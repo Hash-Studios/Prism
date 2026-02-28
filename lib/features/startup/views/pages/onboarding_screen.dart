@@ -1,11 +1,14 @@
+import 'dart:io';
+
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -26,6 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int? selectedTheme;
   late bool isLoading;
   bool? isSignedIn;
+  final AppleAuth _appleAuth = AppleAuth();
   Image? image1;
   Image? image2;
   Image? image3;
@@ -43,8 +47,67 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     analytics.track(OnboardingActionTappedEvent(step: (_currentPage ?? 0) + 1, action: action));
   }
 
-  void _trackOnboardingAuthResult({required EventResultValue result, AnalyticsReasonValue? reason}) {
-    analytics.track(OnboardingAuthResultEvent(method: AuthMethodValue.google, result: result, reason: reason));
+  void _trackOnboardingAuthResult({
+    required EventResultValue result,
+    AnalyticsReasonValue? reason,
+    AuthMethodValue method = AuthMethodValue.google,
+  }) {
+    analytics.track(OnboardingAuthResultEvent(method: method, result: result, reason: reason));
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    _trackOnboardingAction(AnalyticsActionValue.signInTapped);
+    logger.i('Apple sign in tapped', tag: 'Onboarding');
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      final String signInResult = await _appleAuth.signInWithApple();
+      if (signInResult == AppleAuth.signInCancelledResult) {
+        _trackOnboardingAuthResult(
+          result: EventResultValue.cancelled,
+          reason: AnalyticsReasonValue.userCancelled,
+          method: AuthMethodValue.apple,
+        );
+        app_state.prismUser.loggedIn = false;
+        app_state.persistPrismUser();
+        toasts.codeSend("Sign in cancelled.");
+      } else {
+        _trackOnboardingAuthResult(result: EventResultValue.success, method: AuthMethodValue.apple);
+        toasts.codeSend("Login Successful!");
+        app_state.prismUser.loggedIn = true;
+        app_state.persistPrismUser();
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        main.prefs.put('onboarded_new', true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const OptionalInfo3(
+              heading: 'Follow top creators',
+              subheading: 'Never miss the latest and greatest',
+              showSkip: false,
+              skipText: "Skip",
+              doneText: "DONE",
+            ),
+          ),
+        );
+      }
+    } catch (e, st) {
+      logger.e('Apple sign-in failed', tag: 'Onboarding', error: e, stackTrace: st);
+      _trackOnboardingAuthResult(
+        result: EventResultValue.failure,
+        reason: AnalyticsReasonValue.error,
+        method: AuthMethodValue.apple,
+      );
+      app_state.prismUser.loggedIn = false;
+      app_state.persistPrismUser();
+      toasts.error("Something went wrong, please try again!");
+    }
+    setState(() {
+      isLoading = false;
+      isSignedIn = app_state.prismUser.loggedIn;
+    });
   }
 
   @override
@@ -401,15 +464,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Padding(padding: const EdgeInsets.fromLTRB(0, 110, 0, 8), child: image3),
-                      const Column(
+                      Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          ShowUpTransition(
+                          const ShowUpTransition(
                             forward: true,
                             slideSide: SlideFromSlide.bottom,
                             delay: Duration(milliseconds: 150),
                             child: Text(
-                              'Continue with Google',
+                              'Sign in to Continue',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white,
@@ -419,8 +482,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 17),
-                          Padding(
+                          const SizedBox(height: 17),
+                          const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24.0),
                             child: ShowUpTransition(
                               forward: true,
@@ -438,7 +501,41 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          SizedBox(height: 179),
+                          const SizedBox(height: 20),
+                          if (Platform.isIOS || Platform.isMacOS)
+                            ShowUpTransition(
+                              forward: true,
+                              slideSide: SlideFromSlide.bottom,
+                              delay: const Duration(milliseconds: 250),
+                              child: GestureDetector(
+                                onTap: isLoading ? null : _handleAppleSignIn,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    borderRadius: BorderRadius.circular(500),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.apple, color: Colors.white, size: 22),
+                                      SizedBox(width: 10),
+                                      Text(
+                                        'Continue with Apple',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontFamily: "Roboto",
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 80),
                         ],
                       ),
                     ],

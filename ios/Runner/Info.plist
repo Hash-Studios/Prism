@@ -81,5 +81,11 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Prism needs access to your photo library to let you pick images for your profile and setups.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Prism needs permission to save wallpapers to your photo library.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Prism needs camera access to let you take a photo for your profile picture.</string>
 </dict>
 </plist>

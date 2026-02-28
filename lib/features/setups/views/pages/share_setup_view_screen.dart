@@ -24,7 +24,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -475,38 +474,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 delay: const Duration(milliseconds: 150),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
+                                                isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["icon_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
-                                                            sdata.setup!["icon_url"]
-                                                                .toString()
-                                                                .split("details?id=")[1]
-                                                                .split("&")[0],
-                                                          )
-                                                        : launch(sdata.setup!["icon_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["icon_url"].toString());
-                                                  }
+                                                  launch(sdata.setup!["icon_url"].toString());
                                                 },
                                                 tileText: sdata.setup!["icon"].toString(),
                                                 tileType: "Icons",
@@ -554,38 +524,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 delay: const Duration(milliseconds: 150),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
+                                                isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["icon_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
-                                                            sdata.setup!["icon_url"]
-                                                                .toString()
-                                                                .split("details?id=")[1]
-                                                                .split("&")[0],
-                                                          )
-                                                        : launch(sdata.setup!["icon_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["icon_url"].toString());
-                                                  }
+                                                  launch(sdata.setup!["icon_url"].toString());
                                                 },
                                                 tileText: sdata.setup!["icon"].toString(),
                                                 tileType: "Icons",
@@ -593,38 +534,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 delay: const Duration(milliseconds: 200),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["widget_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
+                                                isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["widget_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
-                                                            sdata.setup!["widget_url"]
-                                                                .toString()
-                                                                .split("details?id=")[1]
-                                                                .split("&")[0],
-                                                          )
-                                                        : launch(sdata.setup!["widget_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["widget_url"].toString());
-                                                  }
+                                                  launch(sdata.setup!["widget_url"].toString());
                                                 },
                                                 tileText: sdata.setup!["widget"].toString(),
                                                 tileType: "Widget",
@@ -673,38 +585,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                   delay: const Duration(milliseconds: 150),
                                                 ),
                                                 SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["icon_url"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["icon_url"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
+                                                  isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
-                                                              sdata.setup!["icon_url"]
-                                                                  .toString()
-                                                                  .split("details?id=")[1]
-                                                                  .split("&")[0],
-                                                            )
-                                                          : launch(sdata.setup!["icon_url"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["icon_url"].toString());
-                                                    }
+                                                    launch(sdata.setup!["icon_url"].toString());
                                                   },
                                                   tileText: sdata.setup!["icon"].toString(),
                                                   tileType: "Icons",
@@ -712,38 +595,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                   delay: const Duration(milliseconds: 200),
                                                 ),
                                                 SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["widget_url"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["widget_url"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
+                                                  isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["widget_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
-                                                              sdata.setup!["widget_url"]
-                                                                  .toString()
-                                                                  .split("details?id=")[1]
-                                                                  .split("&")[0],
-                                                            )
-                                                          : launch(sdata.setup!["widget_url"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["widget_url"].toString());
-                                                    }
+                                                    launch(sdata.setup!["widget_url"].toString());
                                                   },
                                                   tileText: sdata.setup!["widget"].toString(),
                                                   tileType: "Widget",
@@ -751,38 +605,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                   delay: const Duration(milliseconds: 250),
                                                 ),
                                                 SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["widget_url2"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["widget_url2"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
+                                                  isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["widget_url2"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url2"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
-                                                              sdata.setup!["widget_url2"]
-                                                                  .toString()
-                                                                  .split("details?id=")[1]
-                                                                  .split("&")[0],
-                                                            )
-                                                          : launch(sdata.setup!["widget_url2"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["widget_url2"].toString());
-                                                    }
+                                                    launch(sdata.setup!["widget_url2"].toString());
                                                   },
                                                   tileText: sdata.setup!["widget2"].toString(),
                                                   tileType: "Widget",

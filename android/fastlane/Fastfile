@@ -1,7 +1,7 @@
 default_platform(:android)
 
 platform :android do
-  desc "Deploy to closed beta track"
+  desc "Deploy to open beta track"
   lane :beta do
     begin
       # gradle(task: "clean")
@@ -15,7 +15,7 @@ platform :android do
         skip_upload_metadata: true,
         skip_upload_images: true,
         skip_upload_screenshots: true,
-        release_status: "draft",
+        release_status: "completed",
         version_code: flutter_version()["version_code"],
       )
     end

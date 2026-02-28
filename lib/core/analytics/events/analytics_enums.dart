@@ -142,7 +142,7 @@ enum DismissModeValue { swipe, clearAll }
 
 enum NotificationTypeValue { route, externalUrl, unknown }
 
-enum AuthMethodValue { google }
+enum AuthMethodValue { google, apple }
 
 enum NavTabValue { home, search, setups, ai, profile }
 
@@ -633,6 +633,8 @@ extension AuthMethodValueX on AuthMethodValue {
     switch (this) {
       case AuthMethodValue.google:
         return 'google';
+      case AuthMethodValue.apple:
+        return 'apple';
     }
   }
 }

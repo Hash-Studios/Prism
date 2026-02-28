@@ -12,7 +12,7 @@ publish_to: none
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.6.9+77
+version: 2.6.9+103
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -24,7 +24,6 @@ dependencies:
   cached_network_image: ^3.0.0
   carousel_slider: ^5.1.2
   cloud_firestore: ^5.6.12
-  device_apps: ^2.1.1
   device_info_plus: ^11.5.0
   extended_image: ^10.0.1
   file_encrypter: ^2.0.2
@@ -87,6 +86,8 @@ dependencies:
   url_launcher: ^6.0.3
   auto_route: ^11.1.0
   mixpanel_flutter: ^2.5.0
+  sign_in_with_apple: ^7.0.0
+  crypto: ^3.0.6
 
 dev_dependencies:
   auto_route_generator: ^10.4.0
