@@ -11,6 +11,8 @@ abstract class SessionRepository {
 
   Future<Result<SessionEntity>> signInWithGoogle();
 
+  Future<Result<SessionEntity>> signInWithApple();
+
   Future<Result<SessionEntity>> refreshPremium();
 
   Future<Result<SessionEntity>> signOut();

@@ -20,7 +20,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -490,58 +489,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     delay: const Duration(milliseconds: 150),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
+                                    isInstalled: Future.value(false),
+                                    onTap: () async {
+                                      launch(
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                          .favouriteSetupsAdapter(listen: false)
-                                          .liked![index!]["icon_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["icon_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["icon_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["icon_url"]
-                                              .toString(),
-                                        );
-                                      }
+                                            .toString(),
+                                      );
                                     },
                                     tileText: context
                                         .favouriteSetupsAdapter(listen: false)
@@ -631,58 +586,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     delay: const Duration(milliseconds: 150),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
+                                    isInstalled: Future.value(false),
+                                    onTap: () async {
+                                      launch(
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                          .favouriteSetupsAdapter(listen: false)
-                                          .liked![index!]["icon_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["icon_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["icon_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["icon_url"]
-                                              .toString(),
-                                        );
-                                      }
+                                            .toString(),
+                                      );
                                     },
                                     tileText: context
                                         .favouriteSetupsAdapter(listen: false)
@@ -693,58 +604,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     delay: const Duration(milliseconds: 200),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
+                                    isInstalled: Future.value(false),
+                                    onTap: () async {
+                                      launch(
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["widget_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["widget_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                          .favouriteSetupsAdapter(listen: false)
-                                          .liked![index!]["widget_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["widget_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["widget_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["widget_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context
-                                              .favouriteSetupsAdapter(listen: false)
-                                              .liked![index!]["widget_url"]
-                                              .toString(),
-                                        );
-                                      }
+                                            .toString(),
+                                      );
                                     },
                                     tileText: context
                                         .favouriteSetupsAdapter(listen: false)
@@ -833,58 +700,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled:
+                                      isInstalled: Future.value(false),
+                                      onTap: () async {
+                                        launch(
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["icon_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                            .favouriteSetupsAdapter(listen: false)
-                                            .liked![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["icon_url"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["icon_url"]
-                                                .toString(),
-                                          );
-                                        }
+                                              .toString(),
+                                        );
                                       },
                                       tileText: context
                                           .favouriteSetupsAdapter(listen: false)
@@ -895,58 +718,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                       delay: const Duration(milliseconds: 200),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled:
+                                      isInstalled: Future.value(false),
+                                      onTap: () async {
+                                        launch(
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["widget_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                            .favouriteSetupsAdapter(listen: false)
-                                            .liked![index!]["widget_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["widget_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["widget_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["widget_url"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["widget_url"]
-                                                .toString(),
-                                          );
-                                        }
+                                              .toString(),
+                                        );
                                       },
                                       tileText: context
                                           .favouriteSetupsAdapter(listen: false)
@@ -957,58 +736,14 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                       delay: const Duration(milliseconds: 250),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled:
+                                      isInstalled: Future.value(false),
+                                      onTap: () async {
+                                        launch(
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url2"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
-                                                  .favouriteSetupsAdapter(listen: false)
-                                                  .liked![index!]["widget_url2"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                            .favouriteSetupsAdapter(listen: false)
-                                            .liked![index!]["widget_url2"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["widget_url2"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["widget_url2"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["widget_url2"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index!]["widget_url2"]
-                                                .toString(),
-                                          );
-                                        }
+                                              .toString(),
+                                        );
                                       },
                                       tileText: context
                                           .favouriteSetupsAdapter(listen: false)

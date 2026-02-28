@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/transactionModel.dart';
@@ -25,6 +26,7 @@ class SessionRepositoryImpl implements SessionRepository {
   late PrismUsersV2 _currentUser;
 
   GoogleAuth get _gAuth => globalGoogleAuth;
+  AppleAuth get _appleAuth => globalAppleAuth;
 
   @override
   PrismUsersV2 get currentUser => _currentUser;
@@ -115,6 +117,21 @@ class SessionRepositoryImpl implements SessionRepository {
       return Result.success(_toEntity());
     } catch (error) {
       return Result.error(ServerFailure('Unable to sign in: $error'));
+    }
+  }
+
+  @override
+  Future<Result<SessionEntity>> signInWithApple() async {
+    try {
+      final String result = await _appleAuth.signInWithApple();
+      if (result == AppleAuth.signInCancelledResult) {
+        _syncFromPrefs();
+        return Result.success(_toEntity());
+      }
+      _syncFromPrefs();
+      return Result.success(_toEntity());
+    } catch (error) {
+      return Result.error(ServerFailure('Unable to sign in with Apple: $error'));
     }
   }
 

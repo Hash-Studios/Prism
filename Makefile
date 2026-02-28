@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard env-guard secrets-guard file-gen pigeon-gen run build attach ios-setup build-ios build-ipa ci test
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard env-guard secrets-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -124,6 +124,16 @@ build: ensure-fvm doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	$(FLUTTER) build apk $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+
+build-aab: ensure-fvm doppler-check
+	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
+		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
+		export PATH="$$JAVA_HOME/bin:$$PATH"; \
+		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
+	fi; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
+	$(FLUTTER) build appbundle --release $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 attach: ensure-fvm
 	@if [ -n "$(DEVICE)" ]; then \
