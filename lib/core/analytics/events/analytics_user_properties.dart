@@ -1,4 +1,4 @@
-enum AnalyticsUserProperty { subscriptionTier, isPremium }
+enum AnalyticsUserProperty { subscriptionTier, isPremium, loggedIn }
 
 extension AnalyticsUserPropertyX on AnalyticsUserProperty {
   String get wireName {
@@ -7,6 +7,8 @@ extension AnalyticsUserPropertyX on AnalyticsUserProperty {
         return 'subscription_tier';
       case AnalyticsUserProperty.isPremium:
         return 'is_premium';
+      case AnalyticsUserProperty.loggedIn:
+        return 'logged_in';
     }
   }
 }
