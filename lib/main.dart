@@ -215,7 +215,6 @@ Future<void> main() async {
         prefs.put('WHpurity', 110);
       }
 
-      _fireQualityDailySnapshotIfDue();
       configureDependencies();
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle(systemNavigationBarColor: Color(systemOverlayColorValue)),
@@ -263,16 +262,6 @@ Future<void> main() async {
       } catch (_) {}
     },
   );
-}
-
-void _fireQualityDailySnapshotIfDue() {
-  try {
-    final String today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
-    final String? lastSnapshot = prefs.get('kpi_quality_snapshot_date') as String?;
-    if (lastSnapshot == today) return;
-    prefs.put('kpi_quality_snapshot_date', today);
-    unawaited(analytics.track(const QualityDailySnapshotEvent(crashFreeUsersPct: 100.0)));
-  } catch (_) {}
 }
 
 SentryConfig _resolveSentryConfig() {
