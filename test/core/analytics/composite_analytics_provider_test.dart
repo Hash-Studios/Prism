@@ -88,7 +88,7 @@ void main() {
     final CompositeAnalyticsProvider provider = CompositeAnalyticsProvider(<AnalyticsProvider>[
       _ThrowingProvider(),
       recording,
-    ]);
+    ], logProviderFailures: false);
 
     await provider.logEvent(name: 'coin_earned', parameters: <String, Object>{'amount': 5});
 
@@ -99,7 +99,10 @@ void main() {
   test('fans out all analytics operations to each provider', () async {
     final _RecordingProvider first = _RecordingProvider();
     final _RecordingProvider second = _RecordingProvider();
-    final CompositeAnalyticsProvider provider = CompositeAnalyticsProvider(<AnalyticsProvider>[first, second]);
+    final CompositeAnalyticsProvider provider = CompositeAnalyticsProvider(<AnalyticsProvider>[
+      first,
+      second,
+    ], logProviderFailures: false);
 
     await provider.logEvent(name: 'paywall_result', parameters: <String, Object>{'result': 'success'});
     await provider.logShare(contentType: 'setup', itemId: 'item_1', method: 'link');

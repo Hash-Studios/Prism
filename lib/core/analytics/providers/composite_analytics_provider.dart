@@ -2,10 +2,12 @@ import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 import 'package:Prism/logger/logger.dart';
 
 class CompositeAnalyticsProvider implements AnalyticsProvider {
-  CompositeAnalyticsProvider(List<AnalyticsProvider> providers)
-    : _providers = List<AnalyticsProvider>.unmodifiable(providers);
+  CompositeAnalyticsProvider(List<AnalyticsProvider> providers, {bool logProviderFailures = true})
+    : _providers = List<AnalyticsProvider>.unmodifiable(providers),
+      _logProviderFailures = logProviderFailures;
 
   final List<AnalyticsProvider> _providers;
+  final bool _logProviderFailures;
 
   @override
   Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) {
@@ -64,6 +66,9 @@ class CompositeAnalyticsProvider implements AnalyticsProvider {
       try {
         await dispatch(provider);
       } catch (error, stackTrace) {
+        if (!_logProviderFailures) {
+          continue;
+        }
         logger.w(
           'Analytics provider failed during dispatch.',
           tag: 'Analytics',
