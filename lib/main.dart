@@ -601,6 +601,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         "Daily featured wallpaper notification at 9 AM.",
         true,
       );
+      await localNotification.createNotificationChannel(
+        "streak_reminder",
+        "Streak reminders",
+        "8 PM reminder to keep your login streak alive.",
+        true,
+      );
     } catch (e, st) {
       logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
     }
@@ -797,6 +803,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       case 'wall_of_the_day':
         unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
         _appRouter.navigate(const HomeTabRoute());
+        break;
+      case 'streak_reminder':
+        _appRouter.navigate(const ProfileTabRoute());
         break;
       case 'follower':
       case 'announcement':

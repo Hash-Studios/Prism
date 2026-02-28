@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -264,6 +265,9 @@ class NotificationCard extends StatelessWidget {
       case "wall_of_the_day":
         context.router.navigate(const HomeTabRoute());
         break;
+      case "streak_reminder":
+        context.router.navigate(const ProfileTabRoute());
+        break;
       case "follower":
       case "announcement":
         context.router.navigate(const HomeTabRoute());
@@ -391,6 +395,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   bool? postsSubscriber;
   bool? inappSubscriber;
   bool? recommendationsSubscriber;
+  bool? streakReminderSubscriber;
   @override
   void initState() {
     super.initState();
@@ -398,6 +403,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
     postsSubscriber = main.prefs.get("postsSubscriber", defaultValue: true) as bool?;
     inappSubscriber = main.prefs.get("inappSubscriber", defaultValue: true) as bool?;
     recommendationsSubscriber = main.prefs.get("recommendationsSubscriber", defaultValue: true) as bool?;
+    streakReminderSubscriber = main.prefs.get("streakReminderSubscriber", defaultValue: true) as bool?;
   }
 
   @override
@@ -620,6 +626,49 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     'recommendations',
                     sourceTag: 'notification.settings.recommendations.disable',
                   );
+                }
+              },
+            ),
+            SwitchListTile(
+              activeThumbColor: Theme.of(context).colorScheme.error,
+              secondary: const Icon(Icons.local_fire_department_rounded),
+              value: streakReminderSubscriber ?? true,
+              title: Text(
+                "Streak reminders",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova",
+                ),
+              ),
+              subtitle: const Text(
+                "Get an 8 PM reminder if your login streak is at risk.",
+                style: TextStyle(fontSize: 12),
+              ),
+              onChanged: (bool value) async {
+                if (app_state.prismUser.loggedIn == true) {
+                  main.prefs.put("streakReminderSubscriber", value);
+                  setState(() {
+                    streakReminderSubscriber = value;
+                  });
+                  analytics.track(
+                    NotificationPreferenceChangedEvent(
+                      preference: NotificationPreferenceValue.streakReminders,
+                      value: value,
+                    ),
+                  );
+                  await CoinsService.instance.setStreakReminderPreference(
+                    value,
+                    sourceTag: 'notification.settings.streak_reminders',
+                  );
+                } else {
+                  analytics.track(
+                    NotificationActionBlockedEvent(
+                      action: AnalyticsActionValue.notificationSettingsOpened,
+                      reason: AnalyticsReasonValue.notSignedIn,
+                    ),
+                  );
+                  toasts.error("Please login to change this setting.");
                 }
               },
             ),

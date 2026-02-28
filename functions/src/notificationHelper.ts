@@ -81,6 +81,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
     },
     data: {
       ...payload.data,
+      channel_id: payload.channelId,
       ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
     },
     android: {

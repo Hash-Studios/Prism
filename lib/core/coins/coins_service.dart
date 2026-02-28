@@ -16,6 +16,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -64,6 +65,55 @@ class AiGenerationReservationResult {
   int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
 }
 
+class StreakStatus {
+  const StreakStatus({
+    required this.streakDay,
+    required this.active,
+    required this.claimedToday,
+    required this.reminderEnabled,
+    required this.timezoneOffsetMinutes,
+    required this.lastClaimDate,
+    this.nextReminderAtUtc,
+  });
+
+  final int streakDay;
+  final bool active;
+  final bool claimedToday;
+  final bool reminderEnabled;
+  final int timezoneOffsetMinutes;
+  final String lastClaimDate;
+  final DateTime? nextReminderAtUtc;
+
+  static const StreakStatus empty = StreakStatus(
+    streakDay: 0,
+    active: false,
+    claimedToday: false,
+    reminderEnabled: true,
+    timezoneOffsetMinutes: 0,
+    lastClaimDate: '',
+  );
+
+  StreakStatus copyWith({
+    int? streakDay,
+    bool? active,
+    bool? claimedToday,
+    bool? reminderEnabled,
+    int? timezoneOffsetMinutes,
+    String? lastClaimDate,
+    DateTime? nextReminderAtUtc,
+  }) {
+    return StreakStatus(
+      streakDay: streakDay ?? this.streakDay,
+      active: active ?? this.active,
+      claimedToday: claimedToday ?? this.claimedToday,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      timezoneOffsetMinutes: timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+      lastClaimDate: lastClaimDate ?? this.lastClaimDate,
+      nextReminderAtUtc: nextReminderAtUtc ?? this.nextReminderAtUtc,
+    );
+  }
+}
+
 class CoinsService {
   CoinsService._();
 
@@ -77,12 +127,18 @@ class CoinsService {
   static const String _shareDomain = 'prismwalls.com';
   static const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
+  static const String _streakReminderPrefKey = 'streakReminderSubscriber';
+  static const String _streakReminderEnabledField = 'streakReminderEnabled';
+  static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
+  static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
+  static const String _streakReminderLastSentDateField = 'streakReminderLastSentDate';
+  static const String _streakLastClaimServerAtField = 'streakLastClaimServerAt';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
   static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
   static const Duration _shortLinkTimeout = Duration(seconds: 6);
-
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
 
   int _deltaVersion = 0;
 
@@ -101,6 +157,58 @@ class CoinsService {
 
   Future<void> clearPendingReferralInviterId() => main.prefs.delete(_pendingReferralInviterPrefKey);
 
+  bool get streakReminderPreferenceEnabled => _preferredStreakReminderEnabled();
+
+  Future<void> setStreakReminderPreference(
+    bool enabled, {
+    String sourceTag = 'coins.streak_reminder.preference',
+  }) async {
+    if (main.prefs.isOpen) {
+      await main.prefs.put(_streakReminderPrefKey, enabled);
+    }
+    if (!_canMutateCoins()) {
+      streakNotifier.value = streakNotifier.value.copyWith(reminderEnabled: enabled);
+      return;
+    }
+    final String userId = app_state.prismUser.id;
+    final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
+    await firestoreClient.runTransaction<void>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return;
+        }
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState, reminderEnabled: enabled, timezoneOffsetMinutes: timezoneOffsetMinutes);
+        final DateTime nowUtc = DateTime.now().toUtc();
+        final String todayLocalKey = _offsetDayKey(nowUtc, timezoneOffsetMinutes);
+        final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
+        final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+        final bool active =
+            streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
+        coinState[_streakReminderEnabledField] = enabled;
+        coinState[_streakTimezoneOffsetMinutesField] = timezoneOffsetMinutes;
+        if (enabled && active) {
+          final DateTime nextReminderAtUtc = _computeNextReminderAtUtc(
+            nowUtc: nowUtc,
+            timezoneOffsetMinutes: timezoneOffsetMinutes,
+            lastClaimDate: lastClaimDate,
+            todayLocalKey: todayLocalKey,
+            activeStreak: true,
+          );
+          coinState[_streakReminderNextAtUtcField] = nextReminderAtUtc;
+        } else {
+          coinState.remove(_streakReminderNextAtUtcField);
+        }
+        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{_coinStateField: coinState});
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+    await refreshStreakStatus();
+  }
+
   Future<void> bootstrapForCurrentUser() async {
     if (!_canMutateCoins()) {
       return;
@@ -118,7 +226,11 @@ class CoinsService {
         }
         final int coins = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        final bool stateChanged = _ensureCoinStateDefaults(coinState);
+        final bool stateChanged = _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (stateChanged || data['coins'] == null) {
           tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
             'coins': coins,
@@ -132,6 +244,7 @@ class CoinsService {
       docId: userId,
     );
     _applyLocalBalance(result.currentBalance, delta: 0);
+    await refreshStreakStatus();
   }
 
   Future<int> refreshBalance() async {
@@ -150,7 +263,26 @@ class CoinsService {
     }
     final int coins = _asInt(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
+    _syncStreakFromUserData(userData);
     return coins;
+  }
+
+  Future<StreakStatus> refreshStreakStatus() async {
+    if (!_canMutateCoins()) {
+      streakNotifier.value = StreakStatus.empty;
+      return StreakStatus.empty;
+    }
+    final String userId = app_state.prismUser.id;
+    final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.usersV2,
+      userId,
+      (data, _) => data,
+      sourceTag: 'coins.refresh_streak',
+    );
+    if (userData == null) {
+      return streakNotifier.value;
+    }
+    return _syncStreakFromUserData(userData);
   }
 
   Future<List<CoinTransactionEntry>> fetchTransactions({int limit = 100}) async {
@@ -220,7 +352,11 @@ class CoinsService {
         final int previous = _asInt(data['coins']);
         final int current = previous + amount;
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
           'coins': current,
           _coinStateField: coinState,
@@ -286,7 +422,11 @@ class CoinsService {
         final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (isPremium && bypassForPremium) {
           return CoinMutationResult(
             success: true,
@@ -392,7 +532,11 @@ class CoinsService {
         final int previous = _asInt(data['coins']);
         final bool isPremium = _isPremiumUserData(data);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
 
         if (!isPremium) {
           final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
@@ -560,7 +704,11 @@ class CoinsService {
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         bool changed = false;
 
         if (mode == AiChargeMode.freeTrial) {
@@ -683,7 +831,11 @@ class CoinsService {
       return true;
     }
     final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
-    _ensureCoinStateDefaults(coinState);
+    _ensureCoinStateDefaults(
+      coinState,
+      reminderEnabled: _preferredStreakReminderEnabled(),
+      timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+    );
     final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
     return (previewUnlocks[normalizedKey] ?? 0) > DateTime.now().millisecondsSinceEpoch;
   }
@@ -720,7 +872,11 @@ class CoinsService {
         final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
         final bool pruned = _pruneExpiredPreviewUnlocks(previewUnlocks, nowMillis: nowMillis);
         final int existingExpiry = previewUnlocks[normalizedKey] ?? 0;
@@ -820,99 +976,83 @@ class CoinsService {
     if (!_canMutateCoins()) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = app_state.prismUser.id;
-    final String today = _localDayKey(DateTime.now());
+    final int previousBalance = app_state.prismUser.coins;
+    final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
+    final bool reminderEnabled = _preferredStreakReminderEnabled();
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      ).httpsCallable('claimDailyStreak');
+      final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
+        'timezoneOffsetMinutes': timezoneOffsetMinutes,
+        'reminderEnabled': reminderEnabled,
+      });
+      final Map<String, dynamic> payload = _asStringDynamicMap(response.data);
 
-    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
-      (tx) async {
-        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
-        if (data == null) {
-          return CoinMutationResult.noChange(
-            balance: app_state.prismUser.coins,
-            success: false,
-            reason: 'user_missing',
+      final bool claimed = _asBool(payload['claimed']);
+      final bool alreadyClaimedToday = _asBool(payload['alreadyClaimedToday']);
+      final int streakDay = _clampStreakDay(_asInt(payload['streakDay']));
+      final int dailyReward = _asInt(payload['dailyReward']);
+      final int streakBonusReward = _asInt(payload['streakBonusReward']);
+      final int totalReward = _asInt(payload['totalReward']);
+      final int newBalance = _asInt(payload['newBalance']);
+      final String todayLocalKey = (payload['todayLocalKey']?.toString() ?? '').trim();
+      final int? nextReminderAtUtcMillis = payload['nextReminderAtUtcMillis'] == null
+          ? null
+          : _asInt(payload['nextReminderAtUtcMillis']);
+      final int delta = newBalance - previousBalance;
+
+      _applyLocalBalance(newBalance, delta: delta);
+      streakNotifier.value = StreakStatus(
+        streakDay: streakDay,
+        active: streakDay > 0,
+        claimedToday: claimed || alreadyClaimedToday,
+        reminderEnabled: reminderEnabled,
+        timezoneOffsetMinutes: timezoneOffsetMinutes,
+        lastClaimDate: todayLocalKey,
+        nextReminderAtUtc: nextReminderAtUtcMillis == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
+      );
+
+      if (claimed) {
+        String dailyReason = 'daily_login';
+        if (streakDay >= 4 && streakDay <= 6) {
+          dailyReason = 'streak_mid_cycle_day_$streakDay';
+        } else if (streakDay == 7) {
+          dailyReason = 'streak_day_7_daily';
+        }
+        if (dailyReward > 0) {
+          _logEarn(
+            action: CoinEarnAction.dailyLogin,
+            amount: dailyReward,
+            sourceTag: 'coins.claim_daily_and_streak',
+            reason: dailyReason,
           );
         }
-        final int previous = _asInt(data['coins']);
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
-
-        final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
-        if (lastClaimDate == today) {
-          return CoinMutationResult.noChange(balance: previous, reason: 'daily_already_claimed');
+        if (streakBonusReward > 0) {
+          _logEarn(
+            action: CoinEarnAction.streakBonus,
+            amount: streakBonusReward,
+            sourceTag: 'coins.claim_daily_and_streak',
+            reason: 'streak_day_7_bonus',
+          );
         }
-
-        int streakDay = _asInt(coinState['streakDay']);
-        if (lastClaimDate.isNotEmpty && _isPreviousDay(lastClaimDate, today)) {
-          streakDay += 1;
-        } else {
-          streakDay = 1;
-        }
-
-        int reward = CoinPolicy.dailyLogin;
-        if (streakDay >= 7) {
-          reward += CoinPolicy.streak7Bonus;
-          streakDay = 0;
-        }
-
-        final int current = previous + reward;
-        coinState['lastDailyClaimDate'] = today;
-        coinState['streakDay'] = streakDay;
-        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-          'coins': current,
-          _coinStateField: coinState,
-        });
-        return CoinMutationResult(
-          success: true,
-          changed: true,
-          previousBalance: previous,
-          currentBalance: current,
-          delta: reward,
-          reason: 'daily_login',
-        );
-      },
-      sourceTag: 'coins.claim_daily_and_streak',
-      collection: FirebaseCollections.usersV2,
-      docId: userId,
-    );
-
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) {
-      _logEarn(
-        action: CoinEarnAction.dailyLogin,
-        amount: CoinPolicy.dailyLogin,
-        sourceTag: 'coins.claim_daily_and_streak',
-      );
-      await _recordCoinTransaction(
-        userId: userId,
-        id: _newTransactionId(CoinEarnAction.dailyLogin.name),
-        delta: CoinPolicy.dailyLogin,
-        balanceBefore: result.previousBalance,
-        balanceAfter: result.previousBalance + CoinPolicy.dailyLogin,
-        action: CoinEarnAction.dailyLogin.name,
-        description: 'Daily login reward (+${CoinPolicy.dailyLogin})',
-        sourceTag: 'coins.claim_daily_and_streak',
-        reason: 'daily_login',
-        status: _txStatusCompleted,
-      );
-      if (result.delta > CoinPolicy.dailyLogin) {
-        final int streakAmount = result.delta - CoinPolicy.dailyLogin;
-        _logEarn(action: CoinEarnAction.streakBonus, amount: streakAmount, sourceTag: 'coins.claim_daily_and_streak');
-        await _recordCoinTransaction(
-          userId: userId,
-          id: _newTransactionId(CoinEarnAction.streakBonus.name),
-          delta: streakAmount,
-          balanceBefore: result.previousBalance + CoinPolicy.dailyLogin,
-          balanceAfter: result.currentBalance,
-          action: CoinEarnAction.streakBonus.name,
-          description: '7-day streak bonus (+$streakAmount)',
-          sourceTag: 'coins.claim_daily_and_streak',
-          reason: 'streak_bonus',
-          status: _txStatusCompleted,
-        );
       }
+
+      return CoinMutationResult(
+        success: true,
+        changed: claimed,
+        previousBalance: previousBalance,
+        currentBalance: newBalance,
+        delta: totalReward > 0 ? totalReward : delta,
+        reason: claimed ? 'daily_login' : 'daily_already_claimed',
+      );
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.claim_daily_and_streak.callable', error: error, stackTrace: stackTrace);
+      await refreshStreakStatus();
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'callable_failed');
     }
-    return result;
   }
 
   Future<CoinMutationResult> maybeAwardProDailyBonus() async {
@@ -937,7 +1077,11 @@ class CoinsService {
           return CoinMutationResult.noChange(balance: previous, reason: 'not_premium');
         }
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         final String lastBonusDate = (coinState['proDailyBonusDate'] as String? ?? '').trim();
         if (lastBonusDate == today) {
           return CoinMutationResult.noChange(balance: previous, reason: 'pro_bonus_already_claimed');
@@ -1005,7 +1149,11 @@ class CoinsService {
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (_asBool(coinState['profileCompletionRewarded'])) {
           return CoinMutationResult.noChange(balance: previous, reason: 'profile_reward_already_claimed');
         }
@@ -1068,7 +1216,11 @@ class CoinsService {
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (_asBool(coinState['firstWallpaperUploadRewarded'])) {
           return CoinMutationResult.noChange(balance: previous, reason: 'first_upload_reward_already_claimed');
         }
@@ -1143,7 +1295,11 @@ class CoinsService {
         }
         final int currentPrevious = _asInt(currentData['coins']);
         final Map<String, dynamic> currentState = _coinStateFromRaw(currentData[_coinStateField]);
-        _ensureCoinStateDefaults(currentState);
+        _ensureCoinStateDefaults(
+          currentState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (_asBool(currentState['referralRewarded'])) {
           return CoinMutationResult.noChange(balance: currentPrevious, reason: 'referral_already_processed');
         }
@@ -1161,7 +1317,11 @@ class CoinsService {
 
         final int inviterPrevious = _asInt(inviterData['coins']);
         final Map<String, dynamic> inviterState = _coinStateFromRaw(inviterData[_coinStateField]);
-        _ensureCoinStateDefaults(inviterState);
+        _ensureCoinStateDefaults(
+          inviterState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
 
         final int currentAfter = currentPrevious + CoinPolicy.referral;
         final int inviterAfter = inviterPrevious + CoinPolicy.referral;
@@ -1470,6 +1630,16 @@ class CoinsService {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
+  Map<String, dynamic> _asStringDynamicMap(Object? raw) {
+    if (raw is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(raw);
+    }
+    if (raw is Map) {
+      return raw.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return <String, dynamic>{};
+  }
+
   bool _asBool(Object? value) {
     if (value is bool) {
       return value;
@@ -1498,7 +1668,11 @@ class CoinsService {
     return <String, dynamic>{};
   }
 
-  bool _ensureCoinStateDefaults(Map<String, dynamic> coinState) {
+  bool _ensureCoinStateDefaults(
+    Map<String, dynamic> coinState, {
+    required bool reminderEnabled,
+    required int timezoneOffsetMinutes,
+  }) {
     bool changed = false;
     changed |= _putDefaultIfMissing(coinState, 'lastDailyClaimDate', '');
     changed |= _putDefaultIfMissing(coinState, 'streakDay', 0);
@@ -1511,12 +1685,116 @@ class CoinsService {
     changed |= _putDefaultIfMissing(coinState, 'aiFreeUsedTotal', 0);
     changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsageDate', '');
     changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsedToday', 0);
+    changed |= _putDefaultIfMissing(coinState, _streakReminderEnabledField, reminderEnabled);
+    changed |= _putDefaultIfMissing(coinState, _streakTimezoneOffsetMinutesField, timezoneOffsetMinutes);
+    changed |= _putDefaultIfMissing(coinState, _streakReminderLastSentDateField, '');
+    changed |= _putDefaultIfMissing(coinState, _streakLastClaimServerAtField, '');
     final Map<String, int> normalizedPreviewUnlocks = _previewUnlocksFromState(coinState);
     if (!_previewUnlockStateEquals(coinState['premiumPreviewUnlocks'], normalizedPreviewUnlocks)) {
       coinState['premiumPreviewUnlocks'] = normalizedPreviewUnlocks;
       changed = true;
     }
+    final int normalizedStreakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+    if (normalizedStreakDay != _asInt(coinState['streakDay'])) {
+      coinState['streakDay'] = normalizedStreakDay;
+      changed = true;
+    }
     return changed;
+  }
+
+  int _deviceTimezoneOffsetMinutes() {
+    return DateTime.now().timeZoneOffset.inMinutes;
+  }
+
+  bool _preferredStreakReminderEnabled() {
+    if (!main.prefs.isOpen) {
+      return true;
+    }
+    return (main.prefs.get(_streakReminderPrefKey, defaultValue: true) as bool?) ?? true;
+  }
+
+  int _clampStreakDay(int day) {
+    if (day < 0) {
+      return 0;
+    }
+    if (day > 7) {
+      return 7;
+    }
+    return day;
+  }
+
+  DateTime _offsetDateTime(DateTime utc, int timezoneOffsetMinutes) {
+    return utc.add(Duration(minutes: timezoneOffsetMinutes));
+  }
+
+  String _offsetDayKey(DateTime utc, int timezoneOffsetMinutes) {
+    final DateTime shifted = _offsetDateTime(utc.toUtc(), timezoneOffsetMinutes);
+    final String month = shifted.month.toString().padLeft(2, '0');
+    final String day = shifted.day.toString().padLeft(2, '0');
+    return '${shifted.year}-$month-$day';
+  }
+
+  DateTime? _parseUtcDateTime(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is DateTime) {
+      return value.toUtc();
+    }
+    final dynamic raw = value;
+    try {
+      final dynamic maybeDate = raw.toDate();
+      if (maybeDate is DateTime) {
+        return maybeDate.toUtc();
+      }
+    } catch (_) {}
+    return DateTime.tryParse(value.toString())?.toUtc();
+  }
+
+  DateTime _computeNextReminderAtUtc({
+    required DateTime nowUtc,
+    required int timezoneOffsetMinutes,
+    required String lastClaimDate,
+    required String todayLocalKey,
+    required bool activeStreak,
+  }) {
+    DateTime reminderLocalBase(DateTime localBase, {required bool tomorrow}) {
+      final DateTime localDate = DateTime(localBase.year, localBase.month, localBase.day);
+      return DateTime(localDate.year, localDate.month, localDate.day + (tomorrow ? 1 : 0), 20);
+    }
+
+    final DateTime localNow = _offsetDateTime(nowUtc, timezoneOffsetMinutes);
+    final bool claimedToday = lastClaimDate == todayLocalKey;
+    final bool sendTomorrow = !activeStreak || claimedToday || localNow.hour >= 20;
+    final DateTime localReminder = reminderLocalBase(localNow, tomorrow: sendTomorrow);
+    return localReminder.subtract(Duration(minutes: timezoneOffsetMinutes)).toUtc();
+  }
+
+  StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
+    final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
+    _ensureCoinStateDefaults(
+      coinState,
+      reminderEnabled: _preferredStreakReminderEnabled(),
+      timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+    );
+    final int timezoneOffsetMinutes = _asInt(coinState[_streakTimezoneOffsetMinutesField]);
+    final String todayLocalKey = _offsetDayKey(DateTime.now().toUtc(), timezoneOffsetMinutes);
+    final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
+    final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+    final bool active =
+        streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
+    final bool claimedToday = lastClaimDate == todayLocalKey;
+    final StreakStatus status = StreakStatus(
+      streakDay: active ? streakDay : 0,
+      active: active,
+      claimedToday: claimedToday,
+      reminderEnabled: _asBool(coinState[_streakReminderEnabledField]),
+      timezoneOffsetMinutes: timezoneOffsetMinutes,
+      lastClaimDate: lastClaimDate,
+      nextReminderAtUtc: _parseUtcDateTime(coinState[_streakReminderNextAtUtcField]),
+    );
+    streakNotifier.value = status;
+    return status;
   }
 
   bool _putDefaultIfMissing(Map<String, dynamic> map, String key, Object value) {

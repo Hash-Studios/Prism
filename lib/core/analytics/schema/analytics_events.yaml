@@ -225,6 +225,7 @@ enums:
       - posts
       - in_app
       - recommendations
+      - streak_reminders
   - name: deep_link_source
     dart_type: DeepLinkSourceValue
     values:

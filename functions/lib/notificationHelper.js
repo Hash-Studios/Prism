@@ -47,7 +47,7 @@ async function sendNotification(payload) {
     const message = Object.assign({ notification: {
             title: payload.title,
             body: payload.body,
-        }, data: Object.assign(Object.assign({}, payload.data), (payload.imageUrl ? { imageUrl: payload.imageUrl } : {})), android: {
+        }, data: Object.assign(Object.assign(Object.assign({}, payload.data), { channel_id: payload.channelId }), (payload.imageUrl ? { imageUrl: payload.imageUrl } : {})), android: {
             notification: Object.assign({ channelId: payload.channelId, clickAction: "FLUTTER_NOTIFICATION_CLICK" }, (payload.imageUrl ? { imageUrl: payload.imageUrl } : {})),
             priority: "high",
         }, apns: {

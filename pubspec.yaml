@@ -29,6 +29,7 @@ dependencies:
   file_encrypter: ^2.0.2
   firebase_analytics: ^11.5.0
   firebase_auth: ^5.6.0
+  cloud_functions: ^5.6.0
   firebase_core: ^3.15.2
   app_links: ^6.4.1
   firebase_in_app_messaging: ^0.8.0

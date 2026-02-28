@@ -86,15 +86,21 @@ class LocalNotification {
   Future<void> showPushNotification(RemoteMessage message) async {
     final RemoteNotification? notification = message.notification;
     if (notification == null) return;
+    final String channelId = (message.data['channel_id']?.toString() ?? '').trim();
+    final String resolvedChannelId = channelId.isEmpty ? 'posts' : channelId;
+    final String resolvedChannelName = channelId == 'streak_reminder' ? 'Streak reminders' : 'Posts';
+    final String resolvedChannelDescription = channelId == 'streak_reminder'
+        ? '8 PM reminder to keep your login streak alive.'
+        : 'Get notifications for posts from artists you follow.';
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'posts',
-      'Posts',
-      channelDescription: 'Get notifications for posts from artists you follow.',
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      resolvedChannelId,
+      resolvedChannelName,
+      channelDescription: resolvedChannelDescription,
       importance: Importance.high,
       priority: Priority.high,
     );
-    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+    final NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
 
     await flutterLocalNotificationsPlugin.show(
       id: notification.hashCode,
