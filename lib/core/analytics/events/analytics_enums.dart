@@ -44,6 +44,82 @@ enum CoinSpendActionValue {
 
 enum AiChargeModeValue { freeTrial, proIncluded, coinSpend, insufficient }
 
+enum SettingValue {
+  followersFeed,
+  animeWallpapers,
+  sketchyWallpapers,
+  followersNotifications,
+  postsNotifications,
+  inAppNotifications,
+  recommendationsNotifications,
+}
+
+enum AnalyticsActionValue {
+  buyPremiumTapped,
+  clearCacheTapped,
+  restartAppTapped,
+  signInTapped,
+  logoutTapped,
+  clearFavouriteWallsTapped,
+  clearFavouriteWallsConfirmed,
+  clearFavouriteSetupsTapped,
+  clearFavouriteSetupsConfirmed,
+  nextTapped,
+  skipTapped,
+  finishTapped,
+  uploadSheetOpened,
+  uploadWallpaperSelected,
+  uploadSetupSelected,
+  notificationSettingsOpened,
+  notificationItemOpened,
+  notificationItemDismissed,
+  quickActionFollowFeed,
+  quickActionCollections,
+  quickActionSetups,
+  quickActionAiWallpapers,
+  quickActionDownloads,
+  quickActionUnknown,
+}
+
+enum EventResultValue { success, failure, cancelled, blocked, navigated, ignored, empty }
+
+enum AnalyticsReasonValue {
+  userCancelled,
+  error,
+  missingData,
+  notSignedIn,
+  alreadySignedIn,
+  emptyInput,
+  unknown,
+  notEligible,
+}
+
+enum SearchProviderValue { wallhaven, pexels, user }
+
+enum ItemTypeValue { wallpaper, user, notification }
+
+enum TargetTypeValue { share, user, setup, refer, shortCode, unknown }
+
+enum EntryPointValue { bottomNav, quickAction }
+
+enum LaunchStateValue { initialLaunch, foreground }
+
+enum ShareChannelValue { shareSheet, clipboard, link }
+
+enum DismissModeValue { swipe, clearAll }
+
+enum NotificationTypeValue { route, externalUrl, unknown }
+
+enum AuthMethodValue { google }
+
+enum NavTabValue { home, search, setups, ai, profile }
+
+enum NotificationPreferenceValue { followers, posts, inApp, recommendations }
+
+enum DeepLinkSourceValue { appLinks, shortLinkResolver }
+
+enum ShareTypeValue { wallpaper, user, setup, refer }
+
 extension WallpaperTargetValueX on WallpaperTargetValue {
   String get wireValue {
     switch (this) {
@@ -183,6 +259,297 @@ extension AiChargeModeValueX on AiChargeModeValue {
         return 'coin_spend';
       case AiChargeModeValue.insufficient:
         return 'insufficient';
+    }
+  }
+}
+
+extension SettingValueX on SettingValue {
+  String get wireValue {
+    switch (this) {
+      case SettingValue.followersFeed:
+        return 'followers_feed';
+      case SettingValue.animeWallpapers:
+        return 'anime_wallpapers';
+      case SettingValue.sketchyWallpapers:
+        return 'sketchy_wallpapers';
+      case SettingValue.followersNotifications:
+        return 'followers_notifications';
+      case SettingValue.postsNotifications:
+        return 'posts_notifications';
+      case SettingValue.inAppNotifications:
+        return 'in_app_notifications';
+      case SettingValue.recommendationsNotifications:
+        return 'recommendations_notifications';
+    }
+  }
+}
+
+extension AnalyticsActionValueX on AnalyticsActionValue {
+  String get wireValue {
+    switch (this) {
+      case AnalyticsActionValue.buyPremiumTapped:
+        return 'buy_premium_tapped';
+      case AnalyticsActionValue.clearCacheTapped:
+        return 'clear_cache_tapped';
+      case AnalyticsActionValue.restartAppTapped:
+        return 'restart_app_tapped';
+      case AnalyticsActionValue.signInTapped:
+        return 'sign_in_tapped';
+      case AnalyticsActionValue.logoutTapped:
+        return 'logout_tapped';
+      case AnalyticsActionValue.clearFavouriteWallsTapped:
+        return 'clear_favourite_walls_tapped';
+      case AnalyticsActionValue.clearFavouriteWallsConfirmed:
+        return 'clear_favourite_walls_confirmed';
+      case AnalyticsActionValue.clearFavouriteSetupsTapped:
+        return 'clear_favourite_setups_tapped';
+      case AnalyticsActionValue.clearFavouriteSetupsConfirmed:
+        return 'clear_favourite_setups_confirmed';
+      case AnalyticsActionValue.nextTapped:
+        return 'next_tapped';
+      case AnalyticsActionValue.skipTapped:
+        return 'skip_tapped';
+      case AnalyticsActionValue.finishTapped:
+        return 'finish_tapped';
+      case AnalyticsActionValue.uploadSheetOpened:
+        return 'upload_sheet_opened';
+      case AnalyticsActionValue.uploadWallpaperSelected:
+        return 'upload_wallpaper_selected';
+      case AnalyticsActionValue.uploadSetupSelected:
+        return 'upload_setup_selected';
+      case AnalyticsActionValue.notificationSettingsOpened:
+        return 'notification_settings_opened';
+      case AnalyticsActionValue.notificationItemOpened:
+        return 'notification_item_opened';
+      case AnalyticsActionValue.notificationItemDismissed:
+        return 'notification_item_dismissed';
+      case AnalyticsActionValue.quickActionFollowFeed:
+        return 'quick_action_follow_feed';
+      case AnalyticsActionValue.quickActionCollections:
+        return 'quick_action_collections';
+      case AnalyticsActionValue.quickActionSetups:
+        return 'quick_action_setups';
+      case AnalyticsActionValue.quickActionAiWallpapers:
+        return 'quick_action_ai_wallpapers';
+      case AnalyticsActionValue.quickActionDownloads:
+        return 'quick_action_downloads';
+      case AnalyticsActionValue.quickActionUnknown:
+        return 'quick_action_unknown';
+    }
+  }
+}
+
+extension EventResultValueX on EventResultValue {
+  String get wireValue {
+    switch (this) {
+      case EventResultValue.success:
+        return 'success';
+      case EventResultValue.failure:
+        return 'failure';
+      case EventResultValue.cancelled:
+        return 'cancelled';
+      case EventResultValue.blocked:
+        return 'blocked';
+      case EventResultValue.navigated:
+        return 'navigated';
+      case EventResultValue.ignored:
+        return 'ignored';
+      case EventResultValue.empty:
+        return 'empty';
+    }
+  }
+}
+
+extension AnalyticsReasonValueX on AnalyticsReasonValue {
+  String get wireValue {
+    switch (this) {
+      case AnalyticsReasonValue.userCancelled:
+        return 'user_cancelled';
+      case AnalyticsReasonValue.error:
+        return 'error';
+      case AnalyticsReasonValue.missingData:
+        return 'missing_data';
+      case AnalyticsReasonValue.notSignedIn:
+        return 'not_signed_in';
+      case AnalyticsReasonValue.alreadySignedIn:
+        return 'already_signed_in';
+      case AnalyticsReasonValue.emptyInput:
+        return 'empty_input';
+      case AnalyticsReasonValue.unknown:
+        return 'unknown';
+      case AnalyticsReasonValue.notEligible:
+        return 'not_eligible';
+    }
+  }
+}
+
+extension SearchProviderValueX on SearchProviderValue {
+  String get wireValue {
+    switch (this) {
+      case SearchProviderValue.wallhaven:
+        return 'wallhaven';
+      case SearchProviderValue.pexels:
+        return 'pexels';
+      case SearchProviderValue.user:
+        return 'user';
+    }
+  }
+}
+
+extension ItemTypeValueX on ItemTypeValue {
+  String get wireValue {
+    switch (this) {
+      case ItemTypeValue.wallpaper:
+        return 'wallpaper';
+      case ItemTypeValue.user:
+        return 'user';
+      case ItemTypeValue.notification:
+        return 'notification';
+    }
+  }
+}
+
+extension TargetTypeValueX on TargetTypeValue {
+  String get wireValue {
+    switch (this) {
+      case TargetTypeValue.share:
+        return 'share';
+      case TargetTypeValue.user:
+        return 'user';
+      case TargetTypeValue.setup:
+        return 'setup';
+      case TargetTypeValue.refer:
+        return 'refer';
+      case TargetTypeValue.shortCode:
+        return 'short_code';
+      case TargetTypeValue.unknown:
+        return 'unknown';
+    }
+  }
+}
+
+extension EntryPointValueX on EntryPointValue {
+  String get wireValue {
+    switch (this) {
+      case EntryPointValue.bottomNav:
+        return 'bottom_nav';
+      case EntryPointValue.quickAction:
+        return 'quick_action';
+    }
+  }
+}
+
+extension LaunchStateValueX on LaunchStateValue {
+  String get wireValue {
+    switch (this) {
+      case LaunchStateValue.initialLaunch:
+        return 'initial_launch';
+      case LaunchStateValue.foreground:
+        return 'foreground';
+    }
+  }
+}
+
+extension ShareChannelValueX on ShareChannelValue {
+  String get wireValue {
+    switch (this) {
+      case ShareChannelValue.shareSheet:
+        return 'share_sheet';
+      case ShareChannelValue.clipboard:
+        return 'clipboard';
+      case ShareChannelValue.link:
+        return 'link';
+    }
+  }
+}
+
+extension DismissModeValueX on DismissModeValue {
+  String get wireValue {
+    switch (this) {
+      case DismissModeValue.swipe:
+        return 'swipe';
+      case DismissModeValue.clearAll:
+        return 'clear_all';
+    }
+  }
+}
+
+extension NotificationTypeValueX on NotificationTypeValue {
+  String get wireValue {
+    switch (this) {
+      case NotificationTypeValue.route:
+        return 'route';
+      case NotificationTypeValue.externalUrl:
+        return 'external_url';
+      case NotificationTypeValue.unknown:
+        return 'unknown';
+    }
+  }
+}
+
+extension AuthMethodValueX on AuthMethodValue {
+  String get wireValue {
+    switch (this) {
+      case AuthMethodValue.google:
+        return 'google';
+    }
+  }
+}
+
+extension NavTabValueX on NavTabValue {
+  String get wireValue {
+    switch (this) {
+      case NavTabValue.home:
+        return 'home';
+      case NavTabValue.search:
+        return 'search';
+      case NavTabValue.setups:
+        return 'setups';
+      case NavTabValue.ai:
+        return 'ai';
+      case NavTabValue.profile:
+        return 'profile';
+    }
+  }
+}
+
+extension NotificationPreferenceValueX on NotificationPreferenceValue {
+  String get wireValue {
+    switch (this) {
+      case NotificationPreferenceValue.followers:
+        return 'followers';
+      case NotificationPreferenceValue.posts:
+        return 'posts';
+      case NotificationPreferenceValue.inApp:
+        return 'in_app';
+      case NotificationPreferenceValue.recommendations:
+        return 'recommendations';
+    }
+  }
+}
+
+extension DeepLinkSourceValueX on DeepLinkSourceValue {
+  String get wireValue {
+    switch (this) {
+      case DeepLinkSourceValue.appLinks:
+        return 'app_links';
+      case DeepLinkSourceValue.shortLinkResolver:
+        return 'short_link_resolver';
+    }
+  }
+}
+
+extension ShareTypeValueX on ShareTypeValue {
+  String get wireValue {
+    switch (this) {
+      case ShareTypeValue.wallpaper:
+        return 'wallpaper';
+      case ShareTypeValue.user:
+        return 'user';
+      case ShareTypeValue.setup:
+        return 'setup';
+      case ShareTypeValue.refer:
+        return 'refer';
     }
   }
 }

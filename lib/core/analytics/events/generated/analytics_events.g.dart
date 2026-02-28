@@ -146,8 +146,8 @@ class DownloadWallpaperEvent extends AnalyticsEvent {
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
       'link': link,
-      if (sourceContext != null) 'source_context': sourceContext,
-      if (premiumContent != null) 'premium_content': premiumContent,
+      if (sourceContext != null) 'source_context': sourceContext!,
+      if (premiumContent != null) 'premium_content': premiumContent!,
     };
   }
 }
@@ -230,11 +230,11 @@ class PaywallResultEvent extends AnalyticsEvent {
       'placement': placement,
       'result': result.wireValue,
       'rc_or_fallback': rcOrFallback.wireValue,
-      if (placementOffering != null) 'placement_offering': placementOffering,
-      if (selectedOffering != null) 'selected_offering': selectedOffering,
-      if (entitlementSynced != null) 'entitlement_synced': entitlementSynced,
-      if (entitlement != null) 'entitlement': entitlement,
-      if (error != null) 'error': error,
+      if (placementOffering != null) 'placement_offering': placementOffering!,
+      if (selectedOffering != null) 'selected_offering': selectedOffering!,
+      if (entitlementSynced != null) 'entitlement_synced': entitlementSynced!,
+      if (entitlement != null) 'entitlement': entitlement!,
+      if (error != null) 'error': error!,
     };
   }
 }
@@ -359,8 +359,8 @@ class SubscriptionRestoreResultEvent extends AnalyticsEvent {
     return <String, Object?>{
       'source': source,
       'result': result.wireValue,
-      if (errorCode != null) 'error_code': errorCode,
-      if (errorMessage != null) 'error_message': errorMessage,
+      if (errorCode != null) 'error_code': errorCode!,
+      if (errorMessage != null) 'error_message': errorMessage!,
     };
   }
 }
@@ -422,8 +422,8 @@ class SubscriptionPurchaseResultEvent extends AnalyticsEvent {
       'product_id': productId,
       'package_type': packageType,
       'result': result.wireValue,
-      if (errorCode != null) 'error_code': errorCode,
-      if (errorMessage != null) 'error_message': errorMessage,
+      if (errorCode != null) 'error_code': errorCode!,
+      if (errorMessage != null) 'error_message': errorMessage!,
     };
   }
 }
@@ -452,11 +452,11 @@ class SubscriptionEntitlementRefreshEvent extends AnalyticsEvent {
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{
       'result': result.wireValue,
-      if (subscriptionTier != null) 'subscription_tier': subscriptionTier,
-      if (isPremium != null) 'is_premium': isPremium,
-      if (activeEntitlements != null) 'active_entitlements': activeEntitlements,
-      if (errorCode != null) 'error_code': errorCode,
-      if (errorMessage != null) 'error_message': errorMessage,
+      if (subscriptionTier != null) 'subscription_tier': subscriptionTier!,
+      if (isPremium != null) 'is_premium': isPremium!,
+      if (activeEntitlements != null) 'active_entitlements': activeEntitlements!,
+      if (errorCode != null) 'error_code': errorCode!,
+      if (errorMessage != null) 'error_message': errorMessage!,
     };
   }
 }
@@ -543,7 +543,7 @@ class AiChargeRolledBackEvent extends AnalyticsEvent {
       'mode': mode.wireValue,
       'balance': balance,
       'source_tag': sourceTag,
-      if (coinsRefunded != null) 'coins_refunded': coinsRefunded,
+      if (coinsRefunded != null) 'coins_refunded': coinsRefunded!,
     };
   }
 }
@@ -600,7 +600,7 @@ class CoinEarnedEvent extends AnalyticsEvent {
       'amount': amount,
       'balance': balance,
       'source_tag': sourceTag,
-      if (reason != null) 'reason': reason,
+      if (reason != null) 'reason': reason!,
     };
   }
 }
@@ -630,7 +630,7 @@ class CoinSpentEvent extends AnalyticsEvent {
       'amount': amount,
       'balance': balance,
       'source_tag': sourceTag,
-      if (reason != null) 'reason': reason,
+      if (reason != null) 'reason': reason!,
     };
   }
 }
@@ -911,5 +911,530 @@ class FavStatusChangedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'id': wallId, 'provider': provider};
+  }
+}
+
+class SettingsActionTappedEvent extends AnalyticsEvent {
+  const SettingsActionTappedEvent({required this.action, required this.isSignedIn, required this.sourceContext});
+
+  final AnalyticsActionValue action;
+  final bool isSignedIn;
+  final String sourceContext;
+
+  @override
+  String get eventName => 'settings_action_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action.wireValue, 'is_signed_in': isSignedIn, 'source_context': sourceContext};
+  }
+}
+
+class SettingsToggleChangedEvent extends AnalyticsEvent {
+  const SettingsToggleChangedEvent({required this.setting, required this.value});
+
+  final SettingValue setting;
+  final bool value;
+
+  @override
+  String get eventName => 'settings_toggle_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'setting': setting.wireValue, 'value': value};
+  }
+}
+
+class SettingsAuthActionResultEvent extends AnalyticsEvent {
+  const SettingsAuthActionResultEvent({required this.action, required this.result, this.reason});
+
+  final AnalyticsActionValue action;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+
+  @override
+  String get eventName => 'settings_auth_action_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'action': action.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+    };
+  }
+}
+
+class SearchSubmittedEvent extends AnalyticsEvent {
+  const SearchSubmittedEvent({
+    required this.provider,
+    required this.queryLength,
+    required this.queryWordCount,
+    required this.sourceContext,
+    required this.fromSuggestion,
+  });
+
+  final SearchProviderValue provider;
+  final int queryLength;
+  final int queryWordCount;
+  final String sourceContext;
+  final bool fromSuggestion;
+
+  @override
+  String get eventName => 'search_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'query_length': queryLength,
+      'query_word_count': queryWordCount,
+      'source_context': sourceContext,
+      'from_suggestion': fromSuggestion,
+    };
+  }
+}
+
+class SearchProviderChangedEvent extends AnalyticsEvent {
+  const SearchProviderChangedEvent({required this.fromProvider, required this.toProvider});
+
+  final SearchProviderValue fromProvider;
+  final SearchProviderValue toProvider;
+
+  @override
+  String get eventName => 'search_provider_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'from_provider': fromProvider.wireValue, 'to_provider': toProvider.wireValue};
+  }
+}
+
+class SearchTagSelectedEvent extends AnalyticsEvent {
+  const SearchTagSelectedEvent({required this.provider, required this.tag});
+
+  final SearchProviderValue provider;
+  final String tag;
+
+  @override
+  String get eventName => 'search_tag_selected';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider.wireValue, 'tag': tag};
+  }
+}
+
+class SearchResultsLoadedEvent extends AnalyticsEvent {
+  const SearchResultsLoadedEvent({
+    required this.provider,
+    required this.queryLength,
+    required this.resultCount,
+    required this.page,
+    required this.result,
+  });
+
+  final SearchProviderValue provider;
+  final int queryLength;
+  final int resultCount;
+  final int page;
+  final EventResultValue result;
+
+  @override
+  String get eventName => 'search_results_loaded';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'query_length': queryLength,
+      'result_count': resultCount,
+      'page': page,
+      'result': result.wireValue,
+    };
+  }
+}
+
+class SearchResultOpenedEvent extends AnalyticsEvent {
+  const SearchResultOpenedEvent({
+    required this.provider,
+    required this.itemType,
+    required this.itemId,
+    required this.index,
+    required this.queryLength,
+  });
+
+  final SearchProviderValue provider;
+  final ItemTypeValue itemType;
+  final String itemId;
+  final int index;
+  final int queryLength;
+
+  @override
+  String get eventName => 'search_result_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'item_type': itemType.wireValue,
+      'item_id': itemId,
+      'index': index,
+      'query_length': queryLength,
+    };
+  }
+}
+
+class SearchPaginationRequestedEvent extends AnalyticsEvent {
+  const SearchPaginationRequestedEvent({required this.provider, required this.queryLength, required this.page});
+
+  final SearchProviderValue provider;
+  final int queryLength;
+  final int page;
+
+  @override
+  String get eventName => 'search_pagination_requested';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'provider': provider.wireValue, 'query_length': queryLength, 'page': page};
+  }
+}
+
+class UserSearchSubmittedEvent extends AnalyticsEvent {
+  const UserSearchSubmittedEvent({required this.queryLength, required this.sourceContext});
+
+  final int queryLength;
+  final String sourceContext;
+
+  @override
+  String get eventName => 'user_search_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'query_length': queryLength, 'source_context': sourceContext};
+  }
+}
+
+class UserSearchResultOpenedEvent extends AnalyticsEvent {
+  const UserSearchResultOpenedEvent({required this.resultUserId, required this.index, required this.queryLength});
+
+  final String resultUserId;
+  final int index;
+  final int queryLength;
+
+  @override
+  String get eventName => 'user_search_result_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'result_user_id': resultUserId, 'index': index, 'query_length': queryLength};
+  }
+}
+
+class NotificationItemOpenedEvent extends AnalyticsEvent {
+  const NotificationItemOpenedEvent({required this.type, required this.destination, required this.hasExternalUrl});
+
+  final NotificationTypeValue type;
+  final String destination;
+  final bool hasExternalUrl;
+
+  @override
+  String get eventName => 'notification_item_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'type': type.wireValue, 'destination': destination, 'has_external_url': hasExternalUrl};
+  }
+}
+
+class NotificationItemDismissedEvent extends AnalyticsEvent {
+  const NotificationItemDismissedEvent({required this.type, required this.dismissMode});
+
+  final NotificationTypeValue type;
+  final DismissModeValue dismissMode;
+
+  @override
+  String get eventName => 'notification_item_dismissed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'type': type.wireValue, 'dismiss_mode': dismissMode.wireValue};
+  }
+}
+
+class NotificationClearAllConfirmedEvent extends AnalyticsEvent {
+  const NotificationClearAllConfirmedEvent({required this.count});
+
+  final int count;
+
+  @override
+  String get eventName => 'notification_clear_all_confirmed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count};
+  }
+}
+
+class NotificationPreferenceChangedEvent extends AnalyticsEvent {
+  const NotificationPreferenceChangedEvent({required this.preference, required this.value});
+
+  final NotificationPreferenceValue preference;
+  final bool value;
+
+  @override
+  String get eventName => 'notification_preference_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'preference': preference.wireValue, 'value': value};
+  }
+}
+
+class NotificationActionBlockedEvent extends AnalyticsEvent {
+  const NotificationActionBlockedEvent({required this.action, required this.reason});
+
+  final AnalyticsActionValue action;
+  final AnalyticsReasonValue reason;
+
+  @override
+  String get eventName => 'notification_action_blocked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action.wireValue, 'reason': reason.wireValue};
+  }
+}
+
+class OnboardingStepViewedEvent extends AnalyticsEvent {
+  const OnboardingStepViewedEvent({required this.step});
+
+  final int step;
+
+  @override
+  String get eventName => 'onboarding_step_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step};
+  }
+}
+
+class OnboardingActionTappedEvent extends AnalyticsEvent {
+  const OnboardingActionTappedEvent({required this.step, required this.action});
+
+  final int step;
+  final AnalyticsActionValue action;
+
+  @override
+  String get eventName => 'onboarding_action_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'step': step, 'action': action.wireValue};
+  }
+}
+
+class OnboardingAuthResultEvent extends AnalyticsEvent {
+  const OnboardingAuthResultEvent({required this.method, required this.result, this.reason});
+
+  final AuthMethodValue method;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+
+  @override
+  String get eventName => 'onboarding_auth_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'method': method.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+    };
+  }
+}
+
+class NavTabSelectedEvent extends AnalyticsEvent {
+  const NavTabSelectedEvent({required this.fromTab, required this.toTab});
+
+  final NavTabValue fromTab;
+  final NavTabValue toTab;
+
+  @override
+  String get eventName => 'nav_tab_selected';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'from_tab': fromTab.wireValue, 'to_tab': toTab.wireValue};
+  }
+}
+
+class UploadActionSelectedEvent extends AnalyticsEvent {
+  const UploadActionSelectedEvent({required this.action, required this.entrypoint});
+
+  final AnalyticsActionValue action;
+  final EntryPointValue entrypoint;
+
+  @override
+  String get eventName => 'upload_action_selected';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action.wireValue, 'entrypoint': entrypoint.wireValue};
+  }
+}
+
+class QuickActionInvokedEvent extends AnalyticsEvent {
+  const QuickActionInvokedEvent({required this.action, required this.launchState});
+
+  final AnalyticsActionValue action;
+  final LaunchStateValue launchState;
+
+  @override
+  String get eventName => 'quick_action_invoked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action.wireValue, 'launch_state': launchState.wireValue};
+  }
+}
+
+class DeepLinkReceivedEvent extends AnalyticsEvent {
+  const DeepLinkReceivedEvent({required this.source, required this.targetType, required this.hasPayload});
+
+  final DeepLinkSourceValue source;
+  final TargetTypeValue targetType;
+  final bool hasPayload;
+
+  @override
+  String get eventName => 'deep_link_received';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source': source.wireValue,
+      'target_type': targetType.wireValue,
+      'has_payload': hasPayload,
+    };
+  }
+}
+
+class DeepLinkResolvedEvent extends AnalyticsEvent {
+  const DeepLinkResolvedEvent({required this.targetType, required this.result, this.reason});
+
+  final TargetTypeValue targetType;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+
+  @override
+  String get eventName => 'deep_link_resolved';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'target_type': targetType.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+    };
+  }
+}
+
+class DeepLinkNavigationResultEvent extends AnalyticsEvent {
+  const DeepLinkNavigationResultEvent({required this.targetType, required this.result, this.reason});
+
+  final TargetTypeValue targetType;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+
+  @override
+  String get eventName => 'deep_link_navigation_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'target_type': targetType.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+    };
+  }
+}
+
+class InviteShareTappedEvent extends AnalyticsEvent {
+  const InviteShareTappedEvent({required this.sourceContext});
+
+  final String sourceContext;
+
+  @override
+  String get eventName => 'invite_share_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext};
+  }
+}
+
+class InviteShareResultEvent extends AnalyticsEvent {
+  const InviteShareResultEvent({required this.channel, required this.result, this.reason, this.sourceContext});
+
+  final ShareChannelValue channel;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+  final String? sourceContext;
+
+  @override
+  String get eventName => 'invite_share_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'channel': channel.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+      if (sourceContext != null) 'source_context': sourceContext!,
+    };
+  }
+}
+
+class DynamicLinkCreateResultEvent extends AnalyticsEvent {
+  const DynamicLinkCreateResultEvent({required this.shareType, required this.result, this.reason});
+
+  final ShareTypeValue shareType;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+
+  @override
+  String get eventName => 'dynamic_link_create_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'share_type': shareType.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+    };
+  }
+}
+
+class AuthLoginResultEvent extends AnalyticsEvent {
+  const AuthLoginResultEvent({required this.method, required this.result, this.reason, this.sourceContext});
+
+  final AuthMethodValue method;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+  final String? sourceContext;
+
+  @override
+  String get eventName => 'auth_login_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'method': method.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+      if (sourceContext != null) 'source_context': sourceContext!,
+    };
   }
 }

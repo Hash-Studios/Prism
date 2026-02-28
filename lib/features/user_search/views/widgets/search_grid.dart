@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenu.dart';
@@ -29,6 +33,79 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
   GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
+  int _currentPage = 1;
+
+  SearchProviderValue get _providerValue {
+    if (widget.selectedProvider == "Pexels") {
+      return SearchProviderValue.pexels;
+    }
+    return SearchProviderValue.wallhaven;
+  }
+
+  int get _queryLength => widget.query.trim().length;
+
+  int get _resultCount => widget.selectedProvider == "Pexels" ? pData.wallsPS.length : wData.wallsS.length;
+
+  void _trackResultsLoaded({required int page, required EventResultValue result}) {
+    analytics.track(
+      SearchResultsLoadedEvent(
+        provider: _providerValue,
+        queryLength: _queryLength,
+        resultCount: _resultCount,
+        page: page,
+        result: result,
+      ),
+    );
+  }
+
+  Future<bool> _requestPage({required int page}) async {
+    analytics.track(SearchPaginationRequestedEvent(provider: _providerValue, queryLength: _queryLength, page: page));
+    try {
+      if (widget.selectedProvider == "WallHaven") {
+        await wData.getWallsbyQueryPage(
+          widget.query,
+          main.prefs.get('WHcategories') as int?,
+          main.prefs.get('WHpurity') as int?,
+        );
+      } else if (widget.selectedProvider == "Pexels") {
+        await pData.getWallsPbyQueryPage(widget.query);
+      }
+      _trackResultsLoaded(page: page, result: _resultCount > 0 ? EventResultValue.success : EventResultValue.empty);
+      return true;
+    } catch (error, stackTrace) {
+      logger.e('Failed to load search results page.', error: error, stackTrace: stackTrace);
+      _trackResultsLoaded(page: page, result: EventResultValue.failure);
+      return false;
+    }
+  }
+
+  Future<void> _requestNextPage() async {
+    if (seeMoreLoader) {
+      return;
+    }
+    setState(() {
+      seeMoreLoader = true;
+    });
+    final int nextPage = _currentPage + 1;
+    final bool success = await _requestPage(page: nextPage);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      if (success) {
+        _currentPage = nextPage;
+      }
+    });
+    Future<void>.delayed(const Duration(seconds: 2)).then((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        seeMoreLoader = false;
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +143,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
             setState(() {});
           });
     _controller!.repeat();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _trackResultsLoaded(page: 1, result: _resultCount > 0 ? EventResultValue.success : EventResultValue.empty);
+    });
   }
 
   @override
@@ -77,12 +157,23 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
-    if (widget.selectedProvider == "WallHaven") {
-      wData.wallsS = [];
-      wData.getWallsbyQuery(widget.query, main.prefs.get('WHcategories') as int?, main.prefs.get('WHpurity') as int?);
-    } else if (widget.selectedProvider == "Pexels") {
-      pData.wallsPS = [];
-      pData.getWallsPbyQuery(widget.query);
+    _currentPage = 1;
+    try {
+      if (widget.selectedProvider == "WallHaven") {
+        wData.wallsS = [];
+        await wData.getWallsbyQuery(
+          widget.query,
+          main.prefs.get('WHcategories') as int?,
+          main.prefs.get('WHpurity') as int?,
+        );
+      } else if (widget.selectedProvider == "Pexels") {
+        pData.wallsPS = [];
+        await pData.getWallsPbyQuery(widget.query);
+      }
+      _trackResultsLoaded(page: 1, result: _resultCount > 0 ? EventResultValue.success : EventResultValue.empty);
+    } catch (error, stackTrace) {
+      logger.e('Failed to refresh search results.', error: error, stackTrace: stackTrace);
+      _trackResultsLoaded(page: 1, result: EventResultValue.failure);
     }
   }
 
@@ -104,20 +195,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
         onNotification: (ScrollNotification scrollInfo) {
           if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
             if (!seeMoreLoader) {
-              if (widget.selectedProvider == "WallHaven") {
-                wData.getWallsbyQueryPage(
-                  widget.query,
-                  main.prefs.get('WHcategories') as int?,
-                  main.prefs.get('WHpurity') as int?,
-                );
-              } else if (widget.selectedProvider == "Pexels") {
-                pData.getWallsPbyQueryPage(widget.query);
-              }
-
-              setState(() {
-                seeMoreLoader = true;
-                Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-              });
+              unawaited(_requestNextPage());
             }
           }
           return false;
@@ -147,18 +225,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                       ? Colors.white10
                       : Colors.black.withValues(alpha: .1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: () {
-                    if (!seeMoreLoader) {
-                      wData.getWallsbyQueryPage(
-                        widget.query,
-                        main.prefs.get('WHcategories') as int?,
-                        main.prefs.get('WHpurity') as int?,
-                      );
-                      setState(() {
-                        seeMoreLoader = true;
-                        Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                      });
-                    }
+                  onPressed: () async {
+                    await _requestNextPage();
                   },
                   child: !seeMoreLoader ? const Text("See more") : Loader(),
                 );
@@ -170,14 +238,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                       ? Colors.white10
                       : Colors.black.withValues(alpha: .1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  onPressed: () {
-                    if (!seeMoreLoader) {
-                      pData.getWallsPbyQueryPage(widget.query);
-                      setState(() {
-                        seeMoreLoader = true;
-                        Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                      });
-                    }
+                  onPressed: () async {
+                    await _requestNextPage();
                   },
                   child: !seeMoreLoader ? const Text("See more") : Loader(),
                 );
@@ -236,6 +298,15 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                 if (widget.selectedProvider == "WallHaven") {
                                   if (wData.wallsS == []) {
                                   } else {
+                                    analytics.track(
+                                      SearchResultOpenedEvent(
+                                        provider: _providerValue,
+                                        itemType: ItemTypeValue.wallpaper,
+                                        itemId: wData.wallsS[index].id?.toString() ?? '',
+                                        index: index,
+                                        queryLength: _queryLength,
+                                      ),
+                                    );
                                     context.router.push(
                                       WallpaperRoute(
                                         arguments: [widget.query, index, wData.wallsS[index].thumbs!["small"]],
@@ -245,6 +316,15 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                 } else if (widget.selectedProvider == "Pexels") {
                                   if (pData.wallsPS == []) {
                                   } else {
+                                    analytics.track(
+                                      SearchResultOpenedEvent(
+                                        provider: _providerValue,
+                                        itemType: ItemTypeValue.wallpaper,
+                                        itemId: pData.wallsPS[index].id?.toString() ?? '',
+                                        index: index,
+                                        queryLength: _queryLength,
+                                      ),
+                                    );
                                     context.router.push(
                                       SearchWallpaperRoute(
                                         arguments: [

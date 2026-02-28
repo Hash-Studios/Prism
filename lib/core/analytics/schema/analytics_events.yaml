@@ -68,6 +68,143 @@ enums:
       - pro_included
       - coin_spend
       - insufficient
+  - name: setting
+    dart_type: SettingValue
+    values:
+      - followers_feed
+      - anime_wallpapers
+      - sketchy_wallpapers
+      - followers_notifications
+      - posts_notifications
+      - in_app_notifications
+      - recommendations_notifications
+  - name: analytics_action
+    dart_type: AnalyticsActionValue
+    values:
+      - buy_premium_tapped
+      - clear_cache_tapped
+      - restart_app_tapped
+      - sign_in_tapped
+      - logout_tapped
+      - clear_favourite_walls_tapped
+      - clear_favourite_walls_confirmed
+      - clear_favourite_setups_tapped
+      - clear_favourite_setups_confirmed
+      - next_tapped
+      - skip_tapped
+      - finish_tapped
+      - upload_sheet_opened
+      - upload_wallpaper_selected
+      - upload_setup_selected
+      - notification_settings_opened
+      - notification_item_opened
+      - notification_item_dismissed
+      - quick_action_follow_feed
+      - quick_action_collections
+      - quick_action_setups
+      - quick_action_ai_wallpapers
+      - quick_action_downloads
+      - quick_action_unknown
+  - name: event_result
+    dart_type: EventResultValue
+    values:
+      - success
+      - failure
+      - cancelled
+      - blocked
+      - navigated
+      - ignored
+      - empty
+  - name: analytics_reason
+    dart_type: AnalyticsReasonValue
+    values:
+      - user_cancelled
+      - error
+      - missing_data
+      - not_signed_in
+      - already_signed_in
+      - empty_input
+      - unknown
+      - not_eligible
+  - name: search_provider
+    dart_type: SearchProviderValue
+    values:
+      - wallhaven
+      - pexels
+      - user
+  - name: item_type
+    dart_type: ItemTypeValue
+    values:
+      - wallpaper
+      - user
+      - notification
+  - name: target_type
+    dart_type: TargetTypeValue
+    values:
+      - share
+      - user
+      - setup
+      - refer
+      - short_code
+      - unknown
+  - name: entrypoint
+    dart_type: EntryPointValue
+    values:
+      - bottom_nav
+      - quick_action
+  - name: launch_state
+    dart_type: LaunchStateValue
+    values:
+      - initial_launch
+      - foreground
+  - name: share_channel
+    dart_type: ShareChannelValue
+    values:
+      - share_sheet
+      - clipboard
+      - link
+  - name: dismiss_mode
+    dart_type: DismissModeValue
+    values:
+      - swipe
+      - clear_all
+  - name: notification_type
+    dart_type: NotificationTypeValue
+    values:
+      - route
+      - external_url
+      - unknown
+  - name: auth_method
+    dart_type: AuthMethodValue
+    values:
+      - google
+  - name: nav_tab
+    dart_type: NavTabValue
+    values:
+      - home
+      - search
+      - setups
+      - ai
+      - profile
+  - name: notification_preference
+    dart_type: NotificationPreferenceValue
+    values:
+      - followers
+      - posts
+      - in_app
+      - recommendations
+  - name: deep_link_source
+    dart_type: DeepLinkSourceValue
+    values:
+      - app_links
+      - short_link_resolver
+  - name: share_type
+    dart_type: ShareTypeValue
+    values:
+      - wallpaper
+      - user
+      - setup
+      - refer
 
 events:
   - id: report_setup
@@ -581,3 +718,351 @@ events:
       - name: provider
         key: provider
         type: string
+  - id: settings_action_tapped
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: is_signed_in
+        key: is_signed_in
+        type: bool
+      - name: source_context
+        key: source_context
+        type: string
+  - id: settings_toggle_changed
+    fields:
+      - name: setting
+        key: setting
+        type: enum
+        enum: SettingValue
+      - name: value
+        key: value
+        type: bool
+  - id: settings_auth_action_result
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: search_submitted
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: query_length
+        key: query_length
+        type: int
+      - name: query_word_count
+        key: query_word_count
+        type: int
+      - name: source_context
+        key: source_context
+        type: string
+      - name: from_suggestion
+        key: from_suggestion
+        type: bool
+  - id: search_provider_changed
+    fields:
+      - name: from_provider
+        key: from_provider
+        type: enum
+        enum: SearchProviderValue
+      - name: to_provider
+        key: to_provider
+        type: enum
+        enum: SearchProviderValue
+  - id: search_tag_selected
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: tag
+        key: tag
+        type: string
+  - id: search_results_loaded
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: query_length
+        key: query_length
+        type: int
+      - name: result_count
+        key: result_count
+        type: int
+      - name: page
+        key: page
+        type: int
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+  - id: search_result_opened
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: item_type
+        key: item_type
+        type: enum
+        enum: ItemTypeValue
+      - name: item_id
+        key: item_id
+        type: string
+      - name: index
+        key: index
+        type: int
+      - name: query_length
+        key: query_length
+        type: int
+  - id: search_pagination_requested
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: query_length
+        key: query_length
+        type: int
+      - name: page
+        key: page
+        type: int
+  - id: user_search_submitted
+    fields:
+      - name: query_length
+        key: query_length
+        type: int
+      - name: source_context
+        key: source_context
+        type: string
+  - id: user_search_result_opened
+    fields:
+      - name: result_user_id
+        key: result_user_id
+        type: string
+      - name: index
+        key: index
+        type: int
+      - name: query_length
+        key: query_length
+        type: int
+  - id: notification_item_opened
+    fields:
+      - name: type
+        key: type
+        type: enum
+        enum: NotificationTypeValue
+      - name: destination
+        key: destination
+        type: string
+      - name: has_external_url
+        key: has_external_url
+        type: bool
+  - id: notification_item_dismissed
+    fields:
+      - name: type
+        key: type
+        type: enum
+        enum: NotificationTypeValue
+      - name: dismiss_mode
+        key: dismiss_mode
+        type: enum
+        enum: DismissModeValue
+  - id: notification_clear_all_confirmed
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: notification_preference_changed
+    fields:
+      - name: preference
+        key: preference
+        type: enum
+        enum: NotificationPreferenceValue
+      - name: value
+        key: value
+        type: bool
+  - id: notification_action_blocked
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+  - id: onboarding_step_viewed
+    fields:
+      - name: step
+        key: step
+        type: int
+  - id: onboarding_action_tapped
+    fields:
+      - name: step
+        key: step
+        type: int
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+  - id: onboarding_auth_result
+    fields:
+      - name: method
+        key: method
+        type: enum
+        enum: AuthMethodValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: nav_tab_selected
+    fields:
+      - name: from_tab
+        key: from_tab
+        type: enum
+        enum: NavTabValue
+      - name: to_tab
+        key: to_tab
+        type: enum
+        enum: NavTabValue
+  - id: upload_action_selected
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: entrypoint
+        key: entrypoint
+        type: enum
+        enum: EntryPointValue
+  - id: quick_action_invoked
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: launch_state
+        key: launch_state
+        type: enum
+        enum: LaunchStateValue
+  - id: deep_link_received
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: DeepLinkSourceValue
+      - name: target_type
+        key: target_type
+        type: enum
+        enum: TargetTypeValue
+      - name: has_payload
+        key: has_payload
+        type: bool
+  - id: deep_link_resolved
+    fields:
+      - name: target_type
+        key: target_type
+        type: enum
+        enum: TargetTypeValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: deep_link_navigation_result
+    fields:
+      - name: target_type
+        key: target_type
+        type: enum
+        enum: TargetTypeValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: invite_share_tapped
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+  - id: invite_share_result
+    fields:
+      - name: channel
+        key: channel
+        type: enum
+        enum: ShareChannelValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+  - id: dynamic_link_create_result
+    fields:
+      - name: share_type
+        key: share_type
+        type: enum
+        enum: ShareTypeValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: auth_login_result
+    fields:
+      - name: method
+        key: method
+        type: enum
+        enum: AuthMethodValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: source_context
+        key: source_context
+        type: string
+        required: false

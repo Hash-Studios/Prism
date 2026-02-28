@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
@@ -27,6 +29,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Image? image1;
   Image? image2;
   Image? image3;
+  int? _lastTrackedStep;
+
+  void _trackOnboardingStepViewed(int step) {
+    if (_lastTrackedStep == step) {
+      return;
+    }
+    _lastTrackedStep = step;
+    analytics.track(OnboardingStepViewedEvent(step: step));
+  }
+
+  void _trackOnboardingAction(AnalyticsActionValue action) {
+    analytics.track(OnboardingActionTappedEvent(step: (_currentPage ?? 0) + 1, action: action));
+  }
+
+  void _trackOnboardingAuthResult({required EventResultValue result, AnalyticsReasonValue? reason}) {
+    analytics.track(OnboardingAuthResultEvent(method: AuthMethodValue.google, result: result, reason: reason));
+  }
 
   @override
   void didChangeDependencies() {
@@ -47,11 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     selectedTheme = 2;
     selectedAccentColor = const Color(0xFFE57697);
     _currentPage = 0;
-    onboardingCarouselController.addListener(() {
-      setState(() {
-        _currentPage = onboardingCarouselController.page!.toInt();
-      });
-    });
+    _trackOnboardingStepViewed(1);
   }
 
   @override
@@ -75,6 +90,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               PageView(
                 controller: onboardingCarouselController,
                 physics: const BouncingScrollPhysics(),
+                onPageChanged: (int page) {
+                  setState(() {
+                    _currentPage = page;
+                  });
+                  _trackOnboardingStepViewed(page + 1);
+                },
                 children: [
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -433,6 +454,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       TextButton(
                         onPressed: _currentPage != 2
                             ? () {
+                                _trackOnboardingAction(AnalyticsActionValue.skipTapped);
                                 onboardingCarouselController.animateToPage(
                                   2,
                                   duration: const Duration(milliseconds: 250),
@@ -440,6 +462,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 );
                               }
                             : () {
+                                _trackOnboardingAction(AnalyticsActionValue.finishTapped);
                                 main.prefs.put('onboarded_new', true);
                                 Navigator.pushReplacement(
                                   context,
@@ -465,6 +488,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ElevatedButton(
                         onPressed: _currentPage != 2
                             ? () {
+                                _trackOnboardingAction(AnalyticsActionValue.nextTapped);
                                 onboardingCarouselController.nextPage(
                                   duration: const Duration(milliseconds: 250),
                                   curve: Curves.easeOutCubic,
@@ -472,11 +496,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               }
                             : isSignedIn!
                             ? () {
+                                _trackOnboardingAction(AnalyticsActionValue.signInTapped);
+                                _trackOnboardingAuthResult(
+                                  result: EventResultValue.ignored,
+                                  reason: AnalyticsReasonValue.alreadySignedIn,
+                                );
                                 toasts.codeSend("Already signed-in!");
                               }
                             : isLoading
                             ? () {}
                             : () async {
+                                _trackOnboardingAction(AnalyticsActionValue.signInTapped);
                                 logger.i('Sign in tapped', tag: 'Onboarding');
                                 setState(() {
                                   isLoading = true;
@@ -484,10 +514,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 try {
                                   final String signInResult = await app_state.gAuth.signInWithGoogle();
                                   if (signInResult == GoogleAuth.signInCancelledResult) {
+                                    _trackOnboardingAuthResult(
+                                      result: EventResultValue.cancelled,
+                                      reason: AnalyticsReasonValue.userCancelled,
+                                    );
                                     app_state.prismUser.loggedIn = false;
                                     app_state.persistPrismUser();
                                     toasts.codeSend("Sign in cancelled.");
                                   } else {
+                                    _trackOnboardingAuthResult(result: EventResultValue.success);
                                     toasts.codeSend("Login Successful!");
                                     app_state.prismUser.loggedIn = true;
                                     app_state.persistPrismUser();
@@ -511,6 +546,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   }
                                 } catch (e, st) {
                                   logger.e('Google sign-in failed', tag: 'Onboarding', error: e, stackTrace: st);
+                                  _trackOnboardingAuthResult(
+                                    result: EventResultValue.failure,
+                                    reason: AnalyticsReasonValue.error,
+                                  );
                                   app_state.prismUser.loggedIn = false;
                                   app_state.persistPrismUser();
                                   toasts.error("Something went wrong, please try again!");

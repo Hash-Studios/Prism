@@ -517,13 +517,29 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void _navigateForDeepLink(DeepLinkActionEntity action) {
     if (action.type == DeepLinkActionType.share) {
       _appRouter.push(ShareWallpaperViewRoute(arguments: action.arguments));
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
+      );
     } else if (action.type == DeepLinkActionType.user) {
       _appRouter.push(ProfileRoute(arguments: action.arguments));
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
+      );
     } else if (action.type == DeepLinkActionType.setup) {
       _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
+      );
     } else if (action.type == DeepLinkActionType.refer) {
       final String inviterUserId = _referralInviterFromAction(action);
       if (inviterUserId.isEmpty) {
+        analytics.track(
+          const DeepLinkNavigationResultEvent(
+            targetType: TargetTypeValue.refer,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.missingData,
+          ),
+        );
         return;
       }
       unawaited(CoinsService.instance.setPendingReferralInviterId(inviterUserId));
@@ -532,6 +548,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       } else {
         toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
       }
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
+      );
     }
   }
 
@@ -589,9 +608,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   Future<void> _resolveAndNavigateShortCode(String code) async {
     if (code.trim().isEmpty) {
+      analytics.track(
+        const DeepLinkResolvedEvent(
+          targetType: TargetTypeValue.shortCode,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.emptyInput,
+        ),
+      );
       return;
     }
 
+    AnalyticsReasonValue failureReason = AnalyticsReasonValue.unknown;
     final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
     try {
       final response = await http
@@ -607,19 +634,26 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             if (canonicalUri != null) {
               final action = _parseCanonicalUriToAction(canonicalUri);
               if (action != null) {
+                analytics.track(
+                  const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
+                );
                 _navigateForDeepLink(action);
                 return;
               }
+              failureReason = AnalyticsReasonValue.missingData;
             }
+            failureReason = AnalyticsReasonValue.missingData;
           }
         }
       } else {
+        failureReason = AnalyticsReasonValue.error;
         logger.w(
           'Short-link resolve returned non-success status.',
           fields: <String, Object?>{'status': response.statusCode, 'code': code, 'body': response.body},
         );
       }
     } catch (error, stackTrace) {
+      failureReason = AnalyticsReasonValue.error;
       logger.w(
         'Failed to resolve short code.',
         error: error,
@@ -628,6 +662,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
 
+    analytics.track(
+      DeepLinkResolvedEvent(
+        targetType: TargetTypeValue.shortCode,
+        result: EventResultValue.failure,
+        reason: failureReason,
+      ),
+    );
     await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
   }
 

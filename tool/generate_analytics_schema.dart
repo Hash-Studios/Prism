@@ -105,7 +105,7 @@ String _generateClass({required String eventId, required String className, requi
   } else {
     buffer.writeln('    return <String, Object?>{');
     for (final _FieldSpec field in fields) {
-      final String serialized = field.serializedValueExpression();
+      final String serialized = field.serializedValueExpression(forceNonNull: !field.required);
       if (field.required) {
         buffer.writeln("      '${field.wireKey}': $serialized,");
       } else {
@@ -206,14 +206,15 @@ class _FieldSpec {
     }
   }
 
-  String serializedValueExpression() {
+  String serializedValueExpression({bool forceNonNull = false}) {
+    final String valueRef = forceNonNull ? '$dartName!' : dartName;
     switch (type) {
       case 'enum':
-        return '$dartName.wireValue';
+        return '$valueRef.wireValue';
       case 'datetime':
-        return '$dartName.toUtc().toIso8601String()';
+        return '$valueRef.toUtc().toIso8601String()';
       default:
-        return dartName;
+        return valueRef;
     }
   }
 }

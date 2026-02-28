@@ -78,6 +78,40 @@ void main() {
         'source_tag': 'coins.rewarded_ad',
       });
     });
+
+    test('serialize canonical search_submitted payload', () {
+      const SearchSubmittedEvent event = SearchSubmittedEvent(
+        provider: SearchProviderValue.wallhaven,
+        queryLength: 10,
+        queryWordCount: 2,
+        sourceContext: 'search_textfield',
+        fromSuggestion: false,
+      );
+
+      expect(event.eventName, 'search_submitted');
+      expect(event.toWireParameters(), <String, Object?>{
+        'provider': 'wallhaven',
+        'query_length': 10,
+        'query_word_count': 2,
+        'source_context': 'search_textfield',
+        'from_suggestion': false,
+      });
+    });
+
+    test('serialize canonical deep_link_navigation_result payload', () {
+      const DeepLinkNavigationResultEvent event = DeepLinkNavigationResultEvent(
+        targetType: TargetTypeValue.shortCode,
+        result: EventResultValue.failure,
+        reason: AnalyticsReasonValue.missingData,
+      );
+
+      expect(event.eventName, 'deep_link_navigation_result');
+      expect(event.toWireParameters(), <String, Object?>{
+        'target_type': 'short_code',
+        'result': 'failure',
+        'reason': 'missing_data',
+      });
+    });
   });
 
   group('provider-backed track dispatch', () {

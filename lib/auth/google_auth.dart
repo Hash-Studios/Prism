@@ -141,7 +141,13 @@ class GoogleAuth {
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
-      analytics.logLogin(loginMethod: 'google');
+      await analytics.track(
+        const AuthLoginResultEvent(
+          method: AuthMethodValue.google,
+          result: EventResultValue.success,
+          sourceContext: 'google_auth',
+        ),
+      );
       await PurchasesService.instance.checkAndPersistPremium();
       await CoinsService.instance.bootstrapForCurrentUser();
       await CoinsService.instance.refreshBalance();
@@ -157,9 +163,25 @@ class GoogleAuth {
       return 'signInWithGoogle succeeded: $user';
     } catch (e, st) {
       if (_isSignInCancelled(e)) {
+        await analytics.track(
+          const AuthLoginResultEvent(
+            method: AuthMethodValue.google,
+            result: EventResultValue.cancelled,
+            reason: AnalyticsReasonValue.userCancelled,
+            sourceContext: 'google_auth',
+          ),
+        );
         logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
         return signInCancelledResult;
       }
+      await analytics.track(
+        const AuthLoginResultEvent(
+          method: AuthMethodValue.google,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.error,
+          sourceContext: 'google_auth',
+        ),
+      );
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
       rethrow;
     } finally {
