@@ -84,10 +84,10 @@ jobs:
             exit 1
           fi
 
-      - name: Build release APK with split debug info
+      - name: Build release AAB with split debug info
         run: |
           DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
-          flutter build apk --release --obfuscate --split-debug-info=build/symbols \
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols \
             $DART_DEFINES \
             --dart-define=SENTRY_DSN="$SENTRY_DSN" \
             --dart-define=SENTRY_ENV="$SENTRY_ENV" \
@@ -98,8 +98,8 @@ jobs:
       - name: Upload debug symbols and mappings to Sentry
         run: dart run sentry_dart_plugin
 
-      - name: Upload APK artifact
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-${{ github.event.inputs.environment }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/bundle/release/app-release.aab

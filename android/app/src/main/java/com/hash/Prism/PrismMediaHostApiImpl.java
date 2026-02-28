@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
@@ -199,17 +200,17 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
     }
 
     private OperationResult createSuccessResult() {
-        OperationResult result = new OperationResult();
-        result.setSuccess(true);
-        return result;
+        return new OperationResult.Builder()
+                .setSuccess(true)
+                .build();
     }
 
     private OperationResult createErrorResult(String errorCode, String message) {
-        OperationResult result = new OperationResult();
-        result.setSuccess(false);
-        result.setErrorCode(errorCode);
-        result.setMessage(message);
-        return result;
+        return new OperationResult.Builder()
+                .setSuccess(false)
+                .setErrorCode(errorCode)
+                .setMessage(message)
+                .build();
     }
 
     private void showToastOnMainThread(String message) {
