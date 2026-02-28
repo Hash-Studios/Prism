@@ -16,7 +16,7 @@ Future<ProcessResult> _runGuard({required Directory workspaceDir, String? libFil
     File('${libDir.path}/violating_usage.dart').writeAsStringSync(libFileContents);
   }
 
-  return Process.run('bash', <String>[scriptFile.path], workingDirectory: workspaceDir.path);
+  return Process.run('bash', <String>[scriptFile.path, workspaceDir.path], workingDirectory: workspaceDir.path);
 }
 
 void main() {

@@ -1252,3 +1252,17 @@ events:
         key: source_context
         type: string
         required: false
+  - id: revenue_recorded
+    fields:
+      - name: amount_usd
+        key: amount_usd
+        type: double
+      - name: source
+        key: source
+        type: string
+  - id: app_crash_fatal
+  - id: quality_daily_snapshot
+    fields:
+      - name: crash_free_users_pct
+        key: crash_free_users_pct
+        type: double

@@ -1564,3 +1564,44 @@ class ExternalLinkOpenResultEvent extends AnalyticsEvent {
     };
   }
 }
+
+class RevenueRecordedEvent extends AnalyticsEvent {
+  const RevenueRecordedEvent({required this.amountUsd, required this.source});
+
+  final double amountUsd;
+  final String source;
+
+  @override
+  String get eventName => 'revenue_recorded';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'amount_usd': amountUsd, 'source': source};
+  }
+}
+
+class AppCrashFatalEvent extends AnalyticsEvent {
+  const AppCrashFatalEvent();
+
+  @override
+  String get eventName => 'app_crash_fatal';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class QualityDailySnapshotEvent extends AnalyticsEvent {
+  const QualityDailySnapshotEvent({required this.crashFreeUsersPct});
+
+  final double crashFreeUsersPct;
+
+  @override
+  String get eventName => 'quality_daily_snapshot';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
+  }
+}

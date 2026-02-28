@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+# When given a workspace path (e.g. from tests), cd there first so rg searches the right tree
+if [[ -n "${1:-}" ]]; then
+  cd "$1"
+fi
+
 raw_facade_usage="$(
   rg -n --no-heading "analytics\\.logEvent\\(" lib test \
     -g '!lib/core/analytics/**' \

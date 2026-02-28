@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -173,6 +174,11 @@ class PurchasesService {
         currency: context.currency ?? 'unknown_currency',
       ),
     );
+
+    final num price = context.price ?? 0;
+    if (price > 0) {
+      unawaited(analytics.track(RevenueRecordedEvent(amountUsd: price.toDouble(), source: 'revenuecat')));
+    }
   }
 
   /// Checks canonical + grandfathered paid entitlements; updates local user state and Hive.
