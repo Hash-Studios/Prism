@@ -414,7 +414,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                     ),
                     child: (_cover == null)
-                        ? (app_state.prismUser.coverPhoto != null)
+                        ? (app_state.prismUser.coverPhoto != null &&
+                                  Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
                               ? CachedNetworkImage(imageUrl: app_state.prismUser.coverPhoto!, fit: BoxFit.cover)
                               : SvgPicture.string(
                                   defaultHeader
@@ -481,7 +482,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                           ),
                           child: (_pfp == null)
-                              ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
+                              ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
+                                    ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
+                                    : const Icon(Icons.person, size: 60)
                               : Image.file(_pfp!, fit: BoxFit.cover),
                         ),
                         Container(

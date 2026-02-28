@@ -63,14 +63,16 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
 
   Future<void> myScroll() async {
     scrollBottomBarController.addListener(() {
-      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (scrollBottomBarController.positions.length != 1) return;
+      final direction = scrollBottomBarController.position.userScrollDirection;
+      if (direction == ScrollDirection.reverse) {
         if (!isScrollingDown) {
           isScrollingDown = true;
           isOnTop = false;
           hideBottomBar();
         }
       }
-      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.forward) {
+      if (direction == ScrollDirection.forward) {
         if (isScrollingDown) {
           isScrollingDown = false;
           isOnTop = true;
@@ -198,7 +200,12 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final tabsRouter = AutoTabsRouter.of(context);
+    TabsRouter tabsRouter;
+    try {
+      tabsRouter = AutoTabsRouter.of(context);
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
     final activeIndex = tabsRouter.activeIndex;
     final isHome = activeIndex == 0;
     final isSearch = activeIndex == 1;

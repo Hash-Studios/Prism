@@ -217,16 +217,19 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
                                             child: Row(
                                               children: [
-                                                Text(
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["id"]
-                                                      .toString()
-                                                      .toUpperCase(),
-                                                  overflow: TextOverflow.fade,
-                                                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                    fontSize: 16,
+                                                Flexible(
+                                                  child: Text(
+                                                    context
+                                                        .setupsAdapter(listen: false)
+                                                        .setups![index!]["id"]
+                                                        .toString()
+                                                        .toUpperCase(),
+                                                    overflow: TextOverflow.fade,
+                                                    softWrap: false,
+                                                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                      fontSize: 16,
+                                                    ),
                                                   ),
                                                 ),
                                                 Padding(
@@ -237,28 +240,12 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                     width: 2,
                                                   ),
                                                 ),
-                                                FutureBuilder(
-                                                  future: _futureView,
-                                                  builder: (context, snapshot) {
-                                                    switch (snapshot.connectionState) {
-                                                      case ConnectionState.waiting:
-                                                        return Text(
-                                                          "",
-                                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                            fontSize: 16,
-                                                          ),
-                                                        );
-                                                      case ConnectionState.none:
-                                                        return Text(
-                                                          "",
-                                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                            color: Theme.of(context).colorScheme.secondary,
-                                                            fontSize: 16,
-                                                          ),
-                                                        );
-                                                      default:
-                                                        if (snapshot.hasError) {
+                                                Flexible(
+                                                  child: FutureBuilder(
+                                                    future: _futureView,
+                                                    builder: (context, snapshot) {
+                                                      switch (snapshot.connectionState) {
+                                                        case ConnectionState.waiting:
                                                           return Text(
                                                             "",
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
@@ -266,19 +253,37 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                               fontSize: 16,
                                                             ),
                                                           );
-                                                        } else {
+                                                        case ConnectionState.none:
                                                           return Text(
-                                                            "${snapshot.data} views",
-                                                            overflow: TextOverflow.fade,
-                                                            softWrap: false,
+                                                            "",
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                               color: Theme.of(context).colorScheme.secondary,
                                                               fontSize: 16,
                                                             ),
                                                           );
-                                                        }
-                                                    }
-                                                  },
+                                                        default:
+                                                          if (snapshot.hasError) {
+                                                            return Text(
+                                                              "",
+                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16,
+                                                              ),
+                                                            );
+                                                          } else {
+                                                            return Text(
+                                                              "${snapshot.data} views",
+                                                              overflow: TextOverflow.fade,
+                                                              softWrap: false,
+                                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                                color: Theme.of(context).colorScheme.secondary,
+                                                                fontSize: 16,
+                                                              ),
+                                                            );
+                                                          }
+                                                      }
+                                                    },
+                                                  ),
                                                 ),
                                               ],
                                             ),

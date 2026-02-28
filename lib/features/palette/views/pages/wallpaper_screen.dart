@@ -401,12 +401,16 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         Padding(
                                           padding: EdgeInsets.zero,
                                           child: Row(
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                wdata.walls[index].category.toString()[0].toUpperCase() +
-                                                    wdata.walls[index].category.toString().substring(1),
-                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
+                                              Flexible(
+                                                child: Text(
+                                                  wdata.walls[index].category.toString()[0].toUpperCase() +
+                                                      wdata.walls[index].category.toString().substring(1),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                                 ),
                                               ),
                                               const SizedBox(width: 10),
@@ -420,11 +424,15 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         ),
                                         const SizedBox(height: 5),
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text(
-                                              wdata.walls[index].resolution.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                            Flexible(
+                                              child: Text(
+                                                wdata.walls[index].resolution.toString(),
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(width: 10),
@@ -437,11 +445,15 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         ),
                                         const SizedBox(height: 5),
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text(
-                                              provider.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                            Flexible(
+                                              child: Text(
+                                                provider.toString(),
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(width: 10),
@@ -2161,12 +2173,16 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         Padding(
                                           padding: EdgeInsets.zero,
                                           child: Row(
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Text(
-                                                wdata.wallsS[index].category.toString()[0].toUpperCase() +
-                                                    wdata.wallsS[index].category.toString().substring(1),
-                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  color: Theme.of(context).colorScheme.secondary,
+                                              Flexible(
+                                                child: Text(
+                                                  wdata.wallsS[index].category.toString()[0].toUpperCase() +
+                                                      wdata.wallsS[index].category.toString().substring(1),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
                                                 ),
                                               ),
                                               const SizedBox(width: 10),
@@ -2180,11 +2196,15 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         ),
                                         const SizedBox(height: 5),
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text(
-                                              wdata.wallsS[index].resolution.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                            Flexible(
+                                              child: Text(
+                                                wdata.wallsS[index].resolution.toString(),
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(width: 10),
@@ -2197,14 +2217,18 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         ),
                                         const SizedBox(height: 5),
                                         Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Text(
-                                              provider!.isNotEmpty
-                                                  ? provider.toString()[0].toUpperCase() +
-                                                        provider.toString().substring(1)
-                                                  : "Search",
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                            Flexible(
+                                              child: Text(
+                                                provider!.isNotEmpty
+                                                    ? provider.toString()[0].toUpperCase() +
+                                                          provider.toString().substring(1)
+                                                    : "Search",
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(width: 10),

@@ -143,9 +143,9 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                             if (!mounted || !sheetContext.mounted) {
                               return;
                             }
-                            setSheetState(() => _loadingReward = true);
+                            if (context.mounted) setSheetState(() => _loadingReward = true);
                             await _watchRewardedAdAndCreditCoins();
-                            if (mounted && sheetContext.mounted) {
+                            if (mounted && sheetContext.mounted && context.mounted) {
                               setSheetState(() => _loadingReward = false);
                             }
                           },
@@ -174,8 +174,9 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
+                      final router = context.router;
                       Navigator.of(context).pop();
-                      context.router.push(const CoinTransactionsRoute());
+                      router.push(const CoinTransactionsRoute());
                     },
                     icon: const Icon(Icons.receipt_long_outlined),
                     label: const Text('View Transactions'),

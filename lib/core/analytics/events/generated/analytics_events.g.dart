@@ -147,7 +147,7 @@ class DownloadWallpaperEvent extends AnalyticsEvent {
     return <String, Object?>{
       'link': link,
       if (sourceContext != null) 'source_context': sourceContext!,
-      if (premiumContent != null) 'premium_content': premiumContent!,
+      if (premiumContent != null) 'premium_content': premiumContent! ? 1 : 0,
     };
   }
 }
@@ -662,7 +662,7 @@ class CoinWatchAndDownloadUsedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'is_premium_content': isPremiumContent, 'source_tag': sourceTag};
+    return <String, Object?>{'is_premium_content': isPremiumContent ? 1 : 0, 'source_tag': sourceTag};
   }
 }
 
@@ -926,7 +926,11 @@ class SettingsActionTappedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'action': action.wireValue, 'is_signed_in': isSignedIn, 'source_context': sourceContext};
+    return <String, Object?>{
+      'action': action.wireValue,
+      'is_signed_in': isSignedIn ? 1 : 0,
+      'source_context': sourceContext,
+    };
   }
 }
 
@@ -941,7 +945,7 @@ class SettingsToggleChangedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'setting': setting.wireValue, 'value': value};
+    return <String, Object?>{'setting': setting.wireValue, 'value': value ? 1 : 0};
   }
 }
 
@@ -990,7 +994,7 @@ class SearchSubmittedEvent extends AnalyticsEvent {
       'query_length': queryLength,
       'query_word_count': queryWordCount,
       'source_context': sourceContext,
-      'from_suggestion': fromSuggestion,
+      'from_suggestion': fromSuggestion ? 1 : 0,
     };
   }
 }
@@ -1144,7 +1148,11 @@ class NotificationItemOpenedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'type': type.wireValue, 'destination': destination, 'has_external_url': hasExternalUrl};
+    return <String, Object?>{
+      'type': type.wireValue,
+      'destination': destination,
+      'has_external_url': hasExternalUrl ? 1 : 0,
+    };
   }
 }
 
@@ -1188,7 +1196,7 @@ class NotificationPreferenceChangedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'preference': preference.wireValue, 'value': value};
+    return <String, Object?>{'preference': preference.wireValue, 'value': value ? 1 : 0};
   }
 }
 
@@ -1316,7 +1324,7 @@ class DeepLinkReceivedEvent extends AnalyticsEvent {
     return <String, Object?>{
       'source': source.wireValue,
       'target_type': targetType.wireValue,
-      'has_payload': hasPayload,
+      'has_payload': hasPayload ? 1 : 0,
     };
   }
 }

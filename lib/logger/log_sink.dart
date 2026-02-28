@@ -1,5 +1,6 @@
 import 'package:Prism/logger/ansi_compact_formatter.dart';
 import 'package:Prism/logger/app_logger.dart';
+import 'package:flutter/foundation.dart';
 
 abstract class LogSink {
   void write(AppLogRecord record);
@@ -27,9 +28,8 @@ class PrintLogSink implements LogSink {
   void write(AppLogRecord record) {
     final List<String> lines = _formatter.format(record);
     for (final String line in lines) {
-      // Intentionally using print for phase 1 to guarantee terminal visibility.
-      // ignore: avoid_print
-      print(line);
+      // debugPrint uses rate limiting to avoid blocking the main thread on syslog writes.
+      debugPrint(line);
     }
   }
 }

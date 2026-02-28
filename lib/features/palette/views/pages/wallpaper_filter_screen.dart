@@ -430,7 +430,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         toasts.error("Couldn't save wallpaper. Please retry!");
       }
     } on PlatformException catch (e) {
-      logger.e('saveMedia failed', error: e);
+      if (e.code == 'channel-error') {
+        logger.w('saveMedia channel unavailable (native side not registered)', error: e);
+      } else {
+        logger.e('saveMedia failed', error: e);
+      }
       toasts.error("Couldn't save wallpaper. Please retry!");
     } catch (e) {
       logger.e('Unexpected saveMedia failure', error: e);

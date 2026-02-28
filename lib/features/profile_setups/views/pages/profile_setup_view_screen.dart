@@ -965,7 +965,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                         toasts.error("Couldn't download! Please Retry!");
                       }
                     } on PlatformException catch (e) {
-                      logger.e('saveMedia failed', error: e);
+                      if (e.code == 'channel-error') {
+                        logger.w('saveMedia channel unavailable (native side not registered)', error: e);
+                      } else {
+                        logger.e('saveMedia failed', error: e);
+                      }
                       toasts.error("Couldn't download! Please Retry!");
                     } catch (e) {
                       logger.e('Unexpected saveMedia failure', error: e);

@@ -318,7 +318,8 @@ class WallTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for review wall download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for review wall download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for review wall download', error: e);
@@ -565,7 +566,8 @@ class RejectedWallTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for rejected wall download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for rejected wall download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for rejected wall download', error: e);
@@ -1071,7 +1073,8 @@ class SetupTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for review setup download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for review setup download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for review setup download', error: e);
@@ -1467,7 +1470,8 @@ class RejectedSetupTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for rejected setup download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for rejected setup download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for rejected setup download', error: e);

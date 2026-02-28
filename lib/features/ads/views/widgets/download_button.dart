@@ -532,7 +532,11 @@ class _DownloadButtonState extends State<DownloadButton> {
       toasts.codeSend('Wall downloaded in Pictures/Prism!');
       return true;
     } on PlatformException catch (e) {
-      logger.e('Download failed', error: e);
+      if (e.code == 'channel-error') {
+        logger.w('Download channel unavailable (native side not registered)', error: e);
+      } else {
+        logger.e('Download failed', error: e);
+      }
       toasts.error("Couldn't download! Please retry.");
       return false;
     } catch (e) {
