@@ -100,7 +100,7 @@ void main() {
         'query_length': 10,
         'query_word_count': 2,
         'source_context': 'search_textfield',
-        'from_suggestion': false,
+        'from_suggestion': 0,
       });
     });
 

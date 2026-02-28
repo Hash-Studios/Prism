@@ -9,6 +9,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
@@ -22,11 +23,17 @@ class AdminReviewScreen extends StatefulWidget {
 class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTickerProviderStateMixin {
   late TabController _controller;
   final AdminReviewRepository _repository = const AdminReviewRepository();
+  late final Stream<(int, int)> _pendingCountsStream;
 
   @override
   void initState() {
     super.initState();
     _controller = TabController(length: 3, vsync: this);
+    _pendingCountsStream = Rx.combineLatest2<int, int, (int, int)>(
+      _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
+      _repository.watchPendingSetups().map((List<FirestoreDocument> list) => list.length),
+      (int a, int b) => (a, b),
+    );
   }
 
   @override
@@ -44,22 +51,30 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Moderation'),
-        bottom: TabBar(
-          controller: _controller,
-          tabs: const <Tab>[
-            Tab(text: 'Wallpapers'),
-            Tab(text: 'Setups'),
-            Tab(text: 'Notifications'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _controller,
-        children: <Widget>[_buildWallTab(), _buildSetupTab(), const _NotificationSenderTab()],
-      ),
+    return StreamBuilder<(int, int)>(
+      stream: _pendingCountsStream,
+      initialData: (0, 0),
+      builder: (BuildContext context, AsyncSnapshot<(int, int)> countSnapshot) {
+        final int wallsCount = countSnapshot.data!.$1;
+        final int setupsCount = countSnapshot.data!.$2;
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Admin Moderation'),
+            bottom: TabBar(
+              controller: _controller,
+              tabs: <Tab>[
+                Tab(text: 'Walls ($wallsCount)'),
+                Tab(text: 'Setups ($setupsCount)'),
+                const Tab(text: 'Notifications'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            controller: _controller,
+            children: <Widget>[_buildWallTab(), _buildSetupTab(), const _NotificationSenderTab()],
+          ),
+        );
+      },
     );
   }
 
