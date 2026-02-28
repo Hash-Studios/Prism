@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -274,15 +275,14 @@ class _PremiumUpsellScreenState extends State<_PremiumUpsellScreen> {
     }
     final Package selectedPackage = packages[index];
     setState(() => _selectedIndex = index);
-    analytics.logEvent(
-      name: 'subscription_package_selected',
-      parameters: <String, Object>{
-        'source': 'premium_screen',
-        'product_id': selectedPackage.storeProduct.identifier,
-        'package_type': selectedPackage.packageType.name,
-        'price': selectedPackage.storeProduct.price,
-        'currency': selectedPackage.storeProduct.currencyCode,
-      },
+    analytics.track(
+      SubscriptionPackageSelectedEvent(
+        source: 'premium_screen',
+        productId: selectedPackage.storeProduct.identifier,
+        packageType: selectedPackage.packageType.name,
+        price: selectedPackage.storeProduct.price,
+        currency: selectedPackage.storeProduct.currencyCode,
+      ),
     );
   }
 
@@ -711,10 +711,7 @@ class _StickyBottomSheet extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
                       onPressed: () async {
-                        analytics.logEvent(
-                          name: 'subscription_restore_started',
-                          parameters: <String, Object>{'source': 'premium_screen'},
-                        );
+                        analytics.track(const SubscriptionRestoreStartedEvent(source: 'premium_screen'));
                         try {
                           logger.d('Restoring purchases');
                           final info = await _purchasesService.restore();
@@ -729,12 +726,11 @@ class _StickyBottomSheet extends StatelessWidget {
                               price: 0,
                             ),
                           );
-                          analytics.logEvent(
-                            name: 'subscription_restore_result',
-                            parameters: <String, Object>{
-                              'source': 'premium_screen',
-                              'result': ok ? 'success' : 'not_entitled',
-                            },
+                          analytics.track(
+                            SubscriptionRestoreResultEvent(
+                              source: 'premium_screen',
+                              result: ok ? SubscriptionResultValue.success : SubscriptionResultValue.notEntitled,
+                            ),
                           );
                           if (ok) {
                             toasts.codeSend('You are now a premium member.');
@@ -743,14 +739,13 @@ class _StickyBottomSheet extends StatelessWidget {
                             toasts.error('There was an error. Please try again later.');
                           }
                         } on PlatformException catch (e) {
-                          analytics.logEvent(
-                            name: 'subscription_restore_result',
-                            parameters: <String, Object>{
-                              'source': 'premium_screen',
-                              'result': 'failure',
-                              'error_code': e.code,
-                              'error_message': e.message ?? '',
-                            },
+                          analytics.track(
+                            SubscriptionRestoreResultEvent(
+                              source: 'premium_screen',
+                              result: SubscriptionResultValue.failure,
+                              errorCode: e.code,
+                              errorMessage: e.message ?? '',
+                            ),
                           );
                           final code = PurchasesErrorHelper.getErrorCode(e);
                           if (code == PurchasesErrorCode.purchaseCancelledError) {
@@ -797,15 +792,14 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
   Future<void> _purchase() async {
     if (_isPurchasing) return;
     setState(() => _isPurchasing = true);
-    analytics.logEvent(
-      name: 'subscription_purchase_started',
-      parameters: <String, Object>{
-        'source': 'premium_screen',
-        'product_id': widget.package.storeProduct.identifier,
-        'package_type': widget.package.packageType.name,
-        'price': widget.package.storeProduct.price,
-        'currency': widget.package.storeProduct.currencyCode,
-      },
+    analytics.track(
+      SubscriptionPurchaseStartedEvent(
+        source: 'premium_screen',
+        productId: widget.package.storeProduct.identifier,
+        packageType: widget.package.packageType.name,
+        price: widget.package.storeProduct.price,
+        currency: widget.package.storeProduct.currencyCode,
+      ),
     );
     try {
       final customerInfo = await _purchasesService.purchase(widget.package);
@@ -820,14 +814,13 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
           currency: widget.package.storeProduct.currencyCode,
         ),
       );
-      analytics.logEvent(
-        name: 'subscription_purchase_result',
-        parameters: <String, Object>{
-          'source': 'premium_screen',
-          'product_id': widget.package.storeProduct.identifier,
-          'package_type': widget.package.packageType.name,
-          'result': isPremium ? 'success' : 'not_entitled',
-        },
+      analytics.track(
+        SubscriptionPurchaseResultEvent(
+          source: 'premium_screen',
+          productId: widget.package.storeProduct.identifier,
+          packageType: widget.package.packageType.name,
+          result: isPremium ? SubscriptionResultValue.success : SubscriptionResultValue.notEntitled,
+        ),
       );
       if (isPremium) {
         toasts.codeSend('You are now a premium member.');
@@ -837,16 +830,15 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
       }
     } on PlatformException catch (e) {
       if (!mounted) return;
-      analytics.logEvent(
-        name: 'subscription_purchase_result',
-        parameters: <String, Object>{
-          'source': 'premium_screen',
-          'product_id': widget.package.storeProduct.identifier,
-          'package_type': widget.package.packageType.name,
-          'result': 'failure',
-          'error_code': e.code,
-          'error_message': e.message ?? '',
-        },
+      analytics.track(
+        SubscriptionPurchaseResultEvent(
+          source: 'premium_screen',
+          productId: widget.package.storeProduct.identifier,
+          packageType: widget.package.packageType.name,
+          result: SubscriptionResultValue.failure,
+          errorCode: e.code,
+          errorMessage: e.message ?? '',
+        ),
       );
       final code = PurchasesErrorHelper.getErrorCode(e);
       if (code == PurchasesErrorCode.purchaseCancelledError) {

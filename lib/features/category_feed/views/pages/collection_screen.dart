@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
@@ -16,7 +17,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   void initState() {
-    analytics.logEvent(name: 'collections_checked');
+    analytics.track(const CollectionsCheckedEvent());
     _collectionsFuture = getCollections();
     super.initState();
   }

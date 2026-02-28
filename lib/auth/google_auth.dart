@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -128,13 +129,25 @@ class GoogleAuth {
 
       await app_state.persistPrismUser();
       await analytics.setUserId(user.uid);
-      await analytics.setUserProperty(name: 'subscription_tier', value: app_state.prismUser.subscriptionTier);
-      await analytics.setUserProperty(name: 'is_premium', value: app_state.prismUser.premium ? '1' : '0');
+      await analytics.setUserProperty(
+        name: AnalyticsUserProperty.subscriptionTier.wireName,
+        value: app_state.prismUser.subscriptionTier,
+      );
+      await analytics.setUserProperty(
+        name: AnalyticsUserProperty.isPremium.wireName,
+        value: app_state.prismUser.premium ? '1' : '0',
+      );
       await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);
-      analytics.logLogin(loginMethod: 'google');
+      await analytics.track(
+        const AuthLoginResultEvent(
+          method: AuthMethodValue.google,
+          result: EventResultValue.success,
+          sourceContext: 'google_auth',
+        ),
+      );
       await PurchasesService.instance.checkAndPersistPremium();
       await CoinsService.instance.bootstrapForCurrentUser();
       await CoinsService.instance.refreshBalance();
@@ -150,9 +163,25 @@ class GoogleAuth {
       return 'signInWithGoogle succeeded: $user';
     } catch (e, st) {
       if (_isSignInCancelled(e)) {
+        await analytics.track(
+          const AuthLoginResultEvent(
+            method: AuthMethodValue.google,
+            result: EventResultValue.cancelled,
+            reason: AnalyticsReasonValue.userCancelled,
+            sourceContext: 'google_auth',
+          ),
+        );
         logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
         return signInCancelledResult;
       }
+      await analytics.track(
+        const AuthLoginResultEvent(
+          method: AuthMethodValue.google,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.error,
+          sourceContext: 'google_auth',
+        ),
+      );
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
       rethrow;
     } finally {
@@ -226,8 +255,8 @@ class GoogleAuth {
       logger.e('Failed to mark user logged out', error: e, stackTrace: st);
     }
     await analytics.setUserId(null);
-    await analytics.setUserProperty(name: 'subscription_tier', value: 'free');
-    await analytics.setUserProperty(name: 'is_premium', value: '0');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
     logger.d("User Sign Out");
     return true;
   }

@@ -45,6 +45,7 @@ pubspec.lock
 android/app/google-services.json
 lib/gitkey.dart
 .env
+.doppler.yaml
 android/app/.settings/org.eclipse.buildship.core.prefs
 android/app/.project
 android/app/.classpath
@@ -61,6 +62,8 @@ lib/firebase_options.dart
 firebase.json
 ios/Runner/GoogleService-Info.plist
 docs/**
+!docs/development/
+!docs/development/doppler.md
 sentry.properties
 infra/cloudflare/worker/.wrangler/**
 AuthKey.p8

@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
@@ -76,7 +77,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
       isLoading = true;
     });
     context.favouriteSetupsAdapter(listen: false).favCheck(id, setupMap).then((value) {
-      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {'id': id});
+      analytics.track(SetupFavStatusChangedEvent(setupId: id));
       setState(() {
         isLoading = false;
       });

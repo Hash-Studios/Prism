@@ -43,4 +43,9 @@ class FirebaseAnalyticsProvider implements AnalyticsProvider {
   Future<void> logShare({required String contentType, required String itemId, required String method}) {
     return _analytics.logShare(contentType: contentType, itemId: itemId, method: method);
   }
+
+  @override
+  Future<void> flush() {
+    return Future<void>.value();
+  }
 }

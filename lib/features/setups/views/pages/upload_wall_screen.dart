@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
@@ -295,10 +296,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           onPressed: !isProcessing && !isUploading
               ? () async {
                   Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.logEvent(
-                    name: 'upload_wallpaper',
-                    parameters: {'id': id ?? '', 'link': wallpaperUrl ?? ''},
-                  );
+                  analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
                   WallStore.createRecord(
                     id,
                     wallpaperProvider,

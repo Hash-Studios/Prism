@@ -146,7 +146,7 @@ Future<void> refreshSessionFromPersistence() async {
   if (!main.prefs.isOpen) {
     return;
   }
-  final dynamic raw = main.prefs.get(main.userHiveKey, defaultValue: app_constants.createGuestPrismUser());
+  final dynamic raw = main.prefs.get(main.userHiveKey);
   if (raw is PrismUsersV2) {
     _fallbackUser = raw;
   }

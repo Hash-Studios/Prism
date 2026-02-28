@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -81,7 +82,7 @@ class _ThemeViewState extends State<ThemeView> {
                   .replaceAll("Color(0xff", "")
                   .replaceAll(")", "");
               main.prefs.put("systemOverlayColor", accentColor);
-              analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
+              analytics.track(AccentChangedEvent(color: hexString));
               Navigator.pop(context);
             },
           ),

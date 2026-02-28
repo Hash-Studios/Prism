@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/apps/appsData.dart';
@@ -254,7 +255,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                       toasts.error("Please fill all required fields!");
                     } else {
                       Navigator.pop(context);
-                      analytics.logEvent(name: 'upload_setup', parameters: {'id': id ?? '', 'link': imageURL ?? ''});
+                      analytics.track(UploadSetupEvent(setupId: id ?? '', link: imageURL ?? ''));
                       WallStore.createSetup(
                         id,
                         imageURL,

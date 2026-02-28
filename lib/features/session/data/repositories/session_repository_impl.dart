@@ -39,7 +39,7 @@ class SessionRepositoryImpl implements SessionRepository {
     if (!main.prefs.isOpen) {
       return createGuestPrismUser();
     }
-    final dynamic raw = main.prefs.get(main.userHiveKey, defaultValue: createGuestPrismUser());
+    final dynamic raw = main.prefs.get(main.userHiveKey);
     if (raw is PrismUsersV2) {
       return raw;
     }
@@ -84,15 +84,19 @@ class SessionRepositoryImpl implements SessionRepository {
     );
   }
 
-  void _syncFromPrefs() {
+  void _syncFromPrefs({bool emit = true}) {
     _currentUser = _readStoredUser();
-    _emitCurrentUser();
+    if (emit) {
+      _emitCurrentUser();
+    }
   }
 
   @override
   Future<Result<SessionEntity>> getSession() async {
     try {
-      _syncFromPrefs();
+      // Avoid emitting current-user updates while handling SessionEvent.started(),
+      // otherwise SessionBloc's stream listener re-dispatches started in a loop.
+      _syncFromPrefs(emit: false);
       return Result.success(_toEntity());
     } catch (error) {
       return Result.error(CacheFailure('Unable to read session: $error'));

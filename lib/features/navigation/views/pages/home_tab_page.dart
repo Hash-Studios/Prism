@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -33,6 +35,38 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   bool result = true;
   final box = Hive.box('localFav');
   String shortcut = "No Action Set";
+  bool _hasHandledQuickActionInvocation = false;
+
+  void _trackQuickActionInvocation(String shortcutType) {
+    final AnalyticsActionValue action;
+    switch (shortcutType) {
+      case 'Follow_Feed':
+        action = AnalyticsActionValue.quickActionFollowFeed;
+        break;
+      case 'Collections':
+        action = AnalyticsActionValue.quickActionCollections;
+        break;
+      case 'Setups':
+        action = AnalyticsActionValue.quickActionSetups;
+        break;
+      case 'AI_Wallpapers':
+        action = AnalyticsActionValue.quickActionAiWallpapers;
+        break;
+      case 'Downloads':
+        action = AnalyticsActionValue.quickActionDownloads;
+        break;
+      default:
+        action = AnalyticsActionValue.quickActionUnknown;
+        break;
+    }
+    analytics.track(
+      QuickActionInvokedEvent(
+        action: action,
+        launchState: _hasHandledQuickActionInvocation ? LaunchStateValue.foreground : LaunchStateValue.initialLaunch,
+      ),
+    );
+    _hasHandledQuickActionInvocation = true;
+  }
 
   Future<void> checkConnection() async {
     result = await InternetConnectionChecker.instance.hasConnection;
@@ -65,6 +99,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
     context.read<AdsBloc>().add(const AdsEvent.started());
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
+      _trackQuickActionInvocation(shortcutType);
       setState(() {
         shortcut = shortcutType;
       });

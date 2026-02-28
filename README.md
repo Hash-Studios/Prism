@@ -99,12 +99,13 @@ You can also report bugs, upload your setups/walls on our telegram channel
 4. [Support](#support)
 5. [Dependencies](#dependencies)
 6. [Development Setup (FVM)](#development-setup-fvm)
-7. [Usage](#usage)
-8. [Contributing](#contributing)
-9. [License](#license)
-10. [Privacy Policy](#privacy)
-11. [Contributors](#contributors)
-12. [To-Do](#to-do)
+7. [Secrets with Doppler](#secrets-with-doppler)
+8. [Usage](#usage)
+9. [Contributing](#contributing)
+10. [License](#license)
+11. [Privacy Policy](#privacy)
+12. [Contributors](#contributors)
+13. [To-Do](#to-do)
 
 ## Features
 
@@ -283,6 +284,33 @@ make update-flutter VERSION=3.42.0
 ```
 
 Then commit the updated [`.fvmrc`](.fvmrc).
+
+## Secrets with Doppler
+
+Prism uses Doppler as the source of truth for runtime secrets. `.env.example` is reference-only and is not used as runtime input by Make targets.
+
+Install Doppler CLI:
+
+- <https://docs.doppler.com/docs/install-cli>
+
+Run one-click setup from project root:
+
+```sh
+make setup-dev
+```
+
+This validates access to `prism/dev`, installs dependencies, and prepares local development.
+
+Useful commands:
+
+```sh
+make doppler-login   # interactive Doppler login/setup
+make secrets-print   # show available keys with masked values
+make run             # run app with Doppler-injected dart-defines
+```
+
+Release workflows use Doppler Service Tokens (GitHub secret: `DOPPLER_TOKEN_PRODUCTION`).
+See detailed guide: [`docs/development/doppler.md`](docs/development/doppler.md).
 
 ## Usage
 

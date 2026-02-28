@@ -6,11 +6,14 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/core/analytics/analytics_identity_sync.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -20,8 +23,10 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/deep_link/deep_link.dart';
@@ -32,6 +37,7 @@ import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
 import 'package:Prism/features/profile_walls/profile_walls.dart';
 import 'package:Prism/features/public_profile/public_profile.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/setups/setups.dart';
 import 'package:Prism/features/startup/startup.dart';
@@ -40,7 +46,6 @@ import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/firebase_options.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -69,6 +74,8 @@ int? categories;
 int? purity;
 late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
+const double _sentryReplaySessionSampleRate = 0.1;
+const double _sentryReplayOnErrorSampleRate = 1.0;
 
 int _to8BitChannel(double value) {
   final channel = (value * 255).round();
@@ -119,6 +126,9 @@ Future<void> main() async {
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
+        try {
+          unawaited(analytics.track(const AppCrashFatalEvent()));
+        } catch (_) {}
         return true;
       };
 
@@ -135,6 +145,9 @@ Future<void> main() async {
             if (details.context != null) 'context': details.context.toString(),
           },
         );
+        try {
+          unawaited(analytics.track(const AppCrashFatalEvent()));
+        } catch (_) {}
       };
 
       localNotification = LocalNotification();
@@ -157,7 +170,7 @@ Future<void> main() async {
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
 
-      _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
+      await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 
       final dir = await getApplicationDocumentsDirectory();
       Hive.init(dir.path);
@@ -244,6 +257,9 @@ Future<void> main() async {
     },
     (obj, stacktrace) {
       logger.e('Uncaught zone error', tag: 'ZoneError', error: obj, stackTrace: stacktrace);
+      try {
+        unawaited(analytics.track(const AppCrashFatalEvent()));
+      } catch (_) {}
     },
   );
 }
@@ -278,8 +294,8 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.tracesSampleRate = 0.1;
       options.attachStacktrace = true;
       options.enableAutoNativeBreadcrumbs = true;
-      options.replay.sessionSampleRate = 0.1;
-      options.replay.onErrorSampleRate = 1.0;
+      options.replay.sessionSampleRate = _sentryReplaySessionSampleRate;
+      options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
@@ -302,15 +318,94 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
   }
 }
 
-void _configureAnalyticsRuntime({required bool firebaseInitialized}) {
-  final AnalyticsProvider provider;
-  if (firebaseInitialized) {
-    provider = CompositeAnalyticsProvider(<AnalyticsProvider>[FirebaseAnalyticsProvider()]);
-  } else {
-    provider = CompositeAnalyticsProvider(<AnalyticsProvider>[const NoopAnalyticsProvider()]);
+Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) async {
+  final bool mixpanelEnabled = _isMixpanelEnabled();
+  logger.i(
+    'Analytics startup configuration resolved.',
+    tag: 'Analytics',
+    fields: <String, Object?>{
+      'replay_backend': 'sentry',
+      'sentry_replay_session_sample_rate': _sentryReplaySessionSampleRate,
+      'sentry_replay_on_error_sample_rate': _sentryReplayOnErrorSampleRate,
+      'mixpanel_enabled': mixpanelEnabled,
+      'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+    },
+  );
+
+  final List<AnalyticsProvider> providers = <AnalyticsProvider>[];
+
+  final AnalyticsProvider? mixpanelProvider = await _buildMixpanelProvider(enabled: mixpanelEnabled);
+  if (mixpanelProvider != null) {
+    providers.add(mixpanelProvider);
   }
 
-  AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: provider);
+  if (firebaseInitialized) {
+    providers.add(FirebaseAnalyticsProvider());
+  }
+
+  if (providers.isEmpty) {
+    providers.add(const NoopAnalyticsProvider());
+  }
+
+  AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: CompositeAnalyticsProvider(providers));
+}
+
+Future<AnalyticsProvider?> _buildMixpanelProvider({required bool enabled}) async {
+  if (!enabled) {
+    logger.i(
+      'Mixpanel analytics disabled by configuration.',
+      tag: 'Analytics',
+      fields: <String, Object?>{
+        'mixpanel_enabled': _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase(),
+        'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+      },
+    );
+    return null;
+  }
+
+  final String token = _normalizeDefineValue(Env.mixpanelToken);
+  if (token.isEmpty) {
+    logger.w('MIXPANEL_ENABLED is on but MIXPANEL_TOKEN is empty. Skipping Mixpanel provider.', tag: 'Analytics');
+    return null;
+  }
+
+  try {
+    return await MixpanelAnalyticsProvider.create(token: token);
+  } catch (error, stackTrace) {
+    logger.w(
+      'Mixpanel initialization failed; continuing with available analytics providers.',
+      tag: 'Analytics',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    return null;
+  }
+}
+
+bool _isMixpanelEnabled() {
+  final String rawValue = _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase();
+  if (rawValue.isEmpty || rawValue == 'auto') {
+    return _normalizeDefineValue(Env.mixpanelToken).isNotEmpty;
+  }
+
+  if (rawValue == '1' || rawValue == 'true' || rawValue == 'yes' || rawValue == 'on') {
+    return true;
+  }
+
+  if (rawValue == '0' || rawValue == 'false' || rawValue == 'no' || rawValue == 'off') {
+    return false;
+  }
+
+  return false;
+}
+
+String _normalizeDefineValue(String rawValue) {
+  String value = rawValue.trim();
+  while (value.length >= 2 &&
+      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+    value = value.substring(1, value.length - 1).trim();
+  }
+  return value;
 }
 
 class MyApp extends StatefulWidget {
@@ -320,6 +415,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
+  late final AnalyticsIdentitySync _analyticsIdentitySync;
   bool _coinSyncInFlight = false;
 
   Future<bool> getLoginStatus() async {
@@ -358,21 +454,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ..following = <dynamic>[]
         ..links = <String, dynamic>{};
     }
+    app_state.prismUser.loggedIn = value;
+    await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
     if (value) {
-      final String currentUserId = app_state.prismUser.id.trim();
-      if (currentUserId.isNotEmpty) {
-        await analytics.setUserId(currentUserId);
-      }
-      await analytics.setUserProperty(name: 'subscription_tier', value: app_state.prismUser.subscriptionTier);
-      await analytics.setUserProperty(name: 'is_premium', value: app_state.prismUser.premium ? '1' : '0');
       await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
-    } else {
-      await analytics.setUserId(null);
-      await analytics.setUserProperty(name: 'subscription_tier', value: 'free');
-      await analytics.setUserProperty(name: 'is_premium', value: '0');
     }
-    app_state.prismUser.loggedIn = value;
     app_state.persistPrismUser();
     await syncSentryUserScope(
       loggedIn: app_state.prismUser.loggedIn,
@@ -381,6 +468,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       username: app_state.prismUser.username,
     );
     return value;
+  }
+
+  Future<void> _syncAnalyticsIdentity({
+    required bool loggedIn,
+    required String userId,
+    required String subscriptionTier,
+    required bool isPremium,
+    required String sourceTag,
+  }) {
+    return _analyticsIdentitySync.sync(
+      loggedIn: loggedIn,
+      userId: userId,
+      subscriptionTier: subscriptionTier,
+      isPremium: isPremium,
+      sourceTag: sourceTag,
+    );
+  }
+
+  Future<void> _syncAnalyticsIdentityFromAppState({required String sourceTag}) {
+    return _syncAnalyticsIdentity(
+      loggedIn: app_state.prismUser.loggedIn,
+      userId: app_state.prismUser.id,
+      subscriptionTier: app_state.prismUser.subscriptionTier,
+      isPremium: app_state.prismUser.premium,
+      sourceTag: sourceTag,
+    );
+  }
+
+  Future<void> _syncAnalyticsIdentityFromSession(SessionEntity session, {required String sourceTag}) {
+    return _syncAnalyticsIdentity(
+      loggedIn: session.loggedIn,
+      userId: session.userId,
+      subscriptionTier: session.subscriptionTier,
+      isPremium: session.premium,
+      sourceTag: sourceTag,
+    );
   }
 
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
@@ -458,13 +581,29 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void _navigateForDeepLink(DeepLinkActionEntity action) {
     if (action.type == DeepLinkActionType.share) {
       _appRouter.push(ShareWallpaperViewRoute(arguments: action.arguments));
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
+      );
     } else if (action.type == DeepLinkActionType.user) {
       _appRouter.push(ProfileRoute(arguments: action.arguments));
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
+      );
     } else if (action.type == DeepLinkActionType.setup) {
       _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
+      );
     } else if (action.type == DeepLinkActionType.refer) {
       final String inviterUserId = _referralInviterFromAction(action);
       if (inviterUserId.isEmpty) {
+        analytics.track(
+          const DeepLinkNavigationResultEvent(
+            targetType: TargetTypeValue.refer,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.missingData,
+          ),
+        );
         return;
       }
       unawaited(CoinsService.instance.setPendingReferralInviterId(inviterUserId));
@@ -473,6 +612,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       } else {
         toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
       }
+      analytics.track(
+        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
+      );
     }
   }
 
@@ -530,9 +672,17 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   Future<void> _resolveAndNavigateShortCode(String code) async {
     if (code.trim().isEmpty) {
+      analytics.track(
+        const DeepLinkResolvedEvent(
+          targetType: TargetTypeValue.shortCode,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.emptyInput,
+        ),
+      );
       return;
     }
 
+    AnalyticsReasonValue failureReason = AnalyticsReasonValue.unknown;
     final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
     try {
       final response = await http
@@ -548,19 +698,26 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             if (canonicalUri != null) {
               final action = _parseCanonicalUriToAction(canonicalUri);
               if (action != null) {
+                analytics.track(
+                  const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
+                );
                 _navigateForDeepLink(action);
                 return;
               }
+              failureReason = AnalyticsReasonValue.missingData;
             }
+            failureReason = AnalyticsReasonValue.missingData;
           }
         }
       } else {
+        failureReason = AnalyticsReasonValue.error;
         logger.w(
           'Short-link resolve returned non-success status.',
           fields: <String, Object?>{'status': response.statusCode, 'code': code, 'body': response.body},
         );
       }
     } catch (error, stackTrace) {
+      failureReason = AnalyticsReasonValue.error;
       logger.w(
         'Failed to resolve short code.',
         error: error,
@@ -569,6 +726,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
 
+    analytics.track(
+      DeepLinkResolvedEvent(
+        targetType: TargetTypeValue.shortCode,
+        result: EventResultValue.failure,
+        reason: failureReason,
+      ),
+    );
     await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
   }
 
@@ -577,6 +741,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
+    _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
@@ -587,31 +752,50 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      return;
+    }
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      unawaited(analytics.flush());
     }
   }
 
   @override
   void dispose() {
+    unawaited(analytics.flush());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<DeepLinkBloc, DeepLinkState>(
-      listenWhen: (previous, current) => previous.latestAction?.rawUri != current.latestAction?.rawUri,
-      listener: (context, state) {
-        final action = state.latestAction;
-        if (action == null) {
-          return;
-        }
-        if (action.type == DeepLinkActionType.shortCode) {
-          final code = action.arguments.isNotEmpty ? action.arguments.first?.toString() ?? '' : '';
-          unawaited(_resolveAndNavigateShortCode(code));
-          return;
-        }
-        _navigateForDeepLink(action);
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<SessionBloc, SessionState>(
+          listenWhen: (previous, current) =>
+              previous.session.userId != current.session.userId ||
+              previous.session.loggedIn != current.session.loggedIn ||
+              previous.session.subscriptionTier != current.session.subscriptionTier ||
+              previous.session.premium != current.session.premium,
+          listener: (context, state) {
+            unawaited(_syncAnalyticsIdentityFromSession(state.session, sourceTag: 'session_bloc'));
+          },
+        ),
+        BlocListener<DeepLinkBloc, DeepLinkState>(
+          listenWhen: (previous, current) => previous.latestAction?.rawUri != current.latestAction?.rawUri,
+          listener: (context, state) {
+            final action = state.latestAction;
+            if (action == null) {
+              return;
+            }
+            if (action.type == DeepLinkActionType.shortCode) {
+              final code = action.arguments.isNotEmpty ? action.arguments.first?.toString() ?? '' : '';
+              unawaited(_resolveAndNavigateShortCode(code));
+              return;
+            }
+            _navigateForDeepLink(action);
+          },
+        ),
+      ],
       child: MaterialApp.router(
         routerConfig: _appRouter.config(
           navigatorObservers: () => [

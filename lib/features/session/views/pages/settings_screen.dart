@@ -1,4 +1,6 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -29,6 +31,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool followers = (main.prefs.get('followersTab') ?? true) as bool;
   int categories = (main.prefs.get('WHcategories') ?? 100) as int;
   int purity = (main.prefs.get('WHpurity') ?? 100) as int;
+
+  void _trackSettingsAction(AnalyticsActionValue action) {
+    analytics.track(
+      SettingsActionTappedEvent(
+        action: action,
+        isSignedIn: app_state.prismUser.loggedIn,
+        sourceContext: 'settings_screen',
+      ),
+    );
+  }
+
+  void _trackSettingsToggle(SettingValue setting, bool value) {
+    analytics.track(SettingsToggleChangedEvent(setting: setting, value: value));
+  }
+
+  void _trackSettingsAuthResult({
+    required AnalyticsActionValue action,
+    required EventResultValue result,
+    AnalyticsReasonValue? reason,
+  }) {
+    analytics.track(SettingsAuthActionResultEvent(action: action, result: result, reason: reason));
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -69,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 else
                   ListTile(
                     onTap: () {
+                      _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
                       if (app_state.prismUser.loggedIn == false) {
                         googleSignInPopUp(context, () {
                           if (app_state.prismUser.premium == true) {
@@ -130,6 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               subtitle: const Text("Clear locally cached images", style: TextStyle(fontSize: 12)),
               onTap: () async {
+                _trackSettingsAction(AnalyticsActionValue.clearCacheTapped);
                 DefaultCacheManager().emptyCache();
                 PaintingBinding.instance.imageCache.clear();
                 await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
@@ -164,6 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 });
                 toasts.codeSend("This will take effect on restarting app.");
                 main.prefs.put('followersTab', value);
+                _trackSettingsToggle(SettingValue.followersFeed, value);
               },
             ),
             SwitchListTile(
@@ -187,11 +215,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     categories = 111;
                   });
                   main.prefs.put('WHcategories', 111);
+                  _trackSettingsToggle(SettingValue.animeWallpapers, true);
                 } else {
                   setState(() {
                     categories = 100;
                   });
                   main.prefs.put('WHcategories', 100);
+                  _trackSettingsToggle(SettingValue.animeWallpapers, false);
                 }
               },
             ),
@@ -216,16 +246,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     purity = 110;
                   });
                   main.prefs.put('WHpurity', 110);
+                  _trackSettingsToggle(SettingValue.sketchyWallpapers, true);
                 } else {
                   setState(() {
                     purity = 100;
                   });
                   main.prefs.put('WHpurity', 100);
+                  _trackSettingsToggle(SettingValue.sketchyWallpapers, false);
                 }
               },
             ),
             ListTile(
               onTap: () {
+                _trackSettingsAction(AnalyticsActionValue.restartAppTapped);
                 main.RestartWidget.restartApp(context);
               },
               leading: const Icon(JamIcons.refresh),
@@ -258,6 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (app_state.prismUser.loggedIn == false)
               ListTile(
                 onTap: () async {
+                  _trackSettingsAction(AnalyticsActionValue.signInTapped);
                   final Dialog loaderDialog = Dialog(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     child: Container(
@@ -285,10 +319,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Navigator.pop(this.context);
                         app_state.prismUser.loggedIn = false;
                         app_state.persistPrismUser();
+                        _trackSettingsAuthResult(
+                          action: AnalyticsActionValue.signInTapped,
+                          result: EventResultValue.cancelled,
+                          reason: AnalyticsReasonValue.userCancelled,
+                        );
                         toasts.codeSend("Sign in cancelled.");
                         return;
                       }
                       toasts.codeSend("Login Successful!");
+                      _trackSettingsAuthResult(
+                        action: AnalyticsActionValue.signInTapped,
+                        result: EventResultValue.success,
+                      );
                       app_state.prismUser.loggedIn = true;
                       app_state.persistPrismUser();
                       Navigator.pop(this.context);
@@ -299,6 +342,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                       logger.d(e);
                       Navigator.pop(this.context);
+                      _trackSettingsAuthResult(
+                        action: AnalyticsActionValue.signInTapped,
+                        result: EventResultValue.failure,
+                        reason: AnalyticsReasonValue.error,
+                      );
                       app_state.prismUser.loggedIn = false;
                       app_state.persistPrismUser();
                       toasts.error("Something went wrong, please try again!");
@@ -336,6 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           subtitle: const Text("Remove all favourite wallpapers", style: TextStyle(fontSize: 12)),
                           onTap: () {
+                            _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
                             showModal(
                               context: context,
                               builder: (context) => AlertDialog(
@@ -356,6 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   MaterialButton(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                     onPressed: () {
+                                      _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsConfirmed);
                                       Navigator.of(context).pop();
                                       toasts.error("Cleared all favourite wallpapers!");
                                       context.favouriteWallsAdapter(listen: false).deleteData();
@@ -394,6 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           subtitle: const Text("Remove all favourite setups", style: TextStyle(fontSize: 12)),
                           onTap: () {
+                            _trackSettingsAction(AnalyticsActionValue.clearFavouriteSetupsTapped);
                             showModal(
                               context: context,
                               builder: (context) => AlertDialog(
@@ -414,6 +465,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   MaterialButton(
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                                     onPressed: () {
+                                      _trackSettingsAction(AnalyticsActionValue.clearFavouriteSetupsConfirmed);
                                       Navigator.of(context).pop();
                                       toasts.error("Cleared all favourite setups!");
                                       context.favouriteSetupsAdapter(listen: false).deleteData();
@@ -451,10 +503,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           subtitle: Text(app_state.prismUser.email, style: const TextStyle(fontSize: 12)),
-                          onTap: () {
-                            app_state.gAuth.signOutGoogle();
-                            toasts.codeSend("Log out Successful!");
-                            main.RestartWidget.restartApp(context);
+                          onTap: () async {
+                            _trackSettingsAction(AnalyticsActionValue.logoutTapped);
+                            try {
+                              final bool signedOut = await app_state.gAuth.signOutGoogle();
+                              _trackSettingsAuthResult(
+                                action: AnalyticsActionValue.logoutTapped,
+                                result: signedOut ? EventResultValue.success : EventResultValue.failure,
+                                reason: signedOut ? null : AnalyticsReasonValue.error,
+                              );
+                              if (signedOut) {
+                                toasts.codeSend("Log out Successful!");
+                                main.RestartWidget.restartApp(context);
+                              }
+                            } catch (error, stackTrace) {
+                              logger.e('Sign out failed from settings.', error: error, stackTrace: stackTrace);
+                              _trackSettingsAuthResult(
+                                action: AnalyticsActionValue.logoutTapped,
+                                result: EventResultValue.failure,
+                                reason: AnalyticsReasonValue.error,
+                              );
+                              toasts.error("Something went wrong, please try again!");
+                            }
                           },
                         ),
                       ],

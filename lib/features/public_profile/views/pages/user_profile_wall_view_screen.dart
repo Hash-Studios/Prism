@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -34,6 +38,7 @@ class UserProfileWallViewScreen extends StatefulWidget {
 
 class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late int index;
   late String thumb;
   bool isLoading = true;
@@ -51,16 +56,54 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
   bool panelCollapsed = true;
   Future<String>? _futureView;
 
+  String get _sourceContext => 'user_profile_wallpaper_view';
+
+  String? get _itemId => context.publicProfileAdapter(listen: false).userProfileWalls?[index].data()["id"]?.toString();
+
+  void _trackAction(AnalyticsActionValue action) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.userProfileWallpaperView,
+          action: action,
+          sourceContext: _sourceContext,
+          itemType: ItemTypeValue.wallpaper,
+          itemId: _itemId,
+          index: index,
+        ),
+      ),
+    );
+  }
+
   Future<void> _updatePaletteGenerator() async {
+    _contentLoadTracker.start();
     setState(() {
       isLoading = true;
     });
-    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
-      paletteGenerator = await PaletteGenerator.fromImageProvider(
-        CachedNetworkImageProvider(thumb),
-        maximumColorCount: 20,
+    try {
+      await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
+        paletteGenerator = await PaletteGenerator.fromImageProvider(
+          CachedNetworkImageProvider(thumb),
+          maximumColorCount: 20,
+        );
+      });
+    } catch (_) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.userProfileWallpaperView,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: _sourceContext,
+              reason: reason,
+            ),
+          );
+        },
       );
-    });
+      rethrow;
+    }
     setState(() {
       isLoading = false;
     });
@@ -71,6 +114,20 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
     setState(() {
       accent = colors![0];
     });
+    _contentLoadTracker.success(
+      itemCount: colors?.length,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.userProfileWallpaperView,
+            result: EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: _sourceContext,
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
     if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
@@ -101,6 +158,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
         );
       }
     }
+    _trackAction(AnalyticsActionValue.paletteCycleTapped);
   }
 
   @override
@@ -110,6 +168,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1].toString();
     isLoading = true;
+    _contentLoadTracker.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       updateViews(
         context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["id"].toString().toUpperCase(),
@@ -141,6 +200,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
       backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
       body: SlidingUpPanel(
         onPanelOpened: () {
+          _trackAction(AnalyticsActionValue.panelOpened);
           setState(() {
             panelCollapsed = false;
           });
@@ -180,6 +240,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
           }
         },
         onPanelClosed: () {
+          _trackAction(AnalyticsActionValue.panelClosed);
           setState(() {
             panelCollapsed = true;
           });
@@ -224,6 +285,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                           opacity: panelCollapsed ? 0.0 : 1.0,
                           child: GestureDetector(
                             onTap: () {
+                              _trackAction(AnalyticsActionValue.panelCollapseTapped);
                               panelController.close();
                             },
                             child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -510,6 +572,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                     }
                   },
                   onLongPress: () {
+                    _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                     setState(() {
                       colorChanged = false;
                     });
@@ -575,6 +638,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                 padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
+                    _trackAction(AnalyticsActionValue.backTapped);
                     Navigator.pop(context);
                   },
                   color: isLoading
@@ -592,6 +656,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                 padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
+                    _trackAction(AnalyticsActionValue.clockOverlayOpened);
                     final link = context
                         .publicProfileAdapter(listen: false)
                         .userProfileWalls![index]

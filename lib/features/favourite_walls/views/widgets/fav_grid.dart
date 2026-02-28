@@ -1,3 +1,9 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
@@ -21,10 +27,13 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
   AnimationController? _controller;
   late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshFavKey = GlobalKey<RefreshIndicatorState>();
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     animation =
         context.prismModeStyleForWindow(listen: false) == "Dark"
@@ -68,12 +77,31 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
 
   Future<void> refreshList() async {
     refreshFavKey.currentState?.show();
+    _contentLoadTracker.start();
+    _scrollMilestoneTracker.reset();
     await context.favouriteWallsAdapter(listen: false).getDataBase(forceRefresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final likedWalls = context.favouriteWallsAdapter(listen: false).liked;
+    if (likedWalls != null) {
+      _contentLoadTracker.success(
+        itemCount: likedWalls.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.favouriteWallsGrid,
+              result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'favourite_walls_grid_initial',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
+    }
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshFavKey,
@@ -151,63 +179,98 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                       ),
                     ],
                   )
-                : GridView.builder(
-                    shrinkWrap: true,
-                    cacheExtent: 50000,
-                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                    controller: controller,
-                    itemCount: context.favouriteWallsAdapter().liked!.length,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                      childAspectRatio: 0.6625,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      return FocusedMenuHolder(
-                        provider: "Liked",
-                        index: index,
-                        child: Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                  image: CachedNetworkImageProvider(
-                                    context.favouriteWallsAdapter().liked![index]["thumb"].toString(),
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                : NotificationListener<ScrollNotification>(
+                    onNotification: (ScrollNotification notification) {
+                      _scrollMilestoneTracker.onScroll(
+                        metrics: notification.metrics,
+                        itemCount: context.favouriteWallsAdapter().liked!.length,
+                        onMilestoneReached: (depth, {required int itemCount}) async {
+                          await analytics.track(
+                            ScrollMilestoneReachedEvent(
+                              surface: AnalyticsSurfaceValue.favouriteWallsGrid,
+                              listName: ScrollListNameValue.favouriteWallsGrid,
+                              depth: depth,
+                              sourceContext: 'favourite_walls_grid_scroll',
+                              itemCount: itemCount,
                             ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                  onTap: () {
-                                    if (context.favouriteWallsAdapter(listen: false).liked == []) {
-                                    } else {
-                                      context.router.push(
-                                        FavWallpaperViewRoute(
-                                          arguments: [
-                                            index,
-                                            context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
-                                          ],
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       );
+                      return false;
                     },
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      cacheExtent: 50000,
+                      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                      controller: controller,
+                      itemCount: context.favouriteWallsAdapter().liked!.length,
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                        childAspectRatio: 0.6625,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                      ),
+                      itemBuilder: (context, index) {
+                        return FocusedMenuHolder(
+                          provider: "Liked",
+                          index: index,
+                          child: Stack(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: animation.value,
+                                  borderRadius: BorderRadius.circular(20),
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(
+                                      context.favouriteWallsAdapter().liked![index]["thumb"].toString(),
+                                    ),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                    highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                                    onTap: () {
+                                      if (context.favouriteWallsAdapter(listen: false).liked == []) {
+                                      } else {
+                                        unawaited(
+                                          analytics.track(
+                                            SurfaceActionTappedEvent(
+                                              surface: AnalyticsSurfaceValue.favouriteWallsGrid,
+                                              action: AnalyticsActionValue.tileOpened,
+                                              sourceContext: 'favourite_walls_grid_tile',
+                                              itemType: ItemTypeValue.wallpaper,
+                                              itemId: context
+                                                  .favouriteWallsAdapter(listen: false)
+                                                  .liked![index]["id"]
+                                                  ?.toString(),
+                                              index: index,
+                                            ),
+                                          ),
+                                        );
+                                        context.router.push(
+                                          FavWallpaperViewRoute(
+                                            arguments: [
+                                              index,
+                                              context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   )
           : const LoadingCards(),
     );

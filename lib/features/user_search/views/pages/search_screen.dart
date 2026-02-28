@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -102,6 +104,38 @@ class _SearchScreenState extends State<SearchScreen> {
   late bool isSubmitted;
   TextEditingController searchController = TextEditingController();
   Future? _future;
+
+  SearchProviderValue _providerFromTitle(String? providerTitle) {
+    switch (providerTitle) {
+      case 'Pexels':
+        return SearchProviderValue.pexels;
+      case 'WallHaven':
+        return SearchProviderValue.wallhaven;
+      default:
+        return SearchProviderValue.wallhaven;
+    }
+  }
+
+  int _queryWordCount(String query) {
+    return query.trim().split(RegExp(r'\s+')).where((segment) => segment.trim().isNotEmpty).length;
+  }
+
+  void _trackSearchSubmitted({required String query, required bool fromSuggestion, required String sourceContext}) {
+    final String trimmedQuery = query.trim();
+    if (trimmedQuery.isEmpty) {
+      return;
+    }
+    analytics.track(
+      SearchSubmittedEvent(
+        provider: _providerFromTitle(selectedProvider),
+        queryLength: trimmedQuery.length,
+        queryWordCount: _queryWordCount(trimmedQuery),
+        sourceContext: sourceContext,
+        fromSuggestion: fromSuggestion,
+      ),
+    );
+  }
+
   @override
   void initState() {
     isSubmitted = false;
@@ -154,6 +188,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                           ),
                           onSubmitted: (tex) {
+                            _trackSearchSubmitted(query: tex, fromSuggestion: false, sourceContext: 'search_textfield');
                             setState(() {
                               isSubmitted = true;
                               if (selectedProvider == "WallHaven") {
@@ -189,12 +224,24 @@ class _SearchScreenState extends State<SearchScreen> {
                 color: Theme.of(context).hintColor,
                 tooltip: 'Providers',
                 onSelected: (dynamic choice) {
+                  final SearchProviderValue previousProvider = _providerFromTitle(selectedProvider);
                   setState(() {
                     selectedProviders = choice as SearchProviderMenuItem;
                     selectedProvider = choice.title.toString();
                     main.prefs.put('selectedSearchProvider', selectedProvider);
+                    analytics.track(
+                      SearchProviderChangedEvent(
+                        fromProvider: previousProvider,
+                        toProvider: _providerFromTitle(selectedProvider),
+                      ),
+                    );
                     if (searchController.text != "") {
                       isSubmitted = true;
+                      _trackSearchSubmitted(
+                        query: searchController.text,
+                        fromSuggestion: false,
+                        sourceContext: 'provider_switch',
+                      );
                       if (choice.title == "WallHaven") {
                         wdata.wallsS = [];
                         _future = wdata.getWallsbyQuery(
@@ -274,6 +321,17 @@ class _SearchScreenState extends State<SearchScreen> {
                               ),
                             ),
                             onPressed: () {
+                              analytics.track(
+                                SearchTagSelectedEvent(
+                                  provider: _providerFromTitle(selectedProvider),
+                                  tag: tags[index].toLowerCase(),
+                                ),
+                              );
+                              _trackSearchSubmitted(
+                                query: tags[index],
+                                fromSuggestion: true,
+                                sourceContext: 'search_tag',
+                              );
                               setState(() {
                                 searchController.text = tags[index];
                                 isSubmitted = true;

@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/contriPopUp.dart';
@@ -12,7 +17,34 @@ import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 
 @RoutePage()
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
+  const AboutScreen({super.key});
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+
+  @override
+  void initState() {
+    super.initState();
+    _contentLoadTracker.start();
+  }
+
+  void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.aboutScreen,
+          action: action,
+          sourceContext: sourceContext,
+        ),
+      ),
+    );
+  }
+
   Future<List<Contributor>> printStream() async {
     final github = GitHub();
     final Stream<Contributor> contri = github.repositories.listContributors(RepositorySlug("Hash-Studios", "Prism"));
@@ -30,6 +62,7 @@ class AboutScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(JamIcons.close),
           onPressed: () {
+            _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
             Navigator.pop(context);
           },
         ),
@@ -97,7 +130,37 @@ class AboutScreen extends StatelessWidget {
                     snapshot.connectionState == ConnectionState.none) {
                   logger.d("snapshot none, waiting");
                   return SizedBox(height: 250, child: Center(child: Loader()));
+                } else if (snapshot.hasError) {
+                  _contentLoadTracker.failure(
+                    reason: AnalyticsReasonValue.error,
+                    onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+                      await analytics.track(
+                        SurfaceContentLoadedEvent(
+                          surface: AnalyticsSurfaceValue.aboutScreen,
+                          result: EventResultValue.failure,
+                          loadTimeMs: loadTimeMs,
+                          sourceContext: 'about_screen_contributors',
+                          reason: reason,
+                        ),
+                      );
+                    },
+                  );
+                  return SizedBox(height: 250, child: Center(child: Loader()));
                 } else {
+                  _contentLoadTracker.success(
+                    itemCount: snapshot.data?.length ?? 0,
+                    onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+                      await analytics.track(
+                        SurfaceContentLoadedEvent(
+                          surface: AnalyticsSurfaceValue.aboutScreen,
+                          result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+                          loadTimeMs: loadTimeMs,
+                          sourceContext: 'about_screen_contributors',
+                          itemCount: itemCount,
+                        ),
+                      );
+                    },
+                  );
                   final List<Widget> tiles = [];
                   tiles.add(
                     Row(
@@ -139,7 +202,22 @@ class AboutScreen extends StatelessWidget {
                             ),
                           ),
                           onTap: () {
-                            launch(c.htmlUrl!);
+                            _trackAction(
+                              AnalyticsActionValue.contributorProfileTapped,
+                              sourceContext: 'about_screen_other_contributor',
+                            );
+                            unawaited(() async {
+                              final bool launched = await launch(c.htmlUrl!);
+                              await analytics.track(
+                                ExternalLinkOpenResultEvent(
+                                  surface: AnalyticsSurfaceValue.aboutScreen,
+                                  destination: LinkDestinationValue.github,
+                                  result: launched ? EventResultValue.success : EventResultValue.failure,
+                                  reason: launched ? null : AnalyticsReasonValue.error,
+                                  sourceContext: 'about_screen_other_contributor',
+                                ),
+                              );
+                            }());
                           },
                         ),
                       );
@@ -178,6 +256,17 @@ class ContributorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        unawaited(
+          analytics.track(
+            SurfaceActionTappedEvent(
+              surface: AnalyticsSurfaceValue.aboutScreen,
+              action: AnalyticsActionValue.contributorProfileTapped,
+              sourceContext: 'about_screen_contributor',
+              itemType: ItemTypeValue.user,
+              itemId: contributor.login,
+            ),
+          ),
+        );
         showContributorDetails(context, contributor.login!);
       },
       child: Column(
@@ -214,6 +303,30 @@ class ActionButton extends StatelessWidget {
   final IconData icon;
   final String text;
   final String link;
+
+  LinkDestinationValue _destination() {
+    final String lower = link.toLowerCase();
+    if (lower.contains('github.com')) {
+      return LinkDestinationValue.github;
+    }
+    if (lower.contains('play.google.com')) {
+      return LinkDestinationValue.playStore;
+    }
+    if (lower.contains('twitter.com')) {
+      return LinkDestinationValue.twitter;
+    }
+    if (lower.contains('instagram.com')) {
+      return LinkDestinationValue.instagram;
+    }
+    if (lower.contains('t.me') || lower.contains('telegram')) {
+      return LinkDestinationValue.telegram;
+    }
+    if (lower.contains('mailto:') || lower.contains('@gmail.com')) {
+      return LinkDestinationValue.email;
+    }
+    return LinkDestinationValue.external;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -234,12 +347,29 @@ class ActionButton extends StatelessWidget {
             context,
           ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
         ),
-        onPressed: () {
-          if (link.contains("@gmail.com")) {
-            launch("mailto:$link");
-          } else {
-            launch(link);
-          }
+        onPressed: () async {
+          unawaited(
+            analytics.track(
+              SurfaceActionTappedEvent(
+                surface: AnalyticsSurfaceValue.aboutScreen,
+                action: AnalyticsActionValue.actionChipTapped,
+                sourceContext: 'about_screen_action_chip_${text.toLowerCase()}',
+              ),
+            ),
+          );
+          final String target = link.contains("@gmail.com") ? "mailto:$link" : link;
+          final bool launched = await launch(target);
+          unawaited(
+            analytics.track(
+              ExternalLinkOpenResultEvent(
+                surface: AnalyticsSurfaceValue.aboutScreen,
+                destination: _destination(),
+                result: launched ? EventResultValue.success : EventResultValue.failure,
+                reason: launched ? null : AnalyticsReasonValue.error,
+                sourceContext: 'about_screen_action_chip_${text.toLowerCase()}',
+              ),
+            ),
+          );
         },
       ),
     );

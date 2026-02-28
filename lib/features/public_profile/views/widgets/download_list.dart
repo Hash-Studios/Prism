@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -10,6 +13,18 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class DownloadList extends StatelessWidget {
+  void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profileDownloadList,
+          action: action,
+          sourceContext: sourceContext,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
@@ -29,6 +44,10 @@ class DownloadList extends StatelessWidget {
       children: [
         ListTile(
           onTap: () {
+            _trackAction(
+              AnalyticsActionValue.openDownloadedWallpaperTapped,
+              sourceContext: 'profile_download_list_open_downloads',
+            );
             context.router.push(const DownloadRoute());
           },
           leading: const Icon(JamIcons.download),
@@ -55,6 +74,10 @@ class DownloadList extends StatelessWidget {
           ),
           subtitle: const Text("Clear downloaded wallpapers", style: TextStyle(fontSize: 12)),
           onTap: () async {
+            _trackAction(
+              AnalyticsActionValue.drawerClearDownloadsTapped,
+              sourceContext: 'profile_download_list_clear_downloads',
+            );
             showModal(
               context: context,
               builder: (context) => AlertDialog(
@@ -73,6 +96,10 @@ class DownloadList extends StatelessWidget {
                   MaterialButton(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                     onPressed: () async {
+                      _trackAction(
+                        AnalyticsActionValue.drawerClearDownloadsConfirmed,
+                        sourceContext: 'profile_download_list_clear_downloads_confirm',
+                      );
                       Navigator.of(context).pop();
                       final dir = Directory("storage/emulated/0/Prism/");
                       final dir2 = Directory("storage/emulated/0/Pictures/Prism/");

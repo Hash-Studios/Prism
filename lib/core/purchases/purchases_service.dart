@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
@@ -144,8 +146,8 @@ class PurchasesService {
   }
 
   Future<void> _syncAnalyticsSubscriptionState({required bool isPremium, required SubscriptionTier tier}) async {
-    await analytics.setUserProperty(name: 'subscription_tier', value: tier.value);
-    await analytics.setUserProperty(name: 'is_premium', value: isPremium ? '1' : '0');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: tier.value);
+    await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: isPremium ? '1' : '0');
   }
 
   Future<void> _logSubscriptionConversion({
@@ -162,17 +164,21 @@ class PurchasesService {
           price: 0,
         );
 
-    await analytics.logEvent(
-      name: 'subscription_conversion',
-      parameters: <String, Object>{
-        'source': context.source,
-        'product_id': context.productId ?? 'unknown_product',
-        'package_type': context.packageType ?? 'unknown_package',
-        'subscription_tier': context.subscriptionTier ?? tier.value,
-        'price': context.price ?? 0,
-        'currency': context.currency ?? 'unknown_currency',
-      },
+    await analytics.track(
+      SubscriptionConversionEvent(
+        source: context.source,
+        productId: context.productId ?? 'unknown_product',
+        packageType: context.packageType ?? 'unknown_package',
+        subscriptionTier: context.subscriptionTier ?? tier.value,
+        price: context.price ?? 0,
+        currency: context.currency ?? 'unknown_currency',
+      ),
     );
+
+    final num price = context.price ?? 0;
+    if (price > 0) {
+      unawaited(analytics.track(RevenueRecordedEvent(amountUsd: price.toDouble(), source: 'revenuecat')));
+    }
   }
 
   /// Checks canonical + grandfathered paid entitlements; updates local user state and Hive.
@@ -194,23 +200,25 @@ class PurchasesService {
       if (!wasPremium && isPremium) {
         await _logSubscriptionConversion(tier: tier, conversionContext: conversionContext);
       }
-      analytics.logEvent(
-        name: 'subscription_entitlement_refresh',
-        parameters: <String, Object>{
-          'result': 'success',
-          'subscription_tier': tier.value,
-          'is_premium': isPremium ? 1 : 0,
-          'active_entitlements': info.entitlements.active.keys.join(','),
-        },
+      analytics.track(
+        SubscriptionEntitlementRefreshEvent(
+          result: SubscriptionEntitlementRefreshResultValue.success,
+          subscriptionTier: tier.value,
+          isPremium: isPremium ? 1 : 0,
+          activeEntitlements: info.entitlements.active.keys.join(','),
+        ),
       );
       if (kDebugMode) {
         logger.d('Premium status: $isPremium');
       }
       return isPremium;
     } on PlatformException catch (e) {
-      analytics.logEvent(
-        name: 'subscription_entitlement_refresh',
-        parameters: <String, Object>{'result': 'failure', 'error_code': e.code, 'error_message': e.message ?? ''},
+      analytics.track(
+        SubscriptionEntitlementRefreshEvent(
+          result: SubscriptionEntitlementRefreshResultValue.failure,
+          errorCode: e.code,
+          errorMessage: e.message ?? '',
+        ),
       );
       logger.d('checkAndPersistPremium failed: $e');
       return app_state.prismUser.premium;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -132,14 +133,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
+      );
       logger.d(e.toString());
     }
     if (!mounted) {
@@ -154,7 +159,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.lock);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -162,7 +169,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
+      );
     }
     if (!mounted) {
       return;
@@ -176,7 +185,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.home);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -184,7 +195,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
+      );
     }
     if (!mounted) {
       return;
@@ -208,10 +221,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
 
-    analytics.logEvent(
-      name: 'coin_premium_filter_spend_attempt',
-      parameters: <String, Object>{'sourceTag': sourceTag, 'filter': _filter?.name ?? ''},
-    );
+    analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: sourceTag, filter: _filter?.name ?? ''));
 
     CoinMutationResult spendResult;
     try {
@@ -239,13 +249,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
     _premiumFilterUnlockedForSession = true;
     if (spendResult.changed) {
-      analytics.logEvent(
-        name: 'coin_premium_filter_spend_success',
-        parameters: <String, Object>{
-          'sourceTag': sourceTag,
-          'coinsSpent': CoinPolicy.premiumFilter,
-          'filter': _filter?.name ?? '',
-        },
+      analytics.track(
+        CoinPremiumFilterSpendSuccessEvent(
+          sourceTag: sourceTag,
+          coinsSpent: CoinPolicy.premiumFilter,
+          filter: _filter?.name ?? '',
+        ),
       );
       toasts.codeSend('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
     }
@@ -331,10 +340,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
-    analytics.logEvent(
-      name: 'coin_filter_watch_and_retry_used',
-      parameters: <String, Object>{'sourceTag': sourceTag, 'filter': _filter?.name ?? ''},
-    );
+    analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _filter?.name ?? ''));
     final bool watched = await _watchRewardedAd();
     if (!watched) {
       toasts.error('Ad was not completed.');
@@ -418,7 +424,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     try {
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
-        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
+        analytics.track(DownloadWallpaperEvent(link: imageFile.path));
         toasts.codeSend("Wall Saved in Pictures!");
       } else {
         toasts.error("Couldn't save wallpaper. Please retry!");

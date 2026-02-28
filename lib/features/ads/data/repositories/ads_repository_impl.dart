@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
@@ -42,6 +44,12 @@ class AdsRepositoryImpl implements AdsRepository {
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
             logger.d('$ad loaded.');
+            ad.onPaidEvent = (Ad unusedAd, double valueMicros, PrecisionType unusedPrecision, String unusedCurrency) {
+              final double revenueUsd = valueMicros / 1e6;
+              if (revenueUsd > 0) {
+                unawaited(analytics.track(RevenueRecordedEvent(amountUsd: revenueUsd, source: 'admob')));
+              }
+            };
             _rewardedAd = ad;
             _numRewardedLoadAttempts = 0;
             _state = _state.copyWith(loadingAd: false, adLoaded: true, adFailed: false);

@@ -1,5 +1,9 @@
 import 'dart:convert';
+import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -38,6 +42,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   String? profileIdentifier;
 
   bool get _isOwnProfile {
@@ -53,11 +58,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     profileIdentifier = (widget.arguments != null && widget.arguments!.isNotEmpty)
         ? widget.arguments![0].toString()
         : app_state.prismUser.email;
+    _contentLoadTracker.start();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isOwnProfile) {
+      _contentLoadTracker.success(
+        itemCount: 1,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.profileScreen,
+              result: EventResultValue.success,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'profile_screen_own_profile',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
+    }
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {}
@@ -91,8 +113,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               body: StreamBuilder<List<Map<String, dynamic>>>(
                 stream: getUserProfile(profileIdentifier!),
                 builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+                  if (snapshot.hasError) {
+                    _contentLoadTracker.failure(
+                      reason: AnalyticsReasonValue.error,
+                      onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+                        await analytics.track(
+                          SurfaceContentLoadedEvent(
+                            surface: AnalyticsSurfaceValue.profileScreen,
+                            result: EventResultValue.failure,
+                            loadTimeMs: loadTimeMs,
+                            sourceContext: 'profile_screen_stream',
+                            reason: reason,
+                          ),
+                        );
+                      },
+                    );
+                  }
                   if (snapshot.hasData && snapshot.data != null) {
                     if (snapshot.data!.isEmpty) {
+                      _contentLoadTracker.success(
+                        itemCount: 0,
+                        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+                          await analytics.track(
+                            SurfaceContentLoadedEvent(
+                              surface: AnalyticsSurfaceValue.profileScreen,
+                              result: EventResultValue.empty,
+                              loadTimeMs: loadTimeMs,
+                              sourceContext: 'profile_screen_stream',
+                              itemCount: itemCount,
+                            ),
+                          );
+                        },
+                      );
                       return ColoredBox(
                         color: Theme.of(context).primaryColor,
                         child: Center(
@@ -107,6 +159,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                     }
                     final data = snapshot.data!.first;
+                    _contentLoadTracker.success(
+                      itemCount: 1,
+                      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+                        await analytics.track(
+                          SurfaceContentLoadedEvent(
+                            surface: AnalyticsSurfaceValue.profileScreen,
+                            result: EventResultValue.success,
+                            loadTimeMs: loadTimeMs,
+                            sourceContext: 'profile_screen_stream',
+                            itemCount: itemCount,
+                          ),
+                        );
+                      },
+                    );
                     final Map links = data["links"] is Map ? (data["links"] as Map) : <String, dynamic>{};
                     final bool premium = data["premium"] is bool && data["premium"] as bool;
                     final List followers = data["followers"] is List ? data["followers"] as List : <dynamic>[];
@@ -183,6 +249,37 @@ class _ProfileChildState extends State<ProfileChild> {
     super.initState();
   }
 
+  void _trackAction(AnalyticsActionValue action, {String sourceContext = 'profile_screen'}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profileScreen,
+          action: action,
+          sourceContext: sourceContext,
+          itemType: ItemTypeValue.user,
+          itemId: widget.id,
+        ),
+      ),
+    );
+  }
+
+  LinkDestinationValue _destinationForLinkKey(String key) {
+    switch (key) {
+      case 'github':
+        return LinkDestinationValue.github;
+      case 'twitter':
+        return LinkDestinationValue.twitter;
+      case 'instagram':
+        return LinkDestinationValue.instagram;
+      case 'telegram':
+        return LinkDestinationValue.telegram;
+      case 'email':
+        return LinkDestinationValue.email;
+      default:
+        return LinkDestinationValue.external;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String safeCoverPhoto = (widget.coverPhoto ?? "").trim();
@@ -222,6 +319,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                     child: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   onPressed: () {
+                                    _trackAction(
+                                      AnalyticsActionValue.backTapped,
+                                      sourceContext: 'profile_screen_header_back',
+                                    );
                                     Navigator.pop(context);
                                   },
                                 ),
@@ -239,6 +340,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                     child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   onPressed: () {
+                                    _trackAction(
+                                      AnalyticsActionValue.editProfileTapped,
+                                      sourceContext: 'profile_screen_header_edit',
+                                    );
                                     context.router.push(const EditProfilePanelRoute());
                                   },
                                 ),
@@ -269,6 +374,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                           ),
                                         ),
                                         onPressed: () {
+                                          _trackAction(
+                                            AnalyticsActionValue.unfollowTapped,
+                                            sourceContext: 'profile_screen_follow_action',
+                                          );
                                           unfollow(widget.email!, widget.id!);
                                           toasts.error("Unfollowed ${widget.name}!");
                                         },
@@ -288,6 +397,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                           ),
                                         ),
                                         onPressed: () {
+                                          _trackAction(
+                                            AnalyticsActionValue.followTapped,
+                                            sourceContext: 'profile_screen_follow_action',
+                                          );
                                           follow(widget.email!, widget.id!);
                                           http.post(
                                             Uri.parse('https://fcm.googleapis.com/fcm/send'),
@@ -333,6 +446,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                   child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
                                 ),
                                 onPressed: () {
+                                  _trackAction(
+                                    AnalyticsActionValue.openDrawerTapped,
+                                    sourceContext: 'profile_screen_header_menu',
+                                  );
                                   widget.parentScaffoldKey?.currentState?.openEndDrawer();
                                 },
                               ),
@@ -523,11 +640,32 @@ class _ProfileChildState extends State<ProfileChild> {
                                                               ),
                                                             ),
                                                             onPressed: () async {
+                                                              _trackAction(
+                                                                AnalyticsActionValue.actionChipTapped,
+                                                                sourceContext: 'profile_screen_link_chip',
+                                                              );
                                                               final String link = widget.links![e].toString();
                                                               final String targetLink = link.contains("@gmail.com")
                                                                   ? "mailto:$link"
                                                                   : link;
-                                                              await launchUrl(Uri.parse(targetLink));
+                                                              final bool launched = await launchUrl(
+                                                                Uri.parse(targetLink),
+                                                              );
+                                                              unawaited(
+                                                                analytics.track(
+                                                                  ExternalLinkOpenResultEvent(
+                                                                    surface: AnalyticsSurfaceValue.profileScreen,
+                                                                    destination: _destinationForLinkKey(e.toString()),
+                                                                    result: launched
+                                                                        ? EventResultValue.success
+                                                                        : EventResultValue.failure,
+                                                                    reason: launched
+                                                                        ? null
+                                                                        : AnalyticsReasonValue.error,
+                                                                    sourceContext: 'profile_screen_link_chip',
+                                                                  ),
+                                                                ),
+                                                              );
                                                             },
                                                           ),
                                                         )
@@ -558,6 +696,10 @@ class _ProfileChildState extends State<ProfileChild> {
                                                           ),
                                                         ),
                                                         onPressed: () {
+                                                          _trackAction(
+                                                            AnalyticsActionValue.actionChipTapped,
+                                                            sourceContext: 'profile_screen_more_links',
+                                                          );
                                                           showNoLoadLinksPopUp(context, widget.links ?? {});
                                                         },
                                                       ),

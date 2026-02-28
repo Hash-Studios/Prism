@@ -1,0 +1,1268 @@
+version: 1
+
+enums:
+  - name: wallpaper_target
+    dart_type: WallpaperTargetValue
+    values:
+      - both
+      - lock
+      - home
+  - name: binary_result
+    dart_type: BinaryResultValue
+    values:
+      - success
+      - failure
+  - name: subscription_result
+    dart_type: SubscriptionResultValue
+    values:
+      - success
+      - not_entitled
+      - failure
+  - name: rc_or_fallback
+    dart_type: RcOrFallbackValue
+    values:
+      - rc_attempt
+      - fallback_only
+      - fallback
+      - rc
+  - name: paywall_result
+    dart_type: PaywallResultValue
+    values:
+      - placement_overridden_to_v3
+      - no_offering
+      - not_presented
+      - error
+      - cancelled
+      - purchased
+      - restored
+      - rc_error
+      - unknown
+  - name: subscription_entitlement_refresh_result
+    dart_type: SubscriptionEntitlementRefreshResultValue
+    values:
+      - success
+      - failure
+  - name: coin_earn_action
+    dart_type: CoinEarnActionValue
+    values:
+      - rewarded_ad
+      - daily_login
+      - streak_bonus
+      - first_wallpaper_upload
+      - referral
+      - profile_completion
+      - pro_daily_bonus
+      - refund
+  - name: coin_spend_action
+    dart_type: CoinSpendActionValue
+    values:
+      - wallpaper_download
+      - premium_wallpaper_download
+      - ai_generation
+      - premium_filter
+      - premium_preview_24h
+  - name: ai_charge_mode
+    dart_type: AiChargeModeValue
+    values:
+      - free_trial
+      - pro_included
+      - coin_spend
+      - insufficient
+  - name: setting
+    dart_type: SettingValue
+    values:
+      - followers_feed
+      - anime_wallpapers
+      - sketchy_wallpapers
+      - followers_notifications
+      - posts_notifications
+      - in_app_notifications
+      - recommendations_notifications
+  - name: analytics_action
+    dart_type: AnalyticsActionValue
+    values:
+      - buy_premium_tapped
+      - clear_cache_tapped
+      - restart_app_tapped
+      - sign_in_tapped
+      - logout_tapped
+      - clear_favourite_walls_tapped
+      - clear_favourite_walls_confirmed
+      - clear_favourite_setups_tapped
+      - clear_favourite_setups_confirmed
+      - next_tapped
+      - skip_tapped
+      - finish_tapped
+      - upload_sheet_opened
+      - upload_wallpaper_selected
+      - upload_setup_selected
+      - notification_settings_opened
+      - notification_item_opened
+      - notification_item_dismissed
+      - quick_action_follow_feed
+      - quick_action_collections
+      - quick_action_setups
+      - quick_action_ai_wallpapers
+      - quick_action_downloads
+      - quick_action_unknown
+      - back_tapped
+      - clock_overlay_opened
+      - panel_opened
+      - panel_closed
+      - panel_collapse_tapped
+      - palette_cycle_tapped
+      - palette_reset_long_pressed
+      - follow_tapped
+      - unfollow_tapped
+      - edit_profile_tapped
+      - open_drawer_tapped
+      - drawer_buy_premium_tapped
+      - drawer_fav_walls_tapped
+      - drawer_fav_setups_tapped
+      - drawer_downloads_tapped
+      - drawer_clear_downloads_tapped
+      - drawer_clear_downloads_confirmed
+      - drawer_review_status_tapped
+      - drawer_enter_code_tapped
+      - drawer_share_prism_tapped
+      - drawer_contact_support_tapped
+      - drawer_logout_tapped
+      - drawer_restart_tapped
+      - open_theme_tapped
+      - open_downloaded_wallpaper_tapped
+      - open_transaction_link_tapped
+      - action_chip_tapped
+      - contributor_profile_tapped
+      - banner_tapped
+      - carousel_item_opened
+      - tile_opened
+      - see_more_tapped
+  - name: event_result
+    dart_type: EventResultValue
+    values:
+      - success
+      - failure
+      - cancelled
+      - blocked
+      - navigated
+      - ignored
+      - empty
+  - name: analytics_reason
+    dart_type: AnalyticsReasonValue
+    values:
+      - user_cancelled
+      - error
+      - missing_data
+      - not_signed_in
+      - already_signed_in
+      - empty_input
+      - unknown
+      - not_eligible
+  - name: search_provider
+    dart_type: SearchProviderValue
+    values:
+      - wallhaven
+      - pexels
+      - user
+  - name: item_type
+    dart_type: ItemTypeValue
+    values:
+      - wallpaper
+      - user
+      - notification
+  - name: target_type
+    dart_type: TargetTypeValue
+    values:
+      - share
+      - user
+      - setup
+      - refer
+      - short_code
+      - unknown
+  - name: entrypoint
+    dart_type: EntryPointValue
+    values:
+      - bottom_nav
+      - quick_action
+  - name: launch_state
+    dart_type: LaunchStateValue
+    values:
+      - initial_launch
+      - foreground
+  - name: share_channel
+    dart_type: ShareChannelValue
+    values:
+      - share_sheet
+      - clipboard
+      - link
+  - name: dismiss_mode
+    dart_type: DismissModeValue
+    values:
+      - swipe
+      - clear_all
+  - name: notification_type
+    dart_type: NotificationTypeValue
+    values:
+      - route
+      - external_url
+      - unknown
+  - name: auth_method
+    dart_type: AuthMethodValue
+    values:
+      - google
+  - name: nav_tab
+    dart_type: NavTabValue
+    values:
+      - home
+      - search
+      - setups
+      - ai
+      - profile
+  - name: notification_preference
+    dart_type: NotificationPreferenceValue
+    values:
+      - followers
+      - posts
+      - in_app
+      - recommendations
+  - name: deep_link_source
+    dart_type: DeepLinkSourceValue
+    values:
+      - app_links
+      - short_link_resolver
+  - name: share_type
+    dart_type: ShareTypeValue
+    values:
+      - wallpaper
+      - user
+      - setup
+      - refer
+  - name: analytics_surface
+    dart_type: AnalyticsSurfaceValue
+    values:
+      - wallpaper_screen
+      - share_wallpaper_view
+      - search_wallpaper_screen
+      - favourite_wallpaper_view
+      - profile_wallpaper_view
+      - user_profile_wallpaper_view
+      - download_wallpaper_screen
+      - profile_screen
+      - profile_drawer
+      - profile_user_list
+      - profile_general_list
+      - profile_prism_list
+      - profile_about_list
+      - profile_premium_list
+      - profile_download_list
+      - about_screen
+      - coin_transactions_screen
+      - download_screen
+      - home_wallpaper_grid
+      - home_wallhaven_grid
+      - home_pexels_grid
+      - home_color_grid
+      - home_collections_view_grid
+      - following_screen
+      - favourite_walls_grid
+      - favourite_setups_grid
+  - name: scroll_list_name
+    dart_type: ScrollListNameValue
+    values:
+      - wallpaper_grid
+      - wallhaven_grid
+      - pexels_grid
+      - color_grid
+      - collections_view_grid
+      - following_grid
+      - favourite_walls_grid
+      - favourite_setups_grid
+      - profile_nested_scroll
+  - name: scroll_depth_percent
+    dart_type: ScrollDepthPercentValue
+    values:
+      - p25
+      - p50
+      - p75
+      - p100
+  - name: link_destination
+    dart_type: LinkDestinationValue
+    values:
+      - github
+      - play_store
+      - twitter
+      - instagram
+      - telegram
+      - email
+      - external
+      - unknown
+
+events:
+  - id: report_setup
+  - id: report_wall
+  - id: setup_fav_status_changed
+    fields:
+      - name: setup_id
+        key: id
+        type: string
+  - id: download_own_setup
+    fields:
+      - name: link
+        key: link
+        type: string
+  - id: download_own_wall
+    fields:
+      - name: link
+        key: link
+        type: string
+  - id: set_wall
+    fields:
+      - name: wallpaper_target
+        key: wallpaper_target
+        type: enum
+        enum: WallpaperTargetValue
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue
+  - id: coin_premium_filter_spend_attempt
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: filter
+        key: filter
+        type: string
+  - id: coin_premium_filter_spend_success
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: coins_spent
+        key: coins_spent
+        type: int
+      - name: filter
+        key: filter
+        type: string
+  - id: coin_filter_watch_and_retry_used
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: filter
+        key: filter
+        type: string
+  - id: download_wallpaper
+    fields:
+      - name: link
+        key: link
+        type: string
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+      - name: premium_content
+        key: premium_content
+        type: bool
+        required: false
+  - id: upload_wallpaper
+    fields:
+      - name: asset_id
+        key: id
+        type: string
+      - name: link
+        key: link
+        type: string
+  - id: accent_changed
+    fields:
+      - name: color
+        key: color
+        type: string
+  - id: paywall_impression
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: rc_or_fallback
+        key: rc_or_fallback
+        type: enum
+        enum: RcOrFallbackValue
+  - id: paywall_result
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: PaywallResultValue
+      - name: rc_or_fallback
+        key: rc_or_fallback
+        type: enum
+        enum: RcOrFallbackValue
+      - name: placement_offering
+        key: placement_offering
+        type: string
+        required: false
+      - name: selected_offering
+        key: selected_offering
+        type: string
+        required: false
+      - name: entitlement_synced
+        key: entitlement_synced
+        type: int
+        required: false
+      - name: entitlement
+        key: entitlement
+        type: string
+        required: false
+      - name: error
+        key: error
+        type: string
+        required: false
+  - id: subscription_trigger_low_balance
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_trigger_after_ad_watch_3
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_trigger_setup_create_block
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_trigger_upload_limit_block
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: placement
+        key: placement
+        type: string
+  - id: subscription_package_selected
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: price
+        key: price
+        type: num
+      - name: currency
+        key: currency
+        type: string
+  - id: subscription_restore_started
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: subscription_restore_result
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: SubscriptionResultValue
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: error_message
+        key: error_message
+        type: string
+        required: false
+  - id: subscription_purchase_started
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: price
+        key: price
+        type: num
+      - name: currency
+        key: currency
+        type: string
+  - id: subscription_purchase_result
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: SubscriptionResultValue
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: error_message
+        key: error_message
+        type: string
+        required: false
+  - id: subscription_entitlement_refresh
+    fields:
+      - name: result
+        key: result
+        type: enum
+        enum: SubscriptionEntitlementRefreshResultValue
+      - name: subscription_tier
+        key: subscription_tier
+        type: string
+        required: false
+      - name: is_premium
+        key: is_premium
+        type: int
+        required: false
+      - name: active_entitlements
+        key: active_entitlements
+        type: string
+        required: false
+      - name: error_code
+        key: error_code
+        type: string
+        required: false
+      - name: error_message
+        key: error_message
+        type: string
+        required: false
+  - id: subscription_conversion
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: product_id
+        key: product_id
+        type: string
+      - name: package_type
+        key: package_type
+        type: string
+      - name: subscription_tier
+        key: subscription_tier
+        type: string
+      - name: price
+        key: price
+        type: num
+      - name: currency
+        key: currency
+        type: string
+  - id: ai_charge_reserved
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: ai_charge_rolled_back
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: coins_refunded
+        key: coins_refunded
+        type: int
+        required: false
+  - id: ai_charge_committed
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: coin_earned
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: CoinEarnActionValue
+      - name: amount
+        key: amount
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+  - id: coin_spent
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: CoinSpendActionValue
+      - name: amount
+        key: amount
+        type: int
+      - name: balance
+        key: balance
+        type: int
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
+  - id: coin_low_balance_nudge_shown
+    fields:
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: required_coins
+        key: required_coins
+        type: int
+      - name: balance
+        key: balance
+        type: int
+  - id: coin_watch_and_download_used
+    fields:
+      - name: is_premium_content
+        key: is_premium_content
+        type: bool
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: ai_prompt_shuffled
+    fields:
+      - name: style
+        key: style
+        type: string
+  - id: ai_history_opened
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: ai_generate_started
+    fields:
+      - name: style
+        key: style
+        type: string
+      - name: quality
+        key: quality
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+  - id: ai_generate_success
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+  - id: ai_variation_used
+    fields:
+      - name: provider
+        key: provider
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+      - name: coins_spent
+        key: coins_spent
+        type: int
+  - id: ai_generate_failed
+    fields:
+      - name: error
+        key: error
+        type: string
+      - name: mode
+        key: mode
+        type: enum
+        enum: AiChargeModeValue
+  - id: ai_share_tapped
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: ai_submit_started
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: ai_submit_success
+    fields:
+      - name: generation_id
+        key: generation_id
+        type: string
+  - id: coin_preview_unlock_attempt
+    fields:
+      - name: collection
+        key: collection
+        type: string
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: coin_preview_unlock_success
+    fields:
+      - name: collection
+        key: collection
+        type: string
+      - name: source_tag
+        key: source_tag
+        type: string
+      - name: coins_spent
+        key: coins_spent
+        type: int
+  - id: coin_preview_watch_and_unlock_used
+    fields:
+      - name: collection
+        key: collection
+        type: string
+      - name: source_tag
+        key: source_tag
+        type: string
+  - id: categories_checked
+  - id: collections_checked
+  - id: edit_setup
+    fields:
+      - name: setup_id
+        key: id
+        type: string
+      - name: link
+        key: link
+        type: string
+  - id: upload_setup
+    fields:
+      - name: setup_id
+        key: id
+        type: string
+      - name: link
+        key: link
+        type: string
+  - id: fav_status_changed
+    fields:
+      - name: wall_id
+        key: id
+        type: string
+      - name: provider
+        key: provider
+        type: string
+  - id: settings_action_tapped
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: is_signed_in
+        key: is_signed_in
+        type: bool
+      - name: source_context
+        key: source_context
+        type: string
+  - id: settings_toggle_changed
+    fields:
+      - name: setting
+        key: setting
+        type: enum
+        enum: SettingValue
+      - name: value
+        key: value
+        type: bool
+  - id: settings_auth_action_result
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: search_submitted
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: query_length
+        key: query_length
+        type: int
+      - name: query_word_count
+        key: query_word_count
+        type: int
+      - name: source_context
+        key: source_context
+        type: string
+      - name: from_suggestion
+        key: from_suggestion
+        type: bool
+  - id: search_provider_changed
+    fields:
+      - name: from_provider
+        key: from_provider
+        type: enum
+        enum: SearchProviderValue
+      - name: to_provider
+        key: to_provider
+        type: enum
+        enum: SearchProviderValue
+  - id: search_tag_selected
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: tag
+        key: tag
+        type: string
+  - id: search_results_loaded
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: query_length
+        key: query_length
+        type: int
+      - name: result_count
+        key: result_count
+        type: int
+      - name: page
+        key: page
+        type: int
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+  - id: search_result_opened
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: item_type
+        key: item_type
+        type: enum
+        enum: ItemTypeValue
+      - name: item_id
+        key: item_id
+        type: string
+      - name: index
+        key: index
+        type: int
+      - name: query_length
+        key: query_length
+        type: int
+  - id: search_pagination_requested
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: query_length
+        key: query_length
+        type: int
+      - name: page
+        key: page
+        type: int
+  - id: user_search_submitted
+    fields:
+      - name: query_length
+        key: query_length
+        type: int
+      - name: source_context
+        key: source_context
+        type: string
+  - id: user_search_result_opened
+    fields:
+      - name: result_user_id
+        key: result_user_id
+        type: string
+      - name: index
+        key: index
+        type: int
+      - name: query_length
+        key: query_length
+        type: int
+  - id: notification_item_opened
+    fields:
+      - name: type
+        key: type
+        type: enum
+        enum: NotificationTypeValue
+      - name: destination
+        key: destination
+        type: string
+      - name: has_external_url
+        key: has_external_url
+        type: bool
+  - id: notification_item_dismissed
+    fields:
+      - name: type
+        key: type
+        type: enum
+        enum: NotificationTypeValue
+      - name: dismiss_mode
+        key: dismiss_mode
+        type: enum
+        enum: DismissModeValue
+  - id: notification_clear_all_confirmed
+    fields:
+      - name: count
+        key: count
+        type: int
+  - id: notification_preference_changed
+    fields:
+      - name: preference
+        key: preference
+        type: enum
+        enum: NotificationPreferenceValue
+      - name: value
+        key: value
+        type: bool
+  - id: notification_action_blocked
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+  - id: onboarding_step_viewed
+    fields:
+      - name: step
+        key: step
+        type: int
+  - id: onboarding_action_tapped
+    fields:
+      - name: step
+        key: step
+        type: int
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+  - id: onboarding_auth_result
+    fields:
+      - name: method
+        key: method
+        type: enum
+        enum: AuthMethodValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: nav_tab_selected
+    fields:
+      - name: from_tab
+        key: from_tab
+        type: enum
+        enum: NavTabValue
+      - name: to_tab
+        key: to_tab
+        type: enum
+        enum: NavTabValue
+  - id: upload_action_selected
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: entrypoint
+        key: entrypoint
+        type: enum
+        enum: EntryPointValue
+  - id: quick_action_invoked
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: launch_state
+        key: launch_state
+        type: enum
+        enum: LaunchStateValue
+  - id: deep_link_received
+    fields:
+      - name: source
+        key: source
+        type: enum
+        enum: DeepLinkSourceValue
+      - name: target_type
+        key: target_type
+        type: enum
+        enum: TargetTypeValue
+      - name: has_payload
+        key: has_payload
+        type: bool
+  - id: deep_link_resolved
+    fields:
+      - name: target_type
+        key: target_type
+        type: enum
+        enum: TargetTypeValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: deep_link_navigation_result
+    fields:
+      - name: target_type
+        key: target_type
+        type: enum
+        enum: TargetTypeValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: invite_share_tapped
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+  - id: invite_share_result
+    fields:
+      - name: channel
+        key: channel
+        type: enum
+        enum: ShareChannelValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+  - id: dynamic_link_create_result
+    fields:
+      - name: share_type
+        key: share_type
+        type: enum
+        enum: ShareTypeValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: auth_login_result
+    fields:
+      - name: method
+        key: method
+        type: enum
+        enum: AuthMethodValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+  - id: surface_action_tapped
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: source_context
+        key: source_context
+        type: string
+      - name: item_type
+        key: item_type
+        type: enum
+        enum: ItemTypeValue
+        required: false
+      - name: item_id
+        key: item_id
+        type: string
+        required: false
+      - name: index
+        key: index
+        type: int
+        required: false
+  - id: surface_content_loaded
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: load_time_ms
+        key: load_time_ms
+        type: int
+      - name: source_context
+        key: source_context
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+        required: false
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: scroll_milestone_reached
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: list_name
+        key: list_name
+        type: enum
+        enum: ScrollListNameValue
+      - name: depth
+        key: depth
+        type: enum
+        enum: ScrollDepthPercentValue
+      - name: source_context
+        key: source_context
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+        required: false
+  - id: external_link_open_result
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: destination
+        key: destination
+        type: enum
+        enum: LinkDestinationValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+  - id: revenue_recorded
+    fields:
+      - name: amount_usd
+        key: amount_usd
+        type: double
+      - name: source
+        key: source
+        type: string
+  - id: app_crash_fatal
+  - id: quality_daily_snapshot
+    fields:
+      - name: crash_free_users_pct
+        key: crash_free_users_pct
+        type: double
