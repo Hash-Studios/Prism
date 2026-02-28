@@ -1,5 +1,8 @@
 import 'dart:io' show Platform;
+import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
@@ -13,6 +16,32 @@ import 'package:flutter/services.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 
 class PrismList extends StatelessWidget {
+  void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profilePrismList,
+          action: action,
+          sourceContext: sourceContext,
+        ),
+      ),
+    );
+  }
+
+  void _trackExternalLink(LinkDestinationValue destination, {required bool launched, required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        ExternalLinkOpenResultEvent(
+          surface: AnalyticsSurfaceValue.profilePrismList,
+          destination: destination,
+          result: launched ? EventResultValue.success : EventResultValue.failure,
+          reason: launched ? null : AnalyticsReasonValue.error,
+          sourceContext: sourceContext,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -29,6 +58,7 @@ class PrismList extends StatelessWidget {
           ),
           subtitle: const Text("Check out the changelog", style: TextStyle(fontSize: 12)),
           onTap: () {
+            _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_whats_new');
             showChangelog(context, () {});
           },
         ),
@@ -44,6 +74,7 @@ class PrismList extends StatelessWidget {
           ),
           subtitle: const Text("Quick link to pass on to your friends and enemies", style: TextStyle(fontSize: 12)),
           onTap: () async {
+            _trackAction(AnalyticsActionValue.drawerSharePrismTapped, sourceContext: 'profile_prism_list_share');
             await ShareService.shareText(
               text:
                   "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism",
@@ -62,8 +93,16 @@ class PrismList extends StatelessWidget {
             ),
           ),
           subtitle: const Text("Read Prism's Privacy Policy.", style: TextStyle(fontSize: 12)),
-          onTap: () {
-            launchUrl(Uri.parse("https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md"));
+          onTap: () async {
+            _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_privacy');
+            final bool launched = await launchUrl(
+              Uri.parse("https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md"),
+            );
+            _trackExternalLink(
+              LinkDestinationValue.github,
+              launched: launched,
+              sourceContext: 'profile_prism_list_privacy',
+            );
           },
         ),
         ListTile(
@@ -78,6 +117,7 @@ class PrismList extends StatelessWidget {
           ),
           subtitle: const Text("Prism uses Wallhaven and Pexels API for wallpapers", style: TextStyle(fontSize: 12)),
           onTap: () {
+            _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_api');
             showModal(
               context: context,
               builder: (context) => AlertDialog(
@@ -115,24 +155,54 @@ class PrismList extends StatelessWidget {
                               ? () {
                                   HapticFeedback.vibrate();
                                   Navigator.of(context).pop();
-                                  launchUrl(Uri.parse("https://wallhaven.cc/help/api"));
+                                  unawaited(() async {
+                                    final bool launched = await launchUrl(Uri.parse("https://wallhaven.cc/help/api"));
+                                    _trackExternalLink(
+                                      LinkDestinationValue.external,
+                                      launched: launched,
+                                      sourceContext: 'profile_prism_list_api_wallhaven',
+                                    );
+                                  }());
                                 }
                               : index == 1
                               ? () {
                                   HapticFeedback.vibrate();
                                   Navigator.of(context).pop();
-                                  launchUrl(Uri.parse("https://www.pexels.com/api/"));
+                                  unawaited(() async {
+                                    final bool launched = await launchUrl(Uri.parse("https://www.pexels.com/api/"));
+                                    _trackExternalLink(
+                                      LinkDestinationValue.external,
+                                      launched: launched,
+                                      sourceContext: 'profile_prism_list_api_pexels',
+                                    );
+                                  }());
                                 }
                               : index == 2
                               ? () {
                                   HapticFeedback.vibrate();
                                   Navigator.of(context).pop();
-                                  launchUrl(Uri.parse("https://unsplash.com/developers"));
+                                  unawaited(() async {
+                                    final bool launched = await launchUrl(Uri.parse("https://unsplash.com/developers"));
+                                    _trackExternalLink(
+                                      LinkDestinationValue.external,
+                                      launched: launched,
+                                      sourceContext: 'profile_prism_list_api_unsplash',
+                                    );
+                                  }());
                                 }
                               : () {
                                   HapticFeedback.vibrate();
                                   Navigator.of(context).pop();
-                                  launchUrl(Uri.parse("https://developer.github.com/v3/"));
+                                  unawaited(() async {
+                                    final bool launched = await launchUrl(
+                                      Uri.parse("https://developer.github.com/v3/"),
+                                    );
+                                    _trackExternalLink(
+                                      LinkDestinationValue.github,
+                                      launched: launched,
+                                      sourceContext: 'profile_prism_list_api_github',
+                                    );
+                                  }());
                                 },
                         );
                       },
@@ -155,6 +225,10 @@ class PrismList extends StatelessWidget {
           ),
           subtitle: const Text("Tell us if you found out a bug", style: TextStyle(fontSize: 12)),
           onTap: () async {
+            _trackAction(
+              AnalyticsActionValue.drawerContactSupportTapped,
+              sourceContext: 'profile_prism_list_report_bug',
+            );
             if (Platform.isAndroid) {
               final androidInfo = await DeviceInfoPlugin().androidInfo;
               final release = androidInfo.version.release;

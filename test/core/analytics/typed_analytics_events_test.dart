@@ -112,6 +112,63 @@ void main() {
         'reason': 'missing_data',
       });
     });
+
+    test('serialize canonical surface_action_tapped payload', () {
+      const SurfaceActionTappedEvent event = SurfaceActionTappedEvent(
+        surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+        action: AnalyticsActionValue.tileOpened,
+        sourceContext: 'home_wallpaper_grid_tile',
+        itemType: ItemTypeValue.wallpaper,
+        itemId: 'wall_123',
+        index: 3,
+      );
+
+      expect(event.eventName, 'surface_action_tapped');
+      expect(event.toWireParameters(), <String, Object?>{
+        'surface': 'home_wallpaper_grid',
+        'action': 'tile_opened',
+        'source_context': 'home_wallpaper_grid_tile',
+        'item_type': 'wallpaper',
+        'item_id': 'wall_123',
+        'index': 3,
+      });
+    });
+
+    test('serialize canonical scroll_milestone_reached payload', () {
+      const ScrollMilestoneReachedEvent event = ScrollMilestoneReachedEvent(
+        surface: AnalyticsSurfaceValue.favouriteWallsGrid,
+        listName: ScrollListNameValue.favouriteWallsGrid,
+        depth: ScrollDepthPercentValue.p75,
+        sourceContext: 'favourite_walls_grid_scroll',
+        itemCount: 42,
+      );
+
+      expect(event.eventName, 'scroll_milestone_reached');
+      expect(event.toWireParameters(), <String, Object?>{
+        'surface': 'favourite_walls_grid',
+        'list_name': 'favourite_walls_grid',
+        'depth': 'p75',
+        'source_context': 'favourite_walls_grid_scroll',
+        'item_count': 42,
+      });
+    });
+
+    test('serialize canonical external_link_open_result payload', () {
+      const ExternalLinkOpenResultEvent event = ExternalLinkOpenResultEvent(
+        surface: AnalyticsSurfaceValue.aboutScreen,
+        destination: LinkDestinationValue.github,
+        result: EventResultValue.success,
+        sourceContext: 'about_screen_action_chip_github',
+      );
+
+      expect(event.eventName, 'external_link_open_result');
+      expect(event.toWireParameters(), <String, Object?>{
+        'surface': 'about_screen',
+        'destination': 'github',
+        'result': 'success',
+        'source_context': 'about_screen_action_chip_github',
+      });
+    });
   });
 
   group('provider-backed track dispatch', () {

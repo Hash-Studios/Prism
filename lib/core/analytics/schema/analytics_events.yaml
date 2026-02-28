@@ -105,6 +105,38 @@ enums:
       - quick_action_ai_wallpapers
       - quick_action_downloads
       - quick_action_unknown
+      - back_tapped
+      - clock_overlay_opened
+      - panel_opened
+      - panel_closed
+      - panel_collapse_tapped
+      - palette_cycle_tapped
+      - palette_reset_long_pressed
+      - follow_tapped
+      - unfollow_tapped
+      - edit_profile_tapped
+      - open_drawer_tapped
+      - drawer_buy_premium_tapped
+      - drawer_fav_walls_tapped
+      - drawer_fav_setups_tapped
+      - drawer_downloads_tapped
+      - drawer_clear_downloads_tapped
+      - drawer_clear_downloads_confirmed
+      - drawer_review_status_tapped
+      - drawer_enter_code_tapped
+      - drawer_share_prism_tapped
+      - drawer_contact_support_tapped
+      - drawer_logout_tapped
+      - drawer_restart_tapped
+      - open_theme_tapped
+      - open_downloaded_wallpaper_tapped
+      - open_transaction_link_tapped
+      - action_chip_tapped
+      - contributor_profile_tapped
+      - banner_tapped
+      - carousel_item_opened
+      - tile_opened
+      - see_more_tapped
   - name: event_result
     dart_type: EventResultValue
     values:
@@ -205,6 +237,65 @@ enums:
       - user
       - setup
       - refer
+  - name: analytics_surface
+    dart_type: AnalyticsSurfaceValue
+    values:
+      - wallpaper_screen
+      - share_wallpaper_view
+      - search_wallpaper_screen
+      - favourite_wallpaper_view
+      - profile_wallpaper_view
+      - user_profile_wallpaper_view
+      - download_wallpaper_screen
+      - profile_screen
+      - profile_drawer
+      - profile_user_list
+      - profile_general_list
+      - profile_prism_list
+      - profile_about_list
+      - profile_premium_list
+      - profile_download_list
+      - about_screen
+      - coin_transactions_screen
+      - download_screen
+      - home_wallpaper_grid
+      - home_wallhaven_grid
+      - home_pexels_grid
+      - home_color_grid
+      - home_collections_view_grid
+      - following_screen
+      - favourite_walls_grid
+      - favourite_setups_grid
+  - name: scroll_list_name
+    dart_type: ScrollListNameValue
+    values:
+      - wallpaper_grid
+      - wallhaven_grid
+      - pexels_grid
+      - color_grid
+      - collections_view_grid
+      - following_grid
+      - favourite_walls_grid
+      - favourite_setups_grid
+      - profile_nested_scroll
+  - name: scroll_depth_percent
+    dart_type: ScrollDepthPercentValue
+    values:
+      - p25
+      - p50
+      - p75
+      - p100
+  - name: link_destination
+    dart_type: LinkDestinationValue
+    values:
+      - github
+      - play_store
+      - twitter
+      - instagram
+      - telegram
+      - email
+      - external
+      - unknown
 
 events:
   - id: report_setup
@@ -1053,6 +1144,101 @@ events:
         key: method
         type: enum
         enum: AuthMethodValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: source_context
+        key: source_context
+        type: string
+        required: false
+  - id: surface_action_tapped
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: action
+        key: action
+        type: enum
+        enum: AnalyticsActionValue
+      - name: source_context
+        key: source_context
+        type: string
+      - name: item_type
+        key: item_type
+        type: enum
+        enum: ItemTypeValue
+        required: false
+      - name: item_id
+        key: item_id
+        type: string
+        required: false
+      - name: index
+        key: index
+        type: int
+        required: false
+  - id: surface_content_loaded
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: load_time_ms
+        key: load_time_ms
+        type: int
+      - name: source_context
+        key: source_context
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+        required: false
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+  - id: scroll_milestone_reached
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: list_name
+        key: list_name
+        type: enum
+        enum: ScrollListNameValue
+      - name: depth
+        key: depth
+        type: enum
+        enum: ScrollDepthPercentValue
+      - name: source_context
+        key: source_context
+        type: string
+      - name: item_count
+        key: item_count
+        type: int
+        required: false
+  - id: external_link_open_result
+    fields:
+      - name: surface
+        key: surface
+        type: enum
+        enum: AnalyticsSurfaceValue
+      - name: destination
+        key: destination
+        type: enum
+        enum: LinkDestinationValue
       - name: result
         key: result
         type: enum

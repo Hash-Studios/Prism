@@ -62,4 +62,40 @@ if [[ -n "$raw_provider_usage" ]]; then
   exit 1
 fi
 
+direct_mixpanel_imports="$(
+  rg -n --no-heading "package:mixpanel_flutter/mixpanel_flutter\\.dart" lib test \
+    -g '!lib/core/analytics/**' \
+    -g '!test/core/analytics/**' || true
+)"
+
+if [[ -n "$direct_mixpanel_imports" ]]; then
+  echo "Forbidden direct mixpanel_flutter import detected outside analytics internals:"
+  echo "$direct_mixpanel_imports"
+  exit 1
+fi
+
+direct_mixpanel_usage="$(
+  rg -n --no-heading "\\bmixpanel\\.(track|identify|reset|registerSuperProperties|getPeople|set|setOnce)" lib test \
+    -g '!lib/core/analytics/**' \
+    -g '!test/core/analytics/**' || true
+)"
+
+if [[ -n "$direct_mixpanel_usage" ]]; then
+  echo "Forbidden direct Mixpanel client usage detected outside analytics internals:"
+  echo "$direct_mixpanel_usage"
+  exit 1
+fi
+
+direct_firebase_analytics_usage="$(
+  rg -n --no-heading "FirebaseAnalytics\\.(instance|observer)|FirebaseAnalyticsObserver\\(" lib test \
+    -g '!lib/core/analytics/**' \
+    -g '!test/core/analytics/**' || true
+)"
+
+if [[ -n "$direct_firebase_analytics_usage" ]]; then
+  echo "Forbidden direct Firebase analytics usage detected outside analytics internals:"
+  echo "$direct_firebase_analytics_usage"
+  exit 1
+fi
+
 echo "analytics_raw_usage_guard passed: no raw analytics event usage found."

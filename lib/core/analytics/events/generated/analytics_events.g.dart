@@ -1438,3 +1438,129 @@ class AuthLoginResultEvent extends AnalyticsEvent {
     };
   }
 }
+
+class SurfaceActionTappedEvent extends AnalyticsEvent {
+  const SurfaceActionTappedEvent({
+    required this.surface,
+    required this.action,
+    required this.sourceContext,
+    this.itemType,
+    this.itemId,
+    this.index,
+  });
+
+  final AnalyticsSurfaceValue surface;
+  final AnalyticsActionValue action;
+  final String sourceContext;
+  final ItemTypeValue? itemType;
+  final String? itemId;
+  final int? index;
+
+  @override
+  String get eventName => 'surface_action_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'surface': surface.wireValue,
+      'action': action.wireValue,
+      'source_context': sourceContext,
+      if (itemType != null) 'item_type': itemType!.wireValue,
+      if (itemId != null) 'item_id': itemId!,
+      if (index != null) 'index': index!,
+    };
+  }
+}
+
+class SurfaceContentLoadedEvent extends AnalyticsEvent {
+  const SurfaceContentLoadedEvent({
+    required this.surface,
+    required this.result,
+    required this.loadTimeMs,
+    required this.sourceContext,
+    this.itemCount,
+    this.reason,
+  });
+
+  final AnalyticsSurfaceValue surface;
+  final EventResultValue result;
+  final int loadTimeMs;
+  final String sourceContext;
+  final int? itemCount;
+  final AnalyticsReasonValue? reason;
+
+  @override
+  String get eventName => 'surface_content_loaded';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'surface': surface.wireValue,
+      'result': result.wireValue,
+      'load_time_ms': loadTimeMs,
+      'source_context': sourceContext,
+      if (itemCount != null) 'item_count': itemCount!,
+      if (reason != null) 'reason': reason!.wireValue,
+    };
+  }
+}
+
+class ScrollMilestoneReachedEvent extends AnalyticsEvent {
+  const ScrollMilestoneReachedEvent({
+    required this.surface,
+    required this.listName,
+    required this.depth,
+    required this.sourceContext,
+    this.itemCount,
+  });
+
+  final AnalyticsSurfaceValue surface;
+  final ScrollListNameValue listName;
+  final ScrollDepthPercentValue depth;
+  final String sourceContext;
+  final int? itemCount;
+
+  @override
+  String get eventName => 'scroll_milestone_reached';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'surface': surface.wireValue,
+      'list_name': listName.wireValue,
+      'depth': depth.wireValue,
+      'source_context': sourceContext,
+      if (itemCount != null) 'item_count': itemCount!,
+    };
+  }
+}
+
+class ExternalLinkOpenResultEvent extends AnalyticsEvent {
+  const ExternalLinkOpenResultEvent({
+    required this.surface,
+    required this.destination,
+    required this.result,
+    this.reason,
+    this.sourceContext,
+  });
+
+  final AnalyticsSurfaceValue surface;
+  final LinkDestinationValue destination;
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+  final String? sourceContext;
+
+  @override
+  String get eventName => 'external_link_open_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'surface': surface.wireValue,
+      'destination': destination.wireValue,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+      if (sourceContext != null) 'source_context': sourceContext!,
+    };
+  }
+}

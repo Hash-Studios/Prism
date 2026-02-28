@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -42,6 +46,7 @@ class WallpaperScreen extends StatefulWidget {
 
 class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   String? provider;
   late int index;
   late String link;
@@ -58,12 +63,62 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   Future<String>? _futureView;
   int firstTime = 0;
 
+  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_wallpaper_screen';
+
+  String? _currentItemId() {
+    try {
+      if (provider == 'Prism') {
+        return data.subPrismWalls?[index]['id']?.toString();
+      }
+      if (provider == 'WallHaven') {
+        return wdata.walls[index].id?.toString();
+      }
+      if (provider == 'Pexels') {
+        return pdata.wallsP[index].id?.toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  void _trackAction(AnalyticsActionValue action) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.wallpaperScreen,
+          action: action,
+          sourceContext: _sourceContext,
+          itemType: ItemTypeValue.wallpaper,
+          itemId: _currentItemId(),
+          index: index,
+        ),
+      ),
+    );
+  }
+
   void _updatePaletteGenerator() {
+    _contentLoadTracker.start();
     context.read<PaletteBloc>().add(PaletteEvent.paletteRequested(imageUrl: link));
   }
 
   void _applyPaletteState(PaletteState state) {
     if (!mounted) return;
+    if (state.status == LoadStatus.failure) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.wallpaperScreen,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: _sourceContext,
+              reason: reason,
+            ),
+          );
+        },
+      );
+      return;
+    }
     if (state.status != LoadStatus.success || state.palette.paletteColorValues.isEmpty) {
       return;
     }
@@ -75,6 +130,21 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
       colors = limitedColors;
       accent = limitedColors[0];
     });
+
+    _contentLoadTracker.success(
+      itemCount: limitedColors.length,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.wallpaperScreen,
+            result: EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: _sourceContext,
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
 
     Future.delayed(const Duration(milliseconds: 500)).then((_) {
       if (!mounted || accent == null) return;
@@ -105,6 +175,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
       });
       _setStatusBarIconBrightness(accent!);
     }
+    _trackAction(AnalyticsActionValue.paletteCycleTapped);
     if (firstTime == 0) {
       toasts.codeSend("Long press to reset.");
       firstTime = 1;
@@ -118,6 +189,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
     provider = widget.arguments![0] as String;
     index = widget.arguments![1] as int;
     link = widget.arguments![2] as String;
+    _contentLoadTracker.start();
     if (provider == "Prism") {
       updateViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
       _futureView = getViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
@@ -151,6 +223,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -194,6 +267,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -238,6 +312,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
+                                      _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                       panelController.close();
                                     },
                                     child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -433,6 +508,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -494,6 +570,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -511,6 +588,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = wdata.walls[index].path;
                             Navigator.push(
                               context,
@@ -551,6 +629,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -591,6 +670,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -635,6 +715,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
+                                      _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                       panelController.close();
                                     },
                                     child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -933,6 +1014,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -994,6 +1076,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -1011,6 +1094,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = data.subPrismWalls![index]["wallpaper_url"];
                             Navigator.push(
                               context,
@@ -1051,6 +1135,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -1091,6 +1176,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -1135,6 +1221,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
+                                      _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                       panelController.close();
                                     },
                                     child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -1353,6 +1440,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -1414,6 +1502,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -1431,6 +1520,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = pdata.wallsP[index].src!["original"];
                             Navigator.push(
                               context,
@@ -1471,6 +1561,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -1511,6 +1602,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -1555,6 +1647,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
+                                      _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                       panelController.close();
                                     },
                                     child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -1773,6 +1866,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -1834,6 +1928,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -1851,6 +1946,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = pdata.wallsC[index].src!["original"];
                             Navigator.push(
                               context,
@@ -1890,6 +1986,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -1930,6 +2027,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -1974,6 +2072,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
+                                      _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                       panelController.close();
                                     },
                                     child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -2172,6 +2271,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -2233,6 +2333,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -2250,6 +2351,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = wdata.wallsS[index].path;
                             Navigator.push(
                               context,

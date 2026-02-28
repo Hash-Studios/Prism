@@ -44,6 +44,30 @@ Future<void> testUsage() async {
     expect(output, contains('Forbidden analytics.logShare usage detected outside analytics internals'));
   });
 
+  test('analytics guard fails on direct mixpanel client usage', () async {
+    final Directory tempDir = await Directory.systemTemp.createTemp('analytics_guard_mixpanel_fail_');
+    addTearDown(() async {
+      if (await tempDir.exists()) {
+        await tempDir.delete(recursive: true);
+      }
+    });
+
+    final ProcessResult result = await _runGuard(
+      workspaceDir: tempDir,
+      libFileContents: '''
+import 'package:mixpanel_flutter/mixpanel_flutter.dart';
+
+void badUsage(Mixpanel mixpanel) {
+  mixpanel.track('raw_event');
+}
+''',
+    );
+
+    final String output = '${result.stdout}\n${result.stderr}';
+    expect(result.exitCode, isNot(0));
+    expect(output, contains('Forbidden direct mixpanel_flutter import detected outside analytics internals'));
+  });
+
   test('analytics guard passes with no forbidden usages', () async {
     final Directory tempDir = await Directory.systemTemp.createTemp('analytics_guard_pass_');
     addTearDown(() async {

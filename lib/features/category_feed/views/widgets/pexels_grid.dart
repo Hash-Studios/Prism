@@ -1,3 +1,9 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
@@ -26,13 +32,18 @@ class _PexelsGridState extends State<PexelsGrid> {
   GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
   }
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
+    _contentLoadTracker.start();
+    _scrollMilestoneTracker.reset();
     PData.wallsP = [];
     await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "r");
   }
@@ -41,6 +52,22 @@ class _PexelsGridState extends State<PexelsGrid> {
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselSliderController carouselController = CarouselSliderController();
+    if (PData.wallsP.isNotEmpty) {
+      _contentLoadTracker.success(
+        itemCount: PData.wallsP.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.homePexelsGrid,
+              result: EventResultValue.success,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'home_pexels_grid_initial',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
       child: NestedScrollView(
@@ -76,6 +103,15 @@ class _PexelsGridState extends State<PexelsGrid> {
                             margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                             child: GestureDetector(
                               onTap: () {
+                                unawaited(
+                                  analytics.track(
+                                    SurfaceActionTappedEvent(
+                                      surface: AnalyticsSurfaceValue.homePexelsGrid,
+                                      action: AnalyticsActionValue.bannerTapped,
+                                      sourceContext: 'home_pexels_grid_banner',
+                                    ),
+                                  ),
+                                );
                                 launch(app_state.bannerURL);
                               },
                               child: Container(
@@ -120,6 +156,18 @@ class _PexelsGridState extends State<PexelsGrid> {
                               onTap: () {
                                 if (PData.wallsP == []) {
                                 } else {
+                                  unawaited(
+                                    analytics.track(
+                                      SurfaceActionTappedEvent(
+                                        surface: AnalyticsSurfaceValue.homePexelsGrid,
+                                        action: AnalyticsActionValue.carouselItemOpened,
+                                        sourceContext: 'home_pexels_grid_carousel',
+                                        itemType: ItemTypeValue.wallpaper,
+                                        itemId: PData.wallsP[i].id.toString(),
+                                        index: i,
+                                      ),
+                                    ),
+                                  );
                                   context.router.push(
                                     WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]),
                                   );
@@ -180,6 +228,21 @@ class _PexelsGridState extends State<PexelsGrid> {
           onRefresh: refreshList,
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
+              _scrollMilestoneTracker.onScroll(
+                metrics: scrollInfo.metrics,
+                itemCount: PData.wallsP.length,
+                onMilestoneReached: (depth, {required int itemCount}) async {
+                  await analytics.track(
+                    ScrollMilestoneReachedEvent(
+                      surface: AnalyticsSurfaceValue.homePexelsGrid,
+                      listName: ScrollListNameValue.pexelsGrid,
+                      depth: depth,
+                      sourceContext: 'home_pexels_grid_scroll',
+                      itemCount: itemCount,
+                    ),
+                  );
+                },
+              );
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
                   context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
@@ -207,6 +270,15 @@ class _PexelsGridState extends State<PexelsGrid> {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
+                      unawaited(
+                        analytics.track(
+                          SurfaceActionTappedEvent(
+                            surface: AnalyticsSurfaceValue.homePexelsGrid,
+                            action: AnalyticsActionValue.seeMoreTapped,
+                            sourceContext: 'home_pexels_grid_see_more',
+                          ),
+                        ),
+                      );
                       if (!seeMoreLoader) {
                         context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
                         setState(() {

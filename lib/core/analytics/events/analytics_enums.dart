@@ -79,6 +79,38 @@ enum AnalyticsActionValue {
   quickActionAiWallpapers,
   quickActionDownloads,
   quickActionUnknown,
+  backTapped,
+  clockOverlayOpened,
+  panelOpened,
+  panelClosed,
+  panelCollapseTapped,
+  paletteCycleTapped,
+  paletteResetLongPressed,
+  followTapped,
+  unfollowTapped,
+  editProfileTapped,
+  openDrawerTapped,
+  drawerBuyPremiumTapped,
+  drawerFavWallsTapped,
+  drawerFavSetupsTapped,
+  drawerDownloadsTapped,
+  drawerClearDownloadsTapped,
+  drawerClearDownloadsConfirmed,
+  drawerReviewStatusTapped,
+  drawerEnterCodeTapped,
+  drawerSharePrismTapped,
+  drawerContactSupportTapped,
+  drawerLogoutTapped,
+  drawerRestartTapped,
+  openThemeTapped,
+  openDownloadedWallpaperTapped,
+  openTransactionLinkTapped,
+  actionChipTapped,
+  contributorProfileTapped,
+  bannerTapped,
+  carouselItemOpened,
+  tileOpened,
+  seeMoreTapped,
 }
 
 enum EventResultValue { success, failure, cancelled, blocked, navigated, ignored, empty }
@@ -119,6 +151,51 @@ enum NotificationPreferenceValue { followers, posts, inApp, recommendations }
 enum DeepLinkSourceValue { appLinks, shortLinkResolver }
 
 enum ShareTypeValue { wallpaper, user, setup, refer }
+
+enum AnalyticsSurfaceValue {
+  wallpaperScreen,
+  shareWallpaperView,
+  searchWallpaperScreen,
+  favouriteWallpaperView,
+  profileWallpaperView,
+  userProfileWallpaperView,
+  downloadWallpaperScreen,
+  profileScreen,
+  profileDrawer,
+  profileUserList,
+  profileGeneralList,
+  profilePrismList,
+  profileAboutList,
+  profilePremiumList,
+  profileDownloadList,
+  aboutScreen,
+  coinTransactionsScreen,
+  downloadScreen,
+  homeWallpaperGrid,
+  homeWallhavenGrid,
+  homePexelsGrid,
+  homeColorGrid,
+  homeCollectionsViewGrid,
+  followingScreen,
+  favouriteWallsGrid,
+  favouriteSetupsGrid,
+}
+
+enum ScrollListNameValue {
+  wallpaperGrid,
+  wallhavenGrid,
+  pexelsGrid,
+  colorGrid,
+  collectionsViewGrid,
+  followingGrid,
+  favouriteWallsGrid,
+  favouriteSetupsGrid,
+  profileNestedScroll,
+}
+
+enum ScrollDepthPercentValue { p25, p50, p75, p100 }
+
+enum LinkDestinationValue { github, playStore, twitter, instagram, telegram, email, external, unknown }
 
 extension WallpaperTargetValueX on WallpaperTargetValue {
   String get wireValue {
@@ -335,6 +412,70 @@ extension AnalyticsActionValueX on AnalyticsActionValue {
         return 'quick_action_downloads';
       case AnalyticsActionValue.quickActionUnknown:
         return 'quick_action_unknown';
+      case AnalyticsActionValue.backTapped:
+        return 'back_tapped';
+      case AnalyticsActionValue.clockOverlayOpened:
+        return 'clock_overlay_opened';
+      case AnalyticsActionValue.panelOpened:
+        return 'panel_opened';
+      case AnalyticsActionValue.panelClosed:
+        return 'panel_closed';
+      case AnalyticsActionValue.panelCollapseTapped:
+        return 'panel_collapse_tapped';
+      case AnalyticsActionValue.paletteCycleTapped:
+        return 'palette_cycle_tapped';
+      case AnalyticsActionValue.paletteResetLongPressed:
+        return 'palette_reset_long_pressed';
+      case AnalyticsActionValue.followTapped:
+        return 'follow_tapped';
+      case AnalyticsActionValue.unfollowTapped:
+        return 'unfollow_tapped';
+      case AnalyticsActionValue.editProfileTapped:
+        return 'edit_profile_tapped';
+      case AnalyticsActionValue.openDrawerTapped:
+        return 'open_drawer_tapped';
+      case AnalyticsActionValue.drawerBuyPremiumTapped:
+        return 'drawer_buy_premium_tapped';
+      case AnalyticsActionValue.drawerFavWallsTapped:
+        return 'drawer_fav_walls_tapped';
+      case AnalyticsActionValue.drawerFavSetupsTapped:
+        return 'drawer_fav_setups_tapped';
+      case AnalyticsActionValue.drawerDownloadsTapped:
+        return 'drawer_downloads_tapped';
+      case AnalyticsActionValue.drawerClearDownloadsTapped:
+        return 'drawer_clear_downloads_tapped';
+      case AnalyticsActionValue.drawerClearDownloadsConfirmed:
+        return 'drawer_clear_downloads_confirmed';
+      case AnalyticsActionValue.drawerReviewStatusTapped:
+        return 'drawer_review_status_tapped';
+      case AnalyticsActionValue.drawerEnterCodeTapped:
+        return 'drawer_enter_code_tapped';
+      case AnalyticsActionValue.drawerSharePrismTapped:
+        return 'drawer_share_prism_tapped';
+      case AnalyticsActionValue.drawerContactSupportTapped:
+        return 'drawer_contact_support_tapped';
+      case AnalyticsActionValue.drawerLogoutTapped:
+        return 'drawer_logout_tapped';
+      case AnalyticsActionValue.drawerRestartTapped:
+        return 'drawer_restart_tapped';
+      case AnalyticsActionValue.openThemeTapped:
+        return 'open_theme_tapped';
+      case AnalyticsActionValue.openDownloadedWallpaperTapped:
+        return 'open_downloaded_wallpaper_tapped';
+      case AnalyticsActionValue.openTransactionLinkTapped:
+        return 'open_transaction_link_tapped';
+      case AnalyticsActionValue.actionChipTapped:
+        return 'action_chip_tapped';
+      case AnalyticsActionValue.contributorProfileTapped:
+        return 'contributor_profile_tapped';
+      case AnalyticsActionValue.bannerTapped:
+        return 'banner_tapped';
+      case AnalyticsActionValue.carouselItemOpened:
+        return 'carousel_item_opened';
+      case AnalyticsActionValue.tileOpened:
+        return 'tile_opened';
+      case AnalyticsActionValue.seeMoreTapped:
+        return 'see_more_tapped';
     }
   }
 }
@@ -550,6 +691,128 @@ extension ShareTypeValueX on ShareTypeValue {
         return 'setup';
       case ShareTypeValue.refer:
         return 'refer';
+    }
+  }
+}
+
+extension AnalyticsSurfaceValueX on AnalyticsSurfaceValue {
+  String get wireValue {
+    switch (this) {
+      case AnalyticsSurfaceValue.wallpaperScreen:
+        return 'wallpaper_screen';
+      case AnalyticsSurfaceValue.shareWallpaperView:
+        return 'share_wallpaper_view';
+      case AnalyticsSurfaceValue.searchWallpaperScreen:
+        return 'search_wallpaper_screen';
+      case AnalyticsSurfaceValue.favouriteWallpaperView:
+        return 'favourite_wallpaper_view';
+      case AnalyticsSurfaceValue.profileWallpaperView:
+        return 'profile_wallpaper_view';
+      case AnalyticsSurfaceValue.userProfileWallpaperView:
+        return 'user_profile_wallpaper_view';
+      case AnalyticsSurfaceValue.downloadWallpaperScreen:
+        return 'download_wallpaper_screen';
+      case AnalyticsSurfaceValue.profileScreen:
+        return 'profile_screen';
+      case AnalyticsSurfaceValue.profileDrawer:
+        return 'profile_drawer';
+      case AnalyticsSurfaceValue.profileUserList:
+        return 'profile_user_list';
+      case AnalyticsSurfaceValue.profileGeneralList:
+        return 'profile_general_list';
+      case AnalyticsSurfaceValue.profilePrismList:
+        return 'profile_prism_list';
+      case AnalyticsSurfaceValue.profileAboutList:
+        return 'profile_about_list';
+      case AnalyticsSurfaceValue.profilePremiumList:
+        return 'profile_premium_list';
+      case AnalyticsSurfaceValue.profileDownloadList:
+        return 'profile_download_list';
+      case AnalyticsSurfaceValue.aboutScreen:
+        return 'about_screen';
+      case AnalyticsSurfaceValue.coinTransactionsScreen:
+        return 'coin_transactions_screen';
+      case AnalyticsSurfaceValue.downloadScreen:
+        return 'download_screen';
+      case AnalyticsSurfaceValue.homeWallpaperGrid:
+        return 'home_wallpaper_grid';
+      case AnalyticsSurfaceValue.homeWallhavenGrid:
+        return 'home_wallhaven_grid';
+      case AnalyticsSurfaceValue.homePexelsGrid:
+        return 'home_pexels_grid';
+      case AnalyticsSurfaceValue.homeColorGrid:
+        return 'home_color_grid';
+      case AnalyticsSurfaceValue.homeCollectionsViewGrid:
+        return 'home_collections_view_grid';
+      case AnalyticsSurfaceValue.followingScreen:
+        return 'following_screen';
+      case AnalyticsSurfaceValue.favouriteWallsGrid:
+        return 'favourite_walls_grid';
+      case AnalyticsSurfaceValue.favouriteSetupsGrid:
+        return 'favourite_setups_grid';
+    }
+  }
+}
+
+extension ScrollListNameValueX on ScrollListNameValue {
+  String get wireValue {
+    switch (this) {
+      case ScrollListNameValue.wallpaperGrid:
+        return 'wallpaper_grid';
+      case ScrollListNameValue.wallhavenGrid:
+        return 'wallhaven_grid';
+      case ScrollListNameValue.pexelsGrid:
+        return 'pexels_grid';
+      case ScrollListNameValue.colorGrid:
+        return 'color_grid';
+      case ScrollListNameValue.collectionsViewGrid:
+        return 'collections_view_grid';
+      case ScrollListNameValue.followingGrid:
+        return 'following_grid';
+      case ScrollListNameValue.favouriteWallsGrid:
+        return 'favourite_walls_grid';
+      case ScrollListNameValue.favouriteSetupsGrid:
+        return 'favourite_setups_grid';
+      case ScrollListNameValue.profileNestedScroll:
+        return 'profile_nested_scroll';
+    }
+  }
+}
+
+extension ScrollDepthPercentValueX on ScrollDepthPercentValue {
+  String get wireValue {
+    switch (this) {
+      case ScrollDepthPercentValue.p25:
+        return 'p25';
+      case ScrollDepthPercentValue.p50:
+        return 'p50';
+      case ScrollDepthPercentValue.p75:
+        return 'p75';
+      case ScrollDepthPercentValue.p100:
+        return 'p100';
+    }
+  }
+}
+
+extension LinkDestinationValueX on LinkDestinationValue {
+  String get wireValue {
+    switch (this) {
+      case LinkDestinationValue.github:
+        return 'github';
+      case LinkDestinationValue.playStore:
+        return 'play_store';
+      case LinkDestinationValue.twitter:
+        return 'twitter';
+      case LinkDestinationValue.instagram:
+        return 'instagram';
+      case LinkDestinationValue.telegram:
+        return 'telegram';
+      case LinkDestinationValue.email:
+        return 'email';
+      case LinkDestinationValue.external:
+        return 'external';
+      case LinkDestinationValue.unknown:
+        return 'unknown';
     }
   }
 }
