@@ -40,13 +40,8 @@ class AdminReviewRepository {
       'collections': collections.isEmpty ? <String>['community'] : collections,
       'reviewedAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
-
-    await _sendUserNotification(
-      modifier: _safeString(payload['email']),
-      title: 'Wallpaper Approved',
-      body: 'Your wallpaper has been approved and is now live.',
-      imageUrl: _safeString(payload['wallpaper_thumb']),
-    );
+    // The onWallApproved Cloud Function handles the push notification and
+    // writes the in-app notification doc when review transitions to true.
   }
 
   Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {
@@ -66,6 +61,7 @@ class AdminReviewRepository {
       title: 'Wallpaper Rejected',
       body: reason,
       imageUrl: _safeString(payload['wallpaper_thumb']),
+      route: 'announcement',
     );
   }
 
@@ -81,6 +77,7 @@ class AdminReviewRepository {
       title: 'Setup Approved',
       body: 'Your setup has been approved and is now live.',
       imageUrl: _safeString(payload['image']),
+      route: 'announcement',
     );
   }
 
@@ -105,6 +102,7 @@ class AdminReviewRepository {
       title: 'Setup Rejected',
       body: reason,
       imageUrl: _safeString(payload['image']),
+      route: 'announcement',
     );
   }
 
@@ -113,6 +111,8 @@ class AdminReviewRepository {
     required String title,
     required String body,
     required String imageUrl,
+    String route = '',
+    String wallId = '',
   }) async {
     if (modifier.isEmpty) {
       return;
@@ -121,7 +121,14 @@ class AdminReviewRepository {
     await firestoreClient.addDoc(FirebaseCollections.notifications, <String, dynamic>{
       'modifier': modifier,
       'notification': <String, dynamic>{'title': title, 'body': body},
-      'data': <String, dynamic>{'pageName': '', 'arguments': const <Object?>[], 'url': '', 'imageUrl': imageUrl},
+      'data': <String, dynamic>{
+        'pageName': '',
+        'arguments': const <Object?>[],
+        'url': '',
+        'imageUrl': imageUrl,
+        'route': route,
+        if (wallId.isNotEmpty) 'wall_id': wallId,
+      },
       'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.user_notification');
   }

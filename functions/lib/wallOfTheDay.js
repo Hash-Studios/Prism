@@ -4,12 +4,12 @@ exports.wallOfTheDay = void 0;
 const admin = require("firebase-admin");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
+const notificationHelper_1 = require("./notificationHelper");
 // Initialize the Admin SDK once (guarded for module reuse across functions).
 if (!admin.apps.length) {
     admin.initializeApp();
 }
 const db = admin.firestore();
-const messaging = admin.messaging();
 /**
  * Scheduled Cloud Function — runs daily at 9:00 AM IST (03:30 UTC).
  *
@@ -139,41 +139,22 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
         return;
     }
     // ------------------------------------------------------------------ //
-    // 5. Send FCM topic push
+    // 5. Send FCM topic push + write in-app notification doc
     // ------------------------------------------------------------------ //
     const wallTitle = wotdDoc.title.trim() || "Check it out";
-    try {
-        const response = await messaging.send({
-            topic: "wall_of_the_day",
-            notification: {
-                title: "Today's Wall of the Day is here",
-                body: wallTitle,
-            },
-            data: {
-                route: "wall_of_the_day",
-                wall_id: newWallId,
-            },
-            android: {
-                notification: {
-                    channelId: "wall_of_the_day",
-                    clickAction: "FLUTTER_NOTIFICATION_CLICK",
-                },
-                priority: "high",
-            },
-            apns: {
-                payload: {
-                    aps: {
-                        sound: "default",
-                        badge: 1,
-                    },
-                },
-            },
-        });
-        v2_1.logger.info("FCM topic push sent.", { messageId: response, wallId: newWallId });
-    }
-    catch (err) {
-        v2_1.logger.error("Failed to send FCM push for wall_of_the_day.", { err });
-    }
+    await (0, notificationHelper_1.sendNotification)({
+        title: "Today's Wall of the Day is here",
+        body: wallTitle,
+        data: {
+            route: "wall_of_the_day",
+            wall_id: newWallId,
+        },
+        imageUrl: wotdDoc.thumbnailUrl || undefined,
+        modifier: "all",
+        channelId: "wall_of_the_day",
+        fcmTarget: { topic: "wall_of_the_day" },
+    });
+    v2_1.logger.info("WOTD notification sent and in-app doc written.", { wallId: newWallId });
 });
 // ------------------------------------------------------------------ //
 // Helpers

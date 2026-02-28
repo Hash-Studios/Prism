@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -11,7 +9,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 class OptionalInfo3 extends StatefulWidget {
   final String heading;
@@ -371,31 +368,6 @@ class FollowHeaderCard extends StatelessWidget {
                                     sourceTag: 'startup.follow.target.update',
                                   );
                                 }
-                                http.post(
-                                  Uri.parse('https://fcm.googleapis.com/fcm/send'),
-                                  headers: <String, String>{
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
-                                  },
-                                  body: jsonEncode(<String, dynamic>{
-                                    'notification': <String, dynamic>{
-                                      'title': '🎉 New Follower!',
-                                      'body': '${app_state.prismUser.username} is now following you.',
-                                      'color': "#e57697",
-                                      'image': app_state.prismUser.profilePhoto,
-                                      'android_channel_id': "followers",
-                                      'tag': '${app_state.prismUser.username} Follow',
-                                      'icon': '@drawable/ic_follow',
-                                    },
-                                    'priority': 'high',
-                                    'data': <String, dynamic>{
-                                      'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                      'id': '1',
-                                      'status': 'done',
-                                    },
-                                    'to': "/topics/${email.split("@")[0]}",
-                                  }),
-                                );
                                 toasts.codeSend("Followed $name!");
                               },
                               style: ButtonStyle(

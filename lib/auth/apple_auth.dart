@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -13,6 +14,7 @@ import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -137,6 +139,8 @@ class AppleAuth {
       if (email.isNotEmpty) {
         await subscribeToTopicSafely(home.f, email.split('@')[0], sourceTag: 'apple_auth.signin.followers_topic');
       }
+      unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
+      FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.apple,

@@ -26,6 +26,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
@@ -78,6 +79,19 @@ late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
+
+/// Top-level FCM background message handler.
+/// Must be a top-level function annotated with @pragma('vm:entry-point').
+/// Avoid any UI work here — only lightweight processing.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase.initializeApp() is already called before main() is reached, but
+  // in the background isolate we may need to re-initialise.  The guard inside
+  // Firebase.initializeApp makes this safe to call multiple times.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final String route = message.data['route']?.toString() ?? '';
+  logger.d('Background push received: $route', tag: 'Push');
+}
 
 int _to8BitChannel(double value) {
   final channel = (value * 255).round();
@@ -161,6 +175,8 @@ Future<void> main() async {
           await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
           firebaseInitialized = true;
           FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
+          // Register background handler before any other FCM calls.
+          FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
         } catch (error, stackTrace) {
           logger.w(
             'Firebase initialization failed; continuing without Firebase-backed startup features.',
@@ -738,33 +754,47 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
   }
 
-  void _handleWotdPushMessage(Map<String, dynamic> data, {required String wallId}) {
-    logger.i('WOTD push tapped', tag: 'Push', fields: <String, Object?>{'wall_id': wallId});
-    unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
-    // Navigate to the Home tab so the WOTD card is visible at the top
-    _appRouter.navigate(const HomeTabRoute());
+  /// Routes a tapped push notification to the correct screen based on
+  /// the `route` field in the notification's data payload.
+  void _handlePushTap(Map<String, dynamic> data) {
+    final String route = data['route']?.toString() ?? '';
+    final String wallId = data['wall_id']?.toString() ?? '';
+
+    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId});
+
+    switch (route) {
+      case 'wall_of_the_day':
+        unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
+        _appRouter.navigate(const HomeTabRoute());
+      case 'wall':
+      case 'follower':
+      case 'announcement':
+        // Navigate to the notification inbox — the user can tap the in-app
+        // entry to navigate further once deep-link routing is expanded.
+        _appRouter.navigate(const NotificationRoute());
+      default:
+        _appRouter.navigate(const HomeTabRoute());
+    }
   }
 
-  void _listenForWotdPushTaps() {
-    // App opened from background by tapping a notification
-    FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      final data = message.data;
-      if (data['route'] == 'wall_of_the_day') {
-        final String wallId = data['wall_id']?.toString() ?? '';
-        _handleWotdPushMessage(data, wallId: wallId);
-      }
+  void _listenForPushMessages() {
+    // Foreground: show a heads-up local notification + sync the inbox.
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      unawaited(localNotification.showPushNotification(message));
+      unawaited(getNotifs());
     });
 
-    // App launched from terminated state by tapping a notification
-    FirebaseMessaging.instance.getInitialMessage().then((message) {
+    // Background / terminated → foreground: user tapped the notification.
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handlePushTap(message.data);
+    });
+
+    // Launched from terminated state by tapping a notification.
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message == null) return;
-      final data = message.data;
-      if (data['route'] == 'wall_of_the_day') {
-        final String wallId = data['wall_id']?.toString() ?? '';
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleWotdPushMessage(data, wallId: wallId);
-        });
-      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handlePushTap(message.data);
+      });
     });
   }
 
@@ -778,13 +808,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
-    _listenForWotdPushTaps();
+    _listenForPushMessages();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      unawaited(getNotifs());
       return;
     }
     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {

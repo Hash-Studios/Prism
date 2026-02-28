@@ -18,6 +18,7 @@ class FirebaseCollections {
   static const String coinTransactions = 'coinTransactions';
   static const String wallOfTheDay = 'wall_of_the_day';
   static const String pastPicks = 'past_picks';
+  static const String notificationRequests = 'notificationRequests';
 }
 
 @Deprecated('Use FirebaseCollections instead.')

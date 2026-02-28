@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
+import { sendNotification } from "./notificationHelper";
 
 // Initialize the Admin SDK once (guarded for module reuse across functions).
 if (!admin.apps.length) {
@@ -8,7 +9,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const messaging = admin.messaging();
 
 /**
  * Scheduled Cloud Function — runs daily at 9:00 AM IST (03:30 UTC).
@@ -150,40 +150,22 @@ export const wallOfTheDay = onSchedule(
     }
 
     // ------------------------------------------------------------------ //
-    // 5. Send FCM topic push
+    // 5. Send FCM topic push + write in-app notification doc
     // ------------------------------------------------------------------ //
     const wallTitle = (wotdDoc.title as string).trim() || "Check it out";
-    try {
-      const response = await messaging.send({
-        topic: "wall_of_the_day",
-        notification: {
-          title: "Today's Wall of the Day is here",
-          body: wallTitle,
-        },
-        data: {
-          route: "wall_of_the_day",
-          wall_id: newWallId,
-        },
-        android: {
-          notification: {
-            channelId: "wall_of_the_day",
-            clickAction: "FLUTTER_NOTIFICATION_CLICK",
-          },
-          priority: "high",
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
-            },
-          },
-        },
-      });
-      logger.info("FCM topic push sent.", { messageId: response, wallId: newWallId });
-    } catch (err) {
-      logger.error("Failed to send FCM push for wall_of_the_day.", { err });
-    }
+    await sendNotification({
+      title: "Today's Wall of the Day is here",
+      body: wallTitle,
+      data: {
+        route: "wall_of_the_day",
+        wall_id: newWallId,
+      },
+      imageUrl: (wotdDoc.thumbnailUrl as string) || undefined,
+      modifier: "all",
+      channelId: "wall_of_the_day",
+      fcmTarget: { topic: "wall_of_the_day" },
+    });
+    logger.info("WOTD notification sent and in-app doc written.", { wallId: newWallId });
   },
 );
 

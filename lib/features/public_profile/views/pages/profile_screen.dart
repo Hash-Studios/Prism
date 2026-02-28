@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -11,7 +10,6 @@ import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
-import 'package:Prism/env/env.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
@@ -30,7 +28,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:http/http.dart' as http;
 
 @RoutePage()
 class ProfileScreen extends StatefulWidget {
@@ -402,31 +399,6 @@ class _ProfileChildState extends State<ProfileChild> {
                                             sourceContext: 'profile_screen_follow_action',
                                           );
                                           follow(widget.email!, widget.id!);
-                                          http.post(
-                                            Uri.parse('https://fcm.googleapis.com/fcm/send'),
-                                            headers: <String, String>{
-                                              'Content-Type': 'application/json',
-                                              'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
-                                            },
-                                            body: jsonEncode(<String, dynamic>{
-                                              'notification': <String, dynamic>{
-                                                'title': '🎉 New Follower!',
-                                                'body': '${app_state.prismUser.username} is now following you.',
-                                                'color': "#e57697",
-                                                'tag': '${app_state.prismUser.username} Follow',
-                                                'image': app_state.prismUser.profilePhoto,
-                                                'android_channel_id': "followers",
-                                                'icon': '@drawable/ic_follow',
-                                              },
-                                              'priority': 'high',
-                                              'data': <String, dynamic>{
-                                                'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                                'id': '1',
-                                                'status': 'done',
-                                              },
-                                              'to': "/topics/${widget.email!.split("@")[0]}",
-                                            }),
-                                          );
                                           toasts.codeSend("Followed ${widget.name}!");
                                         },
                                       ),

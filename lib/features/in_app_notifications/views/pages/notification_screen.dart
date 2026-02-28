@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
@@ -71,19 +72,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 itemCount: notifications.length,
                 itemBuilder: (BuildContext context, int index) {
                   final InAppNotif currentNotification = notifications[index];
-                  box.put(
-                    box.keys.toList()[index],
-                    InAppNotif(
-                      pageName: notifications[index].pageName,
-                      title: notifications[index].title,
-                      body: notifications[index].body,
-                      imageUrl: notifications[index].imageUrl,
-                      arguments: notifications[index].arguments,
-                      url: notifications[index].url,
-                      createdAt: notifications[index].createdAt,
-                      read: true,
-                    ),
-                  );
                   return Dismissible(
                     onDismissed: (DismissDirection direction) {
                       analytics.track(
@@ -113,7 +101,26 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                     ),
                     key: UniqueKey(),
-                    child: NotificationCard(notification: currentNotification),
+                    child: NotificationCard(
+                      notification: currentNotification,
+                      onMarkRead: () {
+                        box.put(
+                          box.keys.toList()[index],
+                          InAppNotif(
+                            pageName: notifications[index].pageName,
+                            title: notifications[index].title,
+                            body: notifications[index].body,
+                            imageUrl: notifications[index].imageUrl,
+                            arguments: notifications[index].arguments,
+                            url: notifications[index].url,
+                            createdAt: notifications[index].createdAt,
+                            read: true,
+                            route: notifications[index].route,
+                            wallId: notifications[index].wallId,
+                          ),
+                        );
+                      },
+                    ),
                   );
                 },
               )
@@ -173,9 +180,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
 }
 
 class NotificationCard extends StatelessWidget {
-  final InAppNotif? notification;
+  const NotificationCard({required this.notification, this.onMarkRead});
 
-  const NotificationCard({this.notification});
+  final InAppNotif? notification;
+  final VoidCallback? onMarkRead;
+
+  static bool _hasValidImageUrl(String? url) {
+    if (url == null || url.trim().isEmpty) return false;
+    try {
+      final uri = Uri.parse(url.trim());
+      return uri.host.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
 
   static String stringForDatetime(DateTime dt) {
     final dtInLocal = dt.toLocal();
@@ -201,86 +219,124 @@ class NotificationCard extends StatelessWidget {
     return dateString;
   }
 
+  void _onTap(BuildContext context) {
+    final InAppNotif n = notification!;
+    onMarkRead?.call();
+    analytics.track(
+      NotificationItemOpenedEvent(
+        type: _notificationTypeFor(n),
+        destination: _destinationFor(n),
+        hasExternalUrl: (n.url ?? "").isNotEmpty,
+      ),
+    );
+    if ((n.url ?? "").trim().isNotEmpty) {
+      launch(n.url!);
+      return;
+    }
+    final String route = (n.route ?? n.pageName ?? "").trim();
+    switch (route) {
+      case "wall_of_the_day":
+        context.router.navigate(const HomeTabRoute());
+        break;
+      case "wall":
+      case "follower":
+      case "announcement":
+        context.router.navigate(const HomeTabRoute());
+        break;
+      default:
+        if (route.isNotEmpty) {
+          context.router.pushPath(route);
+        } else {
+          context.router.navigate(const HomeTabRoute());
+        }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      initiallyExpanded: true,
-      leading: CircleAvatar(
-        backgroundImage: const AssetImage("assets/images/prism.png"),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-      backgroundColor: Theme.of(context).primaryColor,
-      title: Text(
-        notification!.title!,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: "Proxima Nova",
-        ),
-      ),
-      subtitle: Text(
-        notification!.body!,
-        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
-      ),
-      children: <Widget>[
-        InkWell(
-          onTap: () {
-            final InAppNotif currentNotification = notification!;
-            analytics.track(
-              NotificationItemOpenedEvent(
-                type: _notificationTypeFor(currentNotification),
-                destination: _destinationFor(currentNotification),
-                hasExternalUrl: (currentNotification.url ?? "").isNotEmpty,
-              ),
-            );
-            if (notification!.url == "") {
-              if (notification!.pageName != null) {
-                context.router.pushPath(notification!.pageName!);
-              }
-            } else {
-              launch(notification!.url!);
-            }
-          },
-          onLongPress: () {
-            HapticFeedback.lightImpact();
-          },
-          child: Ink(
-            child: Stack(
-              children: [
-                ColorFiltered(
-                  colorFilter: const ColorFilter.mode(Colors.black, BlendMode.saturation),
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.width * 9 / 16,
-                    child: CachedNetworkImage(
-                      imageUrl: notification!.imageUrl ?? "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-                      fit: BoxFit.cover,
+    final bool showImage = _hasValidImageUrl(notification!.imageUrl);
+    final String timeStr = notification!.createdAt != null
+        ? stringForDatetime(notification!.createdAt!)
+        : "";
+
+    return Material(
+      color: Theme.of(context).primaryColor,
+      child: InkWell(
+        onTap: () => _onTap(context),
+        onLongPress: () => HapticFeedback.lightImpact(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  CircleAvatar(
+                    backgroundImage: const AssetImage("assets/images/prism.png"),
+                    backgroundColor: Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                notification!.title ?? "",
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.secondary,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: "Proxima Nova",
+                                ),
+                              ),
+                            ),
+                            if (timeStr.isNotEmpty)
+                              Text(
+                                timeStr,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          notification!.body ?? "",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.width * 9 / 16,
-                  child: CachedNetworkImage(
-                    imageUrl: notification!.imageUrl ?? "https://w.wallhaven.cc/full/q6/wallhaven-q6mg5d.jpg",
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: Text(
-                      stringForDatetime(notification!.createdAt!),
-                      style: const TextStyle(backgroundColor: Colors.white24, color: Colors.black, fontSize: 12),
+                ],
+              ),
+              if (showImage) ...<Widget>[
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.width * 9 / 16,
+                    child: CachedNetworkImage(
+                      imageUrl: notification!.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
                     ),
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

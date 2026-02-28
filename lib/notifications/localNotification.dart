@@ -1,5 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -78,6 +79,29 @@ class LocalNotification {
       body: "",
       notificationDetails: platformChannelSpecifics,
       payload: "downloadProgress",
+    );
+  }
+
+  /// Shows a heads-up local notification for a foreground FCM push message.
+  Future<void> showPushNotification(RemoteMessage message) async {
+    final RemoteNotification? notification = message.notification;
+    if (notification == null) return;
+
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'posts',
+      'Posts',
+      channelDescription: 'Get notifications for posts from artists you follow.',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      id: notification.hashCode,
+      title: notification.title,
+      body: notification.body,
+      notificationDetails: platformDetails,
+      payload: message.data['route']?.toString(),
     );
   }
 
