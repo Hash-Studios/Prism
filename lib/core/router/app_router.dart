@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
+import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
@@ -134,5 +135,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/ads-not-loading', page: AdsNotLoadingRoute.page),
     AutoRoute(path: '/downloads', page: DownloadRoute.page),
     AutoRoute(path: '/admin-review', page: AdminReviewRoute.page),
+    AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page),
   ];
 }

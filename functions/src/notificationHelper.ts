@@ -16,6 +16,9 @@ export interface NotificationPayload {
   channelId: string;
   /** FCM delivery target. Omit for in-app-only (no push). */
   fcmTarget?: { topic: string } | { token: string };
+  /** If true, only send FCM push; do not write an in-app notification doc.
+   *  Use for e.g. follower broadcasts where one doc per recipient would not scale. */
+  pushOnly?: boolean;
 }
 
 /**
@@ -33,8 +36,9 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   const messaging = admin.messaging();
 
   // ------------------------------------------------------------------ //
-  // 1. Write the in-app notification doc
+  // 1. Write the in-app notification doc (unless pushOnly)
   // ------------------------------------------------------------------ //
+  if (!payload.pushOnly) {
   try {
     await db.collection("notifications").add({
       notification: {
@@ -60,6 +64,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   } catch (err) {
     logger.error("Failed to write notification doc to Firestore.", { err, payload });
     // Do not throw — attempt FCM push even if Firestore write fails.
+  }
   }
 
   // ------------------------------------------------------------------ //

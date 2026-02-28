@@ -108,8 +108,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
         final tag = e['sourceTag'] as String? ?? 'unknown';
         byTag[tag] = (byTag[tag] ?? 0) + 1;
       }
-      final byTagList = byTag.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
+      final byTagList = byTag.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
       setState(() {
         _rawContent = content;
@@ -151,135 +150,125 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
       appBar: AppBar(
         title: const Text('Firestore telemetry'),
         actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loading ? null : _loadTelemetry,
-            tooltip: 'Refresh',
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loading ? null : _loadTelemetry, tooltip: 'Refresh'),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                        const SizedBox(height: 16),
-                        FilledButton(onPressed: _loadTelemetry, child: const Text('Retry')),
-                      ],
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: _loadTelemetry,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  'Summary',
-                                  style: Theme.of(context).textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 12),
-                                _StatRow('Total events', '$_totalEvents'),
-                                _StatRow('Estimated document reads', '$_docReads'),
-                                _StatRow('Estimated document writes', '$_docWrites'),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: _rawContent.isEmpty ? null : _copyAllData,
-                          icon: const Icon(Icons.copy),
-                          label: const Text('Copy all data (NDJSON)'),
-                        ),
-                        if (_rawContent.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              'No telemetry recorded yet. Use the app to generate Firestore events.',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ),
-                        const SizedBox(height: 24),
-                        if (_byCollection.isNotEmpty) ...[
-                          Text('By collection', style: Theme.of(context).textTheme.titleSmall),
-                          const SizedBox(height: 8),
-                          Card(
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _byCollection.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, i) {
-                                final e = _byCollection[i];
-                                return ListTile(
-                                  title: Text(e.key),
-                                  subtitle: Text(
-                                    '${e.value['reads']} reads, ${e.value['writes']} writes, ${e.value['ops']} ops',
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (_byOperation.isNotEmpty) ...[
-                          Text('By operation', style: Theme.of(context).textTheme.titleSmall),
-                          const SizedBox(height: 8),
-                          Card(
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _byOperation.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, i) {
-                                final e = _byOperation[i];
-                                return ListTile(
-                                  title: Text(e.key),
-                                  trailing: Text('${e.value}'),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                        if (_bySourceTag.isNotEmpty) ...[
-                          Text('By source (top 15)', style: Theme.of(context).textTheme.titleSmall),
-                          const SizedBox(height: 8),
-                          Card(
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _bySourceTag.length > 15 ? 15 : _bySourceTag.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
-                              itemBuilder: (context, i) {
-                                final e = _bySourceTag[i];
-                                return ListTile(
-                                  title: Text(e.key, overflow: TextOverflow.ellipsis),
-                                  trailing: Text('${e.value}'),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    const SizedBox(height: 16),
+                    FilledButton(onPressed: _loadTelemetry, child: const Text('Retry')),
+                  ],
                 ),
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadTelemetry,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('Summary', style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 12),
+                            _StatRow('Total events', '$_totalEvents'),
+                            _StatRow('Estimated document reads', '$_docReads'),
+                            _StatRow('Estimated document writes', '$_docWrites'),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _rawContent.isEmpty ? null : _copyAllData,
+                      icon: const Icon(Icons.copy),
+                      label: const Text('Copy all data (NDJSON)'),
+                    ),
+                    if (_rawContent.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'No telemetry recorded yet. Use the app to generate Firestore events.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    if (_byCollection.isNotEmpty) ...[
+                      Text('By collection', style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      Card(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _byCollection.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, i) {
+                            final e = _byCollection[i];
+                            return ListTile(
+                              title: Text(e.key),
+                              subtitle: Text(
+                                '${e.value['reads']} reads, ${e.value['writes']} writes, ${e.value['ops']} ops',
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (_byOperation.isNotEmpty) ...[
+                      Text('By operation', style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      Card(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _byOperation.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, i) {
+                            final e = _byOperation[i];
+                            return ListTile(title: Text(e.key), trailing: Text('${e.value}'));
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    if (_bySourceTag.isNotEmpty) ...[
+                      Text('By source (top 15)', style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      Card(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _bySourceTag.length > 15 ? 15 : _bySourceTag.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, i) {
+                            final e = _bySourceTag[i];
+                            return ListTile(
+                              title: Text(e.key, overflow: TextOverflow.ellipsis),
+                              trailing: Text('${e.value}'),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

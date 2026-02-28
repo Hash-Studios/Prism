@@ -7,7 +7,9 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class AdminReviewScreen extends StatefulWidget {
@@ -201,6 +203,12 @@ class _WallCard extends StatelessWidget {
             Text('ID: ${data['id'] ?? wall.id}'),
             Text('By: ${data['by'] ?? '-'}'),
             Text('Email: ${data['email'] ?? '-'}'),
+            Text(
+              'Added ${data['createdAt'] != null ? timeago.format(_adminReviewToDateTime(data['createdAt'])) : '—'}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 8),
             Row(
               children: <Widget>[
@@ -267,6 +275,12 @@ class _SetupCard extends StatelessWidget {
             Text('By: ${data['by'] ?? '-'}'),
             Text('Email: ${data['email'] ?? '-'}'),
             Text('Name: ${data['name'] ?? '-'}'),
+            Text(
+              'Added ${data['created_at'] != null ? timeago.format(_adminReviewToDateTime(data['created_at'])) : '—'}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 8),
             Row(
               children: <Widget>[
@@ -298,6 +312,24 @@ class _SetupCard extends StatelessWidget {
       ),
     );
   }
+}
+
+DateTime _adminReviewToDateTime(dynamic value) {
+  if (value == null) return DateTime.now().toUtc();
+  if (value is DateTime) return value.toUtc();
+  if (value is Timestamp) return value.toDate().toUtc();
+  if (value is int) {
+    if (value > 10000000000) return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+    return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true);
+  }
+  if (value is String) {
+    try {
+      return DateTime.parse(value).toUtc();
+    } catch (_) {
+      return DateTime.now().toUtc();
+    }
+  }
+  return DateTime.now().toUtc();
 }
 
 class _PortraitPreview extends StatelessWidget {
@@ -467,16 +499,11 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
               spacing: 8,
               runSpacing: 8,
               children: _audienceOptions.map((_AudienceOption opt) {
-                final bool selected = opt.value == _modifier ||
-                    (opt.value == 'custom' && _isCustomTarget);
+                final bool selected = opt.value == _modifier || (opt.value == 'custom' && _isCustomTarget);
                 return ChoiceChip(
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(opt.icon, size: 16),
-                      const SizedBox(width: 4),
-                      Text(opt.label),
-                    ],
+                    children: <Widget>[Icon(opt.icon, size: 16), const SizedBox(width: 4), Text(opt.label)],
                   ),
                   selected: selected,
                   onSelected: (_) => setState(() => _modifier = opt.value),
@@ -507,15 +534,9 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _route,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.route),
-              ),
+              decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.route)),
               items: _routeOptions.map((_RouteOption opt) {
-                return DropdownMenuItem<String>(
-                  value: opt.value,
-                  child: Text(opt.label),
-                );
+                return DropdownMenuItem<String>(value: opt.value, child: Text(opt.label));
               }).toList(),
               onChanged: (String? v) {
                 if (v != null) setState(() => _route = v);
@@ -565,19 +586,15 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
 
     setState(() => _isSending = true);
     try {
-      await firestoreClient.addDoc(
-        FirebaseCollections.notificationRequests,
-        <String, dynamic>{
-          'title': title,
-          'body': body,
-          'modifier': modifier,
-          'route': _route,
-          if (imageUrl.isNotEmpty) 'imageUrl': imageUrl,
-          'requestedBy': app_state.prismUser.email,
-          'requestedAt': DateTime.now().millisecondsSinceEpoch,
-        },
-        sourceTag: 'admin.send_notification',
-      );
+      await firestoreClient.addDoc(FirebaseCollections.notificationRequests, <String, dynamic>{
+        'title': title,
+        'body': body,
+        'modifier': modifier,
+        'route': _route,
+        if (imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+        'requestedBy': app_state.prismUser.email,
+        'requestedAt': DateTime.now().millisecondsSinceEpoch,
+      }, sourceTag: 'admin.send_notification');
       if (mounted) {
         toasts.codeSend('Notification queued — Cloud Function will send it shortly');
         _titleController.clear();
@@ -624,18 +641,17 @@ class _SectionHeader extends StatelessWidget {
       children: <Widget>[
         Icon(icon, size: 18, color: colors.primary),
         const SizedBox(width: 8),
-        Text(title, style: textTheme.titleSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.w600)),
+        Text(
+          title,
+          style: textTheme.titleSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }
 }
 
 class _NotificationPreviewCard extends StatefulWidget {
-  const _NotificationPreviewCard({
-    required this.title,
-    required this.body,
-    required this.imageUrl,
-  });
+  const _NotificationPreviewCard({required this.title, required this.body, required this.imageUrl});
 
   final String title;
   final String body;
@@ -667,11 +683,7 @@ class _NotificationPreviewCardState extends State<_NotificationPreviewCard> {
               const SizedBox(width: 4),
               Text(
                 'PREVIEW',
-                style: TextStyle(
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                  color: colors.onSurface.withOpacity(0.5),
-                ),
+                style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: colors.onSurface.withOpacity(0.5)),
               ),
             ],
           ),
@@ -682,10 +694,7 @@ class _NotificationPreviewCardState extends State<_NotificationPreviewCard> {
               Container(
                 width: 36,
                 height: 36,
-                decoration: BoxDecoration(
-                  color: colors.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(8)),
                 child: const Icon(Icons.notifications, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),

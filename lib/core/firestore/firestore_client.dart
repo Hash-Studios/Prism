@@ -10,6 +10,13 @@ abstract class FirestoreTransaction {
   void deleteDoc(String collection, String id);
 }
 
+/// Write-only batch for grouping multiple writes into one round-trip.
+abstract class FirestoreBatch {
+  void addDoc(String collection, Map<String, dynamic> data);
+  void updateDoc(String collection, String id, Map<String, dynamic> data);
+  void deleteDoc(String collection, String id);
+}
+
 abstract class FirestoreClient {
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map);
 
@@ -42,4 +49,7 @@ abstract class FirestoreClient {
     required String collection,
     String? docId,
   });
+
+  /// Runs multiple writes as a single batch (one round-trip).
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag});
 }

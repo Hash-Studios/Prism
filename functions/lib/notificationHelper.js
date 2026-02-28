@@ -19,22 +19,24 @@ async function sendNotification(payload) {
     const db = admin.firestore();
     const messaging = admin.messaging();
     // ------------------------------------------------------------------ //
-    // 1. Write the in-app notification doc
+    // 1. Write the in-app notification doc (unless pushOnly)
     // ------------------------------------------------------------------ //
-    try {
-        await db.collection("notifications").add({
-            notification: {
-                title: payload.title,
-                body: payload.body,
-            },
-            data: Object.assign({ route: (_a = payload.data.route) !== null && _a !== void 0 ? _a : "", imageUrl: (_b = payload.imageUrl) !== null && _b !== void 0 ? _b : "", url: (_c = payload.data.url) !== null && _c !== void 0 ? _c : "", pageName: (_d = payload.data.pageName) !== null && _d !== void 0 ? _d : "", arguments: [] }, Object.fromEntries(Object.entries(payload.data).filter(([k]) => !["route", "url", "pageName"].includes(k)))),
-            modifier: payload.modifier,
-            createdAt: admin.firestore.Timestamp.now(),
-        });
-    }
-    catch (err) {
-        v2_1.logger.error("Failed to write notification doc to Firestore.", { err, payload });
-        // Do not throw — attempt FCM push even if Firestore write fails.
+    if (!payload.pushOnly) {
+        try {
+            await db.collection("notifications").add({
+                notification: {
+                    title: payload.title,
+                    body: payload.body,
+                },
+                data: Object.assign({ route: (_a = payload.data.route) !== null && _a !== void 0 ? _a : "", imageUrl: (_b = payload.imageUrl) !== null && _b !== void 0 ? _b : "", url: (_c = payload.data.url) !== null && _c !== void 0 ? _c : "", pageName: (_d = payload.data.pageName) !== null && _d !== void 0 ? _d : "", arguments: [] }, Object.fromEntries(Object.entries(payload.data).filter(([k]) => !["route", "url", "pageName"].includes(k)))),
+                modifier: payload.modifier,
+                createdAt: admin.firestore.Timestamp.now(),
+            });
+        }
+        catch (err) {
+            v2_1.logger.error("Failed to write notification doc to Firestore.", { err, payload });
+            // Do not throw — attempt FCM push even if Firestore write fails.
+        }
     }
     // ------------------------------------------------------------------ //
     // 2. Send FCM push (if a target was provided)

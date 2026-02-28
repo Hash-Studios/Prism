@@ -22,6 +22,8 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
@@ -518,6 +520,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 
+  /// Minimum time between coin syncs triggered by app resume to reduce Firestore reads/writes.
+  static const Duration _coinSyncResumeThrottle = Duration(minutes: 10);
+  DateTime? _lastCoinSyncResume;
+
+  /// Throttle getNotifs on resume to avoid repeated queries with 0 results.
+  static const Duration _getNotifsResumeThrottle = Duration(minutes: 5);
+  DateTime? _lastGetNotifsResume;
+
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
     if (_coinSyncInFlight) {
       return;
@@ -528,7 +538,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _coinSyncInFlight = true;
     try {
       await CoinsService.instance.bootstrapForCurrentUser();
-      await CoinsService.instance.refreshBalance();
+      // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
@@ -756,22 +766,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   /// Routes a tapped push notification to the correct screen based on
   /// the `route` field in the notification's data payload.
-  void _handlePushTap(Map<String, dynamic> data) {
+  Future<void> _handlePushTap(Map<String, dynamic> data) async {
     final String route = data['route']?.toString() ?? '';
-    final String wallId = data['wall_id']?.toString() ?? '';
+    final String wallId = (data['wall_id']?.toString() ?? '').trim();
 
     logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId});
+
+    if (route == 'wall' && wallId.isNotEmpty) {
+      final Map<String, dynamic>? wall = await firestoreClient.getById<Map<String, dynamic>>(
+        FirebaseCollections.walls,
+        wallId,
+        (doc, id) => doc,
+        sourceTag: 'push.open_wall',
+      );
+      if (wall != null) {
+        final String id = wall['id']?.toString() ?? wallId;
+        final String provider = wall['wallpaper_provider']?.toString() ?? 'Prism';
+        final String url = (wall['wallpaper_url'] ?? wall['wallpaper_thumb'] ?? '').toString();
+        final String thumb = (wall['wallpaper_thumb'] ?? url).toString();
+        if (thumb.isNotEmpty || url.isNotEmpty) {
+          _appRouter.push(ShareWallpaperViewRoute(arguments: [id, provider, url, thumb]));
+          return;
+        }
+      }
+      _appRouter.navigate(const HomeTabRoute());
+      return;
+    }
 
     switch (route) {
       case 'wall_of_the_day':
         unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
         _appRouter.navigate(const HomeTabRoute());
-      case 'wall':
+        break;
       case 'follower':
       case 'announcement':
-        // Navigate to the notification inbox — the user can tap the in-app
-        // entry to navigate further once deep-link routing is expanded.
         _appRouter.navigate(const NotificationRoute());
+        break;
       default:
         _appRouter.navigate(const HomeTabRoute());
     }
@@ -786,14 +816,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
     // Background / terminated → foreground: user tapped the notification.
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _handlePushTap(message.data);
+      unawaited(_handlePushTap(message.data));
     });
 
     // Launched from terminated state by tapping a notification.
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
       if (message == null) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handlePushTap(message.data);
+        unawaited(_handlePushTap(message.data));
       });
     });
   }
@@ -814,8 +844,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
-      unawaited(getNotifs());
+      final now = DateTime.now();
+      if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
+        _lastCoinSyncResume = now;
+        unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      }
+      if (_lastGetNotifsResume == null || now.difference(_lastGetNotifsResume!) >= _getNotifsResumeThrottle) {
+        _lastGetNotifsResume = now;
+        unawaited(getNotifs());
+      }
       return;
     }
     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {

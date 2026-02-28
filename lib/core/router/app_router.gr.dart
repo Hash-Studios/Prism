@@ -21,7 +21,7 @@ class AboutRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return AboutScreen();
+      return const AboutScreen();
     },
   );
 }
@@ -504,6 +504,22 @@ class FavouriteWallpaperRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const FavouriteWallpaperScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [FirestoreTelemetryScreen]
+class FirestoreTelemetryRoute extends PageRouteInfo<void> {
+  const FirestoreTelemetryRoute({List<PageRouteInfo>? children})
+    : super(FirestoreTelemetryRoute.name, initialChildren: children);
+
+  static const String name = 'FirestoreTelemetryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const FirestoreTelemetryScreen();
     },
   );
 }

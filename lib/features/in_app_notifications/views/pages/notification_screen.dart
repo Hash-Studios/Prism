@@ -1,5 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -219,7 +221,7 @@ class NotificationCard extends StatelessWidget {
     return dateString;
   }
 
-  void _onTap(BuildContext context) {
+  Future<void> _onTap(BuildContext context) async {
     final InAppNotif n = notification!;
     onMarkRead?.call();
     analytics.track(
@@ -234,11 +236,34 @@ class NotificationCard extends StatelessWidget {
       return;
     }
     final String route = (n.route ?? n.pageName ?? "").trim();
+    final String? wallId = (n.wallId ?? "").trim().isEmpty ? null : n.wallId!.trim();
+
+    if (route == "wall" && wallId != null) {
+      final Map<String, dynamic>? wall = await firestoreClient.getById<Map<String, dynamic>>(
+        FirebaseCollections.walls,
+        wallId,
+        (data, id) => data,
+        sourceTag: "notification.open_wall",
+      );
+      if (!context.mounted) return;
+      if (wall != null) {
+        final String id = wall["id"]?.toString() ?? wallId;
+        final String provider = wall["wallpaper_provider"]?.toString() ?? "Prism";
+        final String url = (wall["wallpaper_url"] ?? wall["wallpaper_thumb"] ?? "").toString();
+        final String thumb = (wall["wallpaper_thumb"] ?? url).toString();
+        if (thumb.isNotEmpty || url.isNotEmpty) {
+          context.router.push(ShareWallpaperViewRoute(arguments: [id, provider, url, thumb]));
+          return;
+        }
+      }
+      context.router.navigate(const HomeTabRoute());
+      return;
+    }
+
     switch (route) {
       case "wall_of_the_day":
         context.router.navigate(const HomeTabRoute());
         break;
-      case "wall":
       case "follower":
       case "announcement":
         context.router.navigate(const HomeTabRoute());
@@ -255,9 +280,7 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool showImage = _hasValidImageUrl(notification!.imageUrl);
-    final String timeStr = notification!.createdAt != null
-        ? stringForDatetime(notification!.createdAt!)
-        : "";
+    final String timeStr = notification!.createdAt != null ? stringForDatetime(notification!.createdAt!) : "";
 
     return Material(
       color: Theme.of(context).primaryColor,
@@ -307,10 +330,7 @@ class NotificationCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           notification!.body ?? "",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
                         ),
                       ],
                     ),

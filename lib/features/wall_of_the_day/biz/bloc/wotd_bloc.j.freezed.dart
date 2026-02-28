@@ -14,10 +14,15 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WotdEvent {
 
+
+
+
+
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is WotdEvent);
 }
+
 
 @override
 int get hashCode => runtimeType.hashCode;
@@ -26,6 +31,7 @@ int get hashCode => runtimeType.hashCode;
 String toString() {
   return 'WotdEvent()';
 }
+
 
 }
 
@@ -37,6 +43,17 @@ $WotdEventCopyWith(WotdEvent _, $Res Function(WotdEvent) __);
 
 /// Adds pattern-matching-related methods to [WotdEvent].
 extension WotdEventPatterns on WotdEvent {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
 @optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,required TResult orElse(),}){
 final _that = this;
@@ -47,6 +64,18 @@ return started(_that);case _:
 
 }
 }
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
 
 @optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,}){
 final _that = this;
@@ -57,6 +86,17 @@ return started(_that);case _:
 
 }
 }
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
 
 @optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,}){
 final _that = this;
@@ -67,6 +107,17 @@ return started(_that);case _:
 
 }
 }
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,required TResult orElse(),}) {final _that = this;
 switch (_that) {
@@ -76,6 +127,18 @@ return started();case _:
 
 }
 }
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
 
 @optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,}) {final _that = this;
 switch (_that) {
@@ -85,6 +148,17 @@ return started();case _:
 
 }
 }
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
 
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,}) {final _that = this;
 switch (_that) {
@@ -102,11 +176,18 @@ return started();case _:
 
 class _Started implements WotdEvent {
   const _Started();
+  
+
+
+
+
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _Started);
 }
+
 
 @override
 int get hashCode => runtimeType.hashCode;
@@ -115,6 +196,7 @@ int get hashCode => runtimeType.hashCode;
 String toString() {
   return 'WotdEvent.started()';
 }
+
 
 }
 
@@ -131,10 +213,13 @@ mixin _$WotdState {
 @pragma('vm:prefer-inline')
 $WotdStateCopyWith<WotdState> get copyWith => _$WotdStateCopyWithImpl<WotdState>(this as WotdState, _$identity);
 
+
+
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is WotdState&&(identical(other.status, status) || other.status == status)&&(identical(other.entity, entity) || other.entity == entity)&&(identical(other.failure, failure) || other.failure == failure));
 }
+
 
 @override
 int get hashCode => Object.hash(runtimeType,status,entity,failure);
@@ -143,6 +228,7 @@ int get hashCode => Object.hash(runtimeType,status,entity,failure);
 String toString() {
   return 'WotdState(status: $status, entity: $entity, failure: $failure)';
 }
+
 
 }
 
@@ -153,6 +239,9 @@ abstract mixin class $WotdStateCopyWith<$Res>  {
 $Res call({
  LoadStatus status, WallOfTheDayEntity? entity, Failure? failure
 });
+
+
+
 
 }
 /// @nodoc
@@ -179,6 +268,17 @@ as Failure?,
 
 /// Adds pattern-matching-related methods to [WotdState].
 extension WotdStatePatterns on WotdState {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
 @optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _WotdState value)?  $default,{required TResult orElse(),}){
 final _that = this;
@@ -189,6 +289,18 @@ return $default(_that);case _:
 
 }
 }
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
 
 @optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _WotdState value)  $default,){
 final _that = this;
@@ -199,6 +311,17 @@ return $default(_that);case _:
 
 }
 }
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
 
 @optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _WotdState value)?  $default,){
 final _that = this;
@@ -209,6 +332,17 @@ return $default(_that);case _:
 
 }
 }
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
 
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  WallOfTheDayEntity? entity,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
@@ -218,6 +352,18 @@ return $default(_that.status,_that.entity,_that.failure);case _:
 
 }
 }
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
 
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  WallOfTheDayEntity? entity,  Failure? failure)  $default,) {final _that = this;
 switch (_that) {
@@ -227,6 +373,17 @@ return $default(_that.status,_that.entity,_that.failure);case _:
 
 }
 }
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
 
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  WallOfTheDayEntity? entity,  Failure? failure)?  $default,) {final _that = this;
 switch (_that) {
@@ -245,6 +402,7 @@ return $default(_that.status,_that.entity,_that.failure);case _:
 class _WotdState implements WotdState {
   const _WotdState({required this.status, this.entity, this.failure});
   
+
 @override final  LoadStatus status;
 @override final  WallOfTheDayEntity? entity;
 @override final  Failure? failure;
@@ -255,10 +413,13 @@ class _WotdState implements WotdState {
 @pragma('vm:prefer-inline')
 _$WotdStateCopyWith<_WotdState> get copyWith => __$WotdStateCopyWithImpl<_WotdState>(this, _$identity);
 
+
+
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _WotdState&&(identical(other.status, status) || other.status == status)&&(identical(other.entity, entity) || other.entity == entity)&&(identical(other.failure, failure) || other.failure == failure));
 }
+
 
 @override
 int get hashCode => Object.hash(runtimeType,status,entity,failure);
@@ -267,6 +428,7 @@ int get hashCode => Object.hash(runtimeType,status,entity,failure);
 String toString() {
   return 'WotdState(status: $status, entity: $entity, failure: $failure)';
 }
+
 
 }
 
@@ -277,6 +439,9 @@ abstract mixin class _$WotdStateCopyWith<$Res> implements $WotdStateCopyWith<$Re
 $Res call({
  LoadStatus status, WallOfTheDayEntity? entity, Failure? failure
 });
+
+
+
 
 }
 /// @nodoc
@@ -297,6 +462,7 @@ as WallOfTheDayEntity?,failure: freezed == failure ? _self.failure : failure // 
 as Failure?,
   ));
 }
+
 
 }
 

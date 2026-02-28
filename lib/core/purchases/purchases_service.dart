@@ -41,6 +41,13 @@ class PurchasesService {
 
   bool _configured = false;
   String _configuredUserId = '';
+
+  /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
+  static const Duration _subscriptionPersistThrottle = Duration(minutes: 5);
+  bool? _lastPersistedPremium;
+  String? _lastPersistedTier;
+  DateTime? _lastPersistSubscriptionTime;
+
   static const Set<String> _legacyGrandfatheredEntitlementKeys = <String>{
     PurchaseConstants.entitlementPremium,
     PurchaseConstants.entitlementPro,
@@ -137,11 +144,21 @@ class PurchasesService {
     if (userId.isEmpty || !app_state.prismUser.loggedIn) {
       return;
     }
+    final DateTime now = DateTime.now();
+    if (_lastPersistedPremium == isPremium &&
+        _lastPersistedTier == tier.value &&
+        _lastPersistSubscriptionTime != null &&
+        now.difference(_lastPersistSubscriptionTime!) < _subscriptionPersistThrottle) {
+      return;
+    }
     try {
       await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
         'premium': isPremium,
         'subscriptionTier': tier.value,
       }, sourceTag: 'purchases.sync_subscription_state');
+      _lastPersistedPremium = isPremium;
+      _lastPersistedTier = tier.value;
+      _lastPersistSubscriptionTime = now;
     } catch (error, stackTrace) {
       logger.w('Unable to persist subscription state to Firestore.', error: error, stackTrace: stackTrace);
     }

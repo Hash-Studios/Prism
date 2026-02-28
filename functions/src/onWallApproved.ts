@@ -80,8 +80,9 @@ export const onWallApproved = onDocumentUpdated(
     // ------------------------------------------------------------------ //
     const followersTopic = `${artistTopic}_posts`;
 
-    // Check if anyone is likely subscribed before sending (topic sends
-    // succeed even with 0 subscribers, but this avoids pointless writes).
+    // Push only — no in-app doc. Otherwise we'd write one doc with modifier=
+    // artistEmail and the artist would see a duplicate; followers get the
+    // push and can open the wall from the notification.
     await sendNotification({
       title: `New wall by ${artistName}`,
       body: `"${wallTitle}" is now live on Prism.`,
@@ -93,12 +94,10 @@ export const onWallApproved = onDocumentUpdated(
         url: "",
       },
       imageUrl: wallThumb || undefined,
-      // Use artistEmail modifier so followers who share the artist's inbox
-      // entries don't get a separate doc.  If per-follower in-app docs are
-      // needed in future, change this to a fan-out write.
       modifier: artistEmail,
       channelId: "posts",
       fcmTarget: { topic: followersTopic },
+      pushOnly: true,
     });
 
     logger.info("onWallApproved: followers notification sent.", {

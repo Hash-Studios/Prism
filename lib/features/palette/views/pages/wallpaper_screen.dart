@@ -50,6 +50,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   String? provider;
   late int index;
   late String link;
+
+  /// When opening from Wall of the Day, this holds the wall data instead of subPrismWalls[index].
+  Map<String, dynamic>? _wotdWallMap;
   late AnimationController shakeController;
   List<Color?>? colors;
   Color? accent = Colors.white;
@@ -65,10 +68,13 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
 
   String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_wallpaper_screen';
 
+  /// Current Prism-style wall map: either WOTD data or subPrismWalls[index]. Used when provider is Prism or WallOfTheDay.
+  Map<String, dynamic> get _prismWall => _wotdWallMap ?? data.subPrismWalls![index] as Map<String, dynamic>;
+
   String? _currentItemId() {
     try {
-      if (provider == 'Prism') {
-        return data.subPrismWalls?[index]['id']?.toString();
+      if (provider == 'Prism' || provider == 'WallOfTheDay') {
+        return _prismWall['id']?.toString();
       }
       if (provider == 'WallHaven') {
         return wdata.walls[index].id?.toString();
@@ -187,12 +193,19 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
     provider = widget.arguments![0] as String;
-    index = widget.arguments![1] as int;
+    if (provider == 'WallOfTheDay') {
+      _wotdWallMap = widget.arguments![1] as Map<String, dynamic>;
+      index = 0;
+    } else {
+      index = widget.arguments![1] as int;
+    }
     link = widget.arguments![2] as String;
     _contentLoadTracker.start();
-    if (provider == "Prism") {
-      updateViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
-      _futureView = getViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
+    if (provider == 'Prism') {
+      updateViews(_prismWall['id'].toString().toUpperCase());
+      _futureView = getViews(_prismWall['id'].toString().toUpperCase());
+    } else if (provider == 'WallOfTheDay') {
+      _futureView = Future.value('0');
     }
     Future.delayed(Duration.zero).then((value) => _updatePaletteGenerator());
   }
@@ -635,7 +648,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider == "Prism"
+          : provider == "Prism" || provider == "WallOfTheDay"
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -755,7 +768,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             child: Row(
                                               children: [
                                                 Text(
-                                                  data.subPrismWalls![index]["id"].toString().toUpperCase(),
+                                                  _prismWall["id"].toString().toUpperCase(),
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                     fontSize: 16,
@@ -826,7 +839,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              data.subPrismWalls![index]["desc"].toString(),
+                                              _prismWall["desc"].toString(),
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -843,7 +856,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              data.subPrismWalls![index]["size"].toString(),
+                                              _prismWall["size"].toString(),
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -867,18 +880,18 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   child: ActionChip(
                                                     onPressed: () {
                                                       context.router.push(
-                                                        ProfileRoute(arguments: [data.subPrismWalls![index]["email"]]),
+                                                        ProfileRoute(arguments: [_prismWall["email"]]),
                                                       );
                                                     },
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: CircleAvatar(
                                                       backgroundImage: CachedNetworkImageProvider(
-                                                        data.subPrismWalls![index]["userPhoto"].toString(),
+                                                        _prismWall["userPhoto"].toString(),
                                                       ),
                                                     ),
                                                     labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                     label: Text(
-                                                      data.subPrismWalls![index]["by"].toString(),
+                                                      _prismWall["by"].toString(),
                                                       style: Theme.of(context).textTheme.bodyMedium!
                                                           .copyWith(color: Theme.of(context).colorScheme.secondary)
                                                           .copyWith(fontSize: 16),
@@ -886,9 +899,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     ),
                                                   ),
                                                 ),
-                                                if (app_state.verifiedUsers.contains(
-                                                  data.subPrismWalls![index]["email"].toString(),
-                                                ))
+                                                if (app_state.verifiedUsers.contains(_prismWall["email"].toString()))
                                                   Align(
                                                     alignment: Alignment.topRight,
                                                     child: SizedBox(
@@ -917,7 +928,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         Row(
                                           children: [
                                             Text(
-                                              data.subPrismWalls![index]["resolution"].toString(),
+                                              _prismWall["resolution"].toString(),
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -936,10 +947,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             await createCopyrightLink(
                                               false,
                                               context,
-                                              id: data.subPrismWalls![index]["id"].toString(),
+                                              id: _prismWall["id"].toString(),
                                               provider: provider,
-                                              url: data.subPrismWalls![index]["wallpaper_url"].toString(),
-                                              thumbUrl: data.subPrismWalls![index]["wallpaper_thumb"].toString(),
+                                              url: _prismWall["wallpaper_url"].toString(),
+                                              thumbUrl: _prismWall["wallpaper_thumb"].toString(),
                                             );
                                           },
                                           child: Row(
@@ -973,35 +984,31 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : data.subPrismWalls![index]["wallpaper_url"].toString(),
+                                    link: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
                                     isPremiumContent: app_state.isPremiumWall(
                                       app_state.premiumCollections,
-                                      data.subPrismWalls![index]["collections"] as List? ?? [],
+                                      _prismWall["collections"] as List? ?? [],
                                     ),
-                                    contentId: data.subPrismWalls![index]["id"]?.toString(),
+                                    contentId: _prismWall["id"]?.toString(),
                                     sourceContext: 'wallpaper_screen.prism',
                                   ),
                                   SetWallpaperButton(
                                     colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : data.subPrismWalls![index]["wallpaper_url"].toString(),
+                                    url: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
                                   ),
                                   FavouriteWallpaperButton(
-                                    id: data.subPrismWalls![index]["id"].toString(),
+                                    id: _prismWall["id"].toString(),
                                     provider: "Prism",
-                                    prism: data.subPrismWalls![index] as Map,
+                                    prism: _prismWall as Map,
                                     trash: false,
                                   ),
                                   ShareButton(
-                                    id: data.subPrismWalls![index]["id"].toString(),
+                                    id: _prismWall["id"].toString(),
                                     provider: provider,
-                                    url: data.subPrismWalls![index]["wallpaper_url"].toString(),
-                                    thumbUrl: data.subPrismWalls![index]["wallpaper_thumb"].toString(),
+                                    url: _prismWall["wallpaper_url"].toString(),
+                                    thumbUrl: _prismWall["wallpaper_thumb"].toString(),
                                   ),
-                                  EditButton(url: data.subPrismWalls![index]["wallpaper_url"].toString()),
+                                  EditButton(url: _prismWall["wallpaper_url"].toString()),
                                 ],
                               ),
                             ),
@@ -1039,7 +1046,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: data.subPrismWalls![index]["wallpaper_url"].toString(),
+                            imageUrl: _prismWall["wallpaper_url"].toString(),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1107,7 +1114,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = data.subPrismWalls![index]["wallpaper_url"];
+                            final link = _prismWall["wallpaper_url"];
                             Navigator.push(
                               context,
                               PageRouteBuilder(
