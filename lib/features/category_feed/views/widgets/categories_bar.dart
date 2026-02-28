@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -157,7 +158,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
                 )
               : GestureDetector(
                   onTap: () {
-                    analytics.logEvent(name: 'categories_checked');
+                    analytics.track(const CategoriesCheckedEvent());
                     showCategories(context, context.categorySelectedChoice(listen: false));
                   },
                   child: Text(
@@ -183,7 +184,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
         IconButton(
           icon: Icon(JamIcons.grid, color: Theme.of(context).colorScheme.secondary),
           onPressed: () {
-            analytics.logEvent(name: 'categories_checked');
+            analytics.track(const CategoriesCheckedEvent());
             showCategories(context, context.categorySelectedChoice(listen: false));
           },
           tooltip: 'Categories',

@@ -14,4 +14,6 @@ abstract class AnalyticsProvider {
     String? screenClass,
     Map<String, Object> parameters = const <String, Object>{},
   });
+
+  Future<void> flush();
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -216,10 +217,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> _attemptPreviewUnlockAndOpen({required String collectionName, required String sourceTag}) async {
-    analytics.logEvent(
-      name: 'coin_preview_unlock_attempt',
-      parameters: <String, Object>{'collection': collectionName, 'sourceTag': sourceTag},
-    );
+    analytics.track(CoinPreviewUnlockAttemptEvent(collection: collectionName, sourceTag: sourceTag));
     CoinMutationResult result;
     try {
       result = await CoinsService.instance.unlockPremiumPreview24hForCollection(
@@ -250,13 +248,12 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
 
     if (result.changed) {
-      analytics.logEvent(
-        name: 'coin_preview_unlock_success',
-        parameters: <String, Object>{
-          'collection': collectionName,
-          'sourceTag': sourceTag,
-          'coinsSpent': CoinPolicy.premiumPreview24h,
-        },
+      analytics.track(
+        CoinPreviewUnlockSuccessEvent(
+          collection: collectionName,
+          sourceTag: sourceTag,
+          coinsSpent: CoinPolicy.premiumPreview24h,
+        ),
       );
       toasts.codeSend('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
     }
@@ -264,12 +261,11 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> _watchAdAndUnlockPreview({required String collectionName}) async {
-    analytics.logEvent(
-      name: 'coin_preview_watch_and_unlock_used',
-      parameters: <String, Object>{
-        'collection': collectionName,
-        'sourceTag': 'coins.preview.watch_and_unlock.collections_grid',
-      },
+    analytics.track(
+      CoinPreviewWatchAndUnlockUsedEvent(
+        collection: collectionName,
+        sourceTag: 'coins.preview.watch_and_unlock.collections_grid',
+      ),
     );
     final bool watched = await _watchRewardedAd();
     if (!watched) {

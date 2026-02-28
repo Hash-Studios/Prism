@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
@@ -34,6 +38,7 @@ class SearchWallpaperScreen extends StatefulWidget {
 
 class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   String? selectedProvider;
   String? query;
   late int index;
@@ -51,16 +56,51 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
   bool panelClosed = true;
   bool panelCollapsed = true;
 
+  String get _sourceContext => '${(selectedProvider ?? 'unknown').toLowerCase()}_search_wallpaper_screen';
+
+  void _trackAction(AnalyticsActionValue action) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+          action: action,
+          sourceContext: _sourceContext,
+          itemType: ItemTypeValue.wallpaper,
+          index: index,
+        ),
+      ),
+    );
+  }
+
   Future<void> _updatePaletteGenerator() async {
+    _contentLoadTracker.start();
     setState(() {
       isLoading = true;
     });
-    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
-      paletteGenerator = await PaletteGenerator.fromImageProvider(
-        CachedNetworkImageProvider(link),
-        maximumColorCount: 20,
+    try {
+      await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
+        paletteGenerator = await PaletteGenerator.fromImageProvider(
+          CachedNetworkImageProvider(link),
+          maximumColorCount: 20,
+        );
+      });
+    } catch (_) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: _sourceContext,
+              reason: reason,
+            ),
+          );
+        },
       );
-    });
+      rethrow;
+    }
     setState(() {
       isLoading = false;
     });
@@ -71,6 +111,20 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
     setState(() {
       accent = colors![0];
     });
+    _contentLoadTracker.success(
+      itemCount: colors?.length,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.searchWallpaperScreen,
+            result: EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: _sourceContext,
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
     if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
@@ -101,6 +155,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
         );
       }
     }
+    _trackAction(AnalyticsActionValue.paletteCycleTapped);
   }
 
   @override
@@ -112,6 +167,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
     index = widget.arguments![2] as int;
     link = widget.arguments![3].toString();
     isLoading = true;
+    _contentLoadTracker.start();
     _updatePaletteGenerator();
   }
 
@@ -136,6 +192,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
             backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
             body: SlidingUpPanel(
               onPanelOpened: () {
+                _trackAction(AnalyticsActionValue.panelOpened);
                 setState(() {
                   panelCollapsed = false;
                 });
@@ -177,6 +234,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                 }
               },
               onPanelClosed: () {
+                _trackAction(AnalyticsActionValue.panelClosed);
                 setState(() {
                   panelCollapsed = true;
                 });
@@ -221,6 +279,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
                                   onTap: () {
+                                    _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                     panelController.close();
                                   },
                                   child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -416,6 +475,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                           }
                         },
                         onLongPress: () {
+                          _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                           setState(() {
                             colorChanged = false;
                           });
@@ -477,6 +537,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.backTapped);
                           Navigator.pop(context);
                         },
                         color: isLoading
@@ -494,6 +555,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.clockOverlayOpened);
                           final link = wdata.wallsS[index].path;
                           Navigator.push(
                             context,
@@ -533,6 +595,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
             backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
             body: SlidingUpPanel(
               onPanelOpened: () {
+                _trackAction(AnalyticsActionValue.panelOpened);
                 setState(() {
                   panelCollapsed = false;
                 });
@@ -574,6 +637,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                 }
               },
               onPanelClosed: () {
+                _trackAction(AnalyticsActionValue.panelClosed);
                 setState(() {
                   panelCollapsed = true;
                 });
@@ -618,6 +682,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
                                   onTap: () {
+                                    _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                     panelController.close();
                                   },
                                   child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -836,6 +901,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                           }
                         },
                         onLongPress: () {
+                          _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                           setState(() {
                             colorChanged = false;
                           });
@@ -897,6 +963,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.backTapped);
                           Navigator.pop(context);
                         },
                         color: isLoading
@@ -914,6 +981,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.clockOverlayOpened);
                           final link = pdata.wallsPS[index].src!["original"];
                           Navigator.push(
                             context,

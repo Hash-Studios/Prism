@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -35,10 +39,13 @@ class _FollowingScreenState extends State<FollowingScreen> {
   StreamSubscription<List<_FirestoreDoc>>? _feedSubscription;
   List<_FirestoreDoc> finalDocs = <_FirestoreDoc>[];
   List<String> following = <String>[];
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
     unawaited(_loadFollowingFeed());
   }
 
@@ -112,6 +119,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
   }
 
   Future<void> _loadFollowingFeed() async {
+    _contentLoadTracker.start();
+    _scrollMilestoneTracker.reset();
     await _feedSubscription?.cancel();
     final List<String> currentFollowing = await _resolveFollowingEmails();
     if (!mounted) {
@@ -122,6 +131,20 @@ class _FollowingScreenState extends State<FollowingScreen> {
       finalDocs = <_FirestoreDoc>[];
     });
     if (currentFollowing.isEmpty) {
+      _contentLoadTracker.success(
+        itemCount: 0,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.followingScreen,
+              result: EventResultValue.empty,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'following_screen_feed',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
       return;
     }
 
@@ -164,9 +187,37 @@ class _FollowingScreenState extends State<FollowingScreen> {
         setState(() {
           finalDocs = _dedupeSortAndLimit(docs);
         });
+        _contentLoadTracker.success(
+          itemCount: finalDocs.length,
+          onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+            await analytics.track(
+              SurfaceContentLoadedEvent(
+                surface: AnalyticsSurfaceValue.followingScreen,
+                result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+                loadTimeMs: loadTimeMs,
+                sourceContext: 'following_screen_feed',
+                itemCount: itemCount,
+              ),
+            );
+          },
+        );
       },
       onError: (Object error, StackTrace stackTrace) {
         logger.e('Following feed stream failed', error: error, stackTrace: stackTrace);
+        _contentLoadTracker.failure(
+          reason: AnalyticsReasonValue.error,
+          onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+            await analytics.track(
+              SurfaceContentLoadedEvent(
+                surface: AnalyticsSurfaceValue.followingScreen,
+                result: EventResultValue.failure,
+                loadTimeMs: loadTimeMs,
+                sourceContext: 'following_screen_feed',
+                reason: reason,
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -183,30 +234,50 @@ class _FollowingScreenState extends State<FollowingScreen> {
     final ScrollController controller = InheritedDataProvider.of(context)!.scrollController!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-      child: MasonryGridView.builder(
-        gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        itemCount: finalDocs.length + 1,
-        controller: controller,
-        itemBuilder: (context, index) {
-          if (index == finalDocs.length) {
-            return Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              height: finalDocs.isEmpty ? MediaQuery.of(context).size.height * 0.8 : 100,
-              padding: EdgeInsets.symmetric(horizontal: finalDocs.isEmpty ? 0 : 20),
-              child: Center(
-                child: Text(
-                  finalDocs.isEmpty
-                      ? "Follow creators to see their latest posts here!"
-                      : "You have caught up with the latest posts of the people you follow. Follow more people to see their posts.",
-                  textAlign: TextAlign.center,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          _scrollMilestoneTracker.onScroll(
+            metrics: notification.metrics,
+            itemCount: finalDocs.length,
+            onMilestoneReached: (depth, {required int itemCount}) async {
+              await analytics.track(
+                ScrollMilestoneReachedEvent(
+                  surface: AnalyticsSurfaceValue.followingScreen,
+                  listName: ScrollListNameValue.followingGrid,
+                  depth: depth,
+                  sourceContext: 'following_screen_grid',
+                  itemCount: itemCount,
                 ),
-              ),
-            );
-          }
-          return FollowingTile(index, finalDocs);
+              );
+            },
+          );
+          return false;
         },
+        child: MasonryGridView.builder(
+          gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          itemCount: finalDocs.length + 1,
+          controller: controller,
+          itemBuilder: (context, index) {
+            if (index == finalDocs.length) {
+              return Container(
+                width: MediaQuery.of(context).size.width * 0.7,
+                height: finalDocs.isEmpty ? MediaQuery.of(context).size.height * 0.8 : 100,
+                padding: EdgeInsets.symmetric(horizontal: finalDocs.isEmpty ? 0 : 20),
+                child: Center(
+                  child: Text(
+                    finalDocs.isEmpty
+                        ? "Follow creators to see their latest posts here!"
+                        : "You have caught up with the latest posts of the people you follow. Follow more people to see their posts.",
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
+            }
+            return FollowingTile(index, finalDocs);
+          },
+        ),
       ),
     );
   }
@@ -248,6 +319,18 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
+                    unawaited(
+                      analytics.track(
+                        SurfaceActionTappedEvent(
+                          surface: AnalyticsSurfaceValue.followingScreen,
+                          action: AnalyticsActionValue.tileOpened,
+                          sourceContext: 'following_screen_tile',
+                          itemType: ItemTypeValue.wallpaper,
+                          itemId: widget.finalDocs[widget.index]["id"]?.toString(),
+                          index: widget.index,
+                        ),
+                      ),
+                    );
                     context.router.push(
                       ShareWallpaperViewRoute(
                         arguments: [
@@ -278,6 +361,18 @@ class _FollowingTileState extends State<FollowingTile> {
               children: [
                 GestureDetector(
                   onTap: () {
+                    unawaited(
+                      analytics.track(
+                        SurfaceActionTappedEvent(
+                          surface: AnalyticsSurfaceValue.followingScreen,
+                          action: AnalyticsActionValue.actionChipTapped,
+                          sourceContext: 'following_screen_profile_chip',
+                          itemType: ItemTypeValue.user,
+                          itemId: widget.finalDocs[widget.index]["email"]?.toString(),
+                          index: widget.index,
+                        ),
+                      ),
+                    );
                     context.router.push(ProfileRoute(arguments: [widget.finalDocs[widget.index]["email"]]));
                   },
                   child: Row(

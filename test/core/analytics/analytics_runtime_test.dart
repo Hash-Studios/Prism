@@ -1,5 +1,6 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
+import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -8,7 +9,7 @@ class _FakeAppAnalytics implements AppAnalytics {
   List<NavigatorObserver> buildNavigatorObservers() => const <NavigatorObserver>[];
 
   @override
-  Future<void> logEvent({required String name, Map<String, Object?>? parameters}) async {}
+  Future<void> track(AnalyticsEvent event) async {}
 
   @override
   Future<void> logLogin({String? loginMethod}) async {}
@@ -28,6 +29,9 @@ class _FakeAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
+
+  @override
+  Future<void> flush() async {}
 }
 
 void main() {

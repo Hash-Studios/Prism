@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/logger/logger.dart';
@@ -58,6 +59,7 @@ class _ShareButtonState extends State<ShareButton> {
   }
 
   Future<void> onShare() async {
+    analytics.track(const InviteShareTappedEvent(sourceContext: 'wallpaper_screen'));
     setState(() {
       isLoading = true;
     });
@@ -67,9 +69,23 @@ class _ShareButtonState extends State<ShareButton> {
       await Clipboard.setData(ClipboardData(text: link));
       if (!mounted) return;
       await ShareService.shareText(text: '🔥Check this out ➜ $link', context: context);
-      analytics.logShare(contentType: 'wallpaperScreen', itemId: widget.id!, method: 'link');
+      analytics.track(
+        const InviteShareResultEvent(
+          channel: ShareChannelValue.shareSheet,
+          result: EventResultValue.success,
+          sourceContext: 'wallpaper_screen',
+        ),
+      );
     } catch (error, stackTrace) {
       logger.e('Failed to share wallpaper link', error: error, stackTrace: stackTrace);
+      analytics.track(
+        const InviteShareResultEvent(
+          channel: ShareChannelValue.shareSheet,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.error,
+          sourceContext: 'wallpaper_screen',
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {

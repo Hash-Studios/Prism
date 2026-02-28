@@ -1,3 +1,9 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
@@ -26,13 +32,18 @@ class _WallHavenGridState extends State<WallHavenGrid> {
   GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
 
   bool seeMoreLoader = false;
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
   }
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
+    _contentLoadTracker.start();
+    _scrollMilestoneTracker.reset();
     wData.walls = [];
     await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "r");
   }
@@ -41,6 +52,22 @@ class _WallHavenGridState extends State<WallHavenGrid> {
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselSliderController carouselController = CarouselSliderController();
+    if (wData.walls.isNotEmpty) {
+      _contentLoadTracker.success(
+        itemCount: wData.walls.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.homeWallhavenGrid,
+              result: EventResultValue.success,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'home_wallhaven_grid_initial',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
       child: NestedScrollView(
@@ -77,6 +104,15 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                             margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
                             child: GestureDetector(
                               onTap: () {
+                                unawaited(
+                                  analytics.track(
+                                    SurfaceActionTappedEvent(
+                                      surface: AnalyticsSurfaceValue.homeWallhavenGrid,
+                                      action: AnalyticsActionValue.bannerTapped,
+                                      sourceContext: 'home_wallhaven_grid_banner',
+                                    ),
+                                  ),
+                                );
                                 launch(app_state.bannerURL);
                               },
                               child: Container(
@@ -121,6 +157,18 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                               onTap: () {
                                 if (wData.walls == []) {
                                 } else {
+                                  unawaited(
+                                    analytics.track(
+                                      SurfaceActionTappedEvent(
+                                        surface: AnalyticsSurfaceValue.homeWallhavenGrid,
+                                        action: AnalyticsActionValue.carouselItemOpened,
+                                        sourceContext: 'home_wallhaven_grid_carousel',
+                                        itemType: ItemTypeValue.wallpaper,
+                                        itemId: wData.walls[i].id.toString(),
+                                        index: i,
+                                      ),
+                                    ),
+                                  );
                                   context.router.push(
                                     WallpaperRoute(arguments: [widget.provider, i, wData.walls[i].thumbs!["small"]]),
                                   );
@@ -183,6 +231,21 @@ class _WallHavenGridState extends State<WallHavenGrid> {
           onRefresh: refreshList,
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
+              _scrollMilestoneTracker.onScroll(
+                metrics: scrollInfo.metrics,
+                itemCount: wData.walls.length,
+                onMilestoneReached: (depth, {required int itemCount}) async {
+                  await analytics.track(
+                    ScrollMilestoneReachedEvent(
+                      surface: AnalyticsSurfaceValue.homeWallhavenGrid,
+                      listName: ScrollListNameValue.wallhavenGrid,
+                      depth: depth,
+                      sourceContext: 'home_wallhaven_grid_scroll',
+                      itemCount: itemCount,
+                    ),
+                  );
+                },
+              );
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 if (!seeMoreLoader) {
                   context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
@@ -211,6 +274,15 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
+                      unawaited(
+                        analytics.track(
+                          SurfaceActionTappedEvent(
+                            surface: AnalyticsSurfaceValue.homeWallhavenGrid,
+                            action: AnalyticsActionValue.seeMoreTapped,
+                            sourceContext: 'home_wallhaven_grid_see_more',
+                          ),
+                        ),
+                      );
                       if (!seeMoreLoader) {
                         context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
 

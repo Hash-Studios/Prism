@@ -78,5 +78,22 @@ void main() {
       expect(config.dist, '90');
       expect(config.enabled, isTrue);
     });
+
+    test('strips surrounding quotes from dsn and enabled values', () {
+      final SentryConfig config = SentryConfig.fromRaw(
+        dsn: '"https://public@example.ingest.sentry.io/123"',
+        environment: '"production"',
+        release: '"Prism@3.0.0+90"',
+        dist: '"90"',
+        enabledValue: '"true"',
+        fallbackEnvironment: 'staging',
+      );
+
+      expect(config.dsn, 'https://public@example.ingest.sentry.io/123');
+      expect(config.environment, 'production');
+      expect(config.release, 'Prism@3.0.0+90');
+      expect(config.dist, '90');
+      expect(config.enabled, isTrue);
+    });
   });
 }

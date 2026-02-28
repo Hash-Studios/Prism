@@ -1,3 +1,8 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -16,20 +21,51 @@ class CoinTransactionsScreen extends StatefulWidget {
 class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
   bool _loading = false;
   List<CoinTransactionEntry> _items = const <CoinTransactionEntry>[];
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
     _load();
   }
 
   Future<void> _load() async {
+    _contentLoadTracker.start();
     setState(() => _loading = true);
     try {
       final rows = await CoinsService.instance.fetchTransactions(limit: 150);
       if (!mounted) return;
       setState(() => _items = rows);
+      _contentLoadTracker.success(
+        itemCount: rows.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+              result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'coin_transactions_initial_load',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
     } catch (_) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'coin_transactions_initial_load',
+              reason: reason,
+            ),
+          );
+        },
+      );
       toasts.error('Unable to load coin transactions.');
     } finally {
       if (mounted) {
@@ -48,17 +84,60 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
   }
 
   Future<void> _openLinkedFlow(CoinTransactionEntry item) async {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+          action: AnalyticsActionValue.openTransactionLinkTapped,
+          sourceContext: 'coin_transactions_item_tap',
+          itemId: item.id,
+        ),
+      ),
+    );
     final String url = (item.shortLinkUrl ?? item.deepLinkUrl ?? '').trim();
     if (url.isEmpty) {
       toasts.error('No linked item for this transaction.');
+      unawaited(
+        analytics.track(
+          ExternalLinkOpenResultEvent(
+            surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+            destination: LinkDestinationValue.external,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.missingData,
+            sourceContext: 'coin_transactions_item_tap',
+          ),
+        ),
+      );
       return;
     }
     final Uri? parsed = Uri.tryParse(url);
     if (parsed == null) {
       toasts.error('Invalid link for this transaction.');
+      unawaited(
+        analytics.track(
+          ExternalLinkOpenResultEvent(
+            surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+            destination: LinkDestinationValue.external,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.error,
+            sourceContext: 'coin_transactions_item_tap',
+          ),
+        ),
+      );
       return;
     }
     final bool launched = await launchUrl(parsed);
+    unawaited(
+      analytics.track(
+        ExternalLinkOpenResultEvent(
+          surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+          destination: LinkDestinationValue.external,
+          result: launched ? EventResultValue.success : EventResultValue.failure,
+          reason: launched ? null : AnalyticsReasonValue.error,
+          sourceContext: 'coin_transactions_item_tap',
+        ),
+      ),
+    );
     if (!launched) {
       toasts.error('Unable to open linked wallpaper.');
     }

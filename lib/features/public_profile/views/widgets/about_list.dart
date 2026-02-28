@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -19,6 +23,15 @@ class AboutList extends StatelessWidget {
       subtitle: const Text("GitHub, website & more!", style: TextStyle(fontSize: 12)),
       trailing: const Icon(JamIcons.chevron_right),
       onTap: () {
+        unawaited(
+          analytics.track(
+            SurfaceActionTappedEvent(
+              surface: AnalyticsSurfaceValue.profileAboutList,
+              action: AnalyticsActionValue.actionChipTapped,
+              sourceContext: 'profile_about_list_open_about',
+            ),
+          ),
+        );
         context.router.push(const AboutRoute());
       },
     );

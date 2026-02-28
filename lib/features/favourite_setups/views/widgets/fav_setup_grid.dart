@@ -1,3 +1,9 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
@@ -20,10 +26,13 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
   AnimationController? _controller;
   late Animation<Color?> animation;
   GlobalKey<RefreshIndicatorState> refreshFavKey = GlobalKey<RefreshIndicatorState>();
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
     animation =
         context.prismModeStyleForWindow(listen: false) == "Dark"
@@ -67,12 +76,31 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
 
   Future<void> refreshList() async {
     refreshFavKey.currentState?.show();
+    _contentLoadTracker.start();
+    _scrollMilestoneTracker.reset();
     context.favouriteSetupsAdapter(listen: false).getDataBase();
   }
 
   @override
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final likedSetups = context.favouriteSetupsAdapter(listen: false).liked;
+    if (likedSetups != null) {
+      _contentLoadTracker.success(
+        itemCount: likedSetups.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
+              result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'favourite_setups_grid_initial',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
+    }
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshFavKey,
@@ -150,52 +178,86 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                       ),
                     ],
                   )
-                : GridView.builder(
-                    shrinkWrap: true,
-                    cacheExtent: 50000,
-                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                    controller: controller,
-                    itemCount: context.favouriteSetupsAdapter().liked!.length,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                      childAspectRatio: 0.5025,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      return Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: animation.value,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(
-                                  context.favouriteSetupsAdapter().liked![index]["image"].toString(),
-                                ),
-                                fit: BoxFit.cover,
-                              ),
+                : NotificationListener<ScrollNotification>(
+                    onNotification: (ScrollNotification notification) {
+                      _scrollMilestoneTracker.onScroll(
+                        metrics: notification.metrics,
+                        itemCount: context.favouriteSetupsAdapter().liked!.length,
+                        onMilestoneReached: (depth, {required int itemCount}) async {
+                          await analytics.track(
+                            ScrollMilestoneReachedEvent(
+                              surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
+                              listName: ScrollListNameValue.favouriteSetupsGrid,
+                              depth: depth,
+                              sourceContext: 'favourite_setups_grid_scroll',
+                              itemCount: itemCount,
                             ),
-                          ),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                onTap: () {
-                                  if (context.favouriteSetupsAdapter(listen: false).liked == []) {
-                                  } else {
-                                    context.router.push(FavSetupViewRoute(arguments: [index]));
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       );
+                      return false;
                     },
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      cacheExtent: 50000,
+                      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                      controller: controller,
+                      itemCount: context.favouriteSetupsAdapter().liked!.length,
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                        childAspectRatio: 0.5025,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                      ),
+                      itemBuilder: (context, index) {
+                        return Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(
+                                    context.favouriteSetupsAdapter().liked![index]["image"].toString(),
+                                  ),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                                  onTap: () {
+                                    if (context.favouriteSetupsAdapter(listen: false).liked == []) {
+                                    } else {
+                                      unawaited(
+                                        analytics.track(
+                                          SurfaceActionTappedEvent(
+                                            surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
+                                            action: AnalyticsActionValue.tileOpened,
+                                            sourceContext: 'favourite_setups_grid_tile',
+                                            itemId: context
+                                                .favouriteSetupsAdapter(listen: false)
+                                                .liked![index]["id"]
+                                                ?.toString(),
+                                            index: index,
+                                          ),
+                                        ),
+                                      );
+                                      context.router.push(FavSetupViewRoute(arguments: [index]));
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   )
           : const LoadingSetupCards(),
     );

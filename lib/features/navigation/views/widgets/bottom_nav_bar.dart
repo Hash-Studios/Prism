@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -138,6 +140,28 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
   late Animation<double> _paddingAnimation;
   bool? isLoggedin = false;
   bool imageNotFound = false;
+
+  NavTabValue _tabForIndex(int index) {
+    switch (index) {
+      case 0:
+        return NavTabValue.home;
+      case 1:
+        return NavTabValue.search;
+      case 2:
+        return NavTabValue.setups;
+      case 3:
+        return NavTabValue.ai;
+      case 4:
+        return NavTabValue.profile;
+      default:
+        return NavTabValue.home;
+    }
+  }
+
+  void _trackTabSelection({required int fromIndex, required int toIndex}) {
+    analytics.track(NavTabSelectedEvent(fromTab: _tabForIndex(fromIndex), toTab: _tabForIndex(toIndex)));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -226,6 +250,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isHome) {
                     logger.d("Currently on Home");
                   } else {
+                    _trackTabSelection(fromIndex: activeIndex, toIndex: 0);
                     tabsRouter.setActiveIndex(0);
                   }
                 },
@@ -261,6 +286,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isSearch) {
                     logger.d("Currently on Search");
                   } else {
+                    _trackTabSelection(fromIndex: activeIndex, toIndex: 1);
                     tabsRouter.setActiveIndex(1);
                   }
                 },
@@ -305,6 +331,12 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                       ],
                     ),
                     onPressed: () {
+                      analytics.track(
+                        UploadActionSelectedEvent(
+                          action: AnalyticsActionValue.uploadSheetOpened,
+                          entrypoint: EntryPointValue.bottomNav,
+                        ),
+                      );
                       showGooglePopUp(() {
                         showModalBottomSheet(
                           isScrollControlled: true,
@@ -347,6 +379,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isSetups) {
                     logger.d("Currently on Setups");
                   } else {
+                    _trackTabSelection(fromIndex: activeIndex, toIndex: 2);
                     tabsRouter.setActiveIndex(2);
                   }
                 },
@@ -382,6 +415,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isAI) {
                     logger.d("Currently on AI");
                   } else {
+                    _trackTabSelection(fromIndex: activeIndex, toIndex: 3);
                     tabsRouter.setActiveIndex(3);
                   }
                 },
@@ -438,6 +472,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isProfile) {
                     logger.d("Currently on Profile");
                   } else {
+                    _trackTabSelection(fromIndex: activeIndex, toIndex: 4);
                     tabsRouter.setActiveIndex(4);
                   }
                 },
@@ -522,6 +557,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
+                        analytics.track(
+                          UploadActionSelectedEvent(
+                            action: AnalyticsActionValue.uploadWallpaperSelected,
+                            entrypoint: EntryPointValue.bottomNav,
+                          ),
+                        );
                         if (app_state.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
                           toasts.codeSend(
                             "Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.",
@@ -600,6 +641,12 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     padding: const EdgeInsets.all(8.0),
                     child: GestureDetector(
                       onTap: () async {
+                        analytics.track(
+                          UploadActionSelectedEvent(
+                            action: AnalyticsActionValue.uploadSetupSelected,
+                            entrypoint: EntryPointValue.bottomNav,
+                          ),
+                        );
                         if (!app_state.prismUser.premium) {
                           Navigator.pop(context);
                           await PaywallOrchestrator.instance.present(

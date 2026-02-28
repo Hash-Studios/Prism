@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -101,10 +103,39 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   : Theme.of(context).colorScheme.error,
               onPressed: link == ""
                   ? () {
+                      analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen'));
+                      analytics.track(
+                        const InviteShareResultEvent(
+                          channel: ShareChannelValue.link,
+                          result: EventResultValue.blocked,
+                          reason: AnalyticsReasonValue.notSignedIn,
+                          sourceContext: 'share_prism_screen',
+                        ),
+                      );
                       toasts.error("Sign in to generate unique referral link!");
                     }
                   : () async {
-                      await ShareService.shareText(text: link, context: context);
+                      analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen'));
+                      try {
+                        await ShareService.shareText(text: link, context: context);
+                        analytics.track(
+                          const InviteShareResultEvent(
+                            channel: ShareChannelValue.shareSheet,
+                            result: EventResultValue.success,
+                            sourceContext: 'share_prism_screen',
+                          ),
+                        );
+                      } catch (_) {
+                        analytics.track(
+                          const InviteShareResultEvent(
+                            channel: ShareChannelValue.shareSheet,
+                            result: EventResultValue.failure,
+                            reason: AnalyticsReasonValue.error,
+                            sourceContext: 'share_prism_screen',
+                          ),
+                        );
+                        toasts.error("Unable to share invite right now.");
+                      }
                     },
               child: const Text('SHARE INVITE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
             ),

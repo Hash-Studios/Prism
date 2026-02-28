@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_grid.dart';
@@ -45,6 +49,18 @@ class WallhavenTile extends StatelessWidget {
               onTap: () {
                 if (wData.walls == []) {
                 } else {
+                  unawaited(
+                    analytics.track(
+                      SurfaceActionTappedEvent(
+                        surface: AnalyticsSurfaceValue.homeWallhavenGrid,
+                        action: AnalyticsActionValue.tileOpened,
+                        sourceContext: 'home_wallhaven_grid_tile',
+                        itemType: ItemTypeValue.wallpaper,
+                        itemId: wData.walls[index].id.toString(),
+                        index: index,
+                      ),
+                    ),
+                  );
                   context.router.push(
                     WallpaperRoute(arguments: [widget.provider, index, wData.walls[index].thumbs!["small"].toString()]),
                   );

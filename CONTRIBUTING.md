@@ -10,6 +10,15 @@ We love your input! We want to make contributing to this project as easy and tra
 ## We Develop with Github
 We use github to host code, to track issues and feature requests, as well as accept pull requests.
 
+## Secrets policy
+Runtime secrets are managed in Doppler (project `prism`). Do not rely on local `.env` syncing.
+
+When introducing a new secret, update all three:
+
+1. Doppler config(s) (`dev` and/or `production`)
+2. `.env.example` (reference-only schema)
+3. `lib/env/env.dart` (if the app reads it via `String.fromEnvironment`)
+
 ## We Use [Github Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
 Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
 

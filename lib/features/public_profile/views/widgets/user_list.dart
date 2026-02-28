@@ -1,4 +1,8 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -12,11 +16,27 @@ import 'package:flutter/material.dart';
 class UserList extends StatelessWidget {
   final bool expanded;
   const UserList({required this.expanded});
+
+  void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profileUserList,
+          action: action,
+          sourceContext: sourceContext,
+          itemType: ItemTypeValue.user,
+          itemId: app_state.prismUser.id,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (app_state.prismUser.loggedIn == false) {
       return ListTile(
         onTap: () {
+          _trackAction(AnalyticsActionValue.signInTapped, sourceContext: 'profile_user_list_sign_in');
           final Dialog loaderDialog = Dialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: Container(
@@ -104,6 +124,10 @@ class UserList extends StatelessWidget {
                   ),
                   subtitle: const Text("Remove all favourite wallpapers", style: TextStyle(fontSize: 12)),
                   onTap: () async {
+                    _trackAction(
+                      AnalyticsActionValue.clearFavouriteWallsTapped,
+                      sourceContext: 'profile_user_list_clear_favourite_walls',
+                    );
                     showModal(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -122,6 +146,10 @@ class UserList extends StatelessWidget {
                           MaterialButton(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                             onPressed: () {
+                              _trackAction(
+                                AnalyticsActionValue.clearFavouriteWallsConfirmed,
+                                sourceContext: 'profile_user_list_clear_favourite_walls_confirm',
+                              );
                               Navigator.of(context).pop();
                               toasts.error("Cleared all favourite wallpapers!");
                               context.favouriteWallsAdapter(listen: false).deleteData();
@@ -160,6 +188,10 @@ class UserList extends StatelessWidget {
                   ),
                   subtitle: const Text("Remove all favourite setups", style: TextStyle(fontSize: 12)),
                   onTap: () async {
+                    _trackAction(
+                      AnalyticsActionValue.clearFavouriteSetupsTapped,
+                      sourceContext: 'profile_user_list_clear_favourite_setups',
+                    );
                     showModal(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -178,6 +210,10 @@ class UserList extends StatelessWidget {
                           MaterialButton(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                             onPressed: () {
+                              _trackAction(
+                                AnalyticsActionValue.clearFavouriteSetupsConfirmed,
+                                sourceContext: 'profile_user_list_clear_favourite_setups_confirm',
+                              );
                               Navigator.of(context).pop();
                               toasts.error("Cleared all favourite setups!");
                               context.favouriteSetupsAdapter(listen: false).deleteData();
@@ -216,6 +252,7 @@ class UserList extends StatelessWidget {
                   ),
                   subtitle: Text(app_state.prismUser.email, style: const TextStyle(fontSize: 12)),
                   onTap: () {
+                    _trackAction(AnalyticsActionValue.logoutTapped, sourceContext: 'profile_user_list_logout');
                     app_state.gAuth.signOutGoogle();
                     toasts.codeSend("Log out Successful!");
                     main.RestartWidget.restartApp(context);

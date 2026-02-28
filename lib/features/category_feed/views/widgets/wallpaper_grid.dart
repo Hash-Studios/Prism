@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
@@ -30,13 +34,18 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   int _current = 0;
   bool seeMoreLoader = false;
   int _lastLoggedSubWallsCount = -1;
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   @override
   void initState() {
     super.initState();
+    _contentLoadTracker.start();
   }
 
   Future<void> refreshList() async {
     refreshHomeKey.currentState?.show();
+    _contentLoadTracker.start();
+    _scrollMilestoneTracker.reset();
     logger.i("[WallpaperGrid] manual refresh", fields: <String, Object?>{"provider": widget.provider});
     Data.prismWalls = [];
     Data.subPrismWalls = [];
@@ -83,6 +92,22 @@ class _WallpaperGridState extends State<WallpaperGrid> {
           "provider": widget.provider,
           "items": subWalls.length,
           "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
+        },
+      );
+    }
+    if (subWalls.isNotEmpty) {
+      _contentLoadTracker.success(
+        itemCount: subWalls.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+              result: EventResultValue.success,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'home_wallpaper_grid_initial',
+              itemCount: itemCount,
+            ),
+          );
         },
       );
     }
@@ -137,6 +162,15 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                           margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
                           child: GestureDetector(
                             onTap: () {
+                              unawaited(
+                                analytics.track(
+                                  SurfaceActionTappedEvent(
+                                    surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                                    action: AnalyticsActionValue.bannerTapped,
+                                    sourceContext: 'home_wallpaper_grid_banner',
+                                  ),
+                                ),
+                              );
                               launch(app_state.bannerURL);
                             },
                             child: Container(
@@ -184,6 +218,18 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             if (wall == null) {
                               return;
                             }
+                            unawaited(
+                              analytics.track(
+                                SurfaceActionTappedEvent(
+                                  surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                                  action: AnalyticsActionValue.carouselItemOpened,
+                                  sourceContext: 'home_wallpaper_grid_carousel',
+                                  itemType: ItemTypeValue.wallpaper,
+                                  itemId: wall["id"]?.toString(),
+                                  index: i,
+                                ),
+                              ),
+                            );
                             context.router.push(
                               WallpaperRoute(arguments: [widget.provider, i, wall["wallpaper_thumb"]]),
                             );
@@ -250,6 +296,21 @@ class _WallpaperGridState extends State<WallpaperGrid> {
           onRefresh: refreshList,
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
+              _scrollMilestoneTracker.onScroll(
+                metrics: scrollInfo.metrics,
+                itemCount: subWalls.length,
+                onMilestoneReached: (depth, {required int itemCount}) async {
+                  await analytics.track(
+                    ScrollMilestoneReachedEvent(
+                      surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                      listName: ScrollListNameValue.wallpaperGrid,
+                      depth: depth,
+                      sourceContext: 'home_wallpaper_grid_scroll',
+                      itemCount: itemCount,
+                    ),
+                  );
+                },
+              );
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
                 unawaited(_triggerSeeMore(subWalls));
               }
@@ -290,6 +351,15 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
+                      unawaited(
+                        analytics.track(
+                          SurfaceActionTappedEvent(
+                            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                            action: AnalyticsActionValue.seeMoreTapped,
+                            sourceContext: 'home_wallpaper_grid_see_more',
+                          ),
+                        ),
+                      );
                       unawaited(_triggerSeeMore(subWalls));
                     },
                   );

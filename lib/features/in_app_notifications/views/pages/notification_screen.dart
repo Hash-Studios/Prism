@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
@@ -47,6 +49,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
             tooltip: "Notification Settings",
             icon: const Icon(JamIcons.settings_alt),
             onPressed: () {
+              analytics.track(
+                SettingsActionTappedEvent(
+                  action: AnalyticsActionValue.notificationSettingsOpened,
+                  isSignedIn: app_state.prismUser.loggedIn,
+                  sourceContext: 'notification_screen',
+                ),
+              );
               showModalBottomSheet(
                 isScrollControlled: true,
                 context: context,
@@ -61,6 +70,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ? ListView.builder(
                 itemCount: notifications.length,
                 itemBuilder: (BuildContext context, int index) {
+                  final InAppNotif currentNotification = notifications[index];
                   box.put(
                     box.keys.toList()[index],
                     InAppNotif(
@@ -76,6 +86,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   );
                   return Dismissible(
                     onDismissed: (DismissDirection direction) {
+                      analytics.track(
+                        NotificationItemDismissedEvent(
+                          type: _notificationTypeFor(currentNotification),
+                          dismissMode: DismissModeValue.swipe,
+                        ),
+                      );
                       setState(() {
                         notifications.removeAt(index);
                         box.deleteAt(index);
@@ -97,7 +113,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                     ),
                     key: UniqueKey(),
-                    child: NotificationCard(notification: notifications[index]),
+                    child: NotificationCard(notification: currentNotification),
                   );
                 },
               )
@@ -126,6 +142,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       color: Theme.of(context).hintColor,
                       onPressed: () {
                         Navigator.of(context).pop();
+                        analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
                         setState(() {
                           notifications.clear();
                           box.clear();
@@ -208,6 +225,14 @@ class NotificationCard extends StatelessWidget {
       children: <Widget>[
         InkWell(
           onTap: () {
+            final InAppNotif currentNotification = notification!;
+            analytics.track(
+              NotificationItemOpenedEvent(
+                type: _notificationTypeFor(currentNotification),
+                destination: _destinationFor(currentNotification),
+                hasExternalUrl: (currentNotification.url ?? "").isNotEmpty,
+              ),
+            );
             if (notification!.url == "") {
               if (notification!.pageName != null) {
                 context.router.pushPath(notification!.pageName!);
@@ -258,6 +283,26 @@ class NotificationCard extends StatelessWidget {
       ],
     );
   }
+}
+
+NotificationTypeValue _notificationTypeFor(InAppNotif notification) {
+  if ((notification.url ?? "").isNotEmpty) {
+    return NotificationTypeValue.externalUrl;
+  }
+  if ((notification.pageName ?? "").isNotEmpty) {
+    return NotificationTypeValue.route;
+  }
+  return NotificationTypeValue.unknown;
+}
+
+String _destinationFor(InAppNotif notification) {
+  if ((notification.url ?? "").isNotEmpty) {
+    return notification.url!;
+  }
+  if ((notification.pageName ?? "").isNotEmpty) {
+    return notification.pageName!;
+  }
+  return "";
 }
 
 class NotificationSettingsSheet extends StatefulWidget {
@@ -344,6 +389,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   setState(() {
                     followersSubscriber = value;
                   });
+                  analytics.track(
+                    NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.followers, value: value),
+                  );
                   if (value) {
                     await subscribeToTopicSafely(
                       home.f,
@@ -360,6 +408,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     setState(() {
                       postsSubscriber = value;
                     });
+                    analytics.track(
+                      NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value),
+                    );
                     await unsubscribeFromTopicSafely(
                       home.f,
                       'posts',
@@ -367,6 +418,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     );
                   }
                 } else {
+                  analytics.track(
+                    NotificationActionBlockedEvent(
+                      action: AnalyticsActionValue.notificationSettingsOpened,
+                      reason: AnalyticsReasonValue.notSignedIn,
+                    ),
+                  );
                   toasts.error("Please login to change this setting.");
                 }
               },
@@ -394,6 +451,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                         setState(() {
                           postsSubscriber = value;
                         });
+                        analytics.track(
+                          NotificationPreferenceChangedEvent(
+                            preference: NotificationPreferenceValue.posts,
+                            value: value,
+                          ),
+                        );
                         if (value) {
                           await subscribeToTopicSafely(
                             home.f,
@@ -408,6 +471,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                           );
                         }
                       } else {
+                        analytics.track(
+                          NotificationActionBlockedEvent(
+                            action: AnalyticsActionValue.notificationSettingsOpened,
+                            reason: AnalyticsReasonValue.notSignedIn,
+                          ),
+                        );
                         toasts.error("Please login to change this setting.");
                       }
                     }
@@ -434,6 +503,9 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 setState(() {
                   inappSubscriber = value;
                 });
+                analytics.track(
+                  NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.inApp, value: value),
+                );
               },
             ),
             SwitchListTile(
@@ -454,6 +526,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 setState(() {
                   recommendationsSubscriber = value;
                 });
+                analytics.track(
+                  NotificationPreferenceChangedEvent(
+                    preference: NotificationPreferenceValue.recommendations,
+                    value: value,
+                  ),
+                );
                 if (value) {
                   await subscribeToTopicSafely(
                     home.f,

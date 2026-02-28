@@ -1,3 +1,5 @@
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -76,10 +78,14 @@ class _UserSearchState extends State<UserSearch> {
                   ),
                   onSubmitted: (tex) {
                     if (tex.trim().isNotEmpty) {
+                      final String trimmed = tex.trim();
+                      analytics.track(
+                        UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: 'user_search_textfield'),
+                      );
                       setState(() {
                         isSubmitted = true;
                       });
-                      context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: tex.trim()));
+                      context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: trimmed));
                       return;
                     }
                     context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
@@ -108,15 +114,16 @@ class UserSearchLoader extends StatelessWidget {
         if (state.status == LoadStatus.failure) {
           return const LoadingCards();
         }
-        return UsersResultList(users: state.users);
+        return UsersResultList(users: state.users, queryLength: state.query.trim().length);
       },
     );
   }
 }
 
 class UsersResultList extends StatefulWidget {
-  const UsersResultList({required this.users, super.key});
+  const UsersResultList({required this.users, required this.queryLength, super.key});
   final List<UserSearchUser> users;
+  final int queryLength;
 
   @override
   _UsersResultListState createState() => _UsersResultListState();
@@ -434,6 +441,13 @@ class _UsersResultListState extends State<UsersResultList> {
                       Positioned(
                         child: IconButton(
                           onPressed: () {
+                            analytics.track(
+                              UserSearchResultOpenedEvent(
+                                resultUserId: user.id.trim().isNotEmpty ? user.id : user.email,
+                                index: widget.users.indexOf(user),
+                                queryLength: widget.queryLength,
+                              ),
+                            );
                             context.router.push(ProfileRoute(arguments: [user.email]));
                           },
                           icon: const Icon(JamIcons.user_circle),

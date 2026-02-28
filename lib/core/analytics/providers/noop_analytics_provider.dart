@@ -24,4 +24,7 @@ class NoopAnalyticsProvider implements AnalyticsProvider {
 
   @override
   Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
+
+  @override
+  Future<void> flush() async {}
 }

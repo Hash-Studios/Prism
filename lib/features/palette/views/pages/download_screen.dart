@@ -1,6 +1,10 @@
 import 'dart:collection';
+import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -21,6 +25,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
   bool dataFetched = false;
   Map<dynamic, dynamic> allImageInfo = HashMap();
   List<FileSystemEntity> files = [];
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   ScrollController? controller;
   GlobalKey<RefreshIndicatorState> refreshDownloadKey = GlobalKey<RefreshIndicatorState>();
   @override
@@ -47,6 +52,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   Future<void> readData() async {
+    _contentLoadTracker.start();
     final status = await Permission.storage.status;
     if (!status.isGranted) {
       await Permission.storage.request();
@@ -67,10 +73,38 @@ class _DownloadScreenState extends State<DownloadScreen> {
       setState(() {
         dataFetched = false;
       });
+      _contentLoadTracker.success(
+        itemCount: 0,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.downloadScreen,
+              result: EventResultValue.empty,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'download_screen_read_data',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
     } else {
       setState(() {
         dataFetched = true;
       });
+      _contentLoadTracker.success(
+        itemCount: files.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.downloadScreen,
+              result: EventResultValue.success,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'download_screen_read_data',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
     }
   }
 
@@ -133,6 +167,16 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                               onTap: () {
+                                unawaited(
+                                  analytics.track(
+                                    SurfaceActionTappedEvent(
+                                      surface: AnalyticsSurfaceValue.downloadScreen,
+                                      action: AnalyticsActionValue.openDownloadedWallpaperTapped,
+                                      sourceContext: 'download_screen_open_item',
+                                      itemId: files[index].path,
+                                    ),
+                                  ),
+                                );
                                 context.router.push(DownloadWallpaperRoute(arguments: ["Downloads", files[index]]));
                               },
                             ),

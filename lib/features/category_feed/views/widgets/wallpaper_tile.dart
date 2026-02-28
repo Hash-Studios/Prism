@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_grid.dart';
@@ -58,6 +62,18 @@ class WallpaperTile extends StatelessWidget {
                 if (!hasWall || wallData == null) {
                   return;
                 }
+                unawaited(
+                  analytics.track(
+                    SurfaceActionTappedEvent(
+                      surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                      action: AnalyticsActionValue.tileOpened,
+                      sourceContext: 'home_wallpaper_grid_tile',
+                      itemType: ItemTypeValue.wallpaper,
+                      itemId: wallData["id"]?.toString(),
+                      index: index,
+                    ),
+                  ),
+                );
                 context.router.push(WallpaperRoute(arguments: [widget.provider, index, wallData["wallpaper_thumb"]]));
               },
             ),

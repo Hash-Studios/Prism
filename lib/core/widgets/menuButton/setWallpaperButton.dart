@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -24,7 +25,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
+        );
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -35,7 +38,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
+      );
       logger.d(e.toString());
       toasts.error("Something went wrong!");
       if (mounted) {
@@ -52,7 +57,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -64,7 +71,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
+      );
       logger.d(e.toString());
       toasts.error("Something went wrong!");
       if (mounted) {
@@ -81,7 +90,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.lock);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -94,7 +105,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
+      );
       toasts.error("Something went wrong!");
       if (mounted) {
         setState(() {
@@ -110,7 +123,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.home);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -123,7 +138,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
+      );
       toasts.error("Something went wrong!");
       if (mounted) {
         setState(() {

@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/main.dart' as main;
@@ -21,6 +25,18 @@ class _GeneralListState extends State<GeneralList> {
   int categories = (main.prefs.get('WHcategories') ?? 100) as int;
   int purity = (main.prefs.get('WHpurity') ?? 100) as int;
 
+  void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profileGeneralList,
+          action: action,
+          sourceContext: sourceContext,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
@@ -41,6 +57,7 @@ class _GeneralListState extends State<GeneralList> {
       children: [
         ListTile(
           onTap: () {
+            _trackAction(AnalyticsActionValue.openThemeTapped, sourceContext: 'profile_general_list_theme');
             context.router.push(const ThemeViewRoute());
           },
           leading: const Icon(JamIcons.wrench),
@@ -66,6 +83,7 @@ class _GeneralListState extends State<GeneralList> {
           ),
           subtitle: const Text("Clear locally cached images", style: TextStyle(fontSize: 12)),
           onTap: () async {
+            _trackAction(AnalyticsActionValue.clearCacheTapped, sourceContext: 'profile_general_list_clear_cache');
             DefaultCacheManager().emptyCache();
             PaintingBinding.instance.imageCache.clear();
             await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
@@ -92,6 +110,7 @@ class _GeneralListState extends State<GeneralList> {
               ? const Text("Disable this to hide the followers feed from home page.", style: TextStyle(fontSize: 12))
               : const Text("Enable this to show the followers feed on home page.", style: TextStyle(fontSize: 12)),
           onChanged: (bool value) {
+            unawaited(analytics.track(SettingsToggleChangedEvent(setting: SettingValue.followersFeed, value: value)));
             setState(() {
               followers = value;
             });
@@ -115,6 +134,7 @@ class _GeneralListState extends State<GeneralList> {
               ? const Text("Disable this to hide anime wallpapers", style: TextStyle(fontSize: 12))
               : const Text("Enable this to show anime wallpapers", style: TextStyle(fontSize: 12)),
           onChanged: (bool value) {
+            unawaited(analytics.track(SettingsToggleChangedEvent(setting: SettingValue.animeWallpapers, value: value)));
             if (value == true) {
               setState(() {
                 categories = 111;
@@ -144,6 +164,9 @@ class _GeneralListState extends State<GeneralList> {
               ? const Text("Disable this to hide sketchy wallpapers", style: TextStyle(fontSize: 12))
               : const Text("Enable this to show sketchy wallpapers", style: TextStyle(fontSize: 12)),
           onChanged: (bool value) {
+            unawaited(
+              analytics.track(SettingsToggleChangedEvent(setting: SettingValue.sketchyWallpapers, value: value)),
+            );
             if (value == true) {
               setState(() {
                 purity = 110;
@@ -159,6 +182,7 @@ class _GeneralListState extends State<GeneralList> {
         ),
         ListTile(
           onTap: () {
+            _trackAction(AnalyticsActionValue.restartAppTapped, sourceContext: 'profile_general_list_restart_app');
             main.RestartWidget.restartApp(context);
           },
           leading: const Icon(JamIcons.refresh),

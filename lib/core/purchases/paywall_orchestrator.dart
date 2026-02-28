@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -33,13 +34,12 @@ class PaywallOrchestrator {
   Future<void> present(BuildContext context, {required String placement, required String source}) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
     _logPlacementTriggerContext(placement: normalizedPlacement, source: source);
-    analytics.logEvent(
-      name: 'paywall_impression',
-      parameters: <String, Object>{
-        'source': source,
-        'placement': normalizedPlacement,
-        'rc_or_fallback': _rcPaywallsEnabled ? 'rc_attempt' : 'fallback_only',
-      },
+    analytics.track(
+      PaywallImpressionEvent(
+        source: source,
+        placement: normalizedPlacement,
+        rcOrFallback: _rcPaywallsEnabled ? RcOrFallbackValue.rcAttempt : RcOrFallbackValue.fallbackOnly,
+      ),
     );
 
     bool presentedByRc = false;
@@ -54,9 +54,8 @@ class PaywallOrchestrator {
       return;
     }
     context.router.push(const UpgradeRoute());
-    analytics.logEvent(
-      name: 'paywall_impression',
-      parameters: <String, Object>{'source': source, 'placement': normalizedPlacement, 'rc_or_fallback': 'fallback'},
+    analytics.track(
+      PaywallImpressionEvent(source: source, placement: normalizedPlacement, rcOrFallback: RcOrFallbackValue.fallback),
     );
   }
 
@@ -84,28 +83,16 @@ class PaywallOrchestrator {
   void _logPlacementTriggerContext({required String placement, required String source}) {
     switch (placement) {
       case PaywallPlacement.lowBalance:
-        analytics.logEvent(
-          name: 'subscription_trigger_low_balance',
-          parameters: <String, Object>{'source': source, 'placement': placement},
-        );
+        analytics.track(SubscriptionTriggerLowBalanceEvent(source: source, placement: placement));
         return;
       case PaywallPlacement.afterAdWatch3:
-        analytics.logEvent(
-          name: 'subscription_trigger_after_ad_watch_3',
-          parameters: <String, Object>{'source': source, 'placement': placement},
-        );
+        analytics.track(SubscriptionTriggerAfterAdWatch3Event(source: source, placement: placement));
         return;
       case PaywallPlacement.blockedSetupCreate:
-        analytics.logEvent(
-          name: 'subscription_trigger_setup_create_block',
-          parameters: <String, Object>{'source': source, 'placement': placement},
-        );
+        analytics.track(SubscriptionTriggerSetupCreateBlockEvent(source: source, placement: placement));
         return;
       case PaywallPlacement.uploadLimitReached:
-        analytics.logEvent(
-          name: 'subscription_trigger_upload_limit_block',
-          parameters: <String, Object>{'source': source, 'placement': placement},
-        );
+        analytics.track(SubscriptionTriggerUploadLimitBlockEvent(source: source, placement: placement));
         return;
       default:
         return;
@@ -122,16 +109,15 @@ class PaywallOrchestrator {
       if (v3Offering != null) {
         offering = v3Offering;
         if (placementOffering != null && placementOffering.identifier != PurchaseConstants.offeringV3Default) {
-          analytics.logEvent(
-            name: 'paywall_result',
-            parameters: <String, Object>{
-              'source': source,
-              'placement': placement,
-              'result': 'placement_overridden_to_v3',
-              'placement_offering': placementOffering.identifier,
-              'selected_offering': v3Offering.identifier,
-              'rc_or_fallback': 'rc',
-            },
+          analytics.track(
+            PaywallResultEvent(
+              source: source,
+              placement: placement,
+              result: PaywallResultValue.placementOverriddenToV3,
+              placementOffering: placementOffering.identifier,
+              selectedOffering: v3Offering.identifier,
+              rcOrFallback: RcOrFallbackValue.rc,
+            ),
           );
         }
       } else {
@@ -142,14 +128,13 @@ class PaywallOrchestrator {
             offerings?.current;
       }
       if (offering == null) {
-        analytics.logEvent(
-          name: 'paywall_result',
-          parameters: <String, Object>{
-            'source': source,
-            'placement': placement,
-            'result': 'no_offering',
-            'rc_or_fallback': 'rc',
-          },
+        analytics.track(
+          PaywallResultEvent(
+            source: source,
+            placement: placement,
+            result: PaywallResultValue.noOffering,
+            rcOrFallback: RcOrFallbackValue.rc,
+          ),
         );
         return false;
       }
@@ -163,14 +148,13 @@ class PaywallOrchestrator {
       );
 
       if (paywallResult == PaywallResult.notPresented || paywallResult == PaywallResult.error) {
-        analytics.logEvent(
-          name: 'paywall_result',
-          parameters: <String, Object>{
-            'source': source,
-            'placement': placement,
-            'result': paywallResult.name,
-            'rc_or_fallback': 'rc',
-          },
+        analytics.track(
+          PaywallResultEvent(
+            source: source,
+            placement: placement,
+            result: paywallResultValueFromSdkName(paywallResult.name),
+            rcOrFallback: RcOrFallbackValue.rc,
+          ),
         );
         return false;
       }
@@ -182,28 +166,26 @@ class PaywallOrchestrator {
         _resetAdWatchCounter();
       }
 
-      analytics.logEvent(
-        name: 'paywall_result',
-        parameters: <String, Object>{
-          'source': source,
-          'placement': placement,
-          'result': paywallResult.name,
-          'entitlement_synced': isPremium ? 1 : 0,
-          'entitlement': PurchaseConstants.entitlementV3ProAccess,
-          'rc_or_fallback': 'rc',
-        },
+      analytics.track(
+        PaywallResultEvent(
+          source: source,
+          placement: placement,
+          result: paywallResultValueFromSdkName(paywallResult.name),
+          entitlementSynced: isPremium ? 1 : 0,
+          entitlement: PurchaseConstants.entitlementV3ProAccess,
+          rcOrFallback: RcOrFallbackValue.rc,
+        ),
       );
       return true;
     } catch (error) {
-      analytics.logEvent(
-        name: 'paywall_result',
-        parameters: <String, Object>{
-          'source': source,
-          'placement': placement,
-          'result': 'rc_error',
-          'error': error.toString(),
-          'rc_or_fallback': 'rc',
-        },
+      analytics.track(
+        PaywallResultEvent(
+          source: source,
+          placement: placement,
+          result: PaywallResultValue.rcError,
+          error: error.toString(),
+          rcOrFallback: RcOrFallbackValue.rc,
+        ),
       );
       return false;
     }

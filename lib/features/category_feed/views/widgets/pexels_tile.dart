@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/features/category_feed/views/widgets/pexels_grid.dart';
@@ -45,6 +49,18 @@ class PexelsTile extends StatelessWidget {
               onTap: () {
                 if (PData.wallsP == []) {
                 } else {
+                  unawaited(
+                    analytics.track(
+                      SurfaceActionTappedEvent(
+                        surface: AnalyticsSurfaceValue.homePexelsGrid,
+                        action: AnalyticsActionValue.tileOpened,
+                        sourceContext: 'home_pexels_grid_tile',
+                        itemType: ItemTypeValue.wallpaper,
+                        itemId: PData.wallsP[index].id.toString(),
+                        index: index,
+                      ),
+                    ),
+                  );
                   context.router.push(
                     WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]),
                   );

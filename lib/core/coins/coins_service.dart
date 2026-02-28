@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
@@ -504,14 +505,13 @@ class CoinsService {
         reason: 'ai_generation',
       );
     }
-    analytics.logEvent(
-      name: 'ai_charge_reserved',
-      parameters: <String, Object>{
-        'mode': result.mode.value,
-        'coinsSpent': result.coinsSpent,
-        'balance': app_state.prismUser.coins,
-        'sourceTag': sourceTag,
-      },
+    analytics.track(
+      AiChargeReservedEvent(
+        mode: aiChargeModeValueFromDomain(result.mode),
+        coinsSpent: result.coinsSpent,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+      ),
     );
     return result;
   }
@@ -532,14 +532,13 @@ class CoinsService {
         sourceTag: sourceTag,
         reason: 'ai_generation_failed_refund',
       );
-      analytics.logEvent(
-        name: 'ai_charge_rolled_back',
-        parameters: <String, Object>{
-          'mode': mode.value,
-          'coinsRefunded': CoinPolicy.aiGeneration,
-          'balance': app_state.prismUser.coins,
-          'sourceTag': sourceTag,
-        },
+      analytics.track(
+        AiChargeRolledBackEvent(
+          mode: aiChargeModeValueFromDomain(mode),
+          coinsRefunded: CoinPolicy.aiGeneration,
+          balance: app_state.prismUser.coins,
+          sourceTag: sourceTag,
+        ),
       );
       return refund;
     }
@@ -599,9 +598,12 @@ class CoinsService {
       docId: userId,
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
-    analytics.logEvent(
-      name: 'ai_charge_rolled_back',
-      parameters: <String, Object>{'mode': mode.value, 'balance': app_state.prismUser.coins, 'sourceTag': sourceTag},
+    analytics.track(
+      AiChargeRolledBackEvent(
+        mode: aiChargeModeValueFromDomain(mode),
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+      ),
     );
     return result;
   }
@@ -617,14 +619,13 @@ class CoinsService {
     String? prompt,
     String? stylePreset,
   }) {
-    analytics.logEvent(
-      name: 'ai_charge_committed',
-      parameters: <String, Object>{
-        'mode': mode.value,
-        'coinsSpent': coinsSpent,
-        'balance': app_state.prismUser.coins,
-        'sourceTag': sourceTag,
-      },
+    analytics.track(
+      AiChargeCommittedEvent(
+        mode: aiChargeModeValueFromDomain(mode),
+        coinsSpent: coinsSpent,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+      ),
     );
     if (mode == AiChargeMode.coinSpend) {
       unawaited(
@@ -1619,47 +1620,41 @@ class CoinsService {
   }
 
   void _logEarn({required CoinEarnAction action, required int amount, required String sourceTag, String? reason}) {
-    analytics.logEvent(
-      name: 'coin_earned',
-      parameters: <String, Object>{
-        'action': action.name,
-        'amount': amount,
-        'balance': app_state.prismUser.coins,
-        'sourceTag': sourceTag,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-      },
+    analytics.track(
+      CoinEarnedEvent(
+        action: coinEarnActionValueFromDomain(action),
+        amount: amount,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+        reason: reason != null && reason.isNotEmpty ? reason : null,
+      ),
     );
   }
 
   void _logSpend({required CoinSpendAction action, required int amount, required String sourceTag, String? reason}) {
-    analytics.logEvent(
-      name: 'coin_spent',
-      parameters: <String, Object>{
-        'action': action.name,
-        'amount': amount,
-        'balance': app_state.prismUser.coins,
-        'sourceTag': sourceTag,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-      },
+    analytics.track(
+      CoinSpentEvent(
+        action: coinSpendActionValueFromDomain(action),
+        amount: amount,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+        reason: reason != null && reason.isNotEmpty ? reason : null,
+      ),
     );
   }
 
   void logLowBalanceNudge({required String sourceTag, required int requiredCoins}) {
-    analytics.logEvent(
-      name: 'coin_low_balance_nudge_shown',
-      parameters: <String, Object>{
-        'sourceTag': sourceTag,
-        'requiredCoins': requiredCoins,
-        'balance': app_state.prismUser.coins,
-      },
+    analytics.track(
+      CoinLowBalanceNudgeShownEvent(
+        sourceTag: sourceTag,
+        requiredCoins: requiredCoins,
+        balance: app_state.prismUser.coins,
+      ),
     );
   }
 
   void logWatchAndDownloadUsed({required bool isPremiumContent, required String sourceTag}) {
-    analytics.logEvent(
-      name: 'coin_watch_and_download_used',
-      parameters: <String, Object>{'isPremiumContent': isPremiumContent, 'sourceTag': sourceTag},
-    );
+    analytics.track(CoinWatchAndDownloadUsedEvent(isPremiumContent: isPremiumContent, sourceTag: sourceTag));
   }
 
   void logCoinError({required String sourceTag, required Object error, StackTrace? stackTrace}) {

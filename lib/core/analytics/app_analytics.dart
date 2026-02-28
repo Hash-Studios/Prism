@@ -1,10 +1,11 @@
 import 'package:Prism/core/analytics/analytics_event_normalizer.dart';
 import 'package:Prism/core/analytics/analytics_route_observer.dart';
+import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 import 'package:flutter/widgets.dart';
 
 abstract class AppAnalytics {
-  Future<void> logEvent({required String name, Map<String, Object?>? parameters});
+  Future<void> track(AnalyticsEvent event);
 
   Future<void> logShare({required String contentType, required String itemId, required String method});
 
@@ -15,6 +16,8 @@ abstract class AppAnalytics {
   Future<void> setUserProperty({required String name, String? value});
 
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters});
+
+  Future<void> flush();
 
   List<NavigatorObserver> buildNavigatorObservers();
 }
@@ -32,23 +35,42 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
   late final AnalyticsRouteObserver _routeObserver = AnalyticsRouteObserver(onScreenView: logScreenView);
 
   @override
-  Future<void> logEvent({required String name, Map<String, Object?>? parameters}) {
-    final NormalizedAnalyticsEvent normalized = _normalizer.normalizeEvent(name: name, parameters: parameters);
+  Future<void> track(AnalyticsEvent event) {
+    if (event is ShareAnalyticsEvent) {
+      return _provider.logShare(
+        contentType: _nonEmpty(event.contentType, fallback: 'unknown_content'),
+        itemId: _nonEmpty(event.itemId, fallback: 'unknown_item'),
+        method: _nonEmpty(event.method, fallback: 'unknown_method'),
+      );
+    }
+
+    if (event is LoginAnalyticsEvent) {
+      return _provider.logLogin(loginMethod: _nonEmptyOrNull(event.loginMethod));
+    }
+
+    if (event is ScreenViewAnalyticsEvent) {
+      return _provider.logScreenView(
+        screenName: _normalizer.normalizeScreenName(event.screenName),
+        screenClass: _nonEmptyOrNull(event.screenClass),
+        parameters: _normalizer.normalizeParameters(event.parameters),
+      );
+    }
+
+    final NormalizedAnalyticsEvent normalized = _normalizer.normalizeEvent(
+      name: event.eventName,
+      parameters: event.toWireParameters(),
+    );
     return _provider.logEvent(name: normalized.name, parameters: normalized.parameters);
   }
 
   @override
   Future<void> logShare({required String contentType, required String itemId, required String method}) {
-    return _provider.logShare(
-      contentType: _nonEmpty(contentType, fallback: 'unknown_content'),
-      itemId: _nonEmpty(itemId, fallback: 'unknown_item'),
-      method: _nonEmpty(method, fallback: 'unknown_method'),
-    );
+    return track(ShareAnalyticsEvent(contentType: contentType, itemId: itemId, method: method));
   }
 
   @override
   Future<void> logLogin({String? loginMethod}) {
-    return _provider.logLogin(loginMethod: _nonEmptyOrNull(loginMethod));
+    return track(LoginAnalyticsEvent(loginMethod: loginMethod));
   }
 
   @override
@@ -67,11 +89,12 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters}) {
-    return _provider.logScreenView(
-      screenName: _normalizer.normalizeScreenName(screenName),
-      screenClass: _nonEmptyOrNull(screenClass),
-      parameters: _normalizer.normalizeParameters(parameters),
-    );
+    return track(ScreenViewAnalyticsEvent(screenName: screenName, screenClass: screenClass, parameters: parameters));
+  }
+
+  @override
+  Future<void> flush() {
+    return _provider.flush();
   }
 
   @override
@@ -106,7 +129,7 @@ class NoopAppAnalytics implements AppAnalytics {
   List<NavigatorObserver> buildNavigatorObservers() => const <NavigatorObserver>[];
 
   @override
-  Future<void> logEvent({required String name, Map<String, Object?>? parameters}) async {}
+  Future<void> track(AnalyticsEvent event) async {}
 
   @override
   Future<void> logLogin({String? loginMethod}) async {}
@@ -126,4 +149,7 @@ class NoopAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
+
+  @override
+  Future<void> flush() async {}
 }

@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -18,10 +22,27 @@ class DownloadWallpaperScreen extends StatefulWidget {
 }
 
 class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? provider;
   late File file;
+
+  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_download_wallpaper_screen';
+
+  void _trackAction(AnalyticsActionValue action) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.downloadWallpaperScreen,
+          action: action,
+          sourceContext: _sourceContext,
+          itemType: ItemTypeValue.wallpaper,
+          itemId: file.path,
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -29,6 +50,21 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
     super.initState();
     provider = widget.arguments![0] as String;
     file = widget.arguments![1] as File;
+    _contentLoadTracker.start();
+    _contentLoadTracker.success(
+      itemCount: 1,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.downloadWallpaperScreen,
+            result: EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: _sourceContext,
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -59,10 +95,12 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               }
               return GestureDetector(
                 onLongPress: () {
+                  _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                   HapticFeedback.vibrate();
                   shakeController.forward(from: 0.0);
                 },
                 onTap: () {
+                  _trackAction(AnalyticsActionValue.paletteCycleTapped);
                   HapticFeedback.vibrate();
                   shakeController.forward(from: 0.0);
                 },
@@ -94,6 +132,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
               child: IconButton(
                 onPressed: () {
+                  _trackAction(AnalyticsActionValue.backTapped);
                   Navigator.pop(context);
                 },
                 color: Theme.of(context).colorScheme.secondary,
@@ -107,6 +146,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
               child: IconButton(
                 onPressed: () {
+                  _trackAction(AnalyticsActionValue.clockOverlayOpened);
                   final link = file.path;
                   Navigator.push(
                     context,

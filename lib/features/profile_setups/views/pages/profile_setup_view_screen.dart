@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -74,7 +75,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
       isLoading = true;
     });
     context.favouriteSetupsAdapter(listen: false).favCheck(id, setupMap).then((value) {
-      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {'id': id});
+      analytics.track(SetupFavStatusChangedEvent(setupId: id));
       setState(() {
         isLoading = false;
       });
@@ -1223,7 +1224,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                     try {
                       final result = await PrismMediaHostApi().saveMedia(request);
                       if (result.success) {
-                        analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                        analytics.track(DownloadOwnSetupEvent(link: link));
                         toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
                       } else {
                         toasts.error("Couldn't download! Please Retry!");

@@ -7,6 +7,31 @@ import 'package:github/github.dart';
 String jsonFile = 'dummy.json';
 
 final Codec<String, String> _stringToBase64 = utf8.fuse(base64);
+bool _didLogGitHubConfigSnapshot = false;
+
+String _normalizedEnvValue(String raw) {
+  final String trimmed = raw.trim();
+  if (trimmed.length >= 2) {
+    final bool doubleQuoted = trimmed.startsWith('"') && trimmed.endsWith('"');
+    final bool singleQuoted = trimmed.startsWith("'") && trimmed.endsWith("'");
+    if (doubleQuoted || singleQuoted) {
+      return trimmed.substring(1, trimmed.length - 1).trim();
+    }
+  }
+  return trimmed;
+}
+
+Map<String, Object?> _githubConfigSnapshot() {
+  final String token = _normalizedEnvValue(Env.ghToken);
+  final String user = _normalizedEnvValue(Env.ghUserName);
+  final String repo = _normalizedEnvValue(Env.ghRepoData);
+  return <String, Object?>{
+    'gh_token_present': token.isNotEmpty,
+    'gh_token_length': token.length,
+    'gh_username_present': user.isNotEmpty,
+    'gh_repo_data_present': repo.isNotEmpty,
+  };
+}
 
 class _RepoSnapshot {
   _RepoSnapshot({required this.repoContents, required this.jsonMap});
@@ -16,7 +41,11 @@ class _RepoSnapshot {
 }
 
 GitHub _buildGitHubClient() {
-  final String trimmedToken = Env.ghToken.trim();
+  final String trimmedToken = _normalizedEnvValue(Env.ghToken);
+  if (!_didLogGitHubConfigSnapshot) {
+    _didLogGitHubConfigSnapshot = true;
+    logger.i('Informatics GitHub env snapshot.', tag: 'Informatics', fields: _githubConfigSnapshot());
+  }
   if (trimmedToken.isEmpty) {
     return GitHub();
   }
@@ -34,6 +63,7 @@ void _logGitHubError({required String action, required Object error, required St
       tag: 'Informatics',
       error: error,
       stackTrace: stackTrace,
+      fields: _githubConfigSnapshot(),
     );
     return;
   }
@@ -43,7 +73,7 @@ void _logGitHubError({required String action, required Object error, required St
 Future<_RepoSnapshot?> _loadRepoSnapshot(GitHub github, {required String action}) async {
   try {
     final RepositoryContents repoContents = await github.repositories.getContents(
-      RepositorySlug(Env.ghUserName, Env.ghRepoData),
+      RepositorySlug(_normalizedEnvValue(Env.ghUserName), _normalizedEnvValue(Env.ghRepoData)),
       jsonFile,
     );
     final String? encodedContent = repoContents.file?.content;
@@ -109,7 +139,7 @@ Future<void> _incrementCounter(String section, String field, String id) async {
     }
 
     await github.repositories.updateFile(
-      RepositorySlug(Env.ghUserName, Env.ghRepoData),
+      RepositorySlug(_normalizedEnvValue(Env.ghUserName), _normalizedEnvValue(Env.ghRepoData)),
       jsonFile,
       'Updated $field for $id',
       _stringToBase64.encode(json.encode(snapshot.jsonMap)),

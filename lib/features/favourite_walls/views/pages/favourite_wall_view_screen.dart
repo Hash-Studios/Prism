@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -34,6 +38,7 @@ class FavWallpaperViewScreen extends StatefulWidget {
 
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late int index;
   late String thumb;
   bool isLoading = true;
@@ -51,16 +56,54 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
   bool panelCollapsed = true;
   Future<String>? _futureView;
 
+  String get _sourceContext => 'favourite_wallpaper_view';
+
+  String? get _itemId => context.favouriteWallsAdapter(listen: false).liked?[index]["id"]?.toString();
+
+  void _trackAction(AnalyticsActionValue action) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.favouriteWallpaperView,
+          action: action,
+          sourceContext: _sourceContext,
+          itemType: ItemTypeValue.wallpaper,
+          itemId: _itemId,
+          index: index,
+        ),
+      ),
+    );
+  }
+
   Future<void> _updatePaletteGenerator() async {
+    _contentLoadTracker.start();
     setState(() {
       isLoading = true;
     });
-    await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
-      paletteGenerator = await PaletteGenerator.fromImageProvider(
-        CachedNetworkImageProvider(thumb),
-        maximumColorCount: 20,
+    try {
+      await Future.delayed(const Duration(milliseconds: 500)).then((value) async {
+        paletteGenerator = await PaletteGenerator.fromImageProvider(
+          CachedNetworkImageProvider(thumb),
+          maximumColorCount: 20,
+        );
+      });
+    } catch (_) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.favouriteWallpaperView,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: _sourceContext,
+              reason: reason,
+            ),
+          );
+        },
       );
-    });
+      rethrow;
+    }
     setState(() {
       isLoading = false;
     });
@@ -71,6 +114,20 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
     setState(() {
       accent = colors![0];
     });
+    _contentLoadTracker.success(
+      itemCount: colors?.length,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.favouriteWallpaperView,
+            result: EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: _sourceContext,
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
     if (accent!.computeLuminance() > 0.5) {
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
@@ -101,6 +158,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
         );
       }
     }
+    _trackAction(AnalyticsActionValue.paletteCycleTapped);
   }
 
   @override
@@ -109,6 +167,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
     index = widget.arguments![0] as int;
     thumb = widget.arguments![1] as String;
     isLoading = true;
+    _contentLoadTracker.start();
     if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism") {
       updateViews(context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().toUpperCase());
       _futureView = getViews(context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().toUpperCase());
@@ -140,6 +199,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
             backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
             body: SlidingUpPanel(
               onPanelOpened: () {
+                _trackAction(AnalyticsActionValue.panelOpened);
                 setState(() {
                   panelCollapsed = false;
                 });
@@ -179,6 +239,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                 }
               },
               onPanelClosed: () {
+                _trackAction(AnalyticsActionValue.panelClosed);
                 setState(() {
                   panelCollapsed = true;
                 });
@@ -224,6 +285,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
                                   onTap: () {
+                                    _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                     panelController.close();
                                   },
                                   child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -778,6 +840,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           }
                         },
                         onLongPress: () {
+                          _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                           setState(() {
                             colorChanged = false;
                           });
@@ -839,6 +902,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.backTapped);
                           Navigator.pop(context);
                         },
                         color: isLoading
@@ -856,6 +920,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.clockOverlayOpened);
                           final link = context.favouriteWallsAdapter(listen: false).liked![index]["url"];
                           Navigator.push(
                             context,
@@ -895,6 +960,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
             backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
             body: SlidingUpPanel(
               onPanelOpened: () {
+                _trackAction(AnalyticsActionValue.panelOpened);
                 setState(() {
                   panelCollapsed = false;
                 });
@@ -934,6 +1000,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                 }
               },
               onPanelClosed: () {
+                _trackAction(AnalyticsActionValue.panelClosed);
                 setState(() {
                   panelCollapsed = true;
                 });
@@ -979,6 +1046,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                 opacity: panelCollapsed ? 0.0 : 1.0,
                                 child: GestureDetector(
                                   onTap: () {
+                                    _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                     panelController.close();
                                   },
                                   child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
@@ -1291,6 +1359,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           }
                         },
                         onLongPress: () {
+                          _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                           setState(() {
                             colorChanged = false;
                           });
@@ -1388,6 +1457,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.backTapped);
                           Navigator.pop(context);
                         },
                         color: isLoading
@@ -1405,6 +1475,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                       padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                       child: IconButton(
                         onPressed: () {
+                          _trackAction(AnalyticsActionValue.clockOverlayOpened);
                           final link =
                               "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.${context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().substring(context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length - 3, context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length)}";
                           Navigator.push(

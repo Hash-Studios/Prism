@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
@@ -21,6 +24,20 @@ import 'package:hive_io/hive_io.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
+  void _trackDrawerAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profileDrawer,
+          action: action,
+          sourceContext: sourceContext,
+          itemType: ItemTypeValue.user,
+          itemId: app_state.prismUser.id,
+        ),
+      ),
+    );
+  }
+
   Widget createDrawerHeader(BuildContext context) {
     return SizedBox(
       height: 150,
@@ -129,6 +146,10 @@ class ProfileDrawer extends StatelessWidget {
                 icon: JamIcons.coin,
                 text: 'Buy Premium',
                 onTap: () {
+                  _trackDrawerAction(
+                    AnalyticsActionValue.drawerBuyPremiumTapped,
+                    sourceContext: 'profile_drawer_buy_premium',
+                  );
                   Navigator.pop(context);
                   PaywallOrchestrator.instance.present(
                     context,
@@ -144,6 +165,10 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.picture,
               text: 'Wallpapers',
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerFavWallsTapped,
+                  sourceContext: 'profile_drawer_fav_walls',
+                );
                 Navigator.pop(context);
                 context.router.push(const FavouriteWallpaperRoute());
               },
@@ -153,6 +178,10 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.instant_picture,
               text: 'Setups',
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerFavSetupsTapped,
+                  sourceContext: 'profile_drawer_fav_setups',
+                );
                 Navigator.pop(context);
                 context.router.push(const FavouriteSetupRoute());
               },
@@ -164,6 +193,10 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.download,
               text: 'Downloaded Walls',
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerDownloadsTapped,
+                  sourceContext: 'profile_drawer_downloads',
+                );
                 Navigator.pop(context);
                 context.router.push(const DownloadRoute());
               },
@@ -173,6 +206,10 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.trash_alt,
               text: 'Clear all Downloads',
               onTap: () async {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerClearDownloadsTapped,
+                  sourceContext: 'profile_drawer_clear_downloads',
+                );
                 Navigator.pop(context);
                 showModal(
                   context: context,
@@ -192,6 +229,10 @@ class ProfileDrawer extends StatelessWidget {
                       MaterialButton(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
                         onPressed: () async {
+                          _trackDrawerAction(
+                            AnalyticsActionValue.drawerClearDownloadsConfirmed,
+                            sourceContext: 'profile_drawer_clear_downloads_confirm',
+                          );
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
                           final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
@@ -258,6 +299,10 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.check,
               text: 'Review Status',
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerReviewStatusTapped,
+                  sourceContext: 'profile_drawer_review_status',
+                );
                 Navigator.pop(context);
                 context.router.push(const ReviewRoute());
               },
@@ -279,6 +324,7 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.wrench,
               text: 'Themes',
               onTap: () {
+                _trackDrawerAction(AnalyticsActionValue.openThemeTapped, sourceContext: 'profile_drawer_themes');
                 Navigator.pop(context);
                 context.router.push(const ThemeViewRoute());
               },
@@ -291,6 +337,10 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Share your Profile',
               context: context,
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerSharePrismTapped,
+                  sourceContext: 'profile_drawer_share_profile',
+                );
                 createUserDynamicLink(
                   app_state.prismUser.name,
                   app_state.prismUser.username,
@@ -305,6 +355,7 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.log_out,
               text: 'Log out',
               onTap: () {
+                _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
                 Navigator.pop(context);
                 app_state.gAuth.signOutGoogle();
                 toasts.codeSend("Log out Successful!");
@@ -318,6 +369,7 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.pie_chart_alt,
               text: 'Clear cache',
               onTap: () async {
+                _trackDrawerAction(AnalyticsActionValue.clearCacheTapped, sourceContext: 'profile_drawer_clear_cache');
                 Navigator.pop(context);
                 DefaultCacheManager().emptyCache();
                 PaintingBinding.instance.imageCache.clear();
@@ -334,6 +386,10 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.cog,
               text: 'Settings',
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.notificationSettingsOpened,
+                  sourceContext: 'profile_drawer_settings',
+                );
                 Navigator.pop(context);
                 context.router.push(const SettingsRoute());
               },
@@ -343,6 +399,7 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.info,
               text: 'About Prism',
               onTap: () {
+                _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
                 Navigator.pop(context);
                 context.router.push(const AboutRoute());
               },
@@ -355,6 +412,10 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Report a bug',
               context: context,
               onTap: () async {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerContactSupportTapped,
+                  sourceContext: 'profile_drawer_report_bug',
+                );
                 if (Platform.isAndroid) {
                   final androidInfo = await DeviceInfoPlugin().androidInfo;
                   final release = androidInfo.version.release;
@@ -401,6 +462,10 @@ class ProfileDrawer extends StatelessWidget {
                 icon: JamIcons.coin,
                 text: 'Enter Code',
                 onTap: () {
+                  _trackDrawerAction(
+                    AnalyticsActionValue.drawerEnterCodeTapped,
+                    sourceContext: 'profile_drawer_enter_code',
+                  );
                   Navigator.pop(context);
                   showModalBottomSheet(
                     isScrollControlled: true,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -521,13 +522,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         await PrismMediaHostApi().enqueueDownload(request);
       }
 
-      analytics.logEvent(
-        name: 'download_wallpaper',
-        parameters: <String, Object>{
-          'link': link,
-          'sourceContext': widget.sourceContext ?? '',
-          'premiumContent': widget.isPremiumContent,
-        },
+      analytics.track(
+        DownloadWallpaperEvent(
+          link: link,
+          sourceContext: (widget.sourceContext ?? '').trim().isEmpty ? null : widget.sourceContext,
+          premiumContent: widget.isPremiumContent,
+        ),
       );
       toasts.codeSend('Wall downloaded in Pictures/Prism!');
       return true;

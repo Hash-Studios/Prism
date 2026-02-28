@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -45,6 +49,7 @@ class ShareWallpaperViewScreen extends StatefulWidget {
 
 class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   String? id;
   String? provider;
   String? url;
@@ -65,12 +70,47 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   bool panelCollapsed = true;
   Future<String>? _futureView;
 
+  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_share_wallpaper_view';
+
+  void _trackAction(AnalyticsActionValue action, {int? index}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.shareWallpaperView,
+          action: action,
+          sourceContext: _sourceContext,
+          itemType: ItemTypeValue.wallpaper,
+          itemId: id,
+          index: index,
+        ),
+      ),
+    );
+  }
+
   void _updatePaletteGenerator() {
+    _contentLoadTracker.start();
     context.read<PaletteBloc>().add(PaletteEvent.paletteRequested(imageUrl: thumb));
   }
 
   void _applyPaletteState(PaletteState state) {
     if (!mounted) return;
+    if (state.status == LoadStatus.failure) {
+      _contentLoadTracker.failure(
+        reason: AnalyticsReasonValue.error,
+        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.shareWallpaperView,
+              result: EventResultValue.failure,
+              loadTimeMs: loadTimeMs,
+              sourceContext: _sourceContext,
+              reason: reason,
+            ),
+          );
+        },
+      );
+      return;
+    }
     if (state.status != LoadStatus.success || state.palette.paletteColorValues.isEmpty) {
       return;
     }
@@ -82,6 +122,21 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
       colors = limitedColors;
       accent = limitedColors[0];
     });
+
+    _contentLoadTracker.success(
+      itemCount: limitedColors.length,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.shareWallpaperView,
+            result: EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: _sourceContext,
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
 
     Future.delayed(const Duration(milliseconds: 500)).then((_) {
       if (!mounted || accent == null) return;
@@ -112,6 +167,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
       });
       _setStatusBarIconBrightness(accent!);
     }
+    _trackAction(AnalyticsActionValue.paletteCycleTapped);
   }
 
   @override
@@ -121,6 +177,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
     provider = widget.arguments![1].toString();
     url = widget.arguments![2].toString();
     thumb = widget.arguments![3].toString();
+    _contentLoadTracker.start();
     if (provider == "WallHaven") {
       futureW = WData.getWallbyID(id!);
     } else if (provider == "Pexels") {
@@ -160,6 +217,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -199,6 +257,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -252,6 +311,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                         opacity: panelCollapsed ? 0.0 : 1.0,
                                         child: GestureDetector(
                                           onTap: () {
+                                            _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                             panelController.close();
                                           },
                                           child: Icon(
@@ -465,6 +525,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -526,6 +587,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -543,6 +605,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = url;
                             Navigator.push(
                               context,
@@ -583,6 +646,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -622,6 +686,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -675,6 +740,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                         opacity: panelCollapsed ? 0.0 : 1.0,
                                         child: GestureDetector(
                                           onTap: () {
+                                            _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                             panelController.close();
                                           },
                                           child: Icon(
@@ -992,6 +1058,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -1053,6 +1120,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -1070,6 +1138,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = url;
                             Navigator.push(
                               context,
@@ -1110,6 +1179,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
               body: SlidingUpPanel(
                 onPanelOpened: () {
+                  _trackAction(AnalyticsActionValue.panelOpened);
                   setState(() {
                     panelCollapsed = false;
                   });
@@ -1149,6 +1219,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                   }
                 },
                 onPanelClosed: () {
+                  _trackAction(AnalyticsActionValue.panelClosed);
                   setState(() {
                     panelCollapsed = true;
                   });
@@ -1202,6 +1273,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                         opacity: panelCollapsed ? 0.0 : 1.0,
                                         child: GestureDetector(
                                           onTap: () {
+                                            _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                             panelController.close();
                                           },
                                           child: Icon(
@@ -1413,6 +1485,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             }
                           },
                           onLongPress: () {
+                            _trackAction(AnalyticsActionValue.paletteResetLongPressed);
                             setState(() {
                               colorChanged = false;
                             });
@@ -1474,6 +1547,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped);
                             Navigator.pop(context);
                           },
                           color: paletteLoading
@@ -1491,6 +1565,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                         padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                         child: IconButton(
                           onPressed: () {
+                            _trackAction(AnalyticsActionValue.clockOverlayOpened);
                             final link = url;
                             Navigator.push(
                               context,
