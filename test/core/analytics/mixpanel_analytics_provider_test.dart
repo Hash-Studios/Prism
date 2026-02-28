@@ -12,6 +12,7 @@ class _FakeMixpanelClient implements MixpanelClient {
   final List<_TrackCall> tracks = <_TrackCall>[];
   final List<String> identifiedUsers = <String>[];
   int resetCount = 0;
+  int flushCount = 0;
   final Map<String, Object> userProperties = <String, Object>{};
 
   @override
@@ -27,6 +28,11 @@ class _FakeMixpanelClient implements MixpanelClient {
   @override
   void setUserProperty({required String name, required Object value}) {
     userProperties[name] = value;
+  }
+
+  @override
+  Future<void> flush() async {
+    flushCount += 1;
   }
 
   @override
@@ -98,6 +104,15 @@ void main() {
       await provider.setUserProperty(name: 'is_premium');
 
       expect(client.userProperties, <String, Object>{'subscription_tier': 'pro'});
+    });
+
+    test('flush delegates to mixpanel client flush', () async {
+      final _FakeMixpanelClient client = _FakeMixpanelClient();
+      final MixpanelAnalyticsProvider provider = MixpanelAnalyticsProvider.forClient(client);
+
+      await provider.flush();
+
+      expect(client.flushCount, 1);
     });
   });
 }

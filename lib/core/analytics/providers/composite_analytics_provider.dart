@@ -54,6 +54,11 @@ class CompositeAnalyticsProvider implements AnalyticsProvider {
     );
   }
 
+  @override
+  Future<void> flush() {
+    return _fanOut((AnalyticsProvider provider) => provider.flush(), operation: 'flush');
+  }
+
   Future<void> _fanOut(Future<void> Function(AnalyticsProvider provider) dispatch, {required String operation}) async {
     for (final AnalyticsProvider provider in _providers) {
       try {

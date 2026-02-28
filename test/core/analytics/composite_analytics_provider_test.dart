@@ -46,6 +46,11 @@ class _RecordingProvider implements AnalyticsProvider {
   Future<void> logShare({required String contentType, required String itemId, required String method}) async {
     calls.add('log_share');
   }
+
+  @override
+  Future<void> flush() async {
+    calls.add('flush');
+  }
 }
 
 class _ThrowingProvider implements AnalyticsProvider {
@@ -72,6 +77,9 @@ class _ThrowingProvider implements AnalyticsProvider {
   @override
   Future<void> logShare({required String contentType, required String itemId, required String method}) =>
       Future<void>.error(StateError('boom'));
+
+  @override
+  Future<void> flush() => Future<void>.error(StateError('boom'));
 }
 
 void main() {
@@ -103,6 +111,7 @@ void main() {
       screenClass: 'HomeRoute',
       parameters: <String, Object>{'from_push': 1},
     );
+    await provider.flush();
 
     expect(first.calls, <String>[
       'log_event',
@@ -111,6 +120,7 @@ void main() {
       'set_user_id',
       'set_user_property',
       'log_screen_view',
+      'flush',
     ]);
     expect(second.calls, <String>[
       'log_event',
@@ -119,6 +129,7 @@ void main() {
       'set_user_id',
       'set_user_property',
       'log_screen_view',
+      'flush',
     ]);
     expect(first.userIds.single, 'u_1');
     expect(first.userProperties['subscription_tier'], 'pro');

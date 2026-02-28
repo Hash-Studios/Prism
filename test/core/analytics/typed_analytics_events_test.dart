@@ -14,6 +14,7 @@ class _RecordingProvider implements AnalyticsProvider {
   String? lastScreenName;
   String? lastScreenClass;
   Map<String, Object>? lastScreenParams;
+  int flushCount = 0;
 
   @override
   Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) async {
@@ -49,6 +50,11 @@ class _RecordingProvider implements AnalyticsProvider {
 
   @override
   Future<void> setUserProperty({required String name, String? value}) async {}
+
+  @override
+  Future<void> flush() async {
+    flushCount += 1;
+  }
 }
 
 void main() {
@@ -196,6 +202,15 @@ void main() {
       expect(provider.lastLoginMethod, 'google');
       expect(provider.lastScreenName, 'home_feed');
       expect(provider.lastScreenClass, 'HomeRoute');
+    });
+
+    test('flush delegates to provider', () async {
+      final _RecordingProvider provider = _RecordingProvider();
+      final ProviderBackedAppAnalytics analytics = ProviderBackedAppAnalytics(provider: provider);
+
+      await analytics.flush();
+
+      expect(provider.flushCount, 1);
     });
   });
 }

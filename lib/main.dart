@@ -687,11 +687,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      return;
+    }
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      unawaited(analytics.flush());
     }
   }
 
   @override
   void dispose() {
+    unawaited(analytics.flush());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

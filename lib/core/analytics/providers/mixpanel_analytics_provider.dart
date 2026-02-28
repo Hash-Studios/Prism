@@ -10,6 +10,8 @@ abstract class MixpanelClient {
   void reset();
 
   void setUserProperty({required String name, required Object value});
+
+  Future<void> flush();
 }
 
 class MixpanelFlutterClient implements MixpanelClient {
@@ -36,6 +38,11 @@ class MixpanelFlutterClient implements MixpanelClient {
   void setUserProperty({required String name, required Object value}) {
     _mixpanel.registerSuperProperties(<String, Object>{name: value});
     _mixpanel.getPeople().set(name, value);
+  }
+
+  @override
+  Future<void> flush() {
+    return _mixpanel.flush();
   }
 }
 
@@ -111,5 +118,10 @@ class MixpanelAnalyticsProvider implements AnalyticsProvider {
       ...parameters,
     };
     _client.track('screen_view', properties: properties);
+  }
+
+  @override
+  Future<void> flush() {
+    return _client.flush();
   }
 }

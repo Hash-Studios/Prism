@@ -29,6 +29,10 @@ class AnalyticsFacade {
     return AnalyticsRuntime.instance.setUserProperty(name: name, value: value);
   }
 
+  Future<void> flush() {
+    return AnalyticsRuntime.instance.flush();
+  }
+
   @Deprecated('Use analytics.track(...) with generated AnalyticsEvent types.')
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters}) {
     return AnalyticsRuntime.instance.logScreenView(

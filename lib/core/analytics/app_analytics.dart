@@ -17,6 +17,8 @@ abstract class AppAnalytics {
 
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters});
 
+  Future<void> flush();
+
   List<NavigatorObserver> buildNavigatorObservers();
 }
 
@@ -91,6 +93,11 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
   }
 
   @override
+  Future<void> flush() {
+    return _provider.flush();
+  }
+
+  @override
   List<NavigatorObserver> buildNavigatorObservers() {
     return <NavigatorObserver>[_routeObserver];
   }
@@ -142,4 +149,7 @@ class NoopAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
+
+  @override
+  Future<void> flush() async {}
 }
