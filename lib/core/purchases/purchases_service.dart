@@ -48,10 +48,12 @@ class PurchasesService {
   };
 
   static String _resolveApiKey() {
-    const String fallbackApiKey = Env.rcApiKey;
-    if (Platform.isIOS) return Env.rcIosApiKey.isNotEmpty ? Env.rcIosApiKey : fallbackApiKey;
-    if (Platform.isAndroid) return Env.rcAndroidApiKey.isNotEmpty ? Env.rcAndroidApiKey : fallbackApiKey;
-    return Env.rcAndroidApiKey.isNotEmpty ? Env.rcAndroidApiKey : fallbackApiKey;
+    final String fallbackApiKey = Env.normalize(Env.rcApiKey);
+    final String iosKey = Env.normalize(Env.rcIosApiKey);
+    final String androidKey = Env.normalize(Env.rcAndroidApiKey);
+    if (Platform.isIOS) return iosKey.isNotEmpty ? iosKey : fallbackApiKey;
+    if (Platform.isAndroid) return androidKey.isNotEmpty ? androidKey : fallbackApiKey;
+    return androidKey.isNotEmpty ? androidKey : fallbackApiKey;
   }
 
   /// Ensures RevenueCat is configured and logged in as the given user.

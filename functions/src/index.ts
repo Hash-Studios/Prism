@@ -1,0 +1,1 @@
+export { wallOfTheDay } from "./wallOfTheDay";

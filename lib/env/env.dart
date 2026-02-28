@@ -1,6 +1,17 @@
 class Env {
   const Env._();
 
+  /// Strips surrounding single or double quotes that Doppler can inject into
+  /// dart-define values (e.g. `"https://..."` → `https://...`).
+  static String normalize(String raw) {
+    String value = raw.trim();
+    while (value.length >= 2 &&
+        ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+      value = value.substring(1, value.length - 1).trim();
+    }
+    return value;
+  }
+
   // GitHub
   static const String ghToken = String.fromEnvironment('GH_TOKEN');
   static const String ghUserName = String.fromEnvironment('GH_USERNAME');

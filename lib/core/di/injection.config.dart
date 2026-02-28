@@ -156,6 +156,14 @@ import '../../features/user_search/domain/repositories/user_search_repository.da
     as _i204;
 import '../../features/user_search/domain/usecases/search_users_usecase.dart'
     as _i750;
+import '../../features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart'
+    as _i_wotd_bloc;
+import '../../features/wall_of_the_day/data/repositories/wall_of_the_day_repository_impl.dart'
+    as _i_wotd_repo_impl;
+import '../../features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart'
+    as _i_wotd_repo;
+import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart'
+    as _i_wotd_usecase;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
@@ -572,6 +580,19 @@ _i174.GetIt initGetIt(
       gh<_i410.CheckConnectionUseCase>(),
       gh<_i410.WatchConnectionUseCase>(),
     ),
+  );
+  gh.lazySingleton<_i_wotd_repo.WallOfTheDayRepository>(
+    () => _i_wotd_repo_impl.WallOfTheDayRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+    ),
+  );
+  gh.lazySingleton<_i_wotd_usecase.FetchWallOfTheDayUseCase>(
+    () => _i_wotd_usecase.FetchWallOfTheDayUseCase(
+      gh<_i_wotd_repo.WallOfTheDayRepository>(),
+    ),
+  );
+  gh.factory<_i_wotd_bloc.WotdBloc>(
+    () => _i_wotd_bloc.WotdBloc(gh<_i_wotd_usecase.FetchWallOfTheDayUseCase>()),
   );
   return getIt;
 }

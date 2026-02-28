@@ -375,7 +375,7 @@ class FollowHeaderCard extends StatelessWidget {
                                   Uri.parse('https://fcm.googleapis.com/fcm/send'),
                                   headers: <String, String>{
                                     'Content-Type': 'application/json',
-                                    'Authorization': 'key=${Env.fcmServerKey}',
+                                    'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
                                   },
                                   body: jsonEncode(<String, dynamic>{
                                     'notification': <String, dynamic>{
@@ -473,7 +473,7 @@ class FollowImage extends StatelessWidget {
         child: SizedBox(
           height: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
           width: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
-          child: CachedNetworkImage(imageUrl: img1, fit: BoxFit.cover),
+          child: CachedNetworkImage(imageUrl: Env.normalize(img1), fit: BoxFit.cover),
         ),
       ),
     );

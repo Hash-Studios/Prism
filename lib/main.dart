@@ -45,12 +45,14 @@ import 'package:Prism/features/theme_dark/theme_dark.dart';
 import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
+import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
@@ -249,6 +251,7 @@ Future<void> main() async {
               BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
               BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
               BlocProvider<DeepLinkBloc>(create: (_) => getIt<DeepLinkBloc>()..add(const DeepLinkEvent.started())),
+              BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
             ],
             child: MyApp(),
           ),
@@ -399,14 +402,7 @@ bool _isMixpanelEnabled() {
   return false;
 }
 
-String _normalizeDefineValue(String rawValue) {
-  String value = rawValue.trim();
-  while (value.length >= 2 &&
-      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
-    value = value.substring(1, value.length - 1).trim();
-  }
-  return value;
-}
+String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 
 class MyApp extends StatefulWidget {
   @override
@@ -573,6 +569,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         "Get notifications for download progress of wallpapers.",
         false,
       );
+      await localNotification.createNotificationChannel(
+        "wall_of_the_day",
+        "Wall of the Day",
+        "Daily featured wallpaper notification at 9 AM.",
+        true,
+      );
     } catch (e, st) {
       logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
     }
@@ -736,6 +738,36 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
   }
 
+  void _handleWotdPushMessage(Map<String, dynamic> data, {required String wallId}) {
+    logger.i('WOTD push tapped', tag: 'Push', fields: <String, Object?>{'wall_id': wallId});
+    unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
+    // Navigate to the Home tab so the WOTD card is visible at the top
+    _appRouter.navigate(const HomeTabRoute());
+  }
+
+  void _listenForWotdPushTaps() {
+    // App opened from background by tapping a notification
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      final data = message.data;
+      if (data['route'] == 'wall_of_the_day') {
+        final String wallId = data['wall_id']?.toString() ?? '';
+        _handleWotdPushMessage(data, wallId: wallId);
+      }
+    });
+
+    // App launched from terminated state by tapping a notification
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message == null) return;
+      final data = message.data;
+      if (data['route'] == 'wall_of_the_day') {
+        final String wallId = data['wall_id']?.toString() ?? '';
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleWotdPushMessage(data, wallId: wallId);
+        });
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -746,6 +778,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
+    _listenForWotdPushTaps();
   }
 
   @override

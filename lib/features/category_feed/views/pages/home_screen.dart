@@ -36,6 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
       unawaited(subscribeToTopicSafely(f, 'posts', sourceTag: 'home.init.posts'));
       main.prefs.put('subscribedToRecommendations', true);
     }
+    if (!(main.prefs.get('subscribedToWotd', defaultValue: false) as bool)) {
+      unawaited(subscribeToTopicSafely(f, 'wall_of_the_day', sourceTag: 'home.init.wotd'));
+      main.prefs.put('subscribedToWotd', true);
+    }
     isNew = true;
     _updateToken();
   }

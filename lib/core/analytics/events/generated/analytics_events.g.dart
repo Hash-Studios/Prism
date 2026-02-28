@@ -1613,3 +1613,62 @@ class QualityDailySnapshotEvent extends AnalyticsEvent {
     return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
   }
 }
+
+// Wall of the Day analytics events
+
+class WotdViewedEvent extends AnalyticsEvent {
+  const WotdViewedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'wotd_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class WotdOpenedEvent extends AnalyticsEvent {
+  const WotdOpenedEvent({required this.wallId, required this.source});
+
+  final String wallId;
+  final String source;
+
+  @override
+  String get eventName => 'wotd_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'source': source};
+  }
+}
+
+class WotdSetAsWallpaperEvent extends AnalyticsEvent {
+  const WotdSetAsWallpaperEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'wotd_set_as_wallpaper';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class WotdOpenedFromPushEvent extends AnalyticsEvent {
+  const WotdOpenedFromPushEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'wotd_opened_from_push';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}

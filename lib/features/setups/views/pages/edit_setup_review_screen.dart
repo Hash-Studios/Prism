@@ -182,10 +182,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     });
     try {
       final String base64Image = base64Encode(imageBytes);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoSetups),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoSetups)),
             CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
           )
           .then(

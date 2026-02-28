@@ -406,7 +406,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                             Uri.parse('https://fcm.googleapis.com/fcm/send'),
                                             headers: <String, String>{
                                               'Content-Type': 'application/json',
-                                              'Authorization': 'key=${Env.fcmServerKey}',
+                                              'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
                                             },
                                             body: jsonEncode(<String, dynamic>{
                                               'notification': <String, dynamic>{

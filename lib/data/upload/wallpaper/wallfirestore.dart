@@ -76,7 +76,10 @@ Future<void> createRecord(
   if (app_state.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
+      },
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Wall for review!',
@@ -92,7 +95,10 @@ Future<void> createRecord(
     );
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
+      },
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Wall for review!',
@@ -154,7 +160,10 @@ Future<void> createSetup(
   if (app_state.prismUser.loggedIn == true && app_state.prismUser.premium == true) {
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
+      },
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Setup for review!',
@@ -170,7 +179,10 @@ Future<void> createSetup(
     );
     http.post(
       Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
+      headers: <String, String>{
+        'Content-Type': 'application/json',
+        'Authorization': 'key=${Env.normalize(Env.fcmServerKey)}',
+      },
       body: jsonEncode(<String, dynamic>{
         'notification': <String, dynamic>{
           'title': '🎉 New Premium Setup for review!',

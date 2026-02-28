@@ -114,16 +114,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+    final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
     await github.repositories.deleteFile(
-      RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+      RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
       wallpaperPath,
       wallpaperPath,
       wallpaperSha,
       "master",
     );
     await github.repositories.deleteFile(
-      RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+      RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
       thumbPath,
       thumbPath,
       thumbSha,
@@ -140,10 +140,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     try {
       final String base64Image = base64Encode(imageBytes);
       final String base64ImageThumb = base64Encode(imageBytesThumb);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
           )
           .then(
@@ -155,7 +155,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           );
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(
               message: "thumb_${Path.basename(image.path)}",
               content: base64ImageThumb,
