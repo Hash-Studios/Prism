@@ -23,8 +23,11 @@ import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
 class UploadWallScreen extends StatefulWidget {
-  final List? arguments;
-  const UploadWallScreen({this.arguments});
+  const UploadWallScreen({super.key, required this.image, required this.fromSetupRoute});
+
+  final File image;
+  final bool fromSetupRoute;
+
   @override
   _UploadWallScreenState createState() => _UploadWallScreenState();
 }
@@ -53,8 +56,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments![0] as File;
-    fromSetupRoute = widget.arguments![1] as bool;
+    image = widget.image;
+    fromSetupRoute = widget.fromSetupRoute;
     isUploading = false;
     isProcessing = true;
     randomId();

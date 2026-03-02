@@ -4,9 +4,8 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
-import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
@@ -80,16 +79,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         await Future.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
         main.prefs.put('onboarded_new', true);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const OptionalInfo3(
-              heading: 'Follow top creators',
-              subheading: 'Never miss the latest and greatest',
-              showSkip: false,
-              skipText: "Skip",
-              doneText: "DONE",
-            ),
+        context.router.replace(
+          OptionalInfo3Route(
+            heading: 'Follow top creators',
+            subheading: 'Never miss the latest and greatest',
+            showSkip: false,
+            skipText: "Skip",
+            doneText: "DONE",
           ),
         );
       }
@@ -561,10 +557,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             : () {
                                 _trackOnboardingAction(AnalyticsActionValue.finishTapped);
                                 main.prefs.put('onboarded_new', true);
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const SplashWidget()),
-                                );
+                                context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
                               },
                         style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                         child: SizedBox(
@@ -628,16 +621,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       return;
                                     }
                                     main.prefs.put('onboarded_new', true);
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const OptionalInfo3(
-                                          heading: 'Follow top creators',
-                                          subheading: 'Never miss the latest and greatest',
-                                          showSkip: false,
-                                          skipText: "Skip",
-                                          doneText: "DONE",
-                                        ),
+                                    context.router.replace(
+                                      OptionalInfo3Route(
+                                        heading: 'Follow top creators',
+                                        subheading: 'Never miss the latest and greatest',
+                                        showSkip: false,
+                                        skipText: "Skip",
+                                        doneText: "DONE",
                                       ),
                                     );
                                   }

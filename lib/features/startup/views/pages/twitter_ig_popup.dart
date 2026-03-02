@@ -1,15 +1,17 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/env/env.dart';
-import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+@RoutePage(name: 'OptionalInfo3Route')
 class OptionalInfo3 extends StatefulWidget {
   final String heading;
   final String subheading;
@@ -30,7 +32,7 @@ class OptionalInfo3 extends StatefulWidget {
 class _OptionalInfo3State extends State<OptionalInfo3> {
   Image? image1;
   void _navigateToSplash(BuildContext ctx) {
-    Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (context) => const SplashWidget()));
+    ctx.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
   }
 
   bool? isFollow1;
@@ -155,10 +157,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SplashWidget()),
-                        );
+                        context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
                       },
                       style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                       child: SizedBox(
@@ -177,10 +176,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SplashWidget()),
-                        );
+                        context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
                       },
                       style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                       child: SizedBox(
@@ -205,10 +201,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SplashWidget()),
-                        );
+                        context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
                       },
                       style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                       child: const SizedBox(
@@ -239,7 +232,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
           elevation: 0,
           mini: true,
           onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SplashWidget()));
+            context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
           },
           child: const Icon(JamIcons.close, color: Colors.white),
         ),

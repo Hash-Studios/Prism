@@ -242,7 +242,11 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               ),
                             );
                             context.router.push(
-                              WallpaperRoute(arguments: [widget.provider, i - 2, wall["wallpaper_thumb"]]),
+                              WallpaperRoute(
+                                provider: widget.provider.toString(),
+                                index: i - 2,
+                                link: wall["wallpaper_thumb"].toString(),
+                              ),
                             );
                           },
                           child: wall == null

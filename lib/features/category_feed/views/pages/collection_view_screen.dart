@@ -2,27 +2,28 @@ import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
-import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 @RoutePage()
 class CollectionViewScreen extends StatelessWidget {
-  final List? arguments;
-  const CollectionViewScreen({super.key, required this.arguments});
+  const CollectionViewScreen({super.key, required this.collectionName});
+
+  final String collectionName;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: PreferredSize(
         preferredSize: const Size(double.infinity, 55),
-        child: HeadingChipBar(current: (arguments![0] as String).capitalize()),
+        child: HeadingChipBar(current: collectionName.capitalize()),
       ),
       body: FutureBuilder(
-        future: getCollectionWithName(arguments![0].toString()),
+        future: getCollectionWithName(collectionName),
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.hasData) {
-            return const BottomBar(child: CollectionViewGrid());
+            return const CollectionViewGrid();
           }
           return const LoadingCards();
         },

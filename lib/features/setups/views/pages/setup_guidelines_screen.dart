@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -20,8 +20,6 @@ class SetupGuidelinesScreen extends StatefulWidget {
 }
 
 class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
-  File? _setup;
-
   final picker2 = ImagePicker();
 
   Future getSetup() async {
@@ -39,11 +37,8 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
       return;
     }
     if (pickedFile != null) {
-      setState(() {
-        _setup = File(pickedFile.path);
-      });
       Navigator.pop(context);
-      Future<void>.delayed(Duration.zero).then((_) => router.push(UploadSetupRoute(arguments: [_setup])));
+      Future<void>.delayed(Duration.zero).then((_) => router.push(UploadSetupRoute(image: File(pickedFile.path))));
     }
   }
 

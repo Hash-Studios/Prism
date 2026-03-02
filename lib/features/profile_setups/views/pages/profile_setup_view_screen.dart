@@ -33,8 +33,9 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class ProfileSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const ProfileSetupViewScreen({this.arguments});
+  const ProfileSetupViewScreen({super.key, required this.setupIndex});
+
+  final int setupIndex;
 
   @override
   _ProfileSetupViewScreenState createState() => _ProfileSetupViewScreenState();
@@ -54,7 +55,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
+    index = widget.setupIndex;
     updateViewsSetup(context.profileSetupsAdapter(listen: false).profileSetups![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
       context.profileSetupsAdapter(listen: false).profileSetups![index!]["id"].toString().toUpperCase(),
@@ -366,11 +367,10 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     onPressed: () {
                                                       context.router.push(
                                                         ProfileRoute(
-                                                          arguments: [
-                                                            context
-                                                                .profileSetupsAdapter(listen: false)
-                                                                .profileSetups![index!]["email"],
-                                                          ],
+                                                          profileIdentifier: context
+                                                              .profileSetupsAdapter(listen: false)
+                                                              .profileSetups![index!]["email"]
+                                                              .toString(),
                                                         ),
                                                       );
                                                     },
@@ -450,24 +450,22 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
@@ -553,24 +551,22 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
@@ -673,24 +669,22 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                           } else {
                                             context.router.push(
                                               ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
+                                                wallId: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wall_id"]
+                                                    .toString(),
+                                                provider: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wallpaper_provider"]
+                                                    .toString(),
+                                                wallpaperUrl: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wallpaper_url"]
+                                                    .toString(),
+                                                thumbnailUrl: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wallpaper_url"]
+                                                    .toString(),
                                               ),
                                             );
                                           }

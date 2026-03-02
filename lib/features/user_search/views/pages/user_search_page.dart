@@ -448,7 +448,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                 queryLength: widget.queryLength,
                               ),
                             );
-                            context.router.push(ProfileRoute(arguments: [user.email]));
+                            context.router.push(ProfileRoute(profileIdentifier: user.email));
                           },
                           icon: const Icon(JamIcons.user_circle),
                         ),

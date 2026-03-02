@@ -23,6 +23,7 @@ dependencies:
   animations: ^2.0.0
   cached_network_image: ^3.0.0
   carousel_slider: ^5.1.2
+  collection: ^1.19.1
   cloud_firestore: ^5.6.12
   device_info_plus: ^11.5.0
   extended_image: ^10.0.1

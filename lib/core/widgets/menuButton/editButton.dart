@@ -86,12 +86,10 @@ class _EditButtonState extends State<EditButton> {
     });
     context.router.push(
       WallpaperFilterRoute(
-        arguments: [
-          imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
-          imagelib.decodeImage(File(imageData).readAsBytesSync()),
-          path.basename(File(imageThumbData).path),
-          path.basename(File(imageData).path),
-        ],
+        image: imagelib.decodeImage(File(imageThumbData).readAsBytesSync()),
+        finalImage: imagelib.decodeImage(File(imageData).readAsBytesSync()),
+        filename: path.basename(File(imageThumbData).path),
+        finalFilename: path.basename(File(imageData).path),
       ),
     );
   }

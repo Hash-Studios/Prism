@@ -1,9 +1,8 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
@@ -45,7 +44,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         leading: IconButton(
           icon: const Icon(JamIcons.close),
           onPressed: () {
-            Navigator.pop(context);
+            context.router.maybePop();
           },
         ),
         actions: <Widget>[
@@ -187,6 +186,7 @@ class NotificationCard extends StatelessWidget {
 
   final InAppNotif? notification;
   final VoidCallback? onMarkRead;
+  static const NotificationRouteMapper _routeMapper = NotificationRouteMapper();
 
   static bool _hasValidImageUrl(String? url) {
     if (url == null || url.trim().isEmpty) return false;
@@ -237,48 +237,17 @@ class NotificationCard extends StatelessWidget {
       return;
     }
     final String route = (n.route ?? n.pageName ?? "").trim();
-    final String? wallId = (n.wallId ?? "").trim().isEmpty ? null : n.wallId!.trim();
-
-    if (route == "wall" && wallId != null) {
-      final Map<String, dynamic>? wall = await firestoreClient.getById<Map<String, dynamic>>(
-        FirebaseCollections.walls,
-        wallId,
-        (data, id) => data,
-        sourceTag: "notification.open_wall",
-      );
-      if (!context.mounted) return;
-      if (wall != null) {
-        final String id = wall["id"]?.toString() ?? wallId;
-        final String provider = wall["wallpaper_provider"]?.toString() ?? "Prism";
-        final String url = (wall["wallpaper_url"] ?? wall["wallpaper_thumb"] ?? "").toString();
-        final String thumb = (wall["wallpaper_thumb"] ?? url).toString();
-        if (thumb.isNotEmpty || url.isNotEmpty) {
-          context.router.push(ShareWallpaperViewRoute(arguments: [id, provider, url, thumb]));
-          return;
-        }
-      }
-      context.router.navigate(const HomeTabRoute());
+    final PageRouteInfo? mappedRoute = await _routeMapper.fromRoute(
+      route: route,
+      wallId: n.wallId,
+      sourceTag: 'notification.route_mapper',
+    );
+    if (!context.mounted) return;
+    if (mappedRoute != null) {
+      context.router.navigate(mappedRoute);
       return;
     }
-
-    switch (route) {
-      case "wall_of_the_day":
-        context.router.navigate(const HomeTabRoute());
-        break;
-      case "streak_reminder":
-        context.router.navigate(const ProfileTabRoute());
-        break;
-      case "follower":
-      case "announcement":
-        context.router.navigate(const HomeTabRoute());
-        break;
-      default:
-        if (route.isNotEmpty) {
-          context.router.pushPath(route);
-        } else {
-          context.router.navigate(const HomeTabRoute());
-        }
-    }
+    context.router.navigate(const NotFoundRoute());
   }
 
   @override

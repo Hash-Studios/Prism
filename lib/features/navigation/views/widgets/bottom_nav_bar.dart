@@ -479,7 +479,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       });
       final router = context.router;
       Navigator.pop(context);
-      router.push(EditWallRoute(arguments: [_wallpaper]));
+      router.push(EditWallRoute(image: _wallpaper!));
     }
   }
 

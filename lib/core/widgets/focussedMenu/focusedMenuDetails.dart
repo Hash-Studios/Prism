@@ -325,7 +325,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             ),
                                             onPressed: () {
                                               context.router.push(
-                                                ProfileRoute(arguments: [Data.subPrismWalls![widget.index]["email"]]),
+                                                ProfileRoute(
+                                                  profileIdentifier: Data.subPrismWalls![widget.index]["email"]
+                                                      .toString(),
+                                                ),
                                               );
                                             },
                                           ),

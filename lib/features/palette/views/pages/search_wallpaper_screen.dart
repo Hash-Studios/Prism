@@ -30,8 +30,19 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class SearchWallpaperScreen extends StatefulWidget {
-  final List? arguments;
-  const SearchWallpaperScreen({required this.arguments});
+  const SearchWallpaperScreen({
+    super.key,
+    required this.selectedProvider,
+    required this.query,
+    required this.index,
+    required this.link,
+  });
+
+  final String selectedProvider;
+  final String query;
+  final int index;
+  final String link;
+
   @override
   _SearchWallpaperScreenState createState() => _SearchWallpaperScreenState();
 }
@@ -39,8 +50,8 @@ class SearchWallpaperScreen extends StatefulWidget {
 class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  String? selectedProvider;
-  String? query;
+  late String selectedProvider;
+  late String query;
   late int index;
   late String link;
   late AnimationController shakeController;
@@ -56,7 +67,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
   bool panelClosed = true;
   bool panelCollapsed = true;
 
-  String get _sourceContext => '${(selectedProvider ?? 'unknown').toLowerCase()}_search_wallpaper_screen';
+  String get _sourceContext => '${selectedProvider.toLowerCase()}_search_wallpaper_screen';
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -162,10 +173,10 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    selectedProvider = widget.arguments![0].toString();
-    query = widget.arguments![1].toString();
-    index = widget.arguments![2] as int;
-    link = widget.arguments![3].toString();
+    selectedProvider = widget.selectedProvider;
+    query = widget.query;
+    index = widget.index;
+    link = widget.link;
     isLoading = true;
     _contentLoadTracker.start();
     _updatePaletteGenerator();

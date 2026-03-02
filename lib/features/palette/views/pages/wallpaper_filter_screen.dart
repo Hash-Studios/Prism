@@ -35,9 +35,12 @@ import 'package:photofilters/filters/preset_filters.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  final List<dynamic>? arguments;
+  const WallpaperFilterScreen({super.key, this.image, this.finalImage, this.filename, this.finalFilename});
 
-  const WallpaperFilterScreen({super.key, this.arguments});
+  final imagelib.Image? image;
+  final imagelib.Image? finalImage;
+  final String? filename;
+  final String? finalFilename;
 
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
@@ -116,11 +119,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     loading = false;
     isLoading = false;
     _filter = selectedFilters[0];
-    final args = widget.arguments;
-    image = args?[0] as imagelib.Image?;
-    finalImage = args?[1] as imagelib.Image?;
-    filename = args?[2] as String?;
-    finalFilename = args?[3] as String?;
+    image = widget.image;
+    finalImage = widget.finalImage;
+    filename = widget.filename;
+    finalFilename = widget.finalFilename;
   }
 
   @override

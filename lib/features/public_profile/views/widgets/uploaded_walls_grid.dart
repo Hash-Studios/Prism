@@ -208,12 +208,11 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                     } else {
                                       context.router.push(
                                         ProfileWallViewRoute(
-                                          arguments: [
-                                            index,
-                                            context
-                                                .profileWallsSnapshots(listen: false)![index]
-                                                .data()["wallpaper_thumb"],
-                                          ],
+                                          wallIndex: index,
+                                          thumbnailUrl: context
+                                              .profileWallsSnapshots(listen: false)![index]
+                                              .data()["wallpaper_thumb"]
+                                              .toString(),
                                         ),
                                       );
                                     }

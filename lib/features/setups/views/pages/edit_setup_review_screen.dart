@@ -23,8 +23,10 @@ import 'package:path/path.dart' as Path;
 
 @RoutePage()
 class EditSetupReviewScreen extends StatefulWidget {
-  final List? arguments;
-  const EditSetupReviewScreen({this.arguments});
+  const EditSetupReviewScreen({super.key, required this.setupDoc});
+
+  final FirestoreDocument setupDoc;
+
   @override
   _EditSetupReviewScreenState createState() => _EditSetupReviewScreenState();
 }
@@ -67,7 +69,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   @override
   void initState() {
     super.initState();
-    setupDoc = widget.arguments![0] as FirestoreDocument;
+    setupDoc = widget.setupDoc;
     final Map<String, dynamic> setupData = _setupData(setupDoc);
     final dynamic wallpaperUrlData = setupData["wallpaper_url"];
     final String wallpaperUrlText = wallpaperUrlData?.toString() ?? "";
@@ -869,7 +871,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             if (pickedFile != null) {
                               Future.delayed(Duration.zero).then((value) async {
                                 final argumentsFromWall = await context.router.push(
-                                  UploadWallRoute(arguments: [File(pickedFile.path), true]),
+                                  UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
                                 );
                                 if (argumentsFromWall != null) {
                                   final List argsC = argumentsFromWall as List;

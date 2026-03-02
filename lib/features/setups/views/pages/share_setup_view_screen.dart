@@ -33,8 +33,10 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class ShareSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const ShareSetupViewScreen({this.arguments});
+  const ShareSetupViewScreen({super.key, @PathParam('setupName') required this.setupName, this.thumbnailUrl = ''});
+
+  final String setupName;
+  final String thumbnailUrl;
 
   @override
   _ShareSetupViewScreenState createState() => _ShareSetupViewScreenState();
@@ -58,8 +60,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
   void initState() {
     viewCounted = false;
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    name = widget.arguments![0].toString();
-    image = widget.arguments![1].toString();
+    name = widget.setupName;
+    image = widget.thumbnailUrl;
     _future = sdata.getSetupFromName(name);
     isLoading = true;
     box = Hive.box('localFav');
@@ -392,7 +394,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                               labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                               onPressed: () {
                                                                 context.router.push(
-                                                                  ProfileRoute(arguments: [sdata.setup!["email"]]),
+                                                                  ProfileRoute(
+                                                                    profileIdentifier: sdata.setup!["email"].toString(),
+                                                                  ),
                                                                 );
                                                               },
                                                             ),
@@ -452,12 +456,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                     } else {
                                                       context.router.push(
                                                         ShareWallpaperViewRoute(
-                                                          arguments: [
-                                                            sdata.setup!["wall_id"].toString(),
-                                                            sdata.setup!["wallpaper_provider"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                          ],
+                                                          wallId: sdata.setup!["wall_id"].toString(),
+                                                          provider: sdata.setup!["wallpaper_provider"].toString(),
+                                                          wallpaperUrl: sdata.setup!["wallpaper_url"].toString(),
+                                                          thumbnailUrl: sdata.setup!["wallpaper_url"].toString(),
                                                         ),
                                                       );
                                                     }
@@ -502,12 +504,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                     } else {
                                                       context.router.push(
                                                         ShareWallpaperViewRoute(
-                                                          arguments: [
-                                                            sdata.setup!["wall_id"].toString(),
-                                                            sdata.setup!["wallpaper_provider"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                          ],
+                                                          wallId: sdata.setup!["wall_id"].toString(),
+                                                          provider: sdata.setup!["wallpaper_provider"].toString(),
+                                                          wallpaperUrl: sdata.setup!["wallpaper_url"].toString(),
+                                                          thumbnailUrl: sdata.setup!["wallpaper_url"].toString(),
                                                         ),
                                                       );
                                                     }
@@ -562,12 +562,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       } else {
                                                         context.router.push(
                                                           ShareWallpaperViewRoute(
-                                                            arguments: [
-                                                              sdata.setup!["wall_id"].toString(),
-                                                              sdata.setup!["wallpaper_provider"].toString(),
-                                                              sdata.setup!["wallpaper_url"].toString(),
-                                                              sdata.setup!["wallpaper_url"].toString(),
-                                                            ],
+                                                            wallId: sdata.setup!["wall_id"].toString(),
+                                                            provider: sdata.setup!["wallpaper_provider"].toString(),
+                                                            wallpaperUrl: sdata.setup!["wallpaper_url"].toString(),
+                                                            thumbnailUrl: sdata.setup!["wallpaper_url"].toString(),
                                                           ),
                                                         );
                                                       }

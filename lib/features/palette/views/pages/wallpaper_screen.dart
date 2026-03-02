@@ -38,8 +38,17 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class WallpaperScreen extends StatefulWidget {
-  final List? arguments;
-  const WallpaperScreen({required this.arguments});
+  const WallpaperScreen({super.key, required this.provider, required this.link, this.index, this.wotdWallMap})
+    : assert(
+        provider == 'WallOfTheDay' ? wotdWallMap != null : index != null,
+        'WallOfTheDay requires wotdWallMap. Other providers require index.',
+      );
+
+  final String provider;
+  final int? index;
+  final String link;
+  final Map<String, dynamic>? wotdWallMap;
+
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
 }
@@ -47,7 +56,7 @@ class WallpaperScreen extends StatefulWidget {
 class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  String? provider;
+  late String provider;
   late int index;
   late String link;
 
@@ -67,7 +76,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   int firstTime = 0;
   bool _panelScrollInProgress = false;
 
-  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_wallpaper_screen';
+  String get _sourceContext => '${provider.toLowerCase()}_wallpaper_screen';
 
   /// Current Prism-style wall map: either WOTD data or subPrismWalls[index]. Used when provider is Prism or WallOfTheDay.
   Map<String, dynamic> get _prismWall => _wotdWallMap ?? data.subPrismWalls![index] as Map<String, dynamic>;
@@ -193,14 +202,14 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.arguments![0] as String;
+    provider = widget.provider;
     if (provider == 'WallOfTheDay') {
-      _wotdWallMap = widget.arguments![1] as Map<String, dynamic>;
+      _wotdWallMap = widget.wotdWallMap;
       index = 0;
     } else {
-      index = widget.arguments![1] as int;
+      index = widget.index!;
     }
-    link = widget.arguments![2] as String;
+    link = widget.link;
     _contentLoadTracker.start();
     if (provider == 'Prism') {
       updateViews(_prismWall['id'].toString().toUpperCase());
@@ -924,7 +933,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           child: ActionChip(
                                                             onPressed: () {
                                                               context.router.push(
-                                                                ProfileRoute(arguments: [_prismWall["email"]]),
+                                                                ProfileRoute(
+                                                                  profileIdentifier: _prismWall["email"]?.toString(),
+                                                                ),
                                                               );
                                                             },
                                                             padding: const EdgeInsets.symmetric(
@@ -1642,7 +1653,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider!.length > 6 && provider!.substring(0, 6) == "Colors"
+          : provider.length > 6 && provider.substring(0, 6) == "Colors"
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -2305,9 +2316,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             children: [
                                               Flexible(
                                                 child: Text(
-                                                  provider!.isNotEmpty
-                                                      ? provider.toString()[0].toUpperCase() +
-                                                            provider.toString().substring(1)
+                                                  provider.isNotEmpty
+                                                      ? provider[0].toUpperCase() + provider.substring(1)
                                                       : "Search",
                                                   overflow: TextOverflow.ellipsis,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(

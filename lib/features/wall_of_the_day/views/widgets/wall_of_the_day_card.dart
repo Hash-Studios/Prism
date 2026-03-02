@@ -55,8 +55,8 @@ class _WotdCardContent extends StatelessWidget {
   final WallOfTheDayEntity entity;
 
   /// Builds a Prism-shaped map so WallpaperScreen can reuse the Prism branch for WOTD.
-  static List<dynamic> _wallpaperRouteArguments(WallOfTheDayEntity entity) {
-    final wallMap = <String, dynamic>{
+  static Map<String, dynamic> _wotdWallMap(WallOfTheDayEntity entity) {
+    return <String, dynamic>{
       'id': entity.wallId,
       'desc': entity.title,
       'size': '',
@@ -68,17 +68,20 @@ class _WotdCardContent extends StatelessWidget {
       'wallpaper_thumb': entity.thumbnailUrl,
       'collections': <String>[],
     };
-    return ['WallOfTheDay', wallMap, entity.thumbnailUrl];
   }
 
   void _openWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
-    context.router.push(WallpaperRoute(arguments: _wallpaperRouteArguments(entity)));
+    context.router.push(
+      WallpaperRoute(provider: 'WallOfTheDay', link: entity.thumbnailUrl, wotdWallMap: _wotdWallMap(entity)),
+    );
   }
 
   void _setAsWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdSetAsWallpaperEvent(wallId: entity.wallId)));
-    context.router.push(WallpaperRoute(arguments: _wallpaperRouteArguments(entity)));
+    context.router.push(
+      WallpaperRoute(provider: 'WallOfTheDay', link: entity.thumbnailUrl, wotdWallMap: _wotdWallMap(entity)),
+    );
   }
 
   @override

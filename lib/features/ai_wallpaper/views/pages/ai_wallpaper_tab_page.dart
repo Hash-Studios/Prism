@@ -333,7 +333,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     try {
       final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
-      context.router.push(DownloadWallpaperRoute(arguments: <dynamic>['Prism', file]));
+      context.router.push(DownloadWallpaperRoute(provider: 'Prism', file: file));
     } catch (_) {
       toasts.error('Unable to prepare wallpaper file.');
     }

@@ -169,7 +169,11 @@ class _PexelsGridState extends State<PexelsGrid> {
                                     ),
                                   );
                                   context.router.push(
-                                    WallpaperRoute(arguments: [widget.provider, i, PData.wallsP[i].src!["small"]]),
+                                    WallpaperRoute(
+                                      provider: widget.provider.toString(),
+                                      index: i,
+                                      link: PData.wallsP[i].src!["small"].toString(),
+                                    ),
                                   );
                                 }
                               },

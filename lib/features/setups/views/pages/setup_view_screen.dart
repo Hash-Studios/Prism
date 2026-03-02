@@ -30,8 +30,9 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class SetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const SetupViewScreen({this.arguments});
+  const SetupViewScreen({super.key, required this.setupIndex});
+
+  final int setupIndex;
 
   @override
   _SetupViewScreenState createState() => _SetupViewScreenState();
@@ -51,7 +52,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
+    index = widget.setupIndex;
     isLoading = true;
     updateViewsSetup(context.setupsAdapter(listen: false).setups![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(context.setupsAdapter(listen: false).setups![index!]["id"].toString().toUpperCase());
@@ -363,11 +364,10 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                     onPressed: () {
                                                       context.router.push(
                                                         ProfileRoute(
-                                                          arguments: [
-                                                            context
-                                                                .setupsAdapter(listen: false)
-                                                                .setups![index!]["email"],
-                                                          ],
+                                                          profileIdentifier: context
+                                                              .setupsAdapter(listen: false)
+                                                              .setups![index!]["email"]
+                                                              .toString(),
                                                         ),
                                                       );
                                                     },
@@ -441,24 +441,22 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
@@ -526,24 +524,22 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .setupsAdapter(listen: false)
-                                                    .setups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .setupsAdapter(listen: false)
+                                                  .setups![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
@@ -622,24 +618,22 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           } else {
                                             context.router.push(
                                               ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .setupsAdapter(listen: false)
-                                                      .setups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
+                                                wallId: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wall_id"]
+                                                    .toString(),
+                                                provider: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_provider"]
+                                                    .toString(),
+                                                wallpaperUrl: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString(),
+                                                thumbnailUrl: context
+                                                    .setupsAdapter(listen: false)
+                                                    .setups![index!]["wallpaper_url"]
+                                                    .toString(),
                                               ),
                                             );
                                           }

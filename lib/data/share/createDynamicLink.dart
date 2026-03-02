@@ -26,16 +26,19 @@ class CanonicalLinkBuilder {
     });
   }
 
-  Uri user({required String username}) {
-    return Uri.https(_shareDomain, '/user', <String, String>{'username': username});
+  Uri user({required String identifier}) {
+    return Uri.https(_shareDomain, '/user/${Uri.encodeComponent(identifier)}');
   }
 
   Uri setup({required String index, required String name, required String thumbUrl}) {
-    return Uri.https(_shareDomain, '/setup', <String, String>{'index': index, 'name': name, 'thumbUrl': thumbUrl});
+    return Uri.https(_shareDomain, '/setup/${Uri.encodeComponent(name)}', <String, String>{
+      if (index.trim().isNotEmpty) 'index': index,
+      if (thumbUrl.trim().isNotEmpty) 'thumbUrl': thumbUrl,
+    });
   }
 
   Uri refer({required String userId}) {
-    return Uri.https(_shareDomain, '/refer', <String, String>{'userID': userId});
+    return Uri.https(_shareDomain, '/refer/${Uri.encodeComponent(userId)}');
   }
 }
 
@@ -166,7 +169,7 @@ Future<void> createUserDynamicLink(
 }) async {
   final String userIdentifier = username.isNotEmpty ? username : email;
   try {
-    final Uri canonical = _canonicalLinkBuilder.user(username: userIdentifier);
+    final Uri canonical = _canonicalLinkBuilder.user(identifier: userIdentifier);
     final String link = await _buildShareableLink(
       type: 'user',
       canonicalUri: canonical,

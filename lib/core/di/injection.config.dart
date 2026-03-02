@@ -71,13 +71,6 @@ import '../../features/in_app_notifications/domain/repositories/notifications_re
     as _i366;
 import '../../features/in_app_notifications/domain/usecases/notifications_usecases.dart'
     as _i474;
-import '../../features/navigation/biz/bloc/navigation_bloc.j.dart' as _i924;
-import '../../features/navigation/data/repositories/navigation_repository_impl.dart'
-    as _i69;
-import '../../features/navigation/domain/repositories/navigation_repository.dart'
-    as _i647;
-import '../../features/navigation/domain/usecases/navigation_usecases.dart'
-    as _i294;
 import '../../features/palette/biz/bloc/palette_bloc.j.dart' as _i689;
 import '../../features/palette/data/repositories/palette_repository_impl.dart'
     as _i401;
@@ -217,9 +210,6 @@ _i174.GetIt initGetIt(
       gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
     ),
   );
-  gh.lazySingleton<_i647.NavigationRepository>(
-    () => _i69.NavigationRepositoryImpl(),
-  );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
   );
@@ -322,21 +312,6 @@ _i174.GetIt initGetIt(
   gh.factory<_i689.PaletteBloc>(
     () => _i689.PaletteBloc(gh<_i576.GeneratePaletteUseCase>()),
   );
-  gh.lazySingleton<_i294.GetNavigationStackUseCase>(
-    () => _i294.GetNavigationStackUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.PushRouteUseCase>(
-    () => _i294.PushRouteUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.PopRouteUseCase>(
-    () => _i294.PopRouteUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.ResetNavigationUseCase>(
-    () => _i294.ResetNavigationUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.ReplaceNavigationStackUseCase>(
-    () => _i294.ReplaceNavigationStackUseCase(gh<_i647.NavigationRepository>()),
-  );
   gh.lazySingleton<_i301.LoadCategoriesUseCase>(
     () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
   );
@@ -430,15 +405,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
-  );
-  gh.factory<_i924.NavigationBloc>(
-    () => _i924.NavigationBloc(
-      gh<_i294.GetNavigationStackUseCase>(),
-      gh<_i294.PushRouteUseCase>(),
-      gh<_i294.PopRouteUseCase>(),
-      gh<_i294.ResetNavigationUseCase>(),
-      gh<_i294.ReplaceNavigationStackUseCase>(),
-    ),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(

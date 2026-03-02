@@ -11,7 +11,6 @@ import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
-import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/download_list.dart';
@@ -32,8 +31,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 @RoutePage()
 class ProfileScreen extends StatefulWidget {
-  final List? arguments;
-  const ProfileScreen({this.arguments});
+  const ProfileScreen({super.key, @PathParam('identifier') this.profileIdentifier});
+
+  final String? profileIdentifier;
+
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
 }
@@ -53,9 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    profileIdentifier = (widget.arguments != null && widget.arguments!.isNotEmpty)
-        ? widget.arguments![0].toString()
-        : app_state.prismUser.email;
+    profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.email;
     _contentLoadTracker.start();
     super.initState();
   }
@@ -85,22 +84,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
-              body: BottomBar(
-                child: ProfileChild(
-                  ownProfile: true,
-                  parentScaffoldKey: _scaffoldKey,
-                  id: app_state.prismUser.id,
-                  bio: app_state.prismUser.bio,
-                  coverPhoto: app_state.prismUser.coverPhoto,
-                  email: app_state.prismUser.email,
-                  links: app_state.prismUser.links,
-                  name: app_state.prismUser.name,
-                  premium: app_state.prismUser.premium,
-                  userPhoto: app_state.prismUser.profilePhoto,
-                  username: app_state.prismUser.username,
-                  followers: app_state.prismUser.followers,
-                  following: app_state.prismUser.following,
-                ),
+              body: ProfileChild(
+                ownProfile: true,
+                parentScaffoldKey: _scaffoldKey,
+                id: app_state.prismUser.id,
+                bio: app_state.prismUser.bio,
+                coverPhoto: app_state.prismUser.coverPhoto,
+                email: app_state.prismUser.email,
+                links: app_state.prismUser.links,
+                name: app_state.prismUser.name,
+                premium: app_state.prismUser.premium,
+                userPhoto: app_state.prismUser.profilePhoto,
+                username: app_state.prismUser.username,
+                followers: app_state.prismUser.followers,
+                following: app_state.prismUser.following,
               ),
               endDrawer: app_state.prismUser.loggedIn
                   ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: ProfileDrawer())

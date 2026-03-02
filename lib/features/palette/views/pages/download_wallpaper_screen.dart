@@ -16,8 +16,11 @@ import 'package:flutter/services.dart';
 
 @RoutePage()
 class DownloadWallpaperScreen extends StatefulWidget {
-  final List? arguments;
-  const DownloadWallpaperScreen({required this.arguments});
+  const DownloadWallpaperScreen({super.key, required this.provider, required this.file});
+
+  final String provider;
+  final File file;
+
   @override
   _DownloadWallpaperScreenState createState() => _DownloadWallpaperScreenState();
 }
@@ -26,10 +29,10 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String? provider;
-  late File file;
+  late final String provider;
+  late final File file;
 
-  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_download_wallpaper_screen';
+  String get _sourceContext => '${provider.toLowerCase()}_download_wallpaper_screen';
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -49,8 +52,8 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.arguments![0] as String;
-    file = widget.arguments![1] as File;
+    provider = widget.provider;
+    file = widget.file;
     _contentLoadTracker.start();
     _contentLoadTracker.success(
       itemCount: 1,

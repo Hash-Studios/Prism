@@ -29,8 +29,9 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class FavSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const FavSetupViewScreen({this.arguments});
+  const FavSetupViewScreen({super.key, required this.setupIndex});
+
+  final int setupIndex;
 
   @override
   _FavSetupViewScreenState createState() => _FavSetupViewScreenState();
@@ -50,7 +51,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
+    index = widget.setupIndex;
     updateViewsSetup(context.favouriteSetupsAdapter(listen: false).liked![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
       context.favouriteSetupsAdapter(listen: false).liked![index!]["id"].toString().toUpperCase(),
@@ -360,11 +361,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                     onPressed: () {
                                                       context.router.push(
                                                         ProfileRoute(
-                                                          arguments: [
-                                                            context
-                                                                .favouriteSetupsAdapter(listen: false)
-                                                                .liked![index!]["email"],
-                                                          ],
+                                                          profileIdentifier: context
+                                                              .favouriteSetupsAdapter(listen: false)
+                                                              .liked![index!]["email"]
+                                                              .toString(),
                                                         ),
                                                       );
                                                     },
@@ -440,24 +440,22 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
@@ -537,24 +535,22 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
@@ -651,24 +647,22 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           } else {
                                             context.router.push(
                                               ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
+                                                wallId: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wall_id"]
+                                                    .toString(),
+                                                provider: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_provider"]
+                                                    .toString(),
+                                                wallpaperUrl: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_url"]
+                                                    .toString(),
+                                                thumbnailUrl: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_url"]
+                                                    .toString(),
                                               ),
                                             );
                                           }

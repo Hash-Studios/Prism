@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
+import 'package:Prism/core/router/not_found_page.dart';
+import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
@@ -43,6 +48,7 @@ import 'package:Prism/features/setups/views/pages/upload_setup_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/startup/views/pages/onboarding_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
+import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
@@ -50,16 +56,21 @@ import 'package:Prism/payments/upgrade.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' show Image;
 
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
 class AppRouter extends RootStackRouter {
+  final SignedInGuard _signedInGuard = const SignedInGuard();
+  final AdminGuard _adminGuard = const AdminGuard();
+
   @override
   List<AutoRoute> get routes => [
     // Startup
     AutoRoute(path: '/', page: SplashWidgetRoute.page),
     AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
+    AutoRoute(path: '/onboarding/follow', page: OptionalInfo3Route.page),
 
     // Dashboard shell with bottom nav tabs
     AutoRoute(
@@ -110,31 +121,32 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/share', page: ShareWallpaperViewRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
-    AutoRoute(path: '/fav-wall-view', page: FavWallpaperViewRoute.page),
-    AutoRoute(path: '/fav-setup-view', page: FavSetupViewRoute.page),
+    AutoRoute(path: '/fav-wall-view', page: FavWallpaperViewRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/fav-setup-view', page: FavSetupViewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
-    AutoRoute(path: '/share-setup', page: ShareSetupViewRoute.page),
+    AutoRoute(path: '/setup/:setupName', page: ShareSetupViewRoute.page),
     AutoRoute(path: '/profile-wall-view', page: ProfileWallViewRoute.page),
     AutoRoute(path: '/profile-setup-view', page: ProfileSetupViewRoute.page),
     AutoRoute(path: '/user-profile-wall-view', page: UserProfileWallViewRoute.page),
     AutoRoute(path: '/user-profile-setup-view', page: UserProfileSetupViewRoute.page),
-    AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page),
-    AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page),
-    AutoRoute(path: '/setup-guidelines', page: SetupGuidelinesRoute.page),
-    AutoRoute(path: '/upload-wall', page: UploadWallRoute.page),
-    AutoRoute(path: '/edit-wall', page: EditWallRoute.page),
-    AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page),
-    AutoRoute(path: '/review', page: ReviewRoute.page),
+    AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/setup-guidelines', page: SetupGuidelinesRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/premium', page: UpgradeRoute.page),
     AutoRoute(path: '/coin-transactions', page: CoinTransactionsRoute.page),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),
     AutoRoute(path: '/color', page: ColorRoute.page),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
-    AutoRoute(path: '/follower-profile', page: ProfileRoute.page),
+    AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/ads-not-loading', page: AdsNotLoadingRoute.page),
-    AutoRoute(path: '/downloads', page: DownloadRoute.page),
-    AutoRoute(path: '/admin-review', page: AdminReviewRoute.page),
-    AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page),
+    AutoRoute(path: '/admin-review', page: AdminReviewRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/not-found', page: NotFoundRoute.page),
+    RedirectRoute(path: '*', redirectTo: '/not-found'),
   ];
 }

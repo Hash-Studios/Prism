@@ -1034,7 +1034,7 @@ class SetupTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.pencil, color: Theme.of(context).primaryColor),
                                     onPressed: () {
-                                      context.router.push(EditSetupReviewRoute(arguments: [wallpaper]));
+                                      context.router.push(EditSetupReviewRoute(setupDoc: wallpaper));
                                     },
                                   ),
                                 ),
