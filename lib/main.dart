@@ -23,13 +23,16 @@ import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
-import 'package:Prism/features/deep_link/deep_link.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
@@ -45,12 +48,15 @@ import 'package:Prism/features/theme_dark/theme_dark.dart';
 import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
+import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
@@ -76,6 +82,19 @@ late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
+
+/// Top-level FCM background message handler.
+/// Must be a top-level function annotated with @pragma('vm:entry-point').
+/// Avoid any UI work here — only lightweight processing.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase.initializeApp() is already called before main() is reached, but
+  // in the background isolate we may need to re-initialise.  The guard inside
+  // Firebase.initializeApp makes this safe to call multiple times.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final String route = message.data['route']?.toString() ?? '';
+  logger.d('Background push received: $route', tag: 'Push');
+}
 
 int _to8BitChannel(double value) {
   final channel = (value * 255).round();
@@ -159,6 +178,8 @@ Future<void> main() async {
           await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
           firebaseInitialized = true;
           FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
+          // Register background handler before any other FCM calls.
+          FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
         } catch (error, stackTrace) {
           logger.w(
             'Firebase initialization failed; continuing without Firebase-backed startup features.',
@@ -248,7 +269,7 @@ Future<void> main() async {
               ),
               BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
               BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
-              BlocProvider<DeepLinkBloc>(create: (_) => getIt<DeepLinkBloc>()..add(const DeepLinkEvent.started())),
+              BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
             ],
             child: MyApp(),
           ),
@@ -399,14 +420,7 @@ bool _isMixpanelEnabled() {
   return false;
 }
 
-String _normalizeDefineValue(String rawValue) {
-  String value = rawValue.trim();
-  while (value.length >= 2 &&
-      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
-    value = value.substring(1, value.length - 1).trim();
-  }
-  return value;
-}
+String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 
 class MyApp extends StatefulWidget {
   @override
@@ -416,6 +430,11 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
+  final DeepLinkParser _deepLinkParser = const DeepLinkParser();
+  final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
+  final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
+  bool _bootstrapCompleted = false;
+  bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
 
   Future<bool> getLoginStatus() async {
@@ -506,6 +525,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 
+  /// Minimum time between coin syncs triggered by app resume to reduce Firestore reads/writes.
+  static const Duration _coinSyncResumeThrottle = Duration(minutes: 10);
+  DateTime? _lastCoinSyncResume;
+
+  /// Throttle getNotifs on resume to avoid repeated queries with 0 results.
+  static const Duration _getNotifsResumeThrottle = Duration(minutes: 5);
+  DateTime? _lastGetNotifsResume;
+
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
     if (_coinSyncInFlight) {
       return;
@@ -516,7 +543,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     _coinSyncInFlight = true;
     try {
       await CoinsService.instance.bootstrapForCurrentUser();
-      await CoinsService.instance.refreshBalance();
+      // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
@@ -525,13 +552,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     } finally {
       _coinSyncInFlight = false;
     }
-  }
-
-  String _referralInviterFromAction(DeepLinkActionEntity action) {
-    if (action.arguments.isEmpty) {
-      return '';
-    }
-    return action.arguments.first?.toString().trim() ?? '';
   }
 
   Future<void> _configureDisplayMode() async {
@@ -573,101 +593,179 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         "Get notifications for download progress of wallpapers.",
         false,
       );
+      await localNotification.createNotificationChannel(
+        "wall_of_the_day",
+        "Wall of the Day",
+        "Daily featured wallpaper notification at 9 AM.",
+        true,
+      );
+      await localNotification.createNotificationChannel(
+        "streak_reminder",
+        "Streak reminders",
+        "8 PM reminder to keep your login streak alive.",
+        true,
+      );
     } catch (e, st) {
       logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
     }
   }
 
-  void _navigateForDeepLink(DeepLinkActionEntity action) {
-    if (action.type == DeepLinkActionType.share) {
-      _appRouter.push(ShareWallpaperViewRoute(arguments: action.arguments));
-      analytics.track(
-        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
-      );
-    } else if (action.type == DeepLinkActionType.user) {
-      _appRouter.push(ProfileRoute(arguments: action.arguments));
-      analytics.track(
-        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
-      );
-    } else if (action.type == DeepLinkActionType.setup) {
-      _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
-      analytics.track(
-        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
-      );
-    } else if (action.type == DeepLinkActionType.refer) {
-      final String inviterUserId = _referralInviterFromAction(action);
-      if (inviterUserId.isEmpty) {
-        analytics.track(
-          const DeepLinkNavigationResultEvent(
-            targetType: TargetTypeValue.refer,
-            result: EventResultValue.failure,
-            reason: AnalyticsReasonValue.missingData,
-          ),
-        );
-        return;
+  TargetTypeValue _deepLinkTargetType(DeepLinkActionEntity action) {
+    return switch (action) {
+      ShareLinkIntent() => TargetTypeValue.share,
+      UserLinkIntent() => TargetTypeValue.user,
+      SetupLinkIntent() => TargetTypeValue.setup,
+      ReferLinkIntent() => TargetTypeValue.refer,
+      ShortCodeIntent() => TargetTypeValue.shortCode,
+      UnknownIntent() => TargetTypeValue.unknown,
+    };
+  }
+
+  void _queueDeepLinkIntent(DeepLinkActionEntity action) {
+    _pendingDeepLinks.add(action);
+  }
+
+  Future<void> _processPendingDeepLinks() async {
+    if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
+      return;
+    }
+    if (_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_processPendingDeepLinks());
+      });
+      return;
+    }
+    _processingPendingDeepLinks = true;
+    try {
+      final List<DeepLinkActionEntity> queued = List<DeepLinkActionEntity>.from(_pendingDeepLinks);
+      _pendingDeepLinks.clear();
+      for (final DeepLinkActionEntity action in queued) {
+        await _handleDeepLinkIntent(action);
       }
-      unawaited(CoinsService.instance.setPendingReferralInviterId(inviterUserId));
-      if (app_state.prismUser.loggedIn) {
-        unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterUserId));
-      } else {
-        toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
-      }
-      analytics.track(
-        const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
-      );
+    } finally {
+      _processingPendingDeepLinks = false;
     }
   }
 
-  DeepLinkActionEntity? _parseCanonicalUriToAction(Uri uri) {
-    if (uri.pathSegments.isEmpty) {
-      return null;
+  Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
+    switch (action) {
+      case ShareLinkIntent():
+        _appRouter.push(
+          ShareWallpaperViewRoute(
+            wallId: action.wallId,
+            provider: action.provider,
+            wallpaperUrl: action.wallpaperUrl,
+            thumbnailUrl: action.thumbnailUrl,
+          ),
+        );
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
+          ),
+        );
+        break;
+      case UserLinkIntent():
+        _appRouter.push(ProfileRoute(profileIdentifier: action.profileIdentifier));
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
+          ),
+        );
+        break;
+      case SetupLinkIntent():
+        _appRouter.push(ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl));
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
+          ),
+        );
+        break;
+      case ReferLinkIntent():
+        if (action.inviterId.trim().isEmpty) {
+          unawaited(
+            analytics.track(
+              const DeepLinkNavigationResultEvent(
+                targetType: TargetTypeValue.refer,
+                result: EventResultValue.failure,
+                reason: AnalyticsReasonValue.missingData,
+              ),
+            ),
+          );
+          return;
+        }
+        unawaited(CoinsService.instance.setPendingReferralInviterId(action.inviterId));
+        if (app_state.prismUser.loggedIn) {
+          unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: action.inviterId));
+        } else {
+          toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
+        }
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
+          ),
+        );
+        break;
+      case ShortCodeIntent():
+        await _resolveAndNavigateShortCode(action.code);
+        break;
+      case UnknownIntent():
+        _appRouter.push(const NotFoundRoute());
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(
+              targetType: TargetTypeValue.unknown,
+              result: EventResultValue.failure,
+              reason: AnalyticsReasonValue.unknown,
+            ),
+          ),
+        );
+        break;
+    }
+  }
+
+  Future<Uri> _routerDeepLinkTransformer(Uri uri) async {
+    return _deepLinkParser.transform(uri);
+  }
+
+  Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
+    final DeepLinkActionEntity action = _deepLinkParser.parse(platformDeepLink.uri);
+    final TargetTypeValue targetType = _deepLinkTargetType(action);
+    final bool isKnown = action is! UnknownIntent;
+
+    unawaited(
+      analytics.track(
+        DeepLinkReceivedEvent(source: DeepLinkSourceValue.appLinks, targetType: targetType, hasPayload: isKnown),
+      ),
+    );
+    unawaited(
+      analytics.track(
+        DeepLinkResolvedEvent(
+          targetType: targetType,
+          result: isKnown ? EventResultValue.success : EventResultValue.failure,
+          reason: isKnown ? null : AnalyticsReasonValue.missingData,
+        ),
+      ),
+    );
+
+    if (isKnown) {
+      _queueDeepLinkIntent(action);
+      if (_bootstrapCompleted) {
+        unawaited(_processPendingDeepLinks());
+      }
+      return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
     }
 
-    final segment = uri.pathSegments.first;
-    if (segment == 'share') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.share,
-        route: '/share',
-        arguments: <dynamic>[
-          uri.queryParameters['id'],
-          uri.queryParameters['provider'],
-          uri.queryParameters['url'],
-          uri.queryParameters['thumb'],
-        ],
-        rawUri: uri.toString(),
-      );
-    }
-    if (segment == 'user') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.user,
-        route: '/follower-profile',
-        arguments: <dynamic>[uri.queryParameters['username'] ?? uri.queryParameters['email']],
-        rawUri: uri.toString(),
-      );
-    }
-    if (segment == 'setup') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.setup,
-        route: '/share-setup',
-        arguments: <dynamic>[uri.queryParameters['name'], uri.queryParameters['thumbUrl']],
-        rawUri: uri.toString(),
-      );
-    }
-    if (segment == 'refer') {
-      final String? inviterId =
-          uri.queryParameters['userID'] ??
-          uri.queryParameters['userId'] ??
-          uri.queryParameters['userid'] ??
-          uri.queryParameters['id'];
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.refer,
-        route: '',
-        arguments: <dynamic>[inviterId],
-        rawUri: uri.toString(),
-      );
+    if (platformDeepLink.isValid) {
+      return platformDeepLink;
     }
 
-    return null;
+    if (platformDeepLink.uri.path.isNotEmpty && platformDeepLink.uri.path != '/') {
+      _queueDeepLinkIntent(action);
+      if (_bootstrapCompleted) {
+        unawaited(_processPendingDeepLinks());
+      }
+    }
+    return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
   }
 
   Future<void> _resolveAndNavigateShortCode(String code) async {
@@ -696,16 +794,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           if (canonicalRaw is String && canonicalRaw.isNotEmpty) {
             final canonicalUri = Uri.tryParse(canonicalRaw);
             if (canonicalUri != null) {
-              final action = _parseCanonicalUriToAction(canonicalUri);
-              if (action != null) {
+              final DeepLinkActionEntity resolvedIntent = _deepLinkParser.parse(canonicalUri);
+              if (resolvedIntent is! UnknownIntent) {
                 analytics.track(
                   const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
                 );
-                _navigateForDeepLink(action);
+                await _handleDeepLinkIntent(resolvedIntent);
                 return;
               }
               failureReason = AnalyticsReasonValue.missingData;
+            } else {
+              failureReason = AnalyticsReasonValue.missingData;
             }
+          } else {
             failureReason = AnalyticsReasonValue.missingData;
           }
         }
@@ -736,6 +837,45 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
   }
 
+  /// Routes a tapped push notification to the correct screen based on
+  /// the `route` field in the notification's data payload.
+  Future<void> _handlePushTap(Map<String, dynamic> data) async {
+    final String route = data['route']?.toString() ?? '';
+    final String wallId = (data['wall_id']?.toString() ?? '').trim();
+
+    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId});
+    if (route == 'wall_of_the_day') {
+      unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
+    }
+    final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
+    if (mappedRoute != null) {
+      _appRouter.navigate(mappedRoute);
+      return;
+    }
+    _appRouter.navigate(const NotFoundRoute());
+  }
+
+  void _listenForPushMessages() {
+    // Foreground: show a heads-up local notification + sync the inbox.
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      unawaited(localNotification.showPushNotification(message));
+      unawaited(getNotifs());
+    });
+
+    // Background / terminated → foreground: user tapped the notification.
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      unawaited(_handlePushTap(message.data));
+    });
+
+    // Launched from terminated state by tapping a notification.
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_handlePushTap(message.data));
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -746,12 +886,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
+    _listenForPushMessages();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      final now = DateTime.now();
+      if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
+        _lastCoinSyncResume = now;
+        unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      }
+      if (_lastGetNotifsResume == null || now.difference(_lastGetNotifsResume!) >= _getNotifsResumeThrottle) {
+        _lastGetNotifsResume = now;
+        unawaited(getNotifs());
+      }
       return;
     }
     if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
@@ -780,24 +929,26 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             unawaited(_syncAnalyticsIdentityFromSession(state.session, sourceTag: 'session_bloc'));
           },
         ),
-        BlocListener<DeepLinkBloc, DeepLinkState>(
-          listenWhen: (previous, current) => previous.latestAction?.rawUri != current.latestAction?.rawUri,
+        BlocListener<StartupBloc, StartupState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status || previous.isObsoleteVersion != current.isObsoleteVersion,
           listener: (context, state) {
-            final action = state.latestAction;
-            if (action == null) {
+            if (state.status != LoadStatus.success || state.isObsoleteVersion) {
               return;
             }
-            if (action.type == DeepLinkActionType.shortCode) {
-              final code = action.arguments.isNotEmpty ? action.arguments.first?.toString() ?? '' : '';
-              unawaited(_resolveAndNavigateShortCode(code));
-              return;
+            if (!_bootstrapCompleted) {
+              _bootstrapCompleted = true;
             }
-            _navigateForDeepLink(action);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              unawaited(_processPendingDeepLinks());
+            });
           },
         ),
       ],
       child: MaterialApp.router(
         routerConfig: _appRouter.config(
+          deepLinkTransformer: _routerDeepLinkTransformer,
+          deepLinkBuilder: _routerDeepLinkBuilder,
           navigatorObservers: () => [
             ...analytics.buildNavigatorObservers(),
             if (MonitoringRuntime.reporter.isEnabled)

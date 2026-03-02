@@ -52,6 +52,28 @@ class _FirestoreTransactionBridge implements FirestoreTransaction {
   }
 }
 
+class _FirestoreBatchBridge implements FirestoreBatch {
+  _FirestoreBatchBridge(this._batch, this._firestore);
+
+  final WriteBatch _batch;
+  final FirebaseFirestore _firestore;
+
+  @override
+  void addDoc(String collection, Map<String, dynamic> data) {
+    _batch.set(_firestore.collection(collection).doc(), data, SetOptions(merge: false));
+  }
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) {
+    _batch.update(_firestore.collection(collection).doc(id), data);
+  }
+
+  @override
+  void deleteDoc(String collection, String id) {
+    _batch.delete(_firestore.collection(collection).doc(id));
+  }
+}
+
 class FirestoreTrackedClient implements FirestoreClient {
   FirestoreTrackedClient(this._firestore, this._telemetry);
 
@@ -486,7 +508,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   }) async {
     final Stopwatch sw = Stopwatch()..start();
     try {
-      final T result = await _firestore.runTransaction<T>((Transaction transaction) async {
+      final T result = await _firestore.runTransaction<T>((Transaction transaction) {
         final _FirestoreTransactionBridge bridge = _FirestoreTransactionBridge(_firestore, transaction);
         return action(bridge);
       });
@@ -514,6 +536,42 @@ class FirestoreTrackedClient implements FirestoreClient {
           filtersHash: docId == null ? collection : '$collection:$docId',
           durationMs: sw.elapsedMilliseconds,
           docId: docId,
+          success: false,
+          errorCode: mapped.code,
+        ),
+      );
+      throw mapped;
+    }
+  }
+
+  @override
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {
+    final Stopwatch sw = Stopwatch()..start();
+    try {
+      final WriteBatch batch = _firestore.batch();
+      await action(_FirestoreBatchBridge(batch, _firestore));
+      await batch.commit();
+      await _emitTelemetry(
+        FirestoreTelemetryEvent(
+          timestamp: DateTime.now(),
+          sourceTag: sourceTag,
+          operation: FirestoreOperation.update,
+          collection: '',
+          filtersHash: 'batch',
+          durationMs: sw.elapsedMilliseconds,
+          success: true,
+        ),
+      );
+    } catch (error) {
+      final FirestoreError mapped = mapFirestoreError(error);
+      await _emitTelemetry(
+        FirestoreTelemetryEvent(
+          timestamp: DateTime.now(),
+          sourceTag: sourceTag,
+          operation: FirestoreOperation.update,
+          collection: '',
+          filtersHash: 'batch',
+          durationMs: sw.elapsedMilliseconds,
           success: false,
           errorCode: mapped.code,
         ),

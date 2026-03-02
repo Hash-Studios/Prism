@@ -225,6 +225,7 @@ enums:
       - posts
       - in_app
       - recommendations
+      - streak_reminders
   - name: deep_link_source
     dart_type: DeepLinkSourceValue
     values:
@@ -1026,6 +1027,53 @@ events:
         type: enum
         enum: AnalyticsReasonValue
         required: false
+  - id: tomorrow_hook_viewed
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+  - id: tomorrow_hook_action_tapped
+    fields:
+      - name: action
+        key: action
+        type: string
+  - id: tomorrow_hook_permission_result
+    fields:
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
+      - name: reason
+        key: reason
+        type: enum
+        enum: AnalyticsReasonValue
+        required: false
+      - name: subscribed_to_wotd
+        key: subscribed_to_wotd
+        type: bool
+  - id: wotd_viewed
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+  - id: wotd_opened
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: source
+        key: source
+        type: string
+  - id: wotd_set_as_wallpaper
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+  - id: wotd_opened_from_push
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
   - id: nav_tab_selected
     fields:
       - name: from_tab

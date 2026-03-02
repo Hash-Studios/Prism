@@ -238,7 +238,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                   );
                                   context.router.push(
                                     WallpaperRoute(
-                                      arguments: [widget.provider, index, PData.wallsC[index].src!["small"]],
+                                      provider: widget.provider,
+                                      index: index,
+                                      link: PData.wallsC[index].src!["small"].toString(),
                                     ),
                                   );
                                 }

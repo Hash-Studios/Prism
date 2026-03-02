@@ -207,7 +207,7 @@ class _AboutScreenState extends State<AboutScreen> {
                               sourceContext: 'about_screen_other_contributor',
                             );
                             unawaited(() async {
-                              final bool launched = await launch(c.htmlUrl!);
+                              final bool launched = await openPrismLink(context, c.htmlUrl!);
                               await analytics.track(
                                 ExternalLinkOpenResultEvent(
                                   surface: AnalyticsSurfaceValue.aboutScreen,
@@ -358,7 +358,7 @@ class ActionButton extends StatelessWidget {
             ),
           );
           final String target = link.contains("@gmail.com") ? "mailto:$link" : link;
-          final bool launched = await launch(target);
+          final bool launched = await openPrismLink(context, target);
           unawaited(
             analytics.track(
               ExternalLinkOpenResultEvent(

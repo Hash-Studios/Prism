@@ -8,6 +8,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -34,9 +35,12 @@ import 'package:photofilters/filters/preset_filters.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  final List<dynamic>? arguments;
+  const WallpaperFilterScreen({super.key, this.image, this.finalImage, this.filename, this.finalFilename});
 
-  const WallpaperFilterScreen({super.key, this.arguments});
+  final imagelib.Image? image;
+  final imagelib.Image? finalImage;
+  final String? filename;
+  final String? finalFilename;
 
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
@@ -115,11 +119,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     loading = false;
     isLoading = false;
     _filter = selectedFilters[0];
-    final args = widget.arguments;
-    image = args?[0] as imagelib.Image?;
-    finalImage = args?[1] as imagelib.Image?;
-    filename = args?[2] as String?;
-    finalFilename = args?[3] as String?;
+    image = widget.image;
+    finalImage = widget.finalImage;
+    filename = widget.filename;
+    finalFilename = widget.finalFilename;
   }
 
   @override
@@ -430,7 +433,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         toasts.error("Couldn't save wallpaper. Please retry!");
       }
     } on PlatformException catch (e) {
-      logger.e('saveMedia failed', error: e);
+      if (e.code == 'channel-error') {
+        logger.w('saveMedia channel unavailable (native side not registered)', error: e);
+      } else {
+        logger.e('saveMedia failed', error: e);
+      }
       toasts.error("Couldn't save wallpaper. Please retry!");
     } catch (e) {
       logger.e('Unexpected saveMedia failure', error: e);
@@ -505,13 +512,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               onPressed: () =>
                   unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
             ),
-          if (loading)
-            Container()
-          else
-            IconButton(
-              icon: const Icon(JamIcons.check),
-              onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
-            ),
+          if (!hideSetWallpaperUi)
+            if (loading)
+              Container()
+            else
+              IconButton(
+                icon: const Icon(JamIcons.check),
+                onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+              ),
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,

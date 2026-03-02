@@ -213,6 +213,8 @@ class _FieldSpec {
         return '$valueRef.wireValue';
       case 'datetime':
         return '$valueRef.toUtc().toIso8601String()';
+      case 'bool':
+        return '$valueRef ? 1 : 0';
       default:
         return valueRef;
     }

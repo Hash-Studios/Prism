@@ -25,8 +25,10 @@ import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
 class UploadSetupScreen extends StatefulWidget {
-  final List? arguments;
-  const UploadSetupScreen({this.arguments});
+  const UploadSetupScreen({super.key, required this.image});
+
+  final File image;
+
   @override
   _UploadSetupScreenState createState() => _UploadSetupScreenState();
 }
@@ -127,7 +129,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       });
       return;
     }
-    image = widget.arguments![0] as File;
+    image = widget.image;
     isUploading = false;
     isProcessing = true;
     isSaved = false;
@@ -170,10 +172,10 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     });
     try {
       final String base64Image = base64Encode(imageBytes);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoSetups),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoSetups)),
             CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
           )
           .then(
@@ -913,7 +915,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                   if (pickedFile != null) {
                                     Future.delayed(Duration.zero).then((value) async {
                                       final argumentsFromWall = await context.router.push(
-                                        UploadWallRoute(arguments: [File(pickedFile.path), true]),
+                                        UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
                                       );
                                       if (argumentsFromWall != null) {
                                         final List argsC = argumentsFromWall as List;

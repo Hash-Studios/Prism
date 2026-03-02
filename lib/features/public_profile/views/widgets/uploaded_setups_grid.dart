@@ -205,7 +205,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                                 onTap: () {
                                   if (context.profileSetupsAdapter(listen: false).profileSetups == []) {
                                   } else {
-                                    context.router.push(ProfileSetupViewRoute(arguments: [index]));
+                                    context.router.push(ProfileSetupViewRoute(setupIndex: index));
                                   }
                                 },
                               ),

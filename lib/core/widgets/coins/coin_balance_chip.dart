@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -13,9 +14,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CoinBalanceChip extends StatefulWidget {
-  const CoinBalanceChip({super.key, required this.sourceTag});
+  const CoinBalanceChip({super.key, required this.sourceTag, this.showStreak = true});
 
   final String sourceTag;
+  final bool showStreak;
 
   @override
   State<CoinBalanceChip> createState() => _CoinBalanceChipState();
@@ -46,55 +48,63 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
             return AnimatedScale(
               scale: delta == 0 ? 1 : 1.06,
               duration: const Duration(milliseconds: 220),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: () {
-                    if (isLow) {
-                      CoinsService.instance.logLowBalanceNudge(
-                        sourceTag: widget.sourceTag,
-                        requiredCoins: CoinPolicy.lowBalanceNudgeThreshold,
-                      );
-                    }
-                    _showCoinActionsSheet(context, isLow: isLow, balance: balance);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: bgColor,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (widget.showStreak) ...[const StreakPill(compact: true), const SizedBox(width: 8)],
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: isLow ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.secondary,
-                        width: 1.2,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(JamIcons.coin, size: 16, color: Theme.of(context).colorScheme.secondary),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$balance',
-                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                            fontWeight: FontWeight.w700,
+                      onTap: () {
+                        if (isLow) {
+                          CoinsService.instance.logLowBalanceNudge(
+                            sourceTag: widget.sourceTag,
+                            requiredCoins: CoinPolicy.lowBalanceNudgeThreshold,
+                          );
+                        }
+                        _showCoinActionsSheet(context, isLow: isLow, balance: balance);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: bgColor,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: isLow
+                                ? Theme.of(context).colorScheme.error
+                                : Theme.of(context).colorScheme.secondary,
+                            width: 1.2,
                           ),
                         ),
-                        if (delta != 0) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            isEarn ? '+$delta' : '$delta',
-                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                              color: isEarn ? Colors.green : Colors.red,
-                              fontWeight: FontWeight.w700,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(JamIcons.coin, size: 16, color: Theme.of(context).colorScheme.secondary),
+                            const SizedBox(width: 6),
+                            Text(
+                              '$balance',
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                color: Theme.of(context).colorScheme.secondary,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                        ],
-                      ],
+                            if (delta != 0) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                isEarn ? '+$delta' : '$delta',
+                                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                  color: isEarn ? Colors.green : Colors.red,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             );
           },
@@ -143,9 +153,9 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                             if (!mounted || !sheetContext.mounted) {
                               return;
                             }
-                            setSheetState(() => _loadingReward = true);
+                            if (context.mounted) setSheetState(() => _loadingReward = true);
                             await _watchRewardedAdAndCreditCoins();
-                            if (mounted && sheetContext.mounted) {
+                            if (mounted && sheetContext.mounted && context.mounted) {
                               setSheetState(() => _loadingReward = false);
                             }
                           },
@@ -174,8 +184,9 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
+                      final router = context.router;
                       Navigator.of(context).pop();
-                      context.router.push(const CoinTransactionsRoute());
+                      router.push(const CoinTransactionsRoute());
                     },
                     icon: const Icon(Icons.receipt_long_outlined),
                     label: const Text('View Transactions'),

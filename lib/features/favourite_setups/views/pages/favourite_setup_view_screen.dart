@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
@@ -28,8 +29,9 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class FavSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const FavSetupViewScreen({this.arguments});
+  const FavSetupViewScreen({super.key, required this.setupIndex});
+
+  final int setupIndex;
 
   @override
   _FavSetupViewScreenState createState() => _FavSetupViewScreenState();
@@ -49,7 +51,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
+    index = widget.setupIndex;
     updateViewsSetup(context.favouriteSetupsAdapter(listen: false).liked![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
       context.favouriteSetupsAdapter(listen: false).liked![index!]["id"].toString().toUpperCase(),
@@ -359,11 +361,10 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                                     onPressed: () {
                                                       context.router.push(
                                                         ProfileRoute(
-                                                          arguments: [
-                                                            context
-                                                                .favouriteSetupsAdapter(listen: false)
-                                                                .liked![index!]["email"],
-                                                          ],
+                                                          profileIdentifier: context
+                                                              .favouriteSetupsAdapter(listen: false)
+                                                              .liked![index!]["email"]
+                                                              .toString(),
                                                         ),
                                                       );
                                                     },
@@ -430,7 +431,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"]
@@ -439,29 +441,28 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["wallpaper_url"][1]
@@ -491,7 +492,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
@@ -527,7 +529,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"]
@@ -536,29 +539,28 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .favouriteSetupsAdapter(listen: false)
-                                                    .liked![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .favouriteSetupsAdapter(listen: false)
+                                                  .liked![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["wallpaper_url"][1]
@@ -588,7 +590,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
@@ -606,7 +609,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["widget_url"]
@@ -641,7 +645,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                               context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(
+                                            openPrismLink(
+                                              context,
                                               context
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["wallpaper_url"]
@@ -650,29 +655,28 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           } else {
                                             context.router.push(
                                               ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .favouriteSetupsAdapter(listen: false)
-                                                      .liked![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
+                                                wallId: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wall_id"]
+                                                    .toString(),
+                                                provider: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_provider"]
+                                                    .toString(),
+                                                wallpaperUrl: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_url"]
+                                                    .toString(),
+                                                thumbnailUrl: context
+                                                    .favouriteSetupsAdapter(listen: false)
+                                                    .liked![index!]["wallpaper_url"]
+                                                    .toString(),
                                               ),
                                             );
                                           }
                                         } else {
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"][1]
@@ -702,7 +706,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["icon_url"]
@@ -720,7 +725,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url"]
@@ -738,7 +744,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url2"]
@@ -1067,7 +1074,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
+                    openPrismLink(
+                      context,
+                      context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1087,7 +1097,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1109,6 +1122,9 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
+    if (hideSetWallpaperUi) {
+      return const SizedBox.shrink();
+    }
     return context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString()[0] != "["
         ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != null &&
                   context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != ""
@@ -1118,7 +1134,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
+                    openPrismLink(
+                      context,
+                      context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1138,7 +1157,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(

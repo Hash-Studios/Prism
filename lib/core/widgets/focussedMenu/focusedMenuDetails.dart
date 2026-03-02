@@ -325,7 +325,10 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             ),
                                             onPressed: () {
                                               context.router.push(
-                                                ProfileRoute(arguments: [Data.subPrismWalls![widget.index]["email"]]),
+                                                ProfileRoute(
+                                                  profileIdentifier: Data.subPrismWalls![widget.index]["email"]
+                                                      .toString(),
+                                                ),
                                               );
                                             },
                                           ),
@@ -720,7 +723,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ).textTheme.headlineMedium!.copyWith(color: Colors.white),
                                         ),
                                         onPressed: () {
-                                          launch(PData.wallsP[widget.index].url!);
+                                          openPrismLink(context, PData.wallsP[widget.index].url!);
                                         },
                                       ),
                                       Padding(

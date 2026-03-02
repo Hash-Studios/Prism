@@ -271,10 +271,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFile() async {
     try {
       final String base64Image = base64Encode(_compressedPFP);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(message: Path.basename(_pfp!.path), content: base64Image, path: Path.basename(_pfp!.path)),
           )
           .then(
@@ -297,10 +297,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFileCover() async {
     try {
       final String base64Image = base64Encode(_compressedCover);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(message: Path.basename(_cover!.path), content: base64Image, path: Path.basename(_cover!.path)),
           )
           .then(
@@ -414,7 +414,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                       border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                     ),
                     child: (_cover == null)
-                        ? (app_state.prismUser.coverPhoto != null)
+                        ? (app_state.prismUser.coverPhoto != null &&
+                                  Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
                               ? CachedNetworkImage(imageUrl: app_state.prismUser.coverPhoto!, fit: BoxFit.cover)
                               : SvgPicture.string(
                                   defaultHeader
@@ -481,7 +482,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
                           ),
                           child: (_pfp == null)
-                              ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
+                              ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
+                                    ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
+                                    : const Icon(Icons.person, size: 60)
                               : Image.file(_pfp!, fit: BoxFit.cover),
                         ),
                         Container(

@@ -63,6 +63,8 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
             url: existing.url,
             createdAt: existing.createdAt,
             read: true,
+            route: existing.route,
+            wallId: existing.wallId,
           ),
         );
       }

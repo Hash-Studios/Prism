@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
@@ -332,7 +333,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     try {
       final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
-      context.router.push(DownloadWallpaperRoute(arguments: <dynamic>['Prism', file]));
+      context.router.push(DownloadWallpaperRoute(provider: 'Prism', file: file));
     } catch (_) {
       toasts.error('Unable to prepare wallpaper file.');
     }
@@ -664,11 +665,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       icon: const Icon(Icons.share_outlined),
                       label: const Text('Share'),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () => _setWallpaper(current),
-                      icon: const Icon(Icons.wallpaper_outlined),
-                      label: const Text('Set'),
-                    ),
+                    if (!hideSetWallpaperUi)
+                      OutlinedButton.icon(
+                        onPressed: () => _setWallpaper(current),
+                        icon: const Icon(Icons.wallpaper_outlined),
+                        label: const Text('Set'),
+                      ),
                     OutlinedButton.icon(
                       onPressed: _submitting || !app_state.aiSubmitEnabled ? null : () => _submitToCommunity(current),
                       icon: const Icon(Icons.upload_outlined),

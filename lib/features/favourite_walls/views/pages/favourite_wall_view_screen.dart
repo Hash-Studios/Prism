@@ -29,8 +29,10 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class FavWallpaperViewScreen extends StatefulWidget {
-  final List? arguments;
-  const FavWallpaperViewScreen({this.arguments});
+  const FavWallpaperViewScreen({super.key, required this.wallIndex, required this.thumbnailUrl});
+
+  final int wallIndex;
+  final String thumbnailUrl;
 
   @override
   _FavWallpaperViewScreenState createState() => _FavWallpaperViewScreenState();
@@ -164,8 +166,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
-    thumb = widget.arguments![1] as String;
+    index = widget.wallIndex;
+    thumb = widget.thumbnailUrl;
     isLoading = true;
     _contentLoadTracker.start();
     if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism") {

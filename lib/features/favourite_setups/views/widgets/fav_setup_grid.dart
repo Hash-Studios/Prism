@@ -248,7 +248,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                           ),
                                         ),
                                       );
-                                      context.router.push(FavSetupViewRoute(arguments: [index]));
+                                      context.router.push(FavSetupViewRoute(setupIndex: index));
                                     }
                                   },
                                 ),

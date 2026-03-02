@@ -333,12 +333,10 @@ class _FollowingTileState extends State<FollowingTile> {
                     );
                     context.router.push(
                       ShareWallpaperViewRoute(
-                        arguments: [
-                          widget.finalDocs[widget.index]["id"],
-                          widget.finalDocs[widget.index]["wallpaper_provider"],
-                          widget.finalDocs[widget.index]["wallpaper_url"],
-                          widget.finalDocs[widget.index]["wallpaper_thumb"],
-                        ],
+                        wallId: widget.finalDocs[widget.index]["id"].toString(),
+                        provider: widget.finalDocs[widget.index]["wallpaper_provider"].toString(),
+                        wallpaperUrl: widget.finalDocs[widget.index]["wallpaper_url"].toString(),
+                        thumbnailUrl: widget.finalDocs[widget.index]["wallpaper_thumb"].toString(),
                       ),
                     );
                   },
@@ -373,7 +371,9 @@ class _FollowingTileState extends State<FollowingTile> {
                         ),
                       ),
                     );
-                    context.router.push(ProfileRoute(arguments: [widget.finalDocs[widget.index]["email"]]));
+                    context.router.push(
+                      ProfileRoute(profileIdentifier: widget.finalDocs[widget.index]["email"].toString()),
+                    );
                   },
                   child: Row(
                     children: [

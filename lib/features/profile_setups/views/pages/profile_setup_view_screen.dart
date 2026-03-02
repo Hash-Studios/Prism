@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -32,8 +33,9 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class ProfileSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const ProfileSetupViewScreen({this.arguments});
+  const ProfileSetupViewScreen({super.key, required this.setupIndex});
+
+  final int setupIndex;
 
   @override
   _ProfileSetupViewScreenState createState() => _ProfileSetupViewScreenState();
@@ -53,7 +55,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
+    index = widget.setupIndex;
     updateViewsSetup(context.profileSetupsAdapter(listen: false).profileSetups![index!]["id"].toString().toUpperCase());
     _futureView = getViewsSetup(
       context.profileSetupsAdapter(listen: false).profileSetups![index!]["id"].toString().toUpperCase(),
@@ -365,11 +367,10 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     onPressed: () {
                                                       context.router.push(
                                                         ProfileRoute(
-                                                          arguments: [
-                                                            context
-                                                                .profileSetupsAdapter(listen: false)
-                                                                .profileSetups![index!]["email"],
-                                                          ],
+                                                          profileIdentifier: context
+                                                              .profileSetupsAdapter(listen: false)
+                                                              .profileSetups![index!]["email"]
+                                                              .toString(),
                                                         ),
                                                       );
                                                     },
@@ -440,7 +441,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     .profileSetups![index!]["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .profileSetupsAdapter(listen: false)
                                                 .profileSetups![index!]["wallpaper_url"]
@@ -449,29 +451,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .profileSetupsAdapter(listen: false)
                                               .profileSetups![index!]["wallpaper_url"][1]
@@ -503,7 +504,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .profileSetupsAdapter(listen: false)
                                             .profileSetups![index!]["icon_url"]
@@ -543,7 +545,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     .profileSetups![index!]["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .profileSetupsAdapter(listen: false)
                                                 .profileSetups![index!]["wallpaper_url"]
@@ -552,29 +555,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                         } else {
                                           context.router.push(
                                             ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
+                                              wallId: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wall_id"]
+                                                  .toString(),
+                                              provider: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_provider"]
+                                                  .toString(),
+                                              wallpaperUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
+                                              thumbnailUrl: context
+                                                  .profileSetupsAdapter(listen: false)
+                                                  .profileSetups![index!]["wallpaper_url"]
+                                                  .toString(),
                                             ),
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .profileSetupsAdapter(listen: false)
                                               .profileSetups![index!]["wallpaper_url"][1]
@@ -606,7 +608,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .profileSetupsAdapter(listen: false)
                                             .profileSetups![index!]["icon_url"]
@@ -624,7 +627,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .profileSetupsAdapter(listen: false)
                                             .profileSetups![index!]["widget_url"]
@@ -663,7 +667,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                       .profileSetups![index!]["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(
+                                            openPrismLink(
+                                              context,
                                               context
                                                   .profileSetupsAdapter(listen: false)
                                                   .profileSetups![index!]["wallpaper_url"]
@@ -672,29 +677,28 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                           } else {
                                             context.router.push(
                                               ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
+                                                wallId: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wall_id"]
+                                                    .toString(),
+                                                provider: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wallpaper_provider"]
+                                                    .toString(),
+                                                wallpaperUrl: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wallpaper_url"]
+                                                    .toString(),
+                                                thumbnailUrl: context
+                                                    .profileSetupsAdapter(listen: false)
+                                                    .profileSetups![index!]["wallpaper_url"]
+                                                    .toString(),
                                               ),
                                             );
                                           }
                                         } else {
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .profileSetupsAdapter(listen: false)
                                                 .profileSetups![index!]["wallpaper_url"][1]
@@ -726,7 +730,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .profileSetupsAdapter(listen: false)
                                               .profileSetups![index!]["icon_url"]
@@ -744,7 +749,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .profileSetupsAdapter(listen: false)
                                               .profileSetups![index!]["widget_url"]
@@ -762,7 +768,8 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .profileSetupsAdapter(listen: false)
                                               .profileSetups![index!]["widget_url2"]
@@ -965,7 +972,11 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                         toasts.error("Couldn't download! Please Retry!");
                       }
                     } on PlatformException catch (e) {
-                      logger.e('saveMedia failed', error: e);
+                      if (e.code == 'channel-error') {
+                        logger.w('saveMedia channel unavailable (native side not registered)', error: e);
+                      } else {
+                        logger.e('saveMedia failed', error: e);
+                      }
                       toasts.error("Couldn't download! Please Retry!");
                     } catch (e) {
                       logger.e('Unexpected saveMedia failure', error: e);
@@ -1111,7 +1122,8 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(
+                    openPrismLink(
+                      context,
                       context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString(),
                     );
                   },
@@ -1133,7 +1145,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1155,6 +1170,9 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
+    if (hideSetWallpaperUi) {
+      return const SizedBox.shrink();
+    }
     return context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString()[0] != "["
         ? context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"] != null &&
                   context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"] != ""
@@ -1164,7 +1182,8 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(
+                    openPrismLink(
+                      context,
                       context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString(),
                     );
                   },
@@ -1186,7 +1205,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(

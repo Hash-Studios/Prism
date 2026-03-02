@@ -71,13 +71,6 @@ import '../../features/in_app_notifications/domain/repositories/notifications_re
     as _i366;
 import '../../features/in_app_notifications/domain/usecases/notifications_usecases.dart'
     as _i474;
-import '../../features/navigation/biz/bloc/navigation_bloc.j.dart' as _i924;
-import '../../features/navigation/data/repositories/navigation_repository_impl.dart'
-    as _i69;
-import '../../features/navigation/domain/repositories/navigation_repository.dart'
-    as _i647;
-import '../../features/navigation/domain/usecases/navigation_usecases.dart'
-    as _i294;
 import '../../features/palette/biz/bloc/palette_bloc.j.dart' as _i689;
 import '../../features/palette/data/repositories/palette_repository_impl.dart'
     as _i401;
@@ -156,6 +149,13 @@ import '../../features/user_search/domain/repositories/user_search_repository.da
     as _i204;
 import '../../features/user_search/domain/usecases/search_users_usecase.dart'
     as _i750;
+import '../../features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart' as _i183;
+import '../../features/wall_of_the_day/data/repositories/wall_of_the_day_repository_impl.dart'
+    as _i1070;
+import '../../features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart'
+    as _i489;
+import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart'
+    as _i398;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
@@ -210,14 +210,12 @@ _i174.GetIt initGetIt(
       gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
     ),
   );
-  gh.lazySingleton<_i647.NavigationRepository>(
-    () => _i69.NavigationRepositoryImpl(),
-  );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
   );
   gh.lazySingleton<_i226.DeepLinkRepository>(
     () => _i857.DeepLinkRepositoryImpl(gh<_i327.AppLinks>()),
+    dispose: (i) => i.dispose(),
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
@@ -233,13 +231,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
-  );
-  gh.factory<_i364.SessionBloc>(
-    () => _i364.SessionBloc(
-      gh<_i986.GetSessionUseCase>(),
-      gh<_i986.RefreshPremiumUseCase>(),
-      gh<_i986.SignOutUseCase>(),
-    ),
   );
   gh.lazySingleton<_i576.GeneratePaletteUseCase>(
     () => _i576.GeneratePaletteUseCase(gh<_i1019.PaletteRepository>()),
@@ -292,6 +283,14 @@ _i174.GetIt initGetIt(
       gh<_i851.Box<dynamic>>(instanceName: 'localFavBox'),
     ),
   );
+  gh.factory<_i364.SessionBloc>(
+    () => _i364.SessionBloc(
+      gh<_i986.GetSessionUseCase>(),
+      gh<_i986.RefreshPremiumUseCase>(),
+      gh<_i986.SignOutUseCase>(),
+      sessionRepository: gh<_i738.SessionRepository>(),
+    ),
+  );
   gh.lazySingleton<_i491.ConnectivityService>(
     () => _i491.InternetConnectivityService(
       gh<_i973.InternetConnectionChecker>(),
@@ -312,21 +311,6 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i689.PaletteBloc>(
     () => _i689.PaletteBloc(gh<_i576.GeneratePaletteUseCase>()),
-  );
-  gh.lazySingleton<_i294.GetNavigationStackUseCase>(
-    () => _i294.GetNavigationStackUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.PushRouteUseCase>(
-    () => _i294.PushRouteUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.PopRouteUseCase>(
-    () => _i294.PopRouteUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.ResetNavigationUseCase>(
-    () => _i294.ResetNavigationUseCase(gh<_i647.NavigationRepository>()),
-  );
-  gh.lazySingleton<_i294.ReplaceNavigationStackUseCase>(
-    () => _i294.ReplaceNavigationStackUseCase(gh<_i647.NavigationRepository>()),
   );
   gh.lazySingleton<_i301.LoadCategoriesUseCase>(
     () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
@@ -416,17 +400,11 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i474.ClearNotificationsUseCase>(
     () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
+  gh.lazySingleton<_i489.WallOfTheDayRepository>(
+    () => _i1070.WallOfTheDayRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
-  );
-  gh.factory<_i924.NavigationBloc>(
-    () => _i924.NavigationBloc(
-      gh<_i294.GetNavigationStackUseCase>(),
-      gh<_i294.PushRouteUseCase>(),
-      gh<_i294.PopRouteUseCase>(),
-      gh<_i294.ResetNavigationUseCase>(),
-      gh<_i294.ReplaceNavigationStackUseCase>(),
-    ),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
@@ -555,6 +533,9 @@ _i174.GetIt initGetIt(
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
   );
+  gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
+    () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
+  );
   gh.lazySingleton<_i410.CheckConnectionUseCase>(
     () => _i410.CheckConnectionUseCase(gh<_i325.ConnectivityRepository>()),
   );
@@ -572,6 +553,9 @@ _i174.GetIt initGetIt(
       gh<_i410.CheckConnectionUseCase>(),
       gh<_i410.WatchConnectionUseCase>(),
     ),
+  );
+  gh.factory<_i183.WotdBloc>(
+    () => _i183.WotdBloc(gh<_i398.FetchWallOfTheDayUseCase>()),
   );
   return getIt;
 }

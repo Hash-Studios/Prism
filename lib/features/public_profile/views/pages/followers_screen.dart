@@ -6,20 +6,20 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 @RoutePage()
 class FollowersScreen extends StatefulWidget {
-  final List? arguments;
-  const FollowersScreen({required this.arguments});
+  const FollowersScreen({super.key, required this.followers});
+
+  final List<dynamic> followers;
 
   @override
   _FollowersScreenState createState() => _FollowersScreenState();
 }
 
 class _FollowersScreenState extends State<FollowersScreen> {
-  List? followers;
+  late final List<dynamic> followers;
 
   @override
   void initState() {
-    followers = widget.arguments![0] as List;
-    followers!.sort();
+    followers = List<dynamic>.from(widget.followers)..sort();
     super.initState();
   }
 
@@ -32,7 +32,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
         child: HeadingChipBar(current: "Followers"),
       ),
       body: ListView.builder(
-        itemCount: followers!.length,
+        itemCount: followers.length,
         itemBuilder: (BuildContext context, int index) {
           return ListTile(
             leading: CircleAvatar(
@@ -43,11 +43,11 @@ class _FollowersScreenState extends State<FollowersScreen> {
               ),
             ),
             title: Text(
-              followers![index].toString(),
+              followers[index].toString(),
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
             onTap: () {
-              context.router.push(ProfileRoute(arguments: [followers![index].toString()]));
+              context.router.push(ProfileRoute(profileIdentifier: followers[index].toString()));
             },
           );
         },

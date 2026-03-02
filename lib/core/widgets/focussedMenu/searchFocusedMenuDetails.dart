@@ -270,7 +270,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(color: Colors.white),
                                   ),
                                   onPressed: () {
-                                    launch(pdata.wallsPS[index].url!);
+                                    openPrismLink(context, pdata.wallsPS[index].url!);
                                   },
                                 ),
                                 Padding(

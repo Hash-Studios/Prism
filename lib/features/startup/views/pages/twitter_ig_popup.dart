@@ -1,18 +1,19 @@
-import 'dart:convert';
-
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/env/env.dart';
-import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
+import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
+@RoutePage(name: 'OptionalInfo3Route')
 class OptionalInfo3 extends StatefulWidget {
   final String heading;
   final String subheading;
@@ -32,8 +33,27 @@ class OptionalInfo3 extends StatefulWidget {
 
 class _OptionalInfo3State extends State<OptionalInfo3> {
   Image? image1;
+  bool _completingOnboarding = false;
+
   void _navigateToSplash(BuildContext ctx) {
-    Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (context) => const SplashWidget()));
+    ctx.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
+  }
+
+  Future<void> _completeOnboardingFlow() async {
+    if (_completingOnboarding) {
+      return;
+    }
+    _completingOnboarding = true;
+    try {
+      main.prefs.put('onboarded_new', true);
+      await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
+      if (!mounted) {
+        return;
+      }
+      _navigateToSplash(context);
+    } finally {
+      _completingOnboarding = false;
+    }
   }
 
   bool? isFollow1;
@@ -52,9 +72,9 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
-          _navigateToSplash(context);
+          await _completeOnboardingFlow();
         }
       },
       child: Scaffold(
@@ -157,11 +177,8 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SplashWidget()),
-                        );
+                      onPressed: () async {
+                        await _completeOnboardingFlow();
                       },
                       style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                       child: SizedBox(
@@ -179,11 +196,8 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SplashWidget()),
-                        );
+                      onPressed: () async {
+                        await _completeOnboardingFlow();
                       },
                       style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                       child: SizedBox(
@@ -207,11 +221,8 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SplashWidget()),
-                        );
+                      onPressed: () async {
+                        await _completeOnboardingFlow();
                       },
                       style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
                       child: const SizedBox(
@@ -241,8 +252,8 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
           highlightElevation: 0,
           elevation: 0,
           mini: true,
-          onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SplashWidget()));
+          onPressed: () async {
+            await _completeOnboardingFlow();
           },
           child: const Icon(JamIcons.close, color: Colors.white),
         ),
@@ -371,31 +382,6 @@ class FollowHeaderCard extends StatelessWidget {
                                     sourceTag: 'startup.follow.target.update',
                                   );
                                 }
-                                http.post(
-                                  Uri.parse('https://fcm.googleapis.com/fcm/send'),
-                                  headers: <String, String>{
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'key=${Env.fcmServerKey}',
-                                  },
-                                  body: jsonEncode(<String, dynamic>{
-                                    'notification': <String, dynamic>{
-                                      'title': '🎉 New Follower!',
-                                      'body': '${app_state.prismUser.username} is now following you.',
-                                      'color': "#e57697",
-                                      'image': app_state.prismUser.profilePhoto,
-                                      'android_channel_id': "followers",
-                                      'tag': '${app_state.prismUser.username} Follow',
-                                      'icon': '@drawable/ic_follow',
-                                    },
-                                    'priority': 'high',
-                                    'data': <String, dynamic>{
-                                      'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-                                      'id': '1',
-                                      'status': 'done',
-                                    },
-                                    'to': "/topics/${email.split("@")[0]}",
-                                  }),
-                                );
                                 toasts.codeSend("Followed $name!");
                               },
                               style: ButtonStyle(
@@ -473,7 +459,7 @@ class FollowImage extends StatelessWidget {
         child: SizedBox(
           height: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
           width: (MediaQuery.of(context).size.width * 0.8 - 48) / 3,
-          child: CachedNetworkImage(imageUrl: img1, fit: BoxFit.cover),
+          child: CachedNetworkImage(imageUrl: Env.normalize(img1), fit: BoxFit.cover),
         ),
       ),
     );

@@ -255,10 +255,11 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                         );
                                         context.router.push(
                                           FavWallpaperViewRoute(
-                                            arguments: [
-                                              index,
-                                              context.favouriteWallsAdapter(listen: false).liked![index]["thumb"],
-                                            ],
+                                            wallIndex: index,
+                                            thumbnailUrl: context
+                                                .favouriteWallsAdapter(listen: false)
+                                                .liked![index]["thumb"]
+                                                .toString(),
                                           ),
                                         );
                                       }

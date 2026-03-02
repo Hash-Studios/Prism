@@ -1,14 +1,10 @@
-import 'dart:convert';
-
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/env/env.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:http/http.dart' as http;
 
 Future<void> createRecord(
   String? id,
@@ -74,39 +70,6 @@ Future<void> createRecord(
   }, sourceTag: 'upload.createWall');
   await CoinsService.instance.maybeAwardFirstWallpaperUpload();
   if (app_state.prismUser.premium == true) {
-    http.post(
-      Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
-      body: jsonEncode(<String, dynamic>{
-        'notification': <String, dynamic>{
-          'title': '🎉 New Premium Wall for review!',
-          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
-          'color': "#e57697",
-          'image': wallpaperThumb,
-          'android_channel_id': "posts",
-        },
-        'priority': 'high',
-        'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
-        'to': "/topics/${"maurya.abhay30".split("@")[0]}",
-      }),
-    );
-    http.post(
-      Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
-      body: jsonEncode(<String, dynamic>{
-        'notification': <String, dynamic>{
-          'title': '🎉 New Premium Wall for review!',
-          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
-          'color': "#e57697",
-          'image': wallpaperThumb,
-          'android_channel_id': "posts",
-        },
-        'priority': 'high',
-        'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
-        'to': "/topics/${"akshaymaurya3006".split("@")[0]}",
-      }),
-    );
-
     toasts.codeSend("Succesfully uploaded");
   } else {
     toasts.codeSend("Your wall is submitted, and is under review.");
@@ -151,40 +114,6 @@ Future<void> createSetup(
     'created_at': DateTime.now().toUtc(),
     'wall_id': wallId,
   }, sourceTag: 'upload.createSetup');
-  if (app_state.prismUser.loggedIn == true && app_state.prismUser.premium == true) {
-    http.post(
-      Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
-      body: jsonEncode(<String, dynamic>{
-        'notification': <String, dynamic>{
-          'title': '🎉 New Premium Setup for review!',
-          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
-          'color': "#e57697",
-          'image': imageURL,
-          'android_channel_id': "posts",
-        },
-        'priority': 'high',
-        'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
-        'to': "/topics/${"maurya.abhay30".split("@")[0]}",
-      }),
-    );
-    http.post(
-      Uri.parse('https://fcm.googleapis.com/fcm/send'),
-      headers: <String, String>{'Content-Type': 'application/json', 'Authorization': 'key=${Env.fcmServerKey}'},
-      body: jsonEncode(<String, dynamic>{
-        'notification': <String, dynamic>{
-          'title': '🎉 New Premium Setup for review!',
-          'body': 'New Post by ${app_state.prismUser.username} is up for review.',
-          'color': "#e57697",
-          'image': imageURL,
-          'android_channel_id': "posts",
-        },
-        'priority': 'high',
-        'data': <String, dynamic>{'click_action': 'FLUTTER_NOTIFICATION_CLICK', 'id': '1', 'status': 'done'},
-        'to': "/topics/${"akshaymaurya3006".split("@")[0]}",
-      }),
-    );
-  }
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
 

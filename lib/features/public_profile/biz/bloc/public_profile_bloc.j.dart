@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:bloc/bloc.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -188,7 +192,21 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
 
     result.fold(
-      onSuccess: (profile) => emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null)),
+      onSuccess: (profile) {
+        // Subscribe to the artist's posts topic so the user gets push
+        // notifications when that artist publishes a new wallpaper.
+        final String artistEmailPrefix = profile.email.split('@')[0];
+        if (artistEmailPrefix.isNotEmpty) {
+          unawaited(
+            subscribeToTopicSafely(
+              FirebaseMessaging.instance,
+              '${artistEmailPrefix}_posts',
+              sourceTag: 'follow.subscribe_posts_topic',
+            ),
+          );
+        }
+        emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null));
+      },
       onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
@@ -216,7 +234,21 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
 
     result.fold(
-      onSuccess: (profile) => emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null)),
+      onSuccess: (profile) {
+        // Unsubscribe from the artist's posts topic — the user no longer
+        // wants notifications for this artist's new walls.
+        final String artistEmailPrefix = profile.email.split('@')[0];
+        if (artistEmailPrefix.isNotEmpty) {
+          unawaited(
+            unsubscribeFromTopicSafely(
+              FirebaseMessaging.instance,
+              '${artistEmailPrefix}_posts',
+              sourceTag: 'unfollow.unsubscribe_posts_topic',
+            ),
+          );
+        }
+        emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null));
+      },
       onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
