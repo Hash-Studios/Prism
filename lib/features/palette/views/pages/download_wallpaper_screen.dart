@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -119,13 +120,14 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               );
             },
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: SetWallpaperButton(colorChanged: false, url: file.path),
+          if (!hideSetWallpaperUi)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: SetWallpaperButton(colorChanged: false, url: file.path),
+              ),
             ),
-          ),
           Align(
             alignment: Alignment.topLeft,
             child: Padding(

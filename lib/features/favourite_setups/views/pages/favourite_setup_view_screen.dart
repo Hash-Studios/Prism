@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
@@ -1109,6 +1110,9 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
+    if (hideSetWallpaperUi) {
+      return const SizedBox.shrink();
+    }
     return context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString()[0] != "["
         ? context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != null &&
                   context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] != ""

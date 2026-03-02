@@ -8,6 +8,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -509,13 +510,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               onPressed: () =>
                   unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
             ),
-          if (loading)
-            Container()
-          else
-            IconButton(
-              icon: const Icon(JamIcons.check),
-              onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
-            ),
+          if (!hideSetWallpaperUi)
+            if (loading)
+              Container()
+            else
+              IconButton(
+                icon: const Icon(JamIcons.check),
+                onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+              ),
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,

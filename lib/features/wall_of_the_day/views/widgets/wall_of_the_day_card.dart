@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -167,19 +168,21 @@ class _WotdCardContent extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    // Set Wallpaper CTA
-                    GestureDetector(
-                      onTap: () => _setAsWallpaper(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(color: _kBrandPink, borderRadius: BorderRadius.circular(20)),
-                        child: const Text(
-                          'Set Wallpaper',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    if (!hideSetWallpaperUi) ...<Widget>[
+                      const SizedBox(width: 8),
+                      // Set Wallpaper CTA
+                      GestureDetector(
+                        onTap: () => _setAsWallpaper(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(color: _kBrandPink, borderRadius: BorderRadius.circular(20)),
+                          child: const Text(
+                            'Set Wallpaper',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
