@@ -81,7 +81,7 @@ void showChangelog(BuildContext context, Function func) {
       MaterialButton(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         onPressed: () {
-          launch("https://bit.ly/prismchanges");
+          openPrismLink(context, "https://bit.ly/prismchanges");
           func();
         },
         child: Text('VIEW FULL', style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.error)),

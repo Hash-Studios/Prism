@@ -1,0 +1,19 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "usersv2",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "coinState.streakReminderEnabled",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "coinState.streakReminderNextAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

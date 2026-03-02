@@ -1,6 +1,17 @@
 class Env {
   const Env._();
 
+  /// Strips surrounding single or double quotes that Doppler can inject into
+  /// dart-define values (e.g. `"https://..."` → `https://...`).
+  static String normalize(String raw) {
+    String value = raw.trim();
+    while (value.length >= 2 &&
+        ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+      value = value.substring(1, value.length - 1).trim();
+    }
+    return value;
+  }
+
   // GitHub
   static const String ghToken = String.fromEnvironment('GH_TOKEN');
   static const String ghUserName = String.fromEnvironment('GH_USERNAME');
@@ -26,9 +37,6 @@ class Env {
   // Mixpanel
   static const String mixpanelToken = String.fromEnvironment('MIXPANEL_TOKEN');
   static const String mixpanelEnabled = String.fromEnvironment('MIXPANEL_ENABLED', defaultValue: 'auto');
-
-  // FCM
-  static const String fcmServerKey = String.fromEnvironment('FCM_SERVER_KEY');
 
   // User profile images (used in follow suggestions)
   static const String user1Image1 = String.fromEnvironment('USER1_IMAGE1');

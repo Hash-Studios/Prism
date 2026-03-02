@@ -12,8 +12,10 @@ import 'package:image_editor/image_editor.dart' hide ImageSource;
 
 @RoutePage()
 class EditWallScreen extends StatefulWidget {
-  final List? arguments;
-  const EditWallScreen({this.arguments});
+  const EditWallScreen({super.key, required this.image});
+
+  final File image;
+
   @override
   _EditWallScreenState createState() => _EditWallScreenState();
 }
@@ -58,7 +60,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments![0] as File;
+    image = widget.image;
   }
 
   void changeCropRatio() {
@@ -332,7 +334,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final Duration diff = DateTime.now().difference(start);
     image!.writeAsBytesSync(result);
     logger.d('image_editor time : $diff');
-    Future.delayed(Duration.zero).then((value) => context.router.replace(UploadWallRoute(arguments: [image, false])));
+    Future.delayed(
+      Duration.zero,
+    ).then((value) => context.router.replace(UploadWallRoute(image: image!, fromSetupRoute: false)));
   }
 
   void flip() {

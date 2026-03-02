@@ -23,13 +23,15 @@ class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
       url: fields[5] as String?,
       createdAt: fields[6] as DateTime?,
       read: fields[7] as bool?,
+      route: fields[8] as String?,
+      wallId: fields[9] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, InAppNotif obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(10)
       ..writeByte(0)
       ..write(obj.title)
       ..writeByte(1)
@@ -45,7 +47,11 @@ class InAppNotifAdapter extends TypeAdapter<InAppNotif> {
       ..writeByte(6)
       ..write(obj.createdAt)
       ..writeByte(7)
-      ..write(obj.read);
+      ..write(obj.read)
+      ..writeByte(8)
+      ..write(obj.route)
+      ..writeByte(9)
+      ..write(obj.wallId);
   }
 
   @override

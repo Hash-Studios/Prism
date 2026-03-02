@@ -73,7 +73,10 @@ class ShareService {
       return const Rect.fromLTWH(1, 1, 1, 1);
     }
     final RenderObject? renderObject = context.findRenderObject();
-    if (renderObject is RenderBox && renderObject.hasSize) {
+    if (renderObject is RenderBox &&
+        renderObject.hasSize &&
+        renderObject.size.width > 0 &&
+        renderObject.size.height > 0) {
       final Offset origin = renderObject.localToGlobal(Offset.zero);
       return origin & renderObject.size;
     }

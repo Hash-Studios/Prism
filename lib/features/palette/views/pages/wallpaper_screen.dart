@@ -38,8 +38,17 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class WallpaperScreen extends StatefulWidget {
-  final List? arguments;
-  const WallpaperScreen({required this.arguments});
+  const WallpaperScreen({super.key, required this.provider, required this.link, this.index, this.wotdWallMap})
+    : assert(
+        provider == 'WallOfTheDay' ? wotdWallMap != null : index != null,
+        'WallOfTheDay requires wotdWallMap. Other providers require index.',
+      );
+
+  final String provider;
+  final int? index;
+  final String link;
+  final Map<String, dynamic>? wotdWallMap;
+
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
 }
@@ -47,9 +56,12 @@ class WallpaperScreen extends StatefulWidget {
 class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  String? provider;
+  late String provider;
   late int index;
   late String link;
+
+  /// When opening from Wall of the Day, this holds the wall data instead of subPrismWalls[index].
+  Map<String, dynamic>? _wotdWallMap;
   late AnimationController shakeController;
   List<Color?>? colors;
   Color? accent = Colors.white;
@@ -62,13 +74,17 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   bool panelCollapsed = true;
   Future<String>? _futureView;
   int firstTime = 0;
+  bool _panelScrollInProgress = false;
 
-  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_wallpaper_screen';
+  String get _sourceContext => '${provider.toLowerCase()}_wallpaper_screen';
+
+  /// Current Prism-style wall map: either WOTD data or subPrismWalls[index]. Used when provider is Prism or WallOfTheDay.
+  Map<String, dynamic> get _prismWall => _wotdWallMap ?? data.subPrismWalls![index] as Map<String, dynamic>;
 
   String? _currentItemId() {
     try {
-      if (provider == 'Prism') {
-        return data.subPrismWalls?[index]['id']?.toString();
+      if (provider == 'Prism' || provider == 'WallOfTheDay') {
+        return _prismWall['id']?.toString();
       }
       if (provider == 'WallHaven') {
         return wdata.walls[index].id?.toString();
@@ -186,13 +202,20 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.arguments![0] as String;
-    index = widget.arguments![1] as int;
-    link = widget.arguments![2] as String;
+    provider = widget.provider;
+    if (provider == 'WallOfTheDay') {
+      _wotdWallMap = widget.wotdWallMap;
+      index = 0;
+    } else {
+      index = widget.index!;
+    }
+    link = widget.link;
     _contentLoadTracker.start();
-    if (provider == "Prism") {
-      updateViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
-      _futureView = getViews(data.subPrismWalls![index]["id"].toString().toUpperCase());
+    if (provider == 'Prism') {
+      updateViews(_prismWall['id'].toString().toUpperCase());
+      _futureView = getViews(_prismWall['id'].toString().toUpperCase());
+    } else if (provider == 'WallOfTheDay') {
+      _futureView = Future.value('0');
     }
     Future.delayed(Duration.zero).then((value) => _updatePaletteGenerator());
   }
@@ -320,141 +343,155 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 ),
                               ),
                             ),
-                            ColorBar(colors: colors),
+                            ColorBar(colors: colors, fixedHeight: 64),
                             Expanded(
                               flex: 8,
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: <Widget>[
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                          child: Text(
-                                            wdata.walls[index].id.toString().toUpperCase(),
-                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                              color: Theme.of(context).colorScheme.secondary,
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                            child: Text(
+                                              wdata.walls[index].id.toString().toUpperCase(),
+                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.eye,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              wdata.walls[index].views.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.heart_f,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              wdata.walls[index].favourites.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.save,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              "${double.parse((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: EdgeInsets.zero,
-                                          child: Row(
+                                          Row(
                                             children: [
+                                              Icon(
+                                                JamIcons.eye,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
                                               Text(
-                                                wdata.walls[index].category.toString()[0].toUpperCase() +
-                                                    wdata.walls[index].category.toString().substring(1),
+                                                wdata.walls[index].views.toString(),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
                                               ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.heart_f,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                wdata.walls[index].favourites.toString(),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.save,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "${double.parse((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: EdgeInsets.zero,
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    wdata.walls[index].category.toString()[0].toUpperCase() +
+                                                        wdata.walls[index].category.toString().substring(1),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.unordered_list,
+                                                  size: 20,
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  wdata.walls[index].resolution.toString(),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ),
                                               const SizedBox(width: 10),
                                               Icon(
-                                                JamIcons.unordered_list,
+                                                JamIcons.set_square,
                                                 size: 20,
                                                 color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              wdata.walls[index].resolution.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  provider.toString(),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Icon(
-                                              JamIcons.set_square,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              provider.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                              const SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.database,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Icon(
-                                              JamIcons.database,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -623,7 +660,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider == "Prism"
+          : provider == "Prism" || provider == "WallOfTheDay"
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -715,6 +752,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                   opacity: panelCollapsed ? 0.0 : 1.0,
                                   child: GestureDetector(
                                     onTap: () {
+                                      if (_panelScrollInProgress) return;
                                       _trackAction(AnalyticsActionValue.panelCollapseTapped);
                                       panelController.close();
                                     },
@@ -723,273 +761,324 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 ),
                               ),
                             ),
-                            ColorBar(colors: colors),
+                            ColorBar(colors: colors, fixedHeight: 64),
                             Expanded(
-                              flex: 8,
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: <Widget>[
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        SizedBox(
-                                          width: MediaQuery.of(context).size.width * 0.36,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  data.subPrismWalls![index]["id"].toString().toUpperCase(),
-                                                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                                  child: Container(
-                                                    height: 20,
-                                                    color: Theme.of(context).colorScheme.secondary,
-                                                    width: 2,
-                                                  ),
-                                                ),
-                                                FutureBuilder(
-                                                  future: _futureView,
-                                                  builder: (context, snapshot) {
-                                                    switch (snapshot.connectionState) {
-                                                      case ConnectionState.waiting:
-                                                        return Text(
-                                                          "",
+                              child: LayoutBuilder(
+                                builder: (context, constraints) => NotificationListener<ScrollNotification>(
+                                  onNotification: (notification) {
+                                    if (notification is ScrollStartNotification) {
+                                      setState(() => _panelScrollInProgress = true);
+                                    } else if (notification is ScrollEndNotification) {
+                                      Future.delayed(const Duration(milliseconds: 200), () {
+                                        if (mounted) setState(() => _panelScrollInProgress = false);
+                                      });
+                                    }
+                                    return false;
+                                  },
+                                  child: SingleChildScrollView(
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(minHeight: constraints.maxHeight + 1),
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: <Widget>[
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: <Widget>[
+                                                SizedBox(
+                                                  width: MediaQuery.of(context).size.width * 0.36,
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                                    child: Wrap(
+                                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                                      spacing: 0,
+                                                      runSpacing: 4,
+                                                      children: [
+                                                        Text(
+                                                          _prismWall["id"].toString().toUpperCase(),
                                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                             color: Theme.of(context).colorScheme.secondary,
                                                             fontSize: 16,
                                                           ),
-                                                        );
-                                                      case ConnectionState.none:
-                                                        return Text(
-                                                          "",
-                                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                        ),
+                                                        Padding(
+                                                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                                          child: Container(
+                                                            height: 20,
                                                             color: Theme.of(context).colorScheme.secondary,
-                                                            fontSize: 16,
+                                                            width: 2,
                                                           ),
-                                                        );
-                                                      default:
-                                                        if (snapshot.hasError) {
-                                                          return Text(
-                                                            "",
-                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                              fontSize: 16,
-                                                            ),
-                                                          );
-                                                        } else {
-                                                          return Text(
-                                                            "${snapshot.data} views",
-                                                            overflow: TextOverflow.fade,
-                                                            softWrap: false,
-                                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                                              color: Theme.of(context).colorScheme.secondary,
-                                                              fontSize: 16,
-                                                            ),
-                                                          );
-                                                        }
-                                                    }
-                                                  },
+                                                        ),
+                                                        FutureBuilder(
+                                                          future: _futureView,
+                                                          builder: (context, snapshot) {
+                                                            switch (snapshot.connectionState) {
+                                                              case ConnectionState.waiting:
+                                                                return Text(
+                                                                  "",
+                                                                  style: Theme.of(context).textTheme.bodyLarge!
+                                                                      .copyWith(
+                                                                        color: Theme.of(context).colorScheme.secondary,
+                                                                        fontSize: 16,
+                                                                      ),
+                                                                );
+                                                              case ConnectionState.none:
+                                                                return Text(
+                                                                  "",
+                                                                  style: Theme.of(context).textTheme.bodyLarge!
+                                                                      .copyWith(
+                                                                        color: Theme.of(context).colorScheme.secondary,
+                                                                        fontSize: 16,
+                                                                      ),
+                                                                );
+                                                              default:
+                                                                if (snapshot.hasError) {
+                                                                  return Text(
+                                                                    "",
+                                                                    style: Theme.of(context).textTheme.bodyLarge!
+                                                                        .copyWith(
+                                                                          color: Theme.of(
+                                                                            context,
+                                                                          ).colorScheme.secondary,
+                                                                          fontSize: 16,
+                                                                        ),
+                                                                  );
+                                                                } else {
+                                                                  return Text(
+                                                                    "${snapshot.data} views",
+                                                                    style: Theme.of(context).textTheme.bodyLarge!
+                                                                        .copyWith(
+                                                                          color: Theme.of(
+                                                                            context,
+                                                                          ).colorScheme.secondary,
+                                                                          fontSize: 16,
+                                                                        ),
+                                                                  );
+                                                                }
+                                                            }
+                                                          },
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
                                                 ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.arrow_circle_right,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              data.subPrismWalls![index]["desc"].toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.save,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              data.subPrismWalls![index]["size"].toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: <Widget>[
-                                        SizedBox(
-                                          width: 160,
-                                          child: Align(
-                                            alignment: Alignment.centerRight,
-                                            child: Stack(
-                                              children: [
-                                                Align(
-                                                  alignment: Alignment.topRight,
-                                                  child: ActionChip(
-                                                    onPressed: () {
-                                                      context.router.push(
-                                                        ProfileRoute(arguments: [data.subPrismWalls![index]["email"]]),
-                                                      );
-                                                    },
-                                                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                                                    avatar: CircleAvatar(
-                                                      backgroundImage: CachedNetworkImageProvider(
-                                                        data.subPrismWalls![index]["userPhoto"].toString(),
+                                                const SizedBox(height: 5),
+                                                SizedBox(
+                                                  width: MediaQuery.of(context).size.width * 0.36,
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons.arrow_circle_right,
+                                                        size: 20,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.secondary.withValues(alpha: .7),
                                                       ),
-                                                    ),
-                                                    labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                                                    label: Text(
-                                                      data.subPrismWalls![index]["by"].toString(),
-                                                      style: Theme.of(context).textTheme.bodyMedium!
-                                                          .copyWith(color: Theme.of(context).colorScheme.secondary)
-                                                          .copyWith(fontSize: 16),
-                                                      overflow: TextOverflow.fade,
-                                                    ),
-                                                  ),
-                                                ),
-                                                if (app_state.verifiedUsers.contains(
-                                                  data.subPrismWalls![index]["email"].toString(),
-                                                ))
-                                                  Align(
-                                                    alignment: Alignment.topRight,
-                                                    child: SizedBox(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child: SvgPicture.string(
-                                                        verifiedIcon.replaceAll(
-                                                          "E57697",
-                                                          Theme.of(context).colorScheme.error == Colors.black
-                                                              ? "E57697"
-                                                              : Theme.of(context).colorScheme.error
-                                                                    .toString()
-                                                                    .replaceAll("Color(0xff", "")
-                                                                    .replaceAll(")", ""),
+                                                      const SizedBox(width: 10),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _prismWall["desc"].toString(),
+                                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
+                                                          softWrap: true,
                                                         ),
                                                       ),
-                                                    ),
-                                                  )
-                                                else
-                                                  Container(),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 5),
+                                                SizedBox(
+                                                  width: MediaQuery.of(context).size.width * 0.36,
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(
+                                                        JamIcons.save,
+                                                        size: 20,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.secondary.withValues(alpha: .7),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Expanded(
+                                                        child: Text(
+                                                          _prismWall["size"].toString(),
+                                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                            color: Theme.of(context).colorScheme.secondary,
+                                                          ),
+                                                          softWrap: true,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
                                               ],
                                             ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              data.subPrismWalls![index]["resolution"].toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Icon(
-                                              JamIcons.set_square,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: <Widget>[
+                                                SizedBox(
+                                                  width: 160,
+                                                  child: Align(
+                                                    alignment: Alignment.centerRight,
+                                                    child: Stack(
+                                                      children: [
+                                                        Align(
+                                                          alignment: Alignment.topRight,
+                                                          child: ActionChip(
+                                                            onPressed: () {
+                                                              context.router.push(
+                                                                ProfileRoute(
+                                                                  profileIdentifier: _prismWall["email"]?.toString(),
+                                                                ),
+                                                              );
+                                                            },
+                                                            padding: const EdgeInsets.symmetric(
+                                                              vertical: 5,
+                                                              horizontal: 5,
+                                                            ),
+                                                            avatar: CircleAvatar(
+                                                              backgroundImage: CachedNetworkImageProvider(
+                                                                _prismWall["userPhoto"].toString(),
+                                                              ),
+                                                            ),
+                                                            labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                                            label: Text(
+                                                              _prismWall["by"].toString(),
+                                                              style: Theme.of(context).textTheme.bodyMedium!
+                                                                  .copyWith(
+                                                                    color: Theme.of(context).colorScheme.secondary,
+                                                                  )
+                                                                  .copyWith(fontSize: 16),
+                                                              overflow: TextOverflow.fade,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        if (app_state.verifiedUsers.contains(
+                                                          _prismWall["email"].toString(),
+                                                        ))
+                                                          Align(
+                                                            alignment: Alignment.topRight,
+                                                            child: SizedBox(
+                                                              width: 20,
+                                                              height: 20,
+                                                              child: SvgPicture.string(
+                                                                verifiedIcon.replaceAll(
+                                                                  "E57697",
+                                                                  Theme.of(context).colorScheme.error == Colors.black
+                                                                      ? "E57697"
+                                                                      : Theme.of(context).colorScheme.error
+                                                                            .toString()
+                                                                            .replaceAll("Color(0xff", "")
+                                                                            .replaceAll(")", ""),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        else
+                                                          Container(),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 5),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      _prismWall["resolution"].toString(),
+                                                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                        color: Theme.of(context).colorScheme.secondary,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Icon(
+                                                      JamIcons.set_square,
+                                                      size: 20,
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: .7),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 5),
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    await createCopyrightLink(
+                                                      false,
+                                                      context,
+                                                      id: _prismWall["id"].toString(),
+                                                      provider: provider,
+                                                      url: _prismWall["wallpaper_url"].toString(),
+                                                      thumbUrl: _prismWall["wallpaper_thumb"].toString(),
+                                                    );
+                                                  },
+                                                  child: Row(
+                                                    children: [
+                                                      Text(
+                                                        "Report",
+                                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                          decoration: TextDecoration.underline,
+                                                          color: Theme.of(context).colorScheme.secondary,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 10),
+                                                      Icon(
+                                                        JamIcons.info,
+                                                        size: 20,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.secondary.withValues(alpha: .7),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 5),
-                                        GestureDetector(
-                                          onTap: () async {
-                                            await createCopyrightLink(
-                                              false,
-                                              context,
-                                              id: data.subPrismWalls![index]["id"].toString(),
-                                              provider: provider,
-                                              url: data.subPrismWalls![index]["wallpaper_url"].toString(),
-                                              thumbUrl: data.subPrismWalls![index]["wallpaper_thumb"].toString(),
-                                            );
-                                          },
-                                          child: Row(
-                                            children: [
-                                              Text(
-                                                "Report",
-                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                  decoration: TextDecoration.underline,
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Icon(
-                                                JamIcons.info,
-                                                size: 20,
-                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
-                            Expanded(
-                              flex: 5,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : data.subPrismWalls![index]["wallpaper_url"].toString(),
+                                    link: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
                                     isPremiumContent: app_state.isPremiumWall(
                                       app_state.premiumCollections,
-                                      data.subPrismWalls![index]["collections"] as List? ?? [],
+                                      _prismWall["collections"] as List? ?? [],
                                     ),
-                                    contentId: data.subPrismWalls![index]["id"]?.toString(),
+                                    contentId: _prismWall["id"]?.toString(),
                                     sourceContext: 'wallpaper_screen.prism',
                                   ),
                                   SetWallpaperButton(
                                     colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : data.subPrismWalls![index]["wallpaper_url"].toString(),
+                                    url: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
                                   ),
                                   FavouriteWallpaperButton(
-                                    id: data.subPrismWalls![index]["id"].toString(),
+                                    id: _prismWall["id"].toString(),
                                     provider: "Prism",
-                                    prism: data.subPrismWalls![index] as Map,
+                                    prism: _prismWall as Map,
                                     trash: false,
                                   ),
                                   ShareButton(
-                                    id: data.subPrismWalls![index]["id"].toString(),
+                                    id: _prismWall["id"].toString(),
                                     provider: provider,
-                                    url: data.subPrismWalls![index]["wallpaper_url"].toString(),
-                                    thumbUrl: data.subPrismWalls![index]["wallpaper_thumb"].toString(),
+                                    url: _prismWall["wallpaper_url"].toString(),
+                                    thumbUrl: _prismWall["wallpaper_thumb"].toString(),
                                   ),
-                                  EditButton(url: data.subPrismWalls![index]["wallpaper_url"].toString()),
+                                  EditButton(url: _prismWall["wallpaper_url"].toString()),
                                 ],
                               ),
                             ),
@@ -1022,12 +1111,13 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           onTap: () {
+                            if (_panelScrollInProgress) return;
                             HapticFeedback.vibrate();
                             !paletteLoading ? updateAccent() : logger.d("");
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: data.subPrismWalls![index]["wallpaper_url"].toString(),
+                            imageUrl: _prismWall["wallpaper_url"].toString(),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1095,7 +1185,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = data.subPrismWalls![index]["wallpaper_url"];
+                            final link = _prismWall["wallpaper_url"];
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -1229,160 +1319,168 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 ),
                               ),
                             ),
-                            ColorBar(colors: colors),
+                            ColorBar(colors: colors, fixedHeight: 64),
                             Expanded(
                               flex: 8,
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                      child: SizedBox(
-                                        width: MediaQuery.of(context).size.width * .8,
-                                        child: Text(
-                                          pdata.wallsP[index].url
-                                                      .toString()
-                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                      .replaceAll("-", " ")
-                                                      .replaceAll("/", "")
-                                                      .length >
-                                                  8
-                                              ? pdata.wallsP[index].url
-                                                        .toString()
-                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
-                                                    pdata.wallsP[index].url
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: SizedBox(
+                                          width: MediaQuery.of(context).size.width * .8,
+                                          child: Text(
+                                            pdata.wallsP[index].url
                                                         .toString()
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
-                                                        .substring(
-                                                          1,
-                                                          pdata.wallsP[index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")
-                                                                  .length -
-                                                              7,
-                                                        )
-                                              : pdata.wallsP[index].url
-                                                        .toString()
-                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
-                                                    pdata.wallsP[index].url
-                                                        .toString()
-                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")
-                                                        .substring(1),
-                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                            color: Theme.of(context).colorScheme.secondary,
+                                                        .length >
+                                                    8
+                                                ? pdata.wallsP[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")[0]
+                                                          .toUpperCase() +
+                                                      pdata.wallsP[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")
+                                                          .substring(
+                                                            1,
+                                                            pdata.wallsP[index].url
+                                                                    .toString()
+                                                                    .replaceAll("https://www.pexels.com/photo/", "")
+                                                                    .replaceAll("-", " ")
+                                                                    .replaceAll("/", "")
+                                                                    .length -
+                                                                7,
+                                                          )
+                                                : pdata.wallsP[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")[0]
+                                                          .toUpperCase() +
+                                                      pdata.wallsP[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")
+                                                          .substring(1),
+                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 1,
                                         ),
                                       ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: <Widget>[
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: <Widget>[
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  JamIcons.info,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  pdata.wallsP[index].id.toString(),
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.info,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  JamIcons.set_square,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  "${pdata.wallsP[index].width}x${pdata.wallsP[index].height}",
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    pdata.wallsP[index].id.toString(),
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: <Widget>[
-                                            SizedBox(
-                                              width: 160,
-                                              child: Align(
-                                                alignment: Alignment.centerRight,
-                                                child: ActionChip(
-                                                  onPressed: () {
-                                                    launch(pdata.wallsP[index].url!);
-                                                  },
-                                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                                                  avatar: Icon(
-                                                    JamIcons.camera,
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                                ],
+                                              ),
+                                              const SizedBox(height: 5),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
-                                                  labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                                                  label: Text(
-                                                    pdata.wallsP[index].photographer.toString(),
-                                                    style: Theme.of(context).textTheme.bodyMedium!
-                                                        .copyWith(color: Theme.of(context).colorScheme.secondary)
-                                                        .copyWith(fontSize: 16),
-                                                    overflow: TextOverflow.fade,
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    "${pdata.wallsP[index].width}x${pdata.wallsP[index].height}",
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: <Widget>[
+                                              SizedBox(
+                                                width: 160,
+                                                child: Align(
+                                                  alignment: Alignment.centerRight,
+                                                  child: ActionChip(
+                                                    onPressed: () {
+                                                      openPrismLink(context, pdata.wallsP[index].url!);
+                                                    },
+                                                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                                    avatar: Icon(
+                                                      JamIcons.camera,
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
+                                                    labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                                    label: Text(
+                                                      pdata.wallsP[index].photographer.toString(),
+                                                      style: Theme.of(context).textTheme.bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary)
+                                                          .copyWith(fontSize: 16),
+                                                      overflow: TextOverflow.fade,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  provider.toString(),
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    provider.toString(),
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Icon(
-                                                  JamIcons.database,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                                  const SizedBox(width: 10),
+                                                  Icon(
+                                                    JamIcons.database,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: .7),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -1555,7 +1653,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider!.length > 6 && provider!.substring(0, 6) == "Colors"
+          : provider.length > 6 && provider.substring(0, 6) == "Colors"
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -1655,160 +1753,168 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 ),
                               ),
                             ),
-                            ColorBar(colors: colors),
+                            ColorBar(colors: colors, fixedHeight: 64),
                             Expanded(
                               flex: 8,
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                      child: SizedBox(
-                                        width: MediaQuery.of(context).size.width * .8,
-                                        child: Text(
-                                          pdata.wallsC[index].url
-                                                      .toString()
-                                                      .replaceAll("https://www.pexels.com/photo/", "")
-                                                      .replaceAll("-", " ")
-                                                      .replaceAll("/", "")
-                                                      .length >
-                                                  8
-                                              ? pdata.wallsC[index].url
-                                                        .toString()
-                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
-                                                    pdata.wallsC[index].url
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                        child: SizedBox(
+                                          width: MediaQuery.of(context).size.width * .8,
+                                          child: Text(
+                                            pdata.wallsC[index].url
                                                         .toString()
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
-                                                        .substring(
-                                                          1,
-                                                          pdata.wallsC[index].url
-                                                                  .toString()
-                                                                  .replaceAll("https://www.pexels.com/photo/", "")
-                                                                  .replaceAll("-", " ")
-                                                                  .replaceAll("/", "")
-                                                                  .length -
-                                                              7,
-                                                        )
-                                              : pdata.wallsC[index].url
-                                                        .toString()
-                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")[0]
-                                                        .toUpperCase() +
-                                                    pdata.wallsC[index].url
-                                                        .toString()
-                                                        .replaceAll("https://www.pexels.com/photo/", "")
-                                                        .replaceAll("-", " ")
-                                                        .replaceAll("/", "")
-                                                        .substring(1),
-                                          style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                            color: Theme.of(context).colorScheme.secondary,
+                                                        .length >
+                                                    8
+                                                ? pdata.wallsC[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")[0]
+                                                          .toUpperCase() +
+                                                      pdata.wallsC[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")
+                                                          .substring(
+                                                            1,
+                                                            pdata.wallsC[index].url
+                                                                    .toString()
+                                                                    .replaceAll("https://www.pexels.com/photo/", "")
+                                                                    .replaceAll("-", " ")
+                                                                    .replaceAll("/", "")
+                                                                    .length -
+                                                                7,
+                                                          )
+                                                : pdata.wallsC[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")[0]
+                                                          .toUpperCase() +
+                                                      pdata.wallsC[index].url
+                                                          .toString()
+                                                          .replaceAll("https://www.pexels.com/photo/", "")
+                                                          .replaceAll("-", " ")
+                                                          .replaceAll("/", "")
+                                                          .substring(1),
+                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
-                                          maxLines: 1,
                                         ),
                                       ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: <Widget>[
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: <Widget>[
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  JamIcons.info,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  pdata.wallsC[index].id.toString(),
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.info,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  JamIcons.set_square,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Text(
-                                                  "${pdata.wallsC[index].width}x${pdata.wallsC[index].height}",
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    pdata.wallsC[index].id.toString(),
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: <Widget>[
-                                            SizedBox(
-                                              width: 160,
-                                              child: Align(
-                                                alignment: Alignment.centerRight,
-                                                child: ActionChip(
-                                                  onPressed: () {
-                                                    launch(pdata.wallsC[index].url!);
-                                                  },
-                                                  padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                                                  avatar: Icon(
-                                                    JamIcons.camera,
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                                ],
+                                              ),
+                                              const SizedBox(height: 5),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    JamIcons.set_square,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: .7),
                                                   ),
-                                                  labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                                                  label: Text(
-                                                    pdata.wallsC[index].photographer.toString(),
-                                                    style: Theme.of(context).textTheme.bodyMedium!
-                                                        .copyWith(color: Theme.of(context).colorScheme.secondary)
-                                                        .copyWith(fontSize: 16),
-                                                    overflow: TextOverflow.fade,
+                                                  const SizedBox(width: 10),
+                                                  Text(
+                                                    "${pdata.wallsC[index].width}x${pdata.wallsC[index].height}",
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: <Widget>[
+                                              SizedBox(
+                                                width: 160,
+                                                child: Align(
+                                                  alignment: Alignment.centerRight,
+                                                  child: ActionChip(
+                                                    onPressed: () {
+                                                      openPrismLink(context, pdata.wallsC[index].url!);
+                                                    },
+                                                    padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                                                    avatar: Icon(
+                                                      JamIcons.camera,
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
+                                                    labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
+                                                    label: Text(
+                                                      pdata.wallsC[index].photographer.toString(),
+                                                      style: Theme.of(context).textTheme.bodyMedium!
+                                                          .copyWith(color: Theme.of(context).colorScheme.secondary)
+                                                          .copyWith(fontSize: 16),
+                                                      overflow: TextOverflow.fade,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                Text(
-                                                  "Pexels",
-                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                    color: Theme.of(context).colorScheme.secondary,
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    "Pexels",
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                Icon(
-                                                  JamIcons.database,
-                                                  size: 20,
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                                  const SizedBox(width: 10),
+                                                  Icon(
+                                                    JamIcons.database,
+                                                    size: 20,
+                                                    color: Theme.of(
+                                                      context,
+                                                    ).colorScheme.secondary.withValues(alpha: .7),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -2080,144 +2186,157 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 ),
                               ),
                             ),
-                            ColorBar(colors: colors),
+                            ColorBar(colors: colors, fixedHeight: 64),
                             Expanded(
                               flex: 8,
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: <Widget>[
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
-                                          child: Text(
-                                            wdata.wallsS[index].id.toString().toUpperCase(),
-                                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                                              color: Theme.of(context).colorScheme.secondary,
+                              child: SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(35, 0, 35, 15),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: <Widget>[
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+                                            child: Text(
+                                              wdata.wallsS[index].id.toString().toUpperCase(),
+                                              style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                                                color: Theme.of(context).colorScheme.secondary,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.eye,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              wdata.wallsS[index].views.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.heart_f,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              wdata.wallsS[index].favourites.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              JamIcons.save,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: EdgeInsets.zero,
-                                          child: Row(
+                                          Row(
                                             children: [
+                                              Icon(
+                                                JamIcons.eye,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
                                               Text(
-                                                wdata.wallsS[index].category.toString()[0].toUpperCase() +
-                                                    wdata.wallsS[index].category.toString().substring(1),
+                                                wdata.wallsS[index].views.toString(),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
                                               ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.heart_f,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                wdata.wallsS[index].favourites.toString(),
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                JamIcons.save,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                  color: Theme.of(context).colorScheme.secondary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: <Widget>[
+                                          Padding(
+                                            padding: EdgeInsets.zero,
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    wdata.wallsS[index].category.toString()[0].toUpperCase() +
+                                                        wdata.wallsS[index].category.toString().substring(1),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                      color: Theme.of(context).colorScheme.secondary,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                Icon(
+                                                  JamIcons.unordered_list,
+                                                  size: 20,
+                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  wdata.wallsS[index].resolution.toString(),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
+                                              ),
                                               const SizedBox(width: 10),
                                               Icon(
-                                                JamIcons.unordered_list,
+                                                JamIcons.set_square,
                                                 size: 20,
                                                 color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              wdata.wallsS[index].resolution.toString(),
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                          const SizedBox(height: 5),
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  provider.isNotEmpty
+                                                      ? provider[0].toUpperCase() + provider.substring(1)
+                                                      : "Search",
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                                    color: Theme.of(context).colorScheme.secondary,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Icon(
-                                              JamIcons.set_square,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 5),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              provider!.isNotEmpty
-                                                  ? provider.toString()[0].toUpperCase() +
-                                                        provider.toString().substring(1)
-                                                  : "Search",
-                                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                                color: Theme.of(context).colorScheme.secondary,
+                                              const SizedBox(width: 10),
+                                              Icon(
+                                                JamIcons.search,
+                                                size: 20,
+                                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
                                               ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Icon(
-                                              JamIcons.search,
-                                              size: 20,
-                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: .7),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

@@ -40,8 +40,18 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class ShareWallpaperViewScreen extends StatefulWidget {
-  final List? arguments;
-  const ShareWallpaperViewScreen({this.arguments});
+  const ShareWallpaperViewScreen({
+    super.key,
+    required this.wallId,
+    required this.provider,
+    required this.wallpaperUrl,
+    required this.thumbnailUrl,
+  });
+
+  final String wallId;
+  final String provider;
+  final String wallpaperUrl;
+  final String thumbnailUrl;
 
   @override
   _ShareWallpaperViewScreenState createState() => _ShareWallpaperViewScreenState();
@@ -50,9 +60,9 @@ class ShareWallpaperViewScreen extends StatefulWidget {
 class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  String? id;
-  String? provider;
-  String? url;
+  late String id;
+  late String provider;
+  late String url;
   late String thumb;
   List<Color?>? colors;
   Color? accent = Colors.white;
@@ -70,7 +80,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   bool panelCollapsed = true;
   Future<String>? _futureView;
 
-  String get _sourceContext => '${(provider ?? 'unknown').toLowerCase()}_share_wallpaper_view';
+  String get _sourceContext => '${provider.toLowerCase()}_share_wallpaper_view';
 
   void _trackAction(AnalyticsActionValue action, {int? index}) {
     unawaited(
@@ -173,13 +183,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    id = widget.arguments![0].toString();
-    provider = widget.arguments![1].toString();
-    url = widget.arguments![2].toString();
-    thumb = widget.arguments![3].toString();
+    id = widget.wallId;
+    provider = widget.provider;
+    url = widget.wallpaperUrl;
+    thumb = widget.thumbnailUrl;
     _contentLoadTracker.start();
     if (provider == "WallHaven") {
-      futureW = WData.getWallbyID(id!);
+      futureW = WData.getWallbyID(id);
     } else if (provider == "Pexels") {
       futureP = PData.getWallbyIDP(id);
     } else if (provider == "Prism") {
@@ -538,7 +548,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: url!,
+                            imageUrl: url,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -888,7 +898,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         child: ActionChip(
                                                           onPressed: () {
                                                             context.router.push(
-                                                              ProfileRoute(arguments: [Data.wall["email"]]),
+                                                              ProfileRoute(
+                                                                profileIdentifier: Data.wall["email"]?.toString(),
+                                                              ),
                                                             );
                                                           },
                                                           padding: const EdgeInsets.symmetric(
@@ -1071,7 +1083,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: url!,
+                            imageUrl: url,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1498,7 +1510,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: url!,
+                            imageUrl: url,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(

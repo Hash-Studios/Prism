@@ -11,7 +11,7 @@ class CarouselDots extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [0, 1, 2, 3, 4].map((i) {
+        children: [0, 1, 2, 3, 4, 5].map((i) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,

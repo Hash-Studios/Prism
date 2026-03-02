@@ -23,12 +23,14 @@ dependencies:
   animations: ^2.0.0
   cached_network_image: ^3.0.0
   carousel_slider: ^5.1.2
+  collection: ^1.19.1
   cloud_firestore: ^5.6.12
   device_info_plus: ^11.5.0
   extended_image: ^10.0.1
   file_encrypter: ^2.0.2
   firebase_analytics: ^11.5.0
   firebase_auth: ^5.6.0
+  cloud_functions: ^5.6.0
   firebase_core: ^3.15.2
   app_links: ^6.4.1
   firebase_in_app_messaging: ^0.8.0

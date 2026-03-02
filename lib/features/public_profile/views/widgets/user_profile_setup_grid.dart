@@ -211,7 +211,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                   onTap: () {
                                     if (context.publicProfileAdapter(listen: false).userProfileSetups == []) {
                                     } else {
-                                      context.router.push(UserProfileSetupViewRoute(arguments: [index]));
+                                      context.router.push(UserProfileSetupViewRoute(setupIndex: index));
                                     }
                                   },
                                 ),

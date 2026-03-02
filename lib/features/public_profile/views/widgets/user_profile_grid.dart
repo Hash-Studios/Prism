@@ -247,10 +247,12 @@ class PhotographerWallTile extends StatelessWidget {
                 } else {
                   context.router.push(
                     UserProfileWallViewRoute(
-                      arguments: [
-                        index,
-                        context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["wallpaper_thumb"],
-                      ],
+                      wallIndex: index,
+                      thumbnailUrl: context
+                          .publicProfileAdapter(listen: false)
+                          .userProfileWalls![index]
+                          .data()["wallpaper_thumb"]
+                          .toString(),
                     ),
                   );
                 }

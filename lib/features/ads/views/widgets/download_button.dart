@@ -7,6 +7,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -519,7 +520,11 @@ class _DownloadButtonState extends State<DownloadButton> {
           link: link,
           filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
         );
-        await PrismMediaHostApi().enqueueDownload(request);
+        final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
+        if (!result.success) {
+          toasts.error(result.message ?? "Couldn't download! Please retry.");
+          return false;
+        }
       }
 
       analytics.track(
@@ -529,10 +534,14 @@ class _DownloadButtonState extends State<DownloadButton> {
           premiumContent: widget.isPremiumContent,
         ),
       );
-      toasts.codeSend('Wall downloaded in Pictures/Prism!');
+      toasts.codeSend(hideSetWallpaperUi ? 'Saved to Photos.' : 'Wall downloaded in Pictures/Prism!');
       return true;
     } on PlatformException catch (e) {
-      logger.e('Download failed', error: e);
+      if (e.code == 'channel-error') {
+        logger.w('Download channel unavailable (native side not registered)', error: e);
+      } else {
+        logger.e('Download failed', error: e);
+      }
       toasts.error("Couldn't download! Please retry.");
       return false;
     } catch (e) {

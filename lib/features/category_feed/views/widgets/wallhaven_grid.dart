@@ -113,7 +113,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     ),
                                   ),
                                 );
-                                launch(app_state.bannerURL);
+                                openPrismLink(context, app_state.bannerURL);
                               },
                               child: Container(
                                 decoration: BoxDecoration(
@@ -170,7 +170,11 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     ),
                                   );
                                   context.router.push(
-                                    WallpaperRoute(arguments: [widget.provider, i, wData.walls[i].thumbs!["small"]]),
+                                    WallpaperRoute(
+                                      provider: widget.provider.toString(),
+                                      index: i,
+                                      link: wData.walls[i].thumbs!["small"].toString(),
+                                    ),
                                   );
                                 }
                               },

@@ -27,6 +27,7 @@ Future<List?> getPrismWalls() async {
         orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
         limit: 24,
         dedupeWindowMs: 1000,
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
     );

@@ -62,7 +62,11 @@ class WallhavenTile extends StatelessWidget {
                     ),
                   );
                   context.router.push(
-                    WallpaperRoute(arguments: [widget.provider, index, wData.walls[index].thumbs!["small"].toString()]),
+                    WallpaperRoute(
+                      provider: widget.provider.toString(),
+                      index: index,
+                      link: wData.walls[index].thumbs!["small"].toString(),
+                    ),
                   );
                 }
               },

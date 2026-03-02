@@ -4,7 +4,6 @@ import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
-import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/global/searchProviderMenu.dart';
@@ -359,78 +358,76 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ),
-      body: BottomBar(
-        child: isSubmitted
-            ? SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    child: context.prismModeStyleForContext() == "Dark"
-                        ? SvgPicture.string(
-                            loaderDark
-                                .replaceAll(
-                                  "181818",
-                                  Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "E57697",
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                )
-                                .replaceAll(
-                                  "F0F0F0",
-                                  Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "2F2E41",
-                                  Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "3F3D56",
-                                  Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "2F2F2F",
-                                  Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                ),
-                          )
-                        : SvgPicture.string(
-                            loaderLight
-                                .replaceAll(
-                                  "181818",
-                                  Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "E57697",
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                )
-                                .replaceAll(
-                                  "F0F0F0",
-                                  Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "2F2E41",
-                                  Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "3F3D56",
-                                  Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                )
-                                .replaceAll(
-                                  "2F2F2F",
-                                  Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                ),
-                          ),
-                  ),
-                  SizedBox(width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.height * 0.1),
-                ],
-              ),
-      ),
+      body: isSubmitted
+          ? SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  child: context.prismModeStyleForContext() == "Dark"
+                      ? SvgPicture.string(
+                          loaderDark
+                              .replaceAll(
+                                "181818",
+                                Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "E57697",
+                                Theme.of(
+                                  context,
+                                ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                              )
+                              .replaceAll(
+                                "F0F0F0",
+                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "2F2E41",
+                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "3F3D56",
+                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "2F2F2F",
+                                Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
+                              ),
+                        )
+                      : SvgPicture.string(
+                          loaderLight
+                              .replaceAll(
+                                "181818",
+                                Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "E57697",
+                                Theme.of(
+                                  context,
+                                ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
+                              )
+                              .replaceAll(
+                                "F0F0F0",
+                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "2F2E41",
+                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "3F3D56",
+                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
+                              )
+                              .replaceAll(
+                                "2F2F2F",
+                                Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
+                              ),
+                        ),
+                ),
+                SizedBox(width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.height * 0.1),
+              ],
+            ),
     );
   }
 }

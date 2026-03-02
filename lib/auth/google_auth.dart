@@ -10,6 +10,9 @@ import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
+import 'dart:async';
+
+import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -137,7 +140,12 @@ class GoogleAuth {
         name: AnalyticsUserProperty.isPremium.wireName,
         value: app_state.prismUser.premium ? '1' : '0',
       );
-      await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
+      final String? followersTopic = followersTopicFromEmail(user.email!);
+      if (followersTopic != null) {
+        await subscribeToTopicSafely(home.f, followersTopic, sourceTag: 'auth.signin.followers_topic');
+      }
+      unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
+      FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
       assert(user.uid == currentUser!.uid);

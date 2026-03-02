@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -167,6 +168,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (hideSetWallpaperUi) {
+      return const SizedBox.shrink();
+    }
     return GestureDetector(
       onTap: () {
         isLoading

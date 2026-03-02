@@ -217,12 +217,10 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                             );
                             context.router.push(
                               ShareWallpaperViewRoute(
-                                arguments: [
-                                  walls[index]["id"],
-                                  walls[index]["wallpaper_provider"],
-                                  walls[index]["wallpaper_url"],
-                                  walls[index]["wallpaper_thumb"],
-                                ],
+                                wallId: walls[index]["id"].toString(),
+                                provider: walls[index]["wallpaper_provider"].toString(),
+                                wallpaperUrl: walls[index]["wallpaper_url"].toString(),
+                                thumbnailUrl: walls[index]["wallpaper_thumb"].toString(),
                               ),
                             );
                           },

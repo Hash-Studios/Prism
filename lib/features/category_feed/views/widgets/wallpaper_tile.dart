@@ -74,7 +74,13 @@ class WallpaperTile extends StatelessWidget {
                     ),
                   ),
                 );
-                context.router.push(WallpaperRoute(arguments: [widget.provider, index, wallData["wallpaper_thumb"]]));
+                context.router.push(
+                  WallpaperRoute(
+                    provider: widget.provider.toString(),
+                    index: index,
+                    link: wallData["wallpaper_thumb"].toString(),
+                  ),
+                );
               },
             ),
           ),

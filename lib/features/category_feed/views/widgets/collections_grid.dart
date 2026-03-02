@@ -118,7 +118,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   void _openCollection(String collectionName) {
-    context.router.push(CollectionViewRoute(arguments: [collectionName.trim().toLowerCase()]));
+    context.router.push(CollectionViewRoute(collectionName: collectionName.trim().toLowerCase()));
   }
 
   Future<void> _showPremiumPreviewSheet({required String collectionName, required String sourceTag}) async {

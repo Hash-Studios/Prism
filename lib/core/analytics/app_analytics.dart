@@ -32,8 +32,6 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
   final AnalyticsProvider _provider;
   final AnalyticsEventNormalizer _normalizer;
 
-  late final AnalyticsRouteObserver _routeObserver = AnalyticsRouteObserver(onScreenView: logScreenView);
-
   @override
   Future<void> track(AnalyticsEvent event) {
     if (event is ShareAnalyticsEvent) {
@@ -99,7 +97,7 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
 
   @override
   List<NavigatorObserver> buildNavigatorObservers() {
-    return <NavigatorObserver>[_routeObserver];
+    return <NavigatorObserver>[AnalyticsRouteObserver(onScreenView: logScreenView)];
   }
 
   String _nonEmpty(String value, {required String fallback}) {

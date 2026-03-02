@@ -29,8 +29,10 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class UserProfileWallViewScreen extends StatefulWidget {
-  final List? arguments;
-  const UserProfileWallViewScreen({this.arguments});
+  const UserProfileWallViewScreen({super.key, required this.wallIndex, required this.thumbnailUrl});
+
+  final int wallIndex;
+  final String thumbnailUrl;
 
   @override
   _UserProfileWallViewScreenState createState() => _UserProfileWallViewScreenState();
@@ -165,8 +167,8 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
   void initState() {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
-    thumb = widget.arguments![1].toString();
+    index = widget.wallIndex;
+    thumb = widget.thumbnailUrl;
     isLoading = true;
     _contentLoadTracker.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {

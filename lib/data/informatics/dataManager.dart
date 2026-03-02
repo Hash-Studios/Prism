@@ -9,17 +9,7 @@ String jsonFile = 'dummy.json';
 final Codec<String, String> _stringToBase64 = utf8.fuse(base64);
 bool _didLogGitHubConfigSnapshot = false;
 
-String _normalizedEnvValue(String raw) {
-  final String trimmed = raw.trim();
-  if (trimmed.length >= 2) {
-    final bool doubleQuoted = trimmed.startsWith('"') && trimmed.endsWith('"');
-    final bool singleQuoted = trimmed.startsWith("'") && trimmed.endsWith("'");
-    if (doubleQuoted || singleQuoted) {
-      return trimmed.substring(1, trimmed.length - 1).trim();
-    }
-  }
-  return trimmed;
-}
+String _normalizedEnvValue(String raw) => Env.normalize(raw);
 
 Map<String, Object?> _githubConfigSnapshot() {
   final String token = _normalizedEnvValue(Env.ghToken);

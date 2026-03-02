@@ -63,14 +63,16 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
 
   Future<void> myScroll() async {
     scrollBottomBarController.addListener(() {
-      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (scrollBottomBarController.positions.length != 1) return;
+      final direction = scrollBottomBarController.position.userScrollDirection;
+      if (direction == ScrollDirection.reverse) {
         if (!isScrollingDown) {
           isScrollingDown = true;
           isOnTop = false;
           hideBottomBar();
         }
       }
-      if (scrollBottomBarController.position.userScrollDirection == ScrollDirection.forward) {
+      if (direction == ScrollDirection.forward) {
         if (isScrollingDown) {
           isScrollingDown = false;
           isOnTop = true;
@@ -150,8 +152,6 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
       case 2:
         return NavTabValue.setups;
       case 3:
-        return NavTabValue.ai;
-      case 4:
         return NavTabValue.profile;
       default:
         return NavTabValue.home;
@@ -198,13 +198,17 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final tabsRouter = AutoTabsRouter.of(context);
+    TabsRouter tabsRouter;
+    try {
+      tabsRouter = AutoTabsRouter.of(context);
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
     final activeIndex = tabsRouter.activeIndex;
     final isHome = activeIndex == 0;
     final isSearch = activeIndex == 1;
     final isSetups = activeIndex == 2;
-    final isAI = activeIndex == 3;
-    final isProfile = activeIndex == 4;
+    final isProfile = activeIndex == 3;
 
     return Container(
       decoration: BoxDecoration(
@@ -386,42 +390,6 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
-              child: IconButton(
-                tooltip: 'AI',
-                padding: EdgeInsets.zero,
-                icon: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Container(height: isAI ? 9 : 0),
-                    Icon(JamIcons.star, color: Theme.of(context).colorScheme.secondary),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(500),
-                        color: isAI
-                            ? Theme.of(context).colorScheme.error == Colors.black
-                                  ? Colors.white24
-                                  : Theme.of(context).colorScheme.error
-                            : Theme.of(context).colorScheme.secondary,
-                      ),
-                      margin: isAI ? const EdgeInsets.all(3) : EdgeInsets.zero,
-                      width: isAI ? _paddingAnimation.value : 0,
-                      height: isAI ? 3 : 0,
-                    ),
-                  ],
-                ),
-                onPressed: () {
-                  if (isAI) {
-                    logger.d("Currently on AI");
-                  } else {
-                    _trackTabSelection(fromIndex: activeIndex, toIndex: 3);
-                    tabsRouter.setActiveIndex(3);
-                  }
-                },
-              ),
-            ),
-            Padding(
               padding: const EdgeInsets.fromLTRB(0, 10, 18, 10),
               child: IconButton(
                 tooltip: 'Profile',
@@ -472,8 +440,8 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                   if (isProfile) {
                     logger.d("Currently on Profile");
                   } else {
-                    _trackTabSelection(fromIndex: activeIndex, toIndex: 4);
-                    tabsRouter.setActiveIndex(4);
+                    _trackTabSelection(fromIndex: activeIndex, toIndex: 3);
+                    tabsRouter.setActiveIndex(3);
                   }
                 },
               ),
@@ -511,7 +479,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       });
       final router = context.router;
       Navigator.pop(context);
-      router.push(EditWallRoute(arguments: [_wallpaper]));
+      router.push(EditWallRoute(image: _wallpaper!));
     }
   }
 

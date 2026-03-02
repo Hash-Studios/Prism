@@ -378,7 +378,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                                 onPressed: () {
                                                   final links = user.links;
                                                   if (links[e].toString().contains("@gmail.com")) {
-                                                    launch("mailto:${user.links[e]}");
+                                                    openPrismLink(context, "mailto:${user.links[e]}");
                                                   }
                                                 },
                                               ),
@@ -448,7 +448,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                 queryLength: widget.queryLength,
                               ),
                             );
-                            context.router.push(ProfileRoute(arguments: [user.email]));
+                            context.router.push(ProfileRoute(profileIdentifier: user.email));
                           },
                           icon: const Icon(JamIcons.user_circle),
                         ),

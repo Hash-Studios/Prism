@@ -99,13 +99,11 @@ Color showColors(BuildContext context) {
                     Navigator.pop(context);
                     context.router.push(
                       ColorRoute(
-                        arguments: [
-                          color
-                              .toString()
-                              .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                              .replaceAll("Color(0xff", "")
-                              .replaceAll(")", ""),
-                        ],
+                        hexColor: color
+                            .toString()
+                            .replaceAll("MaterialColor(primary value: Color(0xff", "")
+                            .replaceAll("Color(0xff", "")
+                            .replaceAll(")", ""),
                       ),
                     );
                   },

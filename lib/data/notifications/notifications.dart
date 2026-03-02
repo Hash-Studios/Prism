@@ -47,6 +47,7 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
   required DateTime sinceUtc,
   required String sourceTag,
   int limit = _defaultNotifLimit,
+  FirestoreCachePolicy cachePolicy = FirestoreCachePolicy.networkOnly,
 }) async {
   final List<String> modifiers = _notificationModifiers();
   if (modifiers.isEmpty) {
@@ -63,6 +64,7 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
       orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
       limit: limit,
       dedupeWindowMs: 1500,
+      cachePolicy: cachePolicy,
     ),
     (data, _) => data,
   );
@@ -112,6 +114,7 @@ Future<void> getNotifs() async {
   final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
     sinceUtc: lastFetchTime,
     sourceTag: 'notifications.latest',
+    cachePolicy: FirestoreCachePolicy.memoryFirst,
   );
   await _addUniqueNotifications(box, snap.map(_asMap).toList(growable: false));
   main.prefs.put('lastFetchTime', nowUtc);

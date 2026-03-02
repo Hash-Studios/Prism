@@ -146,7 +146,7 @@ enum AuthMethodValue { google, apple }
 
 enum NavTabValue { home, search, setups, ai, profile }
 
-enum NotificationPreferenceValue { followers, posts, inApp, recommendations }
+enum NotificationPreferenceValue { followers, posts, inApp, recommendations, streakReminders }
 
 enum DeepLinkSourceValue { appLinks, shortLinkResolver }
 
@@ -667,6 +667,8 @@ extension NotificationPreferenceValueX on NotificationPreferenceValue {
         return 'in_app';
       case NotificationPreferenceValue.recommendations:
         return 'recommendations';
+      case NotificationPreferenceValue.streakReminders:
+        return 'streak_reminders';
     }
   }
 }

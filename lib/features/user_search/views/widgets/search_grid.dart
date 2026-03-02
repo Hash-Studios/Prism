@@ -309,7 +309,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     );
                                     context.router.push(
                                       WallpaperRoute(
-                                        arguments: [widget.query, index, wData.wallsS[index].thumbs!["small"]],
+                                        provider: "WallHaven",
+                                        index: index,
+                                        link: wData.wallsS[index].thumbs!["small"].toString(),
                                       ),
                                     );
                                   }
@@ -327,12 +329,10 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     );
                                     context.router.push(
                                       SearchWallpaperRoute(
-                                        arguments: [
-                                          widget.selectedProvider,
-                                          widget.query,
-                                          index,
-                                          pData.wallsPS[index].src!["medium"],
-                                        ],
+                                        selectedProvider: widget.selectedProvider ?? "Pexels",
+                                        query: widget.query,
+                                        index: index,
+                                        link: pData.wallsPS[index].src!["medium"].toString(),
                                       ),
                                     );
                                   }

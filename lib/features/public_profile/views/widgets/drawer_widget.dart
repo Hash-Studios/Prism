@@ -308,7 +308,7 @@ class ProfileDrawer extends StatelessWidget {
               },
               context: context,
             ),
-            if (app_state.isAdminUser())
+            if (app_state.isAdminUser()) ...[
               createDrawerBodyItem(
                 icon: JamIcons.shield_check,
                 text: 'Admin Moderation',
@@ -318,6 +318,16 @@ class ProfileDrawer extends StatelessWidget {
                 },
                 context: context,
               ),
+              createDrawerBodyItem(
+                icon: JamIcons.file,
+                text: 'Firestore telemetry',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.router.push(const FirestoreTelemetryRoute());
+                },
+                context: context,
+              ),
+            ],
             const Divider(),
             createDrawerBodyHeader(text: "CUSTOMISATION", context: context),
             createDrawerBodyItem(

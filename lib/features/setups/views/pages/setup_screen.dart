@@ -2,7 +2,6 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
-import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -36,11 +35,9 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
-      body: BottomBar(
-        child: SafeArea(
-          top: false,
-          child: SetupPage(future: future, controller: controller),
-        ),
+      body: SafeArea(
+        top: false,
+        child: SetupPage(future: future, controller: controller),
       ),
     );
   }
@@ -132,7 +129,7 @@ class _SetupPageState extends State<SetupPage> {
                         ? Loader()
                         : GestureDetector(
                             onTap: () {
-                              context.router.push(SetupViewRoute(arguments: [index]));
+                              context.router.push(SetupViewRoute(setupIndex: index));
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),

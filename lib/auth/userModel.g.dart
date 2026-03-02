@@ -33,9 +33,9 @@ class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
       transactions: (fields[15] as List).cast<PrismTransaction>(),
       name: fields[16] as String,
       coverPhoto: fields[17] as String?,
-      subscriptionTier: fields[18] as String? ?? 'free',
-      uploadsWeekStart: fields[19] as String? ?? '',
-      uploadsThisWeek: (fields[20] as num?)?.toInt() ?? 0,
+      subscriptionTier: fields[18] as String,
+      uploadsWeekStart: fields[19] as String,
+      uploadsThisWeek: (fields[20] as num).toInt(),
     );
   }
 

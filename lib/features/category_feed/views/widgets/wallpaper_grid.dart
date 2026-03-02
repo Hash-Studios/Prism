@@ -15,6 +15,7 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -142,7 +143,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                 children: <Widget>[
                   CarouselSlider.builder(
                     carouselController: carouselController,
-                    itemCount: 5,
+                    itemCount: 6,
                     options: CarouselOptions(
                       height: 200,
                       autoPlay: true,
@@ -156,7 +157,16 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                       },
                     ),
                     itemBuilder: (BuildContext context, int i, int rI) {
-                      if (i == 4) {
+                      // Slide 0: Wall of the Day
+                      if (i == 0) {
+                        return Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
+                          child: const WallOfTheDayCard(),
+                        );
+                      }
+                      // Slide 1: Promotional banner
+                      if (i == 1) {
                         return Container(
                           width: MediaQuery.of(context).size.width,
                           margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
@@ -171,7 +181,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   ),
                                 ),
                               );
-                              launch(app_state.bannerURL);
+                              openPrismLink(context, app_state.bannerURL);
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -209,7 +219,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                           ),
                         );
                       }
-                      final Map<String, dynamic>? wall = wallAt(i);
+                      // Slides 2-5: wallpaper thumbnails from the feed
+                      final Map<String, dynamic>? wall = wallAt(i - 2);
                       return Container(
                         width: MediaQuery.of(context).size.width,
                         margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
@@ -226,12 +237,16 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   sourceContext: 'home_wallpaper_grid_carousel',
                                   itemType: ItemTypeValue.wallpaper,
                                   itemId: wall["id"]?.toString(),
-                                  index: i,
+                                  index: i - 2,
                                 ),
                               ),
                             );
                             context.router.push(
-                              WallpaperRoute(arguments: [widget.provider, i, wall["wallpaper_thumb"]]),
+                              WallpaperRoute(
+                                provider: widget.provider.toString(),
+                                index: i - 2,
+                                link: wall["wallpaper_thumb"].toString(),
+                              ),
                             );
                           },
                           child: wall == null

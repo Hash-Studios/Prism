@@ -15,6 +15,14 @@ pattern = "prismwalls.com/og/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/.well-known/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/apple-app-site-association"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/share*"
 zone_name = "prismwalls.com"
 

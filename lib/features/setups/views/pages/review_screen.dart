@@ -318,7 +318,8 @@ class WallTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for review wall download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for review wall download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for review wall download', error: e);
@@ -565,7 +566,8 @@ class RejectedWallTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for rejected wall download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for rejected wall download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for rejected wall download', error: e);
@@ -887,13 +889,13 @@ class SetupTile extends StatelessWidget {
                                         ),
                                       );
                                     } else {
-                                      launch("${wallpaper.data()["wallpaper_url"]}").catchError((e) {
+                                      openPrismLink(context, "${wallpaper.data()["wallpaper_url"]}").catchError((e) {
                                         toasts.error("Error in link!");
                                         return false;
                                       });
                                     }
                                   } else {
-                                    launch("${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
+                                    openPrismLink(context, "${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
                                       toasts.error("Error in link!");
                                       return false;
                                     });
@@ -927,7 +929,7 @@ class SetupTile extends StatelessWidget {
                             GestureDetector(
                               onTap: () {
                                 if ("${wallpaper.data()["icon_url"]}" != "") {
-                                  launch("${wallpaper.data()["icon_url"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["icon_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -956,7 +958,7 @@ class SetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -984,7 +986,7 @@ class SetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget2"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url2"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1032,7 +1034,7 @@ class SetupTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.pencil, color: Theme.of(context).primaryColor),
                                     onPressed: () {
-                                      context.router.push(EditSetupReviewRoute(arguments: [wallpaper]));
+                                      context.router.push(EditSetupReviewRoute(setupDoc: wallpaper));
                                     },
                                   ),
                                 ),
@@ -1071,7 +1073,8 @@ class SetupTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for review setup download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for review setup download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for review setup download', error: e);
@@ -1308,13 +1311,13 @@ class RejectedSetupTile extends StatelessWidget {
                                       ),
                                     );
                                   } else {
-                                    launch("${wallpaper.data()["wallpaper_url"]}").catchError((e) {
+                                    openPrismLink(context, "${wallpaper.data()["wallpaper_url"]}").catchError((e) {
                                       toasts.error("Error in link!");
                                       return false;
                                     });
                                   }
                                 } else {
-                                  launch("${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1342,7 +1345,7 @@ class RejectedSetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                launch("${wallpaper.data()["icon_url"]}").catchError((e) {
+                                openPrismLink(context, "${wallpaper.data()["icon_url"]}").catchError((e) {
                                   toasts.error("Error in link!");
                                   return false;
                                 });
@@ -1368,7 +1371,7 @@ class RejectedSetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1396,7 +1399,7 @@ class RejectedSetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget2"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url2"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1467,7 +1470,8 @@ class RejectedSetupTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        logger.e('saveMedia failed for rejected setup download', error: e);
+                                        if (e.code != 'channel-error')
+                                          logger.e('saveMedia failed for rejected setup download', error: e);
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for rejected setup download', error: e);

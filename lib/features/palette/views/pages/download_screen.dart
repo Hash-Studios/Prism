@@ -177,7 +177,9 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                     ),
                                   ),
                                 );
-                                context.router.push(DownloadWallpaperRoute(arguments: ["Downloads", files[index]]));
+                                context.router.push(
+                                  DownloadWallpaperRoute(provider: "Downloads", file: File(files[index].path)),
+                                );
                               },
                             ),
                           ),

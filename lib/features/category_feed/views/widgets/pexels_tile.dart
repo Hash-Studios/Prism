@@ -62,7 +62,11 @@ class PexelsTile extends StatelessWidget {
                     ),
                   );
                   context.router.push(
-                    WallpaperRoute(arguments: [widget.provider, index, PData.wallsP[index].src!["small"]]),
+                    WallpaperRoute(
+                      provider: widget.provider.toString(),
+                      index: index,
+                      link: PData.wallsP[index].src!["small"].toString(),
+                    ),
                   );
                 }
               },

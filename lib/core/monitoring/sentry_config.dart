@@ -92,12 +92,5 @@ class SentryConfig {
     return dsn.isNotEmpty;
   }
 
-  static String _normalizeDefineValue(String rawValue) {
-    String value = rawValue.trim();
-    while (value.length >= 2 &&
-        ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
-      value = value.substring(1, value.length - 1).trim();
-    }
-    return value;
-  }
+  static String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 }
