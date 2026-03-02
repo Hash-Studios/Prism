@@ -140,7 +140,10 @@ class GoogleAuth {
         name: AnalyticsUserProperty.isPremium.wireName,
         value: app_state.prismUser.premium ? '1' : '0',
       );
-      await subscribeToTopicSafely(home.f, user.email!.split("@")[0], sourceTag: 'auth.signin.followers_topic');
+      final String? followersTopic = followersTopicFromEmail(user.email!);
+      if (followersTopic != null) {
+        await subscribeToTopicSafely(home.f, followersTopic, sourceTag: 'auth.signin.followers_topic');
+      }
       unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
       FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
       assert(!user.isAnonymous);

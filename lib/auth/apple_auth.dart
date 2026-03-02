@@ -136,8 +136,9 @@ class AppleAuth {
         name: AnalyticsUserProperty.isPremium.wireName,
         value: app_state.prismUser.premium ? '1' : '0',
       );
-      if (email.isNotEmpty) {
-        await subscribeToTopicSafely(home.f, email.split('@')[0], sourceTag: 'apple_auth.signin.followers_topic');
+      final String? followersTopic = followersTopicFromEmail(email);
+      if (followersTopic != null) {
+        await subscribeToTopicSafely(home.f, followersTopic, sourceTag: 'apple_auth.signin.followers_topic');
       }
       unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
       FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);

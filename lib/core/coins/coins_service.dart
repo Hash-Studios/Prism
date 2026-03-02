@@ -1759,8 +1759,9 @@ class CoinsService {
     required bool activeStreak,
   }) {
     DateTime reminderLocalBase(DateTime localBase, {required bool tomorrow}) {
-      final DateTime localDate = DateTime(localBase.year, localBase.month, localBase.day);
-      return DateTime(localDate.year, localDate.month, localDate.day + (tomorrow ? 1 : 0), 20);
+      final int dayOffset = tomorrow ? 1 : 0;
+      // Build this in UTC so scheduling doesn't depend on the device timezone.
+      return DateTime.utc(localBase.year, localBase.month, localBase.day + dayOffset, 20);
     }
 
     final DateTime localNow = _offsetDateTime(nowUtc, timezoneOffsetMinutes);

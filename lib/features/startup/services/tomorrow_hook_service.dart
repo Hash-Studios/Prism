@@ -77,12 +77,8 @@ class TomorrowHookService {
     if (!app_state.prismUser.loggedIn) {
       return;
     }
-    final String email = app_state.prismUser.email.trim();
-    if (email.isEmpty) {
-      return;
-    }
-    final String followersTopic = email.split('@').first.trim();
-    if (followersTopic.isEmpty) {
+    final String? followersTopic = followersTopicFromEmail(app_state.prismUser.email);
+    if (followersTopic == null) {
       return;
     }
 

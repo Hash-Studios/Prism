@@ -4,6 +4,20 @@ import 'dart:io';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+final RegExp _invalidFcmTopicCharacters = RegExp(r'[^A-Za-z0-9\-_.~%]');
+
+String? followersTopicFromEmail(String email) {
+  final String localPart = email.trim().split('@').first.trim();
+  if (localPart.isEmpty) {
+    return null;
+  }
+  final String sanitizedLocalPart = localPart.replaceAll(_invalidFcmTopicCharacters, '');
+  if (sanitizedLocalPart.isEmpty) {
+    return null;
+  }
+  return sanitizedLocalPart;
+}
+
 Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {
