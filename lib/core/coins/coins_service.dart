@@ -11,9 +11,10 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
-import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:cloud_functions/cloud_functions.dart';
@@ -1613,11 +1614,11 @@ class CoinsService {
   }
 
   bool _isProfileComplete() {
-    final bool hasName = app_state.prismUser.name.trim().isNotEmpty;
-    final bool hasUsername = app_state.prismUser.username.trim().isNotEmpty;
-    final bool hasBio = app_state.prismUser.bio.trim().isNotEmpty;
-    final bool hasLink = app_state.prismUser.links.values.any((value) => value.toString().trim().isNotEmpty);
-    return hasName && hasUsername && hasBio && hasLink;
+    final ProfileCompletenessStatus status = ProfileCompletenessEvaluator.evaluate(
+      app_state.prismUser,
+      defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
+    );
+    return status.isComplete;
   }
 
   int _asInt(Object? value) {

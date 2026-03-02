@@ -1027,6 +1027,28 @@ events:
         type: enum
         enum: AnalyticsReasonValue
         required: false
+  - id: profile_completeness_nudge_viewed
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+      - name: progress_percent
+        key: progress_percent
+        type: int
+      - name: missing_steps_count
+        key: missing_steps_count
+        type: int
+  - id: profile_completeness_action_tapped
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+      - name: action
+        key: action
+        type: string
+      - name: progress_percent
+        key: progress_percent
+        type: int
   - id: tomorrow_hook_viewed
     fields:
       - name: source_context

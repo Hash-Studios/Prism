@@ -5,6 +5,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -35,8 +36,8 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
   Image? image1;
   bool _completingOnboarding = false;
 
-  void _navigateToSplash(BuildContext ctx) {
-    ctx.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
+  void _navigateToSplash() {
+    context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
   }
 
   Future<void> _completeOnboardingFlow() async {
@@ -46,11 +47,15 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
     _completingOnboarding = true;
     try {
       main.prefs.put('onboarded_new', true);
+      await ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'onboarding_done');
+      if (!mounted) {
+        return;
+      }
       await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
       if (!mounted) {
         return;
       }
-      _navigateToSplash(context);
+      _navigateToSplash();
     } finally {
       _completingOnboarding = false;
     }

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
@@ -12,6 +14,7 @@ import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/download_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
@@ -20,7 +23,6 @@ import 'package:Prism/features/public_profile/views/widgets/premium_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -275,6 +277,15 @@ class _ProfileChildState extends State<ProfileChild> {
     }
   }
 
+  Future<void> _openEditProfilePanel({required String sourceContext}) async {
+    _trackAction(AnalyticsActionValue.editProfileTapped, sourceContext: sourceContext);
+    await context.router.push(const EditProfilePanelRoute());
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final String safeCoverPhoto = (widget.coverPhoto ?? "").trim();
@@ -284,6 +295,12 @@ class _ProfileChildState extends State<ProfileChild> {
     final ScrollController? controller = widget.ownProfile!
         ? InheritedDataProvider.of(context)!.scrollController
         : ScrollController();
+    final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
+      app_state.prismUser,
+      defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
+    );
+    final bool showProfileCompletenessCard =
+        widget.ownProfile! && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
 
     return !widget.ownProfile! || app_state.prismUser.loggedIn
         ? DefaultTabController(
@@ -335,11 +352,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                     child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   onPressed: () {
-                                    _trackAction(
-                                      AnalyticsActionValue.editProfileTapped,
-                                      sourceContext: 'profile_screen_header_edit',
-                                    );
-                                    context.router.push(const EditProfilePanelRoute());
+                                    unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
                                   },
                                 ),
                               ),
@@ -732,6 +745,18 @@ class _ProfileChildState extends State<ProfileChild> {
                           ],
                         ),
                       ),
+                      if (showProfileCompletenessCard)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                            child: ProfileCompletenessCard(
+                              status: profileCompletenessStatus,
+                              onCompleteNow: () async {
+                                await _openEditProfilePanel(sourceContext: 'profile_completeness_card');
+                              },
+                            ),
+                          ),
+                        ),
                       SliverAppBar(
                         backgroundColor: Theme.of(context).primaryColor,
                         automaticallyImplyLeading: false,

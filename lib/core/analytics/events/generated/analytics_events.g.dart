@@ -1264,6 +1264,50 @@ class OnboardingAuthResultEvent extends AnalyticsEvent {
   }
 }
 
+class ProfileCompletenessNudgeViewedEvent extends AnalyticsEvent {
+  const ProfileCompletenessNudgeViewedEvent({
+    required this.sourceContext,
+    required this.progressPercent,
+    required this.missingStepsCount,
+  });
+
+  final String sourceContext;
+  final int progressPercent;
+  final int missingStepsCount;
+
+  @override
+  String get eventName => 'profile_completeness_nudge_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source_context': sourceContext,
+      'progress_percent': progressPercent,
+      'missing_steps_count': missingStepsCount,
+    };
+  }
+}
+
+class ProfileCompletenessActionTappedEvent extends AnalyticsEvent {
+  const ProfileCompletenessActionTappedEvent({
+    required this.sourceContext,
+    required this.action,
+    required this.progressPercent,
+  });
+
+  final String sourceContext;
+  final String action;
+  final int progressPercent;
+
+  @override
+  String get eventName => 'profile_completeness_action_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext, 'action': action, 'progress_percent': progressPercent};
+  }
+}
+
 class TomorrowHookViewedEvent extends AnalyticsEvent {
   const TomorrowHookViewedEvent({required this.sourceContext});
 
