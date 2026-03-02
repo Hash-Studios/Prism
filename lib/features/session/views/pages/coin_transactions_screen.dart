@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -19,6 +20,7 @@ class CoinTransactionsScreen extends StatefulWidget {
 }
 
 class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
+  static const DeepLinkNavigation _deepLinkNavigation = DeepLinkNavigation();
   bool _loading = false;
   List<CoinTransactionEntry> _items = const <CoinTransactionEntry>[];
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
@@ -121,6 +123,25 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
             result: EventResultValue.failure,
             reason: AnalyticsReasonValue.error,
             sourceContext: 'coin_transactions_item_tap',
+          ),
+        ),
+      );
+      return;
+    }
+    final PageRouteInfo? route = _deepLinkNavigation.isPrismDeepLink(parsed)
+        ? await _deepLinkNavigation.mapUriToRoute(parsed)
+        : null;
+    if (route != null) {
+      if (mounted) {
+        context.router.navigate(route);
+      }
+      unawaited(
+        analytics.track(
+          ExternalLinkOpenResultEvent(
+            surface: AnalyticsSurfaceValue.coinTransactionsScreen,
+            destination: LinkDestinationValue.external,
+            result: EventResultValue.success,
+            sourceContext: 'coin_transactions_item_tap.internal_route',
           ),
         ),
       );

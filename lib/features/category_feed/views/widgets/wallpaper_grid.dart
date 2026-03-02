@@ -181,7 +181,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   ),
                                 ),
                               );
-                              launch(app_state.bannerURL);
+                              openPrismLink(context, app_state.bannerURL);
                             },
                             child: Container(
                               decoration: BoxDecoration(

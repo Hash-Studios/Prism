@@ -454,7 +454,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     .data()["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .publicProfileAdapter()
                                                 .userProfileSetups![index!]
@@ -488,7 +489,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .publicProfileAdapter()
                                               .userProfileSetups![index!]
@@ -522,7 +524,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .publicProfileAdapter()
                                             .userProfileSetups![index!]
@@ -567,7 +570,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                     .data()["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .publicProfileAdapter(listen: false)
                                                 .userProfileSetups![index!]
@@ -601,7 +605,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .publicProfileAdapter(listen: false)
                                               .userProfileSetups![index!]
@@ -635,7 +640,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .publicProfileAdapter(listen: false)
                                             .userProfileSetups![index!]
@@ -655,7 +661,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .publicProfileAdapter(listen: false)
                                             .userProfileSetups![index!]
@@ -699,7 +706,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                                       .data()["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(
+                                            openPrismLink(
+                                              context,
                                               context
                                                   .publicProfileAdapter(listen: false)
                                                   .userProfileSetups![index!]
@@ -733,7 +741,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                             );
                                           }
                                         } else {
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .publicProfileAdapter()
                                                 .userProfileSetups![index!]
@@ -767,7 +776,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .publicProfileAdapter(listen: false)
                                               .userProfileSetups![index!]
@@ -787,7 +797,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .publicProfileAdapter(listen: false)
                                               .userProfileSetups![index!]
@@ -807,7 +818,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .publicProfileAdapter(listen: false)
                                               .userProfileSetups![index!]
@@ -1153,7 +1165,8 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(
+                    openPrismLink(
+                      context,
                       context.publicProfileAdapter().userProfileSetups![index!].data()["wallpaper_url"].toString(),
                     );
                   },
@@ -1175,7 +1188,8 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(
+              openPrismLink(
+                context,
                 context
                     .publicProfileAdapter(listen: false)
                     .userProfileSetups![index!]
@@ -1215,7 +1229,8 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(
+                    openPrismLink(
+                      context,
                       context.publicProfileAdapter().userProfileSetups![index!].data()["wallpaper_url"].toString(),
                     );
                   },
@@ -1237,7 +1252,8 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(
+              openPrismLink(
+                context,
                 context
                     .publicProfileAdapter(listen: false)
                     .userProfileSetups![index!]

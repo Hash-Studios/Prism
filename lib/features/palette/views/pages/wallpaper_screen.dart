@@ -1439,7 +1439,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   alignment: Alignment.centerRight,
                                                   child: ActionChip(
                                                     onPressed: () {
-                                                      launch(pdata.wallsP[index].url!);
+                                                      openPrismLink(context, pdata.wallsP[index].url!);
                                                     },
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: Icon(
@@ -1873,7 +1873,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   alignment: Alignment.centerRight,
                                                   child: ActionChip(
                                                     onPressed: () {
-                                                      launch(pdata.wallsC[index].url!);
+                                                      openPrismLink(context, pdata.wallsC[index].url!);
                                                     },
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: Icon(

@@ -816,7 +816,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               alignment: Alignment.centerRight,
                                               child: ActionChip(
                                                 onPressed: () {
-                                                  launch(pdata.wallsPS[index].url!);
+                                                  openPrismLink(context, pdata.wallsPS[index].url!);
                                                 },
                                                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                 avatar: Icon(

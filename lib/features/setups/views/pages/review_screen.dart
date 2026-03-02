@@ -889,13 +889,13 @@ class SetupTile extends StatelessWidget {
                                         ),
                                       );
                                     } else {
-                                      launch("${wallpaper.data()["wallpaper_url"]}").catchError((e) {
+                                      openPrismLink(context, "${wallpaper.data()["wallpaper_url"]}").catchError((e) {
                                         toasts.error("Error in link!");
                                         return false;
                                       });
                                     }
                                   } else {
-                                    launch("${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
+                                    openPrismLink(context, "${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
                                       toasts.error("Error in link!");
                                       return false;
                                     });
@@ -929,7 +929,7 @@ class SetupTile extends StatelessWidget {
                             GestureDetector(
                               onTap: () {
                                 if ("${wallpaper.data()["icon_url"]}" != "") {
-                                  launch("${wallpaper.data()["icon_url"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["icon_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -958,7 +958,7 @@ class SetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -986,7 +986,7 @@ class SetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget2"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url2"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1311,13 +1311,13 @@ class RejectedSetupTile extends StatelessWidget {
                                       ),
                                     );
                                   } else {
-                                    launch("${wallpaper.data()["wallpaper_url"]}").catchError((e) {
+                                    openPrismLink(context, "${wallpaper.data()["wallpaper_url"]}").catchError((e) {
                                       toasts.error("Error in link!");
                                       return false;
                                     });
                                   }
                                 } else {
-                                  launch("${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1345,7 +1345,7 @@ class RejectedSetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                launch("${wallpaper.data()["icon_url"]}").catchError((e) {
+                                openPrismLink(context, "${wallpaper.data()["icon_url"]}").catchError((e) {
                                   toasts.error("Error in link!");
                                   return false;
                                 });
@@ -1371,7 +1371,7 @@ class RejectedSetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1399,7 +1399,7 @@ class RejectedSetupTile extends StatelessWidget {
                             if ("${wallpaper.data()["widget2"]}" != "")
                               GestureDetector(
                                 onTap: () {
-                                  launch("${wallpaper.data()["widget_url2"]}").catchError((e) {
+                                  openPrismLink(context, "${wallpaper.data()["widget_url2"]}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });

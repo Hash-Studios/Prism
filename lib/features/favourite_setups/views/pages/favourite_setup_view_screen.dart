@@ -431,7 +431,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"]
@@ -460,7 +461,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["wallpaper_url"][1]
@@ -490,7 +492,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
@@ -526,7 +529,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
                                                 "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"]
@@ -555,7 +559,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["wallpaper_url"][1]
@@ -585,7 +590,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["icon_url"]
@@ -603,7 +609,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context
                                             .favouriteSetupsAdapter(listen: false)
                                             .liked![index!]["widget_url"]
@@ -638,7 +645,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                               context.favouriteSetupsAdapter(listen: false).liked![index!]["wall_id"] ==
                                                   "") {
                                             logger.d("Id Not Found!");
-                                            launch(
+                                            openPrismLink(
+                                              context,
                                               context
                                                   .favouriteSetupsAdapter(listen: false)
                                                   .liked![index!]["wallpaper_url"]
@@ -667,7 +675,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             );
                                           }
                                         } else {
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .favouriteSetupsAdapter(listen: false)
                                                 .liked![index!]["wallpaper_url"][1]
@@ -697,7 +706,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["icon_url"]
@@ -715,7 +725,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url"]
@@ -733,7 +744,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .favouriteSetupsAdapter(listen: false)
                                               .liked![index!]["widget_url2"]
@@ -1062,7 +1074,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
+                    openPrismLink(
+                      context,
+                      context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1082,7 +1097,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1116,7 +1134,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString());
+                    openPrismLink(
+                      context,
+                      context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"].toString(),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1136,7 +1157,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.favouriteSetupsAdapter(listen: false).liked![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(

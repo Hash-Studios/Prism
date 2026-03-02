@@ -452,7 +452,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                     if (sdata.setup!["wall_id"] == null ||
                                                         sdata.setup!["wall_id"] == "") {
                                                       logger.d("Id Not Found!");
-                                                      launch(sdata.setup!["wallpaper_url"].toString());
+                                                      openPrismLink(context, sdata.setup!["wallpaper_url"].toString());
                                                     } else {
                                                       context.router.push(
                                                         ShareWallpaperViewRoute(
@@ -464,7 +464,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       );
                                                     }
                                                   } else {
-                                                    launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                    openPrismLink(context, sdata.setup!["wallpaper_url"][1].toString());
                                                   }
                                                 },
                                                 tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
@@ -479,7 +479,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  launch(sdata.setup!["icon_url"].toString());
+                                                  openPrismLink(context, sdata.setup!["icon_url"].toString());
                                                 },
                                                 tileText: sdata.setup!["icon"].toString(),
                                                 tileType: "Icons",
@@ -500,7 +500,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                     if (sdata.setup!["wall_id"] == null ||
                                                         sdata.setup!["wall_id"] == "") {
                                                       logger.d("Id Not Found!");
-                                                      launch(sdata.setup!["wallpaper_url"].toString());
+                                                      openPrismLink(context, sdata.setup!["wallpaper_url"].toString());
                                                     } else {
                                                       context.router.push(
                                                         ShareWallpaperViewRoute(
@@ -512,7 +512,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       );
                                                     }
                                                   } else {
-                                                    launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                    openPrismLink(context, sdata.setup!["wallpaper_url"][1].toString());
                                                   }
                                                 },
                                                 tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
@@ -527,7 +527,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  launch(sdata.setup!["icon_url"].toString());
+                                                  openPrismLink(context, sdata.setup!["icon_url"].toString());
                                                 },
                                                 tileText: sdata.setup!["icon"].toString(),
                                                 tileType: "Icons",
@@ -537,7 +537,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  launch(sdata.setup!["widget_url"].toString());
+                                                  openPrismLink(context, sdata.setup!["widget_url"].toString());
                                                 },
                                                 tileText: sdata.setup!["widget"].toString(),
                                                 tileType: "Widget",
@@ -558,7 +558,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       if (sdata.setup!["wall_id"] == null ||
                                                           sdata.setup!["wall_id"] == "") {
                                                         logger.d("Id Not Found!");
-                                                        launch(sdata.setup!["wallpaper_url"].toString());
+                                                        openPrismLink(
+                                                          context,
+                                                          sdata.setup!["wallpaper_url"].toString(),
+                                                        );
                                                       } else {
                                                         context.router.push(
                                                           ShareWallpaperViewRoute(
@@ -570,7 +573,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                         );
                                                       }
                                                     } else {
-                                                      launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                      openPrismLink(
+                                                        context,
+                                                        sdata.setup!["wallpaper_url"][1].toString(),
+                                                      );
                                                     }
                                                   },
                                                   tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
@@ -586,7 +592,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    launch(sdata.setup!["icon_url"].toString());
+                                                    openPrismLink(context, sdata.setup!["icon_url"].toString());
                                                   },
                                                   tileText: sdata.setup!["icon"].toString(),
                                                   tileType: "Icons",
@@ -596,7 +602,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    launch(sdata.setup!["widget_url"].toString());
+                                                    openPrismLink(context, sdata.setup!["widget_url"].toString());
                                                   },
                                                   tileText: sdata.setup!["widget"].toString(),
                                                   tileType: "Widget",
@@ -606,7 +612,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    launch(sdata.setup!["widget_url2"].toString());
+                                                    openPrismLink(context, sdata.setup!["widget_url2"].toString());
                                                   },
                                                   tileText: sdata.setup!["widget2"].toString(),
                                                   tileType: "Widget",
@@ -933,7 +939,7 @@ class ModifiedShareDownloadButton extends StatelessWidget {
               ? DownloadButton(link: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
               : GestureDetector(
                   onTap: () async {
-                    launch(sdata.setup!["wallpaper_url"].toString());
+                    openPrismLink(context, sdata.setup!["wallpaper_url"].toString());
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -953,7 +959,7 @@ class ModifiedShareDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(sdata.setup!["wallpaper_url"][1].toString());
+              openPrismLink(context, sdata.setup!["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(
@@ -981,7 +987,7 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
               ? SetWallpaperButton(url: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
               : GestureDetector(
                   onTap: () async {
-                    launch(sdata.setup!["wallpaper_url"].toString());
+                    openPrismLink(context, sdata.setup!["wallpaper_url"].toString());
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1001,7 +1007,7 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(sdata.setup!["wallpaper_url"][1].toString());
+              openPrismLink(context, sdata.setup!["wallpaper_url"][1].toString());
             },
             child: Container(
               decoration: BoxDecoration(

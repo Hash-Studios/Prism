@@ -432,7 +432,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                         if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
                                             context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["wallpaper_url"]
@@ -461,7 +462,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .setupsAdapter(listen: false)
                                               .setups![index!]["wallpaper_url"][1]
@@ -487,7 +489,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context.setupsAdapter(listen: false).setups![index!]["icon_url"].toString(),
                                       );
                                     },
@@ -515,7 +518,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                         if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
                                             context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
                                           logger.d("Id Not Found!");
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["wallpaper_url"]
@@ -544,7 +548,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           );
                                         }
                                       } else {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .setupsAdapter(listen: false)
                                               .setups![index!]["wallpaper_url"][1]
@@ -570,7 +575,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context.setupsAdapter(listen: false).setups![index!]["icon_url"].toString(),
                                       );
                                     },
@@ -582,7 +588,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
                                     onTap: () async {
-                                      launch(
+                                      openPrismLink(
+                                        context,
                                         context.setupsAdapter(listen: false).setups![index!]["widget_url"].toString(),
                                       );
                                     },
@@ -609,7 +616,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                           if (context.setupsAdapter(listen: false).setups![index!]["wall_id"] == null ||
                                               context.setupsAdapter(listen: false).setups![index!]["wall_id"] == "") {
                                             logger.d("Id Not Found!");
-                                            launch(
+                                            openPrismLink(
+                                              context,
                                               context
                                                   .setupsAdapter(listen: false)
                                                   .setups![index!]["wallpaper_url"]
@@ -638,7 +646,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                             );
                                           }
                                         } else {
-                                          launch(
+                                          openPrismLink(
+                                            context,
                                             context
                                                 .setupsAdapter(listen: false)
                                                 .setups![index!]["wallpaper_url"][1]
@@ -665,7 +674,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context.setupsAdapter(listen: false).setups![index!]["icon_url"].toString(),
                                         );
                                       },
@@ -677,7 +687,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context.setupsAdapter(listen: false).setups![index!]["widget_url"].toString(),
                                         );
                                       },
@@ -692,7 +703,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
                                       onTap: () async {
-                                        launch(
+                                        openPrismLink(
+                                          context,
                                           context
                                               .setupsAdapter(listen: false)
                                               .setups![index!]["widget_url2"]
@@ -1012,7 +1024,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString());
+                    openPrismLink(
+                      context,
+                      context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString(),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1032,7 +1047,10 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1066,7 +1084,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
               : GestureDetector(
                   onTap: () async {
-                    launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString());
+                    openPrismLink(
+                      context,
+                      context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString(),
+                    );
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1086,7 +1107,10 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][1].toString());
+              openPrismLink(
+                context,
+                context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"][1].toString(),
+              );
             },
             child: Container(
               decoration: BoxDecoration(

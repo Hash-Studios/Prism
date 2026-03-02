@@ -233,7 +233,7 @@ class NotificationCard extends StatelessWidget {
       ),
     );
     if ((n.url ?? "").trim().isNotEmpty) {
-      launch(n.url!);
+      await openPrismLink(context, n.url!);
       return;
     }
     final String route = (n.route ?? n.pageName ?? "").trim();

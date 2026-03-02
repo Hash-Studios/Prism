@@ -113,7 +113,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                                     ),
                                   ),
                                 );
-                                launch(app_state.bannerURL);
+                                openPrismLink(context, app_state.bannerURL);
                               },
                               child: Container(
                                 decoration: BoxDecoration(

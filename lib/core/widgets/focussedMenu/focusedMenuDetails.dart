@@ -723,7 +723,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ).textTheme.headlineMedium!.copyWith(color: Colors.white),
                                         ),
                                         onPressed: () {
-                                          launch(PData.wallsP[widget.index].url!);
+                                          openPrismLink(context, PData.wallsP[widget.index].url!);
                                         },
                                       ),
                                       Padding(

@@ -112,7 +112,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                                     ),
                                   ),
                                 );
-                                launch(app_state.bannerURL);
+                                openPrismLink(context, app_state.bannerURL);
                               },
                               child: Container(
                                 decoration: BoxDecoration(
