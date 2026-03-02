@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -5,8 +6,9 @@ import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/animated/showUp.dart';
+import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -33,6 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Image? image2;
   Image? image3;
   int? _lastTrackedStep;
+  bool _completingOnboarding = false;
 
   void _trackOnboardingStepViewed(int step) {
     if (_lastTrackedStep == step) {
@@ -52,6 +55,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     AuthMethodValue method = AuthMethodValue.google,
   }) {
     analytics.track(OnboardingAuthResultEvent(method: method, result: result, reason: reason));
+  }
+
+  Future<void> _completeOnboardingToSplash() async {
+    if (_completingOnboarding) {
+      return;
+    }
+    _completingOnboarding = true;
+    try {
+      main.prefs.put('onboarded_new', true);
+      await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
+      if (!mounted) {
+        return;
+      }
+      context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
+    } finally {
+      _completingOnboarding = false;
+    }
   }
 
   Future<void> _handleAppleSignIn() async {
@@ -556,8 +576,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               }
                             : () {
                                 _trackOnboardingAction(AnalyticsActionValue.finishTapped);
-                                main.prefs.put('onboarded_new', true);
-                                context.router.replaceAll(<PageRouteInfo>[const SplashWidgetRoute()]);
+                                unawaited(_completeOnboardingToSplash());
                               },
                         style: ButtonStyle(overlayColor: WidgetStateColor.resolveWith((states) => Colors.white10)),
                         child: SizedBox(

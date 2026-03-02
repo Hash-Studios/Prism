@@ -27,28 +27,29 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _isOnFirstCategory => context.categorySelectedChoice(listen: false).name == categoryChoices[0].name;
 
   late bool isNew;
+
+  Future<void> _ensureDefaultTopicSubscriptions() async {
+    if (!(main.prefs.get('subscribedToRecommendations', defaultValue: false) as bool)) {
+      final bool recommendationsSubscribed = await subscribeToTopicSafely(
+        f,
+        'recommendations',
+        sourceTag: 'home.init.recommendations',
+      );
+      final bool postsSubscribed = await subscribeToTopicSafely(f, 'posts', sourceTag: 'home.init.posts');
+      if (recommendationsSubscribed && postsSubscribed) {
+        main.prefs.put('subscribedToRecommendations', true);
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    if (main.prefs.get('subscribedToRecommendations', defaultValue: false) as bool) {
-    } else {
-      unawaited(subscribeToTopicSafely(f, 'recommendations', sourceTag: 'home.init.recommendations'));
-      unawaited(subscribeToTopicSafely(f, 'posts', sourceTag: 'home.init.posts'));
-      main.prefs.put('subscribedToRecommendations', true);
-    }
-    if (!(main.prefs.get('subscribedToWotd', defaultValue: false) as bool)) {
-      unawaited(subscribeToTopicSafely(f, 'wall_of_the_day', sourceTag: 'home.init.wotd'));
-      main.prefs.put('subscribedToWotd', true);
-    }
+    unawaited(_ensureDefaultTopicSubscriptions());
     isNew = true;
-    _updateToken();
   }
 
-  void _updateToken() {
-    f.requestPermission();
-  }
-
-  void showChangelogCheck(BuildContext context) {
+  void showChangelogCheck() {
     final newDevice = main.prefs.get("newDevice");
     if (newDevice == null) {
       showChangelog(context, () {
@@ -65,7 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (isNew) {
-      Future.delayed(Duration.zero).then((value) => showChangelogCheck(context));
+      Future.delayed(Duration.zero).then((_) {
+        if (!mounted) {
+          return;
+        }
+        showChangelogCheck();
+      });
     }
     return PopScope(
       canPop: _isOnFirstCategory,

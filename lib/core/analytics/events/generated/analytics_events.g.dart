@@ -1264,6 +1264,111 @@ class OnboardingAuthResultEvent extends AnalyticsEvent {
   }
 }
 
+class TomorrowHookViewedEvent extends AnalyticsEvent {
+  const TomorrowHookViewedEvent({required this.sourceContext});
+
+  final String sourceContext;
+
+  @override
+  String get eventName => 'tomorrow_hook_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext};
+  }
+}
+
+class TomorrowHookActionTappedEvent extends AnalyticsEvent {
+  const TomorrowHookActionTappedEvent({required this.action});
+
+  final String action;
+
+  @override
+  String get eventName => 'tomorrow_hook_action_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action};
+  }
+}
+
+class TomorrowHookPermissionResultEvent extends AnalyticsEvent {
+  const TomorrowHookPermissionResultEvent({required this.result, this.reason, required this.subscribedToWotd});
+
+  final EventResultValue result;
+  final AnalyticsReasonValue? reason;
+  final bool subscribedToWotd;
+
+  @override
+  String get eventName => 'tomorrow_hook_permission_result';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!.wireValue,
+      'subscribed_to_wotd': subscribedToWotd ? 1 : 0,
+    };
+  }
+}
+
+class WotdViewedEvent extends AnalyticsEvent {
+  const WotdViewedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'wotd_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class WotdOpenedEvent extends AnalyticsEvent {
+  const WotdOpenedEvent({required this.wallId, required this.source});
+
+  final String wallId;
+  final String source;
+
+  @override
+  String get eventName => 'wotd_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'source': source};
+  }
+}
+
+class WotdSetAsWallpaperEvent extends AnalyticsEvent {
+  const WotdSetAsWallpaperEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'wotd_set_as_wallpaper';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class WotdOpenedFromPushEvent extends AnalyticsEvent {
+  const WotdOpenedFromPushEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'wotd_opened_from_push';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
 class NavTabSelectedEvent extends AnalyticsEvent {
   const NavTabSelectedEvent({required this.fromTab, required this.toTab});
 
@@ -1611,64 +1716,5 @@ class QualityDailySnapshotEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
-  }
-}
-
-// Wall of the Day analytics events
-
-class WotdViewedEvent extends AnalyticsEvent {
-  const WotdViewedEvent({required this.wallId});
-
-  final String wallId;
-
-  @override
-  String get eventName => 'wotd_viewed';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'wall_id': wallId};
-  }
-}
-
-class WotdOpenedEvent extends AnalyticsEvent {
-  const WotdOpenedEvent({required this.wallId, required this.source});
-
-  final String wallId;
-  final String source;
-
-  @override
-  String get eventName => 'wotd_opened';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'wall_id': wallId, 'source': source};
-  }
-}
-
-class WotdSetAsWallpaperEvent extends AnalyticsEvent {
-  const WotdSetAsWallpaperEvent({required this.wallId});
-
-  final String wallId;
-
-  @override
-  String get eventName => 'wotd_set_as_wallpaper';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'wall_id': wallId};
-  }
-}
-
-class WotdOpenedFromPushEvent extends AnalyticsEvent {
-  const WotdOpenedFromPushEvent({required this.wallId});
-
-  final String wallId;
-
-  @override
-  String get eventName => 'wotd_opened_from_push';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'wall_id': wallId};
   }
 }
