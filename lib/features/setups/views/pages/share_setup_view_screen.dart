@@ -633,7 +633,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: <Widget>[
                                       ModifiedShareDownloadButton(),
-                                      ModifiedShareSetWallpaperButton(),
+                                      if (!hideSetWallpaperUi) ModifiedShareSetWallpaperButton(),
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Theme.of(context).primaryColor,
@@ -979,9 +979,6 @@ class ModifiedShareDownloadButton extends StatelessWidget {
 class ModifiedShareSetWallpaperButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (hideSetWallpaperUi) {
-      return const SizedBox.shrink();
-    }
     return sdata.setup!["wallpaper_url"].toString()[0] != "["
         ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
               ? SetWallpaperButton(url: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)

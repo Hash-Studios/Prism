@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -504,10 +505,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     colorChanged: colorChanged,
                                     link: screenshotTaken ? _imageFile.path : wdata.walls[index].path.toString(),
                                   ),
-                                  SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken ? _imageFile.path : wdata.walls[index].path,
-                                  ),
+                                  if (!hideSetWallpaperUi)
+                                    SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken ? _imageFile.path : wdata.walls[index].path,
+                                    ),
                                   FavouriteWallpaperButton(
                                     id: wdata.walls[index].id.toString(),
                                     provider: "WallHaven",
@@ -1062,10 +1064,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     contentId: _prismWall["id"]?.toString(),
                                     sourceContext: 'wallpaper_screen.prism',
                                   ),
-                                  SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
-                                  ),
+                                  if (!hideSetWallpaperUi)
+                                    SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
+                                    ),
                                   FavouriteWallpaperButton(
                                     id: _prismWall["id"].toString(),
                                     provider: "Prism",
@@ -1495,12 +1498,13 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         ? _imageFile.path
                                         : pdata.wallsP[index].src!["original"].toString(),
                                   ),
-                                  SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsP[index].src!["original"].toString(),
-                                  ),
+                                  if (!hideSetWallpaperUi)
+                                    SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken
+                                          ? _imageFile.path
+                                          : pdata.wallsP[index].src!["original"].toString(),
+                                    ),
                                   FavouriteWallpaperButton(
                                     id: pdata.wallsP[index].id.toString(),
                                     provider: "Pexels",
@@ -1929,12 +1933,13 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         ? _imageFile.path
                                         : pdata.wallsC[index].src!["original"].toString(),
                                   ),
-                                  SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsC[index].src!["original"].toString(),
-                                  ),
+                                  if (!hideSetWallpaperUi)
+                                    SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken
+                                          ? _imageFile.path
+                                          : pdata.wallsC[index].src!["original"].toString(),
+                                    ),
                                   FavouriteWallpaperButton(
                                     id: pdata.wallsC[index].id.toString(),
                                     provider: "Pexels",
@@ -2349,10 +2354,11 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     colorChanged: colorChanged,
                                     link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path.toString(),
                                   ),
-                                  SetWallpaperButton(
-                                    colorChanged: colorChanged,
-                                    url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
-                                  ),
+                                  if (!hideSetWallpaperUi)
+                                    SetWallpaperButton(
+                                      colorChanged: colorChanged,
+                                      url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
+                                    ),
                                   FavouriteWallpaperButton(
                                     id: wdata.wallsS[index].id.toString(),
                                     provider: "WallHaven",

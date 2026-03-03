@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -491,10 +492,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           colorChanged: colorChanged,
                                           link: screenshotTaken ? _imageFile.path : WData.wall.path.toString(),
                                         ),
-                                        SetWallpaperButton(
-                                          colorChanged: colorChanged,
-                                          url: screenshotTaken ? _imageFile.path : WData.wall.path.toString(),
-                                        ),
+                                        if (!hideSetWallpaperUi)
+                                          SetWallpaperButton(
+                                            colorChanged: colorChanged,
+                                            url: screenshotTaken ? _imageFile.path : WData.wall.path.toString(),
+                                          ),
                                         FavouriteWallpaperButton(
                                           id: WData.wall.id.toString(),
                                           provider: "WallHaven",
@@ -1024,12 +1026,13 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           contentId: Data.wall["id"]?.toString(),
                                           sourceContext: 'share_wall_view.prism',
                                         ),
-                                        SetWallpaperButton(
-                                          colorChanged: colorChanged,
-                                          url: screenshotTaken
-                                              ? _imageFile.path
-                                              : Data.wall["wallpaper_url"].toString(),
-                                        ),
+                                        if (!hideSetWallpaperUi)
+                                          SetWallpaperButton(
+                                            colorChanged: colorChanged,
+                                            url: screenshotTaken
+                                                ? _imageFile.path
+                                                : Data.wall["wallpaper_url"].toString(),
+                                          ),
                                         FavouriteWallpaperButton(
                                           id: Data.wall["id"].toString(),
                                           provider: "Prism",
@@ -1450,10 +1453,11 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           colorChanged: colorChanged,
                                           link: screenshotTaken ? _imageFile.path : url.toString(),
                                         ),
-                                        SetWallpaperButton(
-                                          colorChanged: colorChanged,
-                                          url: screenshotTaken ? _imageFile.path : url.toString(),
-                                        ),
+                                        if (!hideSetWallpaperUi)
+                                          SetWallpaperButton(
+                                            colorChanged: colorChanged,
+                                            url: screenshotTaken ? _imageFile.path : url.toString(),
+                                          ),
                                         FavouriteWallpaperButton(
                                           id: PData.wall == null ? "" : PData.wall!.id.toString(),
                                           provider: "Pexels",

@@ -847,7 +847,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
                           ModifiedDownloadButton(index: index),
-                          ModifiedSetWallpaperButton(index: index),
+                          if (!hideSetWallpaperUi) ModifiedSetWallpaperButton(index: index),
                           Container(
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
@@ -1217,9 +1217,6 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    if (hideSetWallpaperUi) {
-      return const SizedBox.shrink();
-    }
     return context.publicProfileAdapter().userProfileSetups![index!].data()["wallpaper_url"].toString()[0] != "["
         ? context.publicProfileAdapter().userProfileSetups![index!].data()["wall_id"] != null &&
                   context.publicProfileAdapter().userProfileSetups![index!].data()["wall_id"] != ""

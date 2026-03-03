@@ -1,4 +1,5 @@
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -364,16 +365,17 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                   ),
                 ),
               ),
-            Positioned(
-              top: topOffset,
-              left: leftOffset,
-              child: SetWallpaperButton(
-                colorChanged: false,
-                url: selectedProvider == "WallHaven"
-                    ? wdata.wallsS[index].path.toString()
-                    : pdata.wallsPS[index].src!["original"].toString(),
+            if (!hideSetWallpaperUi)
+              Positioned(
+                top: topOffset,
+                left: leftOffset,
+                child: SetWallpaperButton(
+                  colorChanged: false,
+                  url: selectedProvider == "WallHaven"
+                      ? wdata.wallsS[index].path.toString()
+                      : pdata.wallsPS[index].src!["original"].toString(),
+                ),
               ),
-            ),
             Positioned(
               top: topOffset - fabHeartTopOffset,
               left: leftOffset - fabHeartLeftOffset,

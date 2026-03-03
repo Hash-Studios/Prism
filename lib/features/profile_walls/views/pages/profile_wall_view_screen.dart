@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -494,15 +495,16 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                             contentId: context.profileWallsSnapshots(listen: false)![index].data()["id"]?.toString(),
                             sourceContext: 'profile_wall_view',
                           ),
-                          SetWallpaperButton(
-                            colorChanged: colorChanged,
-                            url: screenshotTaken
-                                ? _imageFile.path
-                                : context
-                                      .profileWallsSnapshots(listen: false)![index]
-                                      .data()["wallpaper_url"]
-                                      .toString(),
-                          ),
+                          if (!hideSetWallpaperUi)
+                            SetWallpaperButton(
+                              colorChanged: colorChanged,
+                              url: screenshotTaken
+                                  ? _imageFile.path
+                                  : context
+                                        .profileWallsSnapshots(listen: false)![index]
+                                        .data()["wallpaper_url"]
+                                        .toString(),
+                            ),
                           FavouriteWallpaperButton(
                             id: context.profileWallsSnapshots(listen: false)![index].data()["id"].toString(),
                             provider: context

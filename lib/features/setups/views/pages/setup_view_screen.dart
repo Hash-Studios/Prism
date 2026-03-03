@@ -730,7 +730,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
                           ModifiedDownloadButton(index: index),
-                          ModifiedSetWallpaperButton(index: index),
+                          if (!hideSetWallpaperUi) ModifiedSetWallpaperButton(index: index),
                           Container(
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
@@ -1072,9 +1072,6 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    if (hideSetWallpaperUi) {
-      return const SizedBox.shrink();
-    }
     return context.setupsAdapter(listen: false).setups![index!]["wallpaper_url"].toString()[0] != "["
         ? context.setupsAdapter(listen: false).setups![index!]["wall_id"] != null &&
                   context.setupsAdapter(listen: false).setups![index!]["wall_id"] != ""

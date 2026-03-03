@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -1413,26 +1414,31 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                         ),
                       ),
                     ),
-            Positioned(
-              top: topOffset,
-              left: leftOffset,
-              child: SetWallpaperButton(
-                colorChanged: false,
-                url: widget.provider == "WallHaven"
-                    ? WData.walls[widget.index].path.toString()
-                    : widget.provider == "Prism"
-                    ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
-                    : widget.provider == "ProfileWall"
-                    ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
-                    : widget.provider == "UserProfileWall"
-                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["wallpaper_url"].toString()
-                    : widget.provider == "Pexels"
-                    ? PData.wallsP[widget.index].src!["original"].toString()
-                    : widget.provider == "Liked"
-                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
-                    : PData.wallsC[widget.index].src!["original"].toString(),
+            if (!hideSetWallpaperUi)
+              Positioned(
+                top: topOffset,
+                left: leftOffset,
+                child: SetWallpaperButton(
+                  colorChanged: false,
+                  url: widget.provider == "WallHaven"
+                      ? WData.walls[widget.index].path.toString()
+                      : widget.provider == "Prism"
+                      ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
+                      : widget.provider == "ProfileWall"
+                      ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
+                      : widget.provider == "UserProfileWall"
+                      ? context
+                            .publicProfileAdapter()
+                            .userProfileWalls![widget.index]
+                            .data()["wallpaper_url"]
+                            .toString()
+                      : widget.provider == "Pexels"
+                      ? PData.wallsP[widget.index].src!["original"].toString()
+                      : widget.provider == "Liked"
+                      ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
+                      : PData.wallsC[widget.index].src!["original"].toString(),
+                ),
               ),
-            ),
             Positioned(
               top: topOffset! - fabHeartTopOffset,
               left: leftOffset! - fabHeartLeftOffset,

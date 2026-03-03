@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
@@ -445,10 +446,11 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   colorChanged: colorChanged,
                                   link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path.toString(),
                                 ),
-                                SetWallpaperButton(
-                                  colorChanged: colorChanged,
-                                  url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
-                                ),
+                                if (!hideSetWallpaperUi)
+                                  SetWallpaperButton(
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
+                                  ),
                                 FavouriteWallpaperButton(
                                   id: wdata.wallsS[index].id.toString(),
                                   provider: "WallHaven",
@@ -869,12 +871,13 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                       ? _imageFile.path
                                       : pdata.wallsPS[index].src!["original"].toString(),
                                 ),
-                                SetWallpaperButton(
-                                  colorChanged: colorChanged,
-                                  url: screenshotTaken
-                                      ? _imageFile.path
-                                      : pdata.wallsPS[index].src!["original"].toString(),
-                                ),
+                                if (!hideSetWallpaperUi)
+                                  SetWallpaperButton(
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken
+                                        ? _imageFile.path
+                                        : pdata.wallsPS[index].src!["original"].toString(),
+                                  ),
                                 FavouriteWallpaperButton(
                                   id: pdata.wallsPS[index].id.toString(),
                                   provider: "Pexels",

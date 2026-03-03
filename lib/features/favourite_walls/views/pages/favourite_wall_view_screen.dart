@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -788,12 +789,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                       ?.toString(),
                                   sourceContext: 'favourite_wall_view',
                                 ),
-                                SetWallpaperButton(
-                                  colorChanged: colorChanged,
-                                  url: screenshotTaken
-                                      ? _imageFile.path
-                                      : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                ),
+                                if (!hideSetWallpaperUi)
+                                  SetWallpaperButton(
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken
+                                        ? _imageFile.path
+                                        : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                  ),
                                 FavouriteWallpaperButton(
                                   id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
                                   provider: context
@@ -1168,20 +1170,21 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                               children: context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == null
                                   ? downloadLinkBackwards == null
                                         ? <Widget>[
-                                            SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["provider"] ==
-                                                        null
-                                                  ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                  : context
-                                                        .favouriteWallsAdapter(listen: false)
-                                                        .liked![index]["url"]
-                                                        .toString(),
-                                            ),
+                                            if (!hideSetWallpaperUi)
+                                              SetWallpaperButton(
+                                                colorChanged: colorChanged,
+                                                url: screenshotTaken
+                                                    ? _imageFile.path
+                                                    : context
+                                                              .favouriteWallsAdapter(listen: false)
+                                                              .liked![index]["provider"] ==
+                                                          null
+                                                    ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
+                                                    : context
+                                                          .favouriteWallsAdapter(listen: false)
+                                                          .liked![index]["url"]
+                                                          .toString(),
+                                              ),
                                             FavouriteWallpaperButton(
                                               id: context
                                                   .favouriteWallsAdapter(listen: false)
@@ -1236,20 +1239,21 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                   ?.toString(),
                                               sourceContext: 'favourite_wall_view',
                                             ),
-                                            SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["provider"] ==
-                                                        null
-                                                  ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                  : context
-                                                        .favouriteWallsAdapter(listen: false)
-                                                        .liked![index]["url"]
-                                                        .toString(),
-                                            ),
+                                            if (!hideSetWallpaperUi)
+                                              SetWallpaperButton(
+                                                colorChanged: colorChanged,
+                                                url: screenshotTaken
+                                                    ? _imageFile.path
+                                                    : context
+                                                              .favouriteWallsAdapter(listen: false)
+                                                              .liked![index]["provider"] ==
+                                                          null
+                                                    ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
+                                                    : context
+                                                          .favouriteWallsAdapter(listen: false)
+                                                          .liked![index]["url"]
+                                                          .toString(),
+                                              ),
                                             FavouriteWallpaperButton(
                                               id: context
                                                   .favouriteWallsAdapter(listen: false)
@@ -1301,18 +1305,21 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             ?.toString(),
                                         sourceContext: 'favourite_wall_view',
                                       ),
-                                      SetWallpaperButton(
-                                        colorChanged: colorChanged,
-                                        url: screenshotTaken
-                                            ? _imageFile.path
-                                            : context.favouriteWallsAdapter(listen: false).liked![index]["provider"] ==
-                                                  null
-                                            ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                            : context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                      ),
+                                      if (!hideSetWallpaperUi)
+                                        SetWallpaperButton(
+                                          colorChanged: colorChanged,
+                                          url: screenshotTaken
+                                              ? _imageFile.path
+                                              : context
+                                                        .favouriteWallsAdapter(listen: false)
+                                                        .liked![index]["provider"] ==
+                                                    null
+                                              ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
+                                              : context
+                                                    .favouriteWallsAdapter(listen: false)
+                                                    .liked![index]["url"]
+                                                    .toString(),
+                                        ),
                                       FavouriteWallpaperButton(
                                         id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
                                         provider: context
