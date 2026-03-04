@@ -26,6 +26,7 @@ dependencies:
   collection: ^1.19.1
   cloud_firestore: ^5.6.12
   device_info_plus: ^11.5.0
+  package_info_plus: ^8.3.0
   extended_image: ^10.0.1
   file_encrypter: ^2.0.2
   firebase_analytics: ^11.5.0

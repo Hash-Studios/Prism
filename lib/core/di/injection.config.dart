@@ -14,6 +14,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
 import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:firebase_remote_config/firebase_remote_config.dart' as _i627;
 import 'package:get_it/get_it.dart' as _i174;
+import 'package:http/http.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
@@ -216,6 +217,7 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i578.QuickActions>(() => appModule.quickActions);
   gh.lazySingleton<_i496.LocalStore>(() => appModule.localStore);
+  gh.lazySingleton<_i519.Client>(() => appModule.httpClient);
   gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
     () => _i1003.AppIconsLocalDataSource(gh<_i496.LocalStore>()),
   );

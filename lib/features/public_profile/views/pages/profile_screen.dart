@@ -314,7 +314,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final String safeUserPhoto = (widget.userPhoto ?? "").trim();
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
-    final ScrollController? controller = widget.ownProfile!
+    final ScrollController? controller = (widget.ownProfile ?? false)
         ? InheritedDataProvider.of(context)!.scrollController
         : ScrollController();
     final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
@@ -322,9 +322,9 @@ class _ProfileChildState extends State<_ProfileChild> {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     final bool showProfileCompletenessCard =
-        widget.ownProfile! && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
+        (widget.ownProfile ?? false) && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
 
-    return !widget.ownProfile! || app_state.prismUser.loggedIn
+    return !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn
         ? DefaultTabController(
             length: 2,
             child: Stack(
@@ -339,7 +339,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         primary: false,
                         floating: true,
                         elevation: 0,
-                        leading: !widget.ownProfile! || app_state.prismUser.loggedIn == false
+                        leading: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn == false
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
@@ -389,7 +389,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: CoinBalanceChip(sourceTag: 'coins.chip.profile_screen', showStreak: false),
                             ),
-                          if (!widget.ownProfile! || app_state.prismUser.loggedIn == false)
+                          if (!(widget.ownProfile ?? false) || app_state.prismUser.loggedIn == false)
                             if (app_state.prismUser.loggedIn)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -441,7 +441,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                         },
                                       ),
                               ),
-                          if (widget.ownProfile! && app_state.prismUser.loggedIn)
+                          if ((widget.ownProfile ?? false) && app_state.prismUser.loggedIn)
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: IconButton(
@@ -784,7 +784,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         automaticallyImplyLeading: false,
                         pinned: true,
                         titleSpacing: 0,
-                        expandedHeight: !widget.ownProfile! || app_state.prismUser.loggedIn ? 50 : 0,
+                        expandedHeight: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn ? 50 : 0,
                         title: SizedBox(
                           width: MediaQuery.of(context).size.width,
                           height: 57,

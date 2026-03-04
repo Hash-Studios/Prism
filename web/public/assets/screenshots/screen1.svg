@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1f1f1f"/>
+      <stop offset="100%" stop-color="#2a2a2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="390" height="844" fill="url(#g1)"/>
+  <!-- Status bar -->
+  <rect x="0" y="0" width="390" height="44" fill="rgba(0,0,0,0.3)"/>
+  <!-- Header -->
+  <rect x="24" y="60" width="120" height="28" rx="6" fill="#333"/>
+  <rect x="24" y="96" width="80" height="16" rx="4" fill="#2a2a2a"/>
+  <!-- Search bar -->
+  <rect x="24" y="128" width="342" height="44" rx="12" fill="#2a2a2a"/>
+  <circle cx="52" cy="150" r="10" fill="#444"/>
+  <rect x="72" y="144" width="100" height="12" rx="4" fill="#444"/>
+  <!-- Grid wallpapers -->
+  <rect x="12" y="192" width="175" height="200" rx="12" fill="#E5769720"/>
+  <rect x="203" y="192" width="175" height="200" rx="12" fill="#7c6af720"/>
+  <rect x="12" y="404" width="175" height="200" rx="12" fill="#6af7c820"/>
+  <rect x="203" y="404" width="175" height="200" rx="12" fill="#f7c86a20"/>
+  <rect x="12" y="616" width="175" height="200" rx="12" fill="#f76a6a20"/>
+  <rect x="203" y="616" width="175" height="200" rx="12" fill="#6ab5f720"/>
+  <!-- Pink accent dot -->
+  <circle cx="195" cy="800" r="4" fill="#E57697"/>
+</svg>

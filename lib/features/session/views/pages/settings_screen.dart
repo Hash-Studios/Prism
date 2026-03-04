@@ -268,6 +268,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               subtitle: const Text("Force the application to restart", style: TextStyle(fontSize: 12)),
             ),
+            if (app_state.isAdminUser()) ...[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Admin',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.error == Colors.black
+                          ? Colors.grey
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.bug_report_outlined),
+                title: Text(
+                  "Debug Panel",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Proxima Nova",
+                  ),
+                ),
+                subtitle: const Text("Logs, network, tools, storage inspector", style: TextStyle(fontSize: 12)),
+                onTap: () => context.router.pushPath('/debug-panel'),
+              ),
+            ],
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Align(
