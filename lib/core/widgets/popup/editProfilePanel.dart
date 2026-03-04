@@ -30,6 +30,22 @@ class EditProfilePanel extends StatefulWidget {
   _EditProfilePanelState createState() => _EditProfilePanelState();
 }
 
+class _ProfileLinkOption {
+  _ProfileLinkOption({
+    required this.name,
+    required this.link,
+    required this.icon,
+    required this.validator,
+    this.value = '',
+  });
+
+  final String name;
+  final String link;
+  final IconData icon;
+  final String validator;
+  String value;
+}
+
 class _EditProfilePanelState extends State<EditProfilePanel> {
   final TextEditingController linkController = TextEditingController();
   late TextEditingController bioController;
@@ -56,7 +72,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   late String coverPath;
   late String coverUrl;
   final picker2 = ImagePicker();
-  List<Map<String, dynamic>> linkIcons = [
+  List<_ProfileLinkOption> linkIcons = [
     // {
     //   'name': 'Edit links...',
     //   'link': 'Select your link first',
@@ -64,164 +80,119 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     //   'value': '',
     //   'validator': '',
     // },
-    {
-      'name': 'github',
-      'link': 'https://github.com/username',
-      'icon': JamIcons.github,
-      'value': '',
-      'validator': 'github',
-    },
-    {
-      'name': 'twitter',
-      'link': 'https://twitter.com/username',
-      'icon': JamIcons.twitter,
-      'value': '',
-      'validator': 'twitter',
-    },
-    {
-      'name': 'instagram',
-      'link': 'https://instagram.com/username',
-      'icon': JamIcons.instagram,
-      'value': '',
-      'validator': 'instagram',
-    },
-    {'name': 'email', 'link': 'your@email.com', 'icon': JamIcons.inbox, 'value': '', 'validator': '@'},
-    {
-      'name': 'telegram',
-      'link': 'https://t.me/username',
-      'icon': JamIcons.paper_plane,
-      'value': '',
-      'validator': 't.me',
-    },
-    {
-      'name': 'dribbble',
-      'link': 'https://dribbble.com/username',
-      'icon': JamIcons.basketball,
-      'value': '',
-      'validator': 'dribbble',
-    },
-    {
-      'name': 'linkedin',
-      'link': 'https://linkedin.com/in/username',
-      'icon': JamIcons.linkedin,
-      'value': '',
-      'validator': 'linkedin',
-    },
-    {
-      'name': 'bio.link',
-      'link': 'https://bio.link/username',
-      'icon': JamIcons.world,
-      'value': '',
-      'validator': 'bio.link',
-    },
-    {
-      'name': 'patreon',
-      'link': 'https://patreon.com/username',
-      'icon': JamIcons.patreon,
-      'value': '',
-      'validator': 'patreon',
-    },
-    {
-      'name': 'trello',
-      'link': 'https://trello.com/username',
-      'icon': JamIcons.trello,
-      'value': '',
-      'validator': 'trello',
-    },
-    {
-      'name': 'reddit',
-      'link': 'https://reddit.com/user/username',
-      'icon': JamIcons.reddit,
-      'value': '',
-      'validator': 'reddit',
-    },
-    {
-      'name': 'behance',
-      'link': 'https://behance.net/username',
-      'icon': JamIcons.behance,
-      'value': '',
-      'validator': 'behance.net',
-    },
-    {
-      'name': 'deviantart',
-      'link': 'https://deviantart.com/username',
-      'icon': JamIcons.deviantart,
-      'value': '',
-      'validator': 'deviantart',
-    },
-    {
-      'name': 'gitlab',
-      'link': 'https://gitlab.com/username',
-      'icon': JamIcons.gitlab,
-      'value': '',
-      'validator': 'gitlab',
-    },
-    {
-      'name': 'medium',
-      'link': 'https://username.medium.com/',
-      'icon': JamIcons.medium,
-      'value': '',
-      'validator': 'medium',
-    },
-    {
-      'name': 'paypal',
-      'link': 'https://paypal.me/username',
-      'icon': JamIcons.paypal,
-      'value': '',
-      'validator': 'paypal',
-    },
-    {
-      'name': 'spotify',
-      'link': 'https://open.spotify.com/user/username',
-      'icon': JamIcons.spotify,
-      'value': '',
-      'validator': 'open.spotify',
-    },
-    {
-      'name': 'twitch',
-      'link': 'https://twitch.tv/username',
-      'icon': JamIcons.twitch,
-      'value': '',
-      'validator': 'twitch.tv',
-    },
-    {
-      'name': 'unsplash',
-      'link': 'https://unsplash.com/username',
-      'icon': JamIcons.unsplash,
-      'value': '',
-      'validator': 'unsplash',
-    },
-    {
-      'name': 'youtube',
-      'link': 'https://youtube.com/channel/username',
-      'icon': JamIcons.youtube,
-      'value': '',
-      'validator': 'youtube',
-    },
-    {
-      'name': 'linktree',
-      'link': 'https://linktr.ee/username',
-      'icon': JamIcons.tree_alt,
-      'value': '',
-      'validator': 'linktr.ee',
-    },
-    {
-      'name': 'buymeacoffee',
-      'link': 'https://buymeacoff.ee/username',
-      'icon': JamIcons.coffee,
-      'value': '',
-      'validator': 'buymeacoff.ee',
-    },
-    {'name': 'custom link', 'link': '', 'icon': JamIcons.link, 'value': '', 'validator': ''},
+    _ProfileLinkOption(name: 'github', link: 'https://github.com/username', icon: JamIcons.github, validator: 'github'),
+    _ProfileLinkOption(
+      name: 'twitter',
+      link: 'https://twitter.com/username',
+      icon: JamIcons.twitter,
+      validator: 'twitter',
+    ),
+    _ProfileLinkOption(
+      name: 'instagram',
+      link: 'https://instagram.com/username',
+      icon: JamIcons.instagram,
+      validator: 'instagram',
+    ),
+    _ProfileLinkOption(name: 'email', link: 'your@email.com', icon: JamIcons.inbox, validator: '@'),
+    _ProfileLinkOption(name: 'telegram', link: 'https://t.me/username', icon: JamIcons.paper_plane, validator: 't.me'),
+    _ProfileLinkOption(
+      name: 'dribbble',
+      link: 'https://dribbble.com/username',
+      icon: JamIcons.basketball,
+      validator: 'dribbble',
+    ),
+    _ProfileLinkOption(
+      name: 'linkedin',
+      link: 'https://linkedin.com/in/username',
+      icon: JamIcons.linkedin,
+      validator: 'linkedin',
+    ),
+    _ProfileLinkOption(
+      name: 'bio.link',
+      link: 'https://bio.link/username',
+      icon: JamIcons.world,
+      validator: 'bio.link',
+    ),
+    _ProfileLinkOption(
+      name: 'patreon',
+      link: 'https://patreon.com/username',
+      icon: JamIcons.patreon,
+      validator: 'patreon',
+    ),
+    _ProfileLinkOption(name: 'trello', link: 'https://trello.com/username', icon: JamIcons.trello, validator: 'trello'),
+    _ProfileLinkOption(
+      name: 'reddit',
+      link: 'https://reddit.com/user/username',
+      icon: JamIcons.reddit,
+      validator: 'reddit',
+    ),
+    _ProfileLinkOption(
+      name: 'behance',
+      link: 'https://behance.net/username',
+      icon: JamIcons.behance,
+      validator: 'behance.net',
+    ),
+    _ProfileLinkOption(
+      name: 'deviantart',
+      link: 'https://deviantart.com/username',
+      icon: JamIcons.deviantart,
+      validator: 'deviantart',
+    ),
+    _ProfileLinkOption(name: 'gitlab', link: 'https://gitlab.com/username', icon: JamIcons.gitlab, validator: 'gitlab'),
+    _ProfileLinkOption(
+      name: 'medium',
+      link: 'https://username.medium.com/',
+      icon: JamIcons.medium,
+      validator: 'medium',
+    ),
+    _ProfileLinkOption(name: 'paypal', link: 'https://paypal.me/username', icon: JamIcons.paypal, validator: 'paypal'),
+    _ProfileLinkOption(
+      name: 'spotify',
+      link: 'https://open.spotify.com/user/username',
+      icon: JamIcons.spotify,
+      validator: 'open.spotify',
+    ),
+    _ProfileLinkOption(
+      name: 'twitch',
+      link: 'https://twitch.tv/username',
+      icon: JamIcons.twitch,
+      validator: 'twitch.tv',
+    ),
+    _ProfileLinkOption(
+      name: 'unsplash',
+      link: 'https://unsplash.com/username',
+      icon: JamIcons.unsplash,
+      validator: 'unsplash',
+    ),
+    _ProfileLinkOption(
+      name: 'youtube',
+      link: 'https://youtube.com/channel/username',
+      icon: JamIcons.youtube,
+      validator: 'youtube',
+    ),
+    _ProfileLinkOption(
+      name: 'linktree',
+      link: 'https://linktr.ee/username',
+      icon: JamIcons.tree_alt,
+      validator: 'linktr.ee',
+    ),
+    _ProfileLinkOption(
+      name: 'buymeacoffee',
+      link: 'https://buymeacoff.ee/username',
+      icon: JamIcons.coffee,
+      validator: 'buymeacoff.ee',
+    ),
+    _ProfileLinkOption(name: 'custom link', link: '', icon: JamIcons.link, validator: ''),
   ];
-  Map<String, dynamic>? _link;
+  _ProfileLinkOption? _link;
   @override
   void initState() {
-    linkIcons.sort((a, b) => a['name'].toString().compareTo(b['name'].toString()));
+    linkIcons.sort((a, b) => a.name.compareTo(b.name));
     final links = app_state.prismUser.links;
     for (final element in linkIcons) {
-      if (links[element['name']] != "" && links[element['name']] != null) {
-        element['value'] = links[element['name']];
+      final String value = links[element.name]?.toString() ?? '';
+      if (value.isNotEmpty) {
+        element.value = value;
       }
     }
     _link = linkIcons[3];
@@ -737,18 +708,18 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             height: 80,
                             width: 130,
                             child: Center(
-                              child: DropdownButton<Map<String, dynamic>>(
+                              child: DropdownButton<_ProfileLinkOption>(
                                 isExpanded: true,
-                                items: linkIcons.map((Map<String, dynamic> link) {
+                                items: linkIcons.map((link) {
                                   return DropdownMenuItem(
                                     value: link,
                                     child: Row(
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
-                                        Icon(link["icon"] as IconData),
+                                        Icon(link.icon),
                                         const SizedBox(width: 16),
                                         Text(
-                                          link["name"].toString().inCaps,
+                                          link.name.inCaps,
                                           style: Theme.of(
                                             context,
                                           ).textTheme.headlineSmall!.copyWith(color: Colors.white, fontSize: 14),
@@ -760,20 +731,17 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 underline: Container(),
                                 onChanged: (value) {
                                   setState(() => _link = value);
-                                  linkController.text = _link!["value"].toString();
+                                  linkController.text = _link?.value ?? '';
                                 },
                                 icon: Container(),
                                 value: _link,
                                 dropdownColor: Theme.of(context).primaryColor,
                                 selectedItemBuilder: (BuildContext context) {
-                                  return linkIcons.map<Widget>((Map link) {
+                                  return linkIcons.map<Widget>((link) {
                                     return Padding(
                                       padding: const EdgeInsets.only(left: 12.0),
                                       child: Row(
-                                        children: [
-                                          Icon(link["icon"] as IconData),
-                                          const Icon(JamIcons.chevron_down, size: 14),
-                                        ],
+                                        children: [Icon(link.icon), const Icon(JamIcons.chevron_down, size: 14)],
                                       ),
                                     );
                                   }).toList();
@@ -793,7 +761,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
                                 controller: linkController,
                                 decoration: InputDecoration(
-                                  enabled: _link?["name"] != "Edit links...",
+                                  enabled: _link?.name != "Edit links...",
                                   contentPadding: const EdgeInsets.only(left: 30, top: 15),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
@@ -811,11 +779,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                     borderRadius: BorderRadius.circular(10),
                                     borderSide: const BorderSide(color: Colors.white, width: 2),
                                   ),
-                                  labelText: _link?["name"].toString().inCaps ?? "",
+                                  labelText: _link?.name.inCaps ?? "",
                                   labelStyle: Theme.of(
                                     context,
                                   ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                                  hintText: _link?["link"].toString() ?? "",
+                                  hintText: _link?.link ?? "",
                                   hintStyle: Theme.of(
                                     context,
                                   ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
@@ -824,46 +792,27 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                       showRemoveAlertDialog(context, () async {
                                         linkController.text = "";
                                         final links = app_state.prismUser.links;
-                                        links.remove(_link?["name"].toString());
+                                        links.remove(_link?.name);
                                         app_state.prismUser.links = links;
                                         app_state.persistPrismUser();
                                         await _updateCurrentUser(<String, dynamic>{
                                           "links": app_state.prismUser.links,
                                         }, 'profile.edit.removeLink');
-                                      }, "${_link?["name"].toString().inCaps}");
+                                      }, "${_link?.name.inCaps}");
                                     },
                                     icon: const Icon(JamIcons.close, color: Colors.red, size: 24),
                                   ),
                                 ),
                                 onChanged: (value) {
-                                  // logger.d("VALUE TEXT ${value.toLowerCase()}");
-                                  // logger.d(
-                                  //     "VALUE LINK NAME ${_link?["name"].toString().toLowerCase()}");
-                                  // logger.d(
-                                  //     "VALUE LINK VALUE ${_link?["value"].toString().toLowerCase()}");
-                                  // logger.d("VALUE LINK EDIT ${linkEdit}");
-                                  // logger.d(
-                                  //     "VALUE LINK CONTAINS ${(value.toLowerCase().contains('${_link?["name"].toString().toLowerCase()}'))}");
-
-                                  if (value.toLowerCase().contains('${_link?["validator"].toString().toLowerCase()}')) {
+                                  if (value.toLowerCase().contains('${_link?.validator.toLowerCase()}')) {
                                     setState(() {
-                                      _link?["value"] = value;
-                                      // if (_link?["name"].toString() == 'github') {
-                                      //   githubUrl = value;
-                                      // } else if (_link?["name"].toString() ==
-                                      //     'twitter') {
-                                      //   twitterUrl = value;
-                                      // } else if (_link?["name"].toString() ==
-                                      //     'instagram') {
-                                      //   instagramUrl = value;
-                                      // } else if (_link?["name"].toString() ==
-                                      //     'email') {
-                                      //   emailUrl = value;
-                                      // }
+                                      if (_link != null) {
+                                        _link!.value = value;
+                                      }
                                     });
                                     bool changed = false;
                                     for (int i = 0; i < linkIcons.length; i++) {
-                                      if (linkIcons[i]["value"] != "") {
+                                      if (linkIcons[i].value.isNotEmpty) {
                                         changed = true;
                                         break;
                                       }
@@ -874,7 +823,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                   } else if (value == "") {
                                     bool changed = false;
                                     for (int i = 0; i < linkIcons.length; i++) {
-                                      if (linkIcons[i]["value"] != "") {
+                                      if (linkIcons[i].value.isNotEmpty) {
                                         changed = true;
                                         break;
                                       }
@@ -918,10 +867,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
                           }
                           if (linkEdit) {
-                            final Map links = app_state.prismUser.links;
+                            final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
                             for (int p = 0; p < linkIcons.length; p++) {
-                              if (linkIcons[p]["value"] != "") {
-                                links[linkIcons[p]["name"]] = linkIcons[p]["value"];
+                              if (linkIcons[p].value.isNotEmpty) {
+                                links[linkIcons[p].name] = linkIcons[p].value;
                               }
                             }
                             app_state.prismUser.links = links;
@@ -975,10 +924,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                             }, 'profile.edit.name.withUsername');
                           }
                           if (linkEdit) {
-                            final Map links = app_state.prismUser.links;
+                            final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
                             for (int p = 0; p < linkIcons.length; p++) {
-                              if (linkIcons[p]["value"] != "") {
-                                links[linkIcons[p]["name"]] = linkIcons[p]["value"];
+                              if (linkIcons[p].value.isNotEmpty) {
+                                links[linkIcons[p].name] = linkIcons[p].value;
                               }
                               if (_pfp != null && pfpEdit) {
                                 await processImage();
@@ -1001,10 +950,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                                 }, 'profile.edit.name.withUsername');
                               }
                               if (linkEdit) {
-                                final Map links = app_state.prismUser.links;
+                                final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
                                 for (int p = 0; p < linkIcons.length; p++) {
-                                  if (linkIcons[p]["value"] != "") {
-                                    links[linkIcons[p]["name"]] = linkIcons[p]["value"];
+                                  if (linkIcons[p].value.isNotEmpty) {
+                                    links[linkIcons[p].name] = linkIcons[p].value;
                                   }
                                 }
                                 app_state.prismUser.links = links;

@@ -17,7 +17,7 @@ PrismUsersV2 _user({
   String profilePhoto = _defaultPhotoUrl,
   String username = '',
   String bio = '',
-  Map<dynamic, dynamic>? links,
+  Map<String, String>? links,
 }) {
   final String now = DateTime.now().toUtc().toIso8601String();
   return PrismUsersV2(
@@ -27,14 +27,14 @@ PrismUsersV2 _user({
     createdAt: now,
     premium: false,
     lastLoginAt: now,
-    links: links ?? <String, dynamic>{},
-    followers: <dynamic>[],
-    following: <dynamic>[],
+    links: links ?? const <String, String>{},
+    followers: const <String>[],
+    following: const <String>[],
     profilePhoto: profilePhoto,
     bio: bio,
     loggedIn: loggedIn,
     badges: <Badge>[],
-    subPrisms: <dynamic>[],
+    subPrisms: const <String>[],
     coins: 0,
     transactions: <PrismTransaction>[],
     name: '',
@@ -87,7 +87,7 @@ void main() {
       profilePhoto: 'https://example.com/photo.png',
       username: 'creator_01',
       bio: 'hello',
-      links: <String, dynamic>{'github': 'https://github.com/creator'},
+      links: const <String, String>{'github': 'https://github.com/creator'},
     );
 
     int launchCount = 0;

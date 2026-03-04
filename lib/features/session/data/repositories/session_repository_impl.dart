@@ -10,7 +10,9 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/session/domain/entities/badge_entity.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:injectable/injectable.dart';
@@ -75,12 +77,41 @@ class SessionRepositoryImpl implements SessionRepository {
       premium: _currentUser.premium,
       subscriptionTier: _currentUser.subscriptionTier,
       coins: _currentUser.coins,
-      links: _currentUser.links.cast<String, dynamic>(),
-      followers: List<dynamic>.from(_currentUser.followers),
-      following: List<dynamic>.from(_currentUser.following),
-      badges: List<dynamic>.from(_currentUser.badges),
-      transactions: List<dynamic>.from(_currentUser.transactions),
-      subPrisms: List<dynamic>.from(_currentUser.subPrisms),
+      links: <String, String>{
+        for (final entry in _currentUser.links.entries)
+          if (entry.key is String && entry.value != null) entry.key as String: entry.value.toString(),
+      },
+      followers: _currentUser.followers.whereType<String>().toList(growable: false),
+      following: _currentUser.following.whereType<String>().toList(growable: false),
+      badges: _currentUser.badges
+          .whereType<Badge>()
+          .map(
+            (b) => BadgeEntity(
+              id: b.id,
+              name: b.name,
+              description: b.description,
+              imageUrl: b.imageUrl,
+              color: b.color,
+              url: b.url,
+              awardedAt: b.awardedAt,
+            ),
+          )
+          .toList(growable: false),
+      transactions: _currentUser.transactions
+          .whereType<PrismTransaction>()
+          .map(
+            (t) => TransactionEntity(
+              id: t.id,
+              name: t.name,
+              description: t.description,
+              amount: t.amount,
+              credit: t.credit,
+              by: t.by,
+              processedAt: t.processedAt,
+            ),
+          )
+          .toList(growable: false),
+      subPrisms: _currentUser.subPrisms.whereType<String>().toList(growable: false),
       uploadsWeekStart: _currentUser.uploadsWeekStart,
       uploadsThisWeek: _currentUser.uploadsThisWeek,
     );
@@ -186,12 +217,12 @@ class SessionRepositoryImpl implements SessionRepository {
     bool? premium,
     String? subscriptionTier,
     int? coins,
-    Map<dynamic, dynamic>? links,
-    List<dynamic>? followers,
-    List<dynamic>? following,
-    List<dynamic>? badges,
-    List<dynamic>? subPrisms,
-    List<dynamic>? transactions,
+    Map<String, String>? links,
+    List<String>? followers,
+    List<String>? following,
+    List<BadgeEntity>? badges,
+    List<String>? subPrisms,
+    List<TransactionEntity>? transactions,
     String? uploadsWeekStart,
     int? uploadsThisWeek,
     bool persist = true,
@@ -211,10 +242,36 @@ class SessionRepositoryImpl implements SessionRepository {
       if (links != null) _currentUser.links = links;
       if (followers != null) _currentUser.followers = followers;
       if (following != null) _currentUser.following = following;
-      if (badges != null) _currentUser.badges = badges.whereType<Badge>().toList(growable: false);
+      if (badges != null) {
+        _currentUser.badges = badges
+            .map(
+              (b) => Badge(
+                id: b.id,
+                name: b.name,
+                description: b.description,
+                imageUrl: b.imageUrl,
+                color: b.color,
+                url: b.url,
+                awardedAt: b.awardedAt,
+              ),
+            )
+            .toList(growable: false);
+      }
       if (subPrisms != null) _currentUser.subPrisms = subPrisms;
       if (transactions != null) {
-        _currentUser.transactions = transactions.whereType<PrismTransaction>().toList(growable: false);
+        _currentUser.transactions = transactions
+            .map(
+              (t) => PrismTransaction(
+                id: t.id,
+                name: t.name,
+                description: t.description,
+                amount: t.amount,
+                credit: t.credit,
+                by: t.by,
+                processedAt: t.processedAt,
+              ),
+            )
+            .toList(growable: false);
       }
       if (uploadsWeekStart != null) _currentUser.uploadsWeekStart = uploadsWeekStart;
       if (uploadsThisWeek != null) _currentUser.uploadsThisWeek = uploadsThisWeek;

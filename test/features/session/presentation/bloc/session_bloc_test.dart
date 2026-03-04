@@ -2,7 +2,9 @@ import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
+import 'package:Prism/features/session/domain/entities/badge_entity.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/session/domain/usecases/session_usecases.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -45,12 +47,12 @@ void main() {
           premium: false,
           subscriptionTier: 'free',
           coins: 0,
-          links: <String, dynamic>{},
-          followers: <dynamic>[],
-          following: <dynamic>[],
-          badges: <dynamic>[],
-          transactions: <dynamic>[],
-          subPrisms: <dynamic>[],
+          links: <String, String>{},
+          followers: <String>[],
+          following: <String>[],
+          badges: <BadgeEntity>[],
+          transactions: <TransactionEntity>[],
+          subPrisms: <String>[],
           uploadsWeekStart: '',
           uploadsThisWeek: 0,
         ),
@@ -71,12 +73,12 @@ void main() {
           premium: true,
           subscriptionTier: 'pro',
           coins: 100,
-          links: <String, dynamic>{},
-          followers: <dynamic>[],
-          following: <dynamic>[],
-          badges: <dynamic>[],
-          transactions: <dynamic>[],
-          subPrisms: <dynamic>[],
+          links: <String, String>{},
+          followers: <String>[],
+          following: <String>[],
+          badges: <BadgeEntity>[],
+          transactions: <TransactionEntity>[],
+          subPrisms: <String>[],
           uploadsWeekStart: '',
           uploadsThisWeek: 0,
         ),

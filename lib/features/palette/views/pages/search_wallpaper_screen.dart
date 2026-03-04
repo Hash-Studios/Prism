@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -16,6 +17,7 @@ import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
@@ -33,13 +35,13 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 class SearchWallpaperScreen extends StatefulWidget {
   const SearchWallpaperScreen({
     super.key,
-    required this.selectedProvider,
+    required this.source,
     required this.query,
     required this.index,
     required this.link,
   });
 
-  final String selectedProvider;
+  final WallpaperSource source;
   final String query;
   final int index;
   final String link;
@@ -51,7 +53,7 @@ class SearchWallpaperScreen extends StatefulWidget {
 class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  late String selectedProvider;
+  late WallpaperSource source;
   late String query;
   late int index;
   late String link;
@@ -68,7 +70,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
   bool panelClosed = true;
   bool panelCollapsed = true;
 
-  String get _sourceContext => '${selectedProvider.toLowerCase()}_search_wallpaper_screen';
+  String get _sourceContext => '${source.wireValue}_search_wallpaper_screen';
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -174,7 +176,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    selectedProvider = widget.selectedProvider;
+    source = widget.source;
     query = widget.query;
     index = widget.index;
     link = widget.link;
@@ -198,7 +200,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
               shakeController.reverse();
             }
           });
-    return selectedProvider == "WallHaven"
+    return source == WallpaperSource.wallhaven
         ? Scaffold(
             key: _scaffoldKey,
             backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
@@ -347,7 +349,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            wdata.wallsS[index].favourites.toString(),
+                                            wdata.wallsS[index].core.favourites.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -364,7 +366,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                            "${double.parse((double.parse(wdata.wallsS[index].sizeBytes.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -382,8 +384,8 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                         child: Row(
                                           children: [
                                             Text(
-                                              wdata.wallsS[index].category.toString()[0].toUpperCase() +
-                                                  wdata.wallsS[index].category.toString().substring(1),
+                                              wdata.wallsS[index].core.category.toString()[0].toUpperCase() +
+                                                  wdata.wallsS[index].core.category.toString().substring(1),
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -401,7 +403,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                       Row(
                                         children: [
                                           Text(
-                                            wdata.wallsS[index].resolution.toString(),
+                                            wdata.wallsS[index].core.resolution.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -444,26 +446,27 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                               children: <Widget>[
                                 DownloadButton(
                                   colorChanged: colorChanged,
-                                  link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path.toString(),
+                                  link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].core.fullUrl,
                                 ),
                                 if (!hideSetWallpaperUi)
                                   SetWallpaperButton(
                                     colorChanged: colorChanged,
-                                    url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
+                                    url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].core.fullUrl,
                                   ),
                                 FavouriteWallpaperButton(
-                                  id: wdata.wallsS[index].id.toString(),
-                                  provider: "WallHaven",
-                                  wallhaven: wdata.wallsS[index],
+                                  wall: WallhavenFavouriteWall(
+                                    id: wdata.wallsS[index].id,
+                                    wallpaper: wdata.wallsS[index],
+                                  ),
                                   trash: false,
                                 ),
                                 ShareButton(
                                   id: wdata.wallsS[index].id,
-                                  provider: "WallHaven",
-                                  url: wdata.wallsS[index].path,
-                                  thumbUrl: wdata.wallsS[index].thumbs!["original"].toString(),
+                                  source: WallpaperSource.wallhaven,
+                                  url: wdata.wallsS[index].core.fullUrl,
+                                  thumbUrl: wdata.wallsS[index].core.thumbnailUrl,
                                 ),
-                                EditButton(url: wdata.wallsS[index].path),
+                                EditButton(url: wdata.wallsS[index].core.fullUrl),
                               ],
                             ),
                           ),
@@ -501,7 +504,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: wdata.wallsS[index].path!,
+                          imageUrl: wdata.wallsS[index].core.fullUrl,
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
                             child: Container(
@@ -569,7 +572,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                       child: IconButton(
                         onPressed: () {
                           _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                          final link = wdata.wallsS[index].path;
+                          final link = wdata.wallsS[index].core.fullUrl;
                           Navigator.push(
                             context,
                             PageRouteBuilder(
@@ -717,42 +720,36 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                     child: SizedBox(
                                       width: MediaQuery.of(context).size.width * .8,
                                       child: Text(
-                                        pdata.wallsPS[index].url
-                                                    .toString()
+                                        pdata.wallsPS[index].core.fullUrl
                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                     .replaceAll("-", " ")
                                                     .replaceAll("/", "")
                                                     .length >
                                                 8
-                                            ? pdata.wallsPS[index].url
-                                                      .toString()
+                                            ? pdata.wallsPS[index].core.fullUrl
                                                       .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")[0]
                                                       .toUpperCase() +
-                                                  pdata.wallsPS[index].url
-                                                      .toString()
+                                                  pdata.wallsPS[index].core.fullUrl
                                                       .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
                                                       .substring(
                                                         1,
-                                                        pdata.wallsPS[index].url
-                                                                .toString()
+                                                        pdata.wallsPS[index].core.fullUrl
                                                                 .replaceAll("https://www.pexels.com/photo/", "")
                                                                 .replaceAll("-", " ")
                                                                 .replaceAll("/", "")
                                                                 .length -
                                                             7,
                                                       )
-                                            : pdata.wallsPS[index].url
-                                                      .toString()
+                                            : pdata.wallsPS[index].core.fullUrl
                                                       .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")[0]
                                                       .toUpperCase() +
-                                                  pdata.wallsPS[index].url
-                                                      .toString()
+                                                  pdata.wallsPS[index].core.fullUrl
                                                       .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
@@ -799,7 +796,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                "${pdata.wallsPS[index].width}x${pdata.wallsPS[index].height}",
+                                                "${pdata.wallsPS[index].core.width}x${pdata.wallsPS[index].core.height}",
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -818,7 +815,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               alignment: Alignment.centerRight,
                                               child: ActionChip(
                                                 onPressed: () {
-                                                  openPrismLink(context, pdata.wallsPS[index].url!);
+                                                  openPrismLink(context, pdata.wallsPS[index].core.fullUrl);
                                                 },
                                                 padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                 avatar: Icon(
@@ -867,30 +864,27 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                               children: <Widget>[
                                 DownloadButton(
                                   colorChanged: colorChanged,
-                                  link: screenshotTaken
-                                      ? _imageFile.path
-                                      : pdata.wallsPS[index].src!["original"].toString(),
+                                  link: screenshotTaken ? _imageFile.path : pdata.wallsPS[index].core.fullUrl,
                                 ),
                                 if (!hideSetWallpaperUi)
                                   SetWallpaperButton(
                                     colorChanged: colorChanged,
-                                    url: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsPS[index].src!["original"].toString(),
+                                    url: screenshotTaken ? _imageFile.path : pdata.wallsPS[index].core.fullUrl,
                                   ),
                                 FavouriteWallpaperButton(
-                                  id: pdata.wallsPS[index].id.toString(),
-                                  provider: "Pexels",
-                                  pexels: pdata.wallsPS[index],
+                                  wall: PexelsFavouriteWall(
+                                    id: pdata.wallsPS[index].id,
+                                    wallpaper: pdata.wallsPS[index],
+                                  ),
                                   trash: false,
                                 ),
                                 ShareButton(
                                   id: pdata.wallsPS[index].id,
-                                  provider: selectedProvider,
-                                  url: pdata.wallsPS[index].src!["original"].toString(),
-                                  thumbUrl: pdata.wallsPS[index].src!["medium"].toString(),
+                                  source: source,
+                                  url: pdata.wallsPS[index].core.fullUrl,
+                                  thumbUrl: pdata.wallsPS[index].core.thumbnailUrl,
                                 ),
-                                EditButton(url: pdata.wallsPS[index].src!["original"].toString()),
+                                EditButton(url: pdata.wallsPS[index].core.fullUrl),
                               ],
                             ),
                           ),
@@ -928,7 +922,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: pdata.wallsPS[index].src!["original"].toString(),
+                          imageUrl: pdata.wallsPS[index].core.fullUrl,
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
                             child: Container(
@@ -996,7 +990,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                       child: IconButton(
                         onPressed: () {
                           _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                          final link = pdata.wallsPS[index].src!["original"];
+                          final link = pdata.wallsPS[index].core.fullUrl;
                           Navigator.push(
                             context,
                             PageRouteBuilder(

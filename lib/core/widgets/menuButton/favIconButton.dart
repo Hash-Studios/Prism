@@ -1,9 +1,9 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/data/pexels/model/wallpaperp.dart';
-import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/material.dart';
@@ -11,8 +11,8 @@ import 'package:hive_io/hive_io.dart';
 
 class FavIconButton extends StatefulWidget {
   final String? id;
-  final Map? prism;
-  const FavIconButton({required this.id, this.prism, super.key});
+  final FavouriteWallEntity? wall;
+  const FavIconButton({required this.id, this.wall, super.key});
 
   @override
   _FavIconButtonState createState() => _FavIconButtonState();
@@ -35,10 +35,10 @@ class _FavIconButtonState extends State<FavIconButton> {
           valueChanged: () {
             if (app_state.prismUser.loggedIn == false) {
               googleSignInPopUp(context, () {
-                onFav(widget.id, "Prism", null, null, widget.prism);
+                onFav(widget.wall);
               });
             } else {
-              onFav(widget.id, "Prism", null, null, widget.prism);
+              onFav(widget.wall);
             }
           },
           iconColor: Theme.of(context).colorScheme.secondary,
@@ -49,10 +49,13 @@ class _FavIconButtonState extends State<FavIconButton> {
     );
   }
 
-  Future<void> onFav(String? id, String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
+  Future<void> onFav(FavouriteWallEntity? wall) async {
     setState(() {});
-    context.favouriteWallsAdapter(listen: false).favCheck(id, provider, wallhaven, pexels, prism).then((value) {
-      analytics.track(FavStatusChangedEvent(wallId: id ?? '', provider: provider));
+    if (wall == null) {
+      return;
+    }
+    context.favouriteWallsAdapter(listen: false).favCheck(wall).then((value) {
+      analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
       setState(() {});
     });
   }

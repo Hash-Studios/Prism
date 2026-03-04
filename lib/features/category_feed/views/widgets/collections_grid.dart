@@ -348,11 +348,12 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   @override
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
-    final List<dynamic> rawCollections = CData.collections ?? <dynamic>[];
+    final List<Object?> rawCollections =
+        (CData.collections as List?)?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;
     final int itemCount = isLoading ? 8 : rawCollections.length;
 
-    Map<String, dynamic> asMap(dynamic raw) {
+    Map<String, dynamic> asMap(Object? raw) {
       if (raw is Map<String, dynamic>) {
         return raw;
       }

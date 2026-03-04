@@ -189,9 +189,7 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                           ? PremiumBannerWalls(
                               comparator: !app_state.isPremiumWall(
                                 app_state.premiumCollections,
-                                context.publicProfileAdapter().userProfileWalls![index].data()["collections"]
-                                        as List? ??
-                                    [],
+                                context.publicProfileAdapter().userProfileWalls![index].collections ?? const <String>[],
                               ),
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
@@ -220,9 +218,7 @@ class PhotographerWallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"] == null
-        ? ""
-        : context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"].toString().trim();
+    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].wallpaperThumb?.trim() ?? '';
     final bool hasValidImageUrl = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
     return Stack(
       children: [
@@ -248,11 +244,8 @@ class PhotographerWallTile extends StatelessWidget {
                   context.router.push(
                     UserProfileWallViewRoute(
                       wallIndex: index,
-                      thumbnailUrl: context
-                          .publicProfileAdapter(listen: false)
-                          .userProfileWalls![index]
-                          .data()["wallpaper_thumb"]
-                          .toString(),
+                      thumbnailUrl:
+                          context.publicProfileAdapter(listen: false).userProfileWalls![index].wallpaperThumb ?? '',
                     ),
                   );
                 }

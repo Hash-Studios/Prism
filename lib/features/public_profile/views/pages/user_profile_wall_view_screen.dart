@@ -6,6 +6,8 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -14,7 +16,9 @@ import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
@@ -61,7 +65,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
 
   String get _sourceContext => 'user_profile_wallpaper_view';
 
-  String? get _itemId => context.publicProfileAdapter(listen: false).userProfileWalls?[index].data()["id"]?.toString();
+  String? get _itemId => context.publicProfileAdapter(listen: false).userProfileWalls?[index].id?.toString();
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -173,11 +177,9 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
     isLoading = true;
     _contentLoadTracker.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      updateViews(
-        context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["id"].toString().toUpperCase(),
-      );
+      updateViews(context.publicProfileAdapter(listen: false).userProfileWalls![index].id.toString().toUpperCase());
       _futureView = getViews(
-        context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["id"].toString().toUpperCase(),
+        context.publicProfileAdapter(listen: false).userProfileWalls![index].id.toString().toUpperCase(),
       );
     });
     _updatePaletteGenerator();
@@ -319,7 +321,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                           context
                                               .publicProfileAdapter()
                                               .userProfileWalls![index]
-                                              .data()["id"]
+                                              .id
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
@@ -390,7 +392,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      context.publicProfileAdapter().userProfileWalls![index].data()["by"].toString(),
+                                      context.publicProfileAdapter().userProfileWalls![index].by.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -407,7 +409,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      context.publicProfileAdapter().userProfileWalls![index].data()["desc"].toString(),
+                                      context.publicProfileAdapter().userProfileWalls![index].desc.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -424,7 +426,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      context.publicProfileAdapter().userProfileWalls![index].data()["size"].toString(),
+                                      context.publicProfileAdapter().userProfileWalls![index].size.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -440,11 +442,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                 Row(
                                   children: [
                                     Text(
-                                      context
-                                          .publicProfileAdapter()
-                                          .userProfileWalls![index]
-                                          .data()["resolution"]
-                                          .toString(),
+                                      context.publicProfileAdapter().userProfileWalls![index].resolution.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -461,11 +459,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                                 Row(
                                   children: [
                                     Text(
-                                      context
-                                          .publicProfileAdapter()
-                                          .userProfileWalls![index]
-                                          .data()["wallpaper_provider"]
-                                          .toString(),
+                                      context.publicProfileAdapter().userProfileWalls![index].source.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -493,17 +487,12 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                             colorChanged: colorChanged,
                             link: screenshotTaken
                                 ? _imageFile.path
-                                : context
-                                      .publicProfileAdapter()
-                                      .userProfileWalls![index]
-                                      .data()["wallpaper_url"]
-                                      .toString(),
+                                : context.publicProfileAdapter().userProfileWalls![index].wallpaperUrl,
                             isPremiumContent: app_state.isPremiumWall(
                               app_state.premiumCollections,
-                              context.publicProfileAdapter().userProfileWalls![index].data()["collections"] as List? ??
-                                  [],
+                              context.publicProfileAdapter().userProfileWalls![index].collections as List? ?? [],
                             ),
-                            contentId: context.publicProfileAdapter().userProfileWalls![index].data()["id"]?.toString(),
+                            contentId: context.publicProfileAdapter().userProfileWalls![index].id?.toString(),
                             sourceContext: 'user_profile_wall_view',
                           ),
                           if (!hideSetWallpaperUi)
@@ -511,46 +500,56 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                               colorChanged: colorChanged,
                               url: screenshotTaken
                                   ? _imageFile.path
-                                  : context
-                                        .publicProfileAdapter()
-                                        .userProfileWalls![index]
-                                        .data()["wallpaper_url"]
-                                        .toString(),
+                                  : context.publicProfileAdapter().userProfileWalls![index].wallpaperUrl.toString(),
                             ),
                           FavouriteWallpaperButton(
-                            id: context.publicProfileAdapter().userProfileWalls![index].data()["id"].toString(),
-                            provider: context
-                                .publicProfileAdapter()
-                                .userProfileWalls![index]
-                                .data()["wallpaper_provider"]
-                                .toString(),
-                            prism: context.publicProfileAdapter().userProfileWalls![index].data(),
+                            wall: PrismFavouriteWall(
+                              id: context.publicProfileAdapter().userProfileWalls![index].id.toString(),
+                              wallpaper: PrismWallpaper(
+                                core: WallpaperCore(
+                                  id: context.publicProfileAdapter().userProfileWalls![index].id.toString(),
+                                  source: WallpaperSource.prism,
+                                  fullUrl: context
+                                      .publicProfileAdapter()
+                                      .userProfileWalls![index]
+                                      .wallpaperUrl
+                                      .toString(),
+                                  thumbnailUrl: context
+                                      .publicProfileAdapter()
+                                      .userProfileWalls![index]
+                                      .wallpaperThumb
+                                      .toString(),
+                                  resolution: context
+                                      .publicProfileAdapter()
+                                      .userProfileWalls![index]
+                                      .resolution
+                                      .toString(),
+                                  sizeBytes: int.tryParse(
+                                    context.publicProfileAdapter().userProfileWalls![index].size.toString(),
+                                  ),
+                                  authorName: context.publicProfileAdapter().userProfileWalls![index].by.toString(),
+                                  authorEmail: context.publicProfileAdapter().userProfileWalls![index].email.toString(),
+                                  createdAt: context.publicProfileAdapter().userProfileWalls![index].createdAt,
+                                ),
+                                collections:
+                                    context.publicProfileAdapter().userProfileWalls![index].collections?.isEmpty ?? true
+                                    ? null
+                                    : context.publicProfileAdapter().userProfileWalls![index].collections,
+                                review: context.publicProfileAdapter().userProfileWalls![index].review,
+                              ),
+                            ),
                             trash: false,
                           ),
                           ShareButton(
-                            id: context.publicProfileAdapter().userProfileWalls![index].data()["id"].toString(),
-                            provider: context
-                                .publicProfileAdapter()
-                                .userProfileWalls![index]
-                                .data()["wallpaper_provider"]
-                                .toString(),
-                            url: context
-                                .publicProfileAdapter()
-                                .userProfileWalls![index]
-                                .data()["wallpaper_url"]
-                                .toString(),
-                            thumbUrl: context
-                                .publicProfileAdapter()
-                                .userProfileWalls![index]
-                                .data()["wallpaper_thumb"]
-                                .toString(),
+                            id: context.publicProfileAdapter().userProfileWalls![index].id.toString(),
+                            source: WallpaperSourceX.fromWire(
+                              context.publicProfileAdapter().userProfileWalls![index].source,
+                            ),
+                            url: context.publicProfileAdapter().userProfileWalls![index].wallpaperUrl.toString(),
+                            thumbUrl: context.publicProfileAdapter().userProfileWalls![index].wallpaperThumb.toString(),
                           ),
                           EditButton(
-                            url: context
-                                .publicProfileAdapter()
-                                .userProfileWalls![index]
-                                .data()["wallpaper_url"]
-                                .toString(),
+                            url: context.publicProfileAdapter().userProfileWalls![index].wallpaperUrl.toString(),
                           ),
                         ],
                       ),
@@ -589,11 +588,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                     shakeController.forward(from: 0.0);
                   },
                   child: CachedNetworkImage(
-                    imageUrl: context
-                        .publicProfileAdapter()
-                        .userProfileWalls![index]
-                        .data()["wallpaper_url"]
-                        .toString(),
+                    imageUrl: context.publicProfileAdapter().userProfileWalls![index].wallpaperUrl.toString(),
                     imageBuilder: (context, imageProvider) => Screenshot(
                       controller: screenshotController,
                       child: Container(
@@ -661,10 +656,7 @@ class _UserProfileWallViewScreenState extends State<UserProfileWallViewScreen> w
                 child: IconButton(
                   onPressed: () {
                     _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                    final link = context
-                        .publicProfileAdapter(listen: false)
-                        .userProfileWalls![index]
-                        .data()["wallpaper_url"];
+                    final link = context.publicProfileAdapter(listen: false).userProfileWalls![index].wallpaperUrl;
                     Navigator.push(
                       context,
                       PageRouteBuilder(

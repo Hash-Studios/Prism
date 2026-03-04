@@ -1,19 +1,9 @@
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_setups/biz/bloc/favourite_setups_bloc.j.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-class FavouriteSetupSnapshot {
-  const FavouriteSetupSnapshot(this._payload);
-
-  final Map<String, dynamic> _payload;
-
-  Map<String, dynamic> data() => _payload;
-
-  dynamic operator [](String key) => _payload[key];
-}
 
 class FavouriteSetupsAdapter {
   FavouriteSetupsAdapter(BuildContext context, {required bool listen})
@@ -21,22 +11,21 @@ class FavouriteSetupsAdapter {
 
   final FavouriteSetupsBloc _bloc;
 
-  List<FavouriteSetupSnapshot>? get liked {
+  List<FavouriteSetupEntity>? get liked {
     final state = _bloc.state;
     if (state.status == LoadStatus.initial) {
       return null;
     }
-    return state.items.map((item) => FavouriteSetupSnapshot(item.payload)).toList(growable: false);
+    return state.items;
   }
 
-  Future<List<FavouriteSetupSnapshot>?> getDataBase() async {
+  Future<List<FavouriteSetupEntity>?> getDataBase() async {
     await _ensureLoaded();
     return liked;
   }
 
-  Future<void> favCheck(String id, Map? setup) async {
-    final resolvedId = id;
-    if (resolvedId.isEmpty) {
+  Future<void> favCheck(FavouriteSetupEntity setup) async {
+    if (setup.id.isEmpty) {
       return;
     }
 
@@ -48,14 +37,7 @@ class FavouriteSetupsAdapter {
     await _ensureLoaded();
 
     final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
-    _bloc.add(
-      FavouriteSetupsEvent.toggleRequested(
-        setup: FavouriteSetupEntity(
-          id: resolvedId,
-          payload: _buildPayload(id: resolvedId, setup: setup),
-        ),
-      ),
-    );
+    _bloc.add(FavouriteSetupsEvent.toggleRequested(setup: setup));
     await completion;
   }
 
@@ -85,43 +67,6 @@ class FavouriteSetupsAdapter {
     }
 
     await _bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
-  }
-
-  Map<String, dynamic> _buildPayload({required String id, required Map? setup}) {
-    final existing = _existingPayload(id);
-    if (setup == null) {
-      return existing ?? <String, dynamic>{'id': id, 'created_at': DateTime.now().toUtc()};
-    }
-
-    return <String, dynamic>{
-      'by': setup['by'].toString(),
-      'icon': setup['icon'].toString(),
-      'icon_url': setup['icon_url'].toString(),
-      'created_at': DateTime.now().toUtc(),
-      'desc': setup['desc'].toString(),
-      'email': setup['email'].toString(),
-      'id': setup['id'].toString(),
-      'image': setup['image'].toString(),
-      'name': setup['name'].toString(),
-      'userPhoto': setup['userPhoto'].toString(),
-      'wall_id': setup['wall_id'].toString(),
-      'wallpaper_provider': setup['wallpaper_provider'].toString(),
-      'wallpaper_thumb': setup['wallpaper_thumb'].toString(),
-      'wallpaper_url': setup['wallpaper_url'],
-      'widget': setup['widget'].toString(),
-      'widget2': setup['widget2'].toString(),
-      'widget_url': setup['widget_url'].toString(),
-      'widget_url2': setup['widget_url2'].toString(),
-    };
-  }
-
-  Map<String, dynamic>? _existingPayload(String id) {
-    for (final item in _bloc.state.items) {
-      if (item.id == id) {
-        return item.payload;
-      }
-    }
-    return null;
   }
 }
 

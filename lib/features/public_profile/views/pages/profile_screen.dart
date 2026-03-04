@@ -46,6 +46,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   String? profileIdentifier;
 
+  Object? _mapValue(Map<String, dynamic> data, String key) => data[key];
+  String _mapString(Map<String, dynamic> data, String key) => _mapValue(data, key)?.toString() ?? '';
+  bool _mapBool(Map<String, dynamic> data, String key) {
+    final value = _mapValue(data, key);
+    return value is bool && value;
+  }
+
+  List<Object?> _mapList(Map<String, dynamic> data, String key) {
+    final value = _mapValue(data, key);
+    if (value is List) {
+      return value.whereType<Object?>().toList(growable: false);
+    }
+    return const <Object?>[];
+  }
+
+  Map<String, dynamic> _mapObject(Map<String, dynamic> data, String key) {
+    final value = _mapValue(data, key);
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    return <String, dynamic>{};
+  }
+
   bool get _isOwnProfile {
     final String identifier = (profileIdentifier ?? '').trim();
     if (identifier.isEmpty) {
@@ -170,21 +193,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     );
-                    final Map links = data["links"] is Map ? (data["links"] as Map) : <String, dynamic>{};
-                    final bool premium = data["premium"] is bool && data["premium"] as bool;
-                    final List followers = data["followers"] is List ? data["followers"] as List : <dynamic>[];
-                    final List following = data["following"] is List ? data["following"] as List : <dynamic>[];
+                    final Map<String, dynamic> links = _mapObject(data, 'links');
+                    final bool premium = _mapBool(data, 'premium');
+                    final List<Object?> followers = _mapList(data, 'followers');
+                    final List<Object?> following = _mapList(data, 'following');
                     return ProfileChild(
                       ownProfile: false,
-                      id: (data['__docId'] ?? '').toString(),
-                      bio: data["bio"].toString(),
-                      coverPhoto: data["coverPhoto"]?.toString() ?? "",
-                      email: data["email"].toString(),
+                      id: _mapString(data, '__docId'),
+                      bio: _mapString(data, 'bio'),
+                      coverPhoto: _mapString(data, 'coverPhoto'),
+                      email: _mapString(data, 'email'),
                       links: links,
-                      name: data["name"].toString(),
+                      name: _mapString(data, 'name'),
                       premium: premium,
-                      userPhoto: data["profilePhoto"].toString(),
-                      username: data["username"].toString(),
+                      userPhoto: _mapString(data, 'profilePhoto'),
+                      username: _mapString(data, 'username'),
                       followers: followers,
                       following: following,
                     );
@@ -620,7 +643,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                 ).colorScheme.secondary.withValues(alpha: 0.1),
                                                               ),
                                                               child: Icon(
-                                                                linksData[e]!["icon"] as IconData,
+                                                                linksIconData[e.toString()] ?? JamIcons.link,
                                                                 size: 20,
                                                                 color: Theme.of(
                                                                   context,
@@ -861,154 +884,28 @@ class _ProfileChildState extends State<ProfileChild> {
   }
 }
 
-Map<String, Map<String, dynamic>> linksData = {
-  'github': {
-    'name': 'github',
-    'link': 'https://github.com/username',
-    'icon': JamIcons.github,
-    'value': '',
-    'validator': 'github',
-  },
-  'twitter': {
-    'name': 'twitter',
-    'link': 'https://twitter.com/username',
-    'icon': JamIcons.twitter,
-    'value': '',
-    'validator': 'twitter',
-  },
-  'instagram': {
-    'name': 'instagram',
-    'link': 'https://instagram.com/username',
-    'icon': JamIcons.instagram,
-    'value': '',
-    'validator': 'instagram',
-  },
-  'email': {'name': 'email', 'link': 'your@email.com', 'icon': JamIcons.inbox, 'value': '', 'validator': '@'},
-  'telegram': {
-    'name': 'telegram',
-    'link': 'https://t.me/username',
-    'icon': JamIcons.paper_plane,
-    'value': '',
-    'validator': 't.me',
-  },
-  'dribbble': {
-    'name': 'dribbble',
-    'link': 'https://dribbble.com/username',
-    'icon': JamIcons.basketball,
-    'value': '',
-    'validator': 'dribbble',
-  },
-  'linkedin': {
-    'name': 'linkedin',
-    'link': 'https://linkedin.com/in/username',
-    'icon': JamIcons.linkedin,
-    'value': '',
-    'validator': 'linkedin',
-  },
-  'bio.link': {
-    'name': 'bio.link',
-    'link': 'https://bio.link/username',
-    'icon': JamIcons.world,
-    'value': '',
-    'validator': 'bio.link',
-  },
-  'patreon': {
-    'name': 'patreon',
-    'link': 'https://patreon.com/username',
-    'icon': JamIcons.patreon,
-    'value': '',
-    'validator': 'patreon',
-  },
-  'trello': {
-    'name': 'trello',
-    'link': 'https://trello.com/username',
-    'icon': JamIcons.trello,
-    'value': '',
-    'validator': 'trello',
-  },
-  'reddit': {
-    'name': 'reddit',
-    'link': 'https://reddit.com/user/username',
-    'icon': JamIcons.reddit,
-    'value': '',
-    'validator': 'reddit',
-  },
-  'behance': {
-    'name': 'behance',
-    'link': 'https://behance.net/username',
-    'icon': JamIcons.behance,
-    'value': '',
-    'validator': 'behance.net',
-  },
-  'deviantart': {
-    'name': 'deviantart',
-    'link': 'https://deviantart.com/username',
-    'icon': JamIcons.deviantart,
-    'value': '',
-    'validator': 'deviantart',
-  },
-  'gitlab': {
-    'name': 'gitlab',
-    'link': 'https://gitlab.com/username',
-    'icon': JamIcons.gitlab,
-    'value': '',
-    'validator': 'gitlab',
-  },
-  'medium': {
-    'name': 'medium',
-    'link': 'https://username.medium.com/',
-    'icon': JamIcons.medium,
-    'value': '',
-    'validator': 'medium',
-  },
-  'paypal': {
-    'name': 'paypal',
-    'link': 'https://paypal.me/username',
-    'icon': JamIcons.paypal,
-    'value': '',
-    'validator': 'paypal',
-  },
-  'spotify': {
-    'name': 'spotify',
-    'link': 'https://open.spotify.com/user/username',
-    'icon': JamIcons.spotify,
-    'value': '',
-    'validator': 'open.spotify',
-  },
-  'twitch': {
-    'name': 'twitch',
-    'link': 'https://twitch.tv/username',
-    'icon': JamIcons.twitch,
-    'value': '',
-    'validator': 'twitch.tv',
-  },
-  'unsplash': {
-    'name': 'unsplash',
-    'link': 'https://unsplash.com/username',
-    'icon': JamIcons.unsplash,
-    'value': '',
-    'validator': 'unsplash',
-  },
-  'youtube': {
-    'name': 'youtube',
-    'link': 'https://youtube.com/channel/username',
-    'icon': JamIcons.youtube,
-    'value': '',
-    'validator': 'youtube',
-  },
-  'linktree': {
-    'name': 'linktree',
-    'link': 'https://linktr.ee/username',
-    'icon': JamIcons.tree_alt,
-    'value': '',
-    'validator': 'linktr.ee',
-  },
-  'buymeacoffee': {
-    'name': 'buymeacoffee',
-    'link': 'https://buymeacoff.ee/username',
-    'icon': JamIcons.coffee,
-    'value': '',
-    'validator': 'buymeacoff.ee',
-  },
-  'custom link': {'name': 'custom link', 'link': '', 'icon': JamIcons.link, 'value': '', 'validator': ''},
+Map<String, IconData> linksIconData = {
+  'github': JamIcons.github,
+  'twitter': JamIcons.twitter,
+  'instagram': JamIcons.instagram,
+  'email': JamIcons.inbox,
+  'telegram': JamIcons.paper_plane,
+  'dribbble': JamIcons.basketball,
+  'linkedin': JamIcons.linkedin,
+  'bio.link': JamIcons.world,
+  'patreon': JamIcons.patreon,
+  'trello': JamIcons.trello,
+  'reddit': JamIcons.reddit,
+  'behance': JamIcons.behance,
+  'deviantart': JamIcons.deviantart,
+  'gitlab': JamIcons.gitlab,
+  'medium': JamIcons.medium,
+  'paypal': JamIcons.paypal,
+  'spotify': JamIcons.spotify,
+  'twitch': JamIcons.twitch,
+  'unsplash': JamIcons.unsplash,
+  'youtube': JamIcons.youtube,
+  'linktree': JamIcons.tree_alt,
+  'buymeacoffee': JamIcons.coffee,
+  'custom link': JamIcons.link,
 };

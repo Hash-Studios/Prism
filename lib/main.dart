@@ -469,9 +469,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ..bio = ''
         ..profilePhoto = app_state.defaultProfilePhotoUrl
         ..coverPhoto = ''
-        ..followers = <dynamic>[]
-        ..following = <dynamic>[]
-        ..links = <String, dynamic>{};
+        ..followers = <String>[]
+        ..following = <String>[]
+        ..links = <String, String>{};
     }
     app_state.prismUser.loggedIn = value;
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
@@ -653,7 +653,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _appRouter.push(
           ShareWallpaperViewRoute(
             wallId: action.wallId,
-            provider: action.provider,
+            source: action.source,
             wallpaperUrl: action.wallpaperUrl,
             thumbnailUrl: action.thumbnailUrl,
           ),

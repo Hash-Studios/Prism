@@ -3,7 +3,6 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:bloc/bloc.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -41,8 +40,8 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       wall,
     ];
     next.sort((a, b) {
-      final DateTime? aDate = _toDateTime(a.payload['createdAt']);
-      final DateTime? bDate = _toDateTime(b.payload['createdAt']);
+      final DateTime? aDate = a.createdAt;
+      final DateTime? bDate = b.createdAt;
       if (aDate == null && bDate == null) return 0;
       if (aDate == null) return 1;
       if (bDate == null) return -1;
@@ -53,19 +52,6 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
 
   List<FavouriteWallEntity> _removeWall(String wallId) {
     return state.items.where((item) => item.id != wallId).toList(growable: false);
-  }
-
-  DateTime? _toDateTime(Object? value) {
-    if (value is DateTime) {
-      return value;
-    }
-    if (value is String) {
-      return DateTime.tryParse(value);
-    }
-    if (value is Timestamp) {
-      return value.toDate();
-    }
-    return null;
   }
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {

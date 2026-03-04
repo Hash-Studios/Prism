@@ -218,7 +218,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    context.favouriteSetupsAdapter().liked![index]["image"].toString(),
+                                    context.favouriteSetupsAdapter().liked![index].image.toString(),
                                   ),
                                   fit: BoxFit.cover,
                                 ),
@@ -242,7 +242,8 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                             sourceContext: 'favourite_setups_grid_tile',
                                             itemId: context
                                                 .favouriteSetupsAdapter(listen: false)
-                                                .liked![index]["id"]
+                                                .liked![index]
+                                                .id
                                                 ?.toString(),
                                             index: index,
                                           ),

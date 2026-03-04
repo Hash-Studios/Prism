@@ -29,7 +29,7 @@ class _WallpaperLoaderState extends State<WallpaperLoader> {
           logger.d("snapshot none, waiting");
           return const LoadingCards();
         } else {
-          return WallpaperGrid(provider: widget.provider);
+          return const WallpaperGrid();
         }
       },
     );

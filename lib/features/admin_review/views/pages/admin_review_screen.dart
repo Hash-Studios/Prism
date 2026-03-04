@@ -192,11 +192,8 @@ class _WallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = wall.data();
-    final String previewUrl = data['wallpaper_thumb']?.toString() ?? '';
-    final String fullUrl = (data['wallpaper_url']?.toString() ?? '').isNotEmpty
-        ? data['wallpaper_url'].toString()
-        : previewUrl;
+    final String previewUrl = wall.wallpaperThumb;
+    final String fullUrl = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -215,11 +212,11 @@ class _WallCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${data['id'] ?? wall.id}'),
-            Text('By: ${data['by'] ?? '-'}'),
-            Text('Email: ${data['email'] ?? '-'}'),
+            Text('ID: ${wall.id}'),
+            Text('By: ${wall.by.isNotEmpty ? wall.by : '-'}'),
+            Text('Email: ${wall.email.isNotEmpty ? wall.email : '-'}'),
             Text(
-              'Added ${data['createdAt'] != null ? timeago.format(_adminReviewToDateTime(data['createdAt'])) : '—'}',
+              'Added ${wall.createdAt != null ? timeago.format(_adminReviewToDateTime(wall.createdAt)) : '—'}',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -266,8 +263,7 @@ class _SetupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = setup.data();
-    final String fullUrl = data['image']?.toString() ?? '';
+    final String fullUrl = setup.image;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -286,12 +282,12 @@ class _SetupCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${data['id'] ?? setup.id}'),
-            Text('By: ${data['by'] ?? '-'}'),
-            Text('Email: ${data['email'] ?? '-'}'),
-            Text('Name: ${data['name'] ?? '-'}'),
+            Text('ID: ${setup.id}'),
+            Text('By: ${setup.by.isNotEmpty ? setup.by : '-'}'),
+            Text('Email: ${setup.email.isNotEmpty ? setup.email : '-'}'),
+            Text('Name: ${setup.name.isNotEmpty ? setup.name : '-'}'),
             Text(
-              'Added ${data['created_at'] != null ? timeago.format(_adminReviewToDateTime(data['created_at'])) : '—'}',
+              'Added ${setup.createdAt != null ? timeago.format(_adminReviewToDateTime(setup.createdAt)) : '—'}',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),

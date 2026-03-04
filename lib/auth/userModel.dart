@@ -18,6 +18,44 @@ Map<String, dynamic> _mapData(Object? data) {
   return <String, dynamic>{};
 }
 
+List<String> _toStringList(Object? value) {
+  if (value is List) {
+    return value.whereType<Object?>().map((Object? e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+  }
+  return <String>[];
+}
+
+Map<String, String> _toStringMap(Object? value) {
+  if (value is Map) {
+    final Map<String, String> out = <String, String>{};
+    for (final MapEntry<Object?, Object?> e in value.entries) {
+      final String key = e.key?.toString() ?? '';
+      if (key.isEmpty || e.value == null) continue;
+      out[key] = e.value.toString();
+    }
+    return out;
+  }
+  return <String, String>{};
+}
+
+List<Badge> _toBadgeList(Object? value) {
+  if (value is! List) return <Badge>[];
+  return value
+      .whereType<Map>()
+      .map((Map e) => e.map((k, v) => MapEntry(k.toString(), v)))
+      .map(Badge.fromJson)
+      .toList(growable: false);
+}
+
+List<PrismTransaction> _toTransactionList(Object? value) {
+  if (value is! List) return <PrismTransaction>[];
+  return value
+      .whereType<Map>()
+      .map((Map e) => e.map((k, v) => MapEntry(k.toString(), v)))
+      .map(PrismTransaction.fromJson)
+      .toList(growable: false);
+}
+
 String _resolveTierValue({required bool premium, required Object? raw}) {
   final SubscriptionTier parsed = SubscriptionTier.fromValue(raw?.toString());
   if (parsed != SubscriptionTier.free) {
@@ -42,11 +80,11 @@ class PrismUsersV2 {
   @HiveField(5)
   String lastLoginAt;
   @HiveField(6)
-  Map links;
+  Map<String, String> links;
   @HiveField(7)
-  List followers;
+  List<String> followers;
   @HiveField(8)
-  List following;
+  List<String> following;
   @HiveField(9)
   String profilePhoto;
   @HiveField(10)
@@ -56,7 +94,7 @@ class PrismUsersV2 {
   @HiveField(12)
   List<Badge> badges;
   @HiveField(13)
-  List subPrisms;
+  List<String> subPrisms;
   @HiveField(14)
   int coins;
   @HiveField(15)
@@ -112,20 +150,16 @@ class PrismUsersV2 {
       createdAt: data["createdAt"].toString(),
       premium: premium,
       lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
-      links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
-      followers: data["followers"] as List? ?? <dynamic>[],
-      following: data["following"] as List? ?? <dynamic>[],
+      links: _toStringMap(data["links"]),
+      followers: _toStringList(data["followers"]),
+      following: _toStringList(data["following"]),
       profilePhoto: (data["profilePhoto"] ?? user.photoURL).toString(),
       bio: (data["bio"] ?? "").toString(),
       loggedIn: true,
-      badges: (data['badges'] as List<dynamic>? ?? <dynamic>[])
-          .map((e) => Badge.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      subPrisms: data['subPrisms'] as List<dynamic>? ?? <dynamic>[],
+      badges: _toBadgeList(data['badges']),
+      subPrisms: _toStringList(data['subPrisms']),
       coins: data['coins'] as int? ?? 0,
-      transactions: (data['transactions'] as List<dynamic>? ?? <dynamic>[])
-          .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      transactions: _toTransactionList(data['transactions']),
       coverPhoto: data["coverPhoto"]?.toString(),
       subscriptionTier: tierValue,
       uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',
@@ -148,20 +182,16 @@ class PrismUsersV2 {
       ).toUtc().toIso8601String(),
       premium: premium,
       lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
-      links: data["links"] as Map<String, dynamic>? ?? <String, dynamic>{},
-      followers: data["followers"] as List? ?? <dynamic>[],
-      following: data["following"] as List? ?? <dynamic>[],
+      links: _toStringMap(data["links"]),
+      followers: _toStringList(data["followers"]),
+      following: _toStringList(data["following"]),
       profilePhoto: (data["profilePhoto"] ?? "").toString(),
       bio: (data["bio"] ?? "").toString(),
       loggedIn: true,
-      badges: (data['badges'] as List<dynamic>? ?? <dynamic>[])
-          .map((e) => Badge.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      subPrisms: data['subPrisms'] as List<dynamic>? ?? <dynamic>[],
+      badges: _toBadgeList(data['badges']),
+      subPrisms: _toStringList(data['subPrisms']),
       coins: data['coins'] as int? ?? 0,
-      transactions: (data['transactions'] as List<dynamic>? ?? <dynamic>[])
-          .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      transactions: _toTransactionList(data['transactions']),
       coverPhoto: data["coverPhoto"]?.toString(),
       subscriptionTier: tierValue,
       uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',

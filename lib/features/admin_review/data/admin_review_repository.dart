@@ -35,7 +35,13 @@ class AdminReviewRepository {
 
   Future<void> approveWall(FirestoreDocument wall) async {
     final Map<String, dynamic> payload = Map<String, dynamic>.from(wall.data());
-    final List<dynamic> collections = payload['collections'] as List<dynamic>? ?? <dynamic>[];
+    final List<String> collections =
+        (payload['collections'] as List?)
+            ?.whereType<Object?>()
+            .map((Object? item) => item?.toString() ?? '')
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false) ??
+        const <String>[];
     await firestoreClient.runBatch((FirestoreBatch batch) async {
       batch.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
         'review': true,

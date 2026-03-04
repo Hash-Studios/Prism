@@ -86,7 +86,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         return;
       }
       for (final element in value) {
-        box.put(element['id'].toString(), true);
+        box.put(element.id, true);
       }
       box.put('dataSaved', true);
     }

@@ -336,7 +336,10 @@ class FollowHeaderCard extends StatelessWidget {
                       } else {
                         final _FirestoreDoc currentUserDoc = snapshot.data!.first;
                         final Map<String, dynamic> currentUserData = currentUserDoc.data;
-                        final List<dynamic> following = List<dynamic>.from(currentUserData['following'] as List? ?? []);
+                        final List<String> following = List<String>.from(
+                          (currentUserData['following'] as List?)?.whereType<Object?>().map((e) => e.toString()) ??
+                              const <String>[],
+                        );
                         if (following.contains(email)) {
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -376,8 +379,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 );
                                 if (users.isNotEmpty) {
                                   final Map<String, dynamic> userData = users.first.data;
-                                  final List<dynamic> followers = List<dynamic>.from(
-                                    userData['followers'] as List? ?? [],
+                                  final List<String> followers = List<String>.from(
+                                    (userData['followers'] as List?)?.whereType<Object?>().map((e) => e.toString()) ??
+                                        const <String>[],
                                   );
                                   followers.add(app_state.prismUser.email);
                                   await firestoreClient.updateDoc(

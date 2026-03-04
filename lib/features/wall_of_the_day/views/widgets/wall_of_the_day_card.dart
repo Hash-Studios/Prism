@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wall_of_the_day_shimmer.dart';
@@ -54,33 +55,17 @@ class _WotdCardContent extends StatelessWidget {
 
   final WallOfTheDayEntity entity;
 
-  /// Builds a Prism-shaped map so WallpaperScreen can reuse the Prism branch for WOTD.
-  static Map<String, dynamic> _wotdWallMap(WallOfTheDayEntity entity) {
-    return <String, dynamic>{
-      'id': entity.wallId,
-      'desc': entity.title,
-      'size': '',
-      'email': entity.photographerId.isNotEmpty ? entity.photographerId : '',
-      'userPhoto': '',
-      'by': entity.photographer,
-      'resolution': '',
-      'wallpaper_url': entity.url,
-      'wallpaper_thumb': entity.thumbnailUrl,
-      'collections': <String>[],
-    };
-  }
-
   void _openWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
     context.router.push(
-      WallpaperRoute(provider: 'WallOfTheDay', link: entity.thumbnailUrl, wotdWallMap: _wotdWallMap(entity)),
+      WallpaperRoute(source: WallpaperSource.wallOfTheDay, link: entity.thumbnailUrl, wotdWall: entity),
     );
   }
 
   void _setAsWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdSetAsWallpaperEvent(wallId: entity.wallId)));
     context.router.push(
-      WallpaperRoute(provider: 'WallOfTheDay', link: entity.thumbnailUrl, wotdWallMap: _wotdWallMap(entity)),
+      WallpaperRoute(source: WallpaperSource.wallOfTheDay, link: entity.thumbnailUrl, wotdWall: entity),
     );
   }
 

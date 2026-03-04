@@ -1,30 +1,18 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/data/pexels/model/wallpaperp.dart';
-import 'package:Prism/data/wallhaven/model/wallpaper.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:flutter/material.dart';
 import 'package:hive_io/hive_io.dart';
 
 class FavouriteWallpaperButton extends StatefulWidget {
-  final String id;
-  final String provider;
-  final WallPaper? wallhaven;
-  final WallPaperP? pexels;
-  final Map? prism;
+  final FavouriteWallEntity? wall;
   final bool trash;
-  const FavouriteWallpaperButton({
-    required this.id,
-    required this.provider,
-    required this.trash,
-    this.wallhaven,
-    this.pexels,
-    this.prism,
-    super.key,
-  });
+  const FavouriteWallpaperButton({required this.wall, required this.trash, super.key});
 
   @override
   _FavouriteWallpaperButtonState createState() => _FavouriteWallpaperButtonState();
@@ -58,10 +46,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
             valueChanged: () {
               if (app_state.prismUser.loggedIn == false) {
                 googleSignInPopUp(context, () {
-                  onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels, widget.prism);
+                  onFav(widget.wall);
                 });
               } else {
-                onFav(widget.id, widget.provider, widget.wallhaven, widget.pexels, widget.prism);
+                onFav(widget.wall);
               }
               if (widget.trash) {
                 Navigator.pop(context);
@@ -69,7 +57,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
             },
             iconColor: Theme.of(context).colorScheme.secondary,
             iconSize: 30,
-            isFavorite: box.get(widget.id, defaultValue: false) as bool,
+            isFavorite: box.get(widget.wall?.id ?? '', defaultValue: false) as bool,
           ),
         ),
         Positioned(
@@ -83,12 +71,18 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     );
   }
 
-  Future<void> onFav(String id, String provider, WallPaper? wallhaven, WallPaperP? pexels, Map? prism) async {
+  Future<void> onFav(FavouriteWallEntity? wall) async {
     setState(() {
       isLoading = true;
     });
-    context.favouriteWallsAdapter(listen: false).favCheck(id, provider, wallhaven, pexels, prism).then((value) {
-      analytics.track(FavStatusChangedEvent(wallId: id, provider: provider));
+    if (wall == null) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+    context.favouriteWallsAdapter(listen: false).favCheck(wall).then((value) {
+      analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
       setState(() {
         isLoading = false;
       });

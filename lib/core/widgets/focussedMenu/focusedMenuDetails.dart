@@ -1,12 +1,17 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
@@ -189,8 +194,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         .toString(),
                                   ),
                                   label: Text(
-                                    WData.walls[widget.index].category.toString()[0].toUpperCase() +
-                                        WData.walls[widget.index].category.toString().substring(1),
+                                    WData.walls[widget.index].core.category.toString()[0].toUpperCase() +
+                                        WData.walls[widget.index].core.category.toString().substring(1),
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                       color:
                                           HexColor(
@@ -232,7 +237,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     Icon(JamIcons.set_square, size: 20, color: Theme.of(context).colorScheme.secondary),
                                     const SizedBox(width: 10),
                                     Text(
-                                      WData.walls[widget.index].resolution.toString(),
+                                      WData.walls[widget.index].core.resolution.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -302,7 +307,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       Stack(
                                         alignment:
                                             app_state.verifiedUsers.contains(
-                                              Data.subPrismWalls![widget.index]["email"].toString(),
+                                              Data.subPrismWalls![widget.index].core.authorEmail,
                                             )
                                             ? Alignment.topRight
                                             : Alignment.centerLeft,
@@ -312,14 +317,18 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             padding: const EdgeInsets.all(5),
                                             avatar: CircleAvatar(
                                               backgroundImage: CachedNetworkImageProvider(
-                                                Data.subPrismWalls![widget.index]["userPhoto"].toString(),
+                                                Data.subPrismWalls![widget.index].core.authorPhoto ?? '',
                                               ),
                                             ),
                                             backgroundColor: Colors.black,
                                             labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                             label: Text(
-                                              Data.subPrismWalls![widget.index]["by"].toString()[0].toUpperCase() +
-                                                  Data.subPrismWalls![widget.index]["by"].toString().substring(1),
+                                              Data.subPrismWalls![widget.index].core.authorName
+                                                      .toString()[0]
+                                                      .toUpperCase() +
+                                                  Data.subPrismWalls![widget.index].core.authorName
+                                                      .toString()
+                                                      .substring(1),
                                               style: Theme.of(
                                                 context,
                                               ).textTheme.headlineMedium!.copyWith(color: Colors.white),
@@ -327,14 +336,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             onPressed: () {
                                               context.router.push(
                                                 ProfileRoute(
-                                                  profileIdentifier: Data.subPrismWalls![widget.index]["email"]
+                                                  profileIdentifier: Data.subPrismWalls![widget.index].core.authorEmail
                                                       .toString(),
                                                 ),
                                               );
                                             },
                                           ),
                                           if (app_state.verifiedUsers.contains(
-                                            Data.subPrismWalls![widget.index]["email"].toString(),
+                                            Data.subPrismWalls![widget.index].core.authorEmail.toString(),
                                           ))
                                             SizedBox(
                                               width: 20,
@@ -358,7 +367,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          Data.subPrismWalls![widget.index]["id"].toString().toUpperCase(),
+                                          Data.subPrismWalls![widget.index].id.toString().toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
@@ -369,7 +378,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Icon(JamIcons.save, size: 20, color: Theme.of(context).colorScheme.secondary),
                                           const SizedBox(width: 10),
                                           Text(
-                                            Data.subPrismWalls![widget.index]["size"].toString(),
+                                            Data.subPrismWalls![widget.index].core.sizeBytes.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -385,7 +394,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            Data.subPrismWalls![widget.index]["resolution"].toString(),
+                                            Data.subPrismWalls![widget.index].core.resolution.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -458,13 +467,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         backgroundColor: Colors.black,
                                         label: Text(
                                           context
-                                                  .profileWallsSnapshots(listen: false)![widget.index]
-                                                  .data()["by"]
+                                                  .profileWalls(listen: false)![widget.index]
+                                                  .by
                                                   .toString()[0]
                                                   .toUpperCase() +
                                               context
-                                                  .profileWallsSnapshots(listen: false)![widget.index]
-                                                  .data()["by"]
+                                                  .profileWalls(listen: false)![widget.index]
+                                                  .by
                                                   .toString()
                                                   .substring(1),
                                           style: Theme.of(
@@ -477,8 +486,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
                                           context
-                                              .profileWallsSnapshots(listen: false)![widget.index]
-                                              .data()["id"]
+                                              .profileWalls(listen: false)![widget.index]
+                                              .id
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
@@ -491,10 +500,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           Icon(JamIcons.save, size: 20, color: Theme.of(context).colorScheme.secondary),
                                           const SizedBox(width: 10),
                                           Text(
-                                            context
-                                                .profileWallsSnapshots(listen: false)![widget.index]
-                                                .data()["size"]
-                                                .toString(),
+                                            context.profileWalls(listen: false)![widget.index].size.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -510,10 +516,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            context
-                                                .profileWallsSnapshots(listen: false)![widget.index]
-                                                .data()["resolution"]
-                                                .toString(),
+                                            context.profileWalls(listen: false)![widget.index].resolution.toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -588,13 +591,13 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           context
                                                   .publicProfileAdapter()
                                                   .userProfileWalls![widget.index]
-                                                  .data()["by"]
+                                                  .by
                                                   .toString()[0]
                                                   .toUpperCase() +
                                               context
                                                   .publicProfileAdapter()
                                                   .userProfileWalls![widget.index]
-                                                  .data()["by"]
+                                                  .by
                                                   .toString()
                                                   .substring(1),
                                           style: Theme.of(
@@ -609,7 +612,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           context
                                               .publicProfileAdapter()
                                               .userProfileWalls![widget.index]
-                                              .data()["id"]
+                                              .id
                                               .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
@@ -625,7 +628,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             context
                                                 .publicProfileAdapter()
                                                 .userProfileWalls![widget.index]
-                                                .data()["size"]
+                                                .size
                                                 .toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
@@ -645,7 +648,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                             context
                                                 .publicProfileAdapter()
                                                 .userProfileWalls![widget.index]
-                                                .data()["resolution"]
+                                                .resolution
                                                 .toString(),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
@@ -724,48 +727,42 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ).textTheme.headlineMedium!.copyWith(color: Colors.white),
                                         ),
                                         onPressed: () {
-                                          openPrismLink(context, PData.wallsP[widget.index].url!);
+                                          openPrismLink(context, PData.wallsP[widget.index].core.fullUrl);
                                         },
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          PData.wallsP[widget.index].url
-                                                      .toString()
+                                          PData.wallsP[widget.index].core.fullUrl
                                                       .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
                                                       .length >
                                                   8
-                                              ? PData.wallsP[widget.index].url
-                                                        .toString()
+                                              ? PData.wallsP[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    PData.wallsP[widget.index].url
-                                                        .toString()
+                                                    PData.wallsP[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
                                                         .substring(
                                                           1,
-                                                          PData.wallsP[widget.index].url
-                                                                  .toString()
+                                                          PData.wallsP[widget.index].core.fullUrl
                                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                                   .replaceAll("-", " ")
                                                                   .replaceAll("/", "")
                                                                   .length -
                                                               7,
                                                         )
-                                              : PData.wallsP[widget.index].url
-                                                        .toString()
+                                              : PData.wallsP[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    PData.wallsP[widget.index].url
-                                                        .toString()
+                                                    PData.wallsP[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
@@ -784,7 +781,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           ),
                                           const SizedBox(width: 5),
                                           Text(
-                                            "${PData.wallsP[widget.index].width}x${PData.wallsP[widget.index].height}",
+                                            "${PData.wallsP[widget.index].core.width}x${PData.wallsP[widget.index].core.height}",
                                             style: Theme.of(context).textTheme.titleLarge!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -823,7 +820,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                       ),
                     )
                   : widget.provider == "Liked"
-                  ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] == "WallHaven"
+                  ? context.favouriteWallsAdapter(listen: false).liked![widget.index].provider == "WallHaven"
                         ? Positioned(
                             top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
                             left: widget.childOffset.dx,
@@ -859,12 +856,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               label: Text(
                                                 context
                                                         .favouriteWallsAdapter(listen: false)
-                                                        .liked![widget.index]["category"]
+                                                        .liked![widget.index]
+                                                        .category
                                                         .toString()[0]
                                                         .toUpperCase() +
                                                     context
                                                         .favouriteWallsAdapter(listen: false)
-                                                        .liked![widget.index]["category"]
+                                                        .liked![widget.index]
+                                                        .category
                                                         .toString()
                                                         .substring(1),
                                                 style: Theme.of(
@@ -878,7 +877,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               child: Text(
                                                 context
                                                     .favouriteWallsAdapter(listen: false)
-                                                    .liked![widget.index]["id"]
+                                                    .liked![widget.index]
+                                                    .id
                                                     .toString()
                                                     .toUpperCase(),
                                                 style: Theme.of(context).textTheme.headlineSmall!.copyWith(
@@ -891,7 +891,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 const Icon(JamIcons.eye, size: 20, color: Colors.white70),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
+                                                  "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index].views}",
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -905,7 +905,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Text(
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
-                                                      .liked![widget.index]["resolution"]
+                                                      .liked![widget.index]
+                                                      .resolution
                                                       .toString(),
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -947,7 +948,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               ),
                             ),
                           )
-                        : context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] == "Prism"
+                        : context.favouriteWallsAdapter(listen: false).liked![widget.index].provider == "Prism"
                         ? Positioned(
                             top: widget.childOffset.dy + widget.childSize!.height * 2 / 8,
                             left: widget.childOffset.dx,
@@ -983,12 +984,14 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               label: Text(
                                                 context
                                                         .favouriteWallsAdapter(listen: false)
-                                                        .liked![widget.index]["photographer"]
+                                                        .liked![widget.index]
+                                                        .photographer
                                                         .toString()[0]
                                                         .toUpperCase() +
                                                     context
                                                         .favouriteWallsAdapter(listen: false)
-                                                        .liked![widget.index]["photographer"]
+                                                        .liked![widget.index]
+                                                        .photographer
                                                         .toString()
                                                         .substring(1),
                                                 style: Theme.of(
@@ -1002,7 +1005,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               child: Text(
                                                 context
                                                     .favouriteWallsAdapter(listen: false)
-                                                    .liked![widget.index]["id"]
+                                                    .liked![widget.index]
+                                                    .id
                                                     .toString()
                                                     .toUpperCase(),
                                                 style: Theme.of(context).textTheme.headlineSmall!.copyWith(
@@ -1017,7 +1021,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Text(
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
-                                                      .liked![widget.index]["size"]
+                                                      .liked![widget.index]
+                                                      .size
                                                       .toString(),
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -1032,7 +1037,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Text(
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
-                                                      .liked![widget.index]["resolution"]
+                                                      .liked![widget.index]
+                                                      .resolution
                                                       .toString(),
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -1074,7 +1080,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                               ),
                             ),
                           )
-                        : context.favouriteWallsAdapter(listen: false).liked![widget.index]["provider"] == "Pexels"
+                        : context.favouriteWallsAdapter(listen: false).liked![widget.index].provider == "Pexels"
                         ? Positioned(
                             top: widget.childOffset.dy + widget.childSize!.height * 1 / 2,
                             left: widget.childOffset.dx,
@@ -1110,7 +1116,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               label: Text(
                                                 context
                                                     .favouriteWallsAdapter(listen: false)
-                                                    .liked![widget.index]["photographer"]
+                                                    .liked![widget.index]
+                                                    .photographer
                                                     .toString(),
                                                 style: Theme.of(
                                                   context,
@@ -1129,7 +1136,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Text(
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
-                                                      .liked![widget.index]["resolution"]
+                                                      .liked![widget.index]
+                                                      .resolution
                                                       .toString(),
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -1207,7 +1215,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 ),
                                                 const SizedBox(width: 5),
                                                 Text(
-                                                  "Likes: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["fav"]}",
+                                                  "Likes: ${context.favouriteWallsAdapter(listen: false).liked![widget.index].fav}",
                                                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -1223,7 +1231,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 ),
                                                 const SizedBox(width: 5),
                                                 Text(
-                                                  "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index]["views"]}",
+                                                  "Views: ${context.favouriteWallsAdapter(listen: false).liked![widget.index].views}",
                                                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -1241,7 +1249,8 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 Text(
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
-                                                      .liked![widget.index]["resolution"]
+                                                      .liked![widget.index]
+                                                      .resolution
                                                       .toString(),
                                                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -1326,42 +1335,36 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          PData.wallsC[widget.index].url
-                                                      .toString()
+                                          PData.wallsC[widget.index].core.fullUrl
                                                       .replaceAll("https://www.pexels.com/photo/", "")
                                                       .replaceAll("-", " ")
                                                       .replaceAll("/", "")
                                                       .length >
                                                   8
-                                              ? PData.wallsC[widget.index].url
-                                                        .toString()
+                                              ? PData.wallsC[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    PData.wallsC[widget.index].url
-                                                        .toString()
+                                                    PData.wallsC[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
                                                         .substring(
                                                           1,
-                                                          PData.wallsC[widget.index].url
-                                                                  .toString()
+                                                          PData.wallsC[widget.index].core.fullUrl
                                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                                   .replaceAll("-", " ")
                                                                   .replaceAll("/", "")
                                                                   .length -
                                                               7,
                                                         )
-                                              : PData.wallsC[widget.index].url
-                                                        .toString()
+                                              : PData.wallsC[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")[0]
                                                         .toUpperCase() +
-                                                    PData.wallsC[widget.index].url
-                                                        .toString()
+                                                    PData.wallsC[widget.index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
@@ -1376,7 +1379,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           const Icon(JamIcons.set_square, color: Colors.white70, size: 20),
                                           const SizedBox(width: 5),
                                           Text(
-                                            "${PData.wallsC[widget.index].width}x${PData.wallsC[widget.index].height}",
+                                            "${PData.wallsC[widget.index].core.width}x${PData.wallsC[widget.index].core.height}",
                                             style: Theme.of(context).textTheme.titleLarge!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -1421,22 +1424,18 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                 child: SetWallpaperButton(
                   colorChanged: false,
                   url: widget.provider == "WallHaven"
-                      ? WData.walls[widget.index].path.toString()
+                      ? WData.walls[widget.index].core.fullUrl
                       : widget.provider == "Prism"
-                      ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
+                      ? Data.subPrismWalls![widget.index].core.fullUrl
                       : widget.provider == "ProfileWall"
-                      ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
+                      ? context.profileWalls(listen: false)![widget.index].wallpaperUrl
                       : widget.provider == "UserProfileWall"
-                      ? context
-                            .publicProfileAdapter()
-                            .userProfileWalls![widget.index]
-                            .data()["wallpaper_url"]
-                            .toString()
+                      ? context.publicProfileAdapter().userProfileWalls![widget.index].wallpaperUrl
                       : widget.provider == "Pexels"
-                      ? PData.wallsP[widget.index].src!["original"].toString()
+                      ? PData.wallsP[widget.index].core.fullUrl
                       : widget.provider == "Liked"
-                      ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
-                      : PData.wallsC[widget.index].src!["original"].toString(),
+                      ? context.favouriteWallsAdapter(listen: false).liked![widget.index].url
+                      : PData.wallsC[widget.index].core.fullUrl,
                 ),
               ),
             Positioned(
@@ -1444,52 +1443,81 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
               left: leftOffset! - fabHeartLeftOffset,
               child: widget.provider == "WallHaven"
                   ? FavouriteWallpaperButton(
-                      id: WData.walls[widget.index].id.toString(),
-                      provider: "WallHaven",
-                      wallhaven: WData.walls[widget.index],
+                      wall: WallhavenFavouriteWall(
+                        id: WData.walls[widget.index].id,
+                        wallpaper: WData.walls[widget.index],
+                      ),
                       trash: false,
                     )
                   : widget.provider == "Prism"
                   ? FavouriteWallpaperButton(
-                      id: Data.subPrismWalls![widget.index]["id"].toString(),
-                      provider: "Prism",
-                      prism: Data.subPrismWalls![widget.index] as Map,
+                      wall: PrismFavouriteWall(
+                        id: Data.subPrismWalls![widget.index].id,
+                        wallpaper: Data.subPrismWalls![widget.index],
+                      ),
                       trash: false,
                     )
                   : widget.provider == "ProfileWall"
                   ? FavouriteWallpaperButton(
-                      id: context.profileWallsSnapshots(listen: false)![widget.index]["id"].toString(),
-                      provider: "Prism",
-                      prism: context.profileWallsSnapshots(listen: false)![widget.index].data(),
+                      wall: PrismFavouriteWall(
+                        id: context.profileWalls(listen: false)![widget.index].id,
+                        wallpaper: PrismWallpaper(
+                          core: WallpaperCore(
+                            id: context.profileWalls(listen: false)![widget.index].id,
+                            source: WallpaperSource.prism,
+                            fullUrl: context.profileWalls(listen: false)![widget.index].wallpaperUrl,
+                            thumbnailUrl: context.profileWalls(listen: false)![widget.index].wallpaperThumb ?? '',
+                            resolution: context.profileWalls(listen: false)![widget.index].resolution,
+                            sizeBytes: int.tryParse(context.profileWalls(listen: false)![widget.index].size ?? '0'),
+                            createdAt: context.profileWalls(listen: false)![widget.index].createdAt,
+                            authorName: context.profileWalls(listen: false)![widget.index].by ?? '',
+                            authorEmail: context.profileWalls(listen: false)![widget.index].email ?? '',
+                          ),
+                        ),
+                      ),
                       trash: false,
                     )
                   : widget.provider == "UserProfileWall"
                   ? FavouriteWallpaperButton(
-                      id: context.publicProfileAdapter().userProfileWalls![widget.index]["id"].toString(),
-                      provider: "Prism",
-                      prism: context.publicProfileAdapter().userProfileWalls![widget.index].data(),
+                      wall: PrismFavouriteWall(
+                        id: context.publicProfileAdapter().userProfileWalls![widget.index].id,
+                        wallpaper: PrismWallpaper(
+                          core: WallpaperCore(
+                            id: context.publicProfileAdapter().userProfileWalls![widget.index].id,
+                            source: WallpaperSource.prism,
+                            fullUrl: context.publicProfileAdapter().userProfileWalls![widget.index].wallpaperUrl,
+                            thumbnailUrl:
+                                context.publicProfileAdapter().userProfileWalls![widget.index].wallpaperThumb ?? '',
+                            resolution: context.publicProfileAdapter().userProfileWalls![widget.index].resolution,
+                            sizeBytes: int.tryParse(
+                              context.publicProfileAdapter().userProfileWalls![widget.index].size ?? '0',
+                            ),
+                            createdAt: context.publicProfileAdapter().userProfileWalls![widget.index].createdAt,
+                            authorName: context.publicProfileAdapter().userProfileWalls![widget.index].by ?? '',
+                            authorEmail: context.publicProfileAdapter().userProfileWalls![widget.index].email ?? '',
+                          ),
+                        ),
+                      ),
                       trash: false,
                     )
                   : widget.provider == "Pexels"
                   ? FavouriteWallpaperButton(
-                      id: PData.wallsP[widget.index].id.toString(),
-                      provider: "Pexels",
-                      pexels: PData.wallsP[widget.index],
+                      wall: PexelsFavouriteWall(
+                        id: PData.wallsP[widget.index].id,
+                        wallpaper: PData.wallsP[widget.index],
+                      ),
                       trash: false,
                     )
                   : widget.provider == "Liked"
                   ? FavouriteWallpaperButton(
-                      id: context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"].toString(),
-                      provider: context
-                          .favouriteWallsAdapter(listen: false)
-                          .liked![widget.index]["provider"]
-                          .toString(),
+                      wall: context.favouriteWallsAdapter(listen: false).liked![widget.index],
                       trash: true,
                     )
                   : FavouriteWallpaperButton(
-                      id: PData.wallsC[widget.index].id.toString(),
-                      provider: "Pexels",
-                      pexels: PData.wallsC[widget.index],
+                      wall: PexelsFavouriteWall(
+                        id: PData.wallsC[widget.index].id,
+                        wallpaper: PData.wallsC[widget.index],
+                      ),
                       trash: false,
                     ),
             ),
@@ -1499,49 +1527,47 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
               child: DownloadButton(
                 colorChanged: false,
                 link: widget.provider == "WallHaven"
-                    ? WData.walls[widget.index].path.toString()
+                    ? WData.walls[widget.index].fullUrl
                     : widget.provider == "Prism"
-                    ? Data.subPrismWalls![widget.index]["wallpaper_url"].toString()
+                    ? Data.subPrismWalls![widget.index].core.fullUrl
                     : widget.provider == "ProfileWall"
-                    ? context.profileWallsSnapshots(listen: false)![widget.index]["wallpaper_url"].toString()
+                    ? context.profileWalls(listen: false)![widget.index].wallpaperUrl
                     : widget.provider == "UserProfileWall"
-                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["wallpaper_url"].toString()
+                    ? context.publicProfileAdapter().userProfileWalls![widget.index].wallpaperUrl
                     : widget.provider == "Pexels"
-                    ? PData.wallsP[widget.index].src!["original"].toString()
+                    ? PData.wallsP[widget.index].fullUrl
                     : widget.provider == "Liked"
-                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["url"].toString()
-                    : PData.wallsC[widget.index].src!["original"].toString(),
+                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index].url
+                    : PData.wallsC[widget.index].fullUrl,
                 isPremiumContent: widget.provider == "Prism"
                     ? app_state.isPremiumWall(
                         app_state.premiumCollections,
-                        Data.subPrismWalls![widget.index]["collections"] as List? ?? [],
+                        Data.subPrismWalls![widget.index].collections as List? ?? [],
                       )
                     : widget.provider == "ProfileWall"
                     ? app_state.isPremiumWall(
                         app_state.premiumCollections,
-                        context.profileWallsSnapshots(listen: false)![widget.index].data()["collections"] as List? ??
-                            [],
+                        context.profileWalls(listen: false)![widget.index].collections as List? ?? [],
                       )
                     : widget.provider == "UserProfileWall"
                     ? app_state.isPremiumWall(
                         app_state.premiumCollections,
-                        context.publicProfileAdapter().userProfileWalls![widget.index].data()["collections"] as List? ??
-                            [],
+                        context.publicProfileAdapter().userProfileWalls![widget.index].collections as List? ?? [],
                       )
                     : widget.provider == "Liked" &&
                           app_state.isPremiumWall(
                             app_state.premiumCollections,
-                            context.favouriteWallsAdapter(listen: false).liked![widget.index]["collections"] as List? ??
+                            context.favouriteWallsAdapter(listen: false).liked![widget.index].collections as List? ??
                                 [],
                           ),
                 contentId: widget.provider == "Prism"
-                    ? Data.subPrismWalls![widget.index]["id"]?.toString()
+                    ? Data.subPrismWalls![widget.index].id
                     : widget.provider == "ProfileWall"
-                    ? context.profileWallsSnapshots(listen: false)![widget.index].data()["id"]?.toString()
+                    ? context.profileWalls(listen: false)![widget.index].id
                     : widget.provider == "UserProfileWall"
-                    ? context.publicProfileAdapter().userProfileWalls![widget.index].data()["id"]?.toString()
+                    ? context.publicProfileAdapter().userProfileWalls![widget.index].id
                     : widget.provider == "Liked"
-                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index]["id"]?.toString()
+                    ? context.favouriteWallsAdapter(listen: false).liked![widget.index].id
                     : null,
                 sourceContext: 'focused_menu.${widget.provider ?? "unknown"}',
               ),

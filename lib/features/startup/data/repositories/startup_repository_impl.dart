@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -66,7 +65,7 @@ class StartupRepositoryImpl implements StartupRepository {
     }
 
     if (parsed.isEmpty) {
-      return category_data.categories.whereType<Map<String, dynamic>>().toList(growable: false);
+      return <Map<String, dynamic>>[];
     }
 
     return parsed;
@@ -83,7 +82,7 @@ class StartupRepositoryImpl implements StartupRepository {
         'bannerText': defaultBannerText,
         'bannerTextOn': defaultBannerTextOn.toString(),
         'bannerURL': defaultBannerUrl,
-        'latestCategories': category_data.categories.toString(),
+        'latestCategories': '[]',
         'currentVersion': currentAppVersion,
         'obsoleteVersion': defaultObsoleteAppVersion,
         'topTitleText': defaultTopTitleText.toString(),
@@ -113,7 +112,6 @@ class StartupRepositoryImpl implements StartupRepository {
       topTitleText.shuffle();
       final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
       categories.removeWhere((element) => element['name'] == 'Trending');
-      category_data.categories = categories;
 
       final followersTab = (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
       await getNotifs();

@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -222,7 +223,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      context.favouriteWallsAdapter().liked![index]["thumb"].toString(),
+                                      context.favouriteWallsAdapter().liked![index].thumb.toString(),
                                     ),
                                     fit: BoxFit.cover,
                                   ),
@@ -247,7 +248,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                               itemType: ItemTypeValue.wallpaper,
                                               itemId: context
                                                   .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
+                                                  .liked![index]
+                                                  .id
                                                   ?.toString(),
                                               index: index,
                                             ),
@@ -258,7 +260,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                             wallIndex: index,
                                             thumbnailUrl: context
                                                 .favouriteWallsAdapter(listen: false)
-                                                .liked![index]["thumb"]
+                                                .liked![index]
+                                                .thumb
                                                 .toString(),
                                           ),
                                         );

@@ -195,7 +195,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    context.publicProfileAdapter().userProfileSetups![index].data()["image"].toString(),
+                                    context.publicProfileAdapter().userProfileSetups![index].image.toString(),
                                   ),
                                   fit: BoxFit.cover,
                                 ),

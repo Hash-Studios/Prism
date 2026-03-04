@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
@@ -209,7 +210,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
-                                    image: CachedNetworkImageProvider(PData.wallsC[index].src!["medium"].toString()),
+                                    image: CachedNetworkImageProvider(PData.wallsC[index].core.thumbnailUrl),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -222,7 +223,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                               onTap: () {
-                                if (PData.wallsC == []) {
+                                if (PData.wallsC.isEmpty) {
                                 } else {
                                   unawaited(
                                     analytics.track(
@@ -231,16 +232,16 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                         action: AnalyticsActionValue.tileOpened,
                                         sourceContext: 'home_color_grid_tile',
                                         itemType: ItemTypeValue.wallpaper,
-                                        itemId: PData.wallsC[index].id?.toString(),
+                                        itemId: PData.wallsC[index].id.toString(),
                                         index: index,
                                       ),
                                     ),
                                   );
                                   context.router.push(
                                     WallpaperRoute(
-                                      provider: widget.provider,
+                                      source: WallpaperSourceX.fromWire(widget.provider),
                                       index: index,
-                                      link: PData.wallsC[index].src!["small"].toString(),
+                                      link: PData.wallsC[index].core.thumbnailUrl,
                                     ),
                                   );
                                 }
@@ -250,14 +251,14 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                   longTapIndex = index;
                                 });
                                 shakeController.forward(from: 0.0);
-                                if (PData.wallsC == []) {
+                                if (PData.wallsC.isEmpty) {
                                 } else {
                                   HapticFeedback.vibrate();
                                   createDynamicLink(
-                                    PData.wallsC[index].id!,
-                                    "Pexels",
-                                    PData.wallsC[index].src!["original"].toString(),
-                                    PData.wallsC[index].src!["medium"].toString(),
+                                    PData.wallsC[index].id,
+                                    WallpaperSource.pexels,
+                                    PData.wallsC[index].core.fullUrl,
+                                    PData.wallsC[index].core.thumbnailUrl,
                                   );
                                 }
                               },

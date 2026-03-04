@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
@@ -32,6 +33,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   bool seeMoreLoader = false;
+
+  Object? _wallValue(Map<String, dynamic> wall, String key) => wall[key];
+  String _wallString(Map<String, dynamic> wall, String key) => _wallValue(wall, key)?.toString() ?? '';
+  WallpaperSource _wallSource(Map<String, dynamic> wall) =>
+      WallpaperSourceX.fromWire(_wallString(wall, 'wallpaper_provider'));
 
   Future<void> _loadMore() async {
     if (seeMoreLoader || !collectionHasMore) {
@@ -156,6 +162,11 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
           crossAxisSpacing: 8,
         ),
         itemBuilder: (context, index) {
+          final Map<String, dynamic> wall = walls[index];
+          final String wallId = _wallString(wall, 'id');
+          final String wallpaperThumb = _wallString(wall, 'wallpaper_thumb');
+          final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
+          final WallpaperSource wallSource = _wallSource(wall);
           if (index == walls.length - 1 && collectionHasMore && walls.length >= 24) {
             return SeeMoreButton(
               seeMoreLoader: seeMoreLoader,
@@ -189,10 +200,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                       decoration: BoxDecoration(
                         color: animation.value,
                         borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(walls[index]["wallpaper_thumb"].toString()),
-                          fit: BoxFit.cover,
-                        ),
+                        image: DecorationImage(image: CachedNetworkImageProvider(wallpaperThumb), fit: BoxFit.cover),
                       ),
                     ),
                     ClipRRect(
@@ -210,17 +218,17 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                                   action: AnalyticsActionValue.tileOpened,
                                   sourceContext: 'home_collections_grid_tile',
                                   itemType: ItemTypeValue.wallpaper,
-                                  itemId: walls[index]["id"]?.toString(),
+                                  itemId: wallId,
                                   index: index,
                                 ),
                               ),
                             );
                             context.router.push(
                               ShareWallpaperViewRoute(
-                                wallId: walls[index]["id"].toString(),
-                                provider: walls[index]["wallpaper_provider"].toString(),
-                                wallpaperUrl: walls[index]["wallpaper_url"].toString(),
-                                thumbnailUrl: walls[index]["wallpaper_thumb"].toString(),
+                                wallId: wallId,
+                                source: wallSource,
+                                wallpaperUrl: wallpaperUrl,
+                                thumbnailUrl: wallpaperThumb,
                               ),
                             );
                           },
@@ -230,12 +238,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                             });
                             shakeController.forward(from: 0.0);
                             HapticFeedback.vibrate();
-                            createDynamicLink(
-                              walls[index]["id"].toString(),
-                              walls[index]["wallpaper_provider"].toString(),
-                              walls[index]["wallpaper_url"].toString(),
-                              walls[index]["wallpaper_thumb"].toString(),
-                            );
+                            createDynamicLink(wallId, wallSource, wallpaperUrl, wallpaperThumb);
                           },
                         ),
                       ),

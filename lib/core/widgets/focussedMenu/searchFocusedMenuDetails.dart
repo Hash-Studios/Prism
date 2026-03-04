@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -154,8 +155,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1].toString(),
                                   ),
                                   label: Text(
-                                    wdata.wallsS[index].category.toString()[0].toUpperCase() +
-                                        wdata.wallsS[index].category.toString().substring(1),
+                                    wdata.wallsS[index].core.category.toString()[0].toUpperCase() +
+                                        wdata.wallsS[index].core.category.toString().substring(1),
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                       color:
                                           HexColor(
@@ -195,7 +196,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     Icon(JamIcons.set_square, size: 20, color: Theme.of(context).colorScheme.secondary),
                                     const SizedBox(width: 10),
                                     Text(
-                                      wdata.wallsS[index].resolution!,
+                                      wdata.wallsS[index].core.resolution!,
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -271,48 +272,42 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(color: Colors.white),
                                   ),
                                   onPressed: () {
-                                    openPrismLink(context, pdata.wallsPS[index].url!);
+                                    openPrismLink(context, pdata.wallsPS[index].core.fullUrl);
                                   },
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                   child: Text(
-                                    pdata.wallsPS[index].url
-                                                .toString()
+                                    pdata.wallsPS[index].core.fullUrl
                                                 .replaceAll("https://www.pexels.com/photo/", "")
                                                 .replaceAll("-", " ")
                                                 .replaceAll("/", "")
                                                 .length >
                                             8
-                                        ? pdata.wallsPS[index].url
-                                                  .toString()
+                                        ? pdata.wallsPS[index].core.fullUrl
                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                   .replaceAll("-", " ")
                                                   .replaceAll("/", "")[0]
                                                   .toUpperCase() +
-                                              pdata.wallsPS[index].url
-                                                  .toString()
+                                              pdata.wallsPS[index].core.fullUrl
                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                   .replaceAll("-", " ")
                                                   .replaceAll("/", "")
                                                   .substring(
                                                     1,
-                                                    pdata.wallsPS[index].url
-                                                            .toString()
+                                                    pdata.wallsPS[index].core.fullUrl
                                                             .replaceAll("https://www.pexels.com/photo/", "")
                                                             .replaceAll("-", " ")
                                                             .replaceAll("/", "")
                                                             .length -
                                                         7,
                                                   )
-                                        : pdata.wallsPS[index].url
-                                                  .toString()
+                                        : pdata.wallsPS[index].core.fullUrl
                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                   .replaceAll("-", " ")
                                                   .replaceAll("/", "")[0]
                                                   .toUpperCase() +
-                                              pdata.wallsPS[index].url
-                                                  .toString()
+                                              pdata.wallsPS[index].core.fullUrl
                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                   .replaceAll("-", " ")
                                                   .replaceAll("/", "")
@@ -327,7 +322,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary, size: 20),
                                     const SizedBox(width: 5),
                                     Text(
-                                      "${pdata.wallsPS[index].width}x${pdata.wallsPS[index].height}",
+                                      "${pdata.wallsPS[index].core.width}x${pdata.wallsPS[index].core.height}",
                                       style: Theme.of(
                                         context,
                                       ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -372,8 +367,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                 child: SetWallpaperButton(
                   colorChanged: false,
                   url: selectedProvider == "WallHaven"
-                      ? wdata.wallsS[index].path.toString()
-                      : pdata.wallsPS[index].src!["original"].toString(),
+                      ? wdata.wallsS[index].core.fullUrl
+                      : pdata.wallsPS[index].core.fullUrl,
                 ),
               ),
             Positioned(
@@ -381,15 +376,11 @@ class SearchFocusedMenuDetails extends StatelessWidget {
               left: leftOffset - fabHeartLeftOffset,
               child: selectedProvider == "WallHaven"
                   ? FavouriteWallpaperButton(
-                      id: wdata.wallsS[index].id.toString(),
-                      provider: "WallHaven",
-                      wallhaven: wdata.wallsS[index],
+                      wall: WallhavenFavouriteWall(id: wdata.wallsS[index].id, wallpaper: wdata.wallsS[index]),
                       trash: false,
                     )
                   : FavouriteWallpaperButton(
-                      id: pdata.wallsPS[index].id.toString(),
-                      provider: "Pexels",
-                      pexels: pdata.wallsPS[index],
+                      wall: PexelsFavouriteWall(id: pdata.wallsPS[index].id, wallpaper: pdata.wallsPS[index]),
                       trash: false,
                     ),
             ),
@@ -399,8 +390,8 @@ class SearchFocusedMenuDetails extends StatelessWidget {
               child: DownloadButton(
                 colorChanged: false,
                 link: selectedProvider == "WallHaven"
-                    ? wdata.wallsS[index].path.toString()
-                    : pdata.wallsPS[index].src!["original"].toString(),
+                    ? wdata.wallsS[index].core.fullUrl
+                    : pdata.wallsPS[index].core.fullUrl,
               ),
             ),
           ],

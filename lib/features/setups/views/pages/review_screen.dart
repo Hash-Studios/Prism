@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
@@ -190,7 +191,7 @@ class WallTile extends StatelessWidget {
                       Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
-                        formatter.format(_toDateTime(wallpaper.data()["createdAt"]).toLocal()),
+                        formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -211,9 +212,7 @@ class WallTile extends StatelessWidget {
                                   onTapUp: (context, details, controller) {
                                     Navigator.pop(context);
                                   },
-                                  imageProvider: CachedNetworkImageProvider(
-                                    wallpaper.data()["wallpaper_url"] as String,
-                                  ),
+                                  imageProvider: CachedNetworkImageProvider(wallpaper.wallpaperUrl),
                                 ),
                                 fullscreenDialog: true,
                               ),
@@ -222,10 +221,7 @@ class WallTile extends StatelessWidget {
                           child: SizedBox(
                             height: 240,
                             width: 120,
-                            child: CachedNetworkImage(
-                              imageUrl: wallpaper.data()["wallpaper_thumb"] as String,
-                              fit: BoxFit.contain,
-                            ),
+                            child: CachedNetworkImage(imageUrl: wallpaper.wallpaperThumb, fit: BoxFit.contain),
                           ),
                         ),
                         const SizedBox(width: 32),
@@ -237,7 +233,7 @@ class WallTile extends StatelessWidget {
                                 Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.data()["id"]}",
+                                  "${wallpaper.id}",
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -250,7 +246,7 @@ class WallTile extends StatelessWidget {
                                 Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.data()["size"]}",
+                                  "${wallpaper.size}",
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -263,7 +259,7 @@ class WallTile extends StatelessWidget {
                                 Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.data()["resolution"]}",
+                                  "${wallpaper.resolution}",
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -295,7 +291,7 @@ class WallTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.data()["wallpaper_url"].toString();
+                                      final link = wallpaper.wallpaperUrl.toString();
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -438,7 +434,7 @@ class RejectedWallTile extends StatelessWidget {
                       Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
-                        formatter.format(_toDateTime(wallpaper.data()["createdAt"]).toLocal()),
+                        formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -459,9 +455,7 @@ class RejectedWallTile extends StatelessWidget {
                                   onTapUp: (context, details, controller) {
                                     Navigator.pop(context);
                                   },
-                                  imageProvider: CachedNetworkImageProvider(
-                                    wallpaper.data()["wallpaper_url"] as String,
-                                  ),
+                                  imageProvider: CachedNetworkImageProvider(wallpaper.wallpaperUrl),
                                 ),
                                 fullscreenDialog: true,
                               ),
@@ -470,10 +464,7 @@ class RejectedWallTile extends StatelessWidget {
                           child: SizedBox(
                             height: 240,
                             width: 120,
-                            child: CachedNetworkImage(
-                              imageUrl: wallpaper.data()["wallpaper_thumb"] as String,
-                              fit: BoxFit.contain,
-                            ),
+                            child: CachedNetworkImage(imageUrl: wallpaper.wallpaperThumb, fit: BoxFit.contain),
                           ),
                         ),
                         const SizedBox(width: 32),
@@ -485,7 +476,7 @@ class RejectedWallTile extends StatelessWidget {
                                 Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.data()["id"]}",
+                                  "${wallpaper.id}",
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -498,7 +489,7 @@ class RejectedWallTile extends StatelessWidget {
                                 Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.data()["size"]}",
+                                  "${wallpaper.size}",
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -511,7 +502,7 @@ class RejectedWallTile extends StatelessWidget {
                                 Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.data()["resolution"]}",
+                                  "${wallpaper.resolution}",
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -543,7 +534,7 @@ class RejectedWallTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.data()["wallpaper_url"].toString();
+                                      final link = wallpaper.wallpaperUrl.toString();
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -751,12 +742,11 @@ class SetupTile extends StatelessWidget {
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
   Widget build(BuildContext context) {
+    final SetupWallpaperValue wallpaperValue = SetupWallpaperValue.parse(wallpaper.wallpaperUrl);
+    final bool hasSecondWidget = wallpaper.widget2.isNotEmpty;
     return Container(
       width: MediaQuery.of(context).size.width,
-      constraints: BoxConstraints(
-        minHeight: "${wallpaper.data()["widget2"]}" != "" ? 420 : 390,
-        maxHeight: "${wallpaper.data()["widget2"]}" != "" ? 470 : 440,
-      ),
+      constraints: BoxConstraints(minHeight: hasSecondWidget ? 420 : 390, maxHeight: hasSecondWidget ? 470 : 440),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -775,7 +765,7 @@ class SetupTile extends StatelessWidget {
                       Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
-                        formatter.format(_toDateTime(wallpaper.data()["created_at"]).toLocal()),
+                        formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -798,7 +788,7 @@ class SetupTile extends StatelessWidget {
                                       onTapUp: (context, details, controller) {
                                         Navigator.pop(context);
                                       },
-                                      imageProvider: CachedNetworkImageProvider(wallpaper.data()["image"] as String),
+                                      imageProvider: CachedNetworkImageProvider(wallpaper.image),
                                     ),
                                     fullscreenDialog: true,
                                   ),
@@ -807,24 +797,19 @@ class SetupTile extends StatelessWidget {
                               child: SizedBox(
                                 height: 240,
                                 width: 120,
-                                child: CachedNetworkImage(
-                                  imageUrl: wallpaper.data()["image"] as String,
-                                  fit: BoxFit.contain,
-                                ),
+                                child: CachedNetworkImage(imageUrl: wallpaper.image, fit: BoxFit.contain),
                               ),
                             ),
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () {
-                                toasts.codeSend("${wallpaper.data()["name"]} - ${wallpaper.data()["desc"]}");
+                                toasts.codeSend("${wallpaper.name} - ${wallpaper.desc}");
                               },
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
-                                    text: "${wallpaper.data()["name"]}" == ""
-                                        ? "No name"
-                                        : "${wallpaper.data()["name"]}",
+                                    text: "${wallpaper.name}" == "" ? "No name" : "${wallpaper.name}",
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
@@ -832,9 +817,7 @@ class SetupTile extends StatelessWidget {
                                     ),
                                     children: [
                                       TextSpan(
-                                        text: "${wallpaper.data()["desc"]}" == ""
-                                            ? " - No desc"
-                                            : " - ${wallpaper.data()["desc"]}",
+                                        text: "${wallpaper.desc}" == "" ? " - No desc" : " - ${wallpaper.desc}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -860,7 +843,7 @@ class SetupTile extends StatelessWidget {
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
-                                    "${wallpaper.data()["id"]}",
+                                    "${wallpaper.id}",
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -871,9 +854,9 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.data()["wallpaper_url"]}" != "") {
-                                  if ("${wallpaper.data()["wallpaper_url"]}"[0] != "[") {
-                                    if ("${wallpaper.data()["wall_id"]}" != "") {
+                                if (wallpaperValue.primaryUrl.isNotEmpty) {
+                                  if (!wallpaperValue.isEncoded) {
+                                    if (wallpaper.wallId.isNotEmpty) {
                                       Navigator.push(
                                         context,
                                         CupertinoPageRoute(
@@ -881,21 +864,19 @@ class SetupTile extends StatelessWidget {
                                             onTapUp: (context, details, controller) {
                                               Navigator.pop(context);
                                             },
-                                            imageProvider: CachedNetworkImageProvider(
-                                              wallpaper.data()["wallpaper_url"] as String,
-                                            ),
+                                            imageProvider: CachedNetworkImageProvider(wallpaperValue.primaryUrl),
                                           ),
                                           fullscreenDialog: true,
                                         ),
                                       );
                                     } else {
-                                      openPrismLink(context, "${wallpaper.data()["wallpaper_url"]}").catchError((e) {
+                                      openPrismLink(context, wallpaperValue.primaryUrl).catchError((e) {
                                         toasts.error("Error in link!");
                                         return false;
                                       });
                                     }
                                   } else {
-                                    openPrismLink(context, "${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
+                                    openPrismLink(context, wallpaperValue.primaryUrl).catchError((e) {
                                       toasts.error("Error in link!");
                                       return false;
                                     });
@@ -911,10 +892,8 @@ class SetupTile extends StatelessWidget {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()["wallpaper_url"]}" != ""
-                                          ? "${wallpaper.data()["wallpaper_url"]}"[0] != "["
-                                                ? "Wallpaper"
-                                                : "${wallpaper.data()["wallpaper_url"][0]} - ${wallpaper.data()["wallpaper_url"][2]}"
+                                      wallpaperValue.primaryUrl.isNotEmpty
+                                          ? wallpaperValue.tileText(wallId: wallpaper.wallId)
                                           : "Wallpaper",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                         decoration: TextDecoration.underline,
@@ -928,8 +907,8 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.data()["icon_url"]}" != "") {
-                                  openPrismLink(context, "${wallpaper.data()["icon_url"]}").catchError((e) {
+                                if ("${wallpaper.iconUrl}" != "") {
+                                  openPrismLink(context, "${wallpaper.iconUrl}").catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -944,7 +923,7 @@ class SetupTile extends StatelessWidget {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()["icon"]}" == "" ? "No icon" : "${wallpaper.data()["icon"]}",
+                                      "${wallpaper.icon}" == "" ? "No icon" : "${wallpaper.icon}",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                         decoration: TextDecoration.underline,
                                         color: Theme.of(context).colorScheme.secondary,
@@ -954,11 +933,11 @@ class SetupTile extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if ("${wallpaper.data()["widget"]}" != "") const SizedBox(height: 16) else Container(),
-                            if ("${wallpaper.data()["widget"]}" != "")
+                            if (wallpaper.widget.isNotEmpty) const SizedBox(height: 16) else Container(),
+                            if (wallpaper.widget.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
-                                  openPrismLink(context, "${wallpaper.data()["widget_url"]}").catchError((e) {
+                                  openPrismLink(context, wallpaper.widgetUrl).catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -970,7 +949,7 @@ class SetupTile extends StatelessWidget {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
-                                        "${wallpaper.data()["widget"]}",
+                                        wallpaper.widget,
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -982,11 +961,11 @@ class SetupTile extends StatelessWidget {
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()["widget2"]}" != "") const SizedBox(height: 16) else Container(),
-                            if ("${wallpaper.data()["widget2"]}" != "")
+                            if (wallpaper.widget2.isNotEmpty) const SizedBox(height: 16) else Container(),
+                            if (wallpaper.widget2.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
-                                  openPrismLink(context, "${wallpaper.data()["widget_url2"]}").catchError((e) {
+                                  openPrismLink(context, wallpaper.widgetUrl2).catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -998,7 +977,7 @@ class SetupTile extends StatelessWidget {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
-                                        "${wallpaper.data()["widget2"]}",
+                                        wallpaper.widget2,
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -1051,7 +1030,7 @@ class SetupTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.data()["image"].toString();
+                                      final link = wallpaper.image.toString();
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -1181,9 +1160,11 @@ class RejectedSetupTile extends StatelessWidget {
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
   Widget build(BuildContext context) {
+    final SetupWallpaperValue wallpaperValue = SetupWallpaperValue.parse(wallpaper.wallpaperUrl);
+    final bool hasSecondWidget = wallpaper.widget2.isNotEmpty;
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: "${wallpaper.data()["widget2"]}" != "" ? 460 : 430,
+      height: hasSecondWidget ? 460 : 430,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -1202,7 +1183,7 @@ class RejectedSetupTile extends StatelessWidget {
                       Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 8),
                       Text(
-                        formatter.format(_toDateTime(wallpaper.data()["created_at"]).toLocal()),
+                        formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
                         style: Theme.of(
                           context,
                         ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -1225,7 +1206,7 @@ class RejectedSetupTile extends StatelessWidget {
                                       onTapUp: (context, details, controller) {
                                         Navigator.pop(context);
                                       },
-                                      imageProvider: CachedNetworkImageProvider(wallpaper.data()["image"] as String),
+                                      imageProvider: CachedNetworkImageProvider(wallpaper.image),
                                     ),
                                     fullscreenDialog: true,
                                   ),
@@ -1234,22 +1215,19 @@ class RejectedSetupTile extends StatelessWidget {
                               child: SizedBox(
                                 height: 240,
                                 width: 120,
-                                child: CachedNetworkImage(
-                                  imageUrl: wallpaper.data()["image"] as String,
-                                  fit: BoxFit.contain,
-                                ),
+                                child: CachedNetworkImage(imageUrl: wallpaper.image, fit: BoxFit.contain),
                               ),
                             ),
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () {
-                                toasts.codeSend("${wallpaper.data()["name"]} - ${wallpaper.data()["desc"]}");
+                                toasts.codeSend("${wallpaper.name} - ${wallpaper.desc}");
                               },
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
-                                    text: "${wallpaper.data()["name"]}",
+                                    text: "${wallpaper.name}",
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
@@ -1257,7 +1235,7 @@ class RejectedSetupTile extends StatelessWidget {
                                     ),
                                     children: [
                                       TextSpan(
-                                        text: " - ${wallpaper.data()["desc"]}",
+                                        text: " - ${wallpaper.desc}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -1283,7 +1261,7 @@ class RejectedSetupTile extends StatelessWidget {
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
-                                    "${wallpaper.data()["id"]}",
+                                    "${wallpaper.id}",
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -1294,8 +1272,8 @@ class RejectedSetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.data()["wallpaper_url"]}"[0] != "[") {
-                                  if ("${wallpaper.data()["wall_id"]}" != "") {
+                                if (!wallpaperValue.isEncoded) {
+                                  if (wallpaper.wallId.isNotEmpty) {
                                     Navigator.push(
                                       context,
                                       CupertinoPageRoute(
@@ -1303,21 +1281,19 @@ class RejectedSetupTile extends StatelessWidget {
                                           onTapUp: (context, details, controller) {
                                             Navigator.pop(context);
                                           },
-                                          imageProvider: CachedNetworkImageProvider(
-                                            wallpaper.data()["wallpaper_url"] as String,
-                                          ),
+                                          imageProvider: CachedNetworkImageProvider(wallpaperValue.primaryUrl),
                                         ),
                                         fullscreenDialog: true,
                                       ),
                                     );
                                   } else {
-                                    openPrismLink(context, "${wallpaper.data()["wallpaper_url"]}").catchError((e) {
+                                    openPrismLink(context, wallpaperValue.primaryUrl).catchError((e) {
                                       toasts.error("Error in link!");
                                       return false;
                                     });
                                   }
                                 } else {
-                                  openPrismLink(context, "${wallpaper.data()["wallpaper_url"][1]}").catchError((e) {
+                                  openPrismLink(context, wallpaperValue.primaryUrl).catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1330,9 +1306,7 @@ class RejectedSetupTile extends StatelessWidget {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()["wallpaper_url"]}"[0] != "["
-                                          ? "Wallpaper"
-                                          : "${wallpaper.data()["wallpaper_url"][0]} - ${wallpaper.data()["wallpaper_url"][2]}",
+                                      wallpaperValue.tileText(wallId: wallpaper.wallId),
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                         decoration: TextDecoration.underline,
                                         color: Theme.of(context).colorScheme.secondary,
@@ -1345,7 +1319,7 @@ class RejectedSetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                openPrismLink(context, "${wallpaper.data()["icon_url"]}").catchError((e) {
+                                openPrismLink(context, "${wallpaper.iconUrl}").catchError((e) {
                                   toasts.error("Error in link!");
                                   return false;
                                 });
@@ -1357,7 +1331,7 @@ class RejectedSetupTile extends StatelessWidget {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.data()["icon"]}",
+                                      "${wallpaper.icon}",
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                         decoration: TextDecoration.underline,
                                         color: Theme.of(context).colorScheme.secondary,
@@ -1367,11 +1341,11 @@ class RejectedSetupTile extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if ("${wallpaper.data()["widget"]}" != "") const SizedBox(height: 16) else Container(),
-                            if ("${wallpaper.data()["widget"]}" != "")
+                            if (wallpaper.widget.isNotEmpty) const SizedBox(height: 16) else Container(),
+                            if (wallpaper.widget.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
-                                  openPrismLink(context, "${wallpaper.data()["widget_url"]}").catchError((e) {
+                                  openPrismLink(context, wallpaper.widgetUrl).catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1383,7 +1357,7 @@ class RejectedSetupTile extends StatelessWidget {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
-                                        "${wallpaper.data()["widget"]}",
+                                        wallpaper.widget,
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -1395,11 +1369,11 @@ class RejectedSetupTile extends StatelessWidget {
                               )
                             else
                               Container(),
-                            if ("${wallpaper.data()["widget2"]}" != "") const SizedBox(height: 16) else Container(),
-                            if ("${wallpaper.data()["widget2"]}" != "")
+                            if (wallpaper.widget2.isNotEmpty) const SizedBox(height: 16) else Container(),
+                            if (wallpaper.widget2.isNotEmpty)
                               GestureDetector(
                                 onTap: () {
-                                  openPrismLink(context, "${wallpaper.data()["widget_url2"]}").catchError((e) {
+                                  openPrismLink(context, wallpaper.widgetUrl2).catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -1411,7 +1385,7 @@ class RejectedSetupTile extends StatelessWidget {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.3,
                                       child: Text(
-                                        "${wallpaper.data()["widget2"]}",
+                                        wallpaper.widget2,
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -1448,7 +1422,7 @@ class RejectedSetupTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.data()["image"].toString();
+                                      final link = wallpaper.image.toString();
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;

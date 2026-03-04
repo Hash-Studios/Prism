@@ -58,7 +58,7 @@ class ProfileCompletenessEvaluator {
     return currentPhoto != defaultProfilePhotoUrl.trim();
   }
 
-  static bool _hasAnySocialLink(Map<dynamic, dynamic> links) {
+  static bool _hasAnySocialLink(Map<String, String> links) {
     if (links.isEmpty) {
       return false;
     }

@@ -22,7 +22,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
             pageName: item.pageName ?? '',
             body: item.body ?? '',
             imageUrl: item.imageUrl ?? '',
-            arguments: item.arguments ?? const <dynamic>[],
+            arguments: (item.arguments ?? const <Object>[]).whereType<Object>().toList(growable: false),
             url: item.url ?? '',
             createdAt: item.createdAt ?? DateTime.now(),
             read: item.read ?? false,

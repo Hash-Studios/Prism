@@ -189,7 +189,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                               borderRadius: BorderRadius.circular(20),
                               image: DecorationImage(
                                 image: CachedNetworkImageProvider(
-                                  context.profileSetupsAdapter().profileSetups![index]["image"].toString(),
+                                  context.profileSetupsAdapter().profileSetups![index].image.toString(),
                                 ),
                                 fit: BoxFit.cover,
                               ),

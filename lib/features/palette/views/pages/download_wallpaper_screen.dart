@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -16,9 +17,9 @@ import 'package:flutter/services.dart';
 
 @RoutePage()
 class DownloadWallpaperScreen extends StatefulWidget {
-  const DownloadWallpaperScreen({super.key, required this.provider, required this.file});
+  const DownloadWallpaperScreen({super.key, required this.source, required this.file});
 
-  final String provider;
+  final WallpaperSource source;
   final File file;
 
   @override
@@ -29,10 +30,10 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late AnimationController shakeController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late final String provider;
+  late final WallpaperSource source;
   late final File file;
 
-  String get _sourceContext => '${provider.toLowerCase()}_download_wallpaper_screen';
+  String get _sourceContext => '${source.wireValue}_download_wallpaper_screen';
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -52,7 +53,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.provider;
+    source = widget.source;
     file = widget.file;
     _contentLoadTracker.start();
     _contentLoadTracker.success(

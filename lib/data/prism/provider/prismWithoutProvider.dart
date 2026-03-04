@@ -1,103 +1,75 @@
 import 'dart:async';
 
-import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart';
 import 'package:Prism/logger/logger.dart';
 
-List? prismWalls;
-List<String>? prismWallsDocSnaps;
-List? subPrismWalls;
-List? sortedData;
-List? subSortedData;
-late List wallsDataL;
-Map wall = {};
+// SHIM: delete in Phase 8 — lazy singleton wiring old globals to typed repository.
+PrismWallpaperRepositoryImpl? _prismRepo;
+PrismWallpaperRepositoryImpl get _repo {
+  _prismRepo ??= PrismWallpaperRepositoryImpl(firestoreClient);
+  return _prismRepo!;
+}
+
+List<PrismWallpaper>? prismWalls;
+List<PrismWallpaper>? subPrismWalls;
 bool prismHasMore = true;
-Future<List?> getPrismWalls() async {
+
+// SHIM: delete in Phase 8
+Future<List<PrismWallpaper>?> getPrismWalls() async {
   logger.d("[PrismFeed] getPrismWalls start");
   prismWalls = [];
   subPrismWalls = [];
   prismHasMore = true;
   try {
-    final List<Map<String, dynamic>> value = await firestoreClient.query<Map<String, dynamic>>(
-      const FirestoreQuerySpec(
-        collection: FirebaseCollections.walls,
-        sourceTag: 'prism.getPrismWalls',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true)],
-        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-        limit: 24,
-        dedupeWindowMs: 1000,
-        cachePolicy: FirestoreCachePolicy.memoryFirst,
-      ),
-      (data, docId) => <String, dynamic>{...data, '__docId': docId},
-    );
-    prismHasMore = value.length == 24;
-    prismWalls = <Map<String, dynamic>>[];
-    prismWallsDocSnaps = <String>[];
-    for (final f in value) {
-      final Map<String, dynamic> map = <String, dynamic>{...f};
-      map['createdAt'] = map['createdAt'].toString();
-      prismWallsDocSnaps!.add((map['__docId'] ?? '').toString());
-      map.remove('__docId');
-      prismWalls!.add(map);
-    }
-
-    subPrismWalls = prismWalls;
-    logger.i(
-      "[PrismFeed] getPrismWalls success",
-      fields: <String, Object?>{"count": prismWalls!.length, "docSnaps": prismWallsDocSnaps?.length ?? 0},
+    final result = await _repo.fetchFeed(refresh: true);
+    result.fold(
+      onSuccess: (List<PrismWallpaper> walls) {
+        prismHasMore = _repo.hasMore;
+        prismWalls = walls;
+        subPrismWalls = List<PrismWallpaper>.from(walls);
+        logger.i("[PrismFeed] getPrismWalls success", fields: <String, Object?>{"count": walls.length});
+      },
+      onFailure: (failure) {
+        subPrismWalls = <PrismWallpaper>[];
+        logger.e("[PrismFeed] getPrismWalls failed", fields: <String, Object?>{"failure": failure.message});
+      },
     );
   } catch (error, stackTrace) {
-    subPrismWalls = <Map<String, dynamic>>[];
+    subPrismWalls = <PrismWallpaper>[];
     logger.e("[PrismFeed] getPrismWalls failed", error: error, stackTrace: stackTrace);
     rethrow;
   }
   return subPrismWalls;
 }
 
-Future<List?> seeMorePrism() async {
-  logger.d(
-    "[PrismFeed] seeMorePrism start",
-    fields: <String, Object?>{"existing": subPrismWalls?.length ?? 0, "docSnaps": prismWallsDocSnaps?.length ?? 0},
-  );
-  if (!(prismWallsDocSnaps?.isNotEmpty ?? false)) {
-    logger.w("[PrismFeed] seeMorePrism skipped: no cursor snapshot available");
+// SHIM: delete in Phase 8
+Future<List<PrismWallpaper>?> seeMorePrism() async {
+  logger.d("[PrismFeed] seeMorePrism start", fields: <String, Object?>{"existing": subPrismWalls?.length ?? 0});
+  if (!_repo.hasMore) {
+    logger.w("[PrismFeed] seeMorePrism skipped: no more pages");
     prismHasMore = false;
-    return subPrismWalls ?? prismWalls ?? <dynamic>[];
+    return subPrismWalls ?? prismWalls ?? [];
   }
-  prismWalls ??= <Map<String, dynamic>>[];
-  subPrismWalls ??= <Map<String, dynamic>>[];
+  prismWalls ??= <PrismWallpaper>[];
+  subPrismWalls ??= <PrismWallpaper>[];
   try {
-    final List<Map<String, dynamic>> value = await firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.walls,
-        sourceTag: 'prism.seeMorePrism',
-        filters: const <FirestoreFilter>[
-          FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-        ],
-        orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-        startAfterDocId: prismWallsDocSnaps!.last,
-        limit: 24,
-        dedupeWindowMs: 1000,
-      ),
-      (data, docId) => <String, dynamic>{...data, '__docId': docId},
-    );
-    prismHasMore = value.length == 24;
-    for (final f in value) {
-      final Map<String, dynamic> map = <String, dynamic>{...f};
-      map['createdAt'] = map['createdAt'].toString();
-      prismWallsDocSnaps!.add((map['__docId'] ?? '').toString());
-      map.remove('__docId');
-      prismWalls!.add(map);
-    }
-    final int len = prismWalls!.length;
-    final int oldLen = subPrismWalls!.length;
-    if (oldLen < len) {
-      subPrismWalls!.addAll(prismWalls!.sublist(oldLen));
-    }
-    logger.i(
-      "[PrismFeed] seeMorePrism success",
-      fields: <String, Object?>{"fetched": value.length, "total": subPrismWalls!.length},
+    final result = await _repo.fetchFeed(refresh: false);
+    result.fold(
+      onSuccess: (List<PrismWallpaper> walls) {
+        prismHasMore = _repo.hasMore;
+        prismWalls?.addAll(walls);
+        subPrismWalls?.addAll(walls);
+        logger.i(
+          "[PrismFeed] seeMorePrism success",
+          fields: <String, Object?>{"fetched": walls.length, "total": subPrismWalls?.length},
+        );
+      },
+      onFailure: (failure) {
+        prismHasMore = false;
+        logger.e("[PrismFeed] seeMorePrism failed", fields: <String, Object?>{"failure": failure.message});
+      },
     );
   } catch (error, stackTrace) {
     prismHasMore = false;
@@ -107,22 +79,17 @@ Future<List?> seeMorePrism() async {
   return subPrismWalls;
 }
 
-Future<Map> getDataByID(String? id) async {
-  wall = {};
-  final List<Map<String, dynamic>> rows = await firestoreClient.query<Map<String, dynamic>>(
-    FirestoreQuerySpec(
-      collection: FirebaseCollections.walls,
-      sourceTag: 'prism.getDataById',
-      filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: id)],
-      limit: 1,
-    ),
-    (data, _) => data,
+Future<PrismWallpaper?> getDataByID(String? id) async {
+  PrismWallpaper? wallP;
+  final result = await _repo.fetchById(id ?? '');
+  result.fold(
+    onSuccess: (PrismWallpaper? wall) {
+      wallP = wall;
+    },
+    onFailure: (failure) {
+      logger.e("[PrismFeed] getDataByID failed", fields: <String, Object?>{"failure": failure.message});
+    },
   );
-  for (final Map<String, dynamic> element in rows) {
-    if (element["id"] == id) {
-      wall = element;
-      break;
-    }
-  }
-  return wall;
+
+  return wallP;
 }

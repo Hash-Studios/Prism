@@ -8,6 +8,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -333,7 +334,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     try {
       final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
-      context.router.push(DownloadWallpaperRoute(provider: 'Prism', file: file));
+      context.router.push(DownloadWallpaperRoute(source: WallpaperSource.prism, file: file));
     } catch (_) {
       toasts.error('Unable to prepare wallpaper file.');
     }
@@ -404,7 +405,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         edited['category']?.toString(),
         edited['description']?.toString(),
         false,
-        wallpaperTags: (edited['tags'] as List<dynamic>? ?? <dynamic>[]).map((tag) => tag.toString()).toList(),
+        wallpaperTags: (edited['tags'] as List<Object?>? ?? const <Object?>[])
+            .map((Object? tag) => tag?.toString() ?? '')
+            .where((tag) => tag.isNotEmpty)
+            .toList(growable: false),
         isAiGenerated: true,
         aiGenerationId: record.id,
         aiProvider: record.provider,
@@ -447,10 +451,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final descController = TextEditingController(text: (metadata['description'] ?? '').toString());
     final categoryController = TextEditingController(text: (metadata['category'] ?? 'General').toString());
     final tags = metadata['tags'] is List
-        ? (metadata['tags'] as List<dynamic>)
-              .map((item) => item.toString().trim())
+        ? (metadata['tags'] as List<Object?>)
+              .map((Object? item) => item?.toString().trim() ?? '')
               .where((item) => item.isNotEmpty)
-              .toList()
+              .toList(growable: false)
         : <String>[];
     final tagsController = TextEditingController(text: tags.join(', '));
     Map<String, dynamic>? output;
