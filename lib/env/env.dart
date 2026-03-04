@@ -38,6 +38,9 @@ class Env {
   static const String mixpanelToken = String.fromEnvironment('MIXPANEL_TOKEN');
   static const String mixpanelEnabled = String.fromEnvironment('MIXPANEL_ENABLED', defaultValue: 'auto');
 
+  // Persistence
+  static const String localPersistenceBackend = String.fromEnvironment('LOCAL_PERSISTENCE_BACKEND', defaultValue: 'shared_prefs');
+
   // User profile images (used in follow suggestions)
   static const String user1Image1 = String.fromEnvironment('USER1_IMAGE1');
   static const String user1Image2 = String.fromEnvironment('USER1_IMAGE2');
