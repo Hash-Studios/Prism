@@ -10,7 +10,7 @@ class SignedInGuard extends AutoRouteGuard {
       resolver.next();
       return;
     }
-    router.pushPath('/onboarding');
+    router.pushPath('/onboarding/v2');
     resolver.next(false);
   }
 }

@@ -15,6 +15,8 @@ class StartupConfigEntity {
     required this.aiSubmitEnabled,
     required this.aiVariationsEnabled,
     required this.useRcPaywalls,
+    required this.onboardingV2Enabled,
+    required this.onboardingStarterPack,
   });
 
   final String topImageLink;
@@ -32,4 +34,6 @@ class StartupConfigEntity {
   final bool aiSubmitEnabled;
   final bool aiVariationsEnabled;
   final bool useRcPaywalls;
+  final bool onboardingV2Enabled;
+  final List<Map<String, dynamic>> onboardingStarterPack;
 }

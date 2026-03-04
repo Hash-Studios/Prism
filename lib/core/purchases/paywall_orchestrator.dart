@@ -19,6 +19,7 @@ class PaywallPlacement {
   static const String afterAdWatch3 = 'after_ad_watch_3';
   static const String blockedSetupCreate = 'blocked_setup_create';
   static const String uploadLimitReached = 'upload_limit_reached';
+  static const String onboardingCompletion = 'onboarding_completion';
 }
 
 class PaywallOrchestrator {

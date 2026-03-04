@@ -41,15 +41,16 @@ class _SplashWidgetState extends State<SplashWidget> {
       return;
     }
     _navigated = true;
-    final isOnboarded = _settingsLocal.get<bool>('onboarded_new', defaultValue: false);
+    final isOnboarded = _settingsLocal.get<bool>('onboarded_v2_new', defaultValue: false);
+    final v2Enabled = context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      if (isOnboarded) {
-        context.router.replaceAll([const DashboardRoute()]);
+      if (!isOnboarded && v2Enabled) {
+        context.router.replaceAll([const OnboardingV2ShellRoute()]);
       } else {
-        context.router.replaceAll([const OnboardingRoute()]);
+        context.router.replaceAll([const DashboardRoute()]);
       }
     });
   }

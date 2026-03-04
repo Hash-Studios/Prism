@@ -660,102 +660,19 @@ class NotificationRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [OnboardingScreen]
-class OnboardingRoute extends PageRouteInfo<void> {
-  const OnboardingRoute({List<PageRouteInfo>? children})
-    : super(OnboardingRoute.name, initialChildren: children);
+/// [OnboardingV2Shell]
+class OnboardingV2ShellRoute extends PageRouteInfo<void> {
+  const OnboardingV2ShellRoute({List<PageRouteInfo>? children})
+    : super(OnboardingV2ShellRoute.name, initialChildren: children);
 
-  static const String name = 'OnboardingRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return OnboardingScreen();
-    },
-  );
-}
-
-/// generated route for
-/// [OptionalInfo3]
-class OptionalInfo3Route extends PageRouteInfo<OptionalInfo3RouteArgs> {
-  OptionalInfo3Route({
-    required String heading,
-    required String subheading,
-    required bool showSkip,
-    String? skipText,
-    required String? doneText,
-    List<PageRouteInfo>? children,
-  }) : super(
-         OptionalInfo3Route.name,
-         args: OptionalInfo3RouteArgs(
-           heading: heading,
-           subheading: subheading,
-           showSkip: showSkip,
-           skipText: skipText,
-           doneText: doneText,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'OptionalInfo3Route';
+  static const String name = 'OnboardingV2ShellRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<OptionalInfo3RouteArgs>();
-      return OptionalInfo3(
-        heading: args.heading,
-        subheading: args.subheading,
-        showSkip: args.showSkip,
-        skipText: args.skipText,
-        doneText: args.doneText,
-      );
+      return const OnboardingV2Shell();
     },
   );
-}
-
-class OptionalInfo3RouteArgs {
-  const OptionalInfo3RouteArgs({
-    required this.heading,
-    required this.subheading,
-    required this.showSkip,
-    this.skipText,
-    required this.doneText,
-  });
-
-  final String heading;
-
-  final String subheading;
-
-  final bool showSkip;
-
-  final String? skipText;
-
-  final String? doneText;
-
-  @override
-  String toString() {
-    return 'OptionalInfo3RouteArgs{heading: $heading, subheading: $subheading, showSkip: $showSkip, skipText: $skipText, doneText: $doneText}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! OptionalInfo3RouteArgs) return false;
-    return heading == other.heading &&
-        subheading == other.subheading &&
-        showSkip == other.showSkip &&
-        skipText == other.skipText &&
-        doneText == other.doneText;
-  }
-
-  @override
-  int get hashCode =>
-      heading.hashCode ^
-      subheading.hashCode ^
-      showSkip.hashCode ^
-      skipText.hashCode ^
-      doneText.hashCode;
 }
 
 /// generated route for

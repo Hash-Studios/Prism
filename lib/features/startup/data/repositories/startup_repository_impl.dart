@@ -93,6 +93,8 @@ class StartupRepositoryImpl implements StartupRepository {
         'ai_submit_enabled': defaultAiSubmitEnabled,
         'ai_variations_enabled': defaultAiVariationsEnabled,
         'use_rc_paywalls': defaultUseRcPaywalls,
+        'onboarding_v2_enabled': defaultOnboardingV2Enabled,
+        'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
       });
       await _remoteConfig.fetchAndActivate();
 
@@ -114,6 +116,8 @@ class StartupRepositoryImpl implements StartupRepository {
       categories.removeWhere((element) => element['name'] == 'Trending');
 
       final followersTab = _settingsLocal.get<bool>('followersTab', defaultValue: true);
+      final onboardingV2Enabled = _remoteConfig.getBool('onboarding_v2_enabled');
+      final onboardingStarterPack = _parseCategories(_remoteConfig.getString('onboarding_starter_pack_v1'));
       await syncInAppNotificationsFromRemote();
 
       final entity = StartupConfigEntity(
@@ -132,6 +136,8 @@ class StartupRepositoryImpl implements StartupRepository {
         aiSubmitEnabled: aiSubmitEnabled,
         aiVariationsEnabled: aiVariationsEnabled,
         useRcPaywalls: useRcPaywalls,
+        onboardingV2Enabled: onboardingV2Enabled,
+        onboardingStarterPack: onboardingStarterPack,
       );
 
       _currentConfig = entity;

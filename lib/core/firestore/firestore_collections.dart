@@ -1,7 +1,6 @@
 class FirebaseCollections {
   const FirebaseCollections._();
 
-  static const String users = 'users';
   static const String usersV2 = 'usersv2';
   static const String walls = 'walls';
   static const String setups = 'setups';

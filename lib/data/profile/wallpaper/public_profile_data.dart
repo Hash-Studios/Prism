@@ -40,15 +40,7 @@ Stream<List<Map<String, dynamic>>> getUserProfile(String identifier) {
             return byEmailFallback;
           }
         }
-        return firestoreClient.query<Map<String, dynamic>>(
-          FirestoreQuerySpec(
-            collection: USER_OLD_COLLECTION,
-            sourceTag: 'profile.stream.legacy_fallback',
-            filters: <FirestoreFilter>[FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: value)],
-            limit: 1,
-          ),
-          (data, docId) => <String, dynamic>{...data, '__docId': docId},
-        );
+        return <Map<String, dynamic>>[];
       });
 }
 

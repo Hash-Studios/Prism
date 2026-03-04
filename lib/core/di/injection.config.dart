@@ -69,6 +69,22 @@ import '../../features/in_app_notifications/domain/repositories/notifications_re
     as _i366;
 import '../../features/in_app_notifications/domain/usecases/notifications_usecases.dart'
     as _i474;
+import '../../features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart'
+    as _i224;
+import '../../features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart'
+    as _i897;
+import '../../features/onboarding_v2/src/data/repo/onboarding_v2_repo_impl.dart'
+    as _i794;
+import '../../features/onboarding_v2/src/domain/usecases/complete_onboarding_v2_usecase.dart'
+    as _i975;
+import '../../features/onboarding_v2/src/domain/usecases/fetch_starter_pack_usecase.dart'
+    as _i132;
+import '../../features/onboarding_v2/src/domain/usecases/follow_starter_pack_usecase.dart'
+    as _i74;
+import '../../features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart'
+    as _i95;
+import '../../features/onboarding_v2/src/services/first_wallpaper_service.dart'
+    as _i502;
 import '../../features/palette/biz/bloc/palette_bloc.j.dart' as _i689;
 import '../../features/palette/data/repositories/palette_repository_impl.dart'
     as _i401;
@@ -385,6 +401,13 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i986.SignOutUseCase>(
     () => _i986.SignOutUseCase(gh<_i738.SessionRepository>()),
   );
+  gh.lazySingleton<_i897.OnboardingV2Repository>(
+    () => _i794.OnboardingV2RepositoryImpl(
+      gh<_i627.FirebaseRemoteConfig>(),
+      gh<_i349.FirestoreClient>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+    ),
+  );
   gh.lazySingleton<_i340.FetchFavouriteSetupsUseCase>(
     () => _i340.FetchFavouriteSetupsUseCase(
       gh<_i841.FavouriteSetupsRepository>(),
@@ -451,6 +474,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
+  );
+  gh.lazySingleton<_i502.FirstWallpaperService>(
+    () => _i502.FirstWallpaperService(
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+    ),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
@@ -530,6 +559,18 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i58.FetchProfileWallsUseCase>(
     () => _i58.FetchProfileWallsUseCase(gh<_i668.ProfileWallsRepository>()),
   );
+  gh.lazySingleton<_i975.CompleteOnboardingV2UseCase>(
+    () => _i975.CompleteOnboardingV2UseCase(gh<_i897.OnboardingV2Repository>()),
+  );
+  gh.lazySingleton<_i132.FetchStarterPackUseCase>(
+    () => _i132.FetchStarterPackUseCase(gh<_i897.OnboardingV2Repository>()),
+  );
+  gh.lazySingleton<_i74.FollowStarterPackUseCase>(
+    () => _i74.FollowStarterPackUseCase(gh<_i897.OnboardingV2Repository>()),
+  );
+  gh.lazySingleton<_i95.SaveInterestsUseCase>(
+    () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
+  );
   gh.factory<_i716.ThemeLightBloc>(
     () => _i716.ThemeLightBloc(
       gh<_i518.LoadThemeLightUseCase>(),
@@ -586,6 +627,16 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
+  );
+  gh.factory<_i224.OnboardingV2Bloc>(
+    () => _i224.OnboardingV2Bloc(
+      gh<_i132.FetchStarterPackUseCase>(),
+      gh<_i95.SaveInterestsUseCase>(),
+      gh<_i74.FollowStarterPackUseCase>(),
+      gh<_i975.CompleteOnboardingV2UseCase>(),
+      gh<_i502.FirstWallpaperService>(),
+      gh<_i563.CategoryFeedRepository>(),
+    ),
   );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),

@@ -39,21 +39,6 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     if (usersv2.isNotEmpty) {
       return usersv2.first;
     }
-
-    final users = await _firestoreClient.query<_UserRow>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.users,
-        sourceTag: 'public_profile.find_user_legacy',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email)],
-        limit: 1,
-        cachePolicy: FirestoreCachePolicy.memoryFirst,
-        dedupeWindowMs: _profileReadDedupeMs,
-      ),
-      (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-    );
-    if (users.isNotEmpty) {
-      return users.first;
-    }
     return null;
   }
 

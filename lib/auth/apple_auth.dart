@@ -198,22 +198,6 @@ class AppleAuth {
     }
   }
 
-  Future<Map<String, dynamic>?> _getUserOLD(User user) async {
-    final rows = await firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.users,
-        sourceTag: 'apple_auth.get_user_old',
-        filters: [FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user.uid)],
-        limit: 1,
-      ),
-      (data, docId) => <String, dynamic>{...data, '__docId': docId},
-    );
-    if (rows.isEmpty) return null;
-    final docId = rows.first['__docId']?.toString() ?? '';
-    if (docId.isEmpty) return null;
-    return rows.first;
-  }
-
   Future<Map<String, dynamic>?> _getUserNEW(User user) async {
     final rows = await firestoreClient.query<Map<String, dynamic>>(
       FirestoreQuerySpec(
@@ -231,6 +215,6 @@ class AppleAuth {
   }
 
   Future<List<Map<String, dynamic>?>> _getUsersData(User user) {
-    return Future.wait([_getUserOLD(user), _getUserNEW(user)]);
+    return Future.wait([_getUserNEW(user)]);
   }
 }

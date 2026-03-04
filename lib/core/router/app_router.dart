@@ -22,6 +22,7 @@ import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/palette/views/pages/download_screen.dart';
 import 'package:Prism/features/palette/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/palette/views/pages/search_wallpaper_screen.dart';
@@ -48,9 +49,7 @@ import 'package:Prism/features/setups/views/pages/setup_view_screen.dart';
 import 'package:Prism/features/setups/views/pages/share_setup_view_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_setup_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
-import 'package:Prism/features/startup/views/pages/onboarding_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
@@ -72,8 +71,7 @@ class AppRouter extends RootStackRouter {
   List<AutoRoute> get routes => [
     // Startup
     AutoRoute(path: '/', page: SplashWidgetRoute.page),
-    AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
-    AutoRoute(path: '/onboarding/follow', page: OptionalInfo3Route.page),
+    AutoRoute(path: '/onboarding/v2', page: OnboardingV2ShellRoute.page),
 
     // Dashboard shell with bottom nav tabs
     AutoRoute(

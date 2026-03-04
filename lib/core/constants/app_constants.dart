@@ -19,6 +19,9 @@ const bool defaultAiSubmitEnabled = true;
 const bool defaultAiVariationsEnabled = true;
 const bool defaultUseRcPaywalls = true;
 
+const bool defaultOnboardingV2Enabled = true;
+const List<Map<String, dynamic>> defaultOnboardingStarterPack = <Map<String, dynamic>>[];
+
 const List<String> defaultTopTitleText = <String>['TOP-RATED', 'BEST OF COMMUNITY', 'FAN-FAVOURITE', 'TRENDING'];
 
 const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'flat', 'mesh gradients', 'fluids'];
