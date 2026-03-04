@@ -52,6 +52,9 @@ import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
+import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -141,6 +144,7 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      Bloc.observer = const BlocDebugObserver();
       final SentryConfig sentryConfig = _resolveSentryConfig();
       await _initializeMonitoring(sentryConfig);
 
@@ -202,6 +206,7 @@ Future<void> main() async {
       Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
       Hive.registerAdapter<Badge>(BadgeAdapter());
       await PersistenceBootstrap.initialize();
+      DebugFlags.instance.loadFromStore();
       localPrefs = PrefsCompat.fromRuntime();
       logger.d("Persistence initialized");
       final systemOverlayColorValue = _colorValueFromPrefs(localPrefs.get("systemOverlayColor"), fallback: 0xFFE57697);
@@ -242,34 +247,36 @@ Future<void> main() async {
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(
-        RestartWidget(
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-              BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
-              BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-              BlocProvider<CategoryFeedBloc>(
-                create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-              ),
-              BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
-              BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-              BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-              BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
-              BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-              BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-              BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
-              BlocProvider<StartupBloc>(
-                create: (_) =>
-                    getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
-              ),
-              BlocProvider<ThemeLightBloc>(
-                create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-              ),
-              BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
-              BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
-              BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
-            ],
-            child: _MyApp(),
+        LogToastOverlay(
+          child: RestartWidget(
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
+                BlocProvider<CategoryFeedBloc>(
+                  create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                ),
+                BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
+                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+                BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
+                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+                BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                BlocProvider<StartupBloc>(
+                  create: (_) =>
+                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                ),
+                BlocProvider<ThemeLightBloc>(
+                  create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                ),
+                BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
+                BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
+                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+              ],
+              child: _MyApp(),
+            ),
           ),
         ),
       );
@@ -937,19 +944,24 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           },
         ),
       ],
-      child: MaterialApp.router(
-        routerConfig: _appRouter.config(
-          deepLinkTransformer: _routerDeepLinkTransformer,
-          deepLinkBuilder: _routerDeepLinkBuilder,
-          navigatorObservers: () => [
-            ...analytics.buildNavigatorObservers(),
-            if (MonitoringRuntime.reporter.isEnabled)
-              SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-          ],
+      child: ListenableBuilder(
+        listenable: DebugFlags.instance,
+        builder: (context, _) => MaterialApp.router(
+          routerConfig: _appRouter.config(
+            deepLinkTransformer: _routerDeepLinkTransformer,
+            deepLinkBuilder: _routerDeepLinkBuilder,
+            navigatorObservers: () => [
+              ...analytics.buildNavigatorObservers(),
+              if (MonitoringRuntime.reporter.isEnabled)
+                SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+            ],
+          ),
+          showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+          showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+          theme: context.prismLightTheme(),
+          darkTheme: context.prismDarkTheme(),
+          themeMode: context.prismThemeMode(),
         ),
-        theme: context.prismLightTheme(),
-        darkTheme: context.prismDarkTheme(),
-        themeMode: context.prismThemeMode(),
       ),
     );
   }

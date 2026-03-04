@@ -10,19 +10,19 @@ class SettingsLocalDataSource {
 
   bool get isOpen => _store.isReady;
 
-  T get<T>(String key, {T? defaultValue}) {
+  T get<T>(String key, {T? defaultValue, bool hasDefault = false}) {
     final Object? value = _store.get(PersistenceKeys.settings(key));
     if (value == null) {
-      if (defaultValue != null) {
-        return defaultValue;
+      if (hasDefault || defaultValue != null || null is T) {
+        return defaultValue as T;
       }
       throw StateError('Missing settings value for "$key" and no default provided for type $T.');
     }
     if (value is T) {
       return value as T;
     }
-    if (defaultValue != null) {
-      return defaultValue;
+    if (hasDefault || defaultValue != null) {
+      return defaultValue as T;
     }
     throw StateError('Settings key "$key" has type ${value.runtimeType}, expected $T.');
   }
