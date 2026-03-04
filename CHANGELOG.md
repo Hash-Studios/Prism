@@ -1,5 +1,16 @@
 ## Changelog
 
+### v3.0.0
+- Prism v3 — full app redesign and architecture overhaul
+- New user model with username, bio, cover photo, and social links
+- Revamped profiles with richer customisation options
+- 20+ new wallpaper filters
+- Option to pick icons from a curated list of apps
+- Save setups as drafts before publishing
+- Removed banner ads; informational sheet shown when ads don't load
+- Fixed wallpaper download reliability bug
+- Performance improvements and minor bug fixes
+
 ### v2.6.9
 - Laid support for Prism v3
 - New model for users
