@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,7 +14,7 @@ void main() {
     expect(action, isA<ShareLinkIntent>());
     final ShareLinkIntent share = action as ShareLinkIntent;
     expect(share.wallId, 'abc');
-    expect(share.provider, 'Prism');
+    expect(share.source, WallpaperSource.prism);
     expect(share.wallpaperUrl, 'https://img');
     expect(share.thumbnailUrl, 'https://thumb');
   });

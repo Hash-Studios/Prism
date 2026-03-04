@@ -1,14 +1,15 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -17,13 +18,13 @@ import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
+  final CacheMaintenanceService _cacheMaintenance = getIt<CacheMaintenanceService>();
+
   void _trackDrawerAction(AnalyticsActionValue action, {required String sourceContext}) {
     unawaited(
       analytics.track(
@@ -381,13 +382,7 @@ class ProfileDrawer extends StatelessWidget {
               onTap: () async {
                 _trackDrawerAction(AnalyticsActionValue.clearCacheTapped, sourceContext: 'profile_drawer_clear_cache');
                 Navigator.pop(context);
-                DefaultCacheManager().emptyCache();
-                PaintingBinding.instance.imageCache.clear();
-                await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
-                await Hive.openBox<InAppNotif>('inAppNotifs');
-                main.prefs.delete('lastFetchTime');
-                await Hive.box('setups').deleteFromDisk();
-                await Hive.openBox('setups');
+                await _cacheMaintenance.clearTransientCache();
                 toasts.codeSend("Cleared cache!");
               },
               context: context,

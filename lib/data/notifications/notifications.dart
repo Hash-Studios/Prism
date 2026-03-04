@@ -1,11 +1,12 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
-import 'package:hive_io/hive_io.dart';
 
 const int _defaultNotifLimit = 50;
 
@@ -17,20 +18,6 @@ Map<String, dynamic> _asMap(Object? raw) {
     return raw.map((key, value) => MapEntry(key.toString(), value));
   }
   return <String, dynamic>{};
-}
-
-DateTime? _asUtcDateTime(Object? raw) {
-  if (raw is DateTime) {
-    return raw.toUtc();
-  }
-  if (raw is String) {
-    try {
-      return DateTime.parse(raw).toUtc();
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
 }
 
 List<String> _notificationModifiers() {
@@ -58,7 +45,7 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
       collection: FirebaseCollections.notifications,
       sourceTag: sourceTag,
       filters: <FirestoreFilter>[
-        FirestoreFilter(field: "createdAt", op: FirestoreFilterOp.isGreaterThan, value: sinceUtc),
+        FirestoreFilter(field: 'createdAt', op: FirestoreFilterOp.isGreaterThan, value: sinceUtc),
         FirestoreFilter(field: 'modifier', op: FirestoreFilterOp.whereIn, value: modifiers),
       ],
       orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
@@ -70,52 +57,53 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
   );
 }
 
-String _notifKey(InAppNotif notif) {
+InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
+  final InAppNotif notif = InAppNotif.fromSnapshot(raw);
+  final DateTime createdAt = notif.createdAt?.toUtc() ?? DateTime.now().toUtc();
   final String title = notif.title ?? '';
   final String body = notif.body ?? '';
   final String pageName = notif.pageName ?? '';
   final String url = notif.url ?? '';
-  final String createdAt = notif.createdAt?.toUtc().toIso8601String() ?? '';
-  return '$title|$body|$pageName|$url|$createdAt';
+  return InAppNotificationEntity(
+    id: buildInAppNotificationId(title: title, body: body, pageName: pageName, url: url, createdAt: createdAt),
+    title: title,
+    pageName: pageName,
+    body: body,
+    imageUrl: notif.imageUrl ?? '',
+    arguments: (notif.arguments ?? const <Object>[]).whereType<Object>().toList(growable: false),
+    url: url,
+    createdAt: createdAt,
+    read: notif.read ?? false,
+    route: notif.route,
+    wallId: notif.wallId,
+  );
 }
 
-Future<void> _addUniqueNotifications(Box<InAppNotif> box, List<Map<String, dynamic>> docs) async {
-  final Set<String> seen = box.values.map(_notifKey).toSet();
-  for (final Map<String, dynamic> raw in docs) {
-    try {
-      final InAppNotif notif = InAppNotif.fromSnapshot(raw);
-      final String key = _notifKey(notif);
-      if (seen.add(key)) {
-        await box.add(notif);
-      }
-    } catch (e) {
-      logger.w('Skipping malformed in-app notification payload: $e');
-    }
-  }
-}
-
-Future<void> getNotifs() async {
-  logger.d("Fetching notifs");
-  final Box<InAppNotif> box = Hive.box('inAppNotifs');
+Future<void> syncInAppNotificationsFromRemote() async {
+  logger.d('Fetching in-app notifications');
+  final notificationsLocal = getIt<NotificationsLocalDataSource>();
   final DateTime nowUtc = DateTime.now().toUtc();
-  final DateTime? lastFetchTime = _asUtcDateTime(main.prefs.get('lastFetchTime'));
+  final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
+
   if (lastFetchTime == null) {
-    logger.d("Fetching for first time");
-    await box.clear();
     final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
       sinceUtc: nowUtc.subtract(const Duration(days: 30)),
       sourceTag: 'notifications.last_month',
     );
-    await _addUniqueNotifications(box, snap.map(_asMap).toList(growable: false));
-    main.prefs.put('lastFetchTime', nowUtc);
+    final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+    await notificationsLocal.writeAll(entities);
+    await notificationsLocal.setLastFetchAtUtc(nowUtc);
     return;
   }
-  logger.d("Last fetch time $lastFetchTime");
+
   final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
     sinceUtc: lastFetchTime,
     sourceTag: 'notifications.latest',
     cachePolicy: FirestoreCachePolicy.memoryFirst,
   );
-  await _addUniqueNotifications(box, snap.map(_asMap).toList(growable: false));
-  main.prefs.put('lastFetchTime', nowUtc);
+  final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+  if (entities.isNotEmpty) {
+    await notificationsLocal.upsertAll(entities);
+  }
+  await notificationsLocal.setLastFetchAtUtc(nowUtc);
 }

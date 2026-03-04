@@ -1,11 +1,12 @@
-import 'dart:collection';
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -23,7 +24,7 @@ class DownloadScreen extends StatefulWidget {
 
 class _DownloadScreenState extends State<DownloadScreen> {
   bool dataFetched = false;
-  Map<dynamic, dynamic> allImageInfo = HashMap();
+  Map<String, Object?> allImageInfo = HashMap<String, Object?>();
   List<FileSystemEntity> files = [];
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   ScrollController? controller;
@@ -178,7 +179,10 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                   ),
                                 );
                                 context.router.push(
-                                  DownloadWallpaperRoute(provider: "Downloads", file: File(files[index].path)),
+                                  DownloadWallpaperRoute(
+                                    source: WallpaperSource.downloaded,
+                                    file: File(files[index].path),
+                                  ),
                                 );
                               },
                             ),

@@ -1,3 +1,6 @@
+import 'package:Prism/features/session/domain/entities/badge_entity.dart';
+import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
+
 class SessionEntity {
   const SessionEntity({
     required this.userId,
@@ -32,12 +35,12 @@ class SessionEntity {
   final bool premium;
   final String subscriptionTier;
   final int coins;
-  final Map<String, dynamic> links;
-  final List<dynamic> followers;
-  final List<dynamic> following;
-  final List<dynamic> badges;
-  final List<dynamic> transactions;
-  final List<dynamic> subPrisms;
+  final Map<String, String> links;
+  final List<String> followers;
+  final List<String> following;
+  final List<BadgeEntity> badges;
+  final List<TransactionEntity> transactions;
+  final List<String> subPrisms;
   final String uploadsWeekStart;
   final int uploadsThisWeek;
 
@@ -53,12 +56,12 @@ class SessionEntity {
     premium: false,
     subscriptionTier: 'free',
     coins: 0,
-    links: <String, dynamic>{},
-    followers: <dynamic>[],
-    following: <dynamic>[],
-    badges: <dynamic>[],
-    transactions: <dynamic>[],
-    subPrisms: <dynamic>[],
+    links: <String, String>{},
+    followers: <String>[],
+    following: <String>[],
+    badges: <BadgeEntity>[],
+    transactions: <TransactionEntity>[],
+    subPrisms: <String>[],
     uploadsWeekStart: '',
     uploadsThisWeek: 0,
   );

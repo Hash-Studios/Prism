@@ -1,5 +1,5 @@
-bool isPremiumWall(List<String> premiumCollections, List<dynamic> wallCollections) {
-  for (final dynamic element in wallCollections) {
+bool isPremiumWall(List<String> premiumCollections, List<Object?> wallCollections) {
+  for (final Object? element in wallCollections) {
     final String value = element.toString().trim();
     if (premiumCollections.contains(value)) {
       return true;

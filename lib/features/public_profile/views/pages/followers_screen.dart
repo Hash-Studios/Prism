@@ -8,18 +8,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 class FollowersScreen extends StatefulWidget {
   const FollowersScreen({super.key, required this.followers});
 
-  final List<dynamic> followers;
+  final List<String> followers;
 
   @override
   _FollowersScreenState createState() => _FollowersScreenState();
 }
 
 class _FollowersScreenState extends State<FollowersScreen> {
-  late final List<dynamic> followers;
+  late final List<String> followers;
 
   @override
   void initState() {
-    followers = List<dynamic>.from(widget.followers)..sort();
+    followers = List<String>.from(widget.followers)..sort();
     super.initState();
   }
 
@@ -43,11 +43,11 @@ class _FollowersScreenState extends State<FollowersScreen> {
               ),
             ),
             title: Text(
-              followers[index].toString(),
+              followers[index],
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
             onTap: () {
-              context.router.push(ProfileRoute(profileIdentifier: followers[index].toString()));
+              context.router.push(ProfileRoute(profileIdentifier: followers[index]));
             },
           );
         },

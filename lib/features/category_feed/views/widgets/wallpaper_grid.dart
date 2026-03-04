@@ -5,38 +5,43 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class WallpaperGrid extends StatefulWidget {
-  final String? provider;
-  const WallpaperGrid({required this.provider});
+  const WallpaperGrid({super.key});
+
   @override
-  _WallpaperGridState createState() => _WallpaperGridState();
+  State<WallpaperGrid> createState() => _WallpaperGridState();
 }
 
 class _WallpaperGridState extends State<WallpaperGrid> {
-  GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
+  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+
   int _current = 0;
   bool seeMoreLoader = false;
   int _lastLoggedSubWallsCount = -1;
-  final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
-  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+
   @override
   void initState() {
     super.initState();
@@ -47,30 +52,19 @@ class _WallpaperGridState extends State<WallpaperGrid> {
     refreshHomeKey.currentState?.show();
     _contentLoadTracker.start();
     _scrollMilestoneTracker.reset();
-    logger.i("[WallpaperGrid] manual refresh", fields: <String, Object?>{"provider": widget.provider});
-    Data.prismWalls = [];
-    Data.subPrismWalls = [];
-    await Data.getPrismWalls();
+    await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "r");
   }
 
-  Future<void> _triggerSeeMore(List<dynamic> subWalls) async {
-    if (seeMoreLoader || !Data.prismHasMore) {
-      return;
-    }
-    if (!(Data.prismWallsDocSnaps?.isNotEmpty ?? false)) {
-      logger.w("[WallpaperGrid] see more skipped: no doc snapshots");
-      Data.prismHasMore = false;
+  Future<void> _triggerSeeMore({required bool hasMore, required int currentItemCount}) async {
+    if (seeMoreLoader || !hasMore) {
       return;
     }
     setState(() {
       seeMoreLoader = true;
     });
-    logger.d(
-      "[WallpaperGrid] see more triggered",
-      fields: <String, Object?>{"currentItems": subWalls.length, "docSnaps": Data.prismWallsDocSnaps?.length ?? 0},
-    );
+    logger.d("[WallpaperGrid] see more triggered", fields: <String, Object?>{"currentItems": currentItemCount});
     try {
-      await Data.seeMorePrism();
+      await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
     } finally {
       if (mounted) {
         setState(() {
@@ -84,17 +78,12 @@ class _WallpaperGridState extends State<WallpaperGrid> {
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselSliderController carouselController = CarouselSliderController();
-    final List<dynamic> subWalls = Data.subPrismWalls?.cast<dynamic>() ?? <dynamic>[];
+    final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
+    final List<PrismFeedItem> subWalls = state.items.whereType<PrismFeedItem>().toList(growable: false);
+
     if (_lastLoggedSubWallsCount != subWalls.length) {
       _lastLoggedSubWallsCount = subWalls.length;
-      logger.d(
-        "[WallpaperGrid] build",
-        fields: <String, Object?>{
-          "provider": widget.provider,
-          "items": subWalls.length,
-          "docSnaps": Data.prismWallsDocSnaps?.length ?? 0,
-        },
-      );
+      logger.d("[WallpaperGrid] build", fields: <String, Object?>{"items": subWalls.length, "hasMore": state.hasMore});
     }
     if (subWalls.isNotEmpty) {
       _contentLoadTracker.success(
@@ -111,19 +100,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
           );
         },
       );
-    }
-    Map<String, dynamic>? wallAt(int index) {
-      if (index < 0 || index >= subWalls.length) {
-        return null;
-      }
-      final dynamic wall = subWalls[index];
-      if (wall is Map<String, dynamic>) {
-        return wall;
-      }
-      if (wall is Map) {
-        return wall.cast<String, dynamic>();
-      }
-      return null;
     }
 
     return Padding(
@@ -157,7 +133,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                       },
                     ),
                     itemBuilder: (BuildContext context, int i, int rI) {
-                      // Slide 0: Wall of the Day
                       if (i == 0) {
                         return Container(
                           width: MediaQuery.of(context).size.width,
@@ -165,7 +140,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                           child: const WallOfTheDayCard(),
                         );
                       }
-                      // Slide 1: Promotional banner
                       if (i == 1) {
                         return Container(
                           width: MediaQuery.of(context).size.width,
@@ -174,7 +148,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             onTap: () {
                               unawaited(
                                 analytics.track(
-                                  SurfaceActionTappedEvent(
+                                  const SurfaceActionTappedEvent(
                                     surface: AnalyticsSurfaceValue.homeWallpaperGrid,
                                     action: AnalyticsActionValue.bannerTapped,
                                     sourceContext: 'home_wallpaper_grid_banner',
@@ -219,8 +193,10 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                           ),
                         );
                       }
-                      // Slides 2-5: wallpaper thumbnails from the feed
-                      final Map<String, dynamic>? wall = wallAt(i - 2);
+                      final int feedIndex = i - 2;
+                      final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < subWalls.length
+                          ? subWalls[feedIndex]
+                          : null;
                       return Container(
                         width: MediaQuery.of(context).size.width,
                         margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
@@ -236,16 +212,17 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                   action: AnalyticsActionValue.carouselItemOpened,
                                   sourceContext: 'home_wallpaper_grid_carousel',
                                   itemType: ItemTypeValue.wallpaper,
-                                  itemId: wall["id"]?.toString(),
-                                  index: i - 2,
+                                  itemId: wall.id,
+                                  index: feedIndex,
                                 ),
                               ),
                             );
                             context.router.push(
                               WallpaperRoute(
-                                provider: widget.provider.toString(),
-                                index: i - 2,
-                                link: wall["wallpaper_thumb"].toString(),
+                                source: WallpaperSource.prism,
+                                index: feedIndex,
+                                link: wall.wallpaper.thumbnailUrl,
+                                item: wall,
                               ),
                             );
                           },
@@ -261,7 +238,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                               : PremiumBannerWallsCarousel(
                                   comparator: !app_state.isPremiumWall(
                                     app_state.premiumCollections,
-                                    wall["collections"] as List? ?? [],
+                                    wall.wallpaper.collections ?? const <String>[],
                                   ),
                                   child: Container(
                                     decoration: BoxDecoration(
@@ -270,27 +247,8 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                                           : Colors.black.withValues(alpha: .1),
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
-                                        image: CachedNetworkImageProvider(wall["wallpaper_thumb"].toString()),
+                                        image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
                                         fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Container(
-                                        width: MediaQuery.of(context).size.width,
-                                        color: Colors.transparent,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                            "",
-                                            textAlign: TextAlign.center,
-                                            maxLines: 1,
-                                            style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
                                       ),
                                     ),
                                   ),
@@ -327,7 +285,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                 },
               );
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                unawaited(_triggerSeeMore(subWalls));
+                unawaited(_triggerSeeMore(hasMore: state.hasMore, currentItemCount: subWalls.length));
               }
               return false;
             },
@@ -357,46 +315,33 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     ),
                   );
                 }
-
-                index = index + 4;
-                if (index >= subWalls.length) {
-                  return const SizedBox.shrink();
-                }
-                if (index == subWalls.length - 1 && Data.prismHasMore) {
+                final int itemIndex = index + 4;
+                if (itemIndex == subWalls.length - 1) {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
                       unawaited(
                         analytics.track(
-                          SurfaceActionTappedEvent(
+                          const SurfaceActionTappedEvent(
                             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
                             action: AnalyticsActionValue.seeMoreTapped,
                             sourceContext: 'home_wallpaper_grid_see_more',
                           ),
                         ),
                       );
-                      unawaited(_triggerSeeMore(subWalls));
+                      unawaited(_triggerSeeMore(hasMore: state.hasMore, currentItemCount: subWalls.length));
                     },
                   );
                 }
-                return app_state.prismUser.premium == true
-                    ? FocusedMenuHolder(
-                        provider: widget.provider,
-                        index: index,
-                        child: WallpaperTile(widget: widget, index: index),
-                      )
-                    : PremiumBannerWalls(
-                        comparator: !app_state.isPremiumWall(
-                          app_state.premiumCollections,
-                          wallAt(index)?["collections"] as List? ?? [],
-                        ),
-                        defaultChild: FocusedMenuHolder(
-                          provider: widget.provider,
-                          index: index,
-                          child: WallpaperTile(widget: widget, index: index),
-                        ),
-                        trueChild: WallpaperTile(widget: widget, index: index),
-                      );
+                final PrismFeedItem item = subWalls[itemIndex];
+                return PremiumBannerWalls(
+                  comparator: !app_state.isPremiumWall(
+                    app_state.premiumCollections,
+                    item.wallpaper.collections ?? const <String>[],
+                  ),
+                  defaultChild: WallpaperTile(item: item, index: itemIndex),
+                  trueChild: WallpaperTile(item: item, index: itemIndex),
+                );
               },
             ),
           ),

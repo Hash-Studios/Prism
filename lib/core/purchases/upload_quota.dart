@@ -1,4 +1,5 @@
-import 'package:Prism/main.dart' as main;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 
 class UploadQuota {
   const UploadQuota._();
@@ -6,6 +7,7 @@ class UploadQuota {
   static const int freeUploadsPerWeek = 3;
   static const String _weekStartPrefKey = 'uploadsWeekStart';
   static const String _weeklyCountPrefKey = 'uploadsThisWeek';
+  static SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   static DateTime _startOfWeek(DateTime now) {
     final DateTime local = now.toLocal();
@@ -17,13 +19,13 @@ class UploadQuota {
 
   static int _readCountForCurrentWeek(DateTime now) {
     final String currentWeekKey = _weekKey(now);
-    final String storedWeekKey = (main.prefs.get(_weekStartPrefKey, defaultValue: '') as String?)?.trim() ?? '';
+    final String storedWeekKey = _settings.get<String>(_weekStartPrefKey, defaultValue: '').trim();
     if (storedWeekKey != currentWeekKey) {
-      main.prefs.put(_weekStartPrefKey, currentWeekKey);
-      main.prefs.put(_weeklyCountPrefKey, 0);
+      _settings.set(_weekStartPrefKey, currentWeekKey);
+      _settings.set(_weeklyCountPrefKey, 0);
       return 0;
     }
-    return (main.prefs.get(_weeklyCountPrefKey, defaultValue: 0) as int?) ?? 0;
+    return _settings.get<int>(_weeklyCountPrefKey, defaultValue: 0);
   }
 
   static int currentUploadsThisWeek({DateTime? now}) {
@@ -42,7 +44,7 @@ class UploadQuota {
   static int incrementWeeklyUploads({DateTime? now}) {
     final DateTime target = now ?? DateTime.now();
     final int used = _readCountForCurrentWeek(target) + 1;
-    main.prefs.put(_weeklyCountPrefKey, used);
+    _settings.set(_weeklyCountPrefKey, used);
     return used;
   }
 }

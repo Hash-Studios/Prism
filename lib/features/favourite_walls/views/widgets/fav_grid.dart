@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -222,7 +223,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      context.favouriteWallsAdapter().liked![index]["thumb"].toString(),
+                                      context.favouriteWallsAdapter().liked![index].thumb,
                                     ),
                                     fit: BoxFit.cover,
                                   ),
@@ -236,7 +237,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                     splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                     highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                     onTap: () {
-                                      if (context.favouriteWallsAdapter(listen: false).liked == []) {
+                                      if (context.favouriteWallsAdapter(listen: false).liked == null ||
+                                          context.favouriteWallsAdapter(listen: false).liked!.isEmpty) {
                                       } else {
                                         unawaited(
                                           analytics.track(
@@ -245,10 +247,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                               action: AnalyticsActionValue.tileOpened,
                                               sourceContext: 'favourite_walls_grid_tile',
                                               itemType: ItemTypeValue.wallpaper,
-                                              itemId: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  ?.toString(),
+                                              itemId: context.favouriteWallsAdapter(listen: false).liked![index].id,
                                               index: index,
                                             ),
                                           ),
@@ -258,8 +257,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                             wallIndex: index,
                                             thumbnailUrl: context
                                                 .favouriteWallsAdapter(listen: false)
-                                                .liked![index]["thumb"]
-                                                .toString(),
+                                                .liked![index]
+                                                .thumb,
                                           ),
                                         );
                                       }

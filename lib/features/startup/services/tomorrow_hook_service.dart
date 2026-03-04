@@ -1,9 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/startup/views/widgets/tomorrow_hook_sheet.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -14,12 +15,13 @@ class TomorrowHookService {
 
   static const String _shownPrefKey = 'e4TomorrowHookShownV1';
   static const String _wotdSubscribedPrefKey = 'subscribedToWotd';
+  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   Future<void> maybeRunTomorrowHookAtOnboardingDone(BuildContext context) async {
-    if (!main.prefs.isOpen) {
+    if (!_settings.isOpen) {
       return;
     }
-    final bool hasShown = (main.prefs.get(_shownPrefKey, defaultValue: false) as bool?) ?? false;
+    final bool hasShown = _settings.get<bool>(_shownPrefKey, defaultValue: false);
     if (hasShown) {
       return;
     }
@@ -57,7 +59,7 @@ class TomorrowHookService {
           sourceTag: 'tomorrow_hook.enable.wotd',
         );
         if (subscribedToWotd) {
-          await main.prefs.put(_wotdSubscribedPrefKey, true);
+          await _settings.set(_wotdSubscribedPrefKey, true);
         }
         await _retryFollowersTopicSubscriptionIfLoggedIn();
       }
@@ -70,7 +72,7 @@ class TomorrowHookService {
         subscribedToWotd: subscribedToWotd,
       ),
     );
-    await main.prefs.put(_shownPrefKey, true);
+    await _settings.set(_shownPrefKey, true);
   }
 
   Future<void> _retryFollowersTopicSubscriptionIfLoggedIn() async {

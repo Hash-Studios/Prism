@@ -5,6 +5,11 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -13,11 +18,10 @@ import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -39,6 +43,7 @@ class FavWallpaperViewScreen extends StatefulWidget {
 }
 
 class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with SingleTickerProviderStateMixin {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late int index;
@@ -60,7 +65,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
 
   String get _sourceContext => 'favourite_wallpaper_view';
 
-  String? get _itemId => context.favouriteWallsAdapter(listen: false).liked?[index]["id"]?.toString();
+  String? get _itemId => context.favouriteWallsAdapter(listen: false).liked?[index].id;
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -170,9 +175,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
     thumb = widget.thumbnailUrl;
     isLoading = true;
     _contentLoadTracker.start();
-    if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism") {
-      updateViews(context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().toUpperCase());
-      _futureView = getViews(context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().toUpperCase());
+    if (context.favouriteWallsAdapter(listen: false).liked![index].provider == "Prism") {
+      updateViews(context.favouriteWallsAdapter(listen: false).liked![index].id.toUpperCase());
+      _futureView = getViews(context.favouriteWallsAdapter(listen: false).liked![index].id.toUpperCase());
     }
     _updatePaletteGenerator();
     super.initState();
@@ -193,9 +198,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
               shakeController.reverse();
             }
           });
-    return context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven" ||
-            context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels" ||
-            context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
+    return context.favouriteWallsAdapter(listen: false).liked![index].provider == "WallHaven" ||
+            context.favouriteWallsAdapter(listen: false).liked![index].provider == "Pexels" ||
+            context.favouriteWallsAdapter(listen: false).liked![index].provider == "Prism"
         ? Scaffold(
             key: _scaffoldKey,
             backgroundColor: isLoading ? Theme.of(context).primaryColor : accent,
@@ -222,7 +227,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           logger.d(onError.toString());
                         });
                   } else {
-                    (main.prefs.get('optimisedWallpapers') ?? true) == true
+                    _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                         ? screenshotController
                               .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                               .then((Uint8List? image) async {
@@ -296,7 +301,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                             ),
                           ),
                           ColorBar(colors: colors),
-                          if (context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "WallHaven")
+                          if (context.favouriteWallsAdapter(listen: false).liked![index].provider == "WallHaven")
                             Expanded(
                               flex: 8,
                               child: Padding(
@@ -312,11 +317,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         Padding(
                                           padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                           child: Text(
-                                            context
-                                                .favouriteWallsAdapter(listen: false)
-                                                .liked![index]["id"]
-                                                .toString()
-                                                .toUpperCase(),
+                                            context.favouriteWallsAdapter(listen: false).liked![index].id.toUpperCase(),
                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -331,7 +332,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              "${context.favouriteWallsAdapter(listen: false).liked![index]["views"]}",
+                                              context.favouriteWallsAdapter(listen: false).liked![index].views,
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -348,7 +349,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              "${context.favouriteWallsAdapter(listen: false).liked![index]["fav"]}",
+                                              context.favouriteWallsAdapter(listen: false).liked![index].fav,
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -365,7 +366,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                              "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index].size) / 1000000).toString()).toStringAsFixed(2)} MB",
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -385,13 +386,13 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                               Text(
                                                 context
                                                         .favouriteWallsAdapter(listen: false)
-                                                        .liked![index]["category"]
-                                                        .toString()[0]
+                                                        .liked![index]
+                                                        .category[0]
                                                         .toUpperCase() +
                                                     context
                                                         .favouriteWallsAdapter(listen: false)
-                                                        .liked![index]["category"]
-                                                        .toString()
+                                                        .liked![index]
+                                                        .category
                                                         .substring(1),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
@@ -410,7 +411,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         Row(
                                           children: [
                                             Text(
-                                              "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
+                                              context.favouriteWallsAdapter(listen: false).liked![index].resolution,
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -427,10 +428,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                         Row(
                                           children: [
                                             Text(
-                                              context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
+                                              context.favouriteWallsAdapter(listen: false).liked![index].provider,
                                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -450,7 +448,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                               ),
                             )
                           else
-                            context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Prism"
+                            context.favouriteWallsAdapter(listen: false).liked![index].provider == "Prism"
                                 ? Expanded(
                                     flex: 8,
                                     child: SizedBox(
@@ -472,8 +470,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Text(
                                                         context
                                                             .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["id"]
-                                                            .toString()
+                                                            .liked![index]
+                                                            .id
                                                             .toUpperCase(),
                                                         style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
@@ -546,7 +544,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
-                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["photographer"]}",
+                                                      context
+                                                          .favouriteWallsAdapter(listen: false)
+                                                          .liked![index]
+                                                          .photographer,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -565,7 +566,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
-                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["category"]}",
+                                                      context
+                                                          .favouriteWallsAdapter(listen: false)
+                                                          .liked![index]
+                                                          .category,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -584,7 +588,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     ),
                                                     const SizedBox(width: 10),
                                                     Text(
-                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["size"]}",
+                                                      context.favouriteWallsAdapter(listen: false).liked![index].size,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -600,7 +604,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
+                                                      context
+                                                          .favouriteWallsAdapter(listen: false)
+                                                          .liked![index]
+                                                          .resolution,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -621,8 +628,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                     Text(
                                                       context
                                                           .favouriteWallsAdapter(listen: false)
-                                                          .liked![index]["provider"]
-                                                          .toString(),
+                                                          .liked![index]
+                                                          .provider,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -644,7 +651,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                       ),
                                     ),
                                   )
-                                : context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == "Pexels"
+                                : context.favouriteWallsAdapter(listen: false).liked![index].provider == "Pexels"
                                 ? Expanded(
                                     flex: 8,
                                     child: Padding(
@@ -676,8 +683,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                         child: Text(
                                                           context
                                                               .favouriteWallsAdapter(listen: false)
-                                                              .liked![index]["photographer"]
-                                                              .toString(),
+                                                              .liked![index]
+                                                              .photographer,
                                                           textAlign: TextAlign.left,
                                                           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                             color: Theme.of(context).colorScheme.secondary,
@@ -700,8 +707,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Text(
                                                         context
                                                             .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["resolution"]
-                                                            .toString(),
+                                                            .liked![index]
+                                                            .resolution,
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -717,10 +724,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["id"]
-                                                            .toString(),
+                                                        context.favouriteWallsAdapter(listen: false).liked![index].id,
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -741,8 +745,8 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                                       Text(
                                                         context
                                                             .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["provider"]
-                                                            .toString(),
+                                                            .liked![index]
+                                                            .provider,
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -775,48 +779,35 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   colorChanged: colorChanged,
                                   link: screenshotTaken
                                       ? _imageFile.path
-                                      : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                                      : context.favouriteWallsAdapter(listen: false).liked![index].url,
                                   isPremiumContent: app_state.isPremiumWall(
                                     app_state.premiumCollections,
-                                    context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
-                                            as List? ??
+                                    context.favouriteWallsAdapter(listen: false).liked![index].collections as List? ??
                                         [],
                                   ),
-                                  contentId: context
-                                      .favouriteWallsAdapter(listen: false)
-                                      .liked![index]["id"]
-                                      ?.toString(),
+                                  contentId: context.favouriteWallsAdapter(listen: false).liked![index].id,
                                   sourceContext: 'favourite_wall_view',
                                 ),
-                                SetWallpaperButton(
-                                  colorChanged: colorChanged,
-                                  url: screenshotTaken
-                                      ? _imageFile.path
-                                      : context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                ),
+                                if (!hideSetWallpaperUi)
+                                  SetWallpaperButton(
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken
+                                        ? _imageFile.path
+                                        : context.favouriteWallsAdapter(listen: false).liked![index].url,
+                                  ),
                                 FavouriteWallpaperButton(
-                                  id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                  provider: context
-                                      .favouriteWallsAdapter(listen: false)
-                                      .liked![index]["provider"]
-                                      .toString(),
+                                  wall: context.favouriteWallsAdapter(listen: false).liked![index],
                                   trash: true,
                                 ),
                                 ShareButton(
-                                  id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                  provider: context
-                                      .favouriteWallsAdapter(listen: false)
-                                      .liked![index]["provider"]
-                                      .toString(),
-                                  url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                  thumbUrl: context
-                                      .favouriteWallsAdapter(listen: false)
-                                      .liked![index]["thumb"]
-                                      .toString(),
+                                  id: context.favouriteWallsAdapter(listen: false).liked![index].id,
+                                  source: WallpaperSourceX.fromWire(
+                                    context.favouriteWallsAdapter(listen: false).liked![index].provider,
+                                  ),
+                                  url: context.favouriteWallsAdapter(listen: false).liked![index].url,
+                                  thumbUrl: context.favouriteWallsAdapter(listen: false).liked![index].thumb,
                                 ),
-                                EditButton(
-                                  url: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
-                                ),
+                                EditButton(url: context.favouriteWallsAdapter(listen: false).liked![index].url),
                               ],
                             ),
                           ),
@@ -855,7 +846,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           shakeController.forward(from: 0.0);
                         },
                         child: CachedNetworkImage(
-                          imageUrl: context.favouriteWallsAdapter(listen: false).liked![index]["url"].toString(),
+                          imageUrl: context.favouriteWallsAdapter(listen: false).liked![index].url,
                           imageBuilder: (context, imageProvider) => Screenshot(
                             controller: screenshotController,
                             child: Container(
@@ -923,7 +914,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                       child: IconButton(
                         onPressed: () {
                           _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                          final link = context.favouriteWallsAdapter(listen: false).liked![index]["url"];
+                          final link = context.favouriteWallsAdapter(listen: false).liked![index].url;
                           Navigator.push(
                             context,
                             PageRouteBuilder(
@@ -934,7 +925,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                   child: ClockOverlay(
                                     colorChanged: colorChanged,
                                     accent: accent,
-                                    link: link.toString(),
+                                    link: link,
                                     file: false,
                                   ),
                                 );
@@ -983,7 +974,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           logger.d(onError.toString());
                         });
                   } else {
-                    (main.prefs.get('optimisedWallpapers') ?? true) == true
+                    _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                         ? screenshotController
                               .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                               .then((Uint8List? image) async {
@@ -1072,11 +1063,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          context
-                                              .favouriteWallsAdapter(listen: false)
-                                              .liked![index]["id"]
-                                              .toString()
-                                              .toUpperCase(),
+                                          context.favouriteWallsAdapter(listen: false).liked![index].id.toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
@@ -1091,7 +1078,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            "${context.favouriteWallsAdapter(listen: false).liked![index]["views"]}",
+                                            context.favouriteWallsAdapter(listen: false).liked![index].views,
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -1108,7 +1095,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            "${context.favouriteWallsAdapter(listen: false).liked![index]["fav"]}",
+                                            context.favouriteWallsAdapter(listen: false).liked![index].fav,
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -1125,7 +1112,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                       Row(
                                         children: [
                                           Text(
-                                            "${context.favouriteWallsAdapter(listen: false).liked![index]["resolution"]}",
+                                            context.favouriteWallsAdapter(listen: false).liked![index].resolution,
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -1142,7 +1129,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                                       Row(
                                         children: [
                                           Text(
-                                            "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index]["size"].toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                            "${double.parse((double.parse(context.favouriteWallsAdapter(listen: false).liked![index].size) / 1000000).toString()).toStringAsFixed(2)} MB",
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -1165,178 +1152,40 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                             flex: 5,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: context.favouriteWallsAdapter(listen: false).liked![index]["provider"] == null
-                                  ? downloadLinkBackwards == null
-                                        ? <Widget>[
-                                            SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["provider"] ==
-                                                        null
-                                                  ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                  : context
-                                                        .favouriteWallsAdapter(listen: false)
-                                                        .liked![index]["url"]
-                                                        .toString(),
-                                            ),
-                                            FavouriteWallpaperButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              trash: true,
-                                            ),
-                                            ShareButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              url: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                              thumbUrl: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["thumb"]
-                                                  .toString(),
-                                            ),
-                                            EditButton(
-                                              url: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                            ),
-                                          ]
-                                        : <Widget>[
-                                            DownloadButton(
-                                              colorChanged: colorChanged,
-                                              link: screenshotTaken ? _imageFile.path : downloadLinkBackwards,
-                                              isPremiumContent: app_state.isPremiumWall(
-                                                app_state.premiumCollections,
-                                                context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["collections"]
-                                                        as List? ??
-                                                    [],
-                                              ),
-                                              contentId: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  ?.toString(),
-                                              sourceContext: 'favourite_wall_view',
-                                            ),
-                                            SetWallpaperButton(
-                                              colorChanged: colorChanged,
-                                              url: screenshotTaken
-                                                  ? _imageFile.path
-                                                  : context
-                                                            .favouriteWallsAdapter(listen: false)
-                                                            .liked![index]["provider"] ==
-                                                        null
-                                                  ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                                  : context
-                                                        .favouriteWallsAdapter(listen: false)
-                                                        .liked![index]["url"]
-                                                        .toString(),
-                                            ),
-                                            FavouriteWallpaperButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              trash: true,
-                                            ),
-                                            ShareButton(
-                                              id: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["id"]
-                                                  .toString(),
-                                              provider: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["provider"]
-                                                  .toString(),
-                                              url: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                              thumbUrl: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["thumb"]
-                                                  .toString(),
-                                            ),
-                                          ]
-                                  : <Widget>[
-                                      DownloadButton(
-                                        colorChanged: colorChanged,
-                                        link: screenshotTaken
-                                            ? _imageFile.path
-                                            : context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                        isPremiumContent: app_state.isPremiumWall(
-                                          app_state.premiumCollections,
-                                          context.favouriteWallsAdapter(listen: false).liked![index]["collections"]
-                                                  as List? ??
-                                              [],
-                                        ),
-                                        contentId: context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![index]["id"]
-                                            ?.toString(),
-                                        sourceContext: 'favourite_wall_view',
-                                      ),
-                                      SetWallpaperButton(
-                                        colorChanged: colorChanged,
-                                        url: screenshotTaken
-                                            ? _imageFile.path
-                                            : context.favouriteWallsAdapter(listen: false).liked![index]["provider"] ==
-                                                  null
-                                            ? "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png"
-                                            : context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]["url"]
-                                                  .toString(),
-                                      ),
-                                      FavouriteWallpaperButton(
-                                        id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                        provider: context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![index]["provider"]
-                                            .toString(),
-                                        trash: true,
-                                      ),
-                                      ShareButton(
-                                        id: context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString(),
-                                        provider: context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![index]["provider"]
-                                            .toString(),
-                                        url: context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![index]["url"]
-                                            .toString(),
-                                        thumbUrl: context
-                                            .favouriteWallsAdapter(listen: false)
-                                            .liked![index]["thumb"]
-                                            .toString(),
-                                      ),
-                                    ],
+                              children: <Widget>[
+                                DownloadButton(
+                                  colorChanged: colorChanged,
+                                  link: screenshotTaken
+                                      ? _imageFile.path
+                                      : context.favouriteWallsAdapter(listen: false).liked![index].url,
+                                  isPremiumContent: app_state.isPremiumWall(
+                                    app_state.premiumCollections,
+                                    context.favouriteWallsAdapter(listen: false).liked![index].collections as List? ??
+                                        [],
+                                  ),
+                                  contentId: context.favouriteWallsAdapter(listen: false).liked![index].id,
+                                  sourceContext: 'favourite_wall_view',
+                                ),
+                                if (!hideSetWallpaperUi)
+                                  SetWallpaperButton(
+                                    colorChanged: colorChanged,
+                                    url: screenshotTaken
+                                        ? _imageFile.path
+                                        : context.favouriteWallsAdapter(listen: false).liked![index].url,
+                                  ),
+                                FavouriteWallpaperButton(
+                                  wall: context.favouriteWallsAdapter(listen: false).liked![index],
+                                  trash: true,
+                                ),
+                                ShareButton(
+                                  id: context.favouriteWallsAdapter(listen: false).liked![index].id,
+                                  source: WallpaperSourceX.fromWire(
+                                    context.favouriteWallsAdapter(listen: false).liked![index].provider,
+                                  ),
+                                  url: context.favouriteWallsAdapter(listen: false).liked![index].url,
+                                  thumbUrl: context.favouriteWallsAdapter(listen: false).liked![index].thumb,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1375,10 +1224,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         },
                         child: CachedNetworkImage(
                           imageUrl:
-                              "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg",
+                              "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index].id.substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index].id}.jpg",
                           imageBuilder: (context, imageProvider) {
                             downloadLinkBackwards =
-                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.jpg";
+                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index].id.substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index].id}.jpg";
                             return Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1410,10 +1259,10 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                           ),
                           errorWidget: (context, url, error) => CachedNetworkImage(
                             imageUrl:
-                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png",
+                                "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index].id.substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index].id}.png",
                             imageBuilder: (context, imageProvider) {
                               downloadLinkBackwards =
-                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.png";
+                                  "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index].id.substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index].id}.png";
                               return Screenshot(
                                 controller: screenshotController,
                                 child: Container(
@@ -1479,7 +1328,7 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
                         onPressed: () {
                           _trackAction(AnalyticsActionValue.clockOverlayOpened);
                           final link =
-                              "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index]["id"].toString().substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index]["id"]}.${context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().substring(context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length - 3, context.favouriteWallsAdapter(listen: false).liked![index]["thumb"].toString().length)}";
+                              "https://w.wallhaven.cc/full/${context.favouriteWallsAdapter(listen: false).liked![index].id.substring(0, 2)}/wallhaven-${context.favouriteWallsAdapter(listen: false).liked![index].id}.${context.favouriteWallsAdapter(listen: false).liked![index].thumb.substring(context.favouriteWallsAdapter(listen: false).liked![index].thumb.length - 3, context.favouriteWallsAdapter(listen: false).liked![index].thumb.length)}";
                           Navigator.push(
                             context,
                             PageRouteBuilder(

@@ -62,7 +62,7 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
   Future<void> _onMarkReadRequested(_MarkReadRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
-    final result = await _markNotificationAsReadUseCase(MarkNotificationAsReadParams(index: event.index));
+    final result = await _markNotificationAsReadUseCase(MarkNotificationAsReadParams(id: event.id));
 
     result.fold(
       onSuccess: (items) => emit(
@@ -81,7 +81,7 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
   Future<void> _onDeleteRequested(_DeleteRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
-    final result = await _deleteNotificationUseCase(DeleteNotificationParams(index: event.index));
+    final result = await _deleteNotificationUseCase(DeleteNotificationParams(id: event.id));
 
     result.fold(
       onSuccess: (items) => emit(

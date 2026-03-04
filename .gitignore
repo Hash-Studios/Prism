@@ -68,3 +68,4 @@ sentry.properties
 infra/cloudflare/worker/.wrangler/**
 AuthKey.p8
 functions/node_modules/**
+dead_code_report.html

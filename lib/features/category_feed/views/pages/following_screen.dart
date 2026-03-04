@@ -1,18 +1,22 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
-import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/followingFeed.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -49,7 +53,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     unawaited(_loadFollowingFeed());
   }
 
-  List<String> _normalizeEmails(List<dynamic> raw) {
+  List<String> _normalizeEmails(List<Object?> raw) {
     return raw
         .map((value) => value.toString().trim())
         .where((value) => value.isNotEmpty)
@@ -81,7 +85,10 @@ class _FollowingScreenState extends State<FollowingScreen> {
     if (currentUserDocs.isEmpty) {
       return <String>[];
     }
-    final List<String> remote = _normalizeEmails(currentUserDocs.first["following"] as List? ?? <dynamic>[]);
+    final Object? followingRaw = _mapValue(currentUserDocs.first, 'following');
+    final List<String> remote = _normalizeEmails(
+      (followingRaw is List) ? followingRaw.whereType<Object?>().toList(growable: false) : const <Object?>[],
+    );
     app_state.prismUser.following = remote;
     return remote;
   }
@@ -98,12 +105,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
   List<_FirestoreDoc> _dedupeSortAndLimit(List<_FirestoreDoc> docs) {
     final Map<String, _FirestoreDoc> unique = <String, _FirestoreDoc>{};
     for (final _FirestoreDoc doc in docs) {
-      final dynamic rawId = doc['id'];
-      final String key = rawId?.toString().trim().isNotEmpty == true ? rawId.toString() : doc.id;
+      final String key = doc.wallId.isNotEmpty ? doc.wallId : doc.id;
       unique[key] = doc;
     }
     final List<_FirestoreDoc> result = unique.values.toList(growable: false)
-      ..sort((a, b) => _toDateTime(b["createdAt"]).compareTo(_toDateTime(a["createdAt"])));
+      ..sort((a, b) => a.createdAt.isBefore(b.createdAt) ? 1 : -1);
     if (result.length <= _maxFeedItems) {
       return result;
     }
@@ -222,6 +228,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
     );
   }
 
+  Object? _mapValue(Map<String, dynamic> map, String key) => map[key];
+
   @override
   void dispose() {
     _feedSubscription?.cancel();
@@ -275,7 +283,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 ),
               );
             }
-            return FollowingTile(index, finalDocs);
+            return _FollowingTile(index, finalDocs);
           },
         ),
       ),
@@ -283,15 +291,15 @@ class _FollowingScreenState extends State<FollowingScreen> {
   }
 }
 
-class FollowingTile extends StatefulWidget {
+class _FollowingTile extends StatefulWidget {
   final int index;
   final List<_FirestoreDoc> finalDocs;
-  const FollowingTile(this.index, this.finalDocs);
+  const _FollowingTile(this.index, this.finalDocs);
   @override
   _FollowingTileState createState() => _FollowingTileState();
 }
 
-class _FollowingTileState extends State<FollowingTile> {
+class _FollowingTileState extends State<_FollowingTile> {
   final now = DateTime.now().toUtc();
   double? height;
 
@@ -313,7 +321,7 @@ class _FollowingTileState extends State<FollowingTile> {
           PremiumBannerFollowingFeed(
             comparator: !app_state.isPremiumWall(
               app_state.premiumCollections,
-              widget.finalDocs[widget.index]["collections"] as List? ?? [],
+              widget.finalDocs[widget.index].collections,
             ),
             child: Stack(
               children: [
@@ -326,24 +334,24 @@ class _FollowingTileState extends State<FollowingTile> {
                           action: AnalyticsActionValue.tileOpened,
                           sourceContext: 'following_screen_tile',
                           itemType: ItemTypeValue.wallpaper,
-                          itemId: widget.finalDocs[widget.index]["id"]?.toString(),
+                          itemId: widget.finalDocs[widget.index].wallId,
                           index: widget.index,
                         ),
                       ),
                     );
                     context.router.push(
                       ShareWallpaperViewRoute(
-                        wallId: widget.finalDocs[widget.index]["id"].toString(),
-                        provider: widget.finalDocs[widget.index]["wallpaper_provider"].toString(),
-                        wallpaperUrl: widget.finalDocs[widget.index]["wallpaper_url"].toString(),
-                        thumbnailUrl: widget.finalDocs[widget.index]["wallpaper_thumb"].toString(),
+                        wallId: widget.finalDocs[widget.index].wallId,
+                        source: WallpaperSourceX.fromWire(widget.finalDocs[widget.index].wallpaperProvider),
+                        wallpaperUrl: widget.finalDocs[widget.index].wallpaperUrl,
+                        thumbnailUrl: widget.finalDocs[widget.index].wallpaperThumb,
                       ),
                     );
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(25),
                     child: CachedNetworkImage(
-                      imageUrl: widget.finalDocs[widget.index]["wallpaper_thumb"] as String,
+                      imageUrl: widget.finalDocs[widget.index].wallpaperThumb,
                       placeholder: (context, url) {
                         return Container(height: 400, color: Theme.of(context).hintColor);
                       },
@@ -366,14 +374,12 @@ class _FollowingTileState extends State<FollowingTile> {
                           action: AnalyticsActionValue.actionChipTapped,
                           sourceContext: 'following_screen_profile_chip',
                           itemType: ItemTypeValue.user,
-                          itemId: widget.finalDocs[widget.index]["email"]?.toString(),
+                          itemId: widget.finalDocs[widget.index].email,
                           index: widget.index,
                         ),
                       ),
                     );
-                    context.router.push(
-                      ProfileRoute(profileIdentifier: widget.finalDocs[widget.index]["email"].toString()),
-                    );
+                    context.router.push(ProfileRoute(profileIdentifier: widget.finalDocs[widget.index].email));
                   },
                   child: Row(
                     children: [
@@ -383,13 +389,11 @@ class _FollowingTileState extends State<FollowingTile> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(0, 0, 4, 0),
                             child: CircleAvatar(
-                              backgroundImage: CachedNetworkImageProvider(
-                                widget.finalDocs[widget.index]["userPhoto"] as String,
-                              ),
+                              backgroundImage: CachedNetworkImageProvider(widget.finalDocs[widget.index].userPhoto),
                               radius: 16,
                             ),
                           ),
-                          if (app_state.verifiedUsers.contains(widget.finalDocs[widget.index]["email"].toString()))
+                          if (app_state.verifiedUsers.contains(widget.finalDocs[widget.index].email))
                             Container(
                               width: 15,
                               height: 15,
@@ -417,7 +421,7 @@ class _FollowingTileState extends State<FollowingTile> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.2,
                             child: Text(
-                              widget.finalDocs[widget.index]["by"].toString(),
+                              widget.finalDocs[widget.index].by,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
@@ -430,9 +434,7 @@ class _FollowingTileState extends State<FollowingTile> {
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.2,
                             child: Text(
-                              timeago.format(
-                                now.subtract(now.difference(_toDateTime(widget.finalDocs[widget.index]["createdAt"]))),
-                              ),
+                              timeago.format(now.subtract(now.difference(widget.finalDocs[widget.index].createdAt))),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
@@ -447,17 +449,28 @@ class _FollowingTileState extends State<FollowingTile> {
                   ),
                 ),
                 const Spacer(),
-                if (app_state.isPremiumWall(
-                          app_state.premiumCollections,
-                          widget.finalDocs[widget.index]["collections"] as List? ?? [],
-                        ) ==
+                if (app_state.isPremiumWall(app_state.premiumCollections, widget.finalDocs[widget.index].collections) ==
                         true &&
                     app_state.prismUser.premium != true)
                   Container()
                 else
                   FavIconButton(
-                    id: widget.finalDocs[widget.index]["id"] as String?,
-                    prism: widget.finalDocs[widget.index].data(),
+                    id: widget.finalDocs[widget.index].wallId,
+                    wall: PrismFavouriteWall(
+                      id: widget.finalDocs[widget.index].wallId,
+                      wallpaper: PrismWallpaper(
+                        core: WallpaperCore(
+                          id: widget.finalDocs[widget.index].wallId,
+                          source: WallpaperSource.prism,
+                          fullUrl: widget.finalDocs[widget.index].wallpaperUrl,
+                          thumbnailUrl: widget.finalDocs[widget.index].wallpaperThumb,
+                          resolution: widget.finalDocs[widget.index].resolution,
+                          sizeBytes: widget.finalDocs[widget.index].size,
+                          category: widget.finalDocs[widget.index].category,
+                          createdAt: widget.finalDocs[widget.index].createdAt,
+                        ),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -474,8 +487,35 @@ class _FirestoreDoc {
   final String id;
   final Map<String, dynamic> payload;
 
+  String get wallId {
+    final String value = _string('id');
+    return value.isNotEmpty ? value : id;
+  }
+
+  String get wallpaperProvider => _string('wallpaper_provider');
+  String get resolution => _string('resolution');
+  int get size => _int('size');
+  String get category => _string('category');
+  String get wallpaperUrl => _string('wallpaper_url');
+  String get wallpaperThumb => _string('wallpaper_thumb');
+  String get email => _string('email');
+  String get userPhoto => _string('userPhoto');
+  String get by => _string('by');
+  DateTime get createdAt => _toDateTime(_value('createdAt'));
+  List<String> get collections {
+    final Object? value = _value('collections');
+    if (value is List) {
+      return value.map((entry) => entry?.toString() ?? '').where((entry) => entry.isNotEmpty).toList(growable: false);
+    }
+    return const <String>[];
+  }
+
   Map<String, dynamic> data() => payload;
-  dynamic operator [](String key) => payload[key];
+  dynamic operator [](String key) => _value(key);
+
+  Object? _value(String key) => payload[key];
+  String _string(String key) => _value(key)?.toString() ?? '';
+  int _int(String key) => int.tryParse(_value(key)?.toString() ?? '0') ?? 0;
 }
 
 DateTime _toDateTime(dynamic value) {

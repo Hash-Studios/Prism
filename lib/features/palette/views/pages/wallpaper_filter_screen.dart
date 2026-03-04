@@ -6,10 +6,11 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -17,7 +18,6 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/palette/views/pages/custom_filters.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -598,7 +598,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     final String filterName = filter.name;
     if (cachedFilters[filterName] == null) {
       return FutureBuilder<List<int>>(
-        future: compute(applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
+        future: compute(_applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
         builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
@@ -656,7 +656,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<File> saveFilteredImage() async {
     final imageFile = await _localFile;
-    final List<int> finalFilterImageBytes = await compute(applyFilter, <String, dynamic>{
+    final List<int> finalFilterImageBytes = await compute(_applyFilter, <String, dynamic>{
       "filter": _filter,
       "image": finalImage,
       "filename": finalFilename,
@@ -667,7 +667,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Widget _buildFilteredImage(Filter? filter, imagelib.Image? image, String? filename) {
     return FutureBuilder<List<int>>(
-      future: compute(applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
+      future: compute(_applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
       builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.none:
@@ -755,7 +755,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 }
 
 ///The global applyfilter function
-List<int> applyFilter(Map<String, dynamic> params) {
+List<int> _applyFilter(Map<String, dynamic> params) {
   final Filter? filter = params["filter"] as Filter?;
   final imagelib.Image image = params["image"] as imagelib.Image;
   final String filename = params["filename"] as String;
@@ -766,11 +766,4 @@ List<int> applyFilter(Map<String, dynamic> params) {
   final imagelib.Image image0 = imagelib.Image.fromBytes(image.width, image.height, bytes);
 
   return bytes = imagelib.encodeNamedImage(image0, filename)!;
-}
-
-///The global buildThumbnail function
-List<int> buildThumbnail(Map<String, dynamic> params) {
-  final int width = params["width"] as int;
-  params["image"] = imagelib.copyResize(params["image"] as imagelib.Image, width: width);
-  return applyFilter(params);
 }

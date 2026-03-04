@@ -82,6 +82,7 @@ dependencies:
   rxdart: ^0.28.0
   screenshot: ^3.0.0
   sentry_flutter: ^9.13.0
+  shared_preferences: ^2.3.2
   share_plus: ^11.1.0
   sliding_up_panel: ^2.0.0+1
   timeago: ^3.0.2

@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 
 class DeepLinkParser {
@@ -26,7 +27,13 @@ class DeepLinkParser {
     final String root = segments.first.toLowerCase();
     if (_shareRoots.contains(root)) {
       final String wallId = _firstNonEmpty(<String?>[segments.safeAt(1), uri.queryParameters['id']]);
-      final String provider = _firstNonEmpty(<String?>[uri.queryParameters['provider']]);
+      final WallpaperSource source = WallpaperSourceX.fromWire(
+        _firstNonEmpty(<String?>[
+          uri.queryParameters['source'],
+          uri.queryParameters['provider'],
+          uri.queryParameters['wallpaper_provider'],
+        ]),
+      );
       final String wallpaperUrl = _firstNonEmpty(<String?>[
         uri.queryParameters['url'],
         uri.queryParameters['wallpaperUrl'],
@@ -40,12 +47,12 @@ class DeepLinkParser {
         uri.queryParameters['wallpaper_thumb'],
         wallpaperUrl,
       ]);
-      if (wallId.isEmpty || provider.isEmpty || (wallpaperUrl.isEmpty && thumbnailUrl.isEmpty)) {
+      if (wallId.isEmpty || (wallpaperUrl.isEmpty && thumbnailUrl.isEmpty)) {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ShareLinkIntent(
         wallId: wallId,
-        provider: provider,
+        source: source,
         wallpaperUrl: wallpaperUrl,
         thumbnailUrl: thumbnailUrl,
         rawUri: uri.toString(),

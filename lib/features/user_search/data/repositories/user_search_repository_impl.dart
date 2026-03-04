@@ -45,9 +45,22 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
               coverPhoto: data['coverPhoto']?.toString(),
               bio: (data['bio'] ?? '').toString(),
               links:
-                  (data['links'] as Map?)?.map((key, value) => MapEntry(key.toString(), value)) ?? <String, dynamic>{},
-              followers: (data['followers'] as List?)?.toList(growable: false) ?? <dynamic>[],
-              following: (data['following'] as List?)?.toList(growable: false) ?? <dynamic>[],
+                  (data['links'] as Map?)?.map((key, value) => MapEntry(key.toString(), value?.toString() ?? '')) ??
+                  const <String, String>{},
+              followers:
+                  (data['followers'] as List?)
+                      ?.whereType<Object?>()
+                      .map((Object? value) => value?.toString() ?? '')
+                      .where((value) => value.isNotEmpty)
+                      .toList(growable: false) ??
+                  const <String>[],
+              following:
+                  (data['following'] as List?)
+                      ?.whereType<Object?>()
+                      .map((Object? value) => value?.toString() ?? '')
+                      .where((value) => value.isNotEmpty)
+                      .toList(growable: false) ??
+                  const <String>[],
               premium: (data['premium'] ?? false) as bool,
             );
           })

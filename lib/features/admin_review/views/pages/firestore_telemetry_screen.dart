@@ -24,7 +24,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
   int _totalEvents = 0;
   int _docReads = 0;
   int _docWrites = 0;
-  List<MapEntry<String, Map<String, int>>> _byCollection = <MapEntry<String, Map<String, int>>>[];
+  List<MapEntry<String, _CollectionStats>> _byCollection = <MapEntry<String, _CollectionStats>>[];
   List<MapEntry<String, int>> _byOperation = <MapEntry<String, int>>[];
   List<MapEntry<String, int>> _bySourceTag = <MapEntry<String, int>>[];
   String _rawContent = '';
@@ -57,55 +57,53 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
         return;
       }
       final content = await file.readAsString();
-      final events = <Map<String, dynamic>>[];
+      final events = <_TelemetryEvent>[];
       for (final line in content.split('\n')) {
         if (line.trim().isEmpty) continue;
-        try {
-          events.add(jsonDecode(line) as Map<String, dynamic>);
-        } catch (_) {}
+        final event = _TelemetryEvent.tryParse(line);
+        if (event != null) {
+          events.add(event);
+        }
       }
 
       final readOps = events.where((e) {
-        final op = e['operation'] as String?;
-        return op == 'queryGet' || op == 'docGet' || op == 'streamSubscribe';
+        return e.operation == 'queryGet' || e.operation == 'docGet' || e.operation == 'streamSubscribe';
       }).toList();
       final writeOps = events.where((e) {
-        final op = e['operation'] as String?;
-        return op == 'set' || op == 'update' || op == 'delete' || op == 'add' || op == 'transaction';
+        return e.operation == 'set' ||
+            e.operation == 'update' ||
+            e.operation == 'delete' ||
+            e.operation == 'add' ||
+            e.operation == 'transaction';
       }).toList();
 
-      final docReads = readOps.fold<int>(0, (sum, e) {
-        final c = e['resultCount'];
-        return sum + (c is int ? c : 1);
-      });
+      final docReads = readOps.fold<int>(0, (sum, e) => sum + (e.resultCount ?? 1));
       final docWrites = writeOps.length;
 
-      final byCollection = <String, Map<String, int>>{};
+      final byCollection = <String, _CollectionStats>{};
       for (final e in events) {
-        final c = e['collection'] as String? ?? 'unknown';
-        byCollection.putIfAbsent(c, () => {'reads': 0, 'writes': 0, 'ops': 0});
-        byCollection[c]!['ops'] = byCollection[c]!['ops']! + 1;
-        final op = e['operation'] as String? ?? '';
+        final c = e.collection;
+        final stats = byCollection.putIfAbsent(c, _CollectionStats.new);
+        stats.ops += 1;
+        final op = e.operation;
         if (op == 'queryGet' || op == 'docGet' || op == 'streamSubscribe') {
-          final count = e['resultCount'];
-          byCollection[c]!['reads'] = byCollection[c]!['reads']! + (count is int ? count : 1);
+          stats.reads += e.resultCount ?? 1;
         } else if (op == 'set' || op == 'update' || op == 'delete' || op == 'add' || op == 'transaction') {
-          byCollection[c]!['writes'] = byCollection[c]!['writes']! + 1;
+          stats.writes += 1;
         }
       }
-      final byCollectionList = byCollection.entries.toList()
-        ..sort((a, b) => (b.value['reads'] ?? 0).compareTo(a.value['reads'] ?? 0));
+      final byCollectionList = byCollection.entries.toList()..sort((a, b) => b.value.reads.compareTo(a.value.reads));
 
       final byOp = <String, int>{};
       for (final e in events) {
-        final op = e['operation'] as String? ?? 'unknown';
+        final op = e.operation;
         byOp[op] = (byOp[op] ?? 0) + 1;
       }
       final byOpList = byOp.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
       final byTag = <String, int>{};
       for (final e in events) {
-        final tag = e['sourceTag'] as String? ?? 'unknown';
+        final tag = e.sourceTag;
         byTag[tag] = (byTag[tag] ?? 0) + 1;
       }
       final byTagList = byTag.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
@@ -215,14 +213,12 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _byCollection.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, i) {
                             final e = _byCollection[i];
                             return ListTile(
                               title: Text(e.key),
-                              subtitle: Text(
-                                '${e.value['reads']} reads, ${e.value['writes']} writes, ${e.value['ops']} ops',
-                              ),
+                              subtitle: Text('${e.value.reads} reads, ${e.value.writes} writes, ${e.value.ops} ops'),
                             );
                           },
                         ),
@@ -237,7 +233,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _byOperation.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, i) {
                             final e = _byOperation[i];
                             return ListTile(title: Text(e.key), trailing: Text('${e.value}'));
@@ -254,7 +250,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _bySourceTag.length > 15 ? 15 : _bySourceTag.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, i) {
                             final e = _bySourceTag[i];
                             return ListTile(
@@ -270,6 +266,59 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
               ),
             ),
     );
+  }
+}
+
+class _CollectionStats {
+  int reads = 0;
+  int writes = 0;
+  int ops = 0;
+}
+
+class _TelemetryEvent {
+  const _TelemetryEvent({
+    required this.operation,
+    required this.resultCount,
+    required this.collection,
+    required this.sourceTag,
+  });
+
+  final String operation;
+  final int? resultCount;
+  final String collection;
+  final String sourceTag;
+
+  static _TelemetryEvent? tryParse(String line) {
+    try {
+      final Object? raw = jsonDecode(line);
+      if (raw is! Map<String, dynamic>) {
+        return null;
+      }
+      return _TelemetryEvent(
+        operation: _readString(raw, 'operation', fallback: 'unknown'),
+        resultCount: _readInt(raw, 'resultCount'),
+        collection: _readString(raw, 'collection', fallback: 'unknown'),
+        sourceTag: _readString(raw, 'sourceTag', fallback: 'unknown'),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Object? _readValue(Map<String, dynamic> data, String key) => data[key];
+
+  static String _readString(Map<String, dynamic> data, String key, {required String fallback}) {
+    final Object? value = _readValue(data, key);
+    final String output = value?.toString().trim() ?? '';
+    return output.isEmpty ? fallback : output;
+  }
+
+  static int? _readInt(Map<String, dynamic> data, String key) {
+    final Object? value = _readValue(data, key);
+    if (value is int) {
+      return value;
+    }
+    return int.tryParse(value?.toString() ?? '');
   }
 }
 

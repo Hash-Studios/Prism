@@ -227,16 +227,12 @@ class DownloadRoute extends PageRouteInfo<void> {
 class DownloadWallpaperRoute extends PageRouteInfo<DownloadWallpaperRouteArgs> {
   DownloadWallpaperRoute({
     Key? key,
-    required String provider,
+    required WallpaperSource source,
     required File file,
     List<PageRouteInfo>? children,
   }) : super(
          DownloadWallpaperRoute.name,
-         args: DownloadWallpaperRouteArgs(
-           key: key,
-           provider: provider,
-           file: file,
-         ),
+         args: DownloadWallpaperRouteArgs(key: key, source: source, file: file),
          initialChildren: children,
        );
 
@@ -248,7 +244,7 @@ class DownloadWallpaperRoute extends PageRouteInfo<DownloadWallpaperRouteArgs> {
       final args = data.argsAs<DownloadWallpaperRouteArgs>();
       return DownloadWallpaperScreen(
         key: args.key,
-        provider: args.provider,
+        source: args.source,
         file: args.file,
       );
     },
@@ -258,30 +254,30 @@ class DownloadWallpaperRoute extends PageRouteInfo<DownloadWallpaperRouteArgs> {
 class DownloadWallpaperRouteArgs {
   const DownloadWallpaperRouteArgs({
     this.key,
-    required this.provider,
+    required this.source,
     required this.file,
   });
 
   final Key? key;
 
-  final String provider;
+  final WallpaperSource source;
 
   final File file;
 
   @override
   String toString() {
-    return 'DownloadWallpaperRouteArgs{key: $key, provider: $provider, file: $file}';
+    return 'DownloadWallpaperRouteArgs{key: $key, source: $source, file: $file}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! DownloadWallpaperRouteArgs) return false;
-    return key == other.key && provider == other.provider && file == other.file;
+    return key == other.key && source == other.source && file == other.file;
   }
 
   @override
-  int get hashCode => key.hashCode ^ provider.hashCode ^ file.hashCode;
+  int get hashCode => key.hashCode ^ source.hashCode ^ file.hashCode;
 }
 
 /// generated route for
@@ -571,7 +567,7 @@ class FirestoreTelemetryRoute extends PageRouteInfo<void> {
 class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
   FollowersRoute({
     Key? key,
-    required List<dynamic> followers,
+    required List<String> followers,
     List<PageRouteInfo>? children,
   }) : super(
          FollowersRoute.name,
@@ -595,7 +591,7 @@ class FollowersRouteArgs {
 
   final Key? key;
 
-  final List<dynamic> followers;
+  final List<String> followers;
 
   @override
   String toString() {
@@ -607,12 +603,12 @@ class FollowersRouteArgs {
     if (identical(this, other)) return true;
     if (other is! FollowersRouteArgs) return false;
     return key == other.key &&
-        const ListEquality<dynamic>().equals(followers, other.followers);
+        const ListEquality<String>().equals(followers, other.followers);
   }
 
   @override
   int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(followers);
+      key.hashCode ^ const ListEquality<String>().hash(followers);
 }
 
 /// generated route for
@@ -658,108 +654,25 @@ class NotificationRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return NotificationScreen();
+      return const NotificationScreen();
     },
   );
 }
 
 /// generated route for
-/// [OnboardingScreen]
-class OnboardingRoute extends PageRouteInfo<void> {
-  const OnboardingRoute({List<PageRouteInfo>? children})
-    : super(OnboardingRoute.name, initialChildren: children);
+/// [OnboardingV2Shell]
+class OnboardingV2ShellRoute extends PageRouteInfo<void> {
+  const OnboardingV2ShellRoute({List<PageRouteInfo>? children})
+    : super(OnboardingV2ShellRoute.name, initialChildren: children);
 
-  static const String name = 'OnboardingRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return OnboardingScreen();
-    },
-  );
-}
-
-/// generated route for
-/// [OptionalInfo3]
-class OptionalInfo3Route extends PageRouteInfo<OptionalInfo3RouteArgs> {
-  OptionalInfo3Route({
-    required String heading,
-    required String subheading,
-    required bool showSkip,
-    String? skipText,
-    required String? doneText,
-    List<PageRouteInfo>? children,
-  }) : super(
-         OptionalInfo3Route.name,
-         args: OptionalInfo3RouteArgs(
-           heading: heading,
-           subheading: subheading,
-           showSkip: showSkip,
-           skipText: skipText,
-           doneText: doneText,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'OptionalInfo3Route';
+  static const String name = 'OnboardingV2ShellRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<OptionalInfo3RouteArgs>();
-      return OptionalInfo3(
-        heading: args.heading,
-        subheading: args.subheading,
-        showSkip: args.showSkip,
-        skipText: args.skipText,
-        doneText: args.doneText,
-      );
+      return const OnboardingV2Shell();
     },
   );
-}
-
-class OptionalInfo3RouteArgs {
-  const OptionalInfo3RouteArgs({
-    required this.heading,
-    required this.subheading,
-    required this.showSkip,
-    this.skipText,
-    required this.doneText,
-  });
-
-  final String heading;
-
-  final String subheading;
-
-  final bool showSkip;
-
-  final String? skipText;
-
-  final String? doneText;
-
-  @override
-  String toString() {
-    return 'OptionalInfo3RouteArgs{heading: $heading, subheading: $subheading, showSkip: $showSkip, skipText: $skipText, doneText: $doneText}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! OptionalInfo3RouteArgs) return false;
-    return heading == other.heading &&
-        subheading == other.subheading &&
-        showSkip == other.showSkip &&
-        skipText == other.skipText &&
-        doneText == other.doneText;
-  }
-
-  @override
-  int get hashCode =>
-      heading.hashCode ^
-      subheading.hashCode ^
-      showSkip.hashCode ^
-      skipText.hashCode ^
-      doneText.hashCode;
 }
 
 /// generated route for
@@ -998,7 +911,7 @@ class SearchTabRoute extends PageRouteInfo<void> {
 class SearchWallpaperRoute extends PageRouteInfo<SearchWallpaperRouteArgs> {
   SearchWallpaperRoute({
     Key? key,
-    required String selectedProvider,
+    required WallpaperSource source,
     required String query,
     required int index,
     required String link,
@@ -1007,7 +920,7 @@ class SearchWallpaperRoute extends PageRouteInfo<SearchWallpaperRouteArgs> {
          SearchWallpaperRoute.name,
          args: SearchWallpaperRouteArgs(
            key: key,
-           selectedProvider: selectedProvider,
+           source: source,
            query: query,
            index: index,
            link: link,
@@ -1023,7 +936,7 @@ class SearchWallpaperRoute extends PageRouteInfo<SearchWallpaperRouteArgs> {
       final args = data.argsAs<SearchWallpaperRouteArgs>();
       return SearchWallpaperScreen(
         key: args.key,
-        selectedProvider: args.selectedProvider,
+        source: args.source,
         query: args.query,
         index: args.index,
         link: args.link,
@@ -1035,7 +948,7 @@ class SearchWallpaperRoute extends PageRouteInfo<SearchWallpaperRouteArgs> {
 class SearchWallpaperRouteArgs {
   const SearchWallpaperRouteArgs({
     this.key,
-    required this.selectedProvider,
+    required this.source,
     required this.query,
     required this.index,
     required this.link,
@@ -1043,7 +956,7 @@ class SearchWallpaperRouteArgs {
 
   final Key? key;
 
-  final String selectedProvider;
+  final WallpaperSource source;
 
   final String query;
 
@@ -1053,7 +966,7 @@ class SearchWallpaperRouteArgs {
 
   @override
   String toString() {
-    return 'SearchWallpaperRouteArgs{key: $key, selectedProvider: $selectedProvider, query: $query, index: $index, link: $link}';
+    return 'SearchWallpaperRouteArgs{key: $key, source: $source, query: $query, index: $index, link: $link}';
   }
 
   @override
@@ -1061,7 +974,7 @@ class SearchWallpaperRouteArgs {
     if (identical(this, other)) return true;
     if (other is! SearchWallpaperRouteArgs) return false;
     return key == other.key &&
-        selectedProvider == other.selectedProvider &&
+        source == other.source &&
         query == other.query &&
         index == other.index &&
         link == other.link;
@@ -1070,7 +983,7 @@ class SearchWallpaperRouteArgs {
   @override
   int get hashCode =>
       key.hashCode ^
-      selectedProvider.hashCode ^
+      source.hashCode ^
       query.hashCode ^
       index.hashCode ^
       link.hashCode;
@@ -1280,7 +1193,7 @@ class ShareWallpaperViewRoute
   ShareWallpaperViewRoute({
     Key? key,
     required String wallId,
-    required String provider,
+    required WallpaperSource source,
     required String wallpaperUrl,
     required String thumbnailUrl,
     List<PageRouteInfo>? children,
@@ -1289,7 +1202,7 @@ class ShareWallpaperViewRoute
          args: ShareWallpaperViewRouteArgs(
            key: key,
            wallId: wallId,
-           provider: provider,
+           source: source,
            wallpaperUrl: wallpaperUrl,
            thumbnailUrl: thumbnailUrl,
          ),
@@ -1305,7 +1218,7 @@ class ShareWallpaperViewRoute
       return ShareWallpaperViewScreen(
         key: args.key,
         wallId: args.wallId,
-        provider: args.provider,
+        source: args.source,
         wallpaperUrl: args.wallpaperUrl,
         thumbnailUrl: args.thumbnailUrl,
       );
@@ -1317,7 +1230,7 @@ class ShareWallpaperViewRouteArgs {
   const ShareWallpaperViewRouteArgs({
     this.key,
     required this.wallId,
-    required this.provider,
+    required this.source,
     required this.wallpaperUrl,
     required this.thumbnailUrl,
   });
@@ -1326,7 +1239,7 @@ class ShareWallpaperViewRouteArgs {
 
   final String wallId;
 
-  final String provider;
+  final WallpaperSource source;
 
   final String wallpaperUrl;
 
@@ -1334,7 +1247,7 @@ class ShareWallpaperViewRouteArgs {
 
   @override
   String toString() {
-    return 'ShareWallpaperViewRouteArgs{key: $key, wallId: $wallId, provider: $provider, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl}';
+    return 'ShareWallpaperViewRouteArgs{key: $key, wallId: $wallId, source: $source, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl}';
   }
 
   @override
@@ -1343,7 +1256,7 @@ class ShareWallpaperViewRouteArgs {
     if (other is! ShareWallpaperViewRouteArgs) return false;
     return key == other.key &&
         wallId == other.wallId &&
-        provider == other.provider &&
+        source == other.source &&
         wallpaperUrl == other.wallpaperUrl &&
         thumbnailUrl == other.thumbnailUrl;
   }
@@ -1352,7 +1265,7 @@ class ShareWallpaperViewRouteArgs {
   int get hashCode =>
       key.hashCode ^
       wallId.hashCode ^
-      provider.hashCode ^
+      source.hashCode ^
       wallpaperUrl.hashCode ^
       thumbnailUrl.hashCode;
 }
@@ -1738,19 +1651,21 @@ class WallpaperFilterRouteArgs {
 class WallpaperRoute extends PageRouteInfo<WallpaperRouteArgs> {
   WallpaperRoute({
     Key? key,
-    required String provider,
+    required WallpaperSource source,
     required String link,
     int? index,
-    Map<String, dynamic>? wotdWallMap,
+    FeedItemEntity? item,
+    WallOfTheDayEntity? wotdWall,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperRoute.name,
          args: WallpaperRouteArgs(
            key: key,
-           provider: provider,
+           source: source,
            link: link,
            index: index,
-           wotdWallMap: wotdWallMap,
+           item: item,
+           wotdWall: wotdWall,
          ),
          initialChildren: children,
        );
@@ -1763,10 +1678,11 @@ class WallpaperRoute extends PageRouteInfo<WallpaperRouteArgs> {
       final args = data.argsAs<WallpaperRouteArgs>();
       return WallpaperScreen(
         key: args.key,
-        provider: args.provider,
+        source: args.source,
         link: args.link,
         index: args.index,
-        wotdWallMap: args.wotdWallMap,
+        item: args.item,
+        wotdWall: args.wotdWall,
       );
     },
   );
@@ -1775,25 +1691,28 @@ class WallpaperRoute extends PageRouteInfo<WallpaperRouteArgs> {
 class WallpaperRouteArgs {
   const WallpaperRouteArgs({
     this.key,
-    required this.provider,
+    required this.source,
     required this.link,
     this.index,
-    this.wotdWallMap,
+    this.item,
+    this.wotdWall,
   });
 
   final Key? key;
 
-  final String provider;
+  final WallpaperSource source;
 
   final String link;
 
   final int? index;
 
-  final Map<String, dynamic>? wotdWallMap;
+  final FeedItemEntity? item;
+
+  final WallOfTheDayEntity? wotdWall;
 
   @override
   String toString() {
-    return 'WallpaperRouteArgs{key: $key, provider: $provider, link: $link, index: $index, wotdWallMap: $wotdWallMap}';
+    return 'WallpaperRouteArgs{key: $key, source: $source, link: $link, index: $index, item: $item, wotdWall: $wotdWall}';
   }
 
   @override
@@ -1801,20 +1720,19 @@ class WallpaperRouteArgs {
     if (identical(this, other)) return true;
     if (other is! WallpaperRouteArgs) return false;
     return key == other.key &&
-        provider == other.provider &&
+        source == other.source &&
         link == other.link &&
         index == other.index &&
-        const MapEquality<String, dynamic>().equals(
-          wotdWallMap,
-          other.wotdWallMap,
-        );
+        item == other.item &&
+        wotdWall == other.wotdWall;
   }
 
   @override
   int get hashCode =>
       key.hashCode ^
-      provider.hashCode ^
+      source.hashCode ^
       link.hashCode ^
       index.hashCode ^
-      const MapEquality<String, dynamic>().hash(wotdWallMap);
+      item.hashCode ^
+      wotdWall.hashCode;
 }

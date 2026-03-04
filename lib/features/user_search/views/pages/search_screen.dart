@@ -1,5 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -9,7 +11,6 @@ import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/global/searchProviderMenu.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   String? selectedProvider;
   SearchProviderMenuItem? selectedProviders;
   final List providers = [
@@ -139,7 +141,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     isSubmitted = false;
 
-    selectedProvider = main.prefs.get('selectedSearchProvider', defaultValue: "WallHaven").toString();
+    selectedProvider = _settingsLocal.get<String>('selectedSearchProvider', defaultValue: "WallHaven");
     selectedProviders = selectedProvider == "WallHaven"
         ? providers[0] as SearchProviderMenuItem
         : providers[1] as SearchProviderMenuItem;
@@ -194,8 +196,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                 wdata.wallsS = [];
                                 _future = wdata.getWallsbyQuery(
                                   tex,
-                                  main.prefs.get('WHcategories') as int?,
-                                  main.prefs.get('WHpurity') as int?,
+                                  _settingsLocal.get<int>('WHcategories', defaultValue: 100),
+                                  _settingsLocal.get<int>('WHpurity', defaultValue: 100),
                                 );
                               } else if (selectedProvider == "Pexels") {
                                 pdata.wallsPS = [];
@@ -227,7 +229,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   setState(() {
                     selectedProviders = choice as SearchProviderMenuItem;
                     selectedProvider = choice.title.toString();
-                    main.prefs.put('selectedSearchProvider', selectedProvider);
+                    _settingsLocal.set('selectedSearchProvider', selectedProvider);
                     analytics.track(
                       SearchProviderChangedEvent(
                         fromProvider: previousProvider,
@@ -245,8 +247,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         wdata.wallsS = [];
                         _future = wdata.getWallsbyQuery(
                           searchController.text,
-                          main.prefs.get('WHcategories') as int?,
-                          main.prefs.get('WHpurity') as int?,
+                          _settingsLocal.get<int>('WHcategories', defaultValue: 100),
+                          _settingsLocal.get<int>('WHpurity', defaultValue: 100),
                         );
                       } else if (choice.title == "Pexels") {
                         pdata.wallsPS = [];
@@ -338,8 +340,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                   wdata.wallsS = [];
                                   _future = wdata.getWallsbyQuery(
                                     tags[index],
-                                    main.prefs.get('WHcategories') as int?,
-                                    main.prefs.get('WHpurity') as int?,
+                                    _settingsLocal.get<int>('WHcategories', defaultValue: 100),
+                                    _settingsLocal.get<int>('WHpurity', defaultValue: 100),
                                   );
                                 } else if (selectedProvider == "Pexels") {
                                   pdata.wallsPS = [];
@@ -359,7 +361,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: isSubmitted
-          ? SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
+          ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
           : Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -432,16 +434,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class SearchLoader extends StatefulWidget {
+class _SearchLoader extends StatefulWidget {
   final Future? future;
   final String query;
   final String? selectedProvider;
-  const SearchLoader({required this.future, required this.query, required this.selectedProvider});
+  const _SearchLoader({required this.future, required this.query, required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
 
-class _SearchLoaderState extends State<SearchLoader> {
+class _SearchLoaderState extends State<_SearchLoader> {
   Future? _future;
 
   @override

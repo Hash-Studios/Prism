@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_document.dart';
-import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_screen.dart';
@@ -20,6 +22,7 @@ import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/palette/views/pages/download_screen.dart';
 import 'package:Prism/features/palette/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/palette/views/pages/search_wallpaper_screen.dart';
@@ -46,12 +49,11 @@ import 'package:Prism/features/setups/views/pages/setup_view_screen.dart';
 import 'package:Prism/features/setups/views/pages/share_setup_view_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_setup_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
-import 'package:Prism/features/startup/views/pages/onboarding_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/features/startup/views/pages/twitter_ig_popup.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
+import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
@@ -69,8 +71,7 @@ class AppRouter extends RootStackRouter {
   List<AutoRoute> get routes => [
     // Startup
     AutoRoute(path: '/', page: SplashWidgetRoute.page),
-    AutoRoute(path: '/onboarding', page: OnboardingRoute.page),
-    AutoRoute(path: '/onboarding/follow', page: OptionalInfo3Route.page),
+    AutoRoute(path: '/onboarding/v2', page: OnboardingV2ShellRoute.page),
 
     // Dashboard shell with bottom nav tabs
     AutoRoute(

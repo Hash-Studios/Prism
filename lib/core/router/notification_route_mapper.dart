@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:auto_route/auto_route.dart';
 
 class NotificationRouteMapper {
@@ -32,7 +33,9 @@ class NotificationRouteMapper {
           return null;
         }
         final String id = wall['id']?.toString() ?? wallId;
-        final String provider = wall['wallpaper_provider']?.toString() ?? 'Prism';
+        final WallpaperSource source = WallpaperSourceX.fromWire(
+          _firstPresent(wall, const <String>['source', 'wallpaper_provider', 'provider']),
+        );
         final String wallpaperUrl = (wall['wallpaper_url'] ?? wall['wallpaper_thumb'] ?? '').toString();
         final String thumbnailUrl = (wall['wallpaper_thumb'] ?? wallpaperUrl).toString();
         if (wallpaperUrl.isEmpty && thumbnailUrl.isEmpty) {
@@ -40,7 +43,7 @@ class NotificationRouteMapper {
         }
         return ShareWallpaperViewRoute(
           wallId: id,
-          provider: provider,
+          source: source,
           wallpaperUrl: wallpaperUrl,
           thumbnailUrl: thumbnailUrl,
         );
@@ -55,4 +58,14 @@ class NotificationRouteMapper {
         return null;
     }
   }
+}
+
+String _firstPresent(Map<String, dynamic> map, List<String> keys) {
+  for (final String key in keys) {
+    final String? v = map[key]?.toString().trim();
+    if (v != null && v.isNotEmpty) {
+      return v;
+    }
+  }
+  return '';
 }

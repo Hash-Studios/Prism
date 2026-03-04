@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_io/hive_io.dart';
 part 'inAppNotifModel.g.dart';
 
@@ -49,7 +50,7 @@ class InAppNotif {
     }
   }
 
-  static DateTime _parseCreatedAt(dynamic value) {
+  static DateTime _parseCreatedAt(Object? value) {
     if (value == null) return DateTime.now();
     if (value is DateTime) return value;
     try {
@@ -58,10 +59,13 @@ class InAppNotif {
         final nanosec = value['_nanoseconds'] as int? ?? 0;
         return DateTime.fromMillisecondsSinceEpoch(sec * 1000 + nanosec ~/ 1000000);
       }
-      return (value as dynamic).toDate() as DateTime;
+      if (value is Timestamp) {
+        return value.toDate();
+      }
     } catch (_) {
       return DateTime.now();
     }
+    return DateTime.now();
   }
 
   factory InAppNotif.fromSnapshot(Map<String, dynamic> data) {

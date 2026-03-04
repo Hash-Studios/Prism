@@ -1,8 +1,8 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
-import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';

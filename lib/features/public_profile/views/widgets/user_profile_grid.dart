@@ -1,11 +1,11 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -189,21 +189,19 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                           ? PremiumBannerWalls(
                               comparator: !app_state.isPremiumWall(
                                 app_state.premiumCollections,
-                                context.publicProfileAdapter().userProfileWalls![index].data()["collections"]
-                                        as List? ??
-                                    [],
+                                context.publicProfileAdapter().userProfileWalls![index].collections ?? const <String>[],
                               ),
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
                                 index: index,
-                                child: PhotographerWallTile(animation: animation, index: index),
+                                child: _PhotographerWallTile(animation: animation, index: index),
                               ),
-                              trueChild: PhotographerWallTile(animation: animation, index: index),
+                              trueChild: _PhotographerWallTile(animation: animation, index: index),
                             )
                           : FocusedMenuHolder(
                               provider: "UserProfileWall",
                               index: index,
-                              child: PhotographerWallTile(animation: animation, index: index),
+                              child: _PhotographerWallTile(animation: animation, index: index),
                             );
                     },
                   )
@@ -212,17 +210,15 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
   }
 }
 
-class PhotographerWallTile extends StatelessWidget {
-  const PhotographerWallTile({super.key, required this.animation, required this.index});
+class _PhotographerWallTile extends StatelessWidget {
+  const _PhotographerWallTile({required this.animation, required this.index});
 
   final Animation<Color?>? animation;
   final int index;
 
   @override
   Widget build(BuildContext context) {
-    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"] == null
-        ? ""
-        : context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"].toString().trim();
+    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].wallpaperThumb?.trim() ?? '';
     final bool hasValidImageUrl = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
     return Stack(
       children: [
@@ -243,16 +239,14 @@ class PhotographerWallTile extends StatelessWidget {
               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
               onTap: () {
-                if (context.publicProfileAdapter(listen: false).userProfileWalls == []) {
+                if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
+                    context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
                 } else {
                   context.router.push(
                     UserProfileWallViewRoute(
                       wallIndex: index,
-                      thumbnailUrl: context
-                          .publicProfileAdapter(listen: false)
-                          .userProfileWalls![index]
-                          .data()["wallpaper_thumb"]
-                          .toString(),
+                      thumbnailUrl:
+                          context.publicProfileAdapter(listen: false).userProfileWalls![index].wallpaperThumb ?? '',
                     ),
                   );
                 }

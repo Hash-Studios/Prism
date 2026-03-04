@@ -21,6 +21,8 @@ import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
+import 'package:Prism/core/persistence/prefs_compat.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
@@ -68,8 +70,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-String userHiveKey = "prismUserV2-1";
-late Box prefs;
+late PrefsCompat localPrefs;
 String? currentThemeID;
 String? currentDarkThemeID;
 String? currentMode;
@@ -200,40 +201,37 @@ Future<void> main() async {
       Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
       Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
       Hive.registerAdapter<Badge>(BadgeAdapter());
-      await Hive.openBox<InAppNotif>('inAppNotifs');
-      await Hive.openBox('setups');
-      await Hive.openBox('localFav');
-      await Hive.openBox('appsCache');
-      prefs = await Hive.openBox('prefs');
-      logger.d("Box Opened");
-      final systemOverlayColorValue = _colorValueFromPrefs(prefs.get("systemOverlayColor"), fallback: 0xFFE57697);
-      prefs.put("systemOverlayColor", systemOverlayColorValue);
-      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      prefs.put("darkThemeID", currentDarkThemeID);
-      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-      prefs.put("themeMode", currentMode);
-      final lightAccentValue = _colorValueFromPrefs(prefs.get('lightAccent'), fallback: 0xFFE57697);
+      await PersistenceBootstrap.initialize();
+      localPrefs = PrefsCompat.fromRuntime();
+      logger.d("Persistence initialized");
+      final systemOverlayColorValue = _colorValueFromPrefs(localPrefs.get("systemOverlayColor"), fallback: 0xFFE57697);
+      await localPrefs.put("systemOverlayColor", systemOverlayColorValue);
+      currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      await localPrefs.put("lightThemeID", currentThemeID);
+      currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      await localPrefs.put("darkThemeID", currentDarkThemeID);
+      currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
+      await localPrefs.put("themeMode", currentMode);
+      final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
       lightAccent = Color(lightAccentValue);
-      prefs.put("lightAccent", lightAccentValue);
+      await localPrefs.put("lightAccent", lightAccentValue);
 
-      final darkAccentValue = _colorValueFromPrefs(prefs.get('darkAccent'), fallback: 0xFFE57697);
+      final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
       darkAccent = Color(darkAccentValue);
-      prefs.put("darkAccent", darkAccentValue);
-      optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-      prefs.put('optimisedWallpapers', false);
-      categories = prefs.get('WHcategories') as int? ?? 100;
+      await localPrefs.put("darkAccent", darkAccentValue);
+      optimisedWallpapers = localPrefs.get('optimisedWallpapers') == true;
+      await localPrefs.put('optimisedWallpapers', false);
+      categories = localPrefs.get('WHcategories') as int? ?? 100;
       if (categories == 100) {
-        prefs.put('WHcategories', 100);
+        await localPrefs.put('WHcategories', 100);
       } else {
-        prefs.put('WHcategories', 111);
+        await localPrefs.put('WHcategories', 111);
       }
-      purity = prefs.get('WHpurity') as int? ?? 100;
+      purity = localPrefs.get('WHpurity') as int? ?? 100;
       if (purity == 100) {
-        prefs.put('WHpurity', 100);
+        await localPrefs.put('WHpurity', 100);
       } else {
-        prefs.put('WHpurity', 110);
+        await localPrefs.put('WHpurity', 110);
       }
 
       configureDependencies();
@@ -271,7 +269,7 @@ Future<void> main() async {
               BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
               BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
             ],
-            child: MyApp(),
+            child: _MyApp(),
           ),
         ),
       );
@@ -422,12 +420,12 @@ bool _isMixpanelEnabled() {
 
 String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 
-class MyApp extends StatefulWidget {
+class _MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
@@ -440,7 +438,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Future<bool> getLoginStatus() async {
     bool value = await app_state.gAuth.isSignedIn();
     if (value) {
-      if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
+      if (localPrefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
         try {
           await app_state.gAuth.signOutGoogle();
         } catch (e, st) {
@@ -451,12 +449,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             stackTrace: st,
           );
         }
-        prefs.put("logouteveryoneaugust2021", true);
+        await localPrefs.put("logouteveryoneaugust2021", true);
         toasts.codeSend("Please login again, to enjoy the app!");
         value = false;
       }
     } else if (!value) {
-      prefs.put("logouteveryoneaugust2021", true);
+      await localPrefs.put("logouteveryoneaugust2021", true);
       // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
       app_state.prismUser
         ..loggedIn = false
@@ -469,9 +467,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ..bio = ''
         ..profilePhoto = app_state.defaultProfilePhotoUrl
         ..coverPhoto = ''
-        ..followers = <dynamic>[]
-        ..following = <dynamic>[]
-        ..links = <String, dynamic>{};
+        ..followers = <String>[]
+        ..following = <String>[]
+        ..links = <String, String>{};
     }
     app_state.prismUser.loggedIn = value;
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
@@ -653,7 +651,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _appRouter.push(
           ShareWallpaperViewRoute(
             wallId: action.wallId,
-            provider: action.provider,
+            source: action.source,
             wallpaperUrl: action.wallpaperUrl,
             thumbnailUrl: action.thumbnailUrl,
           ),
@@ -663,7 +661,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
           ),
         );
-        break;
       case UserLinkIntent():
         _appRouter.push(ProfileRoute(profileIdentifier: action.profileIdentifier));
         unawaited(
@@ -671,7 +668,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
           ),
         );
-        break;
       case SetupLinkIntent():
         _appRouter.push(ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl));
         unawaited(
@@ -679,7 +675,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
           ),
         );
-        break;
       case ReferLinkIntent():
         if (action.inviterId.trim().isEmpty) {
           unawaited(
@@ -704,10 +699,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
           ),
         );
-        break;
       case ShortCodeIntent():
         await _resolveAndNavigateShortCode(action.code);
-        break;
       case UnknownIntent():
         _appRouter.push(const NotFoundRoute());
         unawaited(
@@ -719,7 +712,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ),
           ),
         );
-        break;
     }
   }
 
@@ -859,7 +851,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     // Foreground: show a heads-up local notification + sync the inbox.
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       unawaited(localNotification.showPushNotification(message));
-      unawaited(getNotifs());
+      unawaited(syncInAppNotificationsFromRemote());
     });
 
     // Background / terminated → foreground: user tapped the notification.
@@ -899,7 +891,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       }
       if (_lastGetNotifsResume == null || now.difference(_lastGetNotifsResume!) >= _getNotifsResumeThrottle) {
         _lastGetNotifsResume = now;
-        unawaited(getNotifs());
+        unawaited(syncInAppNotificationsFromRemote());
       }
       return;
     }
@@ -970,7 +962,9 @@ class RestartWidget extends StatefulWidget {
   static void restartApp(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
-        systemNavigationBarColor: Color(_colorValueFromPrefs(prefs.get('systemOverlayColor'), fallback: 0xFFE57697)),
+        systemNavigationBarColor: Color(
+          _colorValueFromPrefs(localPrefs.get('systemOverlayColor'), fallback: 0xFFE57697),
+        ),
       ),
     );
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
@@ -987,21 +981,19 @@ class _RestartWidgetState extends State<RestartWidget> {
     setState(() {
       key = UniqueKey();
     });
-    Hive.openBox('prefs').then((prefs) {
-      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      prefs.put("darkThemeID", currentDarkThemeID);
-      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-      prefs.put("themeMode", currentMode);
-      final lightAccentValue = _colorValueFromPrefs(prefs.get('lightAccent'), fallback: 0xFFE57697);
-      lightAccent = Color(lightAccentValue);
-      prefs.put("lightAccent", lightAccentValue);
+    currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+    unawaited(localPrefs.put("lightThemeID", currentThemeID));
+    currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+    unawaited(localPrefs.put("darkThemeID", currentDarkThemeID));
+    currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
+    unawaited(localPrefs.put("themeMode", currentMode));
+    final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
+    lightAccent = Color(lightAccentValue);
+    unawaited(localPrefs.put("lightAccent", lightAccentValue));
 
-      final darkAccentValue = _colorValueFromPrefs(prefs.get('darkAccent'), fallback: 0xFFE57697);
-      darkAccent = Color(darkAccentValue);
-      prefs.put("darkAccent", darkAccentValue);
-    });
+    final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
+    darkAccent = Color(darkAccentValue);
+    unawaited(localPrefs.put("darkAccent", darkAccentValue));
   }
 
   @override

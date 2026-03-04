@@ -32,7 +32,7 @@ class CollectionViewScreen extends StatelessWidget {
   }
 }
 
-extension StringExtension on String {
+extension _StringExtension on String {
   String capitalize() {
     return "${this[0].toUpperCase()}${substring(1)}";
   }

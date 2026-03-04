@@ -1,5 +1,4 @@
 export 'biz/bloc/palette_bloc.j.dart';
-export 'builder/palette_builder.dart';
 export 'views/pages/custom_filters.dart';
 export 'views/pages/download_screen.dart';
 export 'views/pages/download_wallpaper_screen.dart';

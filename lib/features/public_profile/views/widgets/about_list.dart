@@ -25,7 +25,7 @@ class AboutList extends StatelessWidget {
       onTap: () {
         unawaited(
           analytics.track(
-            SurfaceActionTappedEvent(
+            const SurfaceActionTappedEvent(
               surface: AnalyticsSurfaceValue.profileAboutList,
               action: AnalyticsActionValue.actionChipTapped,
               sourceContext: 'profile_about_list_open_about',

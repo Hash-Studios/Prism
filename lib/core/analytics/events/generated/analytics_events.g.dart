@@ -1264,6 +1264,50 @@ class OnboardingAuthResultEvent extends AnalyticsEvent {
   }
 }
 
+class ProfileCompletenessNudgeViewedEvent extends AnalyticsEvent {
+  const ProfileCompletenessNudgeViewedEvent({
+    required this.sourceContext,
+    required this.progressPercent,
+    required this.missingStepsCount,
+  });
+
+  final String sourceContext;
+  final int progressPercent;
+  final int missingStepsCount;
+
+  @override
+  String get eventName => 'profile_completeness_nudge_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'source_context': sourceContext,
+      'progress_percent': progressPercent,
+      'missing_steps_count': missingStepsCount,
+    };
+  }
+}
+
+class ProfileCompletenessActionTappedEvent extends AnalyticsEvent {
+  const ProfileCompletenessActionTappedEvent({
+    required this.sourceContext,
+    required this.action,
+    required this.progressPercent,
+  });
+
+  final String sourceContext;
+  final String action;
+  final int progressPercent;
+
+  @override
+  String get eventName => 'profile_completeness_action_tapped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext, 'action': action, 'progress_percent': progressPercent};
+  }
+}
+
 class TomorrowHookViewedEvent extends AnalyticsEvent {
   const TomorrowHookViewedEvent({required this.sourceContext});
 
@@ -1716,5 +1760,88 @@ class QualityDailySnapshotEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
+  }
+}
+
+class OnboardingV2InterestsCompletedEvent extends AnalyticsEvent {
+  const OnboardingV2InterestsCompletedEvent({required this.selectedCount});
+
+  final int selectedCount;
+
+  @override
+  String get eventName => 'onboarding_v2_interests_completed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'selected_count': selectedCount};
+  }
+}
+
+class OnboardingV2StarterPackCompletedEvent extends AnalyticsEvent {
+  const OnboardingV2StarterPackCompletedEvent({required this.followedCount});
+
+  final int followedCount;
+
+  @override
+  String get eventName => 'onboarding_v2_starter_pack_completed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'followed_count': followedCount};
+  }
+}
+
+class OnboardingV2FirstWallpaperShownEvent extends AnalyticsEvent {
+  const OnboardingV2FirstWallpaperShownEvent();
+
+  @override
+  String get eventName => 'onboarding_v2_first_wallpaper_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class OnboardingV2FirstWallpaperActionEvent extends AnalyticsEvent {
+  const OnboardingV2FirstWallpaperActionEvent({required this.result, required this.elapsedMs, required this.platform});
+
+  final BinaryResultValue result;
+  final int elapsedMs;
+  final String platform;
+
+  @override
+  String get eventName => 'onboarding_v2_first_wallpaper_action';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'result': result.wireValue, 'elapsed_ms': elapsedMs, 'platform': platform};
+  }
+}
+
+class OnboardingV2PaywallTimerUnlockedEvent extends AnalyticsEvent {
+  const OnboardingV2PaywallTimerUnlockedEvent();
+
+  @override
+  String get eventName => 'onboarding_v2_paywall_timer_unlocked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class OnboardingV2CompletedEvent extends AnalyticsEvent {
+  const OnboardingV2CompletedEvent({required this.didPurchase, required this.totalElapsedMs});
+
+  final bool didPurchase;
+  final int totalElapsedMs;
+
+  @override
+  String get eventName => 'onboarding_v2_completed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'did_purchase': didPurchase, 'total_elapsed_ms': totalElapsedMs};
   }
 }
