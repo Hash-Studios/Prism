@@ -35,7 +35,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
       key: containerKey,
       children: <Widget>[
         widget.child,
-        if (Data.subPrismWalls == [])
+        if (Data.subPrismWalls == null || Data.subPrismWalls!.isEmpty)
           Container()
         else
           Align(

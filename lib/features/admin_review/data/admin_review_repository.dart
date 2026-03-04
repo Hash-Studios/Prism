@@ -13,7 +13,7 @@ class AdminReviewRepository {
         collection: FirebaseCollections.walls,
         sourceTag: 'admin_review.pending_walls',
         filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
-        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: false)],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt')],
         isStream: true,
       ),
       (data, docId) => FirestoreDocument(docId, data),
@@ -26,7 +26,7 @@ class AdminReviewRepository {
         collection: FirebaseCollections.setups,
         sourceTag: 'admin_review.pending_setups',
         filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
-        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: false)],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at')],
         isStream: true,
       ),
       (data, docId) => FirestoreDocument(docId, data),
@@ -35,7 +35,13 @@ class AdminReviewRepository {
 
   Future<void> approveWall(FirestoreDocument wall) async {
     final Map<String, dynamic> payload = Map<String, dynamic>.from(wall.data());
-    final List<dynamic> collections = payload['collections'] as List<dynamic>? ?? <dynamic>[];
+    final List<String> collections =
+        (payload['collections'] as List?)
+            ?.whereType<Object?>()
+            .map((Object? item) => item?.toString() ?? '')
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false) ??
+        const <String>[];
     await firestoreClient.runBatch((FirestoreBatch batch) async {
       batch.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
         'review': true,

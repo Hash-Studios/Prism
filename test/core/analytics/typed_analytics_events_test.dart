@@ -175,6 +175,36 @@ void main() {
         'source_context': 'about_screen_action_chip_github',
       });
     });
+
+    test('serialize canonical profile_completeness_nudge_viewed payload', () {
+      const ProfileCompletenessNudgeViewedEvent event = ProfileCompletenessNudgeViewedEvent(
+        sourceContext: 'dashboard_entry',
+        progressPercent: 50,
+        missingStepsCount: 2,
+      );
+
+      expect(event.eventName, 'profile_completeness_nudge_viewed');
+      expect(event.toWireParameters(), <String, Object?>{
+        'source_context': 'dashboard_entry',
+        'progress_percent': 50,
+        'missing_steps_count': 2,
+      });
+    });
+
+    test('serialize canonical profile_completeness_action_tapped payload', () {
+      const ProfileCompletenessActionTappedEvent event = ProfileCompletenessActionTappedEvent(
+        sourceContext: 'dashboard_entry',
+        action: 'complete_now',
+        progressPercent: 75,
+      );
+
+      expect(event.eventName, 'profile_completeness_action_tapped');
+      expect(event.toWireParameters(), <String, Object?>{
+        'source_context': 'dashboard_entry',
+        'action': 'complete_now',
+        'progress_percent': 75,
+      });
+    });
   });
 
   group('provider-backed track dispatch', () {

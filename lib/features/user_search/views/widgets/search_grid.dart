@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
@@ -11,7 +14,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as 
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +28,7 @@ class SearchGrid extends StatefulWidget {
 }
 
 class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   AnimationController? _controller;
   late AnimationController shakeController;
   late Animation<Color?> animation;
@@ -64,8 +67,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
       if (widget.selectedProvider == "WallHaven") {
         await wData.getWallsbyQueryPage(
           widget.query,
-          main.prefs.get('WHcategories') as int?,
-          main.prefs.get('WHpurity') as int?,
+          _settingsLocal.get<int>('WHcategories'),
+          _settingsLocal.get<int>('WHpurity'),
         );
       } else if (widget.selectedProvider == "Pexels") {
         await pData.getWallsPbyQueryPage(widget.query);
@@ -163,8 +166,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
         wData.wallsS = [];
         await wData.getWallsbyQuery(
           widget.query,
-          main.prefs.get('WHcategories') as int?,
-          main.prefs.get('WHpurity') as int?,
+          _settingsLocal.get<int>('WHcategories'),
+          _settingsLocal.get<int>('WHpurity'),
         );
       } else if (widget.selectedProvider == "Pexels") {
         pData.wallsPS = [];
@@ -282,7 +285,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
-                                    image: CachedNetworkImageProvider(pData.wallsPS[index].src!["medium"].toString()),
+                                    image: CachedNetworkImageProvider(pData.wallsPS[index].core.thumbnailUrl),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -296,43 +299,43 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                               onTap: () {
                                 if (widget.selectedProvider == "WallHaven") {
-                                  if (wData.wallsS == []) {
+                                  if (wData.wallsS.isEmpty) {
                                   } else {
                                     analytics.track(
                                       SearchResultOpenedEvent(
                                         provider: _providerValue,
                                         itemType: ItemTypeValue.wallpaper,
-                                        itemId: wData.wallsS[index].id?.toString() ?? '',
+                                        itemId: wData.wallsS[index].id,
                                         index: index,
                                         queryLength: _queryLength,
                                       ),
                                     );
                                     context.router.push(
                                       WallpaperRoute(
-                                        provider: "WallHaven",
+                                        source: WallpaperSource.wallhaven,
                                         index: index,
                                         link: wData.wallsS[index].thumbs!["small"].toString(),
                                       ),
                                     );
                                   }
                                 } else if (widget.selectedProvider == "Pexels") {
-                                  if (pData.wallsPS == []) {
+                                  if (pData.wallsPS.isEmpty) {
                                   } else {
                                     analytics.track(
                                       SearchResultOpenedEvent(
                                         provider: _providerValue,
                                         itemType: ItemTypeValue.wallpaper,
-                                        itemId: pData.wallsPS[index].id?.toString() ?? '',
+                                        itemId: pData.wallsPS[index].id,
                                         index: index,
                                         queryLength: _queryLength,
                                       ),
                                     );
                                     context.router.push(
                                       SearchWallpaperRoute(
-                                        selectedProvider: widget.selectedProvider ?? "Pexels",
+                                        source: WallpaperSourceX.fromWire(widget.selectedProvider ?? "Pexels"),
                                         query: widget.query,
                                         index: index,
-                                        link: pData.wallsPS[index].src!["medium"].toString(),
+                                        link: pData.wallsPS[index].core.thumbnailUrl,
                                       ),
                                     );
                                   }
@@ -344,25 +347,25 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                 });
                                 shakeController.forward(from: 0.0);
                                 if (widget.selectedProvider == "WallHaven") {
-                                  if (wData.wallsS == []) {
+                                  if (wData.wallsS.isEmpty) {
                                   } else {
                                     HapticFeedback.vibrate();
                                     createDynamicLink(
-                                      wData.wallsS[index].id!,
-                                      "WallHaven",
-                                      wData.wallsS[index].path,
-                                      wData.wallsS[index].thumbs!["original"].toString(),
+                                      wData.wallsS[index].id,
+                                      WallpaperSource.wallhaven,
+                                      wData.wallsS[index].core.fullUrl,
+                                      wData.wallsS[index].core.thumbnailUrl,
                                     );
                                   }
                                 } else if (widget.selectedProvider == "Pexels") {
-                                  if (wData.wallsS == []) {
+                                  if (pData.wallsPS.isEmpty) {
                                   } else {
                                     HapticFeedback.vibrate();
                                     createDynamicLink(
-                                      pData.wallsPS[index].id!,
-                                      "Pexels",
-                                      pData.wallsPS[index].src!["original"].toString(),
-                                      pData.wallsPS[index].src!["medium"].toString(),
+                                      pData.wallsPS[index].id,
+                                      WallpaperSource.pexels,
+                                      pData.wallsPS[index].core.fullUrl,
+                                      pData.wallsPS[index].core.thumbnailUrl,
                                     );
                                   }
                                 }

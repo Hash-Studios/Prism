@@ -33,7 +33,7 @@ class DeepLinkNavigation {
       case ShareLinkIntent():
         return ShareWallpaperViewRoute(
           wallId: action.wallId,
-          provider: action.provider,
+          source: action.source,
           wallpaperUrl: action.wallpaperUrl,
           thumbnailUrl: action.thumbnailUrl,
         );

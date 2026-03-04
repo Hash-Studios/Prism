@@ -78,8 +78,8 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshProfileKey,
       onRefresh: refreshList,
-      child: context.profileWallsSnapshots(listen: false) != null
-          ? context.profileWallsSnapshots(listen: false)!.isEmpty
+      child: context.profileWalls(listen: false) != null
+          ? context.profileWalls(listen: false)!.isEmpty
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -154,7 +154,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                 : GridView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-                    itemCount: context.profileWallsSnapshots()!.length,
+                    itemCount: context.profileWalls()!.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
                       childAspectRatio: 0.6625,
@@ -162,8 +162,8 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                       crossAxisSpacing: 8,
                     ),
                     itemBuilder: (context, index) {
-                      if (index == context.profileWallsSnapshots(listen: false)!.length - 1 &&
-                          !(context.profileWallsSnapshots(listen: false)!.length < 12)) {
+                      if (index == context.profileWalls(listen: false)!.length - 1 &&
+                          !(context.profileWalls(listen: false)!.length < 12)) {
                         return SeeMoreButton(
                           seeMoreLoader: seeMoreLoader,
                           func: () {
@@ -190,7 +190,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    context.profileWallsSnapshots()![index].data()["wallpaper_thumb"].toString(),
+                                    context.profileWalls()![index].wallpaperThumb.toString(),
                                   ),
                                   fit: BoxFit.cover,
                                 ),
@@ -204,14 +204,15 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                   splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                   highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                   onTap: () {
-                                    if (context.profileWallsSnapshots(listen: false) == []) {
+                                    if (context.profileWalls(listen: false) == null ||
+                                        context.profileWalls(listen: false)!.isEmpty) {
                                     } else {
                                       context.router.push(
                                         ProfileWallViewRoute(
                                           wallIndex: index,
                                           thumbnailUrl: context
-                                              .profileWallsSnapshots(listen: false)![index]
-                                              .data()["wallpaper_thumb"]
+                                              .profileWalls(listen: false)![index]
+                                              .wallpaperThumb
                                               .toString(),
                                         ),
                                       );

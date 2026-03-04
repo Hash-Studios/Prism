@@ -19,6 +19,9 @@ const bool defaultAiSubmitEnabled = true;
 const bool defaultAiVariationsEnabled = true;
 const bool defaultUseRcPaywalls = true;
 
+const bool defaultOnboardingV2Enabled = true;
+const List<Map<String, dynamic>> defaultOnboardingStarterPack = <Map<String, dynamic>>[];
+
 const List<String> defaultTopTitleText = <String>['TOP-RATED', 'BEST OF COMMUNITY', 'FAN-FAVOURITE', 'TRENDING'];
 
 const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'flat', 'mesh gradients', 'fluids'];
@@ -36,22 +39,19 @@ PrismUsersV2 createGuestPrismUser() {
     createdAt: now,
     email: '',
     username: '',
-    followers: <dynamic>[],
-    following: <dynamic>[],
+    followers: const <String>[],
+    following: const <String>[],
     id: '',
     lastLoginAt: now,
-    links: <String, dynamic>{},
+    links: const <String, String>{},
     premium: false,
-    subscriptionTier: 'free',
     loggedIn: false,
     profilePhoto: defaultProfilePhotoUrl,
     badges: <Badge>[],
     coins: 0,
-    subPrisms: <dynamic>[],
+    subPrisms: const <String>[],
     transactions: <PrismTransaction>[],
     coverPhoto: '',
-    uploadsWeekStart: '',
-    uploadsThisWeek: 0,
   );
 }
 

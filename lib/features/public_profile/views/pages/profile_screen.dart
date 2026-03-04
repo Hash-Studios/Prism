@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
@@ -12,6 +14,7 @@ import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/download_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
@@ -20,7 +23,6 @@ import 'package:Prism/features/public_profile/views/widgets/premium_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -43,6 +45,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   String? profileIdentifier;
+
+  Object? _mapValue(Map<String, dynamic> data, String key) => data[key];
+  String _mapString(Map<String, dynamic> data, String key) => _mapValue(data, key)?.toString() ?? '';
+  bool _mapBool(Map<String, dynamic> data, String key) {
+    final value = _mapValue(data, key);
+    return value is bool && value;
+  }
+
+  List<Object?> _mapList(Map<String, dynamic> data, String key) {
+    final value = _mapValue(data, key);
+    if (value is List) {
+      return value.whereType<Object?>().toList(growable: false);
+    }
+    return const <Object?>[];
+  }
+
+  Map<String, dynamic> _mapObject(Map<String, dynamic> data, String key) {
+    final value = _mapValue(data, key);
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    return <String, dynamic>{};
+  }
 
   bool get _isOwnProfile {
     final String identifier = (profileIdentifier ?? '').trim();
@@ -84,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
-              body: ProfileChild(
+              body: _ProfileChild(
                 ownProfile: true,
                 parentScaffoldKey: _scaffoldKey,
                 id: app_state.prismUser.id,
@@ -168,21 +193,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     );
-                    final Map links = data["links"] is Map ? (data["links"] as Map) : <String, dynamic>{};
-                    final bool premium = data["premium"] is bool && data["premium"] as bool;
-                    final List followers = data["followers"] is List ? data["followers"] as List : <dynamic>[];
-                    final List following = data["following"] is List ? data["following"] as List : <dynamic>[];
-                    return ProfileChild(
+                    final Map<String, dynamic> links = _mapObject(data, 'links');
+                    final bool premium = _mapBool(data, 'premium');
+                    final List<Object?> followers = _mapList(data, 'followers');
+                    final List<Object?> following = _mapList(data, 'following');
+                    return _ProfileChild(
                       ownProfile: false,
-                      id: (data['__docId'] ?? '').toString(),
-                      bio: data["bio"].toString(),
-                      coverPhoto: data["coverPhoto"]?.toString() ?? "",
-                      email: data["email"].toString(),
+                      id: _mapString(data, '__docId'),
+                      bio: _mapString(data, 'bio'),
+                      coverPhoto: _mapString(data, 'coverPhoto'),
+                      email: _mapString(data, 'email'),
                       links: links,
-                      name: data["name"].toString(),
+                      name: _mapString(data, 'name'),
                       premium: premium,
-                      userPhoto: data["profilePhoto"].toString(),
-                      username: data["username"].toString(),
+                      userPhoto: _mapString(data, 'profilePhoto'),
+                      username: _mapString(data, 'username'),
                       followers: followers,
                       following: following,
                     );
@@ -198,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class ProfileChild extends StatefulWidget {
+class _ProfileChild extends StatefulWidget {
   final String? name;
   final String? username;
   final String? id;
@@ -212,7 +237,7 @@ class ProfileChild extends StatefulWidget {
   final List? followers;
   final List? following;
   final GlobalKey<ScaffoldState>? parentScaffoldKey;
-  const ProfileChild({
+  const _ProfileChild({
     required this.name,
     required this.username,
     required this.id,
@@ -231,15 +256,14 @@ class ProfileChild extends StatefulWidget {
   _ProfileChildState createState() => _ProfileChildState();
 }
 
-class _ProfileChildState extends State<ProfileChild> {
-  // int favCount = main.prefs.get('userFavs') as int? ?? 0;
-  // int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
-  //     ((main.prefs.get('userSetups') as int?) ?? 0);
+class _ProfileChildState extends State<_ProfileChild> {
+  // int favCount = 0;
+  // int profileCount = 0;
   final ScrollController scrollController = ScrollController();
   // int count = 0;
   @override
   void initState() {
-    // count = main.prefs.get('easterCount', defaultValue: 0) as int;
+    // count = 0;
     // checkFav();
     super.initState();
   }
@@ -275,6 +299,15 @@ class _ProfileChildState extends State<ProfileChild> {
     }
   }
 
+  Future<void> _openEditProfilePanel({required String sourceContext}) async {
+    _trackAction(AnalyticsActionValue.editProfileTapped, sourceContext: sourceContext);
+    await context.router.push(const EditProfilePanelRoute());
+    if (!mounted) {
+      return;
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final String safeCoverPhoto = (widget.coverPhoto ?? "").trim();
@@ -284,6 +317,12 @@ class _ProfileChildState extends State<ProfileChild> {
     final ScrollController? controller = widget.ownProfile!
         ? InheritedDataProvider.of(context)!.scrollController
         : ScrollController();
+    final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
+      app_state.prismUser,
+      defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
+    );
+    final bool showProfileCompletenessCard =
+        widget.ownProfile! && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
 
     return !widget.ownProfile! || app_state.prismUser.loggedIn
         ? DefaultTabController(
@@ -335,11 +374,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                     child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
                                   ),
                                   onPressed: () {
-                                    _trackAction(
-                                      AnalyticsActionValue.editProfileTapped,
-                                      sourceContext: 'profile_screen_header_edit',
-                                    );
-                                    context.router.push(const EditProfilePanelRoute());
+                                    unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
                                   },
                                 ),
                               ),
@@ -607,7 +642,7 @@ class _ProfileChildState extends State<ProfileChild> {
                                                                 ).colorScheme.secondary.withValues(alpha: 0.1),
                                                               ),
                                                               child: Icon(
-                                                                linksData[e]!["icon"] as IconData,
+                                                                linksIconData[e.toString()] ?? JamIcons.link,
                                                                 size: 20,
                                                                 color: Theme.of(
                                                                   context,
@@ -732,6 +767,18 @@ class _ProfileChildState extends State<ProfileChild> {
                           ],
                         ),
                       ),
+                      if (showProfileCompletenessCard)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                            child: ProfileCompletenessCard(
+                              status: profileCompletenessStatus,
+                              onCompleteNow: () async {
+                                await _openEditProfilePanel(sourceContext: 'profile_completeness_card');
+                              },
+                            ),
+                          ),
+                        ),
                       SliverAppBar(
                         backgroundColor: Theme.of(context).primaryColor,
                         automaticallyImplyLeading: false,
@@ -836,154 +883,28 @@ class _ProfileChildState extends State<ProfileChild> {
   }
 }
 
-Map<String, Map<String, dynamic>> linksData = {
-  'github': {
-    'name': 'github',
-    'link': 'https://github.com/username',
-    'icon': JamIcons.github,
-    'value': '',
-    'validator': 'github',
-  },
-  'twitter': {
-    'name': 'twitter',
-    'link': 'https://twitter.com/username',
-    'icon': JamIcons.twitter,
-    'value': '',
-    'validator': 'twitter',
-  },
-  'instagram': {
-    'name': 'instagram',
-    'link': 'https://instagram.com/username',
-    'icon': JamIcons.instagram,
-    'value': '',
-    'validator': 'instagram',
-  },
-  'email': {'name': 'email', 'link': 'your@email.com', 'icon': JamIcons.inbox, 'value': '', 'validator': '@'},
-  'telegram': {
-    'name': 'telegram',
-    'link': 'https://t.me/username',
-    'icon': JamIcons.paper_plane,
-    'value': '',
-    'validator': 't.me',
-  },
-  'dribbble': {
-    'name': 'dribbble',
-    'link': 'https://dribbble.com/username',
-    'icon': JamIcons.basketball,
-    'value': '',
-    'validator': 'dribbble',
-  },
-  'linkedin': {
-    'name': 'linkedin',
-    'link': 'https://linkedin.com/in/username',
-    'icon': JamIcons.linkedin,
-    'value': '',
-    'validator': 'linkedin',
-  },
-  'bio.link': {
-    'name': 'bio.link',
-    'link': 'https://bio.link/username',
-    'icon': JamIcons.world,
-    'value': '',
-    'validator': 'bio.link',
-  },
-  'patreon': {
-    'name': 'patreon',
-    'link': 'https://patreon.com/username',
-    'icon': JamIcons.patreon,
-    'value': '',
-    'validator': 'patreon',
-  },
-  'trello': {
-    'name': 'trello',
-    'link': 'https://trello.com/username',
-    'icon': JamIcons.trello,
-    'value': '',
-    'validator': 'trello',
-  },
-  'reddit': {
-    'name': 'reddit',
-    'link': 'https://reddit.com/user/username',
-    'icon': JamIcons.reddit,
-    'value': '',
-    'validator': 'reddit',
-  },
-  'behance': {
-    'name': 'behance',
-    'link': 'https://behance.net/username',
-    'icon': JamIcons.behance,
-    'value': '',
-    'validator': 'behance.net',
-  },
-  'deviantart': {
-    'name': 'deviantart',
-    'link': 'https://deviantart.com/username',
-    'icon': JamIcons.deviantart,
-    'value': '',
-    'validator': 'deviantart',
-  },
-  'gitlab': {
-    'name': 'gitlab',
-    'link': 'https://gitlab.com/username',
-    'icon': JamIcons.gitlab,
-    'value': '',
-    'validator': 'gitlab',
-  },
-  'medium': {
-    'name': 'medium',
-    'link': 'https://username.medium.com/',
-    'icon': JamIcons.medium,
-    'value': '',
-    'validator': 'medium',
-  },
-  'paypal': {
-    'name': 'paypal',
-    'link': 'https://paypal.me/username',
-    'icon': JamIcons.paypal,
-    'value': '',
-    'validator': 'paypal',
-  },
-  'spotify': {
-    'name': 'spotify',
-    'link': 'https://open.spotify.com/user/username',
-    'icon': JamIcons.spotify,
-    'value': '',
-    'validator': 'open.spotify',
-  },
-  'twitch': {
-    'name': 'twitch',
-    'link': 'https://twitch.tv/username',
-    'icon': JamIcons.twitch,
-    'value': '',
-    'validator': 'twitch.tv',
-  },
-  'unsplash': {
-    'name': 'unsplash',
-    'link': 'https://unsplash.com/username',
-    'icon': JamIcons.unsplash,
-    'value': '',
-    'validator': 'unsplash',
-  },
-  'youtube': {
-    'name': 'youtube',
-    'link': 'https://youtube.com/channel/username',
-    'icon': JamIcons.youtube,
-    'value': '',
-    'validator': 'youtube',
-  },
-  'linktree': {
-    'name': 'linktree',
-    'link': 'https://linktr.ee/username',
-    'icon': JamIcons.tree_alt,
-    'value': '',
-    'validator': 'linktr.ee',
-  },
-  'buymeacoffee': {
-    'name': 'buymeacoffee',
-    'link': 'https://buymeacoff.ee/username',
-    'icon': JamIcons.coffee,
-    'value': '',
-    'validator': 'buymeacoff.ee',
-  },
-  'custom link': {'name': 'custom link', 'link': '', 'icon': JamIcons.link, 'value': '', 'validator': ''},
+Map<String, IconData> linksIconData = {
+  'github': JamIcons.github,
+  'twitter': JamIcons.twitter,
+  'instagram': JamIcons.instagram,
+  'email': JamIcons.inbox,
+  'telegram': JamIcons.paper_plane,
+  'dribbble': JamIcons.basketball,
+  'linkedin': JamIcons.linkedin,
+  'bio.link': JamIcons.world,
+  'patreon': JamIcons.patreon,
+  'trello': JamIcons.trello,
+  'reddit': JamIcons.reddit,
+  'behance': JamIcons.behance,
+  'deviantart': JamIcons.deviantart,
+  'gitlab': JamIcons.gitlab,
+  'medium': JamIcons.medium,
+  'paypal': JamIcons.paypal,
+  'spotify': JamIcons.spotify,
+  'twitch': JamIcons.twitch,
+  'unsplash': JamIcons.unsplash,
+  'youtube': JamIcons.youtube,
+  'linktree': JamIcons.tree_alt,
+  'buymeacoffee': JamIcons.coffee,
+  'custom link': JamIcons.link,
 };

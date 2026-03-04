@@ -1,11 +1,12 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
+import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -37,14 +38,14 @@ class _SetupScreenState extends State<SetupScreen> {
       backgroundColor: Theme.of(context).primaryColor,
       body: SafeArea(
         top: false,
-        child: SetupPage(future: future, controller: controller),
+        child: _SetupPage(future: future, controller: controller),
       ),
     );
   }
 }
 
-class SetupPage extends StatefulWidget {
-  const SetupPage({super.key, required this.future, required this.controller});
+class _SetupPage extends StatefulWidget {
+  const _SetupPage({required this.future, required this.controller});
 
   final Future? future;
   final PageController controller;
@@ -53,12 +54,12 @@ class SetupPage extends StatefulWidget {
   _SetupPageState createState() => _SetupPageState();
 }
 
-class _SetupPageState extends State<SetupPage> {
+class _SetupPageState extends State<_SetupPage> {
   int pageNumber = 0;
 
   @override
   Widget build(BuildContext context) {
-    final List<SetupSnapshot> setups = context.setupsAdapter().setups ?? const <SetupSnapshot>[];
+    final List<SetupEntity> setups = context.setupsAdapter().setups ?? const <SetupEntity>[];
     final bool hasSetups = setups.isNotEmpty;
     final int currentPage = hasSetups ? pageNumber.clamp(0, setups.length - 1) : 0;
 
@@ -87,7 +88,7 @@ class _SetupPageState extends State<SetupPage> {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        hasSetups ? setups[currentPage]['name'].toString().toUpperCase() : "",
+                        hasSetups ? setups[currentPage].name.toString().toUpperCase() : "",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 30),
@@ -141,7 +142,7 @@ class _SetupPageState extends State<SetupPage> {
                               child: Align(
                                 alignment: Alignment.topCenter,
                                 child: CachedNetworkImage(
-                                  imageUrl: setups[index]['image'].toString(),
+                                  imageUrl: setups[index].image,
                                   imageBuilder: (context, imageProvider) => Container(
                                     width: MediaQuery.of(context).size.height * 0.7 * (9 / 19.5),
                                     height: MediaQuery.of(context).size.height * 0.7,

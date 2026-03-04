@@ -33,6 +33,8 @@ void main() {
           aiSubmitEnabled: true,
           aiVariationsEnabled: true,
           useRcPaywalls: true,
+          onboardingV2Enabled: true,
+          onboardingStarterPack: <Map<String, dynamic>>[],
         ),
       ),
     );

@@ -3,21 +3,20 @@ import 'dart:convert';
 
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: StartupRepository)
 class StartupRepositoryImpl implements StartupRepository {
-  StartupRepositoryImpl(this._remoteConfig, @Named('prefsBox') this._prefsBox);
+  StartupRepositoryImpl(this._remoteConfig, this._settingsLocal);
 
   final FirebaseRemoteConfig _remoteConfig;
-  final Box<dynamic> _prefsBox;
+  final SettingsLocalDataSource _settingsLocal;
   final StreamController<StartupConfigEntity> _configController = StreamController<StartupConfigEntity>.broadcast();
 
   StartupConfigEntity? _currentConfig;
@@ -66,7 +65,7 @@ class StartupRepositoryImpl implements StartupRepository {
     }
 
     if (parsed.isEmpty) {
-      return category_data.categories.whereType<Map<String, dynamic>>().toList(growable: false);
+      return <Map<String, dynamic>>[];
     }
 
     return parsed;
@@ -83,7 +82,7 @@ class StartupRepositoryImpl implements StartupRepository {
         'bannerText': defaultBannerText,
         'bannerTextOn': defaultBannerTextOn.toString(),
         'bannerURL': defaultBannerUrl,
-        'latestCategories': category_data.categories.toString(),
+        'latestCategories': '[]',
         'currentVersion': currentAppVersion,
         'obsoleteVersion': defaultObsoleteAppVersion,
         'topTitleText': defaultTopTitleText.toString(),
@@ -94,6 +93,8 @@ class StartupRepositoryImpl implements StartupRepository {
         'ai_submit_enabled': defaultAiSubmitEnabled,
         'ai_variations_enabled': defaultAiVariationsEnabled,
         'use_rc_paywalls': defaultUseRcPaywalls,
+        'onboarding_v2_enabled': defaultOnboardingV2Enabled,
+        'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
       });
       await _remoteConfig.fetchAndActivate();
 
@@ -113,10 +114,11 @@ class StartupRepositoryImpl implements StartupRepository {
       topTitleText.shuffle();
       final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
       categories.removeWhere((element) => element['name'] == 'Trending');
-      category_data.categories = categories;
 
-      final followersTab = (_prefsBox.get('followersTab', defaultValue: true) as bool?) ?? true;
-      await getNotifs();
+      final followersTab = _settingsLocal.get<bool>('followersTab', defaultValue: true);
+      final onboardingV2Enabled = _remoteConfig.getBool('onboarding_v2_enabled');
+      final onboardingStarterPack = _parseCategories(_remoteConfig.getString('onboarding_starter_pack_v1'));
+      await syncInAppNotificationsFromRemote();
 
       final entity = StartupConfigEntity(
         topImageLink: topImageLink,
@@ -134,6 +136,8 @@ class StartupRepositoryImpl implements StartupRepository {
         aiSubmitEnabled: aiSubmitEnabled,
         aiVariationsEnabled: aiVariationsEnabled,
         useRcPaywalls: useRcPaywalls,
+        onboardingV2Enabled: onboardingV2Enabled,
+        onboardingStarterPack: onboardingStarterPack,
       );
 
       _currentConfig = entity;

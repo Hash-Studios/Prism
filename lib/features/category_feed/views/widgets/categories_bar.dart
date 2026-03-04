@@ -1,20 +1,21 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/popups/category_popup.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:in_app_update/in_app_update.dart';
 
 class CategoriesBar extends StatefulWidget {
@@ -25,13 +26,14 @@ class CategoriesBar extends StatefulWidget {
 }
 
 class _CategoriesBarState extends State<CategoriesBar> {
+  final NotificationsLocalDataSource _notificationsLocal = getIt<NotificationsLocalDataSource>();
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool noNotification = true;
-  final Box<InAppNotif> box = Hive.box('inAppNotifs');
-  List notifications = [];
+  List<InAppNotificationEntity> notifications = <InAppNotificationEntity>[];
   final key = GlobalKey();
   @override
   void initState() {
-    if (main.prefs.get("Subscriber", defaultValue: true) as bool) {
+    if (_settingsLocal.get<bool>("Subscriber", defaultValue: true)) {
       fetchNotifications();
     } else {
       noNotification = true;
@@ -45,15 +47,14 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   Future<void> fetchNotifications() async {
     setState(() {
-      notifications = box.values.toList();
+      notifications = _notificationsLocal.readAll();
     });
     checkNewNotification();
   }
 
   void checkNewNotification() {
-    final Box<InAppNotif> box = Hive.box('inAppNotifs');
-    notifications = box.values.toList();
-    notifications.removeWhere((element) => element.read == true);
+    notifications = _notificationsLocal.readAll();
+    notifications = notifications.where((element) => !element.read).toList(growable: false);
     if (notifications.isEmpty) {
       setState(() {
         noNotification = true;

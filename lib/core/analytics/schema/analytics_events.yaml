@@ -1027,6 +1027,28 @@ events:
         type: enum
         enum: AnalyticsReasonValue
         required: false
+  - id: profile_completeness_nudge_viewed
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+      - name: progress_percent
+        key: progress_percent
+        type: int
+      - name: missing_steps_count
+        key: missing_steps_count
+        type: int
+  - id: profile_completeness_action_tapped
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+      - name: action
+        key: action
+        type: string
+      - name: progress_percent
+        key: progress_percent
+        type: int
   - id: tomorrow_hook_viewed
     fields:
       - name: source_context
@@ -1308,6 +1330,38 @@ events:
       - name: source
         key: source
         type: string
+  - id: onboarding_v2_interests_completed
+    fields:
+      - name: selected_count
+        key: selected_count
+        type: int
+  - id: onboarding_v2_starter_pack_completed
+    fields:
+      - name: followed_count
+        key: followed_count
+        type: int
+  - id: onboarding_v2_first_wallpaper_shown
+  - id: onboarding_v2_first_wallpaper_action
+    fields:
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue
+      - name: elapsed_ms
+        key: elapsed_ms
+        type: int
+      - name: platform
+        key: platform
+        type: string
+  - id: onboarding_v2_paywall_timer_unlocked
+  - id: onboarding_v2_completed
+    fields:
+      - name: did_purchase
+        key: did_purchase
+        type: bool
+      - name: total_elapsed_ms
+        key: total_elapsed_ms
+        type: int
   - id: app_crash_fatal
   - id: quality_daily_snapshot
     fields:

@@ -1,8 +1,8 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -192,11 +192,8 @@ class _WallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = wall.data();
-    final String previewUrl = data['wallpaper_thumb']?.toString() ?? '';
-    final String fullUrl = (data['wallpaper_url']?.toString() ?? '').isNotEmpty
-        ? data['wallpaper_url'].toString()
-        : previewUrl;
+    final String previewUrl = wall.wallpaperThumb;
+    final String fullUrl = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -215,11 +212,11 @@ class _WallCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${data['id'] ?? wall.id}'),
-            Text('By: ${data['by'] ?? '-'}'),
-            Text('Email: ${data['email'] ?? '-'}'),
+            Text('ID: ${wall.id}'),
+            Text('By: ${wall.by.isNotEmpty ? wall.by : '-'}'),
+            Text('Email: ${wall.email.isNotEmpty ? wall.email : '-'}'),
             Text(
-              'Added ${data['createdAt'] != null ? timeago.format(_adminReviewToDateTime(data['createdAt'])) : '—'}',
+              'Added ${wall.createdAt != null ? timeago.format(_adminReviewToDateTime(wall.createdAt)) : '—'}',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -266,8 +263,7 @@ class _SetupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = setup.data();
-    final String fullUrl = data['image']?.toString() ?? '';
+    final String fullUrl = setup.image;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -286,12 +282,12 @@ class _SetupCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${data['id'] ?? setup.id}'),
-            Text('By: ${data['by'] ?? '-'}'),
-            Text('Email: ${data['email'] ?? '-'}'),
-            Text('Name: ${data['name'] ?? '-'}'),
+            Text('ID: ${setup.id}'),
+            Text('By: ${setup.by.isNotEmpty ? setup.by : '-'}'),
+            Text('Email: ${setup.email.isNotEmpty ? setup.email : '-'}'),
+            Text('Name: ${setup.name.isNotEmpty ? setup.name : '-'}'),
             Text(
-              'Added ${data['created_at'] != null ? timeago.format(_adminReviewToDateTime(data['created_at'])) : '—'}',
+              'Added ${setup.createdAt != null ? timeago.format(_adminReviewToDateTime(setup.createdAt)) : '—'}',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -471,7 +467,7 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _SectionHeader(title: 'Compose notification', icon: Icons.notifications_outlined),
+            const _SectionHeader(title: 'Compose notification', icon: Icons.notifications_outlined),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -508,7 +504,7 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
               keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 20),
-            _SectionHeader(title: 'Audience', icon: Icons.group_outlined),
+            const _SectionHeader(title: 'Audience', icon: Icons.group_outlined),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -545,10 +541,10 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
               ),
             ],
             const SizedBox(height: 20),
-            _SectionHeader(title: 'Deep-link destination', icon: Icons.link),
+            const _SectionHeader(title: 'Deep-link destination', icon: Icons.link),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _route,
+              initialValue: _route,
               decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.route)),
               items: _routeOptions.map((_RouteOption opt) {
                 return DropdownMenuItem<String>(value: opt.value, child: Text(opt.label));
@@ -743,7 +739,7 @@ class _NotificationPreviewCardState extends State<_NotificationPreviewCard> {
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
                   ),
                 ),
               ],

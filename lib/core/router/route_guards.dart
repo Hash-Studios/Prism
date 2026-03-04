@@ -7,10 +7,10 @@ class SignedInGuard extends AutoRouteGuard {
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
     if (app_state.prismUser.loggedIn) {
-      resolver.next(true);
+      resolver.next();
       return;
     }
-    router.pushPath('/onboarding');
+    router.pushPath('/onboarding/v2');
     resolver.next(false);
   }
 }
@@ -21,7 +21,7 @@ class AdminGuard extends AutoRouteGuard {
   @override
   void onNavigation(NavigationResolver resolver, StackRouter router) {
     if (app_state.isAdminUser()) {
-      resolver.next(true);
+      resolver.next();
       return;
     }
     router.pushPath('/not-found');

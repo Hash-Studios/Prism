@@ -1,10 +1,13 @@
-import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
+
+final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
 
 Future<void> createRecord(
   String? id,
@@ -32,8 +35,7 @@ Future<void> createRecord(
   }
   if (!app_state.prismUser.premium) {
     UploadQuota.incrementWeeklyUploads();
-    app_state.prismUser.uploadsWeekStart =
-        (main.prefs.get('uploadsWeekStart', defaultValue: '') as String?)?.trim() ?? '';
+    app_state.prismUser.uploadsWeekStart = _settingsLocal.get<String>('uploadsWeekStart', defaultValue: '').trim();
     app_state.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
     app_state.persistPrismUser();
     if (app_state.prismUser.id.trim().isNotEmpty) {
