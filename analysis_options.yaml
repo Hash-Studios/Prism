@@ -1,17 +1,20 @@
-# include: package:effective_dart/analysis_options.yaml
 include: package:lint/analysis_options.yaml
 analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
   errors:
-    # unused_import: ignore
-    # deprecated_member_use: ignore
-    missing_return: ignore
+    missing_return: error
     parameter_assignments: ignore
-    # library_prefixes: ignore
     file_names: ignore
-    # prefer_if_elements_to_conditional_expressions: ignore
-    # non_constant_identifier_names: ignore
-    # avoid_function_literals_in_foreach_calls: ignore
-    # avoid_positional_boolean_parameters: ignore
-    # unnecessary_this: ignore
+    dead_code: warning
+    unused_element: warning
+    unused_field: warning
+    unused_local_variable: warning
   exclude:
     - lib/theme/jam_icons_icons.dart
+    - '**/*.g.dart'
+    - '**/*.freezed.dart'
+    - '**/*.gr.dart'
+    - '**/*.config.dart'
