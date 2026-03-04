@@ -725,7 +725,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 }
 
 class _OBIndicator extends StatelessWidget {
-  const _OBIndicator({super.key, required int? currentPage}) : _currentPage = currentPage;
+  const _OBIndicator({required int? currentPage}) : _currentPage = currentPage;
 
   final int? _currentPage;
 

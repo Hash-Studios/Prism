@@ -1,5 +1,5 @@
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -143,8 +143,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     JamIcons.ordered_list,
                                     color:
                                         HexColor(
-                                              wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
-                                                  .toString(),
+                                              wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1],
                                             ).computeLuminance() >
                                             0.5
                                         ? Colors.black
@@ -152,7 +151,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     size: 20,
                                   ),
                                   backgroundColor: HexColor(
-                                    wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1].toString(),
+                                    wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1],
                                   ),
                                   label: Text(
                                     wdata.wallsS[index].core.category.toString()[0].toUpperCase() +
@@ -160,8 +159,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                     style: Theme.of(context).textTheme.headlineMedium!.copyWith(
                                       color:
                                           HexColor(
-                                                wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1]
-                                                    .toString(),
+                                                wdata.wallsS[index].colors![wdata.wallsS[index].colors!.length - 1],
                                               ).computeLuminance() >
                                               0.5
                                           ? Colors.black
@@ -173,7 +171,7 @@ class SearchFocusedMenuDetails extends StatelessWidget {
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                   child: Text(
-                                    wdata.wallsS[index].id.toString().toUpperCase(),
+                                    wdata.wallsS[index].id.toUpperCase(),
                                     style: Theme.of(
                                       context,
                                     ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),

@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
@@ -19,7 +20,6 @@ import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -84,8 +84,8 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.setupIndex;
-    updateViewsSetup(_setup.id.toString().toUpperCase());
-    _futureView = getViewsSetup(_setup.id.toString().toUpperCase());
+    updateViewsSetup(_setup.id.toUpperCase());
+    _futureView = getViewsSetup(_setup.id.toUpperCase());
     isLoading = true;
     box = Hive.box('localFav');
     super.initState();
@@ -248,7 +248,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                             child: Row(
                                               children: [
                                                 Text(
-                                                  _setup.id.toString().toUpperCase(),
+                                                  _setup.id.toUpperCase(),
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -317,7 +317,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                               context,
                                               index: index.toString(),
                                               name: _setup.name.toString(),
-                                              thumbUrl: _setup.image.toString(),
+                                              thumbUrl: _setup.image,
                                             );
                                           },
                                           child: Row(
@@ -551,7 +551,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                               },
                               iconColor: Theme.of(context).colorScheme.secondary,
                               iconSize: 30,
-                              isFavorite: box.get(_setup.id.toString(), defaultValue: false) as bool,
+                              isFavorite: box.get(_setup.id, defaultValue: false) as bool,
                             ),
                           ),
                           GestureDetector(
@@ -559,7 +559,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                               createSetupDynamicLink(
                                 index.toString(),
                                 _setup.name.toString(),
-                                _setup.image.toString(),
+                                _setup.image,
                                 context: context,
                               );
                             },
@@ -612,7 +612,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                     shakeController.forward(from: 0.0);
                   },
                   child: CachedNetworkImage(
-                    imageUrl: _setup.image.toString(),
+                    imageUrl: _setup.image,
                     imageBuilder: (context, imageProvider) => Container(
                       margin: EdgeInsets.symmetric(
                         vertical: offsetAnimation.value * 1.25,
@@ -666,7 +666,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                           animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                           return FadeTransition(
                             opacity: animation,
-                            child: SetupOverlay(link: _setup.image.toString()),
+                            child: SetupOverlay(link: _setup.image),
                           );
                         },
                         fullscreenDialog: true,

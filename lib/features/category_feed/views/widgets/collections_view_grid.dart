@@ -5,8 +5,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
@@ -173,7 +173,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
               func: () {
                 unawaited(
                   analytics.track(
-                    SurfaceActionTappedEvent(
+                    const SurfaceActionTappedEvent(
                       surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
                       action: AnalyticsActionValue.seeMoreTapped,
                       sourceContext: 'home_collections_grid_see_more',

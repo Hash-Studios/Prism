@@ -504,8 +504,8 @@ class _ThemeViewState extends State<ThemeView> {
 
 class _PreferencePanel extends StatefulWidget {
   final int? selectedValue;
-  final Function(bool value)? func;
-  const _PreferencePanel({super.key, this.selectedValue, this.func});
+  final void Function(bool value)? func;
+  const _PreferencePanel({this.selectedValue, this.func});
 
   @override
   _PreferencePanelState createState() => _PreferencePanelState();

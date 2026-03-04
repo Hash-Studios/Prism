@@ -16,8 +16,8 @@ sealed class FeedItemEntity with _$FeedItemEntity {
   const factory FeedItemEntity.pexels({required String id, required PexelsWallpaper wallpaper}) = PexelsFeedItem;
 
   WallpaperSource get source => when(
-    prism: (_, __) => WallpaperSource.prism,
-    wallhaven: (_, __) => WallpaperSource.wallhaven,
-    pexels: (_, __) => WallpaperSource.pexels,
+    prism: (_, _) => WallpaperSource.prism,
+    wallhaven: (_, _) => WallpaperSource.wallhaven,
+    pexels: (_, _) => WallpaperSource.pexels,
   );
 }

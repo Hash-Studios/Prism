@@ -43,11 +43,11 @@ class _FollowersScreenState extends State<FollowersScreen> {
               ),
             ),
             title: Text(
-              followers[index].toString(),
+              followers[index],
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
             onTap: () {
-              context.router.push(ProfileRoute(profileIdentifier: followers[index].toString()));
+              context.router.push(ProfileRoute(profileIdentifier: followers[index]));
             },
           );
         },

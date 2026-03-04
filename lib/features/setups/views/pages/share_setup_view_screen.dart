@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
@@ -23,7 +24,6 @@ import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adap
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart' as sdata;
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -266,7 +266,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       child: Row(
                                                         children: [
                                                           Text(
-                                                            setup.id.toString().toUpperCase(),
+                                                            setup.id.toUpperCase(),
                                                             overflow: TextOverflow.fade,
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                               color: Theme.of(context).colorScheme.secondary,
@@ -646,7 +646,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                           },
                                           iconColor: Theme.of(context).colorScheme.secondary,
                                           iconSize: 30,
-                                          isFavorite: box.get(setup.id.toString(), defaultValue: false) as bool,
+                                          isFavorite: box.get(setup.id, defaultValue: false) as bool,
                                         ),
                                       ),
                                     ],
@@ -731,7 +731,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: setup.image.toString(),
+                              imageUrl: setup.image,
                               imageBuilder: (context, imageProvider) => Container(
                                 margin: EdgeInsets.symmetric(
                                   vertical: offsetAnimation.value * 1.25,
@@ -786,7 +786,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                     animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                     return FadeTransition(
                                       opacity: animation,
-                                      child: SetupOverlay(link: setup.image.toString()),
+                                      child: SetupOverlay(link: setup.image),
                                     );
                                   },
                                   fullscreenDialog: true,
@@ -918,7 +918,7 @@ class SetupDetailsTile extends StatelessWidget {
 }
 
 class _ModifiedShareDownloadButton extends StatelessWidget {
-  const _ModifiedShareDownloadButton({super.key, required this.setup});
+  const _ModifiedShareDownloadButton({required this.setup});
 
   final SetupEntity setup;
 
@@ -968,7 +968,7 @@ class _ModifiedShareDownloadButton extends StatelessWidget {
 }
 
 class _ModifiedShareSetWallpaperButton extends StatelessWidget {
-  const _ModifiedShareSetWallpaperButton({super.key, required this.setup});
+  const _ModifiedShareSetWallpaperButton({required this.setup});
 
   final SetupEntity setup;
 

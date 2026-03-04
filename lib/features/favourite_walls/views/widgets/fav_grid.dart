@@ -223,7 +223,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                      context.favouriteWallsAdapter().liked![index].thumb.toString(),
+                                      context.favouriteWallsAdapter().liked![index].thumb,
                                     ),
                                     fit: BoxFit.cover,
                                   ),
@@ -237,7 +237,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                     splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                     highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                     onTap: () {
-                                      if (context.favouriteWallsAdapter(listen: false).liked == []) {
+                                      if (context.favouriteWallsAdapter(listen: false).liked == null ||
+                                          context.favouriteWallsAdapter(listen: false).liked!.isEmpty) {
                                       } else {
                                         unawaited(
                                           analytics.track(
@@ -246,11 +247,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                               action: AnalyticsActionValue.tileOpened,
                                               sourceContext: 'favourite_walls_grid_tile',
                                               itemType: ItemTypeValue.wallpaper,
-                                              itemId: context
-                                                  .favouriteWallsAdapter(listen: false)
-                                                  .liked![index]
-                                                  .id
-                                                  ?.toString(),
+                                              itemId: context.favouriteWallsAdapter(listen: false).liked![index].id,
                                               index: index,
                                             ),
                                           ),
@@ -261,8 +258,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                             thumbnailUrl: context
                                                 .favouriteWallsAdapter(listen: false)
                                                 .liked![index]
-                                                .thumb
-                                                .toString(),
+                                                .thumb,
                                           ),
                                         );
                                       }

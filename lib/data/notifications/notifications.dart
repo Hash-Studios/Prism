@@ -1,8 +1,8 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:hive_io/hive_io.dart';

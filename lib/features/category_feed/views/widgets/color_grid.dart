@@ -5,9 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
@@ -169,7 +169,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                 onPressed: () {
                   unawaited(
                     analytics.track(
-                      SurfaceActionTappedEvent(
+                      const SurfaceActionTappedEvent(
                         surface: AnalyticsSurfaceValue.homeColorGrid,
                         action: AnalyticsActionValue.seeMoreTapped,
                         sourceContext: 'home_color_grid_see_more',
@@ -232,7 +232,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                         action: AnalyticsActionValue.tileOpened,
                                         sourceContext: 'home_color_grid_tile',
                                         itemType: ItemTypeValue.wallpaper,
-                                        itemId: PData.wallsC[index].id.toString(),
+                                        itemId: PData.wallsC[index].id,
                                         index: index,
                                       ),
                                     ),

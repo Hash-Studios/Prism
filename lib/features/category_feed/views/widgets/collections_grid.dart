@@ -8,6 +8,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
@@ -15,7 +16,6 @@ import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart'
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -349,7 +349,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final List<Object?> rawCollections =
-        (CData.collections as List?)?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
+        CData.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;
     final int itemCount = isLoading ? 8 : rawCollections.length;
 

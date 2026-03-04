@@ -148,7 +148,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                             onTap: () {
                               unawaited(
                                 analytics.track(
-                                  SurfaceActionTappedEvent(
+                                  const SurfaceActionTappedEvent(
                                     surface: AnalyticsSurfaceValue.homeWallpaperGrid,
                                     action: AnalyticsActionValue.bannerTapped,
                                     sourceContext: 'home_wallpaper_grid_banner',
@@ -322,7 +322,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
                     func: () {
                       unawaited(
                         analytics.track(
-                          SurfaceActionTappedEvent(
+                          const SurfaceActionTappedEvent(
                             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
                             action: AnalyticsActionValue.seeMoreTapped,
                             sourceContext: 'home_wallpaper_grid_see_more',

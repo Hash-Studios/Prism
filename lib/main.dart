@@ -663,7 +663,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
           ),
         );
-        break;
       case UserLinkIntent():
         _appRouter.push(ProfileRoute(profileIdentifier: action.profileIdentifier));
         unawaited(
@@ -671,7 +670,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
           ),
         );
-        break;
       case SetupLinkIntent():
         _appRouter.push(ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl));
         unawaited(
@@ -679,7 +677,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
           ),
         );
-        break;
       case ReferLinkIntent():
         if (action.inviterId.trim().isEmpty) {
           unawaited(
@@ -704,10 +701,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
           ),
         );
-        break;
       case ShortCodeIntent():
         await _resolveAndNavigateShortCode(action.code);
-        break;
       case UnknownIntent():
         _appRouter.push(const NotFoundRoute());
         unawaited(
@@ -719,7 +714,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             ),
           ),
         );
-        break;
     }
   }
 

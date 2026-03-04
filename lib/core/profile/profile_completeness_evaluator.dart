@@ -62,7 +62,7 @@ class ProfileCompletenessEvaluator {
     if (links.isEmpty) {
       return false;
     }
-    return links.values.any((value) => value.toString().trim().isNotEmpty);
+    return links.values.any((value) => value.trim().isNotEmpty);
   }
 }
 

@@ -1,10 +1,10 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +73,7 @@ class _SplashWidgetState extends State<SplashWidget> {
 }
 
 class _SecondarySplash extends StatelessWidget {
-  const _SecondarySplash({super.key});
+  const _SecondarySplash();
 
   @override
   Widget build(BuildContext context) {

@@ -130,7 +130,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                             onTap: () {
                               unawaited(
                                 analytics.track(
-                                  SurfaceActionTappedEvent(
+                                  const SurfaceActionTappedEvent(
                                     surface: AnalyticsSurfaceValue.homeWallhavenGrid,
                                     action: AnalyticsActionValue.bannerTapped,
                                     sourceContext: 'home_wallhaven_grid_banner',
@@ -294,7 +294,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
                     func: () {
                       unawaited(
                         analytics.track(
-                          SurfaceActionTappedEvent(
+                          const SurfaceActionTappedEvent(
                             surface: AnalyticsSurfaceValue.homeWallhavenGrid,
                             action: AnalyticsActionValue.seeMoreTapped,
                             sourceContext: 'home_wallhaven_grid_see_more',

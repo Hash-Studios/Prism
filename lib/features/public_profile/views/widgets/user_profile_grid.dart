@@ -1,11 +1,11 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -211,7 +211,7 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
 }
 
 class _PhotographerWallTile extends StatelessWidget {
-  const _PhotographerWallTile({super.key, required this.animation, required this.index});
+  const _PhotographerWallTile({required this.animation, required this.index});
 
   final Animation<Color?>? animation;
   final int index;
@@ -239,7 +239,8 @@ class _PhotographerWallTile extends StatelessWidget {
               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
               onTap: () {
-                if (context.publicProfileAdapter(listen: false).userProfileWalls == []) {
+                if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
+                    context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
                 } else {
                   context.router.push(
                     UserProfileWallViewRoute(

@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
@@ -6,7 +7,6 @@ import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -45,7 +45,7 @@ class _SetupScreenState extends State<SetupScreen> {
 }
 
 class _SetupPage extends StatefulWidget {
-  const _SetupPage({super.key, required this.future, required this.controller});
+  const _SetupPage({required this.future, required this.controller});
 
   final Future? future;
   final PageController controller;

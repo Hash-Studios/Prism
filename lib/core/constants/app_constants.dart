@@ -42,7 +42,6 @@ PrismUsersV2 createGuestPrismUser() {
     lastLoginAt: now,
     links: const <String, String>{},
     premium: false,
-    subscriptionTier: 'free',
     loggedIn: false,
     profilePhoto: defaultProfilePhotoUrl,
     badges: <Badge>[],
@@ -50,8 +49,6 @@ PrismUsersV2 createGuestPrismUser() {
     subPrisms: const <String>[],
     transactions: <PrismTransaction>[],
     coverPhoto: '',
-    uploadsWeekStart: '',
-    uploadsThisWeek: 0,
   );
 }
 

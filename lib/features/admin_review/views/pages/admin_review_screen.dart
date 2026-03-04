@@ -1,8 +1,8 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -467,7 +467,7 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _SectionHeader(title: 'Compose notification', icon: Icons.notifications_outlined),
+            const _SectionHeader(title: 'Compose notification', icon: Icons.notifications_outlined),
             const SizedBox(height: 16),
             TextFormField(
               controller: _titleController,
@@ -504,7 +504,7 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
               keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 20),
-            _SectionHeader(title: 'Audience', icon: Icons.group_outlined),
+            const _SectionHeader(title: 'Audience', icon: Icons.group_outlined),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -541,10 +541,10 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
               ),
             ],
             const SizedBox(height: 20),
-            _SectionHeader(title: 'Deep-link destination', icon: Icons.link),
+            const _SectionHeader(title: 'Deep-link destination', icon: Icons.link),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _route,
+              initialValue: _route,
               decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.route)),
               items: _routeOptions.map((_RouteOption opt) {
                 return DropdownMenuItem<String>(value: opt.value, child: Text(opt.label));
@@ -739,7 +739,7 @@ class _NotificationPreviewCardState extends State<_NotificationPreviewCard> {
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
-                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
                   ),
                 ),
               ],

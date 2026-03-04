@@ -3,10 +3,10 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -320,8 +320,8 @@ class _NotificationCard extends StatelessWidget {
                     child: CachedNetworkImage(
                       imageUrl: notification!.imageUrl!,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                      placeholder: (_, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
                 ),
@@ -470,7 +470,7 @@ class _NotificationSettingsSheetState extends State<_NotificationSettingsSheet> 
                   }
                 } else {
                   analytics.track(
-                    NotificationActionBlockedEvent(
+                    const NotificationActionBlockedEvent(
                       action: AnalyticsActionValue.notificationSettingsOpened,
                       reason: AnalyticsReasonValue.notSignedIn,
                     ),
@@ -523,7 +523,7 @@ class _NotificationSettingsSheetState extends State<_NotificationSettingsSheet> 
                         }
                       } else {
                         analytics.track(
-                          NotificationActionBlockedEvent(
+                          const NotificationActionBlockedEvent(
                             action: AnalyticsActionValue.notificationSettingsOpened,
                             reason: AnalyticsReasonValue.notSignedIn,
                           ),
@@ -632,7 +632,7 @@ class _NotificationSettingsSheetState extends State<_NotificationSettingsSheet> 
                   );
                 } else {
                   analytics.track(
-                    NotificationActionBlockedEvent(
+                    const NotificationActionBlockedEvent(
                       action: AnalyticsActionValue.notificationSettingsOpened,
                       reason: AnalyticsReasonValue.notSignedIn,
                     ),

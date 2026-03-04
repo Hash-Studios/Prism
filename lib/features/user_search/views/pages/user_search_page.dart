@@ -102,7 +102,7 @@ class _UserSearchState extends State<UserSearch> {
 }
 
 class _UserSearchLoader extends StatelessWidget {
-  const _UserSearchLoader({super.key});
+  const _UserSearchLoader();
 
   @override
   Widget build(BuildContext context) {
@@ -121,7 +121,7 @@ class _UserSearchLoader extends StatelessWidget {
 }
 
 class _UsersResultList extends StatefulWidget {
-  const _UsersResultList({required this.users, required this.queryLength, super.key});
+  const _UsersResultList({required this.users, required this.queryLength});
   final List<UserSearchUser> users;
   final int queryLength;
 
@@ -368,7 +368,7 @@ class _UsersResultListState extends State<_UsersResultList> {
                                                     ).colorScheme.secondary.withValues(alpha: 0.1),
                                                   ),
                                                   child: Icon(
-                                                    linksData[e]!["icon"] as IconData,
+                                                    linksData[e]!["icon"]! as IconData,
                                                     size: 20,
                                                     color: Theme.of(
                                                       context,

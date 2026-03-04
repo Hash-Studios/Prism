@@ -218,7 +218,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    context.favouriteSetupsAdapter().liked![index].image.toString(),
+                                    context.favouriteSetupsAdapter().liked![index].image,
                                   ),
                                   fit: BoxFit.cover,
                                 ),
@@ -232,7 +232,8 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                   splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                   highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                   onTap: () {
-                                    if (context.favouriteSetupsAdapter(listen: false).liked == []) {
+                                    if (context.favouriteSetupsAdapter(listen: false).liked == null ||
+                                        context.favouriteSetupsAdapter(listen: false).liked!.isEmpty) {
                                     } else {
                                       unawaited(
                                         analytics.track(
@@ -240,11 +241,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                                             surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
                                             action: AnalyticsActionValue.tileOpened,
                                             sourceContext: 'favourite_setups_grid_tile',
-                                            itemId: context
-                                                .favouriteSetupsAdapter(listen: false)
-                                                .liked![index]
-                                                .id
-                                                ?.toString(),
+                                            itemId: context.favouriteSetupsAdapter(listen: false).liked![index].id,
                                             index: index,
                                           ),
                                         ),

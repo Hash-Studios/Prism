@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Returns the first non-null value for the given keys in [map].
 Object? firstPresent(JsonMap map, List<String> keys) {

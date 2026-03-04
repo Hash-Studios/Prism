@@ -129,7 +129,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                             onTap: () {
                               unawaited(
                                 analytics.track(
-                                  SurfaceActionTappedEvent(
+                                  const SurfaceActionTappedEvent(
                                     surface: AnalyticsSurfaceValue.homePexelsGrid,
                                     action: AnalyticsActionValue.bannerTapped,
                                     sourceContext: 'home_pexels_grid_banner',
@@ -293,7 +293,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                     func: () {
                       unawaited(
                         analytics.track(
-                          SurfaceActionTappedEvent(
+                          const SurfaceActionTappedEvent(
                             surface: AnalyticsSurfaceValue.homePexelsGrid,
                             action: AnalyticsActionValue.seeMoreTapped,
                             sourceContext: 'home_pexels_grid_see_more',

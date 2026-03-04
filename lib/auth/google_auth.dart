@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -7,11 +9,9 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
-import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/logger/logger.dart';
-import 'dart:async';
-
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -112,7 +112,6 @@ class GoogleAuth {
           lastLoginAt: DateTime.now().toUtc().toIso8601String(),
           links: {},
           premium: false,
-          subscriptionTier: 'free',
           loggedIn: true,
           profilePhoto: user.photoURL!,
           badges: [],
@@ -230,7 +229,6 @@ class GoogleAuth {
       lastLoginAt: DateTime.now().toUtc().toIso8601String(),
       links: {},
       premium: false,
-      subscriptionTier: 'free',
       loggedIn: false,
       profilePhoto: app_state.defaultProfilePhotoUrl,
       badges: [],

@@ -13,6 +13,10 @@ analyzer:
     unused_field: warning
     unused_local_variable: warning
     invalid_annotation_target: ignore
+    strict_raw_type: ignore
+    inference_failure_on_function_invocation: ignore
+    inference_failure_on_instance_creation: ignore
+    inference_failure_on_untyped_parameter: ignore
   exclude:
     - lib/theme/jam_icons_icons.dart
     - '**/*.g.dart'

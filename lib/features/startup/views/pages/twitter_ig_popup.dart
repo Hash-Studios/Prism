@@ -269,7 +269,6 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
 
 class _FollowHeaderCard extends StatelessWidget {
   const _FollowHeaderCard({
-    super.key,
     required this.url,
     required this.email,
     required this.name,
@@ -455,7 +454,7 @@ class _FirestoreDoc {
 }
 
 class _FollowImage extends StatelessWidget {
-  const _FollowImage({super.key, required this.img1});
+  const _FollowImage({required this.img1});
 
   final String img1;
 

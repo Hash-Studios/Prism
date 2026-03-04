@@ -213,7 +213,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _byCollection.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, i) {
                             final e = _byCollection[i];
                             return ListTile(
@@ -233,7 +233,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _byOperation.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, i) {
                             final e = _byOperation[i];
                             return ListTile(title: Text(e.key), trailing: Text('${e.value}'));
@@ -250,7 +250,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _bySourceTag.length > 15 ? 15 : _bySourceTag.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, i) {
                             final e = _bySourceTag[i];
                             return ListTile(

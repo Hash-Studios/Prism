@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
@@ -22,7 +23,6 @@ import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adap
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -88,8 +88,8 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.setupIndex;
     isLoading = true;
-    updateViewsSetup(_setup.id.toString().toUpperCase());
-    _futureView = getViewsSetup(_setup.id.toString().toUpperCase());
+    updateViewsSetup(_setup.id.toUpperCase());
+    _futureView = getViewsSetup(_setup.id.toUpperCase());
     box = Hive.box('localFav');
     super.initState();
   }
@@ -260,7 +260,6 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                         .setupsAdapter(listen: false)
                                                         .setups![index!]
                                                         .id
-                                                        .toString()
                                                         .toUpperCase(),
                                                     overflow: TextOverflow.fade,
                                                     softWrap: false,
@@ -338,11 +337,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                                   .setups![index!]
                                                   .name
                                                   .toString(),
-                                              thumbUrl: context
-                                                  .setupsAdapter(listen: false)
-                                                  .setups![index!]
-                                                  .image
-                                                  .toString(),
+                                              thumbUrl: context.setupsAdapter(listen: false).setups![index!].image,
                                             );
                                           },
                                           child: Row(
@@ -595,7 +590,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                               },
                               iconColor: Theme.of(context).colorScheme.secondary,
                               iconSize: 30,
-                              isFavorite: box.get(_setup.id.toString(), defaultValue: false) as bool,
+                              isFavorite: box.get(_setup.id, defaultValue: false) as bool,
                             ),
                           ),
                           GestureDetector(
@@ -603,7 +598,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                               createSetupDynamicLink(
                                 index.toString(),
                                 _setup.name.toString(),
-                                _setup.image.toString(),
+                                _setup.image,
                                 context: context,
                               );
                             },
@@ -655,7 +650,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                     shakeController.forward(from: 0.0);
                   },
                   child: CachedNetworkImage(
-                    imageUrl: _setup.image.toString(),
+                    imageUrl: _setup.image,
                     imageBuilder: (context, imageProvider) => Container(
                       margin: EdgeInsets.symmetric(
                         vertical: offsetAnimation.value * 1.25,
@@ -709,7 +704,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                           animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                           return FadeTransition(
                             opacity: animation,
-                            child: SetupOverlay(link: _setup.image.toString()),
+                            child: SetupOverlay(link: _setup.image),
                           );
                         },
                         fullscreenDialog: true,

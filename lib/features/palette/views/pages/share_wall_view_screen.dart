@@ -351,7 +351,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               Padding(
                                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                 child: Text(
-                                                  id.toString().toUpperCase(),
+                                                  id.toUpperCase(),
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -796,7 +796,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   child: Row(
                                                     children: [
                                                       Text(
-                                                        id.toString().toUpperCase(),
+                                                        id.toUpperCase(),
                                                         style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -1428,7 +1428,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        id.toString(),
+                                                        id,
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -1465,12 +1465,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       children: <Widget>[
                                         DownloadButton(
                                           colorChanged: colorChanged,
-                                          link: screenshotTaken ? _imageFile.path : url.toString(),
+                                          link: screenshotTaken ? _imageFile.path : url,
                                         ),
                                         if (!hideSetWallpaperUi)
                                           SetWallpaperButton(
                                             colorChanged: colorChanged,
-                                            url: screenshotTaken ? _imageFile.path : url.toString(),
+                                            url: screenshotTaken ? _imageFile.path : url,
                                           ),
                                         FavouriteWallpaperButton(
                                           wall: PexelsFavouriteWall(
@@ -1492,12 +1492,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                           ShareButton(
                                             id: snapshot.data?.id ?? '',
                                             source: source,
-                                            url: url.toString(),
-                                            thumbUrl: url.toString(),
+                                            url: url,
+                                            thumbUrl: url,
                                           )
                                         else
                                           Container(),
-                                        EditButton(url: url.toString()),
+                                        EditButton(url: url),
                                       ],
                                     ),
                                   ),

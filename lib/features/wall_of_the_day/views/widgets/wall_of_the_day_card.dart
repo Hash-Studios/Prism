@@ -83,8 +83,8 @@ class _WotdCardContent extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: entity.thumbnailUrl,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => Container(color: Colors.white10),
-                errorWidget: (_, __, ___) => Container(color: Colors.white10),
+                placeholder: (_, _) => Container(color: Colors.white10),
+                errorWidget: (_, _, _) => Container(color: Colors.white10),
               ),
 
               // Gradient overlay

@@ -120,10 +120,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
         return _prismWall.id;
       }
       if (source == WallpaperSource.wallhaven) {
-        return _wallhavenWall.id?.toString();
+        return _wallhavenWall.id;
       }
       if (source == WallpaperSource.pexels) {
-        return _pexelsWall.id?.toString();
+        return _pexelsWall.id;
       }
     } catch (_) {}
     return null;
@@ -393,7 +393,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
-                                              _wallhavenWall.id.toString().toUpperCase(),
+                                              _wallhavenWall.id.toUpperCase(),
                                               style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -543,10 +543,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                       url: screenshotTaken ? _imageFile.path : _wallhavenWall.core.fullUrl,
                                     ),
                                   FavouriteWallpaperButton(
-                                    wall: WallhavenFavouriteWall(
-                                      id: _wallhavenWall.id.toString(),
-                                      wallpaper: _wallhavenWall,
-                                    ),
+                                    wall: WallhavenFavouriteWall(id: _wallhavenWall.id, wallpaper: _wallhavenWall),
                                     trash: false,
                                   ),
                                   ShareButton(
@@ -829,7 +826,6 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                     child: Wrap(
                                                       crossAxisAlignment: WrapCrossAlignment.center,
-                                                      spacing: 0,
                                                       runSpacing: 4,
                                                       children: [
                                                         Text(
@@ -1429,7 +1425,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    _pexelsWall.id.toString(),
+                                                    _pexelsWall.id,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -1653,7 +1649,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     child: ClockOverlay(
                                       colorChanged: colorChanged,
                                       accent: accent,
-                                      link: link.toString(),
+                                      link: link,
                                       file: false,
                                     ),
                                   );
@@ -1852,7 +1848,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    pdata.wallsC[index].id.toString(),
+                                                    pdata.wallsC[index].id,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -2079,7 +2075,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     child: ClockOverlay(
                                       colorChanged: colorChanged,
                                       accent: accent,
-                                      link: link.toString(),
+                                      link: link,
                                       file: false,
                                     ),
                                   );
@@ -2218,7 +2214,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
-                                              wdata.wallsS[index].id.toString().toUpperCase(),
+                                              wdata.wallsS[index].id.toUpperCase(),
                                               style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),

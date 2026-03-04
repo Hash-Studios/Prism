@@ -77,10 +77,7 @@ class SessionRepositoryImpl implements SessionRepository {
       premium: _currentUser.premium,
       subscriptionTier: _currentUser.subscriptionTier,
       coins: _currentUser.coins,
-      links: <String, String>{
-        for (final entry in _currentUser.links.entries)
-          if (entry.key is String && entry.value != null) entry.key as String: entry.value.toString(),
-      },
+      links: <String, String>{for (final entry in _currentUser.links.entries) entry.key: entry.value},
       followers: _currentUser.followers.whereType<String>().toList(growable: false),
       following: _currentUser.following.whereType<String>().toList(growable: false),
       badges: _currentUser.badges

@@ -204,7 +204,8 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                   splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                   highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                   onTap: () {
-                                    if (context.profileWalls(listen: false) == []) {
+                                    if (context.profileWalls(listen: false) == null ||
+                                        context.profileWalls(listen: false)!.isEmpty) {
                                     } else {
                                       context.router.push(
                                         ProfileWallViewRoute(

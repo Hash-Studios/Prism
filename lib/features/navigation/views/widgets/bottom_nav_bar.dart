@@ -5,9 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -336,7 +336,7 @@ class _BottomNavBarState extends State<_BottomNavBar> with SingleTickerProviderS
                     ),
                     onPressed: () {
                       analytics.track(
-                        UploadActionSelectedEvent(
+                        const UploadActionSelectedEvent(
                           action: AnalyticsActionValue.uploadSheetOpened,
                           entrypoint: EntryPointValue.bottomNav,
                         ),
@@ -454,7 +454,7 @@ class _BottomNavBarState extends State<_BottomNavBar> with SingleTickerProviderS
 }
 
 class _UploadBottomPanel extends StatefulWidget {
-  const _UploadBottomPanel({super.key});
+  const _UploadBottomPanel();
 
   @override
   _UploadBottomPanelState createState() => _UploadBottomPanelState();
@@ -526,7 +526,7 @@ class _UploadBottomPanelState extends State<_UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () async {
                         analytics.track(
-                          UploadActionSelectedEvent(
+                          const UploadActionSelectedEvent(
                             action: AnalyticsActionValue.uploadWallpaperSelected,
                             entrypoint: EntryPointValue.bottomNav,
                           ),
@@ -610,7 +610,7 @@ class _UploadBottomPanelState extends State<_UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () async {
                         analytics.track(
-                          UploadActionSelectedEvent(
+                          const UploadActionSelectedEvent(
                             action: AnalyticsActionValue.uploadSetupSelected,
                             entrypoint: EntryPointValue.bottomNav,
                           ),
@@ -706,7 +706,7 @@ class _UploadBottomPanelState extends State<_UploadBottomPanel> {
 int adHeight = 80;
 
 class _AdBannerWidget extends StatefulWidget {
-  const _AdBannerWidget(this.bottom, {super.key});
+  const _AdBannerWidget(this.bottom);
   static const AdRequest request = AdRequest(
     nonPersonalizedAds: false,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],

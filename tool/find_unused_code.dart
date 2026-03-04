@@ -496,7 +496,7 @@ void _generateHtml({
   File(outputPath).writeAsStringSync(html.toString());
 }
 
-String _htmlCss() => r"""
+String _htmlCss() => """
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -547,7 +547,7 @@ String _htmlCss() => r"""
   .notice li { margin: .25rem 0; }
 """;
 
-String _htmlJs() => r"""
+String _htmlJs() => """
   // Collapse/expand all button would go here if needed.
   // Currently details elements are all open by default for immediate visibility.
 """;

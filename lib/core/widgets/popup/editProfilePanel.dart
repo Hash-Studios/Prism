@@ -6,8 +6,8 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/env/env.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/env/env.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -36,6 +36,7 @@ class _ProfileLinkOption {
     required this.link,
     required this.icon,
     required this.validator,
+    // ignore: unused_element_parameter
     this.value = '',
   });
 
@@ -291,7 +292,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
   }
 
-  Future<void> showRemoveAlertDialog(BuildContext context, Function() remove, String removeWhat) async {
+  Future<void> showRemoveAlertDialog(BuildContext context, Future<void> Function() remove, String removeWhat) async {
     final AlertDialog deletePopUp = AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       title: Text(

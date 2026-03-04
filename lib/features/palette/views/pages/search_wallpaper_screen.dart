@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -19,7 +20,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as 
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -317,7 +317,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          wdata.wallsS[index].id.toString().toUpperCase(),
+                                          wdata.wallsS[index].id.toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
@@ -420,7 +420,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                       Row(
                                         children: [
                                           Text(
-                                            query.toString()[0].toUpperCase() + query.toString().substring(1),
+                                            query[0].toUpperCase() + query.substring(1),
                                             style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                               color: Theme.of(context).colorScheme.secondary,
                                             ),
@@ -779,7 +779,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                pdata.wallsPS[index].id.toString(),
+                                                pdata.wallsPS[index].id,
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -836,7 +836,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                           Row(
                                             children: [
                                               Text(
-                                                query.toString(),
+                                                query,
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -1001,7 +1001,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                                   child: ClockOverlay(
                                     colorChanged: colorChanged,
                                     accent: accent,
-                                    link: link.toString(),
+                                    link: link,
                                     file: false,
                                   ),
                                 );

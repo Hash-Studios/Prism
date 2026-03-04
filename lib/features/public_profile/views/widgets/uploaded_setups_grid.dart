@@ -189,7 +189,7 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                               borderRadius: BorderRadius.circular(20),
                               image: DecorationImage(
                                 image: CachedNetworkImageProvider(
-                                  context.profileSetupsAdapter().profileSetups![index].image.toString(),
+                                  context.profileSetupsAdapter().profileSetups![index].image,
                                 ),
                                 fit: BoxFit.cover,
                               ),
@@ -203,7 +203,8 @@ class _UploadedSetupsGridState extends State<UploadedSetupsGrid> with SingleTick
                                 splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                 highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                 onTap: () {
-                                  if (context.profileSetupsAdapter(listen: false).profileSetups == []) {
+                                  if (context.profileSetupsAdapter(listen: false).profileSetups == null ||
+                                      context.profileSetupsAdapter(listen: false).profileSetups!.isEmpty) {
                                   } else {
                                     context.router.push(ProfileSetupViewRoute(setupIndex: index));
                                   }

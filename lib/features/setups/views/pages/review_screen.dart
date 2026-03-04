@@ -6,10 +6,10 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -233,7 +233,7 @@ class _WallTile extends StatelessWidget {
                                 Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.id}",
+                                  wallpaper.id,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -246,7 +246,7 @@ class _WallTile extends StatelessWidget {
                                 Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.size}",
+                                  wallpaper.size,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -259,7 +259,7 @@ class _WallTile extends StatelessWidget {
                                 Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.resolution}",
+                                  wallpaper.resolution,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -291,7 +291,7 @@ class _WallTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.wallpaperUrl.toString();
+                                      final link = wallpaper.wallpaperUrl;
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -314,8 +314,9 @@ class _WallTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        if (e.code != 'channel-error')
+                                        if (e.code != 'channel-error') {
                                           logger.e('saveMedia failed for review wall download', error: e);
+                                        }
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for review wall download', error: e);
@@ -476,7 +477,7 @@ class _RejectedWallTile extends StatelessWidget {
                                 Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.id}",
+                                  wallpaper.id,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -489,7 +490,7 @@ class _RejectedWallTile extends StatelessWidget {
                                 Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.size}",
+                                  wallpaper.size,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -502,7 +503,7 @@ class _RejectedWallTile extends StatelessWidget {
                                 Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
                                 const SizedBox(width: 8),
                                 Text(
-                                  "${wallpaper.resolution}",
+                                  wallpaper.resolution,
                                   style: Theme.of(
                                     context,
                                   ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -534,7 +535,7 @@ class _RejectedWallTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.wallpaperUrl.toString();
+                                      final link = wallpaper.wallpaperUrl;
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -557,8 +558,9 @@ class _RejectedWallTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        if (e.code != 'channel-error')
+                                        if (e.code != 'channel-error') {
                                           logger.e('saveMedia failed for rejected wall download', error: e);
+                                        }
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for rejected wall download', error: e);
@@ -809,7 +811,7 @@ class SetupTile extends StatelessWidget {
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
-                                    text: "${wallpaper.name}" == "" ? "No name" : "${wallpaper.name}",
+                                    text: wallpaper.name == "" ? "No name" : wallpaper.name,
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
@@ -817,7 +819,7 @@ class SetupTile extends StatelessWidget {
                                     ),
                                     children: [
                                       TextSpan(
-                                        text: "${wallpaper.desc}" == "" ? " - No desc" : " - ${wallpaper.desc}",
+                                        text: wallpaper.desc == "" ? " - No desc" : " - ${wallpaper.desc}",
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -843,7 +845,7 @@ class SetupTile extends StatelessWidget {
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
-                                    "${wallpaper.id}",
+                                    wallpaper.id,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -907,8 +909,8 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                if ("${wallpaper.iconUrl}" != "") {
-                                  openPrismLink(context, "${wallpaper.iconUrl}").catchError((e) {
+                                if (wallpaper.iconUrl != "") {
+                                  openPrismLink(context, wallpaper.iconUrl).catchError((e) {
                                     toasts.error("Error in link!");
                                     return false;
                                   });
@@ -923,7 +925,7 @@ class SetupTile extends StatelessWidget {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.icon}" == "" ? "No icon" : "${wallpaper.icon}",
+                                      wallpaper.icon == "" ? "No icon" : wallpaper.icon,
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                         decoration: TextDecoration.underline,
                                         color: Theme.of(context).colorScheme.secondary,
@@ -1030,7 +1032,7 @@ class SetupTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.image.toString();
+                                      final link = wallpaper.image;
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -1052,8 +1054,9 @@ class SetupTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        if (e.code != 'channel-error')
+                                        if (e.code != 'channel-error') {
                                           logger.e('saveMedia failed for review setup download', error: e);
+                                        }
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for review setup download', error: e);
@@ -1227,7 +1230,7 @@ class _RejectedSetupTile extends StatelessWidget {
                                 width: MediaQuery.of(context).size.width * 0.3,
                                 child: RichText(
                                   text: TextSpan(
-                                    text: "${wallpaper.name}",
+                                    text: wallpaper.name,
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
@@ -1261,7 +1264,7 @@ class _RejectedSetupTile extends StatelessWidget {
                                 SizedBox(
                                   width: MediaQuery.of(context).size.width * 0.3,
                                   child: Text(
-                                    "${wallpaper.id}",
+                                    wallpaper.id,
                                     style: Theme.of(
                                       context,
                                     ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -1319,7 +1322,7 @@ class _RejectedSetupTile extends StatelessWidget {
                             const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
-                                openPrismLink(context, "${wallpaper.iconUrl}").catchError((e) {
+                                openPrismLink(context, wallpaper.iconUrl).catchError((e) {
                                   toasts.error("Error in link!");
                                   return false;
                                 });
@@ -1331,7 +1334,7 @@ class _RejectedSetupTile extends StatelessWidget {
                                   SizedBox(
                                     width: MediaQuery.of(context).size.width * 0.3,
                                     child: Text(
-                                      "${wallpaper.icon}",
+                                      wallpaper.icon,
                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                         decoration: TextDecoration.underline,
                                         color: Theme.of(context).colorScheme.secondary,
@@ -1422,7 +1425,7 @@ class _RejectedSetupTile extends StatelessWidget {
                                       if (!status.isGranted) {
                                         await Permission.storage.request();
                                       }
-                                      final link = wallpaper.image.toString();
+                                      final link = wallpaper.image;
                                       logger.d(link);
 
                                       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -1444,8 +1447,9 @@ class _RejectedSetupTile extends StatelessWidget {
                                           toasts.codeSend("Couldn't download! Please Retry!");
                                         }
                                       } on PlatformException catch (e) {
-                                        if (e.code != 'channel-error')
+                                        if (e.code != 'channel-error') {
                                           logger.e('saveMedia failed for rejected setup download', error: e);
+                                        }
                                         toasts.codeSend("Couldn't download! Please Retry!");
                                       } catch (e) {
                                         logger.e('Unexpected saveMedia failure for rejected setup download', error: e);

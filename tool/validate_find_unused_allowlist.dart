@@ -114,8 +114,8 @@ class _Report {
   _Report({required this.unreachable, required this.unusedSymbols});
 
   factory _Report.fromJson(Map<String, dynamic> jsonMap) {
-    final List<dynamic> unreachableRaw = (jsonMap['unreachable_files'] as List<dynamic>? ?? <dynamic>[]);
-    final Map<String, dynamic> unusedRaw = (jsonMap['unused_symbols'] as Map<String, dynamic>? ?? <String, dynamic>{});
+    final List<dynamic> unreachableRaw = jsonMap['unreachable_files'] as List<dynamic>? ?? <dynamic>[];
+    final Map<String, dynamic> unusedRaw = jsonMap['unused_symbols'] as Map<String, dynamic>? ?? <String, dynamic>{};
 
     return _Report(
       unreachable: unreachableRaw.map((dynamic e) => e.toString()).toSet(),
@@ -139,8 +139,8 @@ class _Allowlist {
   _Allowlist({required this.unreachable, required this.unusedSymbols});
 
   factory _Allowlist.fromJson(Map<String, dynamic> jsonMap) {
-    final List<dynamic> unreachableRaw = (jsonMap['unreachable_files'] as List<dynamic>? ?? <dynamic>[]);
-    final Map<String, dynamic> unusedRaw = (jsonMap['unused_symbols'] as Map<String, dynamic>? ?? <String, dynamic>{});
+    final List<dynamic> unreachableRaw = jsonMap['unreachable_files'] as List<dynamic>? ?? <dynamic>[];
+    final Map<String, dynamic> unusedRaw = jsonMap['unused_symbols'] as Map<String, dynamic>? ?? <String, dynamic>{};
 
     return _Allowlist(
       unreachable: unreachableRaw.map((dynamic e) => e.toString()).toSet(),

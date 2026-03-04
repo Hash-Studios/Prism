@@ -1,5 +1,6 @@
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -16,7 +17,6 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -181,8 +181,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                         HexColor(
                                               WData
                                                   .walls[widget.index]
-                                                  .colors![WData.walls[widget.index].colors!.length - 1]
-                                                  .toString(),
+                                                  .colors![WData.walls[widget.index].colors!.length - 1],
                                             ).computeLuminance() >
                                             0.5
                                         ? Colors.black
@@ -190,8 +189,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                     size: 20,
                                   ),
                                   backgroundColor: HexColor(
-                                    WData.walls[widget.index].colors![WData.walls[widget.index].colors!.length - 1]
-                                        .toString(),
+                                    WData.walls[widget.index].colors![WData.walls[widget.index].colors!.length - 1],
                                   ),
                                   label: Text(
                                     WData.walls[widget.index].core.category.toString()[0].toUpperCase() +
@@ -201,8 +199,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                           HexColor(
                                                 WData
                                                     .walls[widget.index]
-                                                    .colors![WData.walls[widget.index].colors!.length - 1]
-                                                    .toString(),
+                                                    .colors![WData.walls[widget.index].colors!.length - 1],
                                               ).computeLuminance() >
                                               0.5
                                           ? Colors.black
@@ -214,7 +211,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                   child: Text(
-                                    WData.walls[widget.index].id.toString().toUpperCase(),
+                                    WData.walls[widget.index].id.toUpperCase(),
                                     style: Theme.of(
                                       context,
                                     ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -367,7 +364,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          Data.subPrismWalls![widget.index].id.toString().toUpperCase(),
+                                          Data.subPrismWalls![widget.index].id.toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
@@ -485,11 +482,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                       Padding(
                                         padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                         child: Text(
-                                          context
-                                              .profileWalls(listen: false)![widget.index]
-                                              .id
-                                              .toString()
-                                              .toUpperCase(),
+                                          context.profileWalls(listen: false)![widget.index].id.toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
@@ -613,7 +606,6 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                               .publicProfileAdapter()
                                               .userProfileWalls![widget.index]
                                               .id
-                                              .toString()
                                               .toUpperCase(),
                                           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
@@ -857,14 +849,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 context
                                                         .favouriteWallsAdapter(listen: false)
                                                         .liked![widget.index]
-                                                        .category
-                                                        .toString()[0]
+                                                        .category[0]
                                                         .toUpperCase() +
                                                     context
                                                         .favouriteWallsAdapter(listen: false)
                                                         .liked![widget.index]
                                                         .category
-                                                        .toString()
                                                         .substring(1),
                                                 style: Theme.of(
                                                   context,
@@ -879,7 +869,6 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     .favouriteWallsAdapter(listen: false)
                                                     .liked![widget.index]
                                                     .id
-                                                    .toString()
                                                     .toUpperCase(),
                                                 style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
@@ -906,8 +895,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
                                                       .liked![widget.index]
-                                                      .resolution
-                                                      .toString(),
+                                                      .resolution,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -985,14 +973,12 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 context
                                                         .favouriteWallsAdapter(listen: false)
                                                         .liked![widget.index]
-                                                        .photographer
-                                                        .toString()[0]
+                                                        .photographer[0]
                                                         .toUpperCase() +
                                                     context
                                                         .favouriteWallsAdapter(listen: false)
                                                         .liked![widget.index]
                                                         .photographer
-                                                        .toString()
                                                         .substring(1),
                                                 style: Theme.of(
                                                   context,
@@ -1007,7 +993,6 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                     .favouriteWallsAdapter(listen: false)
                                                     .liked![widget.index]
                                                     .id
-                                                    .toString()
                                                     .toUpperCase(),
                                                 style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
@@ -1022,8 +1007,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
                                                       .liked![widget.index]
-                                                      .size
-                                                      .toString(),
+                                                      .size,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -1038,8 +1022,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
                                                       .liked![widget.index]
-                                                      .resolution
-                                                      .toString(),
+                                                      .resolution,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -1117,8 +1100,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                 context
                                                     .favouriteWallsAdapter(listen: false)
                                                     .liked![widget.index]
-                                                    .photographer
-                                                    .toString(),
+                                                    .photographer,
                                                 style: Theme.of(
                                                   context,
                                                 ).textTheme.headlineMedium!.copyWith(color: Colors.white),
@@ -1137,8 +1119,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
                                                       .liked![widget.index]
-                                                      .resolution
-                                                      .toString(),
+                                                      .resolution,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -1250,8 +1231,7 @@ class _FocusedMenuDetailsState extends State<FocusedMenuDetails> {
                                                   context
                                                       .favouriteWallsAdapter(listen: false)
                                                       .liked![widget.index]
-                                                      .resolution
-                                                      .toString(),
+                                                      .resolution,
                                                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
