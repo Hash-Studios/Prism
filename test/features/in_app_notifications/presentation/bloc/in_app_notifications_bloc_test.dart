@@ -19,8 +19,8 @@ class _MockClearNotificationsUseCase extends Mock implements ClearNotificationsU
 void main() {
   setUpAll(() {
     registerFallbackValue(const FetchNotificationsParams(syncRemote: true));
-    registerFallbackValue(const MarkNotificationAsReadParams(index: 0));
-    registerFallbackValue(const DeleteNotificationParams(index: 0));
+    registerFallbackValue(const MarkNotificationAsReadParams(id: 'notif-1'));
+    registerFallbackValue(const DeleteNotificationParams(id: 'notif-1'));
   });
 
   late _MockFetchNotificationsUseCase fetchUseCase;
@@ -29,6 +29,7 @@ void main() {
   late _MockClearNotificationsUseCase clearUseCase;
 
   final unread = InAppNotificationEntity(
+    id: 'notif-1',
     title: 't',
     pageName: '/route',
     body: 'b',
@@ -40,6 +41,7 @@ void main() {
   );
 
   final read = InAppNotificationEntity(
+    id: 'notif-1',
     title: 't',
     pageName: '/route',
     body: 'b',
@@ -72,7 +74,7 @@ void main() {
     build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, clearUseCase),
     act: (bloc) => bloc
       ..add(const InAppNotificationsEvent.started(syncRemote: true))
-      ..add(const InAppNotificationsEvent.markReadRequested(index: 0)),
+      ..add(const InAppNotificationsEvent.markReadRequested(id: 'notif-1')),
     verify: (bloc) {
       expect(bloc.state.status, LoadStatus.success);
       expect(bloc.state.unreadCount, 0);

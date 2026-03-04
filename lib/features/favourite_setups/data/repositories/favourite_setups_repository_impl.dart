@@ -2,19 +2,19 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/repositories/favourite_setups_repository.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: FavouriteSetupsRepository)
 class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
-  FavouriteSetupsRepositoryImpl(this._firestoreClient, @Named('localFavBox') this._localFavBox);
+  FavouriteSetupsRepositoryImpl(this._firestoreClient, this._favoritesLocal);
 
   final FirestoreClient _firestoreClient;
-  final Box<dynamic> _localFavBox;
+  final FavoritesLocalDataSource _favoritesLocal;
 
   String _collectionPath(String userId) => 'usersv2/$userId/setups';
 
@@ -65,7 +65,7 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
           setup.id,
           sourceTag: 'favourite_setups.toggle.delete',
         );
-        await _localFavBox.delete(setup.id);
+        await _favoritesLocal.setSetupFavourite(userId, setup.id, false);
       } else {
         await _firestoreClient.setDoc(
           _collectionPath(userId),
@@ -73,7 +73,7 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
           _toFirestoreDoc(setup),
           sourceTag: 'favourite_setups.toggle.set',
         );
-        await _localFavBox.put(setup.id, true);
+        await _favoritesLocal.setSetupFavourite(userId, setup.id, true);
       }
       return Result.success(await _read(userId));
     } catch (error) {
@@ -85,7 +85,7 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   Future<Result<List<FavouriteSetupEntity>>> removeFavourite({required String userId, required String setupId}) async {
     try {
       await _firestoreClient.deleteDoc(_collectionPath(userId), setupId, sourceTag: 'favourite_setups.remove');
-      await _localFavBox.delete(setupId);
+      await _favoritesLocal.setSetupFavourite(userId, setupId, false);
       return Result.success(await _read(userId));
     } catch (error) {
       return Result.error(ServerFailure('Unable to remove favourite setup: $error'));

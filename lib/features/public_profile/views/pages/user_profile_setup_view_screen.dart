@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -31,7 +33,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
@@ -45,6 +46,7 @@ class UserProfileSetupViewScreen extends StatefulWidget {
 }
 
 class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen> with SingleTickerProviderStateMixin {
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? index;
   String? thumb;
@@ -53,7 +55,6 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
   late AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String>? _futureView;
-  late Box box;
 
   PublicProfileSetupEntity get _setup => context.publicProfileAdapter(listen: false).userProfileSetups![index!];
 
@@ -92,7 +93,6 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
       _futureView = getViewsSetup(_setup.id.toUpperCase());
     });
     isLoading = true;
-    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -564,7 +564,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                               },
                               iconColor: Theme.of(context).colorScheme.secondary,
                               iconSize: 30,
-                              isFavorite: box.get(_setup.id, defaultValue: false) as bool,
+                              isFavorite: _favoritesLocal.isSetupFavourite(app_state.prismUser.id, _setup.id),
                             ),
                           ),
                           GestureDetector(

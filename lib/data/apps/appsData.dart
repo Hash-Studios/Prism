@@ -1,8 +1,11 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/persistence/data_sources/app_icons_local_data_source.dart';
 import 'package:Prism/data/apps/app_icon.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:hive_io/hive_io.dart';
+
+const Duration _iconsCacheTtl = Duration(days: 7);
 
 List<AppIcon> _decodeIcons(Object? raw) {
   if (raw is Map) {
@@ -15,17 +18,32 @@ List<AppIcon> _decodeIcons(Object? raw) {
 }
 
 Future<List<AppIcon>> getIcons() async {
+  final AppIconsLocalDataSource local = getIt<AppIconsLocalDataSource>();
+  final Map<String, dynamic> cached = local.readIconsPayload();
+  final DateTime? cachedAt = local.lastUpdatedAtUtc();
+  final bool cacheFresh =
+      cached.isNotEmpty && cachedAt != null && DateTime.now().toUtc().difference(cachedAt) <= _iconsCacheTtl;
+
+  if (cacheFresh) {
+    logger.d('Returning fresh icon cache', fields: <String, Object?>{'count': cached.length});
+    return _decodeIcons(cached);
+  }
+
   logger.i("Fethcing icons");
-  final value = await firestoreClient.getById<Map<String, dynamic>>(
-    FirebaseCollections.apps,
-    "icons",
-    (data, _) => data,
-    sourceTag: "apps.getIcons",
-  );
-  final Map<String, dynamic> iconData = value?["data"] as Map<String, dynamic>? ?? <String, dynamic>{};
-  logger.d("Fetched ${iconData.values.toList().length} icons");
-  final Box box = Hive.box('appsCache');
-  box.put('icons', iconData);
-  logger.i("Saved icons to cache");
-  return _decodeIcons(box.get('icons'));
+  try {
+    final value = await firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.apps,
+      "icons",
+      (data, _) => data,
+      sourceTag: "apps.getIcons",
+    );
+    final Map<String, dynamic> iconData = value?["data"] as Map<String, dynamic>? ?? <String, dynamic>{};
+    logger.d("Fetched ${iconData.values.toList().length} icons");
+    await local.writeIconsPayload(iconData);
+    logger.i("Saved icons to cache");
+    return _decodeIcons(iconData);
+  } catch (error, stackTrace) {
+    logger.w('Failed to fetch icon cache from remote', error: error, stackTrace: stackTrace);
+    return _decodeIcons(cached);
+  }
 }

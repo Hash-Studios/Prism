@@ -257,14 +257,13 @@ class _ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<_ProfileChild> {
-  // int favCount = main.prefs.get('userFavs') as int? ?? 0;
-  // int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
-  //     ((main.prefs.get('userSetups') as int?) ?? 0);
+  // int favCount = 0;
+  // int profileCount = 0;
   final ScrollController scrollController = ScrollController();
   // int count = 0;
   @override
   void initState() {
-    // count = main.prefs.get('easterCount', defaultValue: 0) as int;
+    // count = 0;
     // checkFav();
     super.initState();
   }

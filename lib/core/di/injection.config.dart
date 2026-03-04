@@ -14,13 +14,11 @@ import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
 import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:firebase_remote_config/firebase_remote_config.dart' as _i627;
 import 'package:get_it/get_it.dart' as _i174;
-import 'package:hive_io/hive_io.dart' as _i851;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
 
-import '../../data/notifications/model/inAppNotifModel.dart' as _i1047;
 import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
 import '../../features/ads/data/repositories/ads_repository_impl.dart' as _i418;
 import '../../features/ads/domain/repositories/ads_repository.dart' as _i1055;
@@ -171,6 +169,15 @@ import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_re
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
+import '../persistence/data_sources/app_icons_local_data_source.dart' as _i1003;
+import '../persistence/data_sources/cache_maintenance_service.dart' as _i601;
+import '../persistence/data_sources/favorites_local_data_source.dart' as _i640;
+import '../persistence/data_sources/feed_cache_local_data_source.dart' as _i954;
+import '../persistence/data_sources/notifications_local_data_source.dart'
+    as _i290;
+import '../persistence/data_sources/session_local_data_source.dart' as _i704;
+import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
+import '../persistence/local_store.dart' as _i496;
 import 'injection_module.dart' as _i212;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -192,33 +199,41 @@ _i174.GetIt initGetIt(
     () => appModule.internetConnectionChecker,
   );
   gh.lazySingleton<_i578.QuickActions>(() => appModule.quickActions);
-  gh.lazySingleton<_i851.Box<_i1047.InAppNotif>>(
-    () => appModule.inAppNotificationsBox,
-    instanceName: 'inAppNotificationsBox',
+  gh.lazySingleton<_i496.LocalStore>(() => appModule.localStore);
+  gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
+    () => _i1003.AppIconsLocalDataSource(gh<_i496.LocalStore>()),
   );
-  gh.lazySingleton<_i604.WallhavenWallpaperRepository>(
-    () => _i387.WallhavenWallpaperRepositoryImpl(),
+  gh.lazySingleton<_i640.FavoritesLocalDataSource>(
+    () => _i640.FavoritesLocalDataSource(gh<_i496.LocalStore>()),
   );
-  gh.lazySingleton<_i738.SessionRepository>(
-    () => _i1021.SessionRepositoryImpl(),
+  gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
+    () => _i954.FeedCacheLocalDataSource(gh<_i496.LocalStore>()),
   );
-  gh.lazySingleton<_i851.Box<dynamic>>(
-    () => appModule.prefsBox,
-    instanceName: 'prefsBox',
+  gh.lazySingleton<_i290.NotificationsLocalDataSource>(
+    () => _i290.NotificationsLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i704.SessionLocalDataSource>(
+    () => _i704.SessionLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i1073.SettingsLocalDataSource>(
+    () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
   );
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
-  gh.lazySingleton<_i851.Box<dynamic>>(
-    () => appModule.localFavBox,
-    instanceName: 'localFavBox',
+  gh.lazySingleton<_i604.WallhavenWallpaperRepository>(
+    () => _i387.WallhavenWallpaperRepositoryImpl(
+      gh<_i954.FeedCacheLocalDataSource>(),
+    ),
   );
-  gh.lazySingleton<_i986.GetSessionUseCase>(
-    () => _i986.GetSessionUseCase(gh<_i738.SessionRepository>()),
+  gh.lazySingleton<_i312.PexelsWallpaperRepository>(
+    () => _i914.PexelsWallpaperRepositoryImpl(
+      gh<_i954.FeedCacheLocalDataSource>(),
+    ),
   );
-  gh.lazySingleton<_i986.RefreshPremiumUseCase>(
-    () => _i986.RefreshPremiumUseCase(gh<_i738.SessionRepository>()),
-  );
-  gh.lazySingleton<_i986.SignOutUseCase>(
-    () => _i986.SignOutUseCase(gh<_i738.SessionRepository>()),
+  gh.lazySingleton<_i721.StartupRepository>(
+    () => _i152.StartupRepositoryImpl(
+      gh<_i627.FirebaseRemoteConfig>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+    ),
   );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
@@ -227,36 +242,40 @@ _i174.GetIt initGetIt(
     () => _i857.DeepLinkRepositoryImpl(gh<_i327.AppLinks>()),
     dispose: (i) => i.dispose(),
   );
-  gh.lazySingleton<_i312.PexelsWallpaperRepository>(
-    () => _i914.PexelsWallpaperRepositoryImpl(),
-  );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
       gh<_i974.FirebaseFirestore>(),
       gh<_i393.FirestoreTelemetrySink>(),
     ),
   );
-  gh.lazySingleton<_i721.StartupRepository>(
-    () => _i152.StartupRepositoryImpl(
-      gh<_i627.FirebaseRemoteConfig>(),
-      gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
+  gh.lazySingleton<_i643.FavouriteWallsRepository>(
+    () => _i176.FavouriteWallsRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i640.FavoritesLocalDataSource>(),
+    ),
+  );
+  gh.lazySingleton<_i727.PrismWallpaperRepository>(
+    () => _i759.PrismWallpaperRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
     ),
   );
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
+  gh.lazySingleton<_i366.NotificationsRepository>(
+    () => _i1017.NotificationsRepositoryImpl(
+      gh<_i290.NotificationsLocalDataSource>(),
+    ),
+  );
   gh.lazySingleton<_i576.GeneratePaletteUseCase>(
     () => _i576.GeneratePaletteUseCase(gh<_i1019.PaletteRepository>()),
   );
-  gh.lazySingleton<_i366.NotificationsRepository>(
-    () => _i1017.NotificationsRepositoryImpl(
-      gh<_i851.Box<_i1047.InAppNotif>>(instanceName: 'inAppNotificationsBox'),
-    ),
-  );
-  gh.lazySingleton<_i643.FavouriteWallsRepository>(
-    () => _i176.FavouriteWallsRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i851.Box<dynamic>>(instanceName: 'localFavBox'),
+  gh.lazySingleton<_i601.CacheMaintenanceService>(
+    () => _i601.CacheMaintenanceService(
+      gh<_i290.NotificationsLocalDataSource>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i1003.AppIconsLocalDataSource>(),
     ),
   );
   gh.lazySingleton<_i321.CreateRewardedAdUseCase>(
@@ -287,27 +306,40 @@ _i174.GetIt initGetIt(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
-  gh.lazySingleton<_i865.QuickActionsRepository>(
-    () => _i207.QuickActionsRepositoryImpl(gh<_i578.QuickActions>()),
-  );
   gh.lazySingleton<_i841.FavouriteSetupsRepository>(
     () => _i934.FavouriteSetupsRepositoryImpl(
       gh<_i349.FirestoreClient>(),
-      gh<_i851.Box<dynamic>>(instanceName: 'localFavBox'),
+      gh<_i640.FavoritesLocalDataSource>(),
     ),
   );
-  gh.factory<_i364.SessionBloc>(
-    () => _i364.SessionBloc(
-      gh<_i986.GetSessionUseCase>(),
-      gh<_i986.RefreshPremiumUseCase>(),
-      gh<_i986.SignOutUseCase>(),
-      sessionRepository: gh<_i738.SessionRepository>(),
+  gh.lazySingleton<_i865.QuickActionsRepository>(
+    () => _i207.QuickActionsRepositoryImpl(gh<_i578.QuickActions>()),
+  );
+  gh.lazySingleton<_i425.ThemeRepository>(
+    () => _i404.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
+  );
+  gh.lazySingleton<_i411.SetupsRepository>(
+    () => _i415.SetupsRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
     ),
   );
   gh.lazySingleton<_i491.ConnectivityService>(
     () => _i491.InternetConnectivityService(
       gh<_i973.InternetConnectionChecker>(),
     ),
+  );
+  gh.lazySingleton<_i563.CategoryFeedRepository>(
+    () => _i307.CategoryFeedRepositoryImpl(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i738.SessionRepository>(
+    () => _i1021.SessionRepositoryImpl(gh<_i704.SessionLocalDataSource>()),
   );
   gh.factory<_i782.FavouriteWallsBloc>(
     () => _i782.FavouriteWallsBloc(
@@ -317,13 +349,14 @@ _i174.GetIt initGetIt(
       gh<_i406.ClearFavouriteWallsUseCase>(),
     ),
   );
-  gh.lazySingleton<_i425.ThemeRepository>(
-    () => _i404.ThemeRepositoryImpl(
-      gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
-    ),
-  );
   gh.factory<_i689.PaletteBloc>(
     () => _i689.PaletteBloc(gh<_i576.GeneratePaletteUseCase>()),
+  );
+  gh.lazySingleton<_i301.LoadCategoriesUseCase>(
+    () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
+  );
+  gh.lazySingleton<_i301.FetchCategoryFeedUseCase>(
+    () => _i301.FetchCategoryFeedUseCase(gh<_i563.CategoryFeedRepository>()),
   );
   gh.lazySingleton<_i663.GetInitialDeepLinkActionUseCase>(
     () => _i663.GetInitialDeepLinkActionUseCase(gh<_i226.DeepLinkRepository>()),
@@ -334,9 +367,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
-  gh.lazySingleton<_i411.SetupsRepository>(
-    () => _i415.SetupsRepositoryImpl(gh<_i349.FirestoreClient>()),
-  );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
@@ -345,6 +375,15 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i817.PublicProfileRepository>(
     () => _i769.PublicProfileRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i986.GetSessionUseCase>(
+    () => _i986.GetSessionUseCase(gh<_i738.SessionRepository>()),
+  );
+  gh.lazySingleton<_i986.RefreshPremiumUseCase>(
+    () => _i986.RefreshPremiumUseCase(gh<_i738.SessionRepository>()),
+  );
+  gh.lazySingleton<_i986.SignOutUseCase>(
+    () => _i986.SignOutUseCase(gh<_i738.SessionRepository>()),
   );
   gh.lazySingleton<_i340.FetchFavouriteSetupsUseCase>(
     () => _i340.FetchFavouriteSetupsUseCase(
@@ -365,9 +404,6 @@ _i174.GetIt initGetIt(
     () => _i340.ClearFavouriteSetupsUseCase(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
-  );
-  gh.lazySingleton<_i727.PrismWallpaperRepository>(
-    () => _i759.PrismWallpaperRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i668.ProfileWallsRepository>(
     () => _i409.ProfileWallsRepositoryImpl(gh<_i349.FirestoreClient>()),
@@ -415,6 +451,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
+  );
+  gh.factory<_i195.CategoryFeedBloc>(
+    () => _i195.CategoryFeedBloc(
+      gh<_i301.LoadCategoriesUseCase>(),
+      gh<_i301.FetchCategoryFeedUseCase>(),
+    ),
   );
   gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
     () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
@@ -510,12 +552,12 @@ _i174.GetIt initGetIt(
       gh<_i108.ObserveQuickActionsUseCase>(),
     ),
   );
-  gh.lazySingleton<_i563.CategoryFeedRepository>(
-    () => _i307.CategoryFeedRepositoryImpl(
-      gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
+  gh.factory<_i364.SessionBloc>(
+    () => _i364.SessionBloc(
+      gh<_i986.GetSessionUseCase>(),
+      gh<_i986.RefreshPremiumUseCase>(),
+      gh<_i986.SignOutUseCase>(),
+      sessionRepository: gh<_i738.SessionRepository>(),
     ),
   );
   gh.factory<_i318.SetupsBloc>(
@@ -527,12 +569,6 @@ _i174.GetIt initGetIt(
       gh<_i96.UpdateThemeDarkUseCase>(),
       gh<_i96.UpdateThemeDarkAccentUseCase>(),
     ),
-  );
-  gh.lazySingleton<_i301.LoadCategoriesUseCase>(
-    () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
-  );
-  gh.lazySingleton<_i301.FetchCategoryFeedUseCase>(
-    () => _i301.FetchCategoryFeedUseCase(gh<_i563.CategoryFeedRepository>()),
   );
   gh.factory<_i584.InAppNotificationsBloc>(
     () => _i584.InAppNotificationsBloc(
@@ -559,12 +595,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i410.WatchConnectionUseCase>(
     () => _i410.WatchConnectionUseCase(gh<_i325.ConnectivityRepository>()),
-  );
-  gh.factory<_i195.CategoryFeedBloc>(
-    () => _i195.CategoryFeedBloc(
-      gh<_i301.LoadCategoriesUseCase>(),
-      gh<_i301.FetchCategoryFeedUseCase>(),
-    ),
   );
   gh.factory<_i736.ThemeModeBloc>(
     () => _i736.ThemeModeBloc(

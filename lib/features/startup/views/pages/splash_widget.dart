@@ -1,10 +1,11 @@
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/config.dart' as config;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class SplashWidget extends StatefulWidget {
 }
 
 class _SplashWidgetState extends State<SplashWidget> {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _navigated = false;
   bool _notchMeasured = false;
 
@@ -39,7 +41,7 @@ class _SplashWidgetState extends State<SplashWidget> {
       return;
     }
     _navigated = true;
-    final isOnboarded = (main.prefs.get('onboarded_new') as bool?) ?? false;
+    final isOnboarded = _settingsLocal.get<bool>('onboarded_new', defaultValue: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;

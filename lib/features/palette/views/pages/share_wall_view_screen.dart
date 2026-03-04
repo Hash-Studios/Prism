@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -29,7 +31,6 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
@@ -61,6 +62,7 @@ class ShareWallpaperViewScreen extends StatefulWidget {
 }
 
 class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> with SingleTickerProviderStateMixin {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late String id;
@@ -251,7 +253,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             logger.d(onError.toString());
                           });
                     } else {
-                      (main.prefs.get('optimisedWallpapers') ?? true) == true
+                      _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                           ? screenshotController
                                 .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                                 .then((Uint8List? image) async {
@@ -692,7 +694,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             logger.d(onError.toString());
                           });
                     } else {
-                      (main.prefs.get('optimisedWallpapers') ?? true) == true
+                      _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                           ? screenshotController
                                 .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                                 .then((Uint8List? image) async {
@@ -1235,7 +1237,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                             logger.d(onError.toString());
                           });
                     } else {
-                      (main.prefs.get('optimisedWallpapers') ?? true) == true
+                      _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                           ? screenshotController
                                 .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                                 .then((Uint8List? image) async {

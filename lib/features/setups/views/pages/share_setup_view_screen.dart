@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -34,7 +36,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
@@ -49,6 +50,7 @@ class ShareSetupViewScreen extends StatefulWidget {
 }
 
 class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with SingleTickerProviderStateMixin {
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? name;
   String? image;
@@ -60,7 +62,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
   bool panelCollapsed = true;
   bool? viewCounted;
   Future<String>? _futureView;
-  late Box box;
 
   @override
   void initState() {
@@ -70,7 +71,6 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
     image = widget.thumbnailUrl;
     _future = sdata.getSetupFromName(name);
     isLoading = true;
-    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -646,7 +646,10 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                           },
                                           iconColor: Theme.of(context).colorScheme.secondary,
                                           iconSize: 30,
-                                          isFavorite: box.get(setup.id, defaultValue: false) as bool,
+                                          isFavorite: _favoritesLocal.isSetupFavourite(
+                                            app_state.prismUser.id,
+                                            setup.id,
+                                          ),
                                         ),
                                       ),
                                     ],

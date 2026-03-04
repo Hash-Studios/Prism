@@ -1,10 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -115,14 +116,14 @@ class ProfileCompletenessNudgeService {
     }
   }
 
-  static bool _defaultIsPrefsOpen() => main.prefs.isOpen;
+  static bool _defaultIsPrefsOpen() => true;
 
   static dynamic _defaultReadPrefValue(String key, {dynamic defaultValue}) {
-    return main.prefs.get(key, defaultValue: defaultValue);
+    return getIt<SettingsLocalDataSource>().get<dynamic>(key, defaultValue: defaultValue);
   }
 
   static Future<void> _defaultWritePrefValue(String key, dynamic value) async {
-    await main.prefs.put(key, value);
+    await getIt<SettingsLocalDataSource>().set(key, value);
   }
 
   static Future<void> _defaultOpenEditProfile(BuildContext context) async {

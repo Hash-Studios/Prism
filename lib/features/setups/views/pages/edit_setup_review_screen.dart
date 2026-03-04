@@ -18,7 +18,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
 
@@ -577,20 +576,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                           builder: (context, controller) => StatefulBuilder(
                                             builder: (BuildContext context, StateSetter setState) {
                                               if (!fetched) {
-                                                final Box box = Hive.box('appsCache');
                                                 setState(() {
                                                   fetched = true;
-                                                  final Object? cachedIcons = box.get('icons', defaultValue: null);
-                                                  if (cachedIcons is Map) {
-                                                    icons = cachedIcons.values
-                                                        .whereType<Map>()
-                                                        .map(AppIcon.fromMap)
-                                                        .toList(growable: false);
-                                                    allIcons = icons;
-                                                  }
-                                                  if (icons.isNotEmpty) {
-                                                    loading = false;
-                                                  }
                                                 });
                                                 getIcons().then(
                                                   (value) => setState(() {

@@ -654,7 +654,7 @@ class NotificationRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return NotificationScreen();
+      return const NotificationScreen();
     },
   );
 }

@@ -1,16 +1,13 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/categories/category_definition.dart';
-import 'package:Prism/features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart';
+import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
 // SHIM: delete in Phase 8
-WallhavenWallpaperRepositoryImpl? _wallhavenRepo;
-WallhavenWallpaperRepositoryImpl get _repo {
-  _wallhavenRepo ??= WallhavenWallpaperRepositoryImpl();
-  return _wallhavenRepo!;
-}
+WallhavenWallpaperRepository get _repo => getIt<WallhavenWallpaperRepository>();
 
 List<WallhavenWallpaper> walls = [];
 List<WallhavenWallpaper> wallsS = [];

@@ -1,12 +1,13 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   LoadStatus? _lastLoggedStatus;
   int _lastLoggedItemCount = -1;
 
@@ -30,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late bool isNew;
 
   Future<void> _ensureDefaultTopicSubscriptions() async {
-    if (!(main.prefs.get('subscribedToRecommendations', defaultValue: false) as bool)) {
+    if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
       final bool recommendationsSubscribed = await subscribeToTopicSafely(
         f,
         'recommendations',
@@ -38,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       final bool postsSubscribed = await subscribeToTopicSafely(f, 'posts', sourceTag: 'home.init.posts');
       if (recommendationsSubscribed && postsSubscribed) {
-        main.prefs.put('subscribedToRecommendations', true);
+        _settingsLocal.set('subscribedToRecommendations', true);
       }
     }
   }
@@ -51,16 +53,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showChangelogCheck() {
-    final newDevice = main.prefs.get("newDevice");
+    final newDevice = _settingsLocal.get<Object?>("newDevice");
     if (newDevice == null) {
       showChangelog(context, () {
         setState(() {
           isNew = false;
         });
       });
-      main.prefs.put("newDevice", false);
+      _settingsLocal.set("newDevice", false);
     } else {
-      main.prefs.put("newDevice", false);
+      _settingsLocal.set("newDevice", false);
     }
   }
 

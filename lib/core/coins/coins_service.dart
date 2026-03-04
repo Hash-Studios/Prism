@@ -7,16 +7,17 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -140,23 +141,24 @@ class CoinsService {
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
+  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   int _deltaVersion = 0;
 
-  String? get pendingReferralInviterId =>
-      (main.prefs.get(_pendingReferralInviterPrefKey) as String?)?.trim().isNotEmpty == true
-      ? (main.prefs.get(_pendingReferralInviterPrefKey) as String).trim()
-      : null;
+  String? get pendingReferralInviterId {
+    final String inviter = _settings.get<String>(_pendingReferralInviterPrefKey, defaultValue: '').trim();
+    return inviter.isEmpty ? null : inviter;
+  }
 
   Future<void> setPendingReferralInviterId(String inviterUserId) async {
     final String inviter = inviterUserId.trim();
     if (inviter.isEmpty) {
       return;
     }
-    await main.prefs.put(_pendingReferralInviterPrefKey, inviter);
+    await _settings.set(_pendingReferralInviterPrefKey, inviter);
   }
 
-  Future<void> clearPendingReferralInviterId() => main.prefs.delete(_pendingReferralInviterPrefKey);
+  Future<void> clearPendingReferralInviterId() => _settings.delete(_pendingReferralInviterPrefKey);
 
   bool get streakReminderPreferenceEnabled => _preferredStreakReminderEnabled();
 
@@ -164,8 +166,8 @@ class CoinsService {
     bool enabled, {
     String sourceTag = 'coins.streak_reminder.preference',
   }) async {
-    if (main.prefs.isOpen) {
-      await main.prefs.put(_streakReminderPrefKey, enabled);
+    if (_settings.isOpen) {
+      await _settings.set(_streakReminderPrefKey, enabled);
     }
     if (!_canMutateCoins()) {
       streakNotifier.value = streakNotifier.value.copyWith(reminderEnabled: enabled);
@@ -1708,10 +1710,10 @@ class CoinsService {
   }
 
   bool _preferredStreakReminderEnabled() {
-    if (!main.prefs.isOpen) {
+    if (!_settings.isOpen) {
       return true;
     }
-    return (main.prefs.get(_streakReminderPrefKey, defaultValue: true) as bool?) ?? true;
+    return _settings.get<bool>(_streakReminderPrefKey, defaultValue: true);
   }
 
   int _clampStreakDay(int day) {
@@ -1886,7 +1888,7 @@ class CoinsService {
     if (delta == 0 && previous == newBalance) {
       return;
     }
-    if (main.prefs.isOpen) {
+    if (_settings.isOpen) {
       app_state.persistPrismUser();
     }
     _deltaVersion += 1;

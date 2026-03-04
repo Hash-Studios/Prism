@@ -2,21 +2,21 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: FavouriteWallsRepository)
 class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
-  FavouriteWallsRepositoryImpl(this._firestoreClient, @Named('localFavBox') this._localFavBox);
+  FavouriteWallsRepositoryImpl(this._firestoreClient, this._favoritesLocal);
 
   final FirestoreClient _firestoreClient;
-  final Box<dynamic> _localFavBox;
+  final FavoritesLocalDataSource _favoritesLocal;
 
   String _collectionPath(String userId) => 'usersv2/$userId/images';
 
@@ -63,7 +63,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
     try {
       if (currentlyFavourited) {
         await _firestoreClient.deleteDoc(_collectionPath(userId), wall.id, sourceTag: 'favourite_walls.toggle.delete');
-        await _localFavBox.delete(wall.id);
+        await _favoritesLocal.setWallFavourite(userId, wall.id, false);
         return Result.success(false);
       } else {
         final Map<String, dynamic> payload = _toFirestoreDoc(wall);
@@ -73,7 +73,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           payload,
           sourceTag: 'favourite_walls.toggle.set',
         );
-        await _localFavBox.put(wall.id, true);
+        await _favoritesLocal.setWallFavourite(userId, wall.id, true);
         return Result.success(true);
       }
     } catch (error) {
@@ -229,7 +229,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   Future<Result<bool>> removeFavourite({required String userId, required String wallId}) async {
     try {
       await _firestoreClient.deleteDoc(_collectionPath(userId), wallId, sourceTag: 'favourite_walls.remove');
-      await _localFavBox.delete(wallId);
+      await _favoritesLocal.setWallFavourite(userId, wallId, false);
       return Result.success(true);
     } catch (error) {
       return Result.error(ServerFailure('Unable to remove favourite wall: $error'));
@@ -243,7 +243,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         final String id = rawId.trim();
         if (id.isEmpty) continue;
         await _firestoreClient.deleteDoc(_collectionPath(userId), id, sourceTag: 'favourite_walls.clear_all.delete');
-        await _localFavBox.delete(id);
+        await _favoritesLocal.setWallFavourite(userId, id, false);
       }
       return Result.success(true);
     } catch (error) {

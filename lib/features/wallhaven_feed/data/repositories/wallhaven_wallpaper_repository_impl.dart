@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
@@ -12,13 +13,15 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: WallhavenWallpaperRepository)
 class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
-  WallhavenWallpaperRepositoryImpl();
+  WallhavenWallpaperRepositoryImpl(this._feedCacheLocal);
 
+  final FeedCacheLocalDataSource _feedCacheLocal;
   final Map<String, int> _pageNumbers = <String, int>{};
   final Map<String, bool> _hasMoreMap = <String, bool>{};
 
   static const String _host = 'wallhaven.cc';
   static const String _searchPath = '/api/v1/search';
+  static const int _feedTtlHours = 6;
 
   @override
   bool hasMoreForCategory(String categoryName) => _hasMoreMap[categoryName] ?? true;
@@ -51,8 +54,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     try {
       final http.Response response = await http.get(uri);
       if (response.statusCode != 200) {
-        return Result.error(
-          ServerFailure(
+        return _cachedOrFailure(
+          categoryName: categoryName,
+          categories: categories,
+          purity: purity,
+          failure: ServerFailure(
             'WallHaven feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
           ),
         );
@@ -68,6 +74,14 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
 
       _pageNumbers[categoryName] = currentPage + 1;
       _hasMoreMap[categoryName] = hasMore;
+      await _writeCache(
+        categoryName: categoryName,
+        categories: categories,
+        purity: purity,
+        payload: payload,
+        nextPage: currentPage + 1,
+        hasMore: hasMore,
+      );
 
       logger.i(
         '[WallhavenWallpaperRepository] fetchFeed success',
@@ -75,6 +89,16 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
+      final cached = _readCached(categoryName: categoryName, categories: categories, purity: purity);
+      if (cached != null) {
+        logger.w(
+          '[WallhavenWallpaperRepository] remote fetch failed; returning cached snapshot',
+          error: error,
+          stackTrace: stackTrace,
+          fields: <String, Object?>{'category': categoryName},
+        );
+        return Result.success(cached);
+      }
       logger.e('[WallhavenWallpaperRepository] fetchFeed failed', error: error, stackTrace: stackTrace);
       return Result.error(ServerFailure('Failed to fetch WallHaven feed: $error'));
     }
@@ -101,4 +125,78 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       return Result.error(ServerFailure('Failed to fetch WallHaven wallpaper by id: $error'));
     }
   }
+
+  Result<List<WallhavenWallpaper>> _cachedOrFailure({
+    required String categoryName,
+    required int categories,
+    required int purity,
+    required Failure failure,
+  }) {
+    final cached = _readCached(categoryName: categoryName, categories: categories, purity: purity);
+    if (cached != null) {
+      logger.w(
+        '[WallhavenWallpaperRepository] remote status failed; returning cached snapshot',
+        fields: <String, Object?>{'category': categoryName},
+      );
+      return Result.success(cached);
+    }
+    return Result.error(failure);
+  }
+
+  Future<void> _writeCache({
+    required String categoryName,
+    required int categories,
+    required int purity,
+    required WallhavenSearchResponseDto payload,
+    required int nextPage,
+    required bool hasMore,
+  }) {
+    return _feedCacheLocal.write(
+      source: 'wallhaven',
+      scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
+      ttlHours: _feedTtlHours,
+      payload: <String, Object?>{'payload': payload.toJson(), 'nextPage': nextPage, 'hasMore': hasMore},
+    );
+  }
+
+  List<WallhavenWallpaper>? _readCached({required String categoryName, required int categories, required int purity}) {
+    final snapshot = _feedCacheLocal.read(
+      source: 'wallhaven',
+      scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
+    );
+    if (snapshot == null || snapshot.payload is! Map) {
+      return null;
+    }
+
+    final map = _asMap(snapshot.payload);
+    final payloadMap = _asMap(map['payload']);
+    if (payloadMap.isEmpty) {
+      return null;
+    }
+
+    final payload = WallhavenSearchResponseDto.fromJson(payloadMap);
+    final walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
+    if (walls.isEmpty) {
+      return null;
+    }
+
+    _pageNumbers[categoryName] = (map['nextPage'] as num?)?.toInt() ?? (_pageNumbers[categoryName] ?? 1);
+    _hasMoreMap[categoryName] = map['hasMore'] == true;
+    return walls;
+  }
+
+  String _scope({required String categoryName, required int categories, required int purity}) {
+    final normalizedCategory = categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
+    return '$normalizedCategory.$categories.$purity';
+  }
+}
+
+Map<String, dynamic> _asMap(Object? value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
+  }
+  return <String, dynamic>{};
 }

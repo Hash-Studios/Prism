@@ -1,16 +1,12 @@
 import 'dart:async';
 
-import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart';
+import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
 // SHIM: delete in Phase 8 — lazy singleton wiring old globals to typed repository.
-PrismWallpaperRepositoryImpl? _prismRepo;
-PrismWallpaperRepositoryImpl get _repo {
-  _prismRepo ??= PrismWallpaperRepositoryImpl(firestoreClient);
-  return _prismRepo!;
-}
+PrismWallpaperRepository get _repo => getIt<PrismWallpaperRepository>();
 
 List<PrismWallpaper>? prismWalls;
 List<PrismWallpaper>? subPrismWalls;

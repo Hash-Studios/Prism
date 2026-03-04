@@ -16,7 +16,6 @@ import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hive_io/hive_io.dart';
 
 const String USER_OLD_COLLECTION = FirebaseCollections.users;
 const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
@@ -32,7 +31,6 @@ class GoogleAuth {
   String? email;
   String? imageUrl;
   String errorMsg = "";
-  late Box prefs;
   bool isLoggedIn = false;
   bool isLoading = false;
 
@@ -48,7 +46,6 @@ class GoogleAuth {
     isLoading = true;
     logger.i('signInWithGoogle start', tag: 'GoogleAuth');
     try {
-      prefs = await Hive.openBox('prefs');
       await _ensureGoogleSignInInitialized();
       final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
       final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
@@ -238,9 +235,7 @@ class GoogleAuth {
       coverPhoto: "",
     );
     await syncSentryUserScope(loggedIn: false, id: "", email: "");
-    Hive.openBox('prefs').then((value) {
-      app_state.persistPrismUser();
-    });
+    await app_state.persistPrismUser();
     try {
       await PurchasesService.instance.logOut();
     } catch (e, st) {

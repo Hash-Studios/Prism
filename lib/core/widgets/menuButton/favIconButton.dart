@@ -1,5 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
@@ -7,7 +9,6 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_io/hive_io.dart';
 
 class FavIconButton extends StatefulWidget {
   final String? id;
@@ -19,13 +20,10 @@ class FavIconButton extends StatefulWidget {
 }
 
 class _FavIconButtonState extends State<FavIconButton> {
-  late Box box;
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
 
   @override
-  void initState() {
-    box = Hive.box('localFav');
-    super.initState();
-  }
+  void initState() => super.initState();
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +41,7 @@ class _FavIconButtonState extends State<FavIconButton> {
           },
           iconColor: Theme.of(context).colorScheme.secondary,
           iconSize: 30,
-          isFavorite: box.get(widget.id, defaultValue: false) as bool,
+          isFavorite: _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.id ?? ''),
         ),
       ],
     );

@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -21,7 +23,6 @@ import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -51,6 +52,7 @@ class SearchWallpaperScreen extends StatefulWidget {
 }
 
 class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with SingleTickerProviderStateMixin {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late WallpaperSource source;
@@ -230,7 +232,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                           logger.d(onError.toString());
                         });
                   } else {
-                    main.prefs.get('optimisedWallpapers') as bool? ?? true
+                    _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                         ? screenshotController
                               .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                               .then((Uint8List? image) async {
@@ -635,7 +637,7 @@ class _SearchWallpaperScreenState extends State<SearchWallpaperScreen> with Sing
                           logger.d(onError.toString());
                         });
                   } else {
-                    main.prefs.get('optimisedWallpapers') as bool? ?? true
+                    _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
                         ? screenshotController
                               .capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
                               .then((Uint8List? image) async {

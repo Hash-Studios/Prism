@@ -5,8 +5,8 @@ import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -14,15 +14,15 @@ import 'package:Prism/features/session/domain/entities/badge_entity.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: SessionRepository)
 class SessionRepositoryImpl implements SessionRepository {
-  SessionRepositoryImpl() {
+  SessionRepositoryImpl(this._sessionLocal) {
     _currentUser = _readStoredUser();
   }
 
+  final SessionLocalDataSource _sessionLocal;
   final StreamController<PrismUsersV2> _currentUserController = StreamController<PrismUsersV2>.broadcast();
 
   late PrismUsersV2 _currentUser;
@@ -40,21 +40,11 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   PrismUsersV2 _readStoredUser() {
-    if (!main.prefs.isOpen) {
-      return createGuestPrismUser();
-    }
-    final dynamic raw = main.prefs.get(main.userHiveKey);
-    if (raw is PrismUsersV2) {
-      return raw;
-    }
-    return createGuestPrismUser();
+    return _sessionLocal.readCurrentUser();
   }
 
   Future<void> _persistCurrentUser() async {
-    if (!main.prefs.isOpen) {
-      return;
-    }
-    await main.prefs.put(main.userHiveKey, _currentUser);
+    await _sessionLocal.writeCurrentUser(_currentUser);
   }
 
   void _emitCurrentUser() {

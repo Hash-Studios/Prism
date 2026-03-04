@@ -131,13 +131,13 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool syncRemote)?  started,TResult Function()?  refreshRequested,TResult Function( int index)?  markReadRequested,TResult Function( int index)?  deleteRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool syncRemote)?  started,TResult Function()?  refreshRequested,TResult Function( String id)?  markReadRequested,TResult Function( String id)?  deleteRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.syncRemote);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _MarkReadRequested() when markReadRequested != null:
-return markReadRequested(_that.index);case _DeleteRequested() when deleteRequested != null:
-return deleteRequested(_that.index);case _ClearRequested() when clearRequested != null:
+return markReadRequested(_that.id);case _DeleteRequested() when deleteRequested != null:
+return deleteRequested(_that.id);case _ClearRequested() when clearRequested != null:
 return clearRequested();case _:
   return orElse();
 
@@ -156,13 +156,13 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool syncRemote)  started,required TResult Function()  refreshRequested,required TResult Function( int index)  markReadRequested,required TResult Function( int index)  deleteRequested,required TResult Function()  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool syncRemote)  started,required TResult Function()  refreshRequested,required TResult Function( String id)  markReadRequested,required TResult Function( String id)  deleteRequested,required TResult Function()  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.syncRemote);case _RefreshRequested():
 return refreshRequested();case _MarkReadRequested():
-return markReadRequested(_that.index);case _DeleteRequested():
-return deleteRequested(_that.index);case _ClearRequested():
+return markReadRequested(_that.id);case _DeleteRequested():
+return deleteRequested(_that.id);case _ClearRequested():
 return clearRequested();case _:
   throw StateError('Unexpected subclass');
 
@@ -180,13 +180,13 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool syncRemote)?  started,TResult? Function()?  refreshRequested,TResult? Function( int index)?  markReadRequested,TResult? Function( int index)?  deleteRequested,TResult? Function()?  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool syncRemote)?  started,TResult? Function()?  refreshRequested,TResult? Function( String id)?  markReadRequested,TResult? Function( String id)?  deleteRequested,TResult? Function()?  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.syncRemote);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _MarkReadRequested() when markReadRequested != null:
-return markReadRequested(_that.index);case _DeleteRequested() when deleteRequested != null:
-return deleteRequested(_that.index);case _ClearRequested() when clearRequested != null:
+return markReadRequested(_that.id);case _DeleteRequested() when deleteRequested != null:
+return deleteRequested(_that.id);case _ClearRequested() when clearRequested != null:
 return clearRequested();case _:
   return null;
 
@@ -297,10 +297,10 @@ String toString() {
 
 
 class _MarkReadRequested implements InAppNotificationsEvent {
-  const _MarkReadRequested({required this.index});
+  const _MarkReadRequested({required this.id});
   
 
- final  int index;
+ final  String id;
 
 /// Create a copy of InAppNotificationsEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -312,16 +312,16 @@ _$MarkReadRequestedCopyWith<_MarkReadRequested> get copyWith => __$MarkReadReque
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarkReadRequested&&(identical(other.index, index) || other.index == index));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MarkReadRequested&&(identical(other.id, id) || other.id == id));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,index);
+int get hashCode => Object.hash(runtimeType,id);
 
 @override
 String toString() {
-  return 'InAppNotificationsEvent.markReadRequested(index: $index)';
+  return 'InAppNotificationsEvent.markReadRequested(id: $id)';
 }
 
 
@@ -332,7 +332,7 @@ abstract mixin class _$MarkReadRequestedCopyWith<$Res> implements $InAppNotifica
   factory _$MarkReadRequestedCopyWith(_MarkReadRequested value, $Res Function(_MarkReadRequested) _then) = __$MarkReadRequestedCopyWithImpl;
 @useResult
 $Res call({
- int index
+ String id
 });
 
 
@@ -349,10 +349,10 @@ class __$MarkReadRequestedCopyWithImpl<$Res>
 
 /// Create a copy of InAppNotificationsEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? index = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? id = null,}) {
   return _then(_MarkReadRequested(
-index: null == index ? _self.index : index // ignore: cast_nullable_to_non_nullable
-as int,
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -363,10 +363,10 @@ as int,
 
 
 class _DeleteRequested implements InAppNotificationsEvent {
-  const _DeleteRequested({required this.index});
+  const _DeleteRequested({required this.id});
   
 
- final  int index;
+ final  String id;
 
 /// Create a copy of InAppNotificationsEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -378,16 +378,16 @@ _$DeleteRequestedCopyWith<_DeleteRequested> get copyWith => __$DeleteRequestedCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeleteRequested&&(identical(other.index, index) || other.index == index));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeleteRequested&&(identical(other.id, id) || other.id == id));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,index);
+int get hashCode => Object.hash(runtimeType,id);
 
 @override
 String toString() {
-  return 'InAppNotificationsEvent.deleteRequested(index: $index)';
+  return 'InAppNotificationsEvent.deleteRequested(id: $id)';
 }
 
 
@@ -398,7 +398,7 @@ abstract mixin class _$DeleteRequestedCopyWith<$Res> implements $InAppNotificati
   factory _$DeleteRequestedCopyWith(_DeleteRequested value, $Res Function(_DeleteRequested) _then) = __$DeleteRequestedCopyWithImpl;
 @useResult
 $Res call({
- int index
+ String id
 });
 
 
@@ -415,10 +415,10 @@ class __$DeleteRequestedCopyWithImpl<$Res>
 
 /// Create a copy of InAppNotificationsEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? index = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? id = null,}) {
   return _then(_DeleteRequested(
-index: null == index ? _self.index : index // ignore: cast_nullable_to_non_nullable
-as int,
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

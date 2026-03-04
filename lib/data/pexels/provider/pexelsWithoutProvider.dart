@@ -1,16 +1,13 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/data/categories/category_definition.dart';
-import 'package:Prism/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart';
+import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
 // SHIM: delete in Phase 8
-PexelsWallpaperRepositoryImpl? _pexelsRepo;
-PexelsWallpaperRepositoryImpl get _repo {
-  _pexelsRepo ??= PexelsWallpaperRepositoryImpl();
-  return _pexelsRepo!;
-}
+PexelsWallpaperRepository get _repo => getIt<PexelsWallpaperRepository>();
 
 List<PexelsWallpaper> wallsP = [];
 List<PexelsWallpaper> wallsPS = [];

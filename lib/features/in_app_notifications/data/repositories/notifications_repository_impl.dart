@@ -1,41 +1,28 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/repositories/notifications_repository.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: NotificationsRepository)
 class NotificationsRepositoryImpl implements NotificationsRepository {
-  NotificationsRepositoryImpl(@Named('inAppNotificationsBox') this._box);
+  NotificationsRepositoryImpl(this._notificationsLocal);
 
-  final Box<InAppNotif> _box;
+  final NotificationsLocalDataSource _notificationsLocal;
 
   List<InAppNotificationEntity> _readAll() {
-    final values = _box.values.toList(growable: false);
-    return values
-        .map((item) {
-          return InAppNotificationEntity(
-            title: item.title ?? '',
-            pageName: item.pageName ?? '',
-            body: item.body ?? '',
-            imageUrl: item.imageUrl ?? '',
-            arguments: (item.arguments ?? const <Object>[]).whereType<Object>().toList(growable: false),
-            url: item.url ?? '',
-            createdAt: item.createdAt ?? DateTime.now(),
-            read: item.read ?? false,
-          );
-        })
-        .toList(growable: false);
+    final items = _notificationsLocal.readAll().toList(growable: false);
+    final sorted = items.toList(growable: false)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted;
   }
 
   @override
   Future<Result<List<InAppNotificationEntity>>> fetchNotifications({required bool syncRemote}) async {
     try {
       if (syncRemote) {
-        await getNotifs();
+        await syncInAppNotificationsFromRemote();
       }
       return Result.success(_readAll());
     } catch (error) {
@@ -44,31 +31,12 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   }
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> markAsRead({required int index}) async {
+  Future<Result<List<InAppNotificationEntity>>> markAsRead({required String id}) async {
     try {
-      if (index < 0 || index >= _box.length) {
-        return Result.error(const ValidationFailure('Invalid index'));
+      if (id.trim().isEmpty) {
+        return Result.error(const ValidationFailure('Invalid notification id'));
       }
-
-      final existing = _box.getAt(index);
-      if (existing != null) {
-        await _box.putAt(
-          index,
-          InAppNotif(
-            title: existing.title,
-            pageName: existing.pageName,
-            body: existing.body,
-            imageUrl: existing.imageUrl,
-            arguments: existing.arguments,
-            url: existing.url,
-            createdAt: existing.createdAt,
-            read: true,
-            route: existing.route,
-            wallId: existing.wallId,
-          ),
-        );
-      }
-
+      await _notificationsLocal.markAsRead(id);
       return Result.success(_readAll());
     } catch (error) {
       return Result.error(CacheFailure('Unable to mark notification as read: $error'));
@@ -76,12 +44,12 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   }
 
   @override
-  Future<Result<List<InAppNotificationEntity>>> deleteAt({required int index}) async {
+  Future<Result<List<InAppNotificationEntity>>> deleteById({required String id}) async {
     try {
-      if (index < 0 || index >= _box.length) {
-        return Result.error(const ValidationFailure('Invalid index'));
+      if (id.trim().isEmpty) {
+        return Result.error(const ValidationFailure('Invalid notification id'));
       }
-      await _box.deleteAt(index);
+      await _notificationsLocal.deleteById(id);
       return Result.success(_readAll());
     } catch (error) {
       return Result.error(CacheFailure('Unable to delete notification: $error'));
@@ -91,7 +59,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   @override
   Future<Result<List<InAppNotificationEntity>>> clearAll() async {
     try {
-      await _box.clear();
+      await _notificationsLocal.clearAll();
       return Result.success(const <InAppNotificationEntity>[]);
     } catch (error) {
       return Result.error(CacheFailure('Unable to clear notifications: $error'));

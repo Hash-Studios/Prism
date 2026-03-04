@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
@@ -12,11 +13,13 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: SetupsRepository)
 class SetupsRepositoryImpl implements SetupsRepository {
-  SetupsRepositoryImpl(this._firestoreClient);
+  SetupsRepositoryImpl(this._firestoreClient, this._feedCacheLocal);
 
   final FirestoreClient _firestoreClient;
+  final FeedCacheLocalDataSource _feedCacheLocal;
   String? _cursorDocId;
   static const int _setupsReadDedupeMs = 30000;
+  static const int _setupsCacheTtlHours = 3;
 
   @override
   Future<Result<SetupsPage>> fetchSetups({required bool refresh}) async {
@@ -41,11 +44,66 @@ class SetupsRepositoryImpl implements SetupsRepository {
       }
 
       final items = rows.map((row) => _mapSetup(row.doc, row.docId)).toList(growable: false);
-
-      return Result.success(SetupsPage(items: items, hasMore: rows.length == 10, nextCursor: _cursorDocId));
+      final page = SetupsPage(items: items, hasMore: rows.length == 10, nextCursor: _cursorDocId);
+      await _writeCache(rows: rows, page: page);
+      return Result.success(page);
     } catch (error) {
+      final cached = _readCached();
+      if (cached != null) {
+        return Result.success(cached);
+      }
       return Result.error(ServerFailure('Failed to load setups: $error'));
     }
+  }
+
+  Future<void> _writeCache({required List<_SetupRow> rows, required SetupsPage page}) {
+    return _feedCacheLocal.write(
+      source: 'setups',
+      scope: 'main',
+      ttlHours: _setupsCacheTtlHours,
+      payload: <String, Object?>{
+        'rows': rows
+            .map((row) => <String, Object?>{'docId': row.docId, 'doc': row.doc.toJson()})
+            .toList(growable: false),
+        'hasMore': page.hasMore,
+        'nextCursor': page.nextCursor,
+      },
+    );
+  }
+
+  SetupsPage? _readCached() {
+    final snapshot = _feedCacheLocal.read(source: 'setups', scope: 'main');
+    if (snapshot == null || snapshot.payload is! Map) {
+      return null;
+    }
+
+    final payload = _asMap(snapshot.payload);
+    final rows = payload['rows'];
+    if (rows is! List) {
+      return null;
+    }
+
+    final mappedRows = rows
+        .whereType<Map>()
+        .map(_asMap)
+        .map((entry) {
+          final String docId = entry['docId']?.toString() ?? '';
+          final Map<String, dynamic> docMap = _asMap(entry['doc']);
+          if (docId.isEmpty || docMap.isEmpty) {
+            return null;
+          }
+          return _SetupRow(docId: docId, doc: SetupDocDto.fromJson(docMap));
+        })
+        .whereType<_SetupRow>()
+        .toList(growable: false);
+
+    if (mappedRows.isEmpty) {
+      return null;
+    }
+
+    final items = mappedRows.map((row) => _mapSetup(row.doc, row.docId)).toList(growable: false);
+    _cursorDocId = payload['nextCursor']?.toString();
+    return SetupsPage(items: items, hasMore: payload['hasMore'] == true, nextCursor: _cursorDocId);
   }
 
   SetupEntity _mapSetup(SetupDocDto dto, String docId) {
@@ -74,6 +132,16 @@ class SetupsRepositoryImpl implements SetupsRepository {
       size: dto.size,
     );
   }
+}
+
+Map<String, dynamic> _asMap(Object? value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
+  }
+  return <String, dynamic>{};
 }
 
 class _SetupRow {

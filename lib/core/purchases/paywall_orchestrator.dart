@@ -1,10 +1,11 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/widgets.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -30,6 +31,7 @@ class PaywallOrchestrator {
   static const String _adWatchPromptedKey = 'paywall_ad_watch_prompted';
 
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
+  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   Future<void> present(BuildContext context, {required String placement, required String source}) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
@@ -65,19 +67,19 @@ class PaywallOrchestrator {
       return;
     }
 
-    final int count = ((main.prefs.get(_adWatchCountKey, defaultValue: 0) as int?) ?? 0) + 1;
-    main.prefs.put(_adWatchCountKey, count);
-    final bool prompted = (main.prefs.get(_adWatchPromptedKey, defaultValue: false) as bool?) ?? false;
+    final int count = (_settings.get<int>(_adWatchCountKey, defaultValue: 0)) + 1;
+    _settings.set(_adWatchCountKey, count);
+    final bool prompted = _settings.get<bool>(_adWatchPromptedKey, defaultValue: false);
     if (count < _adWatchThreshold || prompted) {
       return;
     }
-    main.prefs.put(_adWatchPromptedKey, true);
+    _settings.set(_adWatchPromptedKey, true);
     await present(context, placement: PaywallPlacement.afterAdWatch3, source: source);
   }
 
   void _resetAdWatchCounter() {
-    main.prefs.put(_adWatchCountKey, 0);
-    main.prefs.put(_adWatchPromptedKey, false);
+    _settings.set(_adWatchCountKey, 0);
+    _settings.set(_adWatchPromptedKey, false);
   }
 
   void _logPlacementTriggerContext({required String placement, required String source}) {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/env/env.dart';
@@ -13,8 +14,9 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PexelsWallpaperRepository)
 class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
-  PexelsWallpaperRepositoryImpl();
+  PexelsWallpaperRepositoryImpl(this._feedCacheLocal);
 
+  final FeedCacheLocalDataSource _feedCacheLocal;
   final Map<String, int> _pageNumbers = <String, int>{};
   final Map<String, bool> _hasMoreMap = <String, bool>{};
 
@@ -22,6 +24,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   static const String _searchPath = '/v1/search';
   static const String _curatedPath = '/v1/curated';
   static const String _photosPath = '/v1/photos';
+  static const int _feedTtlHours = 6;
 
   @override
   bool hasMoreForCategory(String categoryName) => _hasMoreMap[categoryName] ?? true;
@@ -54,8 +57,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
         headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)},
       );
       if (response.statusCode != 200) {
-        return Result.error(
-          ServerFailure('Pexels feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}'),
+        return _cachedOrFailure(
+          categoryName: categoryName,
+          failure: ServerFailure(
+            'Pexels feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
+          ),
         );
       }
 
@@ -69,6 +75,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
       _pageNumbers[categoryName] = currentPage + 1;
       _hasMoreMap[categoryName] = hasMore;
+      await _writeCache(categoryName: categoryName, payload: payload, nextPage: currentPage + 1, hasMore: hasMore);
 
       logger.i(
         '[PexelsWallpaperRepository] fetchFeed success',
@@ -76,6 +83,16 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
+      final cached = _readCached(categoryName: categoryName);
+      if (cached != null) {
+        logger.w(
+          '[PexelsWallpaperRepository] remote fetch failed; returning cached snapshot',
+          error: error,
+          stackTrace: stackTrace,
+          fields: <String, Object?>{'category': categoryName},
+        );
+        return Result.success(cached);
+      }
       logger.e('[PexelsWallpaperRepository] fetchFeed failed', error: error, stackTrace: stackTrace);
       return Result.error(ServerFailure('Failed to fetch Pexels feed: $error'));
     }
@@ -104,4 +121,67 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       return Result.error(ServerFailure('Failed to fetch Pexels wallpaper by id: $error'));
     }
   }
+
+  Result<List<PexelsWallpaper>> _cachedOrFailure({required String categoryName, required Failure failure}) {
+    final cached = _readCached(categoryName: categoryName);
+    if (cached != null) {
+      logger.w(
+        '[PexelsWallpaperRepository] remote status failed; returning cached snapshot',
+        fields: <String, Object?>{'category': categoryName},
+      );
+      return Result.success(cached);
+    }
+    return Result.error(failure);
+  }
+
+  Future<void> _writeCache({
+    required String categoryName,
+    required PexelsSearchResponseDto payload,
+    required int nextPage,
+    required bool hasMore,
+  }) {
+    return _feedCacheLocal.write(
+      source: 'pexels',
+      scope: _scope(categoryName),
+      ttlHours: _feedTtlHours,
+      payload: <String, Object?>{'payload': payload.toJson(), 'nextPage': nextPage, 'hasMore': hasMore},
+    );
+  }
+
+  List<PexelsWallpaper>? _readCached({required String categoryName}) {
+    final snapshot = _feedCacheLocal.read(source: 'pexels', scope: _scope(categoryName));
+    if (snapshot == null || snapshot.payload is! Map) {
+      return null;
+    }
+
+    final map = _asMap(snapshot.payload);
+    final payloadMap = _asMap(map['payload']);
+    if (payloadMap.isEmpty) {
+      return null;
+    }
+
+    final payload = PexelsSearchResponseDto.fromJson(payloadMap);
+    final walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
+    if (walls.isEmpty) {
+      return null;
+    }
+
+    _pageNumbers[categoryName] = (map['nextPage'] as num?)?.toInt() ?? (_pageNumbers[categoryName] ?? 1);
+    _hasMoreMap[categoryName] = map['hasMore'] == true;
+    return walls;
+  }
+
+  String _scope(String categoryName) {
+    return categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
+  }
+}
+
+Map<String, dynamic> _asMap(Object? value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
+  }
+  return <String, dynamic>{};
 }

@@ -1,5 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -16,7 +18,6 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
 
@@ -31,9 +32,9 @@ class HomeTabPage extends StatefulWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin {
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   int page = 0;
   bool result = true;
-  final box = Hive.box('localFav');
   String shortcut = "No Action Set";
   bool _hasHandledQuickActionInvocation = false;
 
@@ -75,14 +76,17 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
 
   Future<void> saveFavToLocal() async {
     if (app_state.prismUser.loggedIn) {
-      final value = await context.favouriteWallsAdapter(listen: false).getDataBase();
-      if (value == null || value.isEmpty) {
+      final String userId = app_state.prismUser.id;
+      if (_favoritesLocal.isSeeded(userId)) {
         return;
       }
-      for (final element in value) {
-        box.put(element.id, true);
+      final value = await context.favouriteWallsAdapter(listen: false).getDataBase();
+      if (value != null && value.isNotEmpty) {
+        for (final element in value) {
+          await _favoritesLocal.setWallFavourite(userId, element.id, true);
+        }
       }
-      box.put('dataSaved', true);
+      await _favoritesLocal.setSeeded(userId, true);
     }
   }
 
@@ -125,10 +129,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       const ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
       const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
-    if (box.get('dataSaved', defaultValue: false) as bool) {
-    } else {
-      saveFavToLocal();
-    }
+    saveFavToLocal();
     checkConnection();
   }
 

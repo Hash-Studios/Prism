@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
@@ -12,7 +14,6 @@ import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as 
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class SearchGrid extends StatefulWidget {
 }
 
 class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   AnimationController? _controller;
   late AnimationController shakeController;
   late Animation<Color?> animation;
@@ -65,8 +67,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
       if (widget.selectedProvider == "WallHaven") {
         await wData.getWallsbyQueryPage(
           widget.query,
-          main.prefs.get('WHcategories') as int?,
-          main.prefs.get('WHpurity') as int?,
+          _settingsLocal.get<int>('WHcategories'),
+          _settingsLocal.get<int>('WHpurity'),
         );
       } else if (widget.selectedProvider == "Pexels") {
         await pData.getWallsPbyQueryPage(widget.query);
@@ -164,8 +166,8 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
         wData.wallsS = [];
         await wData.getWallsbyQuery(
           widget.query,
-          main.prefs.get('WHcategories') as int?,
-          main.prefs.get('WHpurity') as int?,
+          _settingsLocal.get<int>('WHcategories'),
+          _settingsLocal.get<int>('WHpurity'),
         );
       } else if (widget.selectedProvider == "Pexels") {
         pData.wallsPS = [];

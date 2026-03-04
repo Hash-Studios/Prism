@@ -14,7 +14,6 @@ import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
-import 'package:Prism/main.dart' as main;
 
 export 'package:Prism/core/utils/string_extensions.dart';
 
@@ -65,9 +64,7 @@ Future<void> persistPrismUser() async {
     await repo.replaceCurrentUser(prismUser);
     return;
   }
-  if (main.prefs.isOpen) {
-    await main.prefs.put(main.userHiveKey, prismUser);
-  }
+  _fallbackUser = prismUser;
 }
 
 Future<void> patchPrismUser({

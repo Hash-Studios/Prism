@@ -1,13 +1,14 @@
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -33,6 +34,7 @@ class OptionalInfo3 extends StatefulWidget {
 }
 
 class _OptionalInfo3State extends State<OptionalInfo3> {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   Image? image1;
   bool _completingOnboarding = false;
 
@@ -46,7 +48,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
     }
     _completingOnboarding = true;
     try {
-      main.prefs.put('onboarded_new', true);
+      _settingsLocal.set('onboarded_new', true);
       await ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'onboarding_done');
       if (!mounted) {
         return;

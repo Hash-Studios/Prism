@@ -1,7 +1,8 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// Stores and keeps the FCM device token up-to-date in the user's Firestore
@@ -13,6 +14,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 class FcmTokenService {
   FcmTokenService._();
   static final FcmTokenService instance = FcmTokenService._();
+  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   /// Fetches the current FCM token and writes it to Firestore for [userId].
   /// Call once after login.
@@ -42,7 +44,7 @@ class FcmTokenService {
 
   Future<void> _persistToken({required String userId, required String token}) async {
     final bool streakReminderEnabled =
-        !main.prefs.isOpen || ((main.prefs.get('streakReminderSubscriber', defaultValue: true) as bool?) ?? true);
+        !_settings.isOpen || _settings.get<bool>('streakReminderSubscriber', defaultValue: true);
     await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
       'fcmToken': token,
       'coinState.streakTimezoneOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,
