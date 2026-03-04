@@ -33,7 +33,11 @@ const List<_ChangelogVersion> _changelog = [
       _ChangeItem(icon: JamIcons.coin, text: 'Coins economy — earn and spend coins in-app.', type: ChangeType.feature),
       _ChangeItem(icon: JamIcons.crown, text: 'Subscriptions and new paywall experience.', type: ChangeType.feature),
       _ChangeItem(icon: JamIcons.user_plus, text: 'All-new onboarding experience.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.link, text: 'Deep links — open walls and profiles from URLs.', type: ChangeType.feature),
+      _ChangeItem(
+        icon: JamIcons.link,
+        text: 'Deep links — open walls and profiles from URLs.',
+        type: ChangeType.feature,
+      ),
       _ChangeItem(icon: JamIcons.user, text: 'Profile completeness indicator.', type: ChangeType.improvement),
       _ChangeItem(icon: JamIcons.filter, text: 'Added 20+ new wallpaper filters.', type: ChangeType.improvement),
       _ChangeItem(icon: JamIcons.save, text: 'Save setups as drafts before uploading.', type: ChangeType.feature),
@@ -83,7 +87,11 @@ const List<_ChangelogVersion> _changelog = [
         type: ChangeType.feature,
       ),
       _ChangeItem(icon: JamIcons.download, text: 'Download notifications.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.refresh, text: 'Improved network requests with pagination.', type: ChangeType.improvement),
+      _ChangeItem(
+        icon: JamIcons.refresh,
+        text: 'Improved network requests with pagination.',
+        type: ChangeType.improvement,
+      ),
       _ChangeItem(icon: JamIcons.bug, text: 'Major bug fixes and improvements.', type: ChangeType.fix),
     ],
   ),
@@ -183,7 +191,10 @@ void showChangelog(BuildContext context, Function func) {
           Navigator.of(context).pop();
           func();
         },
-        child: const Text('CLOSE', style: TextStyle(fontSize: 14.0, color: Colors.white, fontWeight: FontWeight.w600)),
+        child: const Text(
+          'CLOSE',
+          style: TextStyle(fontSize: 14.0, color: Colors.white, fontWeight: FontWeight.w600),
+        ),
       ),
     ],
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
@@ -251,8 +262,8 @@ class _ChangeRow extends StatelessWidget {
       case ChangeType.feature:
         return context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
             ? Theme.of(context).colorScheme.error == Colors.black
-                ? Theme.of(context).colorScheme.secondary
-                : Theme.of(context).colorScheme.error
+                  ? Theme.of(context).colorScheme.secondary
+                  : Theme.of(context).colorScheme.error
             : Theme.of(context).colorScheme.error;
       case ChangeType.fix:
         return Colors.orange;
