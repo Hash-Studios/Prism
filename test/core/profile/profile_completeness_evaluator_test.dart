@@ -10,7 +10,7 @@ PrismUsersV2 _user({
   String profilePhoto = _defaultPhotoUrl,
   String username = '',
   String bio = '',
-  Map<dynamic, dynamic>? links,
+  Map<String, String>? links,
 }) {
   return PrismUsersV2(
     username: username,
@@ -19,14 +19,14 @@ PrismUsersV2 _user({
     createdAt: DateTime.now().toUtc().toIso8601String(),
     premium: false,
     lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-    links: links ?? <String, dynamic>{},
-    followers: <dynamic>[],
-    following: <dynamic>[],
+    links: links ?? const <String, String>{},
+    followers: const <String>[],
+    following: const <String>[],
     profilePhoto: profilePhoto,
     bio: bio,
     loggedIn: true,
     badges: <Badge>[],
-    subPrisms: <dynamic>[],
+    subPrisms: const <String>[],
     coins: 0,
     transactions: <PrismTransaction>[],
     name: '',
@@ -49,7 +49,7 @@ void main() {
       _user(
         username: 'creator_01',
         bio: 'hello world',
-        links: <String, dynamic>{'instagram': 'https://instagram.com/creator'},
+        links: const <String, String>{'instagram': 'https://instagram.com/creator'},
       ),
       defaultProfilePhotoUrl: _defaultPhotoUrl,
     );
@@ -77,7 +77,7 @@ void main() {
         profilePhoto: 'https://example.com/photo.png',
         username: 'creator_01',
         bio: 'hello world',
-        links: <String, dynamic>{'github': 'https://github.com/creator'},
+        links: const <String, String>{'github': 'https://github.com/creator'},
       ),
       defaultProfilePhotoUrl: _defaultPhotoUrl,
     );
@@ -95,7 +95,7 @@ void main() {
         profilePhoto: 'https://example.com/photo.png',
         username: 'creator_01',
         bio: 'hello world',
-        links: <String, dynamic>{'custom link': '   https://site.example/u1  '},
+        links: const <String, String>{'custom link': '   https://site.example/u1  '},
       ),
       defaultProfilePhotoUrl: _defaultPhotoUrl,
     );

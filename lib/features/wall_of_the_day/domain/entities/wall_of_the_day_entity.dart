@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class WallOfTheDayEntity {
   const WallOfTheDayEntity({
     required this.wallId,
@@ -28,7 +30,11 @@ class WallOfTheDayEntity {
       date = rawDate;
     } else if (rawDate != null) {
       try {
-        date = (rawDate as dynamic).toDate() as DateTime;
+        if (rawDate is Timestamp) {
+          date = rawDate.toDate();
+        } else {
+          date = DateTime.now();
+        }
       } catch (_) {
         date = DateTime.now();
       }

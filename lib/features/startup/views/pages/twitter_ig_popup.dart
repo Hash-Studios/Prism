@@ -126,7 +126,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       ),
                     ),
                     const SizedBox(height: 17),
-                    const FollowHeaderCard(
+                    const _FollowHeaderCard(
                       email: "hk3ToN_Prism@gmail.com",
                       url: "https://pbs.twimg.com/profile_images/1278264820450680833/LKoAc7nh_400x400.jpg",
                       name: "Hk3ToN",
@@ -134,7 +134,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       img2: Env.user3Image2,
                       img3: Env.user3Image3,
                     ),
-                    const FollowHeaderCard(
+                    const _FollowHeaderCard(
                       email: "akshaymaurya3006@gmail.com",
                       url: "https://lh3.googleusercontent.com/a-/AOh14Gh7a-JaBRpAI9SPmSBJQmOeggj6ic2mub3DKala_g=s96-c",
                       name: "Akshay Maurya",
@@ -142,7 +142,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       img2: Env.user2Image2,
                       img3: Env.user2Image3,
                     ),
-                    const FollowHeaderCard(
+                    const _FollowHeaderCard(
                       email: "maurya.abhay30@gmail.com",
                       url: "https://lh3.googleusercontent.com/a-/AOh14GgTe5pUi3k-cdvxoCoJ2kKWafu0RXDN3sUVTp3Z58c=s96-c",
                       name: "Abhay Maurya",
@@ -150,7 +150,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       img2: Env.user1Image2,
                       img3: Env.user1Image3,
                     ),
-                    const FollowHeaderCard(
+                    const _FollowHeaderCard(
                       email: "inderpalsansoa.1993@gmail.com",
                       url: "https://lh3.googleusercontent.com/a-/AOh14GjUOpZ14V9UdM58LCz1nx87N_3SDYSHQwTOec-I=s96-c",
                       name: "ShankyGotThatArt",
@@ -158,7 +158,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       img2: Env.user4Image2,
                       img3: Env.user4Image3,
                     ),
-                    const FollowHeaderCard(
+                    const _FollowHeaderCard(
                       email: "yyo17341@gmail.com",
                       url: "https://lh3.googleusercontent.com/a-/AOh14GizSGAXOap5UIqWKX16JNSKe56y1X_mKNb0Snaf=s96-c",
                       name: "Megh Dave",
@@ -166,7 +166,7 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
                       img2: Env.user5Image2,
                       img3: Env.user5Image3,
                     ),
-                    const FollowHeaderCard(
+                    const _FollowHeaderCard(
                       email: "techpool007@gmail.com",
                       url: "https://lh3.googleusercontent.com/a-/AOh14GhcT-AssZM3Kk6jz4OTbbAPz3gS-2tvPjLhkAj83w=s96-c",
                       name: "Dennis Wilson",
@@ -267,9 +267,8 @@ class _OptionalInfo3State extends State<OptionalInfo3> {
   }
 }
 
-class FollowHeaderCard extends StatelessWidget {
-  const FollowHeaderCard({
-    super.key,
+class _FollowHeaderCard extends StatelessWidget {
+  const _FollowHeaderCard({
     required this.url,
     required this.email,
     required this.name,
@@ -336,7 +335,10 @@ class FollowHeaderCard extends StatelessWidget {
                       } else {
                         final _FirestoreDoc currentUserDoc = snapshot.data!.first;
                         final Map<String, dynamic> currentUserData = currentUserDoc.data;
-                        final List<dynamic> following = List<dynamic>.from(currentUserData['following'] as List? ?? []);
+                        final List<String> following = List<String>.from(
+                          (currentUserData['following'] as List?)?.whereType<Object?>().map((e) => e.toString()) ??
+                              const <String>[],
+                        );
                         if (following.contains(email)) {
                           return Padding(
                             padding: const EdgeInsets.all(8.0),
@@ -376,8 +378,9 @@ class FollowHeaderCard extends StatelessWidget {
                                 );
                                 if (users.isNotEmpty) {
                                   final Map<String, dynamic> userData = users.first.data;
-                                  final List<dynamic> followers = List<dynamic>.from(
-                                    userData['followers'] as List? ?? [],
+                                  final List<String> followers = List<String>.from(
+                                    (userData['followers'] as List?)?.whereType<Object?>().map((e) => e.toString()) ??
+                                        const <String>[],
                                   );
                                   followers.add(app_state.prismUser.email);
                                   await firestoreClient.updateDoc(
@@ -429,9 +432,9 @@ class FollowHeaderCard extends StatelessWidget {
               height: MediaQuery.of(context).size.width * 0.8 / 3,
               child: Row(
                 children: [
-                  FollowImage(img1: img1),
-                  FollowImage(img1: img2),
-                  FollowImage(img1: img3),
+                  _FollowImage(img1: img1),
+                  _FollowImage(img1: img2),
+                  _FollowImage(img1: img3),
                 ],
               ),
             ),
@@ -450,8 +453,8 @@ class _FirestoreDoc {
   final Map<String, dynamic> data;
 }
 
-class FollowImage extends StatelessWidget {
-  const FollowImage({super.key, required this.img1});
+class _FollowImage extends StatelessWidget {
+  const _FollowImage({required this.img1});
 
   final String img1;
 

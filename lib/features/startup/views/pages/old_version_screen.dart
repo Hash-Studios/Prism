@@ -1,5 +1,5 @@
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:flutter/material.dart';
 
 class OldVersion extends StatelessWidget {

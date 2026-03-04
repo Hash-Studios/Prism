@@ -41,9 +41,8 @@ class FcmTokenService {
   }
 
   Future<void> _persistToken({required String userId, required String token}) async {
-    final bool streakReminderEnabled = main.prefs.isOpen
-        ? ((main.prefs.get('streakReminderSubscriber', defaultValue: true) as bool?) ?? true)
-        : true;
+    final bool streakReminderEnabled =
+        !main.prefs.isOpen || ((main.prefs.get('streakReminderSubscriber', defaultValue: true) as bool?) ?? true);
     await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
       'fcmToken': token,
       'coinState.streakTimezoneOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,

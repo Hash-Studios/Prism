@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
@@ -94,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 'items': state.items.length,
                 'hasMore': state.hasMore,
                 'category': state.selectedCategory?.name,
-                'provider': state.selectedCategory?.provider,
+                'provider': state.selectedCategory?.source.legacyProviderString,
               },
             );
           }
@@ -117,14 +118,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
           }
-          final provider = context.categorySelectedChoice().provider;
-          if (provider == "WallHaven") {
-            return WallHavenGrid(provider: provider);
+          final source = state.selectedCategory?.source ?? WallpaperSource.prism;
+          switch (source) {
+            case WallpaperSource.wallhaven:
+              return const WallHavenGrid();
+            case WallpaperSource.pexels:
+              return const PexelsGrid();
+            case WallpaperSource.prism:
+              return const WallpaperGrid();
+            case WallpaperSource.wallOfTheDay:
+            case WallpaperSource.downloaded:
+            case WallpaperSource.unknown:
+              return const WallpaperGrid();
           }
-          if (provider == "Pexels") {
-            return PexelsGrid(provider: provider);
-          }
-          return WallpaperGrid(provider: provider);
         },
       ),
     );

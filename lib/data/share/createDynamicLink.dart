@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -14,13 +15,14 @@ import 'package:http/http.dart' as http;
 const String _shareDomain = 'prismwalls.com';
 const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
 
-class CanonicalLinkBuilder {
-  const CanonicalLinkBuilder();
+class _CanonicalLinkBuilder {
+  const _CanonicalLinkBuilder();
 
-  Uri wallpaper({required String id, required String provider, String? url, required String thumbUrl}) {
+  Uri wallpaper({required String id, required WallpaperSource source, String? url, required String thumbUrl}) {
     return Uri.https(_shareDomain, '/share', <String, String>{
       'id': id,
-      'provider': provider,
+      'source': source.wireValue,
+      'provider': source.legacyProviderString,
       'thumb': thumbUrl,
       if (url != null) 'url': url,
     });
@@ -42,8 +44,8 @@ class CanonicalLinkBuilder {
   }
 }
 
-class ShortLinkService {
-  const ShortLinkService();
+class _ShortLinkService {
+  const _ShortLinkService();
 
   Future<Uri> createShortLink({
     required String type,
@@ -101,8 +103,8 @@ class ShortLinkService {
   }
 }
 
-const CanonicalLinkBuilder _canonicalLinkBuilder = CanonicalLinkBuilder();
-const ShortLinkService _shortLinkService = ShortLinkService();
+const _CanonicalLinkBuilder _canonicalLinkBuilder = _CanonicalLinkBuilder();
+const _ShortLinkService _shortLinkService = _ShortLinkService();
 
 void _trackDynamicLinkCreateResult({
   required ShareTypeValue shareType,
@@ -128,18 +130,24 @@ Future<String> _buildShareableLink({
   return resolved.toString();
 }
 
-Future<String> createDynamicLink(String id, String provider, String? url, String thumbUrl) async {
+Future<String> createDynamicLink(String id, WallpaperSource source, String? url, String thumbUrl) async {
   try {
-    final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, provider: provider, url: url, thumbUrl: thumbUrl);
+    final Uri canonical = _canonicalLinkBuilder.wallpaper(id: id, source: source, url: url, thumbUrl: thumbUrl);
     final String link = await _buildShareableLink(
       type: 'share',
       canonicalUri: canonical,
-      payload: <String, dynamic>{'id': id, 'provider': provider, if (url != null) 'url': url, 'thumb': thumbUrl},
+      payload: <String, dynamic>{
+        'id': id,
+        'source': source.wireValue,
+        'provider': source.legacyProviderString,
+        if (url != null) 'url': url,
+        'thumb': thumbUrl,
+      },
       preview: <String, dynamic>{
         'title': '$id - Prism',
         'description': 'Check out this amazing wallpaper from Prism.',
         'image_source_url': thumbUrl,
-        'provider': provider,
+        'provider': source.legacyProviderString,
         'wall_id': id,
       },
     );
@@ -261,7 +269,7 @@ Future<String> createCopyrightLink(
   bool setup,
   BuildContext context, {
   String? id,
-  String? provider,
+  WallpaperSource? source,
   String? url,
   String? thumbUrl,
   String? name,
@@ -284,14 +292,21 @@ Future<String> createCopyrightLink(
     };
     analytics.track(const ReportSetupEvent());
   } else {
+    final WallpaperSource resolvedSource = source ?? WallpaperSource.prism;
     type = 'share';
-    canonical = _canonicalLinkBuilder.wallpaper(id: id!, provider: provider!, url: url, thumbUrl: thumbUrl!);
-    payload = <String, dynamic>{'id': id, 'provider': provider, if (url != null) 'url': url, 'thumb': thumbUrl};
+    canonical = _canonicalLinkBuilder.wallpaper(id: id!, source: resolvedSource, url: url, thumbUrl: thumbUrl!);
+    payload = <String, dynamic>{
+      'id': id,
+      'source': resolvedSource.wireValue,
+      'provider': resolvedSource.legacyProviderString,
+      if (url != null) 'url': url,
+      'thumb': thumbUrl,
+    };
     preview = <String, dynamic>{
       'title': '$id - Prism',
       'description': 'Check out this amazing wallpaper from Prism.',
       'image_source_url': thumbUrl,
-      'provider': provider,
+      'provider': resolvedSource.legacyProviderString,
       'wall_id': id,
     };
     analytics.track(const ReportWallEvent());

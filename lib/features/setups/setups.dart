@@ -1,5 +1,4 @@
 export 'biz/bloc/setups_bloc.j.dart';
-export 'builder/setups_builder.dart';
 export 'views/pages/draft_setup_screen.dart';
 export 'views/pages/edit_setup_review_screen.dart';
 export 'views/pages/edit_wall_screen.dart';

@@ -101,7 +101,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
       toasts.error('No linked item for this transaction.');
       unawaited(
         analytics.track(
-          ExternalLinkOpenResultEvent(
+          const ExternalLinkOpenResultEvent(
             surface: AnalyticsSurfaceValue.coinTransactionsScreen,
             destination: LinkDestinationValue.external,
             result: EventResultValue.failure,
@@ -117,7 +117,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
       toasts.error('Invalid link for this transaction.');
       unawaited(
         analytics.track(
-          ExternalLinkOpenResultEvent(
+          const ExternalLinkOpenResultEvent(
             surface: AnalyticsSurfaceValue.coinTransactionsScreen,
             destination: LinkDestinationValue.external,
             result: EventResultValue.failure,
@@ -137,7 +137,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
       }
       unawaited(
         analytics.track(
-          ExternalLinkOpenResultEvent(
+          const ExternalLinkOpenResultEvent(
             surface: AnalyticsSurfaceValue.coinTransactionsScreen,
             destination: LinkDestinationValue.external,
             result: EventResultValue.success,

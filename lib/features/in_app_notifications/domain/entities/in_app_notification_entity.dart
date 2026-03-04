@@ -14,7 +14,7 @@ class InAppNotificationEntity {
   final String pageName;
   final String body;
   final String imageUrl;
-  final List<dynamic> arguments;
+  final List<Object> arguments;
   final String url;
   final DateTime createdAt;
   final bool read;

@@ -8,24 +8,24 @@ import 'package:Prism/main.dart' as main;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-typedef ProfileCompletenessSheetLauncher =
+typedef _ProfileCompletenessSheetLauncher =
     Future<ProfileCompletenessNudgeAction?> Function(BuildContext context, {required ProfileCompletenessStatus status});
 
-typedef ProfileCompletenessEventTracker = Future<void> Function(AnalyticsEvent event);
-typedef ProfileCompletenessOpenEditProfile = Future<void> Function(BuildContext context);
+typedef _ProfileCompletenessEventTracker = Future<void> Function(AnalyticsEvent event);
+typedef _ProfileCompletenessOpenEditProfile = Future<void> Function(BuildContext context);
 
-typedef ReadPrefValue = dynamic Function(String key, {dynamic defaultValue});
-typedef WritePrefValue = Future<void> Function(String key, dynamic value);
-typedef IsPrefsOpen = bool Function();
+typedef _ReadPrefValue = dynamic Function(String key, {dynamic defaultValue});
+typedef _WritePrefValue = Future<void> Function(String key, dynamic value);
+typedef _IsPrefsOpen = bool Function();
 
 class ProfileCompletenessNudgeService {
   ProfileCompletenessNudgeService({
-    ProfileCompletenessSheetLauncher? sheetLauncher,
-    ProfileCompletenessEventTracker? trackEvent,
-    ProfileCompletenessOpenEditProfile? openEditProfile,
-    ReadPrefValue? readPrefValue,
-    WritePrefValue? writePrefValue,
-    IsPrefsOpen? isPrefsOpen,
+    _ProfileCompletenessSheetLauncher? sheetLauncher,
+    _ProfileCompletenessEventTracker? trackEvent,
+    _ProfileCompletenessOpenEditProfile? openEditProfile,
+    _ReadPrefValue? readPrefValue,
+    _WritePrefValue? writePrefValue,
+    _IsPrefsOpen? isPrefsOpen,
   }) : _sheetLauncher = sheetLauncher ?? showProfileCompletenessNudgeSheet,
        _trackEvent = trackEvent ?? analytics.track,
        _openEditProfile = openEditProfile ?? _defaultOpenEditProfile,
@@ -37,12 +37,12 @@ class ProfileCompletenessNudgeService {
 
   static const String _prefPrefix = 'e5ProfileCompletenessNudgeShownV1';
 
-  final ProfileCompletenessSheetLauncher _sheetLauncher;
-  final ProfileCompletenessEventTracker _trackEvent;
-  final ProfileCompletenessOpenEditProfile _openEditProfile;
-  final ReadPrefValue _readPrefValue;
-  final WritePrefValue _writePrefValue;
-  final IsPrefsOpen _isPrefsOpen;
+  final _ProfileCompletenessSheetLauncher _sheetLauncher;
+  final _ProfileCompletenessEventTracker _trackEvent;
+  final _ProfileCompletenessOpenEditProfile _openEditProfile;
+  final _ReadPrefValue _readPrefValue;
+  final _WritePrefValue _writePrefValue;
+  final _IsPrefsOpen _isPrefsOpen;
 
   Future<void> maybeShowNudge(BuildContext context, {required String sourceContext}) async {
     if (!_isPrefsOpen()) {

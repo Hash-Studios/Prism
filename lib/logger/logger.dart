@@ -14,12 +14,3 @@ Future<String> zipLogs() async {
   logger.w('Log export is temporarily disabled during the phase-1 logger migration.', tag: 'Logger');
   return logExportDisabledMarker;
 }
-
-Future<String> encryptLogsZip(String zipPath) async {
-  logger.w(
-    'encryptLogsZip is temporarily disabled during the phase-1 logger migration.',
-    tag: 'Logger',
-    fields: <String, Object?>{'zipPath': zipPath},
-  );
-  return logExportDisabledMarker;
-}

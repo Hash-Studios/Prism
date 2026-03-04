@@ -109,7 +109,6 @@ class AppleAuth {
           lastLoginAt: DateTime.now().toUtc().toIso8601String(),
           links: {},
           premium: false,
-          subscriptionTier: 'free',
           loggedIn: true,
           profilePhoto: photoURL,
           badges: [],

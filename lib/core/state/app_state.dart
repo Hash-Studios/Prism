@@ -9,6 +9,8 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/premium_wall_utils.dart' as premium_wall_utils;
+import 'package:Prism/features/session/domain/entities/badge_entity.dart';
+import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -80,12 +82,12 @@ Future<void> patchPrismUser({
   bool? premium,
   String? subscriptionTier,
   int? coins,
-  Map<dynamic, dynamic>? links,
-  List<dynamic>? followers,
-  List<dynamic>? following,
-  List<dynamic>? badges,
-  List<dynamic>? subPrisms,
-  List<dynamic>? transactions,
+  Map<String, String>? links,
+  List<String>? followers,
+  List<String>? following,
+  List<BadgeEntity>? badges,
+  List<String>? subPrisms,
+  List<TransactionEntity>? transactions,
   String? uploadsWeekStart,
   int? uploadsThisWeek,
 }) async {
@@ -128,28 +130,39 @@ Future<void> patchPrismUser({
   if (links != null) _fallbackUser.links = links;
   if (followers != null) _fallbackUser.followers = followers;
   if (following != null) _fallbackUser.following = following;
-  if (badges != null) _fallbackUser.badges = badges.whereType<Badge>().toList(growable: false);
+  if (badges != null) {
+    _fallbackUser.badges = badges
+        .map(
+          (badge) => Badge(
+            id: badge.id,
+            name: badge.name,
+            description: badge.description,
+            imageUrl: badge.imageUrl,
+            color: badge.color,
+            url: badge.url,
+            awardedAt: badge.awardedAt,
+          ),
+        )
+        .toList(growable: false);
+  }
   if (subPrisms != null) _fallbackUser.subPrisms = subPrisms;
   if (transactions != null) {
-    _fallbackUser.transactions = transactions.whereType<PrismTransaction>().toList(growable: false);
+    _fallbackUser.transactions = transactions
+        .map(
+          (transaction) => PrismTransaction(
+            id: transaction.id,
+            name: transaction.name,
+            description: transaction.description,
+            amount: transaction.amount,
+            credit: transaction.credit,
+            by: transaction.by,
+            processedAt: transaction.processedAt,
+          ),
+        )
+        .toList(growable: false);
   }
   if (uploadsWeekStart != null) _fallbackUser.uploadsWeekStart = uploadsWeekStart;
   if (uploadsThisWeek != null) _fallbackUser.uploadsThisWeek = uploadsThisWeek;
-}
-
-Future<void> refreshSessionFromPersistence() async {
-  final repo = _sessionRepositoryOrNull();
-  if (repo != null) {
-    await repo.getSession();
-    return;
-  }
-  if (!main.prefs.isOpen) {
-    return;
-  }
-  final dynamic raw = main.prefs.get(main.userHiveKey);
-  if (raw is PrismUsersV2) {
-    _fallbackUser = raw;
-  }
 }
 
 StartupConfigEntity? get startupConfig {
@@ -189,7 +202,7 @@ bool isAdminUser([String? email]) {
   return isAdminEmail(target);
 }
 
-bool isPremiumWall(List<String> premiumCollections, List<dynamic> wallCollections) {
+bool isPremiumWall(List<String> premiumCollections, List<Object?> wallCollections) {
   return premium_wall_utils.isPremiumWall(premiumCollections, wallCollections);
 }
 

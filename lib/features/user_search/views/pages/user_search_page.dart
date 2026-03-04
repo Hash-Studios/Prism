@@ -96,13 +96,13 @@ class _UserSearchState extends State<UserSearch> {
           ),
         ),
       ),
-      body: const UserSearchLoader(),
+      body: const _UserSearchLoader(),
     );
   }
 }
 
-class UserSearchLoader extends StatelessWidget {
-  const UserSearchLoader({super.key});
+class _UserSearchLoader extends StatelessWidget {
+  const _UserSearchLoader();
 
   @override
   Widget build(BuildContext context) {
@@ -114,14 +114,14 @@ class UserSearchLoader extends StatelessWidget {
         if (state.status == LoadStatus.failure) {
           return const LoadingCards();
         }
-        return UsersResultList(users: state.users, queryLength: state.query.trim().length);
+        return _UsersResultList(users: state.users, queryLength: state.query.trim().length);
       },
     );
   }
 }
 
-class UsersResultList extends StatefulWidget {
-  const UsersResultList({required this.users, required this.queryLength, super.key});
+class _UsersResultList extends StatefulWidget {
+  const _UsersResultList({required this.users, required this.queryLength});
   final List<UserSearchUser> users;
   final int queryLength;
 
@@ -129,7 +129,7 @@ class UsersResultList extends StatefulWidget {
   _UsersResultListState createState() => _UsersResultListState();
 }
 
-class _UsersResultListState extends State<UsersResultList> {
+class _UsersResultListState extends State<_UsersResultList> {
   List<bool> generateItems(int numberOfItems) {
     return List<bool>.generate(numberOfItems, (int index) {
       return false;
@@ -144,7 +144,7 @@ class _UsersResultListState extends State<UsersResultList> {
   }
 
   @override
-  void didUpdateWidget(covariant UsersResultList oldWidget) {
+  void didUpdateWidget(covariant _UsersResultList oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.users.length != widget.users.length) {
       _data = generateItems(widget.users.length);
@@ -368,7 +368,7 @@ class _UsersResultListState extends State<UsersResultList> {
                                                     ).colorScheme.secondary.withValues(alpha: 0.1),
                                                   ),
                                                   child: Icon(
-                                                    linksData[e]!["icon"] as IconData,
+                                                    linksData[e]!["icon"]! as IconData,
                                                     size: 20,
                                                     color: Theme.of(
                                                       context,

@@ -6,10 +6,11 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/apps/app_icon.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/env/env.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -604,8 +605,8 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               onPressed: () {
                                 bool fetched = false;
                                 bool loading = true;
-                                List icons = [];
-                                List allIcons = [];
+                                List<AppIcon> icons = <AppIcon>[];
+                                List<AppIcon> allIcons = <AppIcon>[];
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
@@ -631,9 +632,14 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                 final Box box = Hive.box('appsCache');
                                                 setState(() {
                                                   fetched = true;
-                                                  icons = (box.get('icons', defaultValue: {}) as Map).values.toList();
-                                                  allIcons = (box.get('icons', defaultValue: {}) as Map).values
-                                                      .toList();
+                                                  final Object? cachedIcons = box.get('icons', defaultValue: null);
+                                                  if (cachedIcons is Map) {
+                                                    icons = cachedIcons.values
+                                                        .whereType<Map>()
+                                                        .map(AppIcon.fromMap)
+                                                        .toList(growable: false);
+                                                    allIcons = icons;
+                                                  }
                                                   if (icons.isNotEmpty) {
                                                     loading = false;
                                                   }
@@ -685,15 +691,12 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                             child: TextField(
                                                               onSubmitted: (query) {
                                                                 query = query.toLowerCase();
-                                                                icons = allIcons;
+                                                                icons = List<AppIcon>.from(allIcons);
                                                                 if (query != '') {
                                                                   icons = icons
                                                                       .where(
-                                                                        (e) => (e as Map)["name"]
-                                                                            .toString()
-                                                                            .trim()
-                                                                            .toLowerCase()
-                                                                            .contains(query),
+                                                                        (e) =>
+                                                                            e.name.trim().toLowerCase().contains(query),
                                                                       )
                                                                       .toList();
                                                                 }
@@ -701,15 +704,12 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                               },
                                                               onChanged: (query) {
                                                                 query = query.toLowerCase();
-                                                                icons = allIcons;
+                                                                icons = List<AppIcon>.from(allIcons);
                                                                 if (query != '') {
                                                                   icons = icons
                                                                       .where(
-                                                                        (e) => (e as Map)["name"]
-                                                                            .toString()
-                                                                            .trim()
-                                                                            .toLowerCase()
-                                                                            .contains(query),
+                                                                        (e) =>
+                                                                            e.name.trim().toLowerCase().contains(query),
                                                                       )
                                                                       .toList();
                                                                 }
@@ -745,26 +745,21 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                   ? const ListTile(title: SizedBox(height: 60))
                                                                   : ListTile(
                                                                       onTap: () {
-                                                                        iconName.text = (icons[index] as Map)["name"]
-                                                                            .toString()
-                                                                            .trim();
-                                                                        iconURL.text = (icons[index] as Map)["link"]
-                                                                            .toString()
-                                                                            .trim();
+                                                                        iconName.text = icons[index].name.trim();
+                                                                        iconURL.text = icons[index].link.trim();
                                                                         Navigator.pop(context);
                                                                       },
                                                                       leading: ClipRRect(
                                                                         borderRadius: BorderRadius.circular(8),
                                                                         child: CachedNetworkImage(
-                                                                          imageUrl: (icons[index] as Map)["icon"]
-                                                                              .toString(),
+                                                                          imageUrl: icons[index].iconUrl,
                                                                           width: 38,
                                                                           height: 38,
                                                                           fit: BoxFit.cover,
                                                                         ),
                                                                       ),
                                                                       title: Text(
-                                                                        (icons[index] as Map)["name"].toString().trim(),
+                                                                        icons[index].name.trim(),
                                                                         style: TextStyle(
                                                                           color: Theme.of(
                                                                             context,
@@ -775,7 +770,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                                                                         ),
                                                                       ),
                                                                       subtitle: Text(
-                                                                        (icons[index] as Map)["id"].toString().trim(),
+                                                                        icons[index].id.trim(),
                                                                         style: TextStyle(
                                                                           color: Theme.of(context).colorScheme.secondary
                                                                               .withValues(alpha: 0.5),

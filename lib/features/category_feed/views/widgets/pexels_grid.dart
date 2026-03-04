@@ -5,35 +5,37 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PexelsGrid extends StatefulWidget {
-  final String? provider;
-  const PexelsGrid({required this.provider});
+  const PexelsGrid({super.key});
+
   @override
-  _PexelsGridState createState() => _PexelsGridState();
+  State<PexelsGrid> createState() => _PexelsGridState();
 }
 
 class _PexelsGridState extends State<PexelsGrid> {
   int _current = 0;
-  GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
-
-  bool seeMoreLoader = false;
+  final GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+  bool seeMoreLoader = false;
+
   @override
   void initState() {
     super.initState();
@@ -44,17 +46,37 @@ class _PexelsGridState extends State<PexelsGrid> {
     refreshHomeKey.currentState?.show();
     _contentLoadTracker.start();
     _scrollMilestoneTracker.reset();
-    PData.wallsP = [];
     await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "r");
+  }
+
+  Future<void> _triggerSeeMore({required bool hasMore, required int itemCount}) async {
+    if (seeMoreLoader || !hasMore) {
+      return;
+    }
+    setState(() {
+      seeMoreLoader = true;
+    });
+    try {
+      await context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
+    } finally {
+      if (mounted) {
+        setState(() {
+          seeMoreLoader = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
     final CarouselSliderController carouselController = CarouselSliderController();
-    if (PData.wallsP.isNotEmpty) {
+    final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
+    final List<PexelsFeedItem> walls = state.items.whereType<PexelsFeedItem>().toList(growable: false);
+
+    if (walls.isNotEmpty) {
       _contentLoadTracker.success(
-        itemCount: PData.wallsP.length,
+        itemCount: walls.length,
         onSuccess: ({required int loadTimeMs, int? itemCount}) async {
           await analytics.track(
             SurfaceContentLoadedEvent(
@@ -68,6 +90,7 @@ class _PexelsGridState extends State<PexelsGrid> {
         },
       );
     }
+
     return Padding(
       padding: const EdgeInsets.only(top: 5.0),
       child: NestedScrollView(
@@ -97,128 +120,114 @@ class _PexelsGridState extends State<PexelsGrid> {
                         }
                       },
                     ),
-                    itemBuilder: (BuildContext context, int i, int rI) => i == 4
-                        ? Container(
-                            width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
-                            child: GestureDetector(
-                              onTap: () {
-                                unawaited(
-                                  analytics.track(
-                                    SurfaceActionTappedEvent(
-                                      surface: AnalyticsSurfaceValue.homePexelsGrid,
-                                      action: AnalyticsActionValue.bannerTapped,
-                                      sourceContext: 'home_pexels_grid_banner',
-                                    ),
-                                  ),
-                                );
-                                openPrismLink(context, app_state.bannerURL);
-                              },
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: context.prismModeStyleForContext() == "Dark"
-                                      ? Colors.white10
-                                      : Colors.black.withValues(alpha: .1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                    image: CachedNetworkImageProvider(app_state.topImageLink),
-                                    fit: BoxFit.cover,
+                    itemBuilder: (BuildContext context, int i, int rI) {
+                      if (i == 4) {
+                        return Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
+                          child: GestureDetector(
+                            onTap: () {
+                              unawaited(
+                                analytics.track(
+                                  const SurfaceActionTappedEvent(
+                                    surface: AnalyticsSurfaceValue.homePexelsGrid,
+                                    action: AnalyticsActionValue.bannerTapped,
+                                    sourceContext: 'home_pexels_grid_banner',
                                   ),
                                 ),
-                                child: Center(
-                                  child: Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    color: app_state.bannerTextOn
-                                        ? Colors.black.withValues(alpha: 0.4)
-                                        : Colors.transparent,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(
-                                        app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                          fontSize: 20,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                              );
+                              openPrismLink(context, app_state.bannerURL);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: context.prismModeStyleForContext() == "Dark"
+                                    ? Colors.white10
+                                    : Colors.black.withValues(alpha: .1),
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(app_state.topImageLink),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: Center(
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  color: app_state.bannerTextOn
+                                      ? Colors.black.withValues(alpha: 0.4)
+                                      : Colors.transparent,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                        fontSize: 20,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          )
-                        : Container(
-                            width: MediaQuery.of(context).size.width,
-                            margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
-                            child: GestureDetector(
-                              onTap: () {
-                                if (PData.wallsP == []) {
-                                } else {
-                                  unawaited(
-                                    analytics.track(
-                                      SurfaceActionTappedEvent(
-                                        surface: AnalyticsSurfaceValue.homePexelsGrid,
-                                        action: AnalyticsActionValue.carouselItemOpened,
-                                        sourceContext: 'home_pexels_grid_carousel',
-                                        itemType: ItemTypeValue.wallpaper,
-                                        itemId: PData.wallsP[i].id.toString(),
-                                        index: i,
-                                      ),
-                                    ),
-                                  );
-                                  context.router.push(
-                                    WallpaperRoute(
-                                      provider: widget.provider.toString(),
-                                      index: i,
-                                      link: PData.wallsP[i].src!["small"].toString(),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: PData.wallsP.isEmpty
-                                  ? Container(
-                                      decoration: BoxDecoration(
-                                        color: context.prismModeStyleForContext() == "Dark"
-                                            ? Colors.white10
-                                            : Colors.black.withValues(alpha: .1),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                    )
-                                  : Container(
-                                      decoration: BoxDecoration(
-                                        color: context.prismModeStyleForContext() == "Dark"
-                                            ? Colors.white10
-                                            : Colors.black.withValues(alpha: .1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                          image: CachedNetworkImageProvider(PData.wallsP[i].src!["medium"].toString()),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: Container(
-                                          width: MediaQuery.of(context).size.width,
-                                          color: Colors.transparent,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              "",
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                                color: Colors.white,
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                            ),
                           ),
+                        );
+                      }
+                      final PexelsFeedItem? item = i < walls.length ? walls[i] : null;
+                      return Container(
+                        width: MediaQuery.of(context).size.width,
+                        margin: const EdgeInsets.fromLTRB(5, 1, 5, 7),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (item == null) {
+                              return;
+                            }
+                            unawaited(
+                              analytics.track(
+                                SurfaceActionTappedEvent(
+                                  surface: AnalyticsSurfaceValue.homePexelsGrid,
+                                  action: AnalyticsActionValue.carouselItemOpened,
+                                  sourceContext: 'home_pexels_grid_carousel',
+                                  itemType: ItemTypeValue.wallpaper,
+                                  itemId: item.id,
+                                  index: i,
+                                ),
+                              ),
+                            );
+                            context.router.push(
+                              WallpaperRoute(
+                                source: WallpaperSource.pexels,
+                                index: i,
+                                link: item.wallpaper.thumbnailUrl,
+                                item: item,
+                              ),
+                            );
+                          },
+                          child: item == null
+                              ? Container(
+                                  decoration: BoxDecoration(
+                                    color: context.prismModeStyleForContext() == "Dark"
+                                        ? Colors.white10
+                                        : Colors.black.withValues(alpha: .1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                )
+                              : Container(
+                                  decoration: BoxDecoration(
+                                    color: context.prismModeStyleForContext() == "Dark"
+                                        ? Colors.white10
+                                        : Colors.black.withValues(alpha: .1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    image: DecorationImage(
+                                      image: CachedNetworkImageProvider(item.wallpaper.thumbnailUrl),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
                   ),
                   CarouselDots(current: _current),
                 ],
@@ -234,7 +243,7 @@ class _PexelsGridState extends State<PexelsGrid> {
             onNotification: (ScrollNotification scrollInfo) {
               _scrollMilestoneTracker.onScroll(
                 metrics: scrollInfo.metrics,
-                itemCount: PData.wallsP.length,
+                itemCount: walls.length,
                 onMilestoneReached: (depth, {required int itemCount}) async {
                   await analytics.track(
                     ScrollMilestoneReachedEvent(
@@ -248,19 +257,17 @@ class _PexelsGridState extends State<PexelsGrid> {
                 },
               );
               if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
-                if (!seeMoreLoader) {
-                  context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
-                  setState(() {
-                    seeMoreLoader = true;
-                    Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                  });
-                }
+                unawaited(_triggerSeeMore(hasMore: state.hasMore, itemCount: walls.length));
               }
               return false;
             },
             child: GridView.builder(
               padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
-              itemCount: PData.wallsP.isEmpty ? 20 : PData.wallsP.length - 4,
+              itemCount: walls.isEmpty
+                  ? 20
+                  : walls.length > 4
+                  ? walls.length - 4
+                  : 0,
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -269,36 +276,35 @@ class _PexelsGridState extends State<PexelsGrid> {
                 crossAxisSpacing: 8,
               ),
               itemBuilder: (context, index) {
-                index = index + 4;
-                if (index == PData.wallsP.length - 1) {
+                if (walls.isEmpty) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: context.prismModeStyleForContext() == "Dark"
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  );
+                }
+                final int itemIndex = index + 4;
+                if (itemIndex == walls.length - 1) {
                   return SeeMoreButton(
                     seeMoreLoader: seeMoreLoader,
                     func: () {
                       unawaited(
                         analytics.track(
-                          SurfaceActionTappedEvent(
+                          const SurfaceActionTappedEvent(
                             surface: AnalyticsSurfaceValue.homePexelsGrid,
                             action: AnalyticsActionValue.seeMoreTapped,
                             sourceContext: 'home_pexels_grid_see_more',
                           ),
                         ),
                       );
-                      if (!seeMoreLoader) {
-                        context.categoryChangeWallpaperFuture(context.categorySelectedChoice(listen: false), "s");
-                        setState(() {
-                          seeMoreLoader = true;
-                          Future.delayed(const Duration(seconds: 2)).then((value) => seeMoreLoader = false);
-                        });
-                      }
+                      unawaited(_triggerSeeMore(hasMore: state.hasMore, itemCount: walls.length));
                     },
                   );
                 }
-
-                return FocusedMenuHolder(
-                  provider: widget.provider,
-                  index: index,
-                  child: PexelsTile(widget: widget, index: index),
-                );
+                return PexelsTile(item: walls[itemIndex], index: itemIndex);
               },
             ),
           ),

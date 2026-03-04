@@ -1,5 +1,4 @@
 export 'biz/bloc/public_profile_bloc.j.dart';
-export 'builder/public_profile_builder.dart';
 export 'views/pages/followers_screen.dart';
 export 'views/pages/profile_screen.dart';
 export 'views/pages/user_profile_setup_view_screen.dart';
@@ -12,9 +11,7 @@ export 'views/widgets/general_list.dart';
 export 'views/widgets/premium_list.dart';
 export 'views/widgets/prism_list.dart';
 export 'views/widgets/uploaded_setups_grid.dart';
-export 'views/widgets/uploaded_setups_loader.dart';
 export 'views/widgets/uploaded_walls_grid.dart';
-export 'views/widgets/uploaded_walls_loader.dart';
 export 'views/widgets/user_list.dart';
 export 'views/widgets/user_profile_grid.dart';
 export 'views/widgets/user_profile_loader.dart';

@@ -1,3 +1,5 @@
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+
 sealed class DeepLinkActionEntity {
   const DeepLinkActionEntity({required this.rawUri});
 
@@ -7,14 +9,14 @@ sealed class DeepLinkActionEntity {
 final class ShareLinkIntent extends DeepLinkActionEntity {
   const ShareLinkIntent({
     required this.wallId,
-    required this.provider,
+    required this.source,
     required this.wallpaperUrl,
     required this.thumbnailUrl,
     required super.rawUri,
   });
 
   final String wallId;
-  final String provider;
+  final WallpaperSource source;
   final String wallpaperUrl;
   final String thumbnailUrl;
 }

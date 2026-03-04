@@ -6,6 +6,10 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -14,9 +18,9 @@ import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -61,7 +65,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
 
   String get _sourceContext => 'profile_wallpaper_view';
 
-  String? get _itemId => context.profileWallsSnapshots(listen: false)![index].data()["id"]?.toString();
+  String? get _itemId => context.profileWalls(listen: false)![index].id;
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -171,8 +175,8 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
     thumb = widget.thumbnailUrl;
     isLoading = true;
     _contentLoadTracker.start();
-    updateViews(context.profileWallsSnapshots(listen: false)![index].data()["id"].toString().toUpperCase());
-    _futureView = getViews(context.profileWallsSnapshots(listen: false)![index].data()["id"].toString().toUpperCase());
+    updateViews(context.profileWalls(listen: false)![index].id.toUpperCase());
+    _futureView = getViews(context.profileWalls(listen: false)![index].id.toUpperCase());
     _updatePaletteGenerator();
     super.initState();
   }
@@ -310,11 +314,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     child: Row(
                                       children: [
                                         Text(
-                                          context
-                                              .profileWallsSnapshots(listen: false)![index]
-                                              .data()["id"]
-                                              .toString()
-                                              .toUpperCase(),
+                                          context.profileWalls(listen: false)![index].id.toUpperCase(),
                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                             color: Theme.of(context).colorScheme.secondary,
                                           ),
@@ -383,7 +383,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      context.profileWallsSnapshots(listen: false)![index].data()["by"].toString(),
+                                      context.profileWalls(listen: false)![index].by.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -400,7 +400,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      context.profileWallsSnapshots(listen: false)![index].data()["desc"].toString(),
+                                      context.profileWalls(listen: false)![index].desc.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -417,7 +417,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      context.profileWallsSnapshots(listen: false)![index].data()["size"].toString(),
+                                      context.profileWalls(listen: false)![index].size.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -433,10 +433,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                 Row(
                                   children: [
                                     Text(
-                                      context
-                                          .profileWallsSnapshots(listen: false)![index]
-                                          .data()["resolution"]
-                                          .toString(),
+                                      context.profileWalls(listen: false)![index].resolution.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -453,10 +450,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                                 Row(
                                   children: [
                                     Text(
-                                      context
-                                          .profileWallsSnapshots(listen: false)![index]
-                                          .data()["wallpaper_provider"]
-                                          .toString(),
+                                      context.profileWalls(listen: false)![index].source.toString(),
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -484,15 +478,12 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                             colorChanged: colorChanged,
                             link: screenshotTaken
                                 ? _imageFile.path
-                                : context
-                                      .profileWallsSnapshots(listen: false)![index]
-                                      .data()["wallpaper_url"]
-                                      .toString(),
+                                : context.profileWalls(listen: false)![index].wallpaperUrl,
                             isPremiumContent: app_state.isPremiumWall(
                               app_state.premiumCollections,
-                              context.profileWallsSnapshots(listen: false)![index].data()["collections"] as List? ?? [],
+                              context.profileWalls(listen: false)![index].collections as List? ?? [],
                             ),
-                            contentId: context.profileWallsSnapshots(listen: false)![index].data()["id"]?.toString(),
+                            contentId: context.profileWalls(listen: false)![index].id,
                             sourceContext: 'profile_wall_view',
                           ),
                           if (!hideSetWallpaperUi)
@@ -500,41 +491,38 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                               colorChanged: colorChanged,
                               url: screenshotTaken
                                   ? _imageFile.path
-                                  : context
-                                        .profileWallsSnapshots(listen: false)![index]
-                                        .data()["wallpaper_url"]
-                                        .toString(),
+                                  : context.profileWalls(listen: false)![index].wallpaperUrl,
                             ),
                           FavouriteWallpaperButton(
-                            id: context.profileWallsSnapshots(listen: false)![index].data()["id"].toString(),
-                            provider: context
-                                .profileWallsSnapshots(listen: false)![index]
-                                .data()["wallpaper_provider"]
-                                .toString(),
-                            prism: context.profileWallsSnapshots(listen: false)![index].data(),
+                            wall: PrismFavouriteWall(
+                              id: context.profileWalls(listen: false)![index].id,
+                              wallpaper: PrismWallpaper(
+                                core: WallpaperCore(
+                                  id: context.profileWalls(listen: false)![index].id,
+                                  source: WallpaperSource.prism,
+                                  fullUrl: context.profileWalls(listen: false)![index].wallpaperUrl,
+                                  thumbnailUrl: context.profileWalls(listen: false)![index].wallpaperThumb.toString(),
+                                  resolution: context.profileWalls(listen: false)![index].resolution.toString(),
+                                  sizeBytes: int.tryParse(context.profileWalls(listen: false)![index].size.toString()),
+                                  authorName: context.profileWalls(listen: false)![index].by.toString(),
+                                  authorEmail: context.profileWalls(listen: false)![index].email.toString(),
+                                  createdAt: context.profileWalls(listen: false)![index].createdAt,
+                                ),
+                                collections: context.profileWalls(listen: false)![index].collections?.isEmpty ?? true
+                                    ? null
+                                    : context.profileWalls(listen: false)![index].collections,
+                                review: context.profileWalls(listen: false)![index].review,
+                              ),
+                            ),
                             trash: false,
                           ),
                           ShareButton(
-                            id: context.profileWallsSnapshots(listen: false)![index].data()["id"].toString(),
-                            provider: context
-                                .profileWallsSnapshots(listen: false)![index]
-                                .data()["wallpaper_provider"]
-                                .toString(),
-                            url: context
-                                .profileWallsSnapshots(listen: false)![index]
-                                .data()["wallpaper_url"]
-                                .toString(),
-                            thumbUrl: context
-                                .profileWallsSnapshots(listen: false)![index]
-                                .data()["wallpaper_thumb"]
-                                .toString(),
+                            id: context.profileWalls(listen: false)![index].id,
+                            source: WallpaperSourceX.fromWire(context.profileWalls(listen: false)![index].source),
+                            url: context.profileWalls(listen: false)![index].wallpaperUrl,
+                            thumbUrl: context.profileWalls(listen: false)![index].wallpaperThumb.toString(),
                           ),
-                          EditButton(
-                            url: context
-                                .profileWallsSnapshots(listen: false)![index]
-                                .data()["wallpaper_url"]
-                                .toString(),
-                          ),
+                          EditButton(url: context.profileWalls(listen: false)![index].wallpaperUrl),
                         ],
                       ),
                     ),
@@ -572,7 +560,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                     shakeController.forward(from: 0.0);
                   },
                   child: CachedNetworkImage(
-                    imageUrl: context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"].toString(),
+                    imageUrl: context.profileWalls(listen: false)![index].wallpaperUrl,
                     imageBuilder: (context, imageProvider) => Screenshot(
                       controller: screenshotController,
                       child: Container(
@@ -640,7 +628,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                 child: IconButton(
                   onPressed: () {
                     _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                    final link = context.profileWallsSnapshots(listen: false)![index].data()["wallpaper_url"];
+                    final link = context.profileWalls(listen: false)![index].wallpaperUrl;
                     Navigator.push(
                       context,
                       PageRouteBuilder(
@@ -648,12 +636,7 @@ class _ProfileWallViewScreenState extends State<ProfileWallViewScreen> with Sing
                           animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                           return FadeTransition(
                             opacity: animation,
-                            child: ClockOverlay(
-                              colorChanged: colorChanged,
-                              accent: accent,
-                              link: link.toString(),
-                              file: false,
-                            ),
+                            child: ClockOverlay(colorChanged: colorChanged, accent: accent, link: link, file: false),
                           );
                         },
                         fullscreenDialog: true,

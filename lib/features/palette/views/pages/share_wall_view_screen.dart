@@ -7,7 +7,11 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
@@ -17,14 +21,12 @@ import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/data/informatics/dataManager.dart';
-import 'package:Prism/data/pexels/model/wallpaperp.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
-import 'package:Prism/data/wallhaven/model/wallpaper.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/palette.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -44,13 +46,13 @@ class ShareWallpaperViewScreen extends StatefulWidget {
   const ShareWallpaperViewScreen({
     super.key,
     required this.wallId,
-    required this.provider,
+    required this.source,
     required this.wallpaperUrl,
     required this.thumbnailUrl,
   });
 
   final String wallId;
-  final String provider;
+  final WallpaperSource source;
   final String wallpaperUrl;
   final String thumbnailUrl;
 
@@ -62,7 +64,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   late String id;
-  late String provider;
+  late WallpaperSource source;
   late String url;
   late String thumb;
   List<Color?>? colors;
@@ -72,16 +74,16 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   bool screenshotTaken = false;
   ScreenshotController screenshotController = ScreenshotController();
   late AnimationController shakeController;
-  late Future<WallPaper> futureW;
-  late Future<WallPaperP> futureP;
-  Future<Map>? futureM;
+  late Future<WallhavenWallpaper?> futureW;
+  late Future<PexelsWallpaper?> futureP;
+  late Future<PrismWallpaper?> futureM;
   PanelController panelController = PanelController();
   late ImageProvider<Object> image;
   bool panelClosed = true;
   bool panelCollapsed = true;
   Future<String>? _futureView;
 
-  String get _sourceContext => '${provider.toLowerCase()}_share_wallpaper_view';
+  String get _sourceContext => '${source.wireValue}_share_wallpaper_view';
 
   void _trackAction(AnalyticsActionValue action, {int? index}) {
     unawaited(
@@ -185,18 +187,18 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     id = widget.wallId;
-    provider = widget.provider;
+    source = widget.source;
     url = widget.wallpaperUrl;
     thumb = widget.thumbnailUrl;
     _contentLoadTracker.start();
-    if (provider == "WallHaven") {
+    if (source == WallpaperSource.wallhaven) {
       futureW = WData.getWallbyID(id);
-    } else if (provider == "Pexels") {
+    } else if (source == WallpaperSource.pexels) {
       futureP = PData.getWallbyIDP(id);
-    } else if (provider == "Prism") {
+    } else if (source == WallpaperSource.prism) {
       futureM = Data.getDataByID(id);
-      updateViews(id.toString().toUpperCase());
-      _futureView = getViews(id.toString().toUpperCase());
+      updateViews(id.toUpperCase());
+      _futureView = getViews(id.toUpperCase());
     }
     Future.delayed(Duration.zero).then((value) => _updatePaletteGenerator());
     super.initState();
@@ -222,7 +224,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
     return BlocListener<PaletteBloc, PaletteState>(
       listenWhen: (previous, current) => previous.status != current.status || previous.palette != current.palette,
       listener: (context, state) => _applyPaletteState(state),
-      child: provider == "WallHaven"
+      child: source == WallpaperSource.wallhaven
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -302,9 +304,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               ? Theme.of(context).primaryColor.withValues(alpha: 1)
                               : Theme.of(context).primaryColor.withValues(alpha: .5),
                         ),
-                        child: FutureBuilder<WallPaper>(
+                        child: FutureBuilder<WallhavenWallpaper?>(
                           future: futureW,
-                          builder: (context, AsyncSnapshot<WallPaper> snapshot) {
+                          builder: (context, AsyncSnapshot<WallhavenWallpaper?> snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting ||
                                 snapshot.connectionState == ConnectionState.none) {
                               logger.d("snapshot none, waiting in share route");
@@ -349,7 +351,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               Padding(
                                                 padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                 child: Text(
-                                                  id.toString().toUpperCase(),
+                                                  id.toUpperCase(),
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
                                                   ),
@@ -366,7 +368,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    WData.wall.views ?? '',
+                                                    snapshot.data?.views?.toString() ?? '',
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -385,7 +387,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    WData.wall.favourites ?? '',
+                                                    snapshot.data?.core.favourites?.toString() ?? '',
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -404,7 +406,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    "${double.parse((double.parse(WData.wall.file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                    "${double.parse((double.parse(snapshot.data?.core.sizeBytes?.toString() ?? '0') / 1000000).toString()).toStringAsFixed(2)} MB",
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -422,8 +424,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                 child: Row(
                                                   children: [
                                                     Text(
-                                                      WData.wall.category.toString()[0].toUpperCase() +
-                                                          WData.wall.category.toString().substring(1),
+                                                      (snapshot.data?.core.category?.toString()[0].toUpperCase() ??
+                                                              '') +
+                                                          (snapshot.data?.core.category?.toString().substring(1) ?? ''),
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -443,7 +446,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               Row(
                                                 children: [
                                                   Text(
-                                                    WData.wall.resolution ?? '',
+                                                    snapshot.data?.core.resolution ?? '',
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -462,7 +465,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               Row(
                                                 children: [
                                                   Text(
-                                                    provider.toString(),
+                                                    source.legacyProviderString,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -490,26 +493,36 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       children: <Widget>[
                                         DownloadButton(
                                           colorChanged: colorChanged,
-                                          link: screenshotTaken ? _imageFile.path : WData.wall.path.toString(),
+                                          link: screenshotTaken ? _imageFile.path : snapshot.data?.core.fullUrl,
                                         ),
                                         if (!hideSetWallpaperUi)
                                           SetWallpaperButton(
                                             colorChanged: colorChanged,
-                                            url: screenshotTaken ? _imageFile.path : WData.wall.path.toString(),
+                                            url: screenshotTaken ? _imageFile.path : snapshot.data?.core.fullUrl,
                                           ),
                                         FavouriteWallpaperButton(
-                                          id: WData.wall.id.toString(),
-                                          provider: "WallHaven",
-                                          wallhaven: WData.wall,
+                                          wall: WallhavenFavouriteWall(
+                                            id: snapshot.data?.id ?? '',
+                                            wallpaper:
+                                                snapshot.data ??
+                                                const WallhavenWallpaper(
+                                                  core: WallpaperCore(
+                                                    id: '',
+                                                    source: WallpaperSource.wallhaven,
+                                                    fullUrl: '',
+                                                    thumbnailUrl: '',
+                                                  ),
+                                                ),
+                                          ),
                                           trash: false,
                                         ),
                                         ShareButton(
-                                          id: WData.wall.id.toString(),
-                                          provider: provider,
-                                          url: WData.wall.path.toString(),
-                                          thumbUrl: WData.wall.thumbs!["original"].toString(),
+                                          id: snapshot.data?.id,
+                                          source: source,
+                                          url: snapshot.data?.core.fullUrl,
+                                          thumbUrl: snapshot.data?.core.thumbnailUrl ?? '',
                                         ),
-                                        EditButton(url: WData.wall.path.toString()),
+                                        EditButton(url: snapshot.data?.core.fullUrl),
                                       ],
                                     ),
                                   ),
@@ -652,7 +665,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                 ),
               ),
             )
-          : provider == "Prism"
+          : source == WallpaperSource.prism
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -732,9 +745,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               ? Theme.of(context).primaryColor.withValues(alpha: 1)
                               : Theme.of(context).primaryColor.withValues(alpha: .5),
                         ),
-                        child: FutureBuilder<Map>(
+                        child: FutureBuilder<PrismWallpaper?>(
                           future: futureM,
-                          builder: (context, AsyncSnapshot<Map> snapshot) {
+                          builder: (context, AsyncSnapshot<PrismWallpaper?> snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting ||
                                 snapshot.connectionState == ConnectionState.none) {
                               logger.d("snapshot none, waiting in share route");
@@ -783,7 +796,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   child: Row(
                                                     children: [
                                                       Text(
-                                                        id.toString().toUpperCase(),
+                                                        id.toUpperCase(),
                                                         style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -857,7 +870,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    Data.wall["desc"]?.toString() ?? "",
+                                                    snapshot.data?.core.category ?? '',
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -876,7 +889,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    Data.wall["size"]?.toString() ?? "",
+                                                    snapshot.data?.core.sizeBytes?.toString() ?? '',
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -901,7 +914,8 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           onPressed: () {
                                                             context.router.push(
                                                               ProfileRoute(
-                                                                profileIdentifier: Data.wall["email"]?.toString(),
+                                                                profileIdentifier:
+                                                                    snapshot.data?.core.authorEmail ?? '',
                                                               ),
                                                             );
                                                           },
@@ -911,12 +925,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                           ),
                                                           avatar: CircleAvatar(
                                                             backgroundImage: CachedNetworkImageProvider(
-                                                              Data.wall["userPhoto"].toString(),
+                                                              snapshot.data?.core.authorPhoto ?? '',
                                                             ),
                                                           ),
                                                           labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                           label: Text(
-                                                            Data.wall["by"].toString(),
+                                                            snapshot.data?.core.authorName ?? '',
                                                             style: Theme.of(context).textTheme.bodyMedium!
                                                                 .copyWith(
                                                                   color: Theme.of(context).colorScheme.secondary,
@@ -927,7 +941,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                         ),
                                                       ),
                                                       if (app_state.verifiedUsers.contains(
-                                                        Data.wall["email"].toString(),
+                                                        snapshot.data?.core.authorEmail ?? '',
                                                       ))
                                                         Align(
                                                           alignment: Alignment.topRight,
@@ -957,7 +971,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               Row(
                                                 children: [
                                                   Text(
-                                                    Data.wall["resolution"]?.toString() ?? "",
+                                                    snapshot.data?.core.resolution ?? '',
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -979,7 +993,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                     context: context,
                                                     builder: (BuildContext context) => CopyrightPopUp(
                                                       setup: false,
-                                                      shortlink: "Wallpaper ID - ${Data.wall["id"]}",
+                                                      shortlink: "Wallpaper ID - ${snapshot.data?.id ?? ''}",
                                                     ),
                                                   );
                                                 },
@@ -1016,36 +1030,42 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       children: <Widget>[
                                         DownloadButton(
                                           colorChanged: colorChanged,
-                                          link: screenshotTaken
-                                              ? _imageFile.path
-                                              : Data.wall["wallpaper_url"].toString(),
+                                          link: screenshotTaken ? _imageFile.path : snapshot.data?.core.fullUrl ?? '',
                                           isPremiumContent: app_state.isPremiumWall(
                                             app_state.premiumCollections,
-                                            Data.wall["collections"] as List? ?? [],
+                                            snapshot.data?.collections ?? const <String>[],
                                           ),
-                                          contentId: Data.wall["id"]?.toString(),
+                                          contentId: snapshot.data?.id ?? '',
                                           sourceContext: 'share_wall_view.prism',
                                         ),
                                         if (!hideSetWallpaperUi)
                                           SetWallpaperButton(
                                             colorChanged: colorChanged,
-                                            url: screenshotTaken
-                                                ? _imageFile.path
-                                                : Data.wall["wallpaper_url"].toString(),
+                                            url: screenshotTaken ? _imageFile.path : snapshot.data?.core.fullUrl ?? '',
                                           ),
                                         FavouriteWallpaperButton(
-                                          id: Data.wall["id"].toString(),
-                                          provider: "Prism",
-                                          prism: Data.wall,
+                                          wall: PrismFavouriteWall(
+                                            id: snapshot.data?.id ?? '',
+                                            wallpaper:
+                                                snapshot.data ??
+                                                const PrismWallpaper(
+                                                  core: WallpaperCore(
+                                                    id: '',
+                                                    source: WallpaperSource.prism,
+                                                    fullUrl: '',
+                                                    thumbnailUrl: '',
+                                                  ),
+                                                ),
+                                          ),
                                           trash: false,
                                         ),
                                         ShareButton(
-                                          id: Data.wall["id"].toString(),
-                                          provider: provider,
-                                          url: Data.wall["wallpaper_url"].toString(),
-                                          thumbUrl: Data.wall["wallpaper_thumb"].toString(),
+                                          id: snapshot.data?.id ?? '',
+                                          source: source,
+                                          url: snapshot.data?.core.fullUrl ?? '',
+                                          thumbUrl: snapshot.data?.core.thumbnailUrl ?? '',
                                         ),
-                                        EditButton(url: Data.wall["wallpaper_url"].toString()),
+                                        EditButton(url: snapshot.data?.core.fullUrl ?? ''),
                                       ],
                                     ),
                                   ),
@@ -1188,7 +1208,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                 ),
               ),
             )
-          : provider == "Pexels"
+          : source == WallpaperSource.pexels
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -1268,9 +1288,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                               ? Theme.of(context).primaryColor.withValues(alpha: 1)
                               : Theme.of(context).primaryColor.withValues(alpha: .5),
                         ),
-                        child: FutureBuilder<WallPaperP>(
+                        child: FutureBuilder<PexelsWallpaper?>(
                           future: futureP,
-                          builder: (context, AsyncSnapshot<WallPaperP> snapshot) {
+                          builder: (context, AsyncSnapshot<PexelsWallpaper?> snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting ||
                                 snapshot.connectionState == ConnectionState.none) {
                               logger.d("snapshot none, waiting in share route");
@@ -1315,28 +1335,24 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                               child: Text(
                                                 PData.wall == null
                                                     ? "Wallpaper"
-                                                    : (PData.wall!.url
-                                                                  .toString()
+                                                    : ((snapshot.data?.core.fullUrl ?? '')
                                                                   .replaceAll("https://www.pexels.com/photo/", "")
                                                                   .replaceAll("-", " ")
                                                                   .replaceAll("/", "")
                                                                   .length >
                                                               8
-                                                          ? PData.wall!.url
-                                                                    .toString()
+                                                          ? (snapshot.data?.core.fullUrl ?? '')
                                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                                     .replaceAll("-", " ")
                                                                     .replaceAll("/", "")[0]
                                                                     .toUpperCase() +
-                                                                PData.wall!.url
-                                                                    .toString()
+                                                                (snapshot.data?.core.fullUrl ?? '')
                                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                                     .replaceAll("-", " ")
                                                                     .replaceAll("/", "")
                                                                     .substring(
                                                                       1,
-                                                                      PData.wall!.url
-                                                                              .toString()
+                                                                      (snapshot.data?.core.fullUrl ?? '')
                                                                               .replaceAll(
                                                                                 "https://www.pexels.com/photo/",
                                                                                 "",
@@ -1346,14 +1362,12 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                                               .length -
                                                                           7,
                                                                     )
-                                                          : PData.wall!.url
-                                                                    .toString()
+                                                          : (snapshot.data?.core.fullUrl ?? '')
                                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                                     .replaceAll("-", " ")
                                                                     .replaceAll("/", "")[0]
                                                                     .toUpperCase() +
-                                                                PData.wall!.url
-                                                                    .toString()
+                                                                (snapshot.data?.core.fullUrl ?? '')
                                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                                     .replaceAll("-", " ")
                                                                     .replaceAll("/", "")
@@ -1398,7 +1412,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                       const Icon(JamIcons.set_square, size: 20, color: Colors.white70),
                                                       const SizedBox(width: 10),
                                                       Text(
-                                                        "${PData.wall == null ? 0 : PData.wall!.width.toString()}x${PData.wall == null ? 0 : PData.wall!.height.toString()}",
+                                                        "${snapshot.data?.core.width?.toString() ?? '0'}x${snapshot.data?.core.height?.toString() ?? '0'}",
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -1414,7 +1428,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        id.toString(),
+                                                        id,
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -1427,7 +1441,7 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        provider.toString(),
+                                                        source.legacyProviderString,
                                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                           color: Theme.of(context).colorScheme.secondary,
                                                         ),
@@ -1451,29 +1465,39 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
                                       children: <Widget>[
                                         DownloadButton(
                                           colorChanged: colorChanged,
-                                          link: screenshotTaken ? _imageFile.path : url.toString(),
+                                          link: screenshotTaken ? _imageFile.path : url,
                                         ),
                                         if (!hideSetWallpaperUi)
                                           SetWallpaperButton(
                                             colorChanged: colorChanged,
-                                            url: screenshotTaken ? _imageFile.path : url.toString(),
+                                            url: screenshotTaken ? _imageFile.path : url,
                                           ),
                                         FavouriteWallpaperButton(
-                                          id: PData.wall == null ? "" : PData.wall!.id.toString(),
-                                          provider: "Pexels",
-                                          pexels: PData.wall ?? WallPaperP(),
+                                          wall: PexelsFavouriteWall(
+                                            id: snapshot.data?.id ?? '',
+                                            wallpaper:
+                                                snapshot.data ??
+                                                const PexelsWallpaper(
+                                                  core: WallpaperCore(
+                                                    id: '',
+                                                    source: WallpaperSource.pexels,
+                                                    fullUrl: '',
+                                                    thumbnailUrl: '',
+                                                  ),
+                                                ),
+                                          ),
                                           trash: false,
                                         ),
-                                        if (PData.wall != null)
+                                        if (snapshot.data != null)
                                           ShareButton(
-                                            id: PData.wall!.id ?? "",
-                                            provider: provider,
-                                            url: url.toString(),
-                                            thumbUrl: url.toString(),
+                                            id: snapshot.data?.id ?? '',
+                                            source: source,
+                                            url: url,
+                                            thumbUrl: url,
                                           )
                                         else
                                           Container(),
-                                        EditButton(url: url.toString()),
+                                        EditButton(url: url),
                                       ],
                                     ),
                                   ),

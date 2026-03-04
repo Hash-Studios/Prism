@@ -1,13 +1,13 @@
-import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';

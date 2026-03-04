@@ -20,6 +20,3 @@ class FirebaseCollections {
   static const String pastPicks = 'past_picks';
   static const String notificationRequests = 'notificationRequests';
 }
-
-@Deprecated('Use FirebaseCollections instead.')
-typedef FirestoreCollections = FirebaseCollections;

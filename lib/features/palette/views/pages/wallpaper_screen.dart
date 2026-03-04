@@ -3,12 +3,15 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/home/core/colorBar.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
@@ -21,8 +24,10 @@ import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as data;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/palette.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -39,16 +44,17 @@ import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class WallpaperScreen extends StatefulWidget {
-  const WallpaperScreen({super.key, required this.provider, required this.link, this.index, this.wotdWallMap})
+  const WallpaperScreen({super.key, required this.source, required this.link, this.index, this.item, this.wotdWall})
     : assert(
-        provider == 'WallOfTheDay' ? wotdWallMap != null : index != null,
-        'WallOfTheDay requires wotdWallMap. Other providers require index.',
+        source == WallpaperSource.wallOfTheDay ? wotdWall != null : (item != null || index != null),
+        'WallOfTheDay requires wotdWall. Other providers require item or index.',
       );
 
-  final String provider;
+  final WallpaperSource source;
   final int? index;
   final String link;
-  final Map<String, dynamic>? wotdWallMap;
+  final FeedItemEntity? item;
+  final WallOfTheDayEntity? wotdWall;
 
   @override
   _WallpaperScreenState createState() => _WallpaperScreenState();
@@ -57,12 +63,10 @@ class WallpaperScreen extends StatefulWidget {
 class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  late String provider;
+  late WallpaperSource source;
   late int index;
   late String link;
-
-  /// When opening from Wall of the Day, this holds the wall data instead of subPrismWalls[index].
-  Map<String, dynamic>? _wotdWallMap;
+  WallOfTheDayEntity? _wotdWall;
   late AnimationController shakeController;
   List<Color?>? colors;
   Color? accent = Colors.white;
@@ -77,21 +81,49 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   int firstTime = 0;
   bool _panelScrollInProgress = false;
 
-  String get _sourceContext => '${provider.toLowerCase()}_wallpaper_screen';
+  String get _sourceContext => '${source.wireValue}_wallpaper_screen';
 
-  /// Current Prism-style wall map: either WOTD data or subPrismWalls[index]. Used when provider is Prism or WallOfTheDay.
-  Map<String, dynamic> get _prismWall => _wotdWallMap ?? data.subPrismWalls![index] as Map<String, dynamic>;
+  PrismFeedItem? get _prismFeedItem => widget.item is PrismFeedItem ? widget.item as PrismFeedItem? : null;
+  WallhavenFeedItem? get _wallhavenFeedItem =>
+      widget.item is WallhavenFeedItem ? widget.item as WallhavenFeedItem? : null;
+  PexelsFeedItem? get _pexelsFeedItem => widget.item is PexelsFeedItem ? widget.item as PexelsFeedItem? : null;
+
+  PrismWallpaper get _prismWall {
+    if (_wotdWall case final entity?) {
+      return PrismWallpaper.fromWotd(entity);
+    }
+    if (_prismFeedItem != null) {
+      return _prismFeedItem!.wallpaper;
+    }
+    return data.subPrismWalls![index];
+  }
+
+  WallhavenWallpaper get _wallhavenWall {
+    final typed = _wallhavenFeedItem?.wallpaper;
+    if (typed == null) {
+      return wdata.walls[index];
+    }
+    return typed;
+  }
+
+  PexelsWallpaper get _pexelsWall {
+    final typed = _pexelsFeedItem?.wallpaper;
+    if (typed == null) {
+      return pdata.wallsP[index];
+    }
+    return typed;
+  }
 
   String? _currentItemId() {
     try {
-      if (provider == 'Prism' || provider == 'WallOfTheDay') {
-        return _prismWall['id']?.toString();
+      if (source == WallpaperSource.prism || source == WallpaperSource.wallOfTheDay) {
+        return _prismWall.id;
       }
-      if (provider == 'WallHaven') {
-        return wdata.walls[index].id?.toString();
+      if (source == WallpaperSource.wallhaven) {
+        return _wallhavenWall.id;
       }
-      if (provider == 'Pexels') {
-        return pdata.wallsP[index].id?.toString();
+      if (source == WallpaperSource.pexels) {
+        return _pexelsWall.id;
       }
     } catch (_) {}
     return null;
@@ -203,19 +235,19 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    provider = widget.provider;
-    if (provider == 'WallOfTheDay') {
-      _wotdWallMap = widget.wotdWallMap;
+    source = widget.source;
+    if (source == WallpaperSource.wallOfTheDay) {
+      _wotdWall = widget.wotdWall;
       index = 0;
     } else {
-      index = widget.index!;
+      index = widget.index ?? 0;
     }
     link = widget.link;
     _contentLoadTracker.start();
-    if (provider == 'Prism') {
-      updateViews(_prismWall['id'].toString().toUpperCase());
-      _futureView = getViews(_prismWall['id'].toString().toUpperCase());
-    } else if (provider == 'WallOfTheDay') {
+    if (source == WallpaperSource.prism) {
+      updateViews(_prismWall.id.toUpperCase());
+      _futureView = getViews(_prismWall.id.toUpperCase());
+    } else if (source == WallpaperSource.wallOfTheDay) {
       _futureView = Future.value('0');
     }
     Future.delayed(Duration.zero).then((value) => _updatePaletteGenerator());
@@ -241,7 +273,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
     return BlocListener<PaletteBloc, PaletteState>(
       listenWhen: (previous, current) => previous.status != current.status || previous.palette != current.palette,
       listener: (context, state) => _applyPaletteState(state),
-      child: provider == "WallHaven"
+      child: source == WallpaperSource.wallhaven
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -361,7 +393,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
-                                              wdata.walls[index].id.toString().toUpperCase(),
+                                              _wallhavenWall.id.toUpperCase(),
                                               style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -376,7 +408,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                wdata.walls[index].views.toString(),
+                                                _wallhavenWall.views.toString(),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -393,7 +425,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                wdata.walls[index].favourites.toString(),
+                                                _wallhavenWall.core.favourites?.toString() ?? '0',
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -410,7 +442,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                "${double.parse((double.parse(wdata.walls[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                "${double.parse((double.parse(_wallhavenWall.core.sizeBytes?.toString() ?? '0') / 1000000).toString()).toStringAsFixed(2)} MB",
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -430,8 +462,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               children: [
                                                 Flexible(
                                                   child: Text(
-                                                    wdata.walls[index].category.toString()[0].toUpperCase() +
-                                                        wdata.walls[index].category.toString().substring(1),
+                                                    (_wallhavenWall.core.category?.toString()[0].toUpperCase() ?? '') +
+                                                        (_wallhavenWall.core.category?.toString().substring(1) ?? ''),
                                                     overflow: TextOverflow.ellipsis,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
@@ -453,7 +485,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             children: [
                                               Flexible(
                                                 child: Text(
-                                                  wdata.walls[index].resolution.toString(),
+                                                  _wallhavenWall.core.resolution?.toString() ?? '',
                                                   overflow: TextOverflow.ellipsis,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -474,7 +506,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             children: [
                                               Flexible(
                                                 child: Text(
-                                                  provider.toString(),
+                                                  source.legacyProviderString,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -503,26 +535,24 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken ? _imageFile.path : wdata.walls[index].path.toString(),
+                                    link: screenshotTaken ? _imageFile.path : _wallhavenWall.core.fullUrl,
                                   ),
                                   if (!hideSetWallpaperUi)
                                     SetWallpaperButton(
                                       colorChanged: colorChanged,
-                                      url: screenshotTaken ? _imageFile.path : wdata.walls[index].path,
+                                      url: screenshotTaken ? _imageFile.path : _wallhavenWall.core.fullUrl,
                                     ),
                                   FavouriteWallpaperButton(
-                                    id: wdata.walls[index].id.toString(),
-                                    provider: "WallHaven",
-                                    wallhaven: wdata.walls[index],
+                                    wall: WallhavenFavouriteWall(id: _wallhavenWall.id, wallpaper: _wallhavenWall),
                                     trash: false,
                                   ),
                                   ShareButton(
-                                    id: wdata.walls[index].id,
-                                    provider: provider,
-                                    url: wdata.walls[index].path,
-                                    thumbUrl: wdata.walls[index].thumbs!["original"].toString(),
+                                    id: _wallhavenWall.id,
+                                    source: source,
+                                    url: _wallhavenWall.core.fullUrl,
+                                    thumbUrl: _wallhavenWall.core.thumbnailUrl,
                                   ),
-                                  EditButton(url: wdata.walls[index].path),
+                                  EditButton(url: _wallhavenWall.core.fullUrl),
                                 ],
                               ),
                             ),
@@ -560,7 +590,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: wdata.walls[index].path!,
+                            imageUrl: _wallhavenWall.core.thumbnailUrl,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -628,7 +658,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = wdata.walls[index].path;
+                            final link = _wallhavenWall.core.fullUrl;
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -662,7 +692,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider == "Prism" || provider == "WallOfTheDay"
+          : source == WallpaperSource.prism || source == WallpaperSource.wallOfTheDay
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -796,11 +826,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                                     child: Wrap(
                                                       crossAxisAlignment: WrapCrossAlignment.center,
-                                                      spacing: 0,
                                                       runSpacing: 4,
                                                       children: [
                                                         Text(
-                                                          _prismWall["id"].toString().toUpperCase(),
+                                                          _prismWall.id.toUpperCase(),
                                                           style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                             color: Theme.of(context).colorScheme.secondary,
                                                             fontSize: 16,
@@ -883,7 +912,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                       const SizedBox(width: 10),
                                                       Expanded(
                                                         child: Text(
-                                                          _prismWall["desc"].toString(),
+                                                          _prismWall.core.category ?? '',
                                                           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                             color: Theme.of(context).colorScheme.secondary,
                                                           ),
@@ -908,7 +937,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                       const SizedBox(width: 10),
                                                       Expanded(
                                                         child: Text(
-                                                          _prismWall["size"].toString(),
+                                                          _prismWall.core.sizeBytes?.toString() ?? '',
                                                           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                             color: Theme.of(context).colorScheme.secondary,
                                                           ),
@@ -936,7 +965,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                             onPressed: () {
                                                               context.router.push(
                                                                 ProfileRoute(
-                                                                  profileIdentifier: _prismWall["email"]?.toString(),
+                                                                  profileIdentifier: _prismWall.core.authorEmail ?? '',
                                                                 ),
                                                               );
                                                             },
@@ -946,12 +975,12 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                             ),
                                                             avatar: CircleAvatar(
                                                               backgroundImage: CachedNetworkImageProvider(
-                                                                _prismWall["userPhoto"].toString(),
+                                                                _prismWall.core.authorPhoto ?? '',
                                                               ),
                                                             ),
                                                             labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                             label: Text(
-                                                              _prismWall["by"].toString(),
+                                                              _prismWall.core.authorName ?? '',
                                                               style: Theme.of(context).textTheme.bodyMedium!
                                                                   .copyWith(
                                                                     color: Theme.of(context).colorScheme.secondary,
@@ -962,7 +991,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                           ),
                                                         ),
                                                         if (app_state.verifiedUsers.contains(
-                                                          _prismWall["email"].toString(),
+                                                          _prismWall.core.authorEmail ?? '',
                                                         ))
                                                           Align(
                                                             alignment: Alignment.topRight,
@@ -992,7 +1021,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      _prismWall["resolution"].toString(),
+                                                      _prismWall.core.resolution ?? '',
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
                                                       ),
@@ -1013,10 +1042,10 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     await createCopyrightLink(
                                                       false,
                                                       context,
-                                                      id: _prismWall["id"].toString(),
-                                                      provider: provider,
-                                                      url: _prismWall["wallpaper_url"].toString(),
-                                                      thumbUrl: _prismWall["wallpaper_thumb"].toString(),
+                                                      id: _prismWall.id,
+                                                      source: source,
+                                                      url: _prismWall.fullUrl,
+                                                      thumbUrl: _prismWall.thumbnailUrl,
                                                     );
                                                   },
                                                   child: Row(
@@ -1056,32 +1085,30 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
+                                    link: screenshotTaken ? _imageFile.path : _prismWall.fullUrl,
                                     isPremiumContent: app_state.isPremiumWall(
                                       app_state.premiumCollections,
-                                      _prismWall["collections"] as List? ?? [],
+                                      _prismWall.collections ?? const <String>[],
                                     ),
-                                    contentId: _prismWall["id"]?.toString(),
+                                    contentId: _prismWall.id,
                                     sourceContext: 'wallpaper_screen.prism',
                                   ),
                                   if (!hideSetWallpaperUi)
                                     SetWallpaperButton(
                                       colorChanged: colorChanged,
-                                      url: screenshotTaken ? _imageFile.path : _prismWall["wallpaper_url"].toString(),
+                                      url: screenshotTaken ? _imageFile.path : _prismWall.fullUrl,
                                     ),
                                   FavouriteWallpaperButton(
-                                    id: _prismWall["id"].toString(),
-                                    provider: "Prism",
-                                    prism: _prismWall as Map,
+                                    wall: PrismFavouriteWall(id: _prismWall.id, wallpaper: _prismWall),
                                     trash: false,
                                   ),
                                   ShareButton(
-                                    id: _prismWall["id"].toString(),
-                                    provider: provider,
-                                    url: _prismWall["wallpaper_url"].toString(),
-                                    thumbUrl: _prismWall["wallpaper_thumb"].toString(),
+                                    id: _prismWall.id,
+                                    source: source,
+                                    url: _prismWall.fullUrl,
+                                    thumbUrl: _prismWall.thumbnailUrl,
                                   ),
-                                  EditButton(url: _prismWall["wallpaper_url"].toString()),
+                                  EditButton(url: _prismWall.fullUrl),
                                 ],
                               ),
                             ),
@@ -1120,7 +1147,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: _prismWall["wallpaper_url"].toString(),
+                            imageUrl: _prismWall.fullUrl,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1188,7 +1215,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = _prismWall["wallpaper_url"];
+                            final link = _prismWall.fullUrl;
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -1199,7 +1226,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     child: ClockOverlay(
                                       colorChanged: colorChanged,
                                       accent: accent,
-                                      link: link.toString(),
+                                      link: link,
                                       file: false,
                                     ),
                                   );
@@ -1222,7 +1249,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider == "Pexels"
+          : source == WallpaperSource.pexels
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -1337,42 +1364,36 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         child: SizedBox(
                                           width: MediaQuery.of(context).size.width * .8,
                                           child: Text(
-                                            pdata.wallsP[index].url
-                                                        .toString()
+                                            _pexelsWall.core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
                                                         .length >
                                                     8
-                                                ? pdata.wallsP[index].url
-                                                          .toString()
+                                                ? _pexelsWall.core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")[0]
                                                           .toUpperCase() +
-                                                      pdata.wallsP[index].url
-                                                          .toString()
+                                                      _pexelsWall.core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")
                                                           .substring(
                                                             1,
-                                                            pdata.wallsP[index].url
-                                                                    .toString()
+                                                            _pexelsWall.core.fullUrl
                                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                                     .replaceAll("-", " ")
                                                                     .replaceAll("/", "")
                                                                     .length -
                                                                 7,
                                                           )
-                                                : pdata.wallsP[index].url
-                                                          .toString()
+                                                : _pexelsWall.core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")[0]
                                                           .toUpperCase() +
-                                                      pdata.wallsP[index].url
-                                                          .toString()
+                                                      _pexelsWall.core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")
@@ -1404,7 +1425,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    pdata.wallsP[index].id.toString(),
+                                                    _pexelsWall.id,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -1423,7 +1444,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    "${pdata.wallsP[index].width}x${pdata.wallsP[index].height}",
+                                                    "${_pexelsWall.core.width}x${_pexelsWall.core.height}",
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -1442,7 +1463,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   alignment: Alignment.centerRight,
                                                   child: ActionChip(
                                                     onPressed: () {
-                                                      openPrismLink(context, pdata.wallsP[index].url!);
+                                                      openPrismLink(context, _pexelsWall.core.fullUrl);
                                                     },
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: Icon(
@@ -1451,7 +1472,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                     ),
                                                     labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                     label: Text(
-                                                      pdata.wallsP[index].photographer.toString(),
+                                                      _pexelsWall.photographer.toString(),
                                                       style: Theme.of(context).textTheme.bodyMedium!
                                                           .copyWith(color: Theme.of(context).colorScheme.secondary)
                                                           .copyWith(fontSize: 16),
@@ -1463,7 +1484,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               Row(
                                                 children: [
                                                   Text(
-                                                    provider.toString(),
+                                                    source.legacyProviderString,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -1494,30 +1515,24 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsP[index].src!["original"].toString(),
+                                    link: screenshotTaken ? _imageFile.path : _pexelsWall.core.fullUrl,
                                   ),
                                   if (!hideSetWallpaperUi)
                                     SetWallpaperButton(
                                       colorChanged: colorChanged,
-                                      url: screenshotTaken
-                                          ? _imageFile.path
-                                          : pdata.wallsP[index].src!["original"].toString(),
+                                      url: screenshotTaken ? _imageFile.path : _pexelsWall.core.fullUrl,
                                     ),
                                   FavouriteWallpaperButton(
-                                    id: pdata.wallsP[index].id.toString(),
-                                    provider: "Pexels",
-                                    pexels: pdata.wallsP[index],
+                                    wall: PexelsFavouriteWall(id: _pexelsWall.id, wallpaper: _pexelsWall),
                                     trash: false,
                                   ),
                                   ShareButton(
-                                    id: pdata.wallsP[index].id,
-                                    provider: provider,
-                                    url: pdata.wallsP[index].src!["original"].toString(),
-                                    thumbUrl: pdata.wallsP[index].src!["medium"].toString(),
+                                    id: _pexelsWall.id,
+                                    source: source,
+                                    url: _pexelsWall.core.fullUrl,
+                                    thumbUrl: _pexelsWall.core.thumbnailUrl,
                                   ),
-                                  EditButton(url: pdata.wallsP[index].src!["original"].toString()),
+                                  EditButton(url: _pexelsWall.core.fullUrl),
                                 ],
                               ),
                             ),
@@ -1555,7 +1570,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: pdata.wallsP[index].src!["original"].toString(),
+                            imageUrl: _pexelsWall.core.fullUrl,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1623,7 +1638,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = pdata.wallsP[index].src!["original"];
+                            final link = _pexelsWall.core.fullUrl;
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -1634,7 +1649,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     child: ClockOverlay(
                                       colorChanged: colorChanged,
                                       accent: accent,
-                                      link: link.toString(),
+                                      link: link,
                                       file: false,
                                     ),
                                   );
@@ -1657,7 +1672,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                 ),
               ),
             )
-          : provider.length > 6 && provider.substring(0, 6) == "Colors"
+          : source == WallpaperSource.unknown
           ? Scaffold(
               key: _scaffoldKey,
               backgroundColor: paletteLoading ? Theme.of(context).primaryColor : accent,
@@ -1772,42 +1787,36 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                         child: SizedBox(
                                           width: MediaQuery.of(context).size.width * .8,
                                           child: Text(
-                                            pdata.wallsC[index].url
-                                                        .toString()
+                                            pdata.wallsC[index].core.fullUrl
                                                         .replaceAll("https://www.pexels.com/photo/", "")
                                                         .replaceAll("-", " ")
                                                         .replaceAll("/", "")
                                                         .length >
                                                     8
-                                                ? pdata.wallsC[index].url
-                                                          .toString()
+                                                ? pdata.wallsC[index].core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")[0]
                                                           .toUpperCase() +
-                                                      pdata.wallsC[index].url
-                                                          .toString()
+                                                      pdata.wallsC[index].core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")
                                                           .substring(
                                                             1,
-                                                            pdata.wallsC[index].url
-                                                                    .toString()
+                                                            pdata.wallsC[index].core.fullUrl
                                                                     .replaceAll("https://www.pexels.com/photo/", "")
                                                                     .replaceAll("-", " ")
                                                                     .replaceAll("/", "")
                                                                     .length -
                                                                 7,
                                                           )
-                                                : pdata.wallsC[index].url
-                                                          .toString()
+                                                : pdata.wallsC[index].core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")[0]
                                                           .toUpperCase() +
-                                                      pdata.wallsC[index].url
-                                                          .toString()
+                                                      pdata.wallsC[index].core.fullUrl
                                                           .replaceAll("https://www.pexels.com/photo/", "")
                                                           .replaceAll("-", " ")
                                                           .replaceAll("/", "")
@@ -1839,7 +1848,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    pdata.wallsC[index].id.toString(),
+                                                    pdata.wallsC[index].id,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -1858,7 +1867,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   ),
                                                   const SizedBox(width: 10),
                                                   Text(
-                                                    "${pdata.wallsC[index].width}x${pdata.wallsC[index].height}",
+                                                    "${pdata.wallsC[index].core.width}x${pdata.wallsC[index].core.height}",
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
                                                     ),
@@ -1877,7 +1886,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                   alignment: Alignment.centerRight,
                                                   child: ActionChip(
                                                     onPressed: () {
-                                                      openPrismLink(context, pdata.wallsC[index].url!);
+                                                      openPrismLink(context, pdata.wallsC[index].core.fullUrl);
                                                     },
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: Icon(
@@ -1929,30 +1938,27 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken
-                                        ? _imageFile.path
-                                        : pdata.wallsC[index].src!["original"].toString(),
+                                    link: screenshotTaken ? _imageFile.path : pdata.wallsC[index].core.fullUrl,
                                   ),
                                   if (!hideSetWallpaperUi)
                                     SetWallpaperButton(
                                       colorChanged: colorChanged,
-                                      url: screenshotTaken
-                                          ? _imageFile.path
-                                          : pdata.wallsC[index].src!["original"].toString(),
+                                      url: screenshotTaken ? _imageFile.path : pdata.wallsC[index].core.fullUrl,
                                     ),
                                   FavouriteWallpaperButton(
-                                    id: pdata.wallsC[index].id.toString(),
-                                    provider: "Pexels",
-                                    pexels: pdata.wallsC[index],
+                                    wall: PexelsFavouriteWall(
+                                      id: pdata.wallsC[index].id,
+                                      wallpaper: pdata.wallsC[index],
+                                    ),
                                     trash: false,
                                   ),
                                   ShareButton(
                                     id: pdata.wallsC[index].id,
-                                    provider: "Pexels",
-                                    url: pdata.wallsC[index].src!["original"].toString(),
-                                    thumbUrl: pdata.wallsC[index].src!["medium"].toString(),
+                                    source: WallpaperSource.pexels,
+                                    url: pdata.wallsC[index].core.fullUrl,
+                                    thumbUrl: pdata.wallsC[index].core.thumbnailUrl,
                                   ),
-                                  EditButton(url: pdata.wallsC[index].src!["original"].toString()),
+                                  EditButton(url: pdata.wallsC[index].core.fullUrl),
                                 ],
                               ),
                             ),
@@ -1990,7 +1996,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: pdata.wallsC[index].src!["original"].toString(),
+                            imageUrl: pdata.wallsC[index].core.thumbnailUrl,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -2058,7 +2064,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = pdata.wallsC[index].src!["original"];
+                            final link = pdata.wallsC[index].core.fullUrl;
                             Navigator.push(
                               context,
                               PageRouteBuilder(
@@ -2069,7 +2075,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                     child: ClockOverlay(
                                       colorChanged: colorChanged,
                                       accent: accent,
-                                      link: link.toString(),
+                                      link: link,
                                       file: false,
                                     ),
                                   );
@@ -2208,7 +2214,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                           Padding(
                                             padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
                                             child: Text(
-                                              wdata.wallsS[index].id.toString().toUpperCase(),
+                                              wdata.wallsS[index].id.toUpperCase(),
                                               style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                 color: Theme.of(context).colorScheme.secondary,
                                               ),
@@ -2240,7 +2246,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                wdata.wallsS[index].favourites.toString(),
+                                                wdata.wallsS[index].core.favourites.toString(),
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -2257,7 +2263,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               ),
                                               const SizedBox(width: 10),
                                               Text(
-                                                "${double.parse((double.parse(wdata.wallsS[index].file_size.toString()) / 1000000).toString()).toStringAsFixed(2)} MB",
+                                                "${double.parse((double.parse(wdata.wallsS[index].core.sizeBytes?.toString() ?? '0') / 1000000).toString()).toStringAsFixed(2)} MB",
                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                   color: Theme.of(context).colorScheme.secondary,
                                                 ),
@@ -2277,8 +2283,8 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                               children: [
                                                 Flexible(
                                                   child: Text(
-                                                    wdata.wallsS[index].category.toString()[0].toUpperCase() +
-                                                        wdata.wallsS[index].category.toString().substring(1),
+                                                    wdata.wallsS[index].core.category.toString()[0].toUpperCase() +
+                                                        wdata.wallsS[index].core.category.toString().substring(1),
                                                     overflow: TextOverflow.ellipsis,
                                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                       color: Theme.of(context).colorScheme.secondary,
@@ -2300,7 +2306,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             children: [
                                               Flexible(
                                                 child: Text(
-                                                  wdata.wallsS[index].resolution.toString(),
+                                                  wdata.wallsS[index].core.resolution.toString(),
                                                   overflow: TextOverflow.ellipsis,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -2321,9 +2327,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                             children: [
                                               Flexible(
                                                 child: Text(
-                                                  provider.isNotEmpty
-                                                      ? provider[0].toUpperCase() + provider.substring(1)
-                                                      : "Search",
+                                                  source.legacyProviderString,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -2352,26 +2356,27 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                 children: <Widget>[
                                   DownloadButton(
                                     colorChanged: colorChanged,
-                                    link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path.toString(),
+                                    link: screenshotTaken ? _imageFile.path : wdata.wallsS[index].core.fullUrl,
                                   ),
                                   if (!hideSetWallpaperUi)
                                     SetWallpaperButton(
                                       colorChanged: colorChanged,
-                                      url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].path,
+                                      url: screenshotTaken ? _imageFile.path : wdata.wallsS[index].core.fullUrl,
                                     ),
                                   FavouriteWallpaperButton(
-                                    id: wdata.wallsS[index].id.toString(),
-                                    provider: "WallHaven",
-                                    wallhaven: wdata.wallsS[index],
+                                    wall: WallhavenFavouriteWall(
+                                      id: wdata.wallsS[index].id,
+                                      wallpaper: wdata.wallsS[index],
+                                    ),
                                     trash: false,
                                   ),
                                   ShareButton(
                                     id: wdata.wallsS[index].id,
-                                    provider: "WallHaven",
-                                    url: wdata.wallsS[index].path,
-                                    thumbUrl: wdata.wallsS[index].thumbs!["original"].toString(),
+                                    source: WallpaperSource.wallhaven,
+                                    url: wdata.wallsS[index].core.fullUrl,
+                                    thumbUrl: wdata.wallsS[index].core.thumbnailUrl,
                                   ),
-                                  EditButton(url: wdata.wallsS[index].path),
+                                  EditButton(url: wdata.wallsS[index].core.fullUrl),
                                 ],
                               ),
                             ),
@@ -2409,7 +2414,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: wdata.wallsS[index].path!,
+                            imageUrl: wdata.wallsS[index].core.thumbnailUrl,
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -2477,7 +2482,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                         child: IconButton(
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                            final link = wdata.wallsS[index].path;
+                            final link = wdata.wallsS[index].core.fullUrl;
                             Navigator.push(
                               context,
                               PageRouteBuilder(

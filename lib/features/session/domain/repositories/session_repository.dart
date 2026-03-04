@@ -1,6 +1,8 @@
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/session/domain/entities/badge_entity.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 
 abstract class SessionRepository {
   PrismUsersV2 get currentUser;
@@ -31,12 +33,12 @@ abstract class SessionRepository {
     bool? premium,
     String? subscriptionTier,
     int? coins,
-    Map<dynamic, dynamic>? links,
-    List<dynamic>? followers,
-    List<dynamic>? following,
-    List<dynamic>? badges,
-    List<dynamic>? subPrisms,
-    List<dynamic>? transactions,
+    Map<String, String>? links,
+    List<String>? followers,
+    List<String>? following,
+    List<BadgeEntity>? badges,
+    List<String>? subPrisms,
+    List<TransactionEntity>? transactions,
     String? uploadsWeekStart,
     int? uploadsThisWeek,
     bool persist = true,

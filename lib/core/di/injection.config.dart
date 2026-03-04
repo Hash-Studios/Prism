@@ -78,6 +78,14 @@ import '../../features/palette/domain/repositories/palette_repository.dart'
     as _i1019;
 import '../../features/palette/domain/usecases/generate_palette_usecase.dart'
     as _i576;
+import '../../features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart'
+    as _i914;
+import '../../features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart'
+    as _i312;
+import '../../features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart'
+    as _i759;
+import '../../features/prism_feed/domain/repositories/prism_wallpaper_repository.dart'
+    as _i727;
 import '../../features/profile_setups/biz/bloc/profile_setups_bloc.j.dart'
     as _i941;
 import '../../features/profile_setups/data/repositories/profile_setups_repository_impl.dart'
@@ -156,6 +164,10 @@ import '../../features/wall_of_the_day/domain/repositories/wall_of_the_day_repos
     as _i489;
 import '../../features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart'
     as _i398;
+import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart'
+    as _i387;
+import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
+    as _i604;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
@@ -184,6 +196,9 @@ _i174.GetIt initGetIt(
     () => appModule.inAppNotificationsBox,
     instanceName: 'inAppNotificationsBox',
   );
+  gh.lazySingleton<_i604.WallhavenWallpaperRepository>(
+    () => _i387.WallhavenWallpaperRepositoryImpl(),
+  );
   gh.lazySingleton<_i738.SessionRepository>(
     () => _i1021.SessionRepositoryImpl(),
   );
@@ -205,17 +220,15 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i986.SignOutUseCase>(
     () => _i986.SignOutUseCase(gh<_i738.SessionRepository>()),
   );
-  gh.lazySingleton<_i563.CategoryFeedRepository>(
-    () => _i307.CategoryFeedRepositoryImpl(
-      gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
-    ),
-  );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
   );
   gh.lazySingleton<_i226.DeepLinkRepository>(
     () => _i857.DeepLinkRepositoryImpl(gh<_i327.AppLinks>()),
     dispose: (i) => i.dispose(),
+  );
+  gh.lazySingleton<_i312.PexelsWallpaperRepository>(
+    () => _i914.PexelsWallpaperRepositoryImpl(),
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
@@ -312,12 +325,6 @@ _i174.GetIt initGetIt(
   gh.factory<_i689.PaletteBloc>(
     () => _i689.PaletteBloc(gh<_i576.GeneratePaletteUseCase>()),
   );
-  gh.lazySingleton<_i301.LoadCategoriesUseCase>(
-    () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
-  );
-  gh.lazySingleton<_i301.FetchCategoryFeedUseCase>(
-    () => _i301.FetchCategoryFeedUseCase(gh<_i563.CategoryFeedRepository>()),
-  );
   gh.lazySingleton<_i663.GetInitialDeepLinkActionUseCase>(
     () => _i663.GetInitialDeepLinkActionUseCase(gh<_i226.DeepLinkRepository>()),
   );
@@ -358,6 +365,9 @@ _i174.GetIt initGetIt(
     () => _i340.ClearFavouriteSetupsUseCase(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
+  );
+  gh.lazySingleton<_i727.PrismWallpaperRepository>(
+    () => _i759.PrismWallpaperRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i668.ProfileWallsRepository>(
     () => _i409.ProfileWallsRepositoryImpl(gh<_i349.FirestoreClient>()),
@@ -405,12 +415,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
-  );
-  gh.factory<_i195.CategoryFeedBloc>(
-    () => _i195.CategoryFeedBloc(
-      gh<_i301.LoadCategoriesUseCase>(),
-      gh<_i301.FetchCategoryFeedUseCase>(),
-    ),
   );
   gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
     () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
@@ -506,6 +510,14 @@ _i174.GetIt initGetIt(
       gh<_i108.ObserveQuickActionsUseCase>(),
     ),
   );
+  gh.lazySingleton<_i563.CategoryFeedRepository>(
+    () => _i307.CategoryFeedRepositoryImpl(
+      gh<_i851.Box<dynamic>>(instanceName: 'prefsBox'),
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+    ),
+  );
   gh.factory<_i318.SetupsBloc>(
     () => _i318.SetupsBloc(gh<_i247.FetchSetupsUseCase>()),
   );
@@ -515,6 +527,12 @@ _i174.GetIt initGetIt(
       gh<_i96.UpdateThemeDarkUseCase>(),
       gh<_i96.UpdateThemeDarkAccentUseCase>(),
     ),
+  );
+  gh.lazySingleton<_i301.LoadCategoriesUseCase>(
+    () => _i301.LoadCategoriesUseCase(gh<_i563.CategoryFeedRepository>()),
+  );
+  gh.lazySingleton<_i301.FetchCategoryFeedUseCase>(
+    () => _i301.FetchCategoryFeedUseCase(gh<_i563.CategoryFeedRepository>()),
   );
   gh.factory<_i584.InAppNotificationsBloc>(
     () => _i584.InAppNotificationsBloc(
@@ -541,6 +559,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i410.WatchConnectionUseCase>(
     () => _i410.WatchConnectionUseCase(gh<_i325.ConnectivityRepository>()),
+  );
+  gh.factory<_i195.CategoryFeedBloc>(
+    () => _i195.CategoryFeedBloc(
+      gh<_i301.LoadCategoriesUseCase>(),
+      gh<_i301.FetchCategoryFeedUseCase>(),
+    ),
   );
   gh.factory<_i736.ThemeModeBloc>(
     () => _i736.ThemeModeBloc(

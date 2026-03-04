@@ -271,7 +271,7 @@ Future<void> main() async {
               BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
               BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
             ],
-            child: MyApp(),
+            child: _MyApp(),
           ),
         ),
       );
@@ -422,12 +422,12 @@ bool _isMixpanelEnabled() {
 
 String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 
-class MyApp extends StatefulWidget {
+class _MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
@@ -469,9 +469,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ..bio = ''
         ..profilePhoto = app_state.defaultProfilePhotoUrl
         ..coverPhoto = ''
-        ..followers = <dynamic>[]
-        ..following = <dynamic>[]
-        ..links = <String, dynamic>{};
+        ..followers = <String>[]
+        ..following = <String>[]
+        ..links = <String, String>{};
     }
     app_state.prismUser.loggedIn = value;
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
@@ -653,7 +653,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         _appRouter.push(
           ShareWallpaperViewRoute(
             wallId: action.wallId,
-            provider: action.provider,
+            source: action.source,
             wallpaperUrl: action.wallpaperUrl,
             thumbnailUrl: action.thumbnailUrl,
           ),
@@ -663,7 +663,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
           ),
         );
-        break;
       case UserLinkIntent():
         _appRouter.push(ProfileRoute(profileIdentifier: action.profileIdentifier));
         unawaited(
@@ -671,7 +670,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
           ),
         );
-        break;
       case SetupLinkIntent():
         _appRouter.push(ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl));
         unawaited(
@@ -679,7 +677,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
           ),
         );
-        break;
       case ReferLinkIntent():
         if (action.inviterId.trim().isEmpty) {
           unawaited(
@@ -704,10 +701,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
           ),
         );
-        break;
       case ShortCodeIntent():
         await _resolveAndNavigateShortCode(action.code);
-        break;
       case UnknownIntent():
         _appRouter.push(const NotFoundRoute());
         unawaited(
@@ -719,7 +714,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             ),
           ),
         );
-        break;
     }
   }
 

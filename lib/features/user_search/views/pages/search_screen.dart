@@ -359,7 +359,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: isSubmitted
-          ? SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
+          ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
           : Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -432,16 +432,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class SearchLoader extends StatefulWidget {
+class _SearchLoader extends StatefulWidget {
   final Future? future;
   final String query;
   final String? selectedProvider;
-  const SearchLoader({required this.future, required this.query, required this.selectedProvider});
+  const _SearchLoader({required this.future, required this.query, required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
 
-class _SearchLoaderState extends State<SearchLoader> {
+class _SearchLoaderState extends State<_SearchLoader> {
   Future? _future;
 
   @override

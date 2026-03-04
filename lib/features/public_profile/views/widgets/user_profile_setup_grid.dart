@@ -195,7 +195,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    context.publicProfileAdapter().userProfileSetups![index].data()["image"].toString(),
+                                    context.publicProfileAdapter().userProfileSetups![index].image,
                                   ),
                                   fit: BoxFit.cover,
                                 ),
@@ -209,7 +209,8 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                   splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                                   highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                                   onTap: () {
-                                    if (context.publicProfileAdapter(listen: false).userProfileSetups == []) {
+                                    if (context.publicProfileAdapter(listen: false).userProfileSetups == null ||
+                                        context.publicProfileAdapter(listen: false).userProfileSetups!.isEmpty) {
                                     } else {
                                       context.router.push(UserProfileSetupViewRoute(setupIndex: index));
                                     }

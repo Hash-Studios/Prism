@@ -5,9 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -98,7 +98,7 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
         InheritedDataProvider(scrollController: scrollBottomBarController, child: widget.child!),
         Positioned(
           bottom: bottom,
-          child: SlideTransition(position: _offsetAnimation, child: BottomNavBar()),
+          child: SlideTransition(position: _offsetAnimation, child: _BottomNavBar()),
         ),
         if (isOnTop == true)
           Container()
@@ -132,12 +132,12 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
   }
 }
 
-class BottomNavBar extends StatefulWidget {
+class _BottomNavBar extends StatefulWidget {
   @override
   _BottomNavBarState createState() => _BottomNavBarState();
 }
 
-class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderStateMixin {
+class _BottomNavBarState extends State<_BottomNavBar> with SingleTickerProviderStateMixin {
   late AnimationController _controller2;
   late Animation<double> _paddingAnimation;
   bool? isLoggedin = false;
@@ -336,7 +336,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                     ),
                     onPressed: () {
                       analytics.track(
-                        UploadActionSelectedEvent(
+                        const UploadActionSelectedEvent(
                           action: AnalyticsActionValue.uploadSheetOpened,
                           entrypoint: EntryPointValue.bottomNav,
                         ),
@@ -345,7 +345,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         showModalBottomSheet(
                           isScrollControlled: true,
                           context: context,
-                          builder: (context) => const UploadBottomPanel(),
+                          builder: (context) => const _UploadBottomPanel(),
                         );
                       });
                     },
@@ -453,14 +453,14 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
   }
 }
 
-class UploadBottomPanel extends StatefulWidget {
-  const UploadBottomPanel({super.key});
+class _UploadBottomPanel extends StatefulWidget {
+  const _UploadBottomPanel();
 
   @override
   _UploadBottomPanelState createState() => _UploadBottomPanelState();
 }
 
-class _UploadBottomPanelState extends State<UploadBottomPanel> {
+class _UploadBottomPanelState extends State<_UploadBottomPanel> {
   File? _wallpaper;
   final picker = ImagePicker();
   @override
@@ -526,7 +526,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () async {
                         analytics.track(
-                          UploadActionSelectedEvent(
+                          const UploadActionSelectedEvent(
                             action: AnalyticsActionValue.uploadWallpaperSelected,
                             entrypoint: EntryPointValue.bottomNav,
                           ),
@@ -610,7 +610,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                     child: GestureDetector(
                       onTap: () async {
                         analytics.track(
-                          UploadActionSelectedEvent(
+                          const UploadActionSelectedEvent(
                             action: AnalyticsActionValue.uploadSetupSelected,
                             entrypoint: EntryPointValue.bottomNav,
                           ),
@@ -705,8 +705,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
 
 int adHeight = 80;
 
-class AdBannerWidget extends StatefulWidget {
-  const AdBannerWidget(this.bottom, {super.key});
+class _AdBannerWidget extends StatefulWidget {
+  const _AdBannerWidget(this.bottom);
   static const AdRequest request = AdRequest(
     nonPersonalizedAds: false,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
@@ -716,7 +716,7 @@ class AdBannerWidget extends StatefulWidget {
   _AdBannerWidgetState createState() => _AdBannerWidgetState();
 }
 
-class _AdBannerWidgetState extends State<AdBannerWidget> {
+class _AdBannerWidgetState extends State<_AdBannerWidget> {
   BannerAd? _anchoredBanner;
 
   bool _loadingAnchoredBanner = false;
@@ -744,7 +744,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
 
     final BannerAd banner = BannerAd(
       size: size,
-      request: AdBannerWidget.request,
+      request: _AdBannerWidget.request,
       adUnitId: kReleaseMode ? "ca-app-pub-4649644680694757/8480286673" : "ca-app-pub-3940256099942544/6300978111",
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {

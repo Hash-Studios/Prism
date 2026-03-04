@@ -1,9 +1,7 @@
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
-import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 
 Stream<List<Map<String, dynamic>>> getUserProfile(String identifier) {
@@ -70,14 +68,4 @@ Future<void> unfollow(String email, String id) async {
   await firestoreClient.updateDoc(USER_NEW_COLLECTION, id, {
     'followers': FirestoreSentinels.arrayRemove(<Object?>[app_state.prismUser.email]),
   }, sourceTag: 'profile.unfollow.target_user');
-}
-
-Future<void> setUserLinks(List<LinksModel> linklist, String id) async {
-  final Map<String, dynamic> updateLink = <String, dynamic>{};
-  for (final element in linklist) {
-    updateLink[element.name] = element.link;
-  }
-  await firestoreClient.updateDoc(FirebaseCollections.usersV2, id, <String, dynamic>{
-    'links': updateLink,
-  }, sourceTag: 'profile.update_links');
 }
