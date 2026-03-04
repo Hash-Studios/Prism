@@ -283,7 +283,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
                 ),
               );
             }
-            return FollowingTile(index, finalDocs);
+            return _FollowingTile(index, finalDocs);
           },
         ),
       ),
@@ -291,15 +291,15 @@ class _FollowingScreenState extends State<FollowingScreen> {
   }
 }
 
-class FollowingTile extends StatefulWidget {
+class _FollowingTile extends StatefulWidget {
   final int index;
   final List<_FirestoreDoc> finalDocs;
-  const FollowingTile(this.index, this.finalDocs);
+  const _FollowingTile(this.index, this.finalDocs);
   @override
   _FollowingTileState createState() => _FollowingTileState();
 }
 
-class _FollowingTileState extends State<FollowingTile> {
+class _FollowingTileState extends State<_FollowingTile> {
   final now = DateTime.now().toUtc();
   double? height;
 

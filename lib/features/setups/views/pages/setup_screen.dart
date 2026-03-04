@@ -38,14 +38,14 @@ class _SetupScreenState extends State<SetupScreen> {
       backgroundColor: Theme.of(context).primaryColor,
       body: SafeArea(
         top: false,
-        child: SetupPage(future: future, controller: controller),
+        child: _SetupPage(future: future, controller: controller),
       ),
     );
   }
 }
 
-class SetupPage extends StatefulWidget {
-  const SetupPage({super.key, required this.future, required this.controller});
+class _SetupPage extends StatefulWidget {
+  const _SetupPage({super.key, required this.future, required this.controller});
 
   final Future? future;
   final PageController controller;
@@ -54,7 +54,7 @@ class SetupPage extends StatefulWidget {
   _SetupPageState createState() => _SetupPageState();
 }
 
-class _SetupPageState extends State<SetupPage> {
+class _SetupPageState extends State<_SetupPage> {
   int pageNumber = 0;
 
   @override

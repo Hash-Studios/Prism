@@ -593,7 +593,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ),
                       ),
-                      OBIndicator(currentPage: _currentPage),
+                      _OBIndicator(currentPage: _currentPage),
                       ElevatedButton(
                         onPressed: _currentPage != 2
                             ? () {
@@ -724,8 +724,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-class OBIndicator extends StatelessWidget {
-  const OBIndicator({super.key, required int? currentPage}) : _currentPage = currentPage;
+class _OBIndicator extends StatelessWidget {
+  const _OBIndicator({super.key, required int? currentPage}) : _currentPage = currentPage;
 
   final int? _currentPage;
 

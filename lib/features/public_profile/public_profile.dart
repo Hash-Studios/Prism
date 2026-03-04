@@ -1,5 +1,4 @@
 export 'biz/bloc/public_profile_bloc.j.dart';
-export 'builder/public_profile_builder.dart';
 export 'views/pages/followers_screen.dart';
 export 'views/pages/profile_screen.dart';
 export 'views/pages/user_profile_setup_view_screen.dart';

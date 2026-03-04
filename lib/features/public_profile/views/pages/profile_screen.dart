@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
-              body: ProfileChild(
+              body: _ProfileChild(
                 ownProfile: true,
                 parentScaffoldKey: _scaffoldKey,
                 id: app_state.prismUser.id,
@@ -197,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final bool premium = _mapBool(data, 'premium');
                     final List<Object?> followers = _mapList(data, 'followers');
                     final List<Object?> following = _mapList(data, 'following');
-                    return ProfileChild(
+                    return _ProfileChild(
                       ownProfile: false,
                       id: _mapString(data, '__docId'),
                       bio: _mapString(data, 'bio'),
@@ -223,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class ProfileChild extends StatefulWidget {
+class _ProfileChild extends StatefulWidget {
   final String? name;
   final String? username;
   final String? id;
@@ -237,7 +237,7 @@ class ProfileChild extends StatefulWidget {
   final List? followers;
   final List? following;
   final GlobalKey<ScaffoldState>? parentScaffoldKey;
-  const ProfileChild({
+  const _ProfileChild({
     required this.name,
     required this.username,
     required this.id,
@@ -256,7 +256,7 @@ class ProfileChild extends StatefulWidget {
   _ProfileChildState createState() => _ProfileChildState();
 }
 
-class _ProfileChildState extends State<ProfileChild> {
+class _ProfileChildState extends State<_ProfileChild> {
   // int favCount = main.prefs.get('userFavs') as int? ?? 0;
   // int profileCount = ((main.prefs.get('userPosts') as int?) ?? 0) +
   //     ((main.prefs.get('userSetups') as int?) ?? 0);

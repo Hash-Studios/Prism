@@ -619,8 +619,8 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: <Widget>[
-                                      ModifiedShareDownloadButton(setup: setup),
-                                      if (!hideSetWallpaperUi) ModifiedShareSetWallpaperButton(setup: setup),
+                                      _ModifiedShareDownloadButton(setup: setup),
+                                      if (!hideSetWallpaperUi) _ModifiedShareSetWallpaperButton(setup: setup),
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Theme.of(context).primaryColor,
@@ -917,8 +917,8 @@ class SetupDetailsTile extends StatelessWidget {
   }
 }
 
-class ModifiedShareDownloadButton extends StatelessWidget {
-  const ModifiedShareDownloadButton({super.key, required this.setup});
+class _ModifiedShareDownloadButton extends StatelessWidget {
+  const _ModifiedShareDownloadButton({super.key, required this.setup});
 
   final SetupEntity setup;
 
@@ -967,8 +967,8 @@ class ModifiedShareDownloadButton extends StatelessWidget {
   }
 }
 
-class ModifiedShareSetWallpaperButton extends StatelessWidget {
-  const ModifiedShareSetWallpaperButton({super.key, required this.setup});
+class _ModifiedShareSetWallpaperButton extends StatelessWidget {
+  const _ModifiedShareSetWallpaperButton({super.key, required this.setup});
 
   final SetupEntity setup;
 

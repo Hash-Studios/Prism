@@ -117,7 +117,7 @@ class _ThemeViewState extends State<ThemeView> {
               showModalBottomSheet(
                 isScrollControlled: true,
                 context: context,
-                builder: (context) => PreferencePanel(
+                builder: (context) => _PreferencePanel(
                   selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
                       ? 1
                       : context.prismThemeMode(listen: false) == ThemeMode.dark
@@ -502,16 +502,16 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-class PreferencePanel extends StatefulWidget {
+class _PreferencePanel extends StatefulWidget {
   final int? selectedValue;
   final Function(bool value)? func;
-  const PreferencePanel({super.key, this.selectedValue, this.func});
+  const _PreferencePanel({super.key, this.selectedValue, this.func});
 
   @override
   _PreferencePanelState createState() => _PreferencePanelState();
 }
 
-class _PreferencePanelState extends State<PreferencePanel> {
+class _PreferencePanelState extends State<_PreferencePanel> {
   late int? _selectedValue;
 
   @override

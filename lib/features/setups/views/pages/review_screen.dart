@@ -91,17 +91,17 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
         ),
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: TabBarView(controller: tabController, children: [WallReview(), SetupReview()]),
+      body: TabBarView(controller: tabController, children: [_WallReview(), _SetupReview()]),
     );
   }
 }
 
-class WallReview extends StatefulWidget {
+class _WallReview extends StatefulWidget {
   @override
   _WallReviewState createState() => _WallReviewState();
 }
 
-class _WallReviewState extends State<WallReview> {
+class _WallReviewState extends State<_WallReview> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -127,7 +127,7 @@ class _WallReviewState extends State<WallReview> {
                 return Column(
                   children: List.generate(
                     snapshot.data!.length,
-                    (int index) => RejectedWallTile(snapshot.data![index]),
+                    (int index) => _RejectedWallTile(snapshot.data![index]),
                   ),
                 );
               }
@@ -152,7 +152,7 @@ class _WallReviewState extends State<WallReview> {
                 return Center(child: Loader());
               } else {
                 return Column(
-                  children: List.generate(snapshot.data!.length, (int index) => WallTile(snapshot.data![index])),
+                  children: List.generate(snapshot.data!.length, (int index) => _WallTile(snapshot.data![index])),
                 );
               }
             },
@@ -163,9 +163,9 @@ class _WallReviewState extends State<WallReview> {
   }
 }
 
-class WallTile extends StatelessWidget {
+class _WallTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
-  WallTile(this.wallpaper);
+  _WallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
@@ -406,9 +406,9 @@ class WallTile extends StatelessWidget {
   }
 }
 
-class RejectedWallTile extends StatelessWidget {
+class _RejectedWallTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
-  RejectedWallTile(this.wallpaper);
+  _RejectedWallTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
@@ -664,12 +664,12 @@ class RejectedWallTile extends StatelessWidget {
   }
 }
 
-class SetupReview extends StatefulWidget {
+class _SetupReview extends StatefulWidget {
   @override
   _SetupReviewState createState() => _SetupReviewState();
 }
 
-class _SetupReviewState extends State<SetupReview> {
+class _SetupReviewState extends State<_SetupReview> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -695,7 +695,7 @@ class _SetupReviewState extends State<SetupReview> {
                 return Column(
                   children: List.generate(
                     snapshot.data!.length,
-                    (int index) => RejectedSetupTile(snapshot.data![index]),
+                    (int index) => _RejectedSetupTile(snapshot.data![index]),
                   ),
                 );
               }
@@ -1153,9 +1153,9 @@ class SetupTile extends StatelessWidget {
   }
 }
 
-class RejectedSetupTile extends StatelessWidget {
+class _RejectedSetupTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
-  RejectedSetupTile(this.wallpaper);
+  _RejectedSetupTile(this.wallpaper);
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override

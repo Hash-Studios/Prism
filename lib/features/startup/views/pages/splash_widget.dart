@@ -66,14 +66,14 @@ class _SplashWidgetState extends State<SplashWidget> {
         if (state.status == LoadStatus.success && state.isObsoleteVersion) {
           return OldVersion();
         }
-        return const SecondarySplash();
+        return const _SecondarySplash();
       },
     );
   }
 }
 
-class SecondarySplash extends StatelessWidget {
-  const SecondarySplash({super.key});
+class _SecondarySplash extends StatelessWidget {
+  const _SecondarySplash({super.key});
 
   @override
   Widget build(BuildContext context) {

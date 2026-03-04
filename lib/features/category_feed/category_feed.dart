@@ -1,5 +1,4 @@
 export 'biz/bloc/category_feed_bloc.j.dart';
-export 'builder/category_feed_builder.dart';
 export 'views/category_feed_bloc_adapter.dart';
 export 'views/pages/collection_screen.dart';
 export 'views/pages/collection_view_screen.dart';
