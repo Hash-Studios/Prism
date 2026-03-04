@@ -62,7 +62,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               showModalBottomSheet(
                 isScrollControlled: true,
                 context: context,
-                builder: (context) => NotificationSettingsSheet(),
+                builder: (context) => _NotificationSettingsSheet(),
               );
             },
           ),
@@ -103,7 +103,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       ),
                     ),
                     key: UniqueKey(),
-                    child: NotificationCard(
+                    child: _NotificationCard(
                       notification: currentNotification,
                       onMarkRead: () {
                         box.put(
@@ -181,8 +181,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 }
 
-class NotificationCard extends StatelessWidget {
-  const NotificationCard({required this.notification, this.onMarkRead});
+class _NotificationCard extends StatelessWidget {
+  const _NotificationCard({required this.notification, this.onMarkRead});
 
   final InAppNotif? notification;
   final VoidCallback? onMarkRead;
@@ -354,12 +354,12 @@ String _destinationFor(InAppNotif notification) {
   return "";
 }
 
-class NotificationSettingsSheet extends StatefulWidget {
+class _NotificationSettingsSheet extends StatefulWidget {
   @override
   _NotificationSettingsSheetState createState() => _NotificationSettingsSheetState();
 }
 
-class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
+class _NotificationSettingsSheetState extends State<_NotificationSettingsSheet> {
   bool? followersSubscriber;
   bool? postsSubscriber;
   bool? inappSubscriber;

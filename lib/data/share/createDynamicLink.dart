@@ -15,8 +15,8 @@ import 'package:http/http.dart' as http;
 const String _shareDomain = 'prismwalls.com';
 const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
 
-class CanonicalLinkBuilder {
-  const CanonicalLinkBuilder();
+class _CanonicalLinkBuilder {
+  const _CanonicalLinkBuilder();
 
   Uri wallpaper({required String id, required WallpaperSource source, String? url, required String thumbUrl}) {
     return Uri.https(_shareDomain, '/share', <String, String>{
@@ -44,8 +44,8 @@ class CanonicalLinkBuilder {
   }
 }
 
-class ShortLinkService {
-  const ShortLinkService();
+class _ShortLinkService {
+  const _ShortLinkService();
 
   Future<Uri> createShortLink({
     required String type,
@@ -103,8 +103,8 @@ class ShortLinkService {
   }
 }
 
-const CanonicalLinkBuilder _canonicalLinkBuilder = CanonicalLinkBuilder();
-const ShortLinkService _shortLinkService = ShortLinkService();
+const _CanonicalLinkBuilder _canonicalLinkBuilder = _CanonicalLinkBuilder();
+const _ShortLinkService _shortLinkService = _ShortLinkService();
 
 void _trackDynamicLinkCreateResult({
   required ShareTypeValue shareType,

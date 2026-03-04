@@ -166,9 +166,9 @@ class _AboutScreenState extends State<AboutScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ContributorWidget(contributor: snapshot.data![1], radius: 35),
-                        ContributorWidget(contributor: snapshot.data![0], radius: 45),
-                        ContributorWidget(contributor: snapshot.data![2], radius: 35),
+                        _ContributorWidget(contributor: snapshot.data![1], radius: 35),
+                        _ContributorWidget(contributor: snapshot.data![0], radius: 45),
+                        _ContributorWidget(contributor: snapshot.data![2], radius: 35),
                       ],
                     ),
                   );
@@ -247,8 +247,8 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 }
 
-class ContributorWidget extends StatelessWidget {
-  const ContributorWidget({super.key, required this.contributor, required this.radius});
+class _ContributorWidget extends StatelessWidget {
+  const _ContributorWidget({super.key, required this.contributor, required this.radius});
   final Contributor contributor;
   final double radius;
 

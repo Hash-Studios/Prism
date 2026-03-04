@@ -25,56 +25,7 @@ List<Map<String, int>> pageNumbersP = categoryDefinitions
     .map((CategoryDefinition cat) => <String, int>{cat.name: 1})
     .toList();
 
-// SHIM: delete in Phase 8
-Future<List<PexelsWallpaper>> categoryDataFetcherP(String categoryName, String mode) async {
-  final bool refresh = mode == "r";
-  if (refresh) {
-    wallsP = [];
-  }
-  final result = await _repo.fetchFeed(categoryName: categoryName, refresh: refresh);
-  result.fold(
-    onSuccess: (List<PexelsWallpaper> fetched) {
-      if (refresh) {
-        wallsP = fetched;
-      } else {
-        wallsP.addAll(fetched);
-      }
-      logger.d("categoryDataFetcherP done: ${fetched.length}");
-    },
-    onFailure: (failure) {
-      logger.e("categoryDataFetcherP failed: ${failure.message}");
-    },
-  );
-  return wallsP;
-}
-
 int pageColorsP = 1;
-
-// SHIM: delete in Phase 8
-Future<List<PexelsWallpaper>> getDataP(String mode) async {
-  final bool refresh = mode == "r";
-  if (refresh) {
-    wallsP = [];
-    pageGetDataP = 1;
-  } else {
-    pageGetDataP = pageGetDataP + 1;
-  }
-  final result = await _repo.fetchFeed(categoryName: 'Curated', refresh: refresh);
-  result.fold(
-    onSuccess: (List<PexelsWallpaper> fetched) {
-      if (refresh) {
-        wallsP = fetched;
-      } else {
-        wallsP.addAll(fetched);
-      }
-      logger.d("getDataP done: ${fetched.length}");
-    },
-    onFailure: (failure) {
-      logger.e("getDataP failed: ${failure.message}");
-    },
-  );
-  return wallsP;
-}
 
 // SHIM: delete in Phase 8
 Future<PexelsWallpaper?> getWallbyIDP(String? id) async {

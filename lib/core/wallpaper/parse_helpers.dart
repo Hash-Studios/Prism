@@ -38,14 +38,6 @@ int? parseInt(Object? v) {
   return null;
 }
 
-double? parseDouble(Object? v) {
-  if (v == null) return null;
-  if (v is double) return v;
-  if (v is int) return v.toDouble();
-  if (v is String) return double.tryParse(v);
-  return null;
-}
-
 List<String> parseStringList(Object? v) {
   if (v == null) return const <String>[];
   if (v is List) {

@@ -3,8 +3,8 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/widgets.dart';
 
-class AnalyticsFacade {
-  const AnalyticsFacade();
+class _AnalyticsFacade {
+  const _AnalyticsFacade();
 
   Future<void> track(AnalyticsEvent event) {
     logger.i('Tracking event: ${event.eventName}');
@@ -47,4 +47,4 @@ class AnalyticsFacade {
   }
 }
 
-const AnalyticsFacade analytics = AnalyticsFacade();
+const _AnalyticsFacade analytics = _AnalyticsFacade();

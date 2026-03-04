@@ -271,7 +271,7 @@ Future<void> main() async {
               BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
               BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
             ],
-            child: MyApp(),
+            child: _MyApp(),
           ),
         ),
       );
@@ -422,12 +422,12 @@ bool _isMixpanelEnabled() {
 
 String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 
-class MyApp extends StatefulWidget {
+class _MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();

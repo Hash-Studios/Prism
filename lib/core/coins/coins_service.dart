@@ -54,8 +54,8 @@ class CoinMutationResult {
   }
 }
 
-class AiGenerationReservationResult {
-  const AiGenerationReservationResult({required this.mode, required this.mutation, this.transactionId});
+class _AiGenerationReservationResult {
+  const _AiGenerationReservationResult({required this.mode, required this.mutation, this.transactionId});
 
   final AiChargeMode mode;
   final CoinMutationResult mutation;
@@ -502,11 +502,11 @@ class CoinsService {
     );
   }
 
-  Future<AiGenerationReservationResult> reserveForAiGeneration({
+  Future<_AiGenerationReservationResult> reserveForAiGeneration({
     String sourceTag = 'coins.reserve.ai_generation',
   }) async {
     if (!_canMutateCoins()) {
-      return AiGenerationReservationResult(
+      return _AiGenerationReservationResult(
         mode: AiChargeMode.insufficient,
         mutation: CoinMutationResult.noChange(
           balance: app_state.prismUser.coins,
@@ -517,11 +517,11 @@ class CoinsService {
     }
     final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
-    final AiGenerationReservationResult result = await firestoreClient.runTransaction<AiGenerationReservationResult>(
+    final _AiGenerationReservationResult result = await firestoreClient.runTransaction<_AiGenerationReservationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return AiGenerationReservationResult(
+          return _AiGenerationReservationResult(
             mode: AiChargeMode.insufficient,
             mutation: CoinMutationResult.noChange(
               balance: app_state.prismUser.coins,
@@ -547,7 +547,7 @@ class CoinsService {
               'coins': previous,
               _coinStateField: coinState,
             });
-            return AiGenerationReservationResult(
+            return _AiGenerationReservationResult(
               mode: AiChargeMode.freeTrial,
               mutation: CoinMutationResult(
                 success: true,
@@ -572,7 +572,7 @@ class CoinsService {
               'coins': previous,
               _coinStateField: coinState,
             });
-            return AiGenerationReservationResult(
+            return _AiGenerationReservationResult(
               mode: AiChargeMode.proIncluded,
               mutation: CoinMutationResult(
                 success: true,
@@ -587,7 +587,7 @@ class CoinsService {
         }
 
         if (previous < CoinPolicy.aiGeneration) {
-          return AiGenerationReservationResult(
+          return _AiGenerationReservationResult(
             mode: AiChargeMode.insufficient,
             mutation: CoinMutationResult(
               success: false,
@@ -623,7 +623,7 @@ class CoinsService {
           'type': 'debit',
           'referenceType': 'ai_generation',
         });
-        return AiGenerationReservationResult(
+        return _AiGenerationReservationResult(
           mode: AiChargeMode.coinSpend,
           mutation: CoinMutationResult(
             success: true,

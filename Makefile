@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard secrets-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard secrets-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -194,7 +194,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard secrets-guard analytics-check analyze no-dynamic-guard
+ci: get format-check env-guard secrets-guard analytics-check analyze no-dynamic-guard find-unused-ci
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
@@ -208,3 +208,7 @@ find-unused: ensure-fvm ## Find unreachable files and unused public symbols
 
 find-unused-html: ensure-fvm ## Find unused code + open HTML visual report
 	@$(DART) run tool/find_unused_code.dart --html
+
+find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
+	@$(DART) run tool/find_unused_code.dart --json > /tmp/prism_find_unused_ci.json
+	@$(DART) run tool/validate_find_unused_allowlist.dart /tmp/prism_find_unused_ci.json tool/find_unused_allowlist.json

@@ -165,21 +165,6 @@ Future<void> patchPrismUser({
   if (uploadsThisWeek != null) _fallbackUser.uploadsThisWeek = uploadsThisWeek;
 }
 
-Future<void> refreshSessionFromPersistence() async {
-  final repo = _sessionRepositoryOrNull();
-  if (repo != null) {
-    await repo.getSession();
-    return;
-  }
-  if (!main.prefs.isOpen) {
-    return;
-  }
-  final dynamic raw = main.prefs.get(main.userHiveKey);
-  if (raw is PrismUsersV2) {
-    _fallbackUser = raw;
-  }
-}
-
 StartupConfigEntity? get startupConfig {
   final repo = _startupRepositoryOrNull();
   if (repo == null) {

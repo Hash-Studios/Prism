@@ -37,10 +37,10 @@ void showChangelog(BuildContext context, Function func) {
                 child: const Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ChangeVersion(number: 'v2.6.9'),
+                    _ChangeVersion(number: 'v2.6.9'),
                     Change(icon: JamIcons.eye, text: "New splash screen animation."),
                     Change(icon: JamIcons.download, text: "Fix wallpaper download bugs."),
-                    ChangeVersion(number: 'v2.6.8'),
+                    _ChangeVersion(number: 'v2.6.8'),
                     Change(icon: JamIcons.user, text: "All-new beautiful profile."),
                     Change(
                       icon: JamIcons.instant_picture,
@@ -49,18 +49,18 @@ void showChangelog(BuildContext context, Function func) {
                     Change(icon: JamIcons.link, text: "Add upto 25 links in your profile."),
                     Change(icon: JamIcons.filter, text: "Added 23 new filters like Rise, Ashby, etc."),
                     Change(icon: JamIcons.bug, text: "Fixed first time app open stuck on splash screen bug."),
-                    ChangeVersion(number: 'v2.6.7'),
+                    _ChangeVersion(number: 'v2.6.7'),
                     Change(icon: JamIcons.user, text: "Add bio or change your username now!"),
                     Change(
                       icon: JamIcons.log_in,
                       text: "Fix log-in bug, which fixes follow, favourites and alot of other bugs.",
                     ),
-                    ChangeVersion(number: 'v2.6.6'),
+                    _ChangeVersion(number: 'v2.6.6'),
                     Change(icon: JamIcons.bug, text: "Minor bug fixes and improvements."),
-                    ChangeVersion(number: 'v2.6.5'),
+                    _ChangeVersion(number: 'v2.6.5'),
                     Change(icon: JamIcons.user, text: "Improved overall user experience."),
                     Change(icon: JamIcons.bug, text: "Major bug fixes and improvements."),
-                    ChangeVersion(number: 'v2.6.4'),
+                    _ChangeVersion(number: 'v2.6.4'),
                     Change(icon: JamIcons.bell, text: "Get notified when people you follow post."),
                     Change(
                       icon: JamIcons.shuffle,
@@ -103,9 +103,9 @@ void showChangelog(BuildContext context, Function func) {
   showModal(context: context, builder: (BuildContext context) => aboutPopUp);
 }
 
-class ChangeVersion extends StatelessWidget {
+class _ChangeVersion extends StatelessWidget {
   final String number;
-  const ChangeVersion({required this.number});
+  const _ChangeVersion({required this.number});
   @override
   Widget build(BuildContext context) {
     return Column(

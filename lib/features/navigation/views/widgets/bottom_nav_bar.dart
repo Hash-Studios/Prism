@@ -98,7 +98,7 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
         InheritedDataProvider(scrollController: scrollBottomBarController, child: widget.child!),
         Positioned(
           bottom: bottom,
-          child: SlideTransition(position: _offsetAnimation, child: BottomNavBar()),
+          child: SlideTransition(position: _offsetAnimation, child: _BottomNavBar()),
         ),
         if (isOnTop == true)
           Container()
@@ -132,12 +132,12 @@ class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMix
   }
 }
 
-class BottomNavBar extends StatefulWidget {
+class _BottomNavBar extends StatefulWidget {
   @override
   _BottomNavBarState createState() => _BottomNavBarState();
 }
 
-class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderStateMixin {
+class _BottomNavBarState extends State<_BottomNavBar> with SingleTickerProviderStateMixin {
   late AnimationController _controller2;
   late Animation<double> _paddingAnimation;
   bool? isLoggedin = false;
@@ -345,7 +345,7 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
                         showModalBottomSheet(
                           isScrollControlled: true,
                           context: context,
-                          builder: (context) => const UploadBottomPanel(),
+                          builder: (context) => const _UploadBottomPanel(),
                         );
                       });
                     },
@@ -453,14 +453,14 @@ class _BottomNavBarState extends State<BottomNavBar> with SingleTickerProviderSt
   }
 }
 
-class UploadBottomPanel extends StatefulWidget {
-  const UploadBottomPanel({super.key});
+class _UploadBottomPanel extends StatefulWidget {
+  const _UploadBottomPanel({super.key});
 
   @override
   _UploadBottomPanelState createState() => _UploadBottomPanelState();
 }
 
-class _UploadBottomPanelState extends State<UploadBottomPanel> {
+class _UploadBottomPanelState extends State<_UploadBottomPanel> {
   File? _wallpaper;
   final picker = ImagePicker();
   @override
@@ -705,8 +705,8 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
 
 int adHeight = 80;
 
-class AdBannerWidget extends StatefulWidget {
-  const AdBannerWidget(this.bottom, {super.key});
+class _AdBannerWidget extends StatefulWidget {
+  const _AdBannerWidget(this.bottom, {super.key});
   static const AdRequest request = AdRequest(
     nonPersonalizedAds: false,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
@@ -716,7 +716,7 @@ class AdBannerWidget extends StatefulWidget {
   _AdBannerWidgetState createState() => _AdBannerWidgetState();
 }
 
-class _AdBannerWidgetState extends State<AdBannerWidget> {
+class _AdBannerWidgetState extends State<_AdBannerWidget> {
   BannerAd? _anchoredBanner;
 
   bool _loadingAnchoredBanner = false;
@@ -744,7 +744,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
 
     final BannerAd banner = BannerAd(
       size: size,
-      request: AdBannerWidget.request,
+      request: _AdBannerWidget.request,
       adUnitId: kReleaseMode ? "ca-app-pub-4649644680694757/8480286673" : "ca-app-pub-3940256099942544/6300978111",
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {

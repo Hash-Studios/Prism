@@ -194,14 +194,14 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                               defaultChild: FocusedMenuHolder(
                                 provider: "UserProfileWall",
                                 index: index,
-                                child: PhotographerWallTile(animation: animation, index: index),
+                                child: _PhotographerWallTile(animation: animation, index: index),
                               ),
-                              trueChild: PhotographerWallTile(animation: animation, index: index),
+                              trueChild: _PhotographerWallTile(animation: animation, index: index),
                             )
                           : FocusedMenuHolder(
                               provider: "UserProfileWall",
                               index: index,
-                              child: PhotographerWallTile(animation: animation, index: index),
+                              child: _PhotographerWallTile(animation: animation, index: index),
                             );
                     },
                   )
@@ -210,8 +210,8 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
   }
 }
 
-class PhotographerWallTile extends StatelessWidget {
-  const PhotographerWallTile({super.key, required this.animation, required this.index});
+class _PhotographerWallTile extends StatelessWidget {
+  const _PhotographerWallTile({super.key, required this.animation, required this.index});
 
   final Animation<Color?>? animation;
   final int index;
