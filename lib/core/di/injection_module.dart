@@ -1,3 +1,4 @@
+import 'package:Prism/core/debug/network_logging_client.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
@@ -7,6 +8,7 @@ import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -43,4 +45,7 @@ abstract class AppModule {
 
   @lazySingleton
   LocalStore get localStore => PersistenceRuntime.store;
+
+  @lazySingleton
+  http.Client get httpClient => NetworkLoggingClient();
 }

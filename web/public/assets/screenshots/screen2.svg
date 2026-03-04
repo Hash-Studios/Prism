@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <defs>
+    <linearGradient id="g2" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#E57697"/>
+      <stop offset="60%" stop-color="#1f1f1f"/>
+      <stop offset="100%" stop-color="#181818"/>
+    </linearGradient>
+  </defs>
+  <rect width="390" height="844" fill="url(#g2)"/>
+  <!-- Wallpaper preview area -->
+  <rect x="0" y="0" width="390" height="420" fill="rgba(229,118,151,0.15)"/>
+  <!-- Back button -->
+  <circle cx="40" cy="60" r="18" fill="rgba(0,0,0,0.4)"/>
+  <rect x="33" y="57" width="14" height="2" rx="1" fill="#fff" transform="rotate(-45 40 58)"/>
+  <rect x="33" y="62" width="14" height="2" rx="1" fill="#fff" transform="rotate(45 40 63)"/>
+  <!-- Heart button -->
+  <circle cx="350" cy="60" r="18" fill="rgba(0,0,0,0.4)"/>
+  <!-- Wallpaper info card -->
+  <rect x="0" y="480" width="390" height="364" rx="0" fill="#1f1f1f"/>
+  <rect x="24" y="504" width="160" height="24" rx="6" fill="#333"/>
+  <rect x="24" y="536" width="100" height="16" rx="4" fill="#2a2a2a"/>
+  <!-- Tags -->
+  <rect x="24" y="572" width="60" height="26" rx="13" fill="#E5769720"/>
+  <rect x="92" y="572" width="80" height="26" rx="13" fill="#333"/>
+  <rect x="180" y="572" width="70" height="26" rx="13" fill="#333"/>
+  <!-- Set wallpaper button -->
+  <rect x="24" y="740" width="342" height="52" rx="26" fill="#E57697"/>
+  <rect x="120" y="759" width="150" height="14" rx="4" fill="rgba(255,255,255,0.8)"/>
+</svg>

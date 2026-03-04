@@ -14,6 +14,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:github/github.dart';
 
 @RoutePage()
@@ -26,11 +27,22 @@ class AboutScreen extends StatefulWidget {
 
 class _AboutScreenState extends State<AboutScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+  int _versionTapCount = 0;
 
   @override
   void initState() {
     super.initState();
     _contentLoadTracker.start();
+  }
+
+  void _onVersionTap() {
+    _versionTapCount++;
+    if (_versionTapCount >= 5) {
+      _versionTapCount = 0;
+      if (!app_state.isAdminUser()) return;
+      HapticFeedback.mediumImpact();
+      context.router.pushPath('/debug-panel');
+    }
   }
 
   void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
@@ -82,12 +94,15 @@ class _AboutScreenState extends State<AboutScreen> {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
-            Text(
-              "Version ${app_state.currentAppVersion}+${app_state.currentAppVersionCode}",
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+            GestureDetector(
+              onTap: _onVersionTap,
+              child: Text(
+                "Version ${app_state.currentAppVersion}+${app_state.currentAppVersionCode}",
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+              ),
             ),
             const SizedBox(height: 10),
             Text(

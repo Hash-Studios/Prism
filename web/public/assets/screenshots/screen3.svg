@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <rect width="390" height="844" fill="#181818"/>
+  <!-- Header -->
+  <rect x="24" y="60" width="140" height="28" rx="6" fill="#333"/>
+  <rect x="24" y="96" width="200" height="16" rx="4" fill="#2a2a2a"/>
+  <!-- Collection cards (large) -->
+  <rect x="12" y="136" width="366" height="160" rx="16" fill="#E5769720"/>
+  <rect x="28" y="156" width="100" height="18" rx="5" fill="#E57697"/>
+  <rect x="28" y="182" width="160" height="14" rx="4" fill="rgba(255,255,255,0.3)"/>
+  <rect x="28" y="204" width="60" height="12" rx="4" fill="rgba(255,255,255,0.2)"/>
+  <rect x="12" y="308" width="176" height="160" rx="16" fill="#7c6af720"/>
+  <rect x="202" y="308" width="176" height="160" rx="16" fill="#6af7c820"/>
+  <rect x="28" y="328" width="80" height="14" rx="4" fill="rgba(255,255,255,0.4)"/>
+  <rect x="218" y="328" width="80" height="14" rx="4" fill="rgba(255,255,255,0.4)"/>
+  <rect x="12" y="480" width="176" height="160" rx="16" fill="#f7c86a20"/>
+  <rect x="202" y="480" width="176" height="160" rx="16" fill="#f76a6a20"/>
+  <rect x="12" y="652" width="176" height="160" rx="16" fill="#6ab5f720"/>
+  <rect x="202" y="652" width="176" height="160" rx="16" fill="#c86af720"/>
+</svg>

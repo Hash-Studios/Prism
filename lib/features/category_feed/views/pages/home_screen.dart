@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -53,16 +54,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void showChangelogCheck() {
-    final newDevice = _settingsLocal.get<Object?>("newDevice");
-    if (newDevice == null) {
+    final lastSeen = _settingsLocal.get<Object?>("lastSeenVersion") as String?;
+    if (lastSeen != currentAppVersion) {
       showChangelog(context, () {
         setState(() {
           isNew = false;
         });
       });
-      _settingsLocal.set("newDevice", false);
+      _settingsLocal.set("lastSeenVersion", currentAppVersion);
     } else {
-      _settingsLocal.set("newDevice", false);
+      setState(() {
+        isNew = false;
+      });
     }
   }
 

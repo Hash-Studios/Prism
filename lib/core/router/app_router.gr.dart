@@ -207,6 +207,22 @@ class DashboardRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [DebugPanelPage]
+class DebugPanelRoute extends PageRouteInfo<void> {
+  const DebugPanelRoute({List<PageRouteInfo>? children})
+    : super(DebugPanelRoute.name, initialChildren: children);
+
+  static const String name = 'DebugPanelRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DebugPanelPage();
+    },
+  );
+}
+
+/// generated route for
 /// [DownloadScreen]
 class DownloadRoute extends PageRouteInfo<void> {
   const DownloadRoute({List<PageRouteInfo>? children})
