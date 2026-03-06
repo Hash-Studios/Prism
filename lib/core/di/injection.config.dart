@@ -93,6 +93,14 @@ import '../../features/palette/domain/repositories/palette_repository.dart'
     as _i1019;
 import '../../features/palette/domain/usecases/generate_palette_usecase.dart'
     as _i576;
+import '../../features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart'
+    as _i872;
+import '../../features/personalized_feed/data/personalized_feed_repository_impl.dart'
+    as _i903;
+import '../../features/personalized_feed/domain/repositories/personalized_feed_repository.dart'
+    as _i567;
+import '../../features/personalized_feed/domain/usecases/personalized_feed_usecases.dart'
+    as _i212;
 import '../../features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart'
     as _i914;
 import '../../features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart'
@@ -457,6 +465,15 @@ _i174.GetIt initGetIt(
       gh<_i817.PublicProfileRepository>(),
     ),
   );
+  gh.lazySingleton<_i567.PersonalizedFeedRepository>(
+    () => _i903.PersonalizedFeedRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+    ),
+  );
   gh.lazySingleton<_i474.FetchNotificationsUseCase>(
     () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
@@ -588,6 +605,11 @@ _i174.GetIt initGetIt(
       gh<_i340.ClearFavouriteSetupsUseCase>(),
     ),
   );
+  gh.lazySingleton<_i212.FetchPersonalizedFeedUseCase>(
+    () => _i212.FetchPersonalizedFeedUseCase(
+      gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
   gh.factory<_i1055.QuickActionsBloc>(
     () => _i1055.QuickActionsBloc(
       gh<_i108.InitializeQuickActionsUseCase>(),
@@ -602,6 +624,9 @@ _i174.GetIt initGetIt(
       gh<_i986.SignOutUseCase>(),
       sessionRepository: gh<_i738.SessionRepository>(),
     ),
+  );
+  gh.factory<_i872.PersonalizedFeedBloc>(
+    () => _i872.PersonalizedFeedBloc(gh<_i212.FetchPersonalizedFeedUseCase>()),
   );
   gh.factory<_i318.SetupsBloc>(
     () => _i318.SetupsBloc(gh<_i247.FetchSetupsUseCase>()),

@@ -4,16 +4,14 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_screen.dart';
-import 'package:Prism/features/category_feed/views/pages/following_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/home_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
+import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +39,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   void _trackQuickActionInvocation(String shortcutType) {
     final AnalyticsActionValue action;
     switch (shortcutType) {
-      case 'Follow_Feed':
+      case 'Personalized_Feed':
         action = AnalyticsActionValue.quickActionFollowFeed;
       case 'Collections':
         action = AnalyticsActionValue.quickActionCollections;
@@ -93,7 +91,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: app_state.followersTab ? 3 : 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
     context.read<AdsBloc>().add(const AdsEvent.started());
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
@@ -101,18 +99,12 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       setState(() {
         shortcut = shortcutType;
       });
-      if (shortcutType == 'Follow_Feed') {
-        logger.d('Follow_Feed');
-        if (app_state.followersTab) {
-          tabController!.animateTo(1);
-        }
+      if (shortcutType == 'Personalized_Feed') {
+        logger.d('Personalized_Feed');
+        tabController!.animateTo(0);
       } else if (shortcutType == 'Collections') {
         logger.d('Collections');
-        if (app_state.followersTab) {
-          tabController!.animateTo(2);
-        } else {
-          tabController!.animateTo(1);
-        }
+        tabController!.animateTo(2);
       } else if (shortcutType == 'Setups') {
         logger.d('Setups');
         final tabsRouter = AutoTabsRouter.of(context);
@@ -124,7 +116,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
     });
 
     quickActions.setShortcutItems(<ShortcutItem>[
-      const ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
+      const ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: '@drawable/ic_feed'),
       const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
       const ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
       const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
@@ -154,71 +146,18 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
             controller: tabController,
             indicatorColor: Theme.of(context).colorScheme.secondary,
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: app_state.followersTab
-                ? [
-                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
-                    Tab(icon: Icon(JamIcons.user_square, color: Theme.of(context).colorScheme.secondary)),
-                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
-                  ]
-                : [
-                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
-                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
-                  ],
+            tabs: [
+              Tab(icon: Icon(JamIcons.users, color: Theme.of(context).colorScheme.secondary)),
+              Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
+              Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+            ],
           ),
         ),
         body: Stack(
           children: <Widget>[
             TabBarView(
               controller: tabController,
-              children: (app_state.followersTab == true)
-                  ? <Widget>[
-                      const HomeScreen(),
-                      if (app_state.prismUser.loggedIn == true)
-                        const FollowingScreen()
-                      else
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            const Spacer(),
-                            Center(
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.7,
-                                child: const Text(
-                                  "Please sign-in to view the latest walls from the artists you follow here.",
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                googleSignInPopUp(context, () {
-                                  main.RestartWidget.restartApp(context);
-                                });
-                              },
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-                              ),
-                              child: const SizedBox(
-                                width: 60,
-                                child: Text(
-                                  'SIGN-IN',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Color(0xFFE57697),
-                                    fontSize: 15,
-                                    fontFamily: "Roboto",
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      const CollectionScreen(),
-                    ]
-                  : [const HomeScreen(), const CollectionScreen()],
+              children: const <Widget>[PersonalizedFeedScreen(), HomeScreen(), CollectionScreen()],
             ),
             if (!result) ConnectivityWidget() else Container(),
           ],

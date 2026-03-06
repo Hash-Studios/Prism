@@ -23,7 +23,6 @@ class _GeneralListState extends State<GeneralList> {
   final CacheMaintenanceService _cacheMaintenance = getIt<CacheMaintenanceService>();
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool optWall = getIt<SettingsLocalDataSource>().get<bool>('optimisedWallpapers', defaultValue: true);
-  bool followers = getIt<SettingsLocalDataSource>().get<bool>('followersTab', defaultValue: true);
   int categories = getIt<SettingsLocalDataSource>().get<int>('WHcategories', defaultValue: 100);
   int purity = getIt<SettingsLocalDataSource>().get<int>('WHpurity', defaultValue: 100);
 
@@ -88,30 +87,6 @@ class _GeneralListState extends State<GeneralList> {
             _trackAction(AnalyticsActionValue.clearCacheTapped, sourceContext: 'profile_general_list_clear_cache');
             await _cacheMaintenance.clearTransientCache();
             toasts.codeSend("Cleared cache!");
-          },
-        ),
-        SwitchListTile(
-          activeThumbColor: Theme.of(context).colorScheme.error,
-          secondary: const Icon(JamIcons.user_plus),
-          value: followers,
-          title: Text(
-            "Show Following Feed",
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova",
-            ),
-          ),
-          subtitle: followers
-              ? const Text("Disable this to hide the followers feed from home page.", style: TextStyle(fontSize: 12))
-              : const Text("Enable this to show the followers feed on home page.", style: TextStyle(fontSize: 12)),
-          onChanged: (bool value) {
-            unawaited(analytics.track(SettingsToggleChangedEvent(setting: SettingValue.followersFeed, value: value)));
-            setState(() {
-              followers = value;
-            });
-            toasts.codeSend("This will take effect on restarting app.");
-            _settingsLocal.set('followersTab', value);
           },
         ),
         SwitchListTile(
