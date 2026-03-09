@@ -36,46 +36,28 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final SettingsLocalDataSource _settingsLocal;
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
-  final PersonalizedRankingService _rankingService =
-      const PersonalizedRankingService();
+  final PersonalizedRankingService _rankingService = const PersonalizedRankingService();
 
   static const int _pageSize = 24;
   static const int _cacheTtlHours = 2;
   static const int _seenWindow = 300;
 
   @override
-  Future<Result<PersonalizedFeedPage>> fetch(
-    FetchPersonalizedFeedRequest request,
-  ) async {
+  Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
     final userId = app_state.prismUser.id.trim();
     final isGuest = userId.isEmpty;
     final cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
     try {
-      final userDoc = isGuest
-          ? const <String, dynamic>{}
-          : await _resolveUserDoc(userId: userId);
+      final userDoc = isGuest ? const <String, dynamic>{} : await _resolveUserDoc(userId: userId);
       final interests = _resolveInterests(userDoc);
       final following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
 
-      final creatorFuture = _fetchCreatorItems(
-        following: following,
-        page: request.page,
-      );
-      final wallhavenFuture = _fetchWallhavenItems(
-        interests: interests,
-        refresh: request.refresh,
-      );
-      final pexelsFuture = _fetchPexelsItems(
-        interests: interests,
-        refresh: request.refresh,
-      );
+      final creatorFuture = _fetchCreatorItems(following: following, page: request.page);
+      final wallhavenFuture = _fetchWallhavenItems(interests: interests, refresh: request.refresh);
+      final pexelsFuture = _fetchPexelsItems(interests: interests, refresh: request.refresh);
 
-      final results = await Future.wait<List<FeedItemEntity>>([
-        creatorFuture,
-        wallhavenFuture,
-        pexelsFuture,
-      ]);
+      final results = await Future.wait<List<FeedItemEntity>>([creatorFuture, wallhavenFuture, pexelsFuture]);
 
       final creatorItems = results[0];
       final wallhavenItems = results[1];
@@ -95,11 +77,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         request.refresh ? const <FeedItemEntity>[] : request.existingItems,
         ranking.items,
       );
-      await _writeCacheState(
-        scope: cacheScope,
-        seenKeys: nextSeen,
-        cachedItems: merged,
-      );
+      await _writeCacheState(scope: cacheScope, seenKeys: nextSeen, cachedItems: merged);
 
       logger.i(
         '[PersonalizedFeed] fetch success',
@@ -109,8 +87,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           'page': request.page,
           'items': ranking.items.length,
           'source_prism': ranking.sourceCounts[WallpaperSource.prism] ?? 0,
-          'source_wallhaven':
-              ranking.sourceCounts[WallpaperSource.wallhaven] ?? 0,
+          'source_wallhaven': ranking.sourceCounts[WallpaperSource.wallhaven] ?? 0,
           'source_pexels': ranking.sourceCounts[WallpaperSource.pexels] ?? 0,
         },
       );
@@ -124,11 +101,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         ),
       );
     } catch (error, stackTrace) {
-      logger.e(
-        '[PersonalizedFeed] fetch failed',
-        error: error,
-        stackTrace: stackTrace,
-      );
+      logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
       final cachedState = _readCacheState(scope: cacheScope);
       if (cachedState.cachedItems.isNotEmpty) {
         return Result.success(
@@ -140,9 +113,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           ),
         );
       }
-      return Result.error(
-        ServerFailure('Failed to fetch personalized feed: $error'),
-      );
+      return Result.error(ServerFailure('Failed to fetch personalized feed: $error'));
     }
   }
 
@@ -166,13 +137,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       FirestoreQuerySpec(
         collection: FirebaseCollections.usersV2,
         sourceTag: 'personalized.user_doc_by_email',
-        filters: <FirestoreFilter>[
-          FirestoreFilter(
-            field: 'email',
-            op: FirestoreFilterOp.isEqualTo,
-            value: email,
-          ),
-        ],
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email)],
         limit: 1,
         cachePolicy: FirestoreCachePolicy.memoryFirst,
       ),
@@ -190,15 +155,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return remote;
     }
 
-    final localRaw = _settingsLocal.get<String>(
-      'onboarding_v2_interests',
-      defaultValue: '',
-    );
-    final local = localRaw
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList(growable: false);
+    final localRaw = _settingsLocal.get<String>('onboarding_v2_interests', defaultValue: '');
+    final local = localRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(growable: false);
     if (local.isNotEmpty) {
       return local;
     }
@@ -207,30 +165,21 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   List<String> _resolveFollowing(Map<String, dynamic> userDoc) {
-    final fromSession = app_state.prismUser.following
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
-        .toList();
+    final fromSession = app_state.prismUser.following.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
     if (fromSession.isNotEmpty) {
       return fromSession;
     }
     return _toStringList(userDoc['following']);
   }
 
-  Future<List<FeedItemEntity>> _fetchCreatorItems({
-    required List<String> following,
-    required int page,
-  }) async {
+  Future<List<FeedItemEntity>> _fetchCreatorItems({required List<String> following, required int page}) async {
     if (following.isEmpty) {
       return const <FeedItemEntity>[];
     }
 
     final uniqueFollowing = following.toSet().toList(growable: false);
     final chunks = _chunks(uniqueFollowing, 10);
-    final int perChunkLimit = ((12 * page) / chunks.length).ceil().clamp(
-      10,
-      30,
-    );
+    final int perChunkLimit = ((12 * page) / chunks.length).ceil().clamp(10, 30);
 
     final futures = chunks
         .asMap()
@@ -243,28 +192,16 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
               collection: FirebaseCollections.walls,
               sourceTag: 'personalized.creator_chunk_${chunkIndex + 1}',
               filters: <FirestoreFilter>[
-                const FirestoreFilter(
-                  field: 'review',
-                  op: FirestoreFilterOp.isEqualTo,
-                  value: true,
-                ),
-                FirestoreFilter(
-                  field: 'email',
-                  op: FirestoreFilterOp.whereIn,
-                  value: chunk,
-                ),
+                const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+                FirestoreFilter(field: 'email', op: FirestoreFilterOp.whereIn, value: chunk),
               ],
-              orderBy: const <FirestoreOrderBy>[
-                FirestoreOrderBy(field: 'createdAt', descending: true),
-              ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
               limit: perChunkLimit,
               cachePolicy: FirestoreCachePolicy.memoryFirst,
             ),
             (data, docId) => _CreatorWallRow(
               docId: docId,
-              createdAt: DateTime.tryParse(
-                (data['createdAt'] ?? '').toString(),
-              )?.toUtc(),
+              createdAt: DateTime.tryParse((data['createdAt'] ?? '').toString())?.toUtc(),
               dto: PrismWallDocDto.fromJson(data),
             ),
           );
@@ -274,10 +211,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final chunkedRows = await Future.wait(futures);
     final allRows = chunkedRows.expand((rows) => rows).toList(growable: false);
     allRows.sort((a, b) {
-      final aAt =
-          a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
-      final bAt =
-          b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      final aAt = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      final bAt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
       return bAt.compareTo(aAt);
     });
 
@@ -291,23 +226,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return dedupe.values.toList(growable: false);
   }
 
-  Future<List<FeedItemEntity>> _fetchWallhavenItems({
-    required List<String> interests,
-    required bool refresh,
-  }) async {
-    final active = _activeInterestsForSource(
-      interests,
-      WallpaperSource.wallhaven,
-    );
+  Future<List<FeedItemEntity>> _fetchWallhavenItems({required List<String> interests, required bool refresh}) async {
+    final active = _activeInterestsForSource(interests, WallpaperSource.wallhaven);
     final futures = active
         .map(
           (interest) => _wallhavenRepository.fetchFeed(
             categoryName: interest,
             refresh: refresh,
-            categories: _settingsLocal.get<int>(
-              'WHcategories',
-              defaultValue: 100,
-            ),
+            categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
             purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
           ),
         )
@@ -317,56 +243,35 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final items = <FeedItemEntity>[];
     for (final result in results) {
       if (result.isSuccess && result.data != null) {
-        items.addAll(
-          result.data!.map(
-            (wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall),
-          ),
-        );
+        items.addAll(result.data!.map((wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall)));
       }
     }
     return items;
   }
 
-  Future<List<FeedItemEntity>> _fetchPexelsItems({
-    required List<String> interests,
-    required bool refresh,
-  }) async {
+  Future<List<FeedItemEntity>> _fetchPexelsItems({required List<String> interests, required bool refresh}) async {
     final active = _activeInterestsForSource(interests, WallpaperSource.pexels);
     final futures = active
-        .map(
-          (interest) => _pexelsRepository.fetchFeed(
-            categoryName: interest,
-            refresh: refresh,
-          ),
-        )
+        .map((interest) => _pexelsRepository.fetchFeed(categoryName: interest, refresh: refresh))
         .toList(growable: false);
 
     final results = await Future.wait(futures);
     final items = <FeedItemEntity>[];
     for (final result in results) {
       if (result.isSuccess && result.data != null) {
-        items.addAll(
-          result.data!.map(
-            (wall) => PexelsFeedItem(id: wall.id, wallpaper: wall),
-          ),
-        );
+        items.addAll(result.data!.map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall)));
       }
     }
     return items;
   }
 
-  List<String> _activeInterestsForSource(
-    List<String> interests,
-    WallpaperSource source,
-  ) {
+  List<String> _activeInterestsForSource(List<String> interests, WallpaperSource source) {
     final mapped = category_data.categoryDefinitions
         .where((entry) => entry.source == source)
         .map((entry) => entry.name.toLowerCase())
         .toSet();
 
-    final matched = interests
-        .where((interest) => mapped.contains(interest.toLowerCase()))
-        .toList(growable: false);
+    final matched = interests.where((interest) => mapped.contains(interest.toLowerCase())).toList(growable: false);
     if (matched.isNotEmpty) {
       return matched.take(2).toList(growable: false);
     }
@@ -377,13 +282,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return const <String>['Curated', 'Nature'];
   }
 
-  List<FeedItemEntity> _mergeCachedAndNew(
-    List<FeedItemEntity> cachedItems,
-    List<FeedItemEntity> newItems,
-  ) {
+  List<FeedItemEntity> _mergeCachedAndNew(List<FeedItemEntity> cachedItems, List<FeedItemEntity> newItems) {
     final merged = <String, FeedItemEntity>{
-      for (final item in cachedItems)
-        PersonalizedRankingService.canonicalKey(item): item,
+      for (final item in cachedItems) PersonalizedRankingService.canonicalKey(item): item,
     };
     for (final item in newItems) {
       merged[PersonalizedRankingService.canonicalKey(item)] = item;
@@ -400,15 +301,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
   Map<WallpaperSource, int> _countSources(List<FeedItemEntity> items) {
     return <WallpaperSource, int>{
-      WallpaperSource.prism: items
-          .where((e) => e.source == WallpaperSource.prism)
-          .length,
-      WallpaperSource.wallhaven: items
-          .where((e) => e.source == WallpaperSource.wallhaven)
-          .length,
-      WallpaperSource.pexels: items
-          .where((e) => e.source == WallpaperSource.pexels)
-          .length,
+      WallpaperSource.prism: items.where((e) => e.source == WallpaperSource.prism).length,
+      WallpaperSource.wallhaven: items.where((e) => e.source == WallpaperSource.wallhaven).length,
+      WallpaperSource.pexels: items.where((e) => e.source == WallpaperSource.pexels).length,
     };
   }
 
@@ -460,11 +355,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 }
 
 class _CreatorWallRow {
-  const _CreatorWallRow({
-    required this.docId,
-    required this.createdAt,
-    required this.dto,
-  });
+  const _CreatorWallRow({required this.docId, required this.createdAt, required this.dto});
 
   final String docId;
   final DateTime? createdAt;
@@ -474,9 +365,7 @@ class _CreatorWallRow {
 class _CacheState {
   const _CacheState({required this.seenKeys, required this.cachedItems});
 
-  const _CacheState.empty()
-    : seenKeys = const <String>[],
-      cachedItems = const <FeedItemEntity>[];
+  const _CacheState.empty() : seenKeys = const <String>[], cachedItems = const <FeedItemEntity>[];
 
   final List<String> seenKeys;
   final List<FeedItemEntity> cachedItems;
@@ -487,9 +376,7 @@ Map<String, dynamic> _asMap(Object? value) {
     return value;
   }
   if (value is Map) {
-    return value.map<String, dynamic>(
-      (key, val) => MapEntry(key.toString(), val),
-    );
+    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
   }
   return <String, dynamic>{};
 }
@@ -498,29 +385,13 @@ List<String> _toStringList(Object? value) {
   if (value is! List) {
     return const <String>[];
   }
-  return value
-      .map((e) => e?.toString().trim() ?? '')
-      .where((e) => e.isNotEmpty)
-      .toSet()
-      .toList(growable: false);
+  return value.map((e) => e?.toString().trim() ?? '').where((e) => e.isNotEmpty).toSet().toList(growable: false);
 }
 
 Map<String, Object?> _encodeFeedItem(FeedItemEntity item) => item.when(
-  prism: (id, wall) => <String, Object?>{
-    'type': 'prism',
-    'id': id,
-    'wall': _encodePrism(wall),
-  },
-  wallhaven: (id, wall) => <String, Object?>{
-    'type': 'wallhaven',
-    'id': id,
-    'wall': _encodeWallhaven(wall),
-  },
-  pexels: (id, wall) => <String, Object?>{
-    'type': 'pexels',
-    'id': id,
-    'wall': _encodePexels(wall),
-  },
+  prism: (id, wall) => <String, Object?>{'type': 'prism', 'id': id, 'wall': _encodePrism(wall)},
+  wallhaven: (id, wall) => <String, Object?>{'type': 'wallhaven', 'id': id, 'wall': _encodeWallhaven(wall)},
+  pexels: (id, wall) => <String, Object?>{'type': 'pexels', 'id': id, 'wall': _encodePexels(wall)},
 );
 
 FeedItemEntity? _decodeFeedItem(Map<String, dynamic> map) {
@@ -624,9 +495,7 @@ WallhavenWallpaper _decodeWallhaven(Map<String, dynamic> map) {
     dimensionX: (map['dimensionX'] as num?)?.toInt(),
     dimensionY: (map['dimensionY'] as num?)?.toInt(),
     colors: _toStringList(map['colors']),
-    thumbs: _asMap(
-      map['thumbs'],
-    ).map((key, value) => MapEntry(key, value.toString())),
+    thumbs: _asMap(map['thumbs']).map((key, value) => MapEntry(key, value.toString())),
     tags: _toStringList(map['tags']),
     sizeBytes: (map['sizeBytes'] as num?)?.toInt(),
   );

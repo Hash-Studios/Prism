@@ -45,6 +45,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_PaywallPrimaryTapped>(_onPaywallPrimaryTapped);
     on<_PaywallContinueFreeTapped>(_onPaywallContinueFreeTapped);
     on<_PaywallResultReceived>(_onPaywallResultReceived);
+    on<_StepBack>(_onStepBack);
   }
 
   final FetchStarterPackUseCase _fetchStarterPackUseCase;
@@ -302,6 +303,14 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       ),
       onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
+  }
+
+  void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
+    final idx = OnboardingV2Step.values.indexOf(state.step);
+    // auth (0) and paywall (4) are terminal — no backward navigation allowed.
+    if (idx > 0 && state.step != OnboardingV2Step.paywall) {
+      emit(state.copyWith(step: OnboardingV2Step.values[idx - 1], navRequest: null));
+    }
   }
 
   @override

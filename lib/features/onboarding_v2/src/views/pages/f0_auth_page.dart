@@ -22,6 +22,7 @@ class F0AuthPage extends StatefulWidget {
 class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateMixin {
   final AppleAuth _appleAuth = AppleAuth();
   late AnimationController _controller;
+  String? _loadingProvider;
 
   // Staggered entrance animations
   late Animation<double> _logoFade;
@@ -98,6 +99,7 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
   }
 
   Future<void> _handleAppleSignIn() async {
+    setState(() => _loadingProvider = 'apple');
     final bloc = context.read<OnboardingV2Bloc>();
     bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
     try {
@@ -107,6 +109,7 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
         app_state.prismUser.loggedIn = false;
         app_state.persistPrismUser();
         toasts.codeSend('Sign in cancelled.');
+        setState(() => _loadingProvider = null);
         bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;
@@ -114,18 +117,23 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
         toasts.codeSend('Login Successful!');
         await Future.delayed(const Duration(milliseconds: 300));
         if (!mounted) return;
+        setState(() => _loadingProvider = null);
         bloc.add(const OnboardingV2Event.authCompleted());
       }
     } catch (e, st) {
       logger.e('Apple sign-in failed', tag: 'OnboardingV2', error: e, stackTrace: st);
       app_state.prismUser.loggedIn = false;
       app_state.persistPrismUser();
-      if (mounted) toasts.error('Something went wrong, please try again!');
+      if (mounted) {
+        setState(() => _loadingProvider = null);
+        toasts.error('Something went wrong, please try again!');
+      }
       bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
   }
 
   Future<void> _handleGoogleSignIn() async {
+    setState(() => _loadingProvider = 'google');
     final bloc = context.read<OnboardingV2Bloc>();
     bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
     try {
@@ -135,6 +143,7 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
         app_state.prismUser.loggedIn = false;
         app_state.persistPrismUser();
         toasts.codeSend('Sign in cancelled.');
+        setState(() => _loadingProvider = null);
         bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;
@@ -142,13 +151,17 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
         toasts.codeSend('Login Successful!');
         await Future.delayed(const Duration(milliseconds: 300));
         if (!mounted) return;
+        setState(() => _loadingProvider = null);
         bloc.add(const OnboardingV2Event.authCompleted());
       }
     } catch (e, st) {
       logger.e('Google sign-in failed', tag: 'OnboardingV2', error: e, stackTrace: st);
       app_state.prismUser.loggedIn = false;
       app_state.persistPrismUser();
-      if (mounted) toasts.error('Something went wrong, please try again!');
+      if (mounted) {
+        setState(() => _loadingProvider = null);
+        toasts.error('Something went wrong, please try again!');
+      }
       bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
   }
@@ -156,10 +169,11 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final isAnyLoading = _loadingProvider != null;
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
       buildWhen: (prev, curr) => prev.isAuthLoading != curr.isAuthLoading,
       builder: (context, state) {
-        final isLoading = state.isAuthLoading;
+        final isOverlayVisible = state.isAuthLoading;
         return Scaffold(
           backgroundColor: Colors.black,
           body: Stack(
@@ -306,17 +320,17 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
                                 children: [
                                   if (Platform.isIOS || Platform.isMacOS) ...[
                                     _AuthButton(
-                                      onTap: isLoading ? null : _handleAppleSignIn,
+                                      onTap: isAnyLoading ? null : _handleAppleSignIn,
                                       label: 'Continue with Apple',
-                                      isLoading: isLoading,
+                                      isLoading: _loadingProvider == 'apple',
                                       child: const Icon(Icons.apple, color: Colors.white, size: 20),
                                     ),
                                     const SizedBox(height: 12),
                                   ],
                                   _AuthButton(
-                                    onTap: isLoading ? null : _handleGoogleSignIn,
+                                    onTap: isAnyLoading ? null : _handleGoogleSignIn,
                                     label: 'Continue with Google',
-                                    isLoading: Platform.isAndroid && isLoading,
+                                    isLoading: _loadingProvider == 'google',
                                     child: const _GoogleIcon(),
                                   ),
                                 ],
@@ -363,9 +377,9 @@ class _F0AuthPageState extends State<F0AuthPage> with SingleTickerProviderStateM
               ),
 
               // Full-page loading overlay — blocks accidental taps during auth
-              if (isLoading)
+              if (isOverlayVisible)
                 AnimatedOpacity(
-                  opacity: isLoading ? 1.0 : 0.0,
+                  opacity: isOverlayVisible ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 200),
                   child: Container(color: Colors.black.withValues(alpha: 0.3)),
                 ),

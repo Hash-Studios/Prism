@@ -14,10 +14,8 @@ part 'personalized_feed_state.j.dart';
 part 'personalized_feed_bloc.j.freezed.dart';
 
 @injectable
-class PersonalizedFeedBloc
-    extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
-  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase)
-    : super(PersonalizedFeedState.initial()) {
+class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
+  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase) : super(PersonalizedFeedState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -26,46 +24,24 @@ class PersonalizedFeedBloc
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
 
-  Future<void> _onStarted(
-    _Started event,
-    Emitter<PersonalizedFeedState> emit,
-  ) async {
+  Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
     await _load(emit, refresh: true);
   }
 
-  Future<void> _onRefreshRequested(
-    _RefreshRequested event,
-    Emitter<PersonalizedFeedState> emit,
-  ) async {
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) async {
     await _load(emit, refresh: true);
   }
 
-  Future<void> _onFetchMoreRequested(
-    _FetchMoreRequested event,
-    Emitter<PersonalizedFeedState> emit,
-  ) async {
-    if (state.isFetchingMore ||
-        !state.hasMore ||
-        state.status == LoadStatus.loading) {
+  Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<PersonalizedFeedState> emit) async {
+    if (state.isFetchingMore || !state.hasMore || state.status == LoadStatus.loading) {
       return;
     }
 
-    emit(
-      state.copyWith(
-        isFetchingMore: true,
-        actionStatus: ActionStatus.inProgress,
-        failure: null,
-      ),
-    );
+    emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress, failure: null));
 
     final nextPage = state.page + 1;
     final result = await _fetchPersonalizedFeedUseCase(
-      FetchPersonalizedFeedParams(
-        page: nextPage,
-        refresh: false,
-        seenKeys: state.seenKeys,
-        existingItems: state.items,
-      ),
+      FetchPersonalizedFeedParams(page: nextPage, refresh: false, seenKeys: state.seenKeys, existingItems: state.items),
     );
 
     result.fold(
@@ -93,9 +69,7 @@ class PersonalizedFeedBloc
         analytics.track(
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-            result: page.items.isEmpty
-                ? EventResultValue.empty
-                : EventResultValue.success,
+            result: page.items.isEmpty ? EventResultValue.empty : EventResultValue.success,
             loadTimeMs: 0,
             sourceContext: 'personalized_feed_more',
             itemCount: merged.length,
@@ -103,13 +77,7 @@ class PersonalizedFeedBloc
         );
       },
       onFailure: (failure) {
-        emit(
-          state.copyWith(
-            actionStatus: ActionStatus.failure,
-            isFetchingMore: false,
-            failure: failure,
-          ),
-        );
+        emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMore: false, failure: failure));
         analytics.track(
           const SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
@@ -123,17 +91,11 @@ class PersonalizedFeedBloc
     );
   }
 
-  Future<void> _onRetryRequested(
-    _RetryRequested event,
-    Emitter<PersonalizedFeedState> emit,
-  ) async {
+  Future<void> _onRetryRequested(_RetryRequested event, Emitter<PersonalizedFeedState> emit) async {
     await _load(emit, refresh: true);
   }
 
-  Future<void> _load(
-    Emitter<PersonalizedFeedState> emit, {
-    required bool refresh,
-  }) async {
+  Future<void> _load(Emitter<PersonalizedFeedState> emit, {required bool refresh}) async {
     final baseState = refresh
         ? state.copyWith(
             status: LoadStatus.loading,
@@ -145,11 +107,7 @@ class PersonalizedFeedBloc
             isFetchingMore: false,
             failure: null,
           )
-        : state.copyWith(
-            status: LoadStatus.loading,
-            actionStatus: ActionStatus.inProgress,
-            failure: null,
-          );
+        : state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress, failure: null);
     emit(baseState);
 
     final result = await _fetchPersonalizedFeedUseCase(
@@ -185,33 +143,21 @@ class PersonalizedFeedBloc
         analytics.track(
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-            result: page.items.isEmpty
-                ? EventResultValue.empty
-                : EventResultValue.success,
+            result: page.items.isEmpty ? EventResultValue.empty : EventResultValue.success,
             loadTimeMs: 0,
-            sourceContext: refresh
-                ? 'personalized_feed_refresh'
-                : 'personalized_feed_initial',
+            sourceContext: refresh ? 'personalized_feed_refresh' : 'personalized_feed_initial',
             itemCount: page.items.length,
           ),
         );
       },
       onFailure: (failure) {
-        emit(
-          state.copyWith(
-            status: LoadStatus.failure,
-            actionStatus: ActionStatus.failure,
-            failure: failure,
-          ),
-        );
+        emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure));
         analytics.track(
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
             result: EventResultValue.failure,
             loadTimeMs: 0,
-            sourceContext: refresh
-                ? 'personalized_feed_refresh'
-                : 'personalized_feed_initial',
+            sourceContext: refresh ? 'personalized_feed_refresh' : 'personalized_feed_initial',
             reason: AnalyticsReasonValue.error,
           ),
         );
@@ -219,10 +165,7 @@ class PersonalizedFeedBloc
     );
   }
 
-  List<FeedItemEntity> _mergeUnique(
-    List<FeedItemEntity> first,
-    List<FeedItemEntity> second,
-  ) {
+  List<FeedItemEntity> _mergeUnique(List<FeedItemEntity> first, List<FeedItemEntity> second) {
     final merged = <String, FeedItemEntity>{
       for (final item in first) _itemKey(item): item,
       for (final item in second) _itemKey(item): item,
@@ -231,15 +174,9 @@ class PersonalizedFeedBloc
   }
 
   String _itemKey(FeedItemEntity item) => item.when(
-    prism: (_, wall) => wall.fullUrl.isNotEmpty
-        ? wall.fullUrl
-        : '${item.source.wireValue}:${item.id}',
-    wallhaven: (_, wall) => wall.fullUrl.isNotEmpty
-        ? wall.fullUrl
-        : '${item.source.wireValue}:${item.id}',
-    pexels: (_, wall) => wall.fullUrl.isNotEmpty
-        ? wall.fullUrl
-        : '${item.source.wireValue}:${item.id}',
+    prism: (_, wall) => wall.fullUrl.isNotEmpty ? wall.fullUrl : '${item.source.wireValue}:${item.id}',
+    wallhaven: (_, wall) => wall.fullUrl.isNotEmpty ? wall.fullUrl : '${item.source.wireValue}:${item.id}',
+    pexels: (_, wall) => wall.fullUrl.isNotEmpty ? wall.fullUrl : '${item.source.wireValue}:${item.id}',
   );
 
   List<String> _trimSeen(List<String> seen) {
@@ -273,11 +210,7 @@ class PersonalizedFeedBloc
 }
 
 class _SourceCounts {
-  const _SourceCounts({
-    required this.prism,
-    required this.wallhaven,
-    required this.pexels,
-  });
+  const _SourceCounts({required this.prism, required this.wallhaven, required this.pexels});
 
   final int prism;
   final int wallhaven;
