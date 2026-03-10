@@ -61,55 +61,57 @@ class PersonalizedFeedHeader extends StatelessWidget {
                     color: secondary,
                   ),
                 ),
-                const Spacer(),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  child: isFetchingMore
-                      ? SizedBox(
-                          key: const ValueKey('loading'),
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: secondary),
-                        )
-                      : Icon(
-                          Icons.tune_rounded,
-                          key: const ValueKey('ready'),
-                          size: 18,
-                          color: secondary.withValues(alpha: 0.86),
-                        ),
-                ),
+                // const Spacer(),
+                // Settings icon — commented out, to be added later
+                // AnimatedSwitcher(
+                //   duration: const Duration(milliseconds: 220),
+                //   child: isFetchingMore
+                //       ? SizedBox(
+                //           key: const ValueKey('loading'),
+                //           width: 16,
+                //           height: 16,
+                //           child: CircularProgressIndicator(strokeWidth: 2, color: secondary),
+                //         )
+                //       : Icon(
+                //           Icons.tune_rounded,
+                //           key: const ValueKey('ready'),
+                //           size: 18,
+                //           color: secondary.withValues(alpha: 0.86),
+                //         ),
+                // ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              '$itemCount personalized picks from creators + Wallhaven + Pexels.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: secondary.withValues(alpha: 0.92), height: 1.4),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _HeaderChip(
-                  icon: Icons.people_alt_rounded,
-                  label: 'Following',
-                  value: prismCount,
-                  accent: const Color(0xFF4CAF50),
-                ),
-                _HeaderChip(
-                  icon: Icons.landscape_rounded,
-                  label: 'Wallhaven',
-                  value: wallhavenCount,
-                  accent: const Color(0xFF1EA7FD),
-                ),
-                _HeaderChip(
-                  icon: Icons.photo_camera_back_rounded,
-                  label: 'Pexels',
-                  value: pexelsCount,
-                  accent: const Color(0xFFFFA726),
-                ),
-              ],
-            ),
+            // Wallpaper count + source chips — commented out, to be added later
+            // const SizedBox(height: 6),
+            // Text(
+            //   '$itemCount personalized picks from creators + Wallhaven + Pexels.',
+            //   style: theme.textTheme.bodyMedium?.copyWith(color: secondary.withValues(alpha: 0.92), height: 1.4),
+            // ),
+            // const SizedBox(height: 12),
+            // Wrap(
+            //   spacing: 8,
+            //   runSpacing: 8,
+            //   children: [
+            //     _HeaderChip(
+            //       icon: Icons.people_alt_rounded,
+            //       label: 'Following',
+            //       value: prismCount,
+            //       accent: const Color(0xFF4CAF50),
+            //     ),
+            //     _HeaderChip(
+            //       icon: Icons.landscape_rounded,
+            //       label: 'Wallhaven',
+            //       value: wallhavenCount,
+            //       accent: const Color(0xFF1EA7FD),
+            //     ),
+            //     _HeaderChip(
+            //       icon: Icons.photo_camera_back_rounded,
+            //       label: 'Pexels',
+            //       value: pexelsCount,
+            //       accent: const Color(0xFFFFA726),
+            //     ),
+            //   ],
+            // ),
           ],
         ),
       ),
@@ -117,36 +119,37 @@ class PersonalizedFeedHeader extends StatelessWidget {
   }
 }
 
-class _HeaderChip extends StatelessWidget {
-  const _HeaderChip({required this.icon, required this.label, required this.value, required this.accent});
-
-  final IconData icon;
-  final String label;
-  final int value;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: accent),
-          const SizedBox(width: 6),
-          Text(
-            '$label $value',
-            style: text.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: accent, letterSpacing: 0.2),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// _HeaderChip — commented out, to be re-enabled with settings + wallpaper count
+// class _HeaderChip extends StatelessWidget {
+//   const _HeaderChip({required this.icon, required this.label, required this.value, required this.accent});
+//
+//   final IconData icon;
+//   final String label;
+//   final int value;
+//   final Color accent;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     final text = Theme.of(context).textTheme;
+//
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+//       decoration: BoxDecoration(
+//         color: accent.withValues(alpha: 0.14),
+//         borderRadius: BorderRadius.circular(999),
+//         border: Border.all(color: accent.withValues(alpha: 0.35)),
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           Icon(icon, size: 14, color: accent),
+//           const SizedBox(width: 6),
+//           Text(
+//             '$label $value',
+//             style: text.labelLarge?.copyWith(fontWeight: FontWeight.w700, color: accent, letterSpacing: 0.2),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
