@@ -1,19 +1,25 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_screen.dart';
-import 'package:Prism/features/category_feed/views/pages/home_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -31,10 +37,45 @@ class HomeTabPage extends StatefulWidget {
 
 class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   int page = 0;
   bool result = true;
   String shortcut = "No Action Set";
   bool _hasHandledQuickActionInvocation = false;
+  bool _isChangelogCheckPending = true;
+
+  Future<void> _ensureDefaultTopicSubscriptions() async {
+    if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
+      final messaging = FirebaseMessaging.instance;
+      final bool recommendationsSubscribed = await subscribeToTopicSafely(
+        messaging,
+        'recommendations',
+        sourceTag: 'home_tab.init.recommendations',
+      );
+      final bool postsSubscribed = await subscribeToTopicSafely(messaging, 'posts', sourceTag: 'home_tab.init.posts');
+      if (recommendationsSubscribed && postsSubscribed) {
+        _settingsLocal.set('subscribedToRecommendations', true);
+      }
+    }
+  }
+
+  void _showChangelogCheck() {
+    final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
+    if (lastSeen != currentAppVersion) {
+      showChangelog(context, () {
+        if (mounted) {
+          setState(() {
+            _isChangelogCheckPending = false;
+          });
+        }
+      });
+      _settingsLocal.set('lastSeenVersion', currentAppVersion);
+      return;
+    }
+    setState(() {
+      _isChangelogCheckPending = false;
+    });
+  }
 
   void _trackQuickActionInvocation(String shortcutType) {
     final AnalyticsActionValue action;
@@ -91,7 +132,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 2, vsync: this);
     context.read<AdsBloc>().add(const AdsEvent.started());
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
@@ -104,7 +145,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         tabController!.animateTo(0);
       } else if (shortcutType == 'Collections') {
         logger.d('Collections');
-        tabController!.animateTo(2);
+        tabController!.animateTo(1);
       } else if (shortcutType == 'Setups') {
         logger.d('Setups');
         final tabsRouter = AutoTabsRouter.of(context);
@@ -123,10 +164,20 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
     ]);
     saveFavToLocal();
     checkConnection();
+    unawaited(_ensureDefaultTopicSubscriptions());
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isChangelogCheckPending) {
+      Future<void>.delayed(Duration.zero).then((_) {
+        if (!mounted) {
+          return;
+        }
+        _showChangelogCheck();
+      });
+    }
+
     return PopScope(
       canPop: tabController?.index == 0,
       onPopInvokedWithResult: (didPop, result) {
@@ -148,7 +199,6 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
             indicatorSize: TabBarIndicatorSize.label,
             tabs: [
               Tab(icon: Icon(JamIcons.users, color: Theme.of(context).colorScheme.secondary)),
-              Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
               Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
             ],
           ),
@@ -157,7 +207,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
           children: <Widget>[
             TabBarView(
               controller: tabController,
-              children: const <Widget>[PersonalizedFeedScreen(), HomeScreen(), CollectionScreen()],
+              children: const <Widget>[PersonalizedFeedScreen(), CollectionScreen()],
             ),
             if (!result) ConnectivityWidget() else Container(),
           ],
