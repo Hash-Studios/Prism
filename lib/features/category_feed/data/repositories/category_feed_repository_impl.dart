@@ -38,7 +38,13 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
   Future<Result<List<CategoryEntity>>> getCategories() async {
     final categories = category_data.categoryDefinitions
         .map(
-          (def) => CategoryEntity(name: def.name, source: def.source, searchType: def.searchType, image: def.imageUrl),
+          (def) => CategoryEntity(
+            name: def.name,
+            source: def.source,
+            searchType: def.searchType,
+            image: def.imageUrl,
+            image2: def.secondaryImageUrl,
+          ),
         )
         .toList(growable: false);
 

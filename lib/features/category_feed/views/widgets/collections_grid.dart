@@ -401,7 +401,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                     kind: _DiscoverTileKind.category,
                     name: choice.name?.trim() ?? '',
                     thumb1: choice.image?.trim() ?? '',
-                    thumb2: choice.image?.trim() ?? '',
+                    thumb2: choice.image2?.trim() ?? choice.image?.trim() ?? '',
                     isPremium: false,
                   ),
                 ),

@@ -7,8 +7,12 @@ import 'package:Prism/global/categoryMenu.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-CategoryMenu _toMenu(CategoryEntity category) =>
-    CategoryMenu(name: category.name, provider: category.source.legacyProviderString, image: category.image);
+CategoryMenu _toMenu(CategoryEntity category) => CategoryMenu(
+  name: category.name,
+  provider: category.source.legacyProviderString,
+  image: category.image,
+  image2: category.image2,
+);
 
 CategoryEntity _toEntity(CategoryMenu choice, List<CategoryEntity> categories) {
   final selectedName = (choice.name ?? '').trim();
@@ -22,11 +26,19 @@ CategoryEntity _toEntity(CategoryMenu choice, List<CategoryEntity> categories) {
     source: WallpaperSourceX.fromWire(choice.provider),
     searchType: CategorySearchType.search,
     image: choice.image ?? '',
+    image2: choice.image2 ?? '',
   );
 }
 
 final List<CategoryMenu> categoryChoices = category_data.categoryDefinitions
-    .map((def) => CategoryMenu(name: def.name, provider: def.source.legacyProviderString, image: def.imageUrl))
+    .map(
+      (def) => CategoryMenu(
+        name: def.name,
+        provider: def.source.legacyProviderString,
+        image: def.imageUrl,
+        image2: def.secondaryImageUrl,
+      ),
+    )
     .toList(growable: false);
 
 extension CategoryFeedBlocAdapterX on BuildContext {

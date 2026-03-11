@@ -28,6 +28,7 @@ class FirstWallpaperService {
               source: allCategories.isEmpty ? allCategories.first.source : allCategories.first.source,
               searchType: allCategories.isEmpty ? allCategories.first.searchType : allCategories.first.searchType,
               image: '',
+              image2: '',
             ),
           );
 
