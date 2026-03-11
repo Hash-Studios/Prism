@@ -95,6 +95,7 @@ class StartupRepositoryImpl implements StartupRepository {
         'use_rc_paywalls': defaultUseRcPaywalls,
         'onboarding_v2_enabled': defaultOnboardingV2Enabled,
         'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
+        personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
       });
       await _remoteConfig.fetchAndActivate();
 

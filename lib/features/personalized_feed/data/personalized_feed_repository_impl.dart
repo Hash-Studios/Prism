@@ -1,25 +1,27 @@
-import 'package:injectable/injectable.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
+import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PersonalizedFeedRepository)
 class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
@@ -50,12 +52,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
     try {
       final userDoc = isGuest ? const <String, dynamic>{} : await _resolveUserDoc(userId: userId);
-      final interests = _resolveInterests(userDoc);
+      final catalog = await PersonalizedInterestsCatalog.load(
+        remoteConfig: FirebaseRemoteConfig.instance,
+        settingsLocal: _settingsLocal,
+      );
+      final interests = _resolveInterests(userDoc, catalog);
       final following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
+      final targets = _resolveTargets();
 
       final creatorFuture = _fetchCreatorItems(following: following, page: request.page);
-      final wallhavenFuture = _fetchWallhavenItems(interests: interests, refresh: request.refresh);
-      final pexelsFuture = _fetchPexelsItems(interests: interests, refresh: request.refresh);
+      final wallhavenFuture = _fetchWallhavenItems(interests: interests, catalog: catalog, refresh: request.refresh);
+      final pexelsFuture = _fetchPexelsItems(interests: interests, catalog: catalog, refresh: request.refresh);
 
       final results = await Future.wait<List<FeedItemEntity>>([creatorFuture, wallhavenFuture, pexelsFuture]);
 
@@ -69,6 +76,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         pexelsItems: pexelsItems,
         blockedKeys: request.seenKeys.toSet(),
         interests: interests.toSet(),
+        creatorTarget: targets.creator,
+        wallhavenTarget: targets.wallhaven,
+        pexelsTarget: targets.pexels,
       );
 
       final hasMore = ranking.items.length >= _pageSize;
@@ -149,7 +159,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return users.first;
   }
 
-  List<String> _resolveInterests(Map<String, dynamic> userDoc) {
+  List<String> _resolveInterests(Map<String, dynamic> userDoc, List<PersonalizedInterest> catalog) {
     final remote = _toStringList(userDoc['interestCategories']);
     if (remote.isNotEmpty) {
       return remote;
@@ -161,7 +171,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return local;
     }
 
-    return const <String>['Nature', 'Abstract', 'Technology', 'Art'];
+    return PersonalizedInterestsCatalog.defaultSelection(catalog);
   }
 
   List<String> _resolveFollowing(Map<String, dynamic> userDoc) {
@@ -226,8 +236,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return dedupe.values.toList(growable: false);
   }
 
-  Future<List<FeedItemEntity>> _fetchWallhavenItems({required List<String> interests, required bool refresh}) async {
-    final active = _activeInterestsForSource(interests, WallpaperSource.wallhaven);
+  Future<List<FeedItemEntity>> _fetchWallhavenItems({
+    required List<String> interests,
+    required List<PersonalizedInterest> catalog,
+    required bool refresh,
+  }) async {
+    final active = _activeInterestsForSource(interests, catalog, WallpaperSource.wallhaven);
     final futures = active
         .map(
           (interest) => _wallhavenRepository.fetchFeed(
@@ -249,8 +263,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return items;
   }
 
-  Future<List<FeedItemEntity>> _fetchPexelsItems({required List<String> interests, required bool refresh}) async {
-    final active = _activeInterestsForSource(interests, WallpaperSource.pexels);
+  Future<List<FeedItemEntity>> _fetchPexelsItems({
+    required List<String> interests,
+    required List<PersonalizedInterest> catalog,
+    required bool refresh,
+  }) async {
+    final active = _activeInterestsForSource(interests, catalog, WallpaperSource.pexels);
     final futures = active
         .map((interest) => _pexelsRepository.fetchFeed(categoryName: interest, refresh: refresh))
         .toList(growable: false);
@@ -265,21 +283,49 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return items;
   }
 
-  List<String> _activeInterestsForSource(List<String> interests, WallpaperSource source) {
-    final mapped = category_data.categoryDefinitions
-        .where((entry) => entry.source == source)
-        .map((entry) => entry.name.toLowerCase())
-        .toSet();
-
-    final matched = interests.where((interest) => mapped.contains(interest.toLowerCase())).toList(growable: false);
+  List<String> _activeInterestsForSource(
+    List<String> interests,
+    List<PersonalizedInterest> catalog,
+    WallpaperSource source,
+  ) {
+    final byName = <String, PersonalizedInterest>{for (final entry in catalog) entry.name.toLowerCase(): entry};
+    final matched = interests
+        .map((interest) => byName[interest.toLowerCase()])
+        .whereType<PersonalizedInterest>()
+        .where((entry) => entry.supports(source))
+        .map((entry) => entry.query)
+        .where((entry) => entry.isNotEmpty)
+        .toList(growable: false);
     if (matched.isNotEmpty) {
       return matched.take(2).toList(growable: false);
+    }
+
+    final fallbackFromCatalog = catalog
+        .where((entry) => entry.supports(source))
+        .map((entry) => entry.query)
+        .where((entry) => entry.isNotEmpty)
+        .take(2)
+        .toList(growable: false);
+    if (fallbackFromCatalog.isNotEmpty) {
+      return fallbackFromCatalog;
     }
 
     if (source == WallpaperSource.wallhaven) {
       return const <String>['Popular', 'Landscape'];
     }
     return const <String>['Curated', 'Nature'];
+  }
+
+  _SourceTargets _resolveTargets() {
+    final mix = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced').trim().toLowerCase();
+    switch (mix) {
+      case 'creators':
+        return const _SourceTargets(creator: 16, wallhaven: 4, pexels: 4);
+      case 'discovery':
+        return const _SourceTargets(creator: 8, wallhaven: 8, pexels: 8);
+      default:
+        return const _SourceTargets(creator: 12, wallhaven: 6, pexels: 6);
+    }
   }
 
   List<FeedItemEntity> _mergeCachedAndNew(List<FeedItemEntity> cachedItems, List<FeedItemEntity> newItems) {
@@ -369,6 +415,14 @@ class _CacheState {
 
   final List<String> seenKeys;
   final List<FeedItemEntity> cachedItems;
+}
+
+class _SourceTargets {
+  const _SourceTargets({required this.creator, required this.wallhaven, required this.pexels});
+
+  final int creator;
+  final int wallhaven;
+  final int pexels;
 }
 
 Map<String, dynamic> _asMap(Object? value) {

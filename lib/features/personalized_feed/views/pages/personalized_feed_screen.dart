@@ -7,15 +7,16 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/animated_feed_tile.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
@@ -34,13 +35,16 @@ class PersonalizedFeedScreen extends StatefulWidget {
   State<PersonalizedFeedScreen> createState() => _PersonalizedFeedScreenState();
 }
 
-class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
+class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with AutomaticKeepAliveClientMixin {
   static const int _carouselPreviewCount = 4;
 
   late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
   int _current = 0;
   final CarouselSliderController _carouselController = CarouselSliderController();
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -58,8 +62,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
     super.dispose();
   }
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) {
+  void _onScroll([ScrollController? controller]) {
+    final activeController = controller ?? _scrollController;
+    if (!activeController.hasClients) {
       return;
     }
     final state = _bloc.state;
@@ -67,7 +72,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
       return;
     }
 
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 400) {
+    if (activeController.position.pixels >= activeController.position.maxScrollExtent - 400) {
       _bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
     }
   }
@@ -230,6 +235,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return BlocProvider.value(
       value: _bloc,
       child: BlocConsumer<PersonalizedFeedBloc, PersonalizedFeedState>(
@@ -238,6 +244,19 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
           final theme = Theme.of(context);
           final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
           final visibleItems = _gridItemsWithoutCarouselPreview(state);
+
+          // Get inherited scroll controller from BottomBar for hide/show behavior
+          final inheritedScrollController = InheritedDataProvider.of(context)?.scrollController;
+          final scrollController = inheritedScrollController ?? _scrollController;
+
+          // Add pagination listener to inherited controller if available
+          if (inheritedScrollController != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                inheritedScrollController.addListener(() => _onScroll(inheritedScrollController));
+              }
+            });
+          }
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
             return const Center(child: CircularProgressIndicator.adaptive());
@@ -275,7 +294,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
           return RefreshIndicator(
             onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
             child: CustomScrollView(
-              controller: _scrollController,
+              controller: scrollController,
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               slivers: [
                 // Carousel: WallOfTheDay + banner + 4 wallpaper previews
