@@ -1,6 +1,6 @@
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
 import 'package:Prism/core/widgets/focussedMenu/focused_menu_overlay.dart';
-import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -16,22 +16,29 @@ class FocusedMenuHolder extends StatefulWidget {
 
 class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
   final GlobalKey containerKey = GlobalKey();
-  Offset childOffset = Offset.zero;
-  Size? childSize;
+  late FocusedMenuData _menuData;
 
-  void getOffset() {
+  (Offset, Size)? _getOffsetAndSize() {
     final renderBox = (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
-    final size = renderBox.size;
-    final offset = renderBox.localToGlobal(Offset.zero);
-    setState(() {
-      childOffset = Offset(offset.dx, offset.dy);
-      childSize = size;
-    });
+    return (renderBox.localToGlobal(Offset.zero), renderBox.size);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _menuData = FocusedMenuDataAdapter.fromPayload(widget.payload);
+  }
+
+  @override
+  void didUpdateWidget(covariant FocusedMenuHolder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.payload != widget.payload) {
+      _menuData = FocusedMenuDataAdapter.fromPayload(widget.payload);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = FocusedMenuDataAdapter.fromPayload(widget.payload);
     return Stack(
       key: containerKey,
       children: <Widget>[
@@ -40,10 +47,11 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
           alignment: Alignment.bottomRight,
           child: GestureDetector(
             onTap: () async {
-              getOffset();
-              if (childSize == null) {
+              final placement = _getOffsetAndSize();
+              if (placement == null) {
                 return;
               }
+              final (childOffset, childSize) = placement;
               await Navigator.push(
                 context,
                 PageRouteBuilder(
@@ -53,9 +61,9 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                     return FadeTransition(
                       opacity: animation,
                       child: FocusedMenuOverlay(
-                        menuData: data,
+                        menuData: _menuData,
                         childOffset: childOffset,
-                        childSize: childSize!,
+                        childSize: childSize,
                         child: widget.child,
                       ),
                     );

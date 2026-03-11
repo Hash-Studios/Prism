@@ -7,7 +7,7 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
-class FocusedMenuOverlay extends StatelessWidget {
+class FocusedMenuOverlay extends StatefulWidget {
   const FocusedMenuOverlay({
     super.key,
     required this.menuData,
@@ -22,7 +22,30 @@ class FocusedMenuOverlay extends StatelessWidget {
   final Widget child;
 
   @override
+  State<FocusedMenuOverlay> createState() => _FocusedMenuOverlayState();
+}
+
+class _FocusedMenuOverlayState extends State<FocusedMenuOverlay> {
+  bool _showActionButtons = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _showActionButtons = true;
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final menuData = widget.menuData;
+    final childOffset = widget.childOffset;
+    final childSize = widget.childSize;
     final size = MediaQuery.of(context).size;
     final orientation = MediaQuery.of(context).orientation;
 
@@ -97,120 +120,131 @@ class FocusedMenuOverlay extends StatelessWidget {
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: AbsorbPointer(
-                child: SizedBox(width: childSize.width, height: childSize.height, child: child),
+                child: RepaintBoundary(
+                  child: SizedBox(width: childSize.width, height: childSize.height, child: widget.child),
+                ),
               ),
             ),
           ),
           Positioned(
             top: childOffset.dy + childSize.height * menuData.cardTopFactor,
             left: childOffset.dx,
-            child: TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 200),
-              tween: Tween<double>(begin: 0.0, end: 1.0),
-              builder: (context, value, child) {
-                return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
-              },
-              child: Container(
-                width: childSize.width,
-                height: childSize.height * menuData.cardHeightFactor,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).hintColor,
-                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            ActionChip(
-                              pressElevation: 5,
-                              padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                              avatar: Icon(menuData.titleIcon, color: menuData.titleForegroundColor, size: 20),
-                              backgroundColor: menuData.titleBackgroundColor ?? Colors.black,
-                              label: Text(
-                                menuData.title,
+            child: RepaintBoundary(
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 200),
+                tween: Tween<double>(begin: 0.0, end: 1.0),
+                builder: (context, value, child) {
+                  return Transform.scale(scale: value, alignment: Alignment.bottomRight, child: child);
+                },
+                child: Container(
+                  width: childSize.width,
+                  height: childSize.height * menuData.cardHeightFactor,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).hintColor,
+                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(15, 7, 15, 15),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              ActionChip(
+                                pressElevation: 5,
+                                padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+                                avatar: Icon(menuData.titleIcon, color: menuData.titleForegroundColor, size: 20),
+                                backgroundColor: menuData.titleBackgroundColor ?? Colors.black,
+                                label: Text(
+                                  menuData.title,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium!.copyWith(color: menuData.titleForegroundColor),
+                                ),
+                                onPressed: menuData.onTitleTap == null ? null : () => menuData.onTitleTap!(context),
+                              ),
+                              Text(
+                                menuData.subtitle,
                                 style: Theme.of(
                                   context,
-                                ).textTheme.headlineMedium!.copyWith(color: menuData.titleForegroundColor),
+                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                               ),
-                              onPressed: menuData.onTitleTap == null ? null : () => menuData.onTitleTap!(context),
-                            ),
-                            Text(
-                              menuData.subtitle,
-                              style: Theme.of(
-                                context,
-                              ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                            ),
-                            for (final stat in menuData.stats.take(3))
-                              Row(
-                                children: [
-                                  Icon(stat.icon, size: 20, color: Theme.of(context).colorScheme.secondary),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      stat.label,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                              for (final stat in menuData.stats.take(3))
+                                Row(
+                                  children: [
+                                    Icon(stat.icon, size: 20, color: Theme.of(context).colorScheme.secondary),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        stat.label,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                          color: Theme.of(context).colorScheme.secondary,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).hintColor,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                bottomRight: Radius.circular(20),
-                              ),
-                            ),
-                            padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                            child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
+                                  ],
+                                ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).hintColor,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  bottomRight: Radius.circular(20),
+                                ),
+                              ),
+                              padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                              child: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          if (!hideSetWallpaperUi)
-            Positioned(
-              top: topOffset,
-              left: leftOffset,
-              child: SetWallpaperButton(colorChanged: false, url: menuData.fullUrl),
+          if (_showActionButtons)
+            RepaintBoundary(
+              child: Stack(
+                children: [
+                  if (!hideSetWallpaperUi)
+                    Positioned(
+                      top: topOffset,
+                      left: leftOffset,
+                      child: SetWallpaperButton(colorChanged: false, url: menuData.fullUrl),
+                    ),
+                  Positioned(
+                    top: topOffset - fabHeartTopOffset,
+                    left: leftOffset - fabHeartLeftOffset,
+                    child: FavouriteWallpaperButton(wall: menuData.favouriteWall, trash: menuData.favouriteTrash),
+                  ),
+                  Positioned(
+                    top: topOffset + fabWallTopOffset,
+                    left: leftOffset + fabWallLeftOffset,
+                    child: DownloadButton(
+                      colorChanged: false,
+                      link: menuData.fullUrl,
+                      isPremiumContent: menuData.isPremiumContent,
+                      contentId: menuData.contentId,
+                      sourceContext: menuData.sourceContext,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          Positioned(
-            top: topOffset - fabHeartTopOffset,
-            left: leftOffset - fabHeartLeftOffset,
-            child: FavouriteWallpaperButton(wall: menuData.favouriteWall, trash: menuData.favouriteTrash),
-          ),
-          Positioned(
-            top: topOffset + fabWallTopOffset,
-            left: leftOffset + fabWallLeftOffset,
-            child: DownloadButton(
-              colorChanged: false,
-              link: menuData.fullUrl,
-              isPremiumContent: menuData.isPremiumContent,
-              contentId: menuData.contentId,
-              sourceContext: menuData.sourceContext,
-            ),
-          ),
         ],
       ),
     );
