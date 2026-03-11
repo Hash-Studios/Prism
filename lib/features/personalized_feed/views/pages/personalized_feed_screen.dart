@@ -50,21 +50,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   void initState() {
     super.initState();
     _bloc = getIt<PersonalizedFeedBloc>();
-    _scrollController.addListener(_onScroll);
     _bloc.add(const PersonalizedFeedEvent.started());
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _bloc.close();
     super.dispose();
   }
 
-  void _onScroll([ScrollController? controller]) {
-    final activeController = controller ?? _scrollController;
-    if (!activeController.hasClients) {
+  void _maybeFetchMore(ScrollMetrics metrics) {
+    if (metrics.maxScrollExtent <= 0) {
       return;
     }
     final state = _bloc.state;
@@ -72,7 +69,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       return;
     }
 
-    if (activeController.position.pixels >= activeController.position.maxScrollExtent - 400) {
+    if (metrics.pixels >= metrics.maxScrollExtent - 400) {
       _bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
     }
   }
@@ -249,15 +246,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
           final inheritedScrollController = InheritedDataProvider.of(context)?.scrollController;
           final scrollController = inheritedScrollController ?? _scrollController;
 
-          // Add pagination listener to inherited controller if available
-          if (inheritedScrollController != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                inheritedScrollController.addListener(() => _onScroll(inheritedScrollController));
-              }
-            });
-          }
-
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
             return const Center(child: CircularProgressIndicator.adaptive());
           }
@@ -276,8 +264,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.14)),
                     ),
-                    child: Column(
-                      children: const [
+                    child: const Column(
+                      children: [
                         Icon(Icons.wifi_tethering_error_rounded, size: 28),
                         SizedBox(height: 10),
                         Text("Couldn't load your personalized feed."),
@@ -293,63 +281,71 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
           return RefreshIndicator(
             onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
-            child: CustomScrollView(
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-              slivers: [
-                // Carousel: WallOfTheDay + banner + 4 wallpaper previews
-                SliverToBoxAdapter(child: _buildCarousel(context, state)),
-                // SliverToBoxAdapter(
-                //   child: AnimatedOpacity(
-                //     opacity: state.status == LoadStatus.success ? 1 : 0,
-                //     duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                //     curve: Curves.easeOut,
-                //     child: AnimatedSlide(
-                //       offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
-                //       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                //       curve: Curves.easeOutCubic,
-                //       child: PersonalizedFeedHeader(
-                //         prismCount: state.sourcePrism,
-                //         wallhavenCount: state.sourceWallhaven,
-                //         pexelsCount: state.sourcePexels,
-                //         itemCount: state.items.length,
-                //         isFetchingMore: state.isFetchingMore,
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                      childAspectRatio: 0.6625,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification.depth == 0) {
+                  _maybeFetchMore(notification.metrics);
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                controller: scrollController,
+                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                slivers: [
+                  // Carousel: WallOfTheDay + banner + 4 wallpaper previews
+                  SliverToBoxAdapter(child: _buildCarousel(context, state)),
+                  // SliverToBoxAdapter(
+                  //   child: AnimatedOpacity(
+                  //     opacity: state.status == LoadStatus.success ? 1 : 0,
+                  //     duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                  //     curve: Curves.easeOut,
+                  //     child: AnimatedSlide(
+                  //       offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
+                  //       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                  //       curve: Curves.easeOutCubic,
+                  //       child: PersonalizedFeedHeader(
+                  //         prismCount: state.sourcePrism,
+                  //         wallhavenCount: state.sourceWallhaven,
+                  //         pexelsCount: state.sourcePexels,
+                  //         itemCount: state.items.length,
+                  //         isFetchingMore: state.isFetchingMore,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                        childAspectRatio: 0.6625,
+                        mainAxisSpacing: 8,
+                        crossAxisSpacing: 8,
+                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final item = visibleItems[index];
+                        final tile = switch (item) {
+                          PrismFeedItem prism => WallpaperTile(item: prism, index: index),
+                          WallhavenFeedItem wallhaven => WallhavenTile(item: wallhaven, index: index),
+                          PexelsFeedItem pexels => PexelsTile(item: pexels, index: index),
+                        };
+
+                        final payload = WallpaperActionPayloadAdapter.fromFeedItem(
+                          item,
+                          sourceContext: 'focused_menu.personalized_feed.${item.source.wireValue}',
+                        );
+
+                        return AnimatedFeedTile(
+                          index: index,
+                          reduceMotion: reduceMotion,
+                          child: FocusedMenuHolder.payload(payload: payload, child: tile),
+                        );
+                      }, childCount: visibleItems.length),
                     ),
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final item = visibleItems[index];
-                      final tile = switch (item) {
-                        PrismFeedItem prism => WallpaperTile(item: prism, index: index),
-                        WallhavenFeedItem wallhaven => WallhavenTile(item: wallhaven, index: index),
-                        PexelsFeedItem pexels => PexelsTile(item: pexels, index: index),
-                      };
-
-                      final payload = WallpaperActionPayloadAdapter.fromFeedItem(
-                        item,
-                        sourceContext: 'focused_menu.personalized_feed.${item.source.wireValue}',
-                      );
-
-                      return AnimatedFeedTile(
-                        index: index,
-                        reduceMotion: reduceMotion,
-                        child: FocusedMenuHolder.payload(payload: payload, child: tile),
-                      );
-                    }, childCount: visibleItems.length),
                   ),
-                ),
-                SliverToBoxAdapter(child: _bottomState(context, state)),
-              ],
+                  SliverToBoxAdapter(child: _bottomState(context, state)),
+                ],
+              ),
             ),
           );
         },

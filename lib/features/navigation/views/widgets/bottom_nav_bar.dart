@@ -14,125 +14,32 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
+import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart' as floating;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker/image_picker.dart';
 
-class BottomBar extends StatefulWidget {
+class BottomBar extends StatelessWidget {
   final Widget? child;
   const BottomBar({this.child, super.key});
 
   @override
-  _BottomBarState createState() => _BottomBarState();
-}
-
-class _BottomBarState extends State<BottomBar> with SingleTickerProviderStateMixin {
-  ScrollController scrollBottomBarController = ScrollController();
-  late AnimationController _controller;
-  late Animation<Offset> _offsetAnimation;
-  bool isScrollingDown = false;
-  bool isOnTop = true;
-  late double bottom;
-
-  @override
-  void initState() {
-    myScroll();
-    super.initState();
-    bottom = 10;
-    _controller = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _offsetAnimation =
-        Tween<Offset>(
-          begin: Offset.zero,
-          end: const Offset(0, 2),
-        ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut))..addListener(() {
-          setState(() {});
-        });
-  }
-
-  void showBottomBar() {
-    setState(() {
-      _controller.reverse();
-    });
-  }
-
-  void hideBottomBar() {
-    setState(() {
-      _controller.forward();
-    });
-  }
-
-  Future<void> myScroll() async {
-    scrollBottomBarController.addListener(() {
-      if (scrollBottomBarController.positions.length != 1) return;
-      final direction = scrollBottomBarController.position.userScrollDirection;
-      if (direction == ScrollDirection.reverse) {
-        if (!isScrollingDown) {
-          isScrollingDown = true;
-          isOnTop = false;
-          hideBottomBar();
-        }
-      }
-      if (direction == ScrollDirection.forward) {
-        if (isScrollingDown) {
-          isScrollingDown = false;
-          isOnTop = true;
-          showBottomBar();
-        }
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    scrollBottomBarController.removeListener(() {});
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      alignment: Alignment.bottomCenter,
-      children: [
-        InheritedDataProvider(scrollController: scrollBottomBarController, child: widget.child!),
-        Positioned(
-          bottom: bottom,
-          child: SlideTransition(position: _offsetAnimation, child: _BottomNavBar()),
-        ),
-        if (isOnTop == true)
-          Container()
-        else
-          Positioned(
-            right: 10,
-            bottom: bottom,
-            child: FloatingActionButton(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              mini: true,
-              onPressed: () {
-                scrollBottomBarController
-                    .animateTo(
-                      scrollBottomBarController.position.minScrollExtent,
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeIn,
-                    )
-                    .then((value) {
-                      setState(() {
-                        isOnTop = true;
-                        isScrollingDown = false;
-                      });
-                      showBottomBar();
-                    });
-              },
-              child: Icon(JamIcons.arrow_up, color: Theme.of(context).primaryColor),
-            ),
-          ),
-      ],
+    return floating.BottomBar(
+      iconTooltip: 'Scroll to top',
+      iconDecoration: BoxDecoration(color: Theme.of(context).colorScheme.secondary, shape: BoxShape.circle),
+      barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
+      child: const _BottomNavBar(),
+      body: (context, controller) => PrimaryScrollController(
+        controller: controller,
+        child: InheritedDataProvider(scrollController: controller, child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }
 
 class _BottomNavBar extends StatefulWidget {
+  const _BottomNavBar();
+
   @override
   _BottomNavBarState createState() => _BottomNavBarState();
 }

@@ -702,6 +702,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.0"
+  flutter_floating_bottom_bar:
+    dependency: "direct main"
+    description:
+      name: flutter_floating_bottom_bar
+      sha256: "75a2daf16e883b6e565d00ee052256012638bfbd352ffe66da70312e5be03d6a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
   flutter_image_compress:
     dependency: "direct main"
     description:
