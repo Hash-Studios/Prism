@@ -8,4 +8,3 @@ export 'views/pages/personalized_feed_screen.dart';
 export 'views/widgets/animated_feed_tile.dart';
 export 'views/widgets/empty_card.dart';
 export 'views/widgets/feed_header.dart';
-export 'views/widgets/loading_grid.dart';

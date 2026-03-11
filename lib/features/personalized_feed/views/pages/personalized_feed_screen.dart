@@ -19,7 +19,6 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/animated_feed_tile.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
-import 'package:Prism/features/personalized_feed/views/widgets/loading_grid.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:auto_route/auto_route.dart';
@@ -241,7 +240,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
           final visibleItems = _gridItemsWithoutCarouselPreview(state);
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
-            return const PersonalizedLoadingGrid();
+            return const Center(child: CircularProgressIndicator.adaptive());
           }
 
           if (state.status == LoadStatus.failure && state.items.isEmpty) {
