@@ -69,7 +69,7 @@ class _WallHavenGridState extends State<WallHavenGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
     final CarouselSliderController carouselController = CarouselSliderController();
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
     final List<WallhavenFeedItem> walls = state.items.whereType<WallhavenFeedItem>().toList(growable: false);

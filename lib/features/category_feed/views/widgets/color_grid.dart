@@ -101,7 +101,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
     if (PData.wallsC.isNotEmpty) {
       _contentLoadTracker.success(
         itemCount: PData.wallsC.length,

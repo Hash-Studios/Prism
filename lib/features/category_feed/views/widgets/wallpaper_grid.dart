@@ -66,7 +66,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
     final List<PrismFeedItem> subWalls = state.items.whereType<PrismFeedItem>().toList(growable: false);
 

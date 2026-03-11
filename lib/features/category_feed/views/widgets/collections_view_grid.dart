@@ -113,7 +113,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
     final List<Map<String, dynamic>> walls = anyCollectionWalls ?? <Map<String, dynamic>>[];
     if (walls.isNotEmpty) {
       _contentLoadTracker.success(
