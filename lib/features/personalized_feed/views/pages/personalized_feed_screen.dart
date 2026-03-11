@@ -16,7 +16,6 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/animated_feed_tile.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
@@ -243,7 +242,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
           final visibleItems = _gridItemsWithoutCarouselPreview(state);
 
           // Get inherited scroll controller from BottomBar for hide/show behavior
-          final inheritedScrollController = InheritedDataProvider.of(context)?.scrollController;
+          final inheritedScrollController = PrimaryScrollController.maybeOf(context);
           final scrollController = inheritedScrollController ?? _scrollController;
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {

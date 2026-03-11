@@ -12,7 +12,6 @@ import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -101,7 +100,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     if (PData.wallsC.isNotEmpty) {
       _contentLoadTracker.success(
         itemCount: PData.wallsC.length,

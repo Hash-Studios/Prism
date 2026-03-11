@@ -16,7 +16,6 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menuButton/favIconButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/followingFeed.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -239,7 +238,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController controller = InheritedDataProvider.of(context)!.scrollController!;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
       child: NotificationListener<ScrollNotification>(

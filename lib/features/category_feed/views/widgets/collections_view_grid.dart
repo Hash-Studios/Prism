@@ -9,7 +9,6 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -113,7 +112,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final List<Map<String, dynamic>> walls = anyCollectionWalls ?? <Map<String, dynamic>>[];
     if (walls.isNotEmpty) {
       _contentLoadTracker.success(

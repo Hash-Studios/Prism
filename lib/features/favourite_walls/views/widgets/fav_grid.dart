@@ -10,7 +10,6 @@ import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:auto_route/auto_route.dart';
@@ -86,7 +85,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final likedWalls = context.favouriteWallsAdapter(listen: false).liked;
     if (likedWalls != null) {
       _contentLoadTracker.success(

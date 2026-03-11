@@ -15,7 +15,6 @@ import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -366,7 +365,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final List<Object?> rawCollections =
         CData.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;

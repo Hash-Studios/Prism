@@ -11,7 +11,6 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
@@ -66,7 +65,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)?.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
     final List<PrismFeedItem> subWalls = state.items.whereType<PrismFeedItem>().toList(growable: false);
 
