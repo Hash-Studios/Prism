@@ -20,7 +20,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final CacheMaintenanceService _cacheMaintenance = getIt<CacheMaintenanceService>();
@@ -237,10 +236,6 @@ class ProfileDrawer extends StatelessWidget {
                           Navigator.of(context).pop();
                           final dir = Directory("storage/emulated/0/Prism/");
                           final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
-                          final status = await Permission.storage.status;
-                          if (!status.isGranted) {
-                            await Permission.storage.request();
-                          }
                           bool deletedDir = false;
                           bool deletedDir2 = false;
                           try {

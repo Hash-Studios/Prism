@@ -10,7 +10,6 @@ import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class DownloadList extends StatelessWidget {
   void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
@@ -103,10 +102,6 @@ class DownloadList extends StatelessWidget {
                       Navigator.of(context).pop();
                       final dir = Directory("storage/emulated/0/Prism/");
                       final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
-                      final status = await Permission.storage.status;
-                      if (!status.isGranted) {
-                        await Permission.storage.request();
-                      }
                       bool deletedDir = false;
                       bool deletedDir2 = false;
                       try {

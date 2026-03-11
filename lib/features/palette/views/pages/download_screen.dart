@@ -14,7 +14,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 @RoutePage()
 class DownloadScreen extends StatefulWidget {
@@ -54,10 +53,6 @@ class _DownloadScreenState extends State<DownloadScreen> {
 
   Future<void> readData() async {
     _contentLoadTracker.start();
-    final status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
     final file = await localfile;
     final fileNew = await newLocalfile;
     try {
