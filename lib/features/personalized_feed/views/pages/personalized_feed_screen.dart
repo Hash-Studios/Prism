@@ -16,9 +16,7 @@ import 'package:Prism/features/category_feed/views/widgets/wallhaven_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/animated_feed_tile.dart';
-import 'package:Prism/features/personalized_feed/views/widgets/decorated_background.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
-import 'package:Prism/features/personalized_feed/views/widgets/feed_header.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/loading_grid.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
@@ -241,21 +239,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
           final visibleItems = _gridItemsWithoutCarouselPreview(state);
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                DecoratedBackground(colorScheme: theme.colorScheme),
-                const PersonalizedLoadingGrid(),
-              ],
-            );
+            return const PersonalizedLoadingGrid();
           }
 
           if (state.status == LoadStatus.failure && state.items.isEmpty) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                DecoratedBackground(colorScheme: theme.colorScheme),
-                RefreshIndicator(
+            return RefreshIndicator(
                   onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -280,16 +268,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                       ),
                     ],
                   ),
-                ),
-              ],
-            );
+                );
           }
 
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              DecoratedBackground(colorScheme: theme.colorScheme),
-              RefreshIndicator(
+          return RefreshIndicator(
                 onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
                 child: CustomScrollView(
                   controller: _scrollController,
@@ -340,9 +322,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                     SliverToBoxAdapter(child: _bottomState(context, state)),
                   ],
                 ),
-              ),
-            ],
-          );
+              );
         },
       ),
     );
