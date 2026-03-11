@@ -8,6 +8,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -244,85 +246,94 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
 
           if (state.status == LoadStatus.failure && state.items.isEmpty) {
             return RefreshIndicator(
-                  onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(20, 100, 20, 20),
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: theme.primaryColor.withValues(alpha: 0.72),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.14)),
-                        ),
-                        child: Column(
-                          children: const [
-                            Icon(Icons.wifi_tethering_error_rounded, size: 28),
-                            SizedBox(height: 10),
-                            Text("Couldn't load your personalized feed."),
-                            SizedBox(height: 6),
-                            Text('Pull down to retry.'),
-                          ],
-                        ),
-                      ),
-                    ],
+              onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 100, 20, 20),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor.withValues(alpha: 0.72),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.14)),
+                    ),
+                    child: Column(
+                      children: const [
+                        Icon(Icons.wifi_tethering_error_rounded, size: 28),
+                        SizedBox(height: 10),
+                        Text("Couldn't load your personalized feed."),
+                        SizedBox(height: 6),
+                        Text('Pull down to retry.'),
+                      ],
+                    ),
                   ),
-                );
+                ],
+              ),
+            );
           }
 
           return RefreshIndicator(
-                onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  slivers: [
-                    // Carousel: WallOfTheDay + banner + 4 wallpaper previews
-                    SliverToBoxAdapter(child: _buildCarousel(context, state)),
-                    // SliverToBoxAdapter(
-                    //   child: AnimatedOpacity(
-                    //     opacity: state.status == LoadStatus.success ? 1 : 0,
-                    //     duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                    //     curve: Curves.easeOut,
-                    //     child: AnimatedSlide(
-                    //       offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
-                    //       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                    //       curve: Curves.easeOutCubic,
-                    //       child: PersonalizedFeedHeader(
-                    //         prismCount: state.sourcePrism,
-                    //         wallhavenCount: state.sourceWallhaven,
-                    //         pexelsCount: state.sourcePexels,
-                    //         itemCount: state.items.length,
-                    //         isFetchingMore: state.isFetchingMore,
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                      sliver: SliverGrid(
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                          childAspectRatio: 0.6625,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                        ),
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = visibleItems[index];
-                          final tile = switch (item) {
-                            PrismFeedItem prism => WallpaperTile(item: prism, index: index),
-                            WallhavenFeedItem wallhaven => WallhavenTile(item: wallhaven, index: index),
-                            PexelsFeedItem pexels => PexelsTile(item: pexels, index: index),
-                          };
-
-                          return AnimatedFeedTile(index: index, reduceMotion: reduceMotion, child: tile);
-                        }, childCount: visibleItems.length),
-                      ),
+            onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
+                // Carousel: WallOfTheDay + banner + 4 wallpaper previews
+                SliverToBoxAdapter(child: _buildCarousel(context, state)),
+                // SliverToBoxAdapter(
+                //   child: AnimatedOpacity(
+                //     opacity: state.status == LoadStatus.success ? 1 : 0,
+                //     duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                //     curve: Curves.easeOut,
+                //     child: AnimatedSlide(
+                //       offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
+                //       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                //       curve: Curves.easeOutCubic,
+                //       child: PersonalizedFeedHeader(
+                //         prismCount: state.sourcePrism,
+                //         wallhavenCount: state.sourceWallhaven,
+                //         pexelsCount: state.sourcePexels,
+                //         itemCount: state.items.length,
+                //         isFetchingMore: state.isFetchingMore,
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                      childAspectRatio: 0.6625,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
                     ),
-                    SliverToBoxAdapter(child: _bottomState(context, state)),
-                  ],
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final item = visibleItems[index];
+                      final tile = switch (item) {
+                        PrismFeedItem prism => WallpaperTile(item: prism, index: index),
+                        WallhavenFeedItem wallhaven => WallhavenTile(item: wallhaven, index: index),
+                        PexelsFeedItem pexels => PexelsTile(item: pexels, index: index),
+                      };
+
+                      final menuData = FocusedMenuDataAdapter.fromFeedItem(
+                        item,
+                        sourceContext: 'focused_menu.personalized_feed.${item.source.wireValue}',
+                      );
+
+                      return AnimatedFeedTile(
+                        index: index,
+                        reduceMotion: reduceMotion,
+                        child: FocusedMenuHolder.data(menuData: menuData, child: tile),
+                      );
+                    }, childCount: visibleItems.length),
+                  ),
                 ),
-              );
+                SliverToBoxAdapter(child: _bottomState(context, state)),
+              ],
+            ),
+          );
         },
       ),
     );

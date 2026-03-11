@@ -1,14 +1,20 @@
-import 'package:Prism/core/widgets/focussedMenu/focusedMenuDetails.dart';
-import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
+import 'package:Prism/core/widgets/focussedMenu/focused_menu_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class FocusedMenuHolder extends StatefulWidget {
   final String? provider;
+  final FocusedMenuData? menuData;
   final Widget child;
-  final int index;
+  final int? index;
 
-  const FocusedMenuHolder({required this.provider, required this.child, required this.index});
+  const FocusedMenuHolder({super.key, required this.provider, required this.child, required this.index})
+    : menuData = null;
+
+  const FocusedMenuHolder.data({super.key, required this.menuData, required this.child})
+    : provider = null,
+      index = null;
 
   @override
   _FocusedMenuHolderState createState() => _FocusedMenuHolderState();
@@ -31,18 +37,25 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
 
   @override
   Widget build(BuildContext context) {
+    final FocusedMenuData? data =
+        widget.menuData ??
+        (widget.index == null
+            ? null
+            : FocusedMenuDataAdapter.fromLegacy(context, provider: widget.provider, index: widget.index!));
+
     return Stack(
       key: containerKey,
       children: <Widget>[
         widget.child,
-        if (Data.subPrismWalls == null || Data.subPrismWalls!.isEmpty)
-          Container()
-        else
+        if (data != null)
           Align(
             alignment: Alignment.bottomRight,
             child: GestureDetector(
               onTap: () async {
                 getOffset();
+                if (childSize == null) {
+                  return;
+                }
                 await Navigator.push(
                   context,
                   PageRouteBuilder(
@@ -51,13 +64,10 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
                       animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                       return FadeTransition(
                         opacity: animation,
-                        child: FocusedMenuDetails(
-                          provider: widget.provider,
+                        child: FocusedMenuOverlay(
+                          menuData: data,
                           childOffset: childOffset,
-                          childSize: childSize,
-                          index: widget.index,
-                          size: MediaQuery.of(context).size,
-                          orientation: MediaQuery.of(context).orientation,
+                          childSize: childSize!,
                           child: widget.child,
                         ),
                       );
