@@ -9,7 +9,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
-import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -317,7 +317,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                         PexelsFeedItem pexels => PexelsTile(item: pexels, index: index),
                       };
 
-                      final menuData = FocusedMenuDataAdapter.fromFeedItem(
+                      final payload = WallpaperActionPayloadAdapter.fromFeedItem(
                         item,
                         sourceContext: 'focused_menu.personalized_feed.${item.source.wireValue}',
                       );
@@ -325,7 +325,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                       return AnimatedFeedTile(
                         index: index,
                         reduceMotion: reduceMotion,
-                        child: FocusedMenuHolder.data(menuData: menuData, child: tile),
+                        child: FocusedMenuHolder.payload(payload: payload, child: tile),
                       );
                     }, childCount: visibleItems.length),
                   ),

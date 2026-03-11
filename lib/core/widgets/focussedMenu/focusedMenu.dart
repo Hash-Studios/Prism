@@ -1,19 +1,28 @@
 import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
 import 'package:Prism/core/widgets/focussedMenu/focused_menu_overlay.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class FocusedMenuHolder extends StatefulWidget {
   final String? provider;
   final FocusedMenuData? menuData;
+  final WallpaperActionPayload? payload;
   final Widget child;
   final int? index;
 
   const FocusedMenuHolder({super.key, required this.provider, required this.child, required this.index})
-    : menuData = null;
+    : menuData = null,
+      payload = null;
+
+  const FocusedMenuHolder.payload({super.key, required this.payload, required this.child})
+    : provider = null,
+      menuData = null,
+      index = null;
 
   const FocusedMenuHolder.data({super.key, required this.menuData, required this.child})
     : provider = null,
+      payload = null,
       index = null;
 
   @override
@@ -39,6 +48,7 @@ class _FocusedMenuHolderState extends State<FocusedMenuHolder> {
   Widget build(BuildContext context) {
     final FocusedMenuData? data =
         widget.menuData ??
+        (widget.payload == null ? null : FocusedMenuDataAdapter.fromPayload(widget.payload!)) ??
         (widget.index == null
             ? null
             : FocusedMenuDataAdapter.fromLegacy(context, provider: widget.provider, index: widget.index!));

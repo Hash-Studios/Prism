@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
 import 'package:Prism/core/widgets/focussedMenu/focused_menu_overlay.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -7,6 +8,7 @@ class SearchFocusedMenuHolder extends StatefulWidget {
   final String? selectedProvider;
   final String query;
   final FocusedMenuData? menuData;
+  final WallpaperActionPayload? payload;
   final Widget child;
   final int? index;
 
@@ -16,11 +18,19 @@ class SearchFocusedMenuHolder extends StatefulWidget {
     required this.query,
     required this.child,
     required this.index,
-  }) : menuData = null;
+  }) : menuData = null,
+       payload = null;
+
+  const SearchFocusedMenuHolder.payload({super.key, required this.payload, required this.child})
+    : selectedProvider = null,
+      query = '',
+      menuData = null,
+      index = null;
 
   const SearchFocusedMenuHolder.data({super.key, required this.menuData, required this.child})
     : selectedProvider = null,
       query = '',
+      payload = null,
       index = null;
 
   @override
@@ -46,6 +56,7 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
   Widget build(BuildContext context) {
     final FocusedMenuData? data =
         widget.menuData ??
+        (widget.payload == null ? null : FocusedMenuDataAdapter.fromPayload(widget.payload!)) ??
         (widget.index == null
             ? null
             : FocusedMenuDataAdapter.fromSearch(provider: widget.selectedProvider, index: widget.index!));
