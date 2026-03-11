@@ -1,21 +1,28 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_screen.dart';
-import 'package:Prism/features/category_feed/views/pages/following_screen.dart';
-import 'package:Prism/features/category_feed/views/pages/home_screen.dart';
 import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
+import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
+import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
@@ -33,15 +40,51 @@ class HomeTabPage extends StatefulWidget {
 
 class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   int page = 0;
   bool result = true;
   String shortcut = "No Action Set";
   bool _hasHandledQuickActionInvocation = false;
+  bool _isChangelogCheckPending = true;
+  int _personalizedFeedVersion = 0;
+
+  Future<void> _ensureDefaultTopicSubscriptions() async {
+    if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
+      final messaging = FirebaseMessaging.instance;
+      final bool recommendationsSubscribed = await subscribeToTopicSafely(
+        messaging,
+        'recommendations',
+        sourceTag: 'home_tab.init.recommendations',
+      );
+      final bool postsSubscribed = await subscribeToTopicSafely(messaging, 'posts', sourceTag: 'home_tab.init.posts');
+      if (recommendationsSubscribed && postsSubscribed) {
+        _settingsLocal.set('subscribedToRecommendations', true);
+      }
+    }
+  }
+
+  void _showChangelogCheck() {
+    final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
+    if (lastSeen != currentAppVersion) {
+      showChangelog(context, () {
+        if (mounted) {
+          setState(() {
+            _isChangelogCheckPending = false;
+          });
+        }
+      });
+      _settingsLocal.set('lastSeenVersion', currentAppVersion);
+      return;
+    }
+    setState(() {
+      _isChangelogCheckPending = false;
+    });
+  }
 
   void _trackQuickActionInvocation(String shortcutType) {
     final AnalyticsActionValue action;
     switch (shortcutType) {
-      case 'Follow_Feed':
+      case 'Personalized_Feed':
         action = AnalyticsActionValue.quickActionFollowFeed;
       case 'Collections':
         action = AnalyticsActionValue.quickActionCollections;
@@ -93,7 +136,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: app_state.followersTab ? 3 : 2, vsync: this);
+    tabController = TabController(length: 2, vsync: this);
     context.read<AdsBloc>().add(const AdsEvent.started());
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
@@ -101,18 +144,12 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       setState(() {
         shortcut = shortcutType;
       });
-      if (shortcutType == 'Follow_Feed') {
-        logger.d('Follow_Feed');
-        if (app_state.followersTab) {
-          tabController!.animateTo(1);
-        }
+      if (shortcutType == 'Personalized_Feed') {
+        logger.d('Personalized_Feed');
+        tabController!.animateTo(0);
       } else if (shortcutType == 'Collections') {
         logger.d('Collections');
-        if (app_state.followersTab) {
-          tabController!.animateTo(2);
-        } else {
-          tabController!.animateTo(1);
-        }
+        tabController!.animateTo(1);
       } else if (shortcutType == 'Setups') {
         logger.d('Setups');
         final tabsRouter = AutoTabsRouter.of(context);
@@ -124,17 +161,27 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
     });
 
     quickActions.setShortcutItems(<ShortcutItem>[
-      const ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
+      const ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: '@drawable/ic_feed'),
       const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
       const ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
       const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
     saveFavToLocal();
     checkConnection();
+    unawaited(_ensureDefaultTopicSubscriptions());
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isChangelogCheckPending) {
+      Future<void>.delayed(Duration.zero).then((_) {
+        if (!mounted) {
+          return;
+        }
+        _showChangelogCheck();
+      });
+    }
+
     return PopScope(
       canPop: tabController?.index == 0,
       onPopInvokedWithResult: (didPop, result) {
@@ -154,71 +201,38 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
             controller: tabController,
             indicatorColor: Theme.of(context).colorScheme.secondary,
             indicatorSize: TabBarIndicatorSize.label,
-            tabs: app_state.followersTab
-                ? [
-                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
-                    Tab(icon: Icon(JamIcons.user_square, color: Theme.of(context).colorScheme.secondary)),
-                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
-                  ]
-                : [
-                    Tab(icon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary)),
-                    Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+            onTap: (index) {
+              if (index == 0 && tabController?.index == 0 && !(tabController?.indexIsChanging ?? false)) {
+                unawaited(_openForYouMenu());
+              }
+            },
+            tabs: [
+              Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(JamIcons.users, color: Theme.of(context).colorScheme.secondary),
+                    const SizedBox(width: 3),
+                    Icon(
+                      JamIcons.chevron_down,
+                      size: 14,
+                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                    ),
                   ],
+                ),
+              ),
+              Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+            ],
           ),
         ),
         body: Stack(
           children: <Widget>[
             TabBarView(
               controller: tabController,
-              children: (app_state.followersTab == true)
-                  ? <Widget>[
-                      const HomeScreen(),
-                      if (app_state.prismUser.loggedIn == true)
-                        const FollowingScreen()
-                      else
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            const Spacer(),
-                            Center(
-                              child: SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.7,
-                                child: const Text(
-                                  "Please sign-in to view the latest walls from the artists you follow here.",
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                googleSignInPopUp(context, () {
-                                  main.RestartWidget.restartApp(context);
-                                });
-                              },
-                              style: ButtonStyle(
-                                backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white),
-                              ),
-                              child: const SizedBox(
-                                width: 60,
-                                child: Text(
-                                  'SIGN-IN',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Color(0xFFE57697),
-                                    fontSize: 15,
-                                    fontFamily: "Roboto",
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      const CollectionScreen(),
-                    ]
-                  : [const HomeScreen(), const CollectionScreen()],
+              children: <Widget>[
+                PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
+                const CollectionScreen(),
+              ],
             ),
             if (!result) ConnectivityWidget() else Container(),
           ],
@@ -226,4 +240,210 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       ),
     );
   }
+
+  Future<void> _openForYouMenu() async {
+    final action = await showModalBottomSheet<_ForYouMenuAction>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: const Text('Edit interests'),
+                onTap: () => Navigator.pop(context, _ForYouMenuAction.editInterests),
+              ),
+              ListTile(
+                leading: const Icon(JamIcons.filter),
+                title: const Text('Feed mix'),
+                onTap: () => Navigator.pop(context, _ForYouMenuAction.feedMix),
+              ),
+              ListTile(
+                leading: const Icon(JamIcons.backward),
+                title: const Text('Reset personalization'),
+                onTap: () => Navigator.pop(context, _ForYouMenuAction.reset),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    switch (action) {
+      case _ForYouMenuAction.editInterests:
+        await _openEditInterestsSheet();
+      case _ForYouMenuAction.feedMix:
+        await _openFeedMixSheet();
+      case _ForYouMenuAction.reset:
+        await _resetPersonalization();
+      case null:
+        return;
+    }
+  }
+
+  Future<void> _openEditInterestsSheet() async {
+    final catalog = await PersonalizedInterestsCatalog.load(
+      remoteConfig: FirebaseRemoteConfig.instance,
+      settingsLocal: _settingsLocal,
+    );
+    if (catalog.isEmpty) {
+      return;
+    }
+    final selected = PersonalizedInterestsCatalog.selectedFromLocal(_settingsLocal).toSet();
+    if (selected.isEmpty) {
+      selected.addAll(PersonalizedInterestsCatalog.defaultSelection(catalog));
+    }
+    if (!mounted) {
+      return;
+    }
+
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        final temp = {...selected};
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 8),
+                    Text('Your interests', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 10),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final entry in catalog)
+                              FilterChip(
+                                label: Text(entry.name),
+                                selected: temp.contains(entry.name),
+                                avatar: CircleAvatar(backgroundImage: NetworkImage(entry.imageUrl)),
+                                onSelected: (selected) {
+                                  setModalState(() {
+                                    if (selected) {
+                                      temp.add(entry.name);
+                                    } else {
+                                      temp.remove(entry.name);
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: temp.length < 3
+                              ? null
+                              : () => Navigator.pop(context, temp.toList(growable: false)),
+                          child: const Text('Save interests'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || result.isEmpty || !mounted) {
+      return;
+    }
+
+    final persisted = await _persistInterests(result);
+    if (!persisted) {
+      return;
+    }
+    setState(() {
+      _personalizedFeedVersion += 1;
+    });
+  }
+
+  Future<void> _openFeedMixSheet() async {
+    final current = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced');
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                value: 'balanced',
+                groupValue: current,
+                title: const Text('Balanced'),
+                subtitle: const Text('Creators + discovery in equal balance'),
+                onChanged: (value) => Navigator.pop(context, value),
+              ),
+              RadioListTile<String>(
+                value: 'creators',
+                groupValue: current,
+                title: const Text('More creators'),
+                subtitle: const Text('Prefer people you follow and Prism walls'),
+                onChanged: (value) => Navigator.pop(context, value),
+              ),
+              RadioListTile<String>(
+                value: 'discovery',
+                groupValue: current,
+                title: const Text('More discovery'),
+                subtitle: const Text('Prefer Wallhaven and Pexels exploration'),
+                onChanged: (value) => Navigator.pop(context, value),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected == null || selected == current) {
+      return;
+    }
+    await _settingsLocal.set(personalizedFeedMixLocalKey, selected);
+    setState(() {
+      _personalizedFeedVersion += 1;
+    });
+  }
+
+  Future<void> _resetPersonalization() async {
+    final catalog = await PersonalizedInterestsCatalog.load(
+      remoteConfig: FirebaseRemoteConfig.instance,
+      settingsLocal: _settingsLocal,
+    );
+    final defaults = PersonalizedInterestsCatalog.defaultSelection(catalog);
+    final persisted = await _persistInterests(defaults);
+    if (!persisted) {
+      return;
+    }
+    await _settingsLocal.set(personalizedFeedMixLocalKey, 'balanced');
+    setState(() {
+      _personalizedFeedVersion += 1;
+    });
+  }
+
+  Future<bool> _persistInterests(List<String> interests) async {
+    await _settingsLocal.set('onboarding_v2_interests', interests.join(','));
+    if (!app_state.prismUser.loggedIn) {
+      return true;
+    }
+    final saveInterests = getIt<SaveInterestsUseCase>();
+    final saveResult = await saveInterests(SaveInterestsParams(interests: interests));
+    return saveResult.isSuccess;
+  }
 }
+
+enum _ForYouMenuAction { editInterests, feedMix, reset }

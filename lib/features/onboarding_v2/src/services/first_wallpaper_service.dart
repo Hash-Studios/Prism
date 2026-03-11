@@ -1,6 +1,5 @@
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
@@ -20,16 +19,15 @@ class FirstWallpaperService {
       final categoriesResult = await _categoryFeedRepository.getCategories();
       if (categoriesResult.isSuccess && categoriesResult.data != null) {
         final allCategories = categoriesResult.data!;
+        if (allCategories.isEmpty) {
+          return _fetchWotdVm();
+        }
         for (final interest in interests) {
-          final category = allCategories.firstWhere(
-            (c) => c.name.toLowerCase() == interest.toLowerCase(),
-            orElse: () => CategoryEntity(
-              name: interest,
-              source: allCategories.isEmpty ? allCategories.first.source : allCategories.first.source,
-              searchType: allCategories.isEmpty ? allCategories.first.searchType : allCategories.first.searchType,
-              image: '',
-            ),
-          );
+          final matched = allCategories.where((c) => c.name.toLowerCase() == interest.toLowerCase());
+          if (matched.isEmpty) {
+            continue;
+          }
+          final category = matched.first;
 
           final feedResult = await _categoryFeedRepository.fetchCategoryFeed(category: category, refresh: false);
 

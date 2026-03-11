@@ -22,7 +22,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
@@ -287,10 +286,6 @@ class _WallTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status = await Permission.storage.status;
-                                      if (!status.isGranted) {
-                                        await Permission.storage.request();
-                                      }
                                       final link = wallpaper.wallpaperUrl;
                                       logger.d(link);
 
@@ -531,10 +526,6 @@ class _RejectedWallTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status = await Permission.storage.status;
-                                      if (!status.isGranted) {
-                                        await Permission.storage.request();
-                                      }
                                       final link = wallpaper.wallpaperUrl;
                                       logger.d(link);
 
@@ -1028,10 +1019,6 @@ class SetupTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status = await Permission.storage.status;
-                                      if (!status.isGranted) {
-                                        await Permission.storage.request();
-                                      }
                                       final link = wallpaper.image;
                                       logger.d(link);
 
@@ -1421,10 +1408,6 @@ class _RejectedSetupTile extends StatelessWidget {
                                   child: IconButton(
                                     icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
                                     onPressed: () async {
-                                      final status = await Permission.storage.status;
-                                      if (!status.isGranted) {
-                                        await Permission.storage.request();
-                                      }
                                       final link = wallpaper.image;
                                       logger.d(link);
 

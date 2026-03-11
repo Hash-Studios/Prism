@@ -12,18 +12,22 @@ class CollectionScreen extends StatefulWidget {
   _CollectionScreenState createState() => _CollectionScreenState();
 }
 
-class _CollectionScreenState extends State<CollectionScreen> {
+class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepAliveClientMixin {
   late Future<List?> _collectionsFuture;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
+    super.initState();
     analytics.track(const CollectionsCheckedEvent());
     _collectionsFuture = getCollections();
-    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return FutureBuilder<List?>(
       future: _collectionsFuture,
       builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {

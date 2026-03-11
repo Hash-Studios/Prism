@@ -14,7 +14,7 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
+import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -28,6 +28,24 @@ class CollectionsGrid extends StatefulWidget {
 }
 
 enum _PremiumPreviewAction { none, unlockNow, watchAndUnlock, upgrade }
+
+enum _DiscoverTileKind { collection, category }
+
+final class _DiscoverTileData {
+  const _DiscoverTileData({
+    required this.kind,
+    required this.name,
+    required this.thumb1,
+    required this.thumb2,
+    required this.isPremium,
+  });
+
+  final _DiscoverTileKind kind;
+  final String name;
+  final String thumb1;
+  final String thumb2;
+  final bool isPremium;
+}
 
 class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   AnimationController? _controller;
@@ -347,11 +365,10 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final List<Object?> rawCollections =
         CData.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;
-    final int itemCount = isLoading ? 8 : rawCollections.length;
 
     Map<String, dynamic> asMap(Object? raw) {
       if (raw is Map<String, dynamic>) {
@@ -363,17 +380,50 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       return <String, dynamic>{};
     }
 
-    Widget buildCollectionCard(Map<String, dynamic>? collection) {
-      final bool loading = collection == null;
-      final bool isPremium = !loading && (collection['premium'] == true);
-      final String name = loading ? "LOADING" : collection['name'].toString().toUpperCase();
-      final String thumb1 = loading ? '' : collection['thumb1'].toString();
-      final String thumb2 = loading ? '' : collection['thumb2'].toString();
+    final List<_DiscoverTileData> discoverTiles = isLoading
+        ? const <_DiscoverTileData>[]
+        : <_DiscoverTileData>[
+            ...rawCollections.map((raw) {
+              final collection = asMap(raw);
+              return _DiscoverTileData(
+                kind: _DiscoverTileKind.collection,
+                name: collection['name']?.toString() ?? '',
+                thumb1: collection['thumb1']?.toString() ?? '',
+                thumb2: collection['thumb2']?.toString() ?? '',
+                isPremium: collection['premium'] == true,
+              );
+            }),
+            ...context
+                .categoryChoiceList(listen: false)
+                .map(
+                  (choice) => _DiscoverTileData(
+                    kind: _DiscoverTileKind.category,
+                    name: choice.name?.trim() ?? '',
+                    thumb1: choice.image?.trim() ?? '',
+                    thumb2: choice.image2?.trim() ?? choice.image?.trim() ?? '',
+                    isPremium: false,
+                  ),
+                ),
+          ];
+    final int itemCount = isLoading ? 8 : discoverTiles.length;
+
+    Widget buildCollectionCard(_DiscoverTileData? tile) {
+      final bool loading = tile == null;
+      final bool isPremium = tile?.isPremium ?? false;
+      final String name = loading ? "LOADING" : tile.name.toUpperCase();
+      final String thumb1 = loading ? '' : tile.thumb1;
+      final String thumb2 = loading ? '' : tile.thumb2;
       return GestureDetector(
         onTap: loading
             ? null
-            : () =>
-                  unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: collection['name'].toString())),
+            : () {
+                if (tile.kind == _DiscoverTileKind.collection) {
+                  unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: tile.name));
+                  return;
+                }
+                final encodedName = Uri.encodeComponent(tile.name);
+                context.router.push(CollectionViewRoute(collectionName: 'category:$encodedName'));
+              },
         child: PremiumBanner(
           comparator: !isPremium,
           child: Stack(
@@ -509,8 +559,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           if (isLoading) {
             return buildCollectionCard(null);
           }
-          final Map<String, dynamic> collection = asMap(rawCollections[index]);
-          return buildCollectionCard(collection);
+          return buildCollectionCard(discoverTiles[index]);
         },
       ),
     );

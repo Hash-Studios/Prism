@@ -1,6 +1,4 @@
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 
 class LoadingSetupCards extends StatefulWidget {
@@ -60,14 +58,7 @@ class _LoadingSetupCardsState extends State<LoadingSetupCards> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    ScrollController? controller;
-    try {
-      if (InheritedDataProvider.of(context) != null) {
-        controller = InheritedDataProvider.of(context)!.scrollController;
-      }
-    } catch (e) {
-      logger.d(e.toString());
-    }
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
 
     return controller != null
         ? GridView.builder(

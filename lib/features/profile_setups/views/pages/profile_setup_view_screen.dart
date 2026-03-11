@@ -35,7 +35,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
@@ -663,10 +662,6 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                 padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () async {
-                    final status = await Permission.storage.status;
-                    if (!status.isGranted) {
-                      await Permission.storage.request();
-                    }
                     final link = _setup.image;
                     logger.d(link);
 

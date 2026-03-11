@@ -13,7 +13,6 @@ import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/download_list.dart';
@@ -314,9 +313,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final String safeUserPhoto = (widget.userPhoto ?? "").trim();
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
-    final ScrollController? controller = (widget.ownProfile ?? false)
-        ? InheritedDataProvider.of(context)!.scrollController
-        : ScrollController();
+    final ScrollController? controller = (widget.ownProfile ?? false) ? PrimaryScrollController.maybeOf(context) : null;
     final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
       app_state.prismUser,
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,

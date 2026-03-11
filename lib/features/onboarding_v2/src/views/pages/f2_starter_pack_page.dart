@@ -29,9 +29,9 @@ class F2StarterPackPage extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Follow artists',
-                        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800),
+                      GestureDetector(
+                        onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.stepBack()),
+                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                       ),
                       Row(
                         children: [

@@ -28,7 +28,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as imagelib;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:photofilters/filters/preset_filters.dart';
@@ -413,10 +412,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
     toasts.codeSend("Processing Wallpaper");
     final imageFile = await saveFilteredImage();
-    final status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
     if (!mounted) {
       return;
     }

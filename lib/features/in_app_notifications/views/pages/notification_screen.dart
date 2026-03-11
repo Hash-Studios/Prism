@@ -7,7 +7,6 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -16,6 +15,7 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -459,13 +459,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
           );
           if (value) {
             await subscribeToTopicSafely(
-              home.f,
+              FirebaseMessaging.instance,
               app_state.prismUser.email.split('@')[0],
               sourceTag: 'notification.settings.followers.enable',
             );
           } else {
             await unsubscribeFromTopicSafely(
-              home.f,
+              FirebaseMessaging.instance,
               app_state.prismUser.email.split('@')[0],
               sourceTag: 'notification.settings.followers.disable',
             );
@@ -475,7 +475,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               const NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: false),
             );
             await unsubscribeFromTopicSafely(
-              home.f,
+              FirebaseMessaging.instance,
               'posts',
               sourceTag: 'notification.settings.posts.disable_from_followers',
             );
@@ -516,9 +516,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value),
                 );
                 if (value) {
-                  await subscribeToTopicSafely(home.f, 'posts', sourceTag: 'notification.settings.posts.enable');
+                  await subscribeToTopicSafely(
+                    FirebaseMessaging.instance,
+                    'posts',
+                    sourceTag: 'notification.settings.posts.enable',
+                  );
                 } else {
-                  await unsubscribeFromTopicSafely(home.f, 'posts', sourceTag: 'notification.settings.posts.disable');
+                  await unsubscribeFromTopicSafely(
+                    FirebaseMessaging.instance,
+                    'posts',
+                    sourceTag: 'notification.settings.posts.disable',
+                  );
                 }
               } else {
                 analytics.track(
@@ -583,13 +591,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
         );
         if (value) {
           await subscribeToTopicSafely(
-            home.f,
+            FirebaseMessaging.instance,
             'recommendations',
             sourceTag: 'notification.settings.recommendations.enable',
           );
         } else {
           await unsubscribeFromTopicSafely(
-            home.f,
+            FirebaseMessaging.instance,
             'recommendations',
             sourceTag: 'notification.settings.recommendations.disable',
           );

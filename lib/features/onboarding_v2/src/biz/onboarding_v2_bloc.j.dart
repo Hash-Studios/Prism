@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/complete_onboarding_v2_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/fetch_starter_pack_usecase.dart';
@@ -12,14 +14,15 @@ import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_servic
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_creator_vm.j.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
-import 'package:bloc/bloc.dart';
-import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:bloc/bloc.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
+part 'onboarding_v2_bloc.j.freezed.dart';
 part 'onboarding_v2_event.dart';
 part 'onboarding_v2_state.dart';
-part 'onboarding_v2_bloc.j.freezed.dart';
 
 @injectable
 class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
@@ -45,6 +48,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_PaywallPrimaryTapped>(_onPaywallPrimaryTapped);
     on<_PaywallContinueFreeTapped>(_onPaywallContinueFreeTapped);
     on<_PaywallResultReceived>(_onPaywallResultReceived);
+    on<_StepBack>(_onStepBack);
   }
 
   final FetchStarterPackUseCase _fetchStarterPackUseCase;
@@ -59,15 +63,24 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) async {
     emit(state.copyWith(loadStatus: LoadStatus.loading, failure: null, navRequest: null));
-
-    final categoriesResult = await _categoryFeedRepository.getCategories();
-    final List<CategoryEntity> filteredCategories = categoriesResult.fold(
-      onSuccess: (cats) => cats.where((c) => c.name != OnboardingV2Config.excludedCategory).toList(growable: false),
-      onFailure: (_) => <CategoryEntity>[],
+    final settingsLocal = getIt<SettingsLocalDataSource>();
+    final catalog = await PersonalizedInterestsCatalog.load(
+      remoteConfig: FirebaseRemoteConfig.instance,
+      settingsLocal: settingsLocal,
     );
-
-    final availableCategories = filteredCategories.map((c) => c.name).toList(growable: false);
-    final categoryImages = <String, String>{for (final c in filteredCategories) c.name: c.image};
+    List<String> availableCategories = catalog.map((e) => e.name).toList(growable: false);
+    Map<String, String> categoryImages = <String, String>{for (final entry in catalog) entry.name: entry.imageUrl};
+    if (availableCategories.isEmpty) {
+      final categoriesResult = await _categoryFeedRepository.getCategories();
+      categoriesResult.fold(
+        onSuccess: (cats) {
+          final filtered = cats.where((c) => c.name != OnboardingV2Config.excludedCategory).toList(growable: false);
+          availableCategories = filtered.map((c) => c.name).toList(growable: false);
+          categoryImages = <String, String>{for (final entry in filtered) entry.name: entry.image};
+        },
+        onFailure: (_) {},
+      );
+    }
 
     final starterPackResult = await _fetchStarterPackUseCase(const FetchStarterPackParams());
     final List<OnboardingCreatorVm> creatorVms = starterPackResult.fold(
@@ -302,6 +315,14 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       ),
       onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
+  }
+
+  void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
+    final idx = OnboardingV2Step.values.indexOf(state.step);
+    // auth (0) and paywall (4) are terminal — no backward navigation allowed.
+    if (idx > 0 && state.step != OnboardingV2Step.paywall) {
+      emit(state.copyWith(step: OnboardingV2Step.values[idx - 1], navRequest: null));
+    }
   }
 
   @override

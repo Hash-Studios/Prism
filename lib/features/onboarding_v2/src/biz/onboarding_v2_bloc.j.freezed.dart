@@ -55,7 +55,7 @@ extension OnboardingV2EventPatterns on OnboardingV2Event {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallTimerTicked value)?  paywallTimerTicked,TResult Function( _PaywallPrimaryTapped value)?  paywallPrimaryTapped,TResult Function( _PaywallContinueFreeTapped value)?  paywallContinueFreeTapped,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _AuthCompleted value)?  authCompleted,TResult Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult Function( _InterestToggled value)?  interestToggled,TResult Function( _InterestsConfirmed value)?  interestsConfirmed,TResult Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult Function( _PaywallTimerTicked value)?  paywallTimerTicked,TResult Function( _PaywallPrimaryTapped value)?  paywallPrimaryTapped,TResult Function( _PaywallContinueFreeTapped value)?  paywallContinueFreeTapped,TResult Function( _PaywallResultReceived value)?  paywallResultReceived,TResult Function( _StepBack value)?  stepBack,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -72,7 +72,8 @@ return firstWallpaperStepContinued(_that);case _PaywallTimerTicked() when paywal
 return paywallTimerTicked(_that);case _PaywallPrimaryTapped() when paywallPrimaryTapped != null:
 return paywallPrimaryTapped(_that);case _PaywallContinueFreeTapped() when paywallContinueFreeTapped != null:
 return paywallContinueFreeTapped(_that);case _PaywallResultReceived() when paywallResultReceived != null:
-return paywallResultReceived(_that);case _:
+return paywallResultReceived(_that);case _StepBack() when stepBack != null:
+return stepBack(_that);case _:
   return orElse();
 
 }
@@ -90,7 +91,7 @@ return paywallResultReceived(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallTimerTicked value)  paywallTimerTicked,required TResult Function( _PaywallPrimaryTapped value)  paywallPrimaryTapped,required TResult Function( _PaywallContinueFreeTapped value)  paywallContinueFreeTapped,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _AuthCompleted value)  authCompleted,required TResult Function( _AuthLoadingChanged value)  authLoadingChanged,required TResult Function( _InterestToggled value)  interestToggled,required TResult Function( _InterestsConfirmed value)  interestsConfirmed,required TResult Function( _CreatorFollowToggled value)  creatorFollowToggled,required TResult Function( _StarterPackConfirmed value)  starterPackConfirmed,required TResult Function( _FirstWallpaperActionRequested value)  firstWallpaperActionRequested,required TResult Function( _FirstWallpaperActionCompleted value)  firstWallpaperActionCompleted,required TResult Function( _FirstWallpaperStepContinued value)  firstWallpaperStepContinued,required TResult Function( _PaywallTimerTicked value)  paywallTimerTicked,required TResult Function( _PaywallPrimaryTapped value)  paywallPrimaryTapped,required TResult Function( _PaywallContinueFreeTapped value)  paywallContinueFreeTapped,required TResult Function( _PaywallResultReceived value)  paywallResultReceived,required TResult Function( _StepBack value)  stepBack,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -107,7 +108,8 @@ return firstWallpaperStepContinued(_that);case _PaywallTimerTicked():
 return paywallTimerTicked(_that);case _PaywallPrimaryTapped():
 return paywallPrimaryTapped(_that);case _PaywallContinueFreeTapped():
 return paywallContinueFreeTapped(_that);case _PaywallResultReceived():
-return paywallResultReceived(_that);case _:
+return paywallResultReceived(_that);case _StepBack():
+return stepBack(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -124,7 +126,7 @@ return paywallResultReceived(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallTimerTicked value)?  paywallTimerTicked,TResult? Function( _PaywallPrimaryTapped value)?  paywallPrimaryTapped,TResult? Function( _PaywallContinueFreeTapped value)?  paywallContinueFreeTapped,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _AuthCompleted value)?  authCompleted,TResult? Function( _AuthLoadingChanged value)?  authLoadingChanged,TResult? Function( _InterestToggled value)?  interestToggled,TResult? Function( _InterestsConfirmed value)?  interestsConfirmed,TResult? Function( _CreatorFollowToggled value)?  creatorFollowToggled,TResult? Function( _StarterPackConfirmed value)?  starterPackConfirmed,TResult? Function( _FirstWallpaperActionRequested value)?  firstWallpaperActionRequested,TResult? Function( _FirstWallpaperActionCompleted value)?  firstWallpaperActionCompleted,TResult? Function( _FirstWallpaperStepContinued value)?  firstWallpaperStepContinued,TResult? Function( _PaywallTimerTicked value)?  paywallTimerTicked,TResult? Function( _PaywallPrimaryTapped value)?  paywallPrimaryTapped,TResult? Function( _PaywallContinueFreeTapped value)?  paywallContinueFreeTapped,TResult? Function( _PaywallResultReceived value)?  paywallResultReceived,TResult? Function( _StepBack value)?  stepBack,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -141,7 +143,8 @@ return firstWallpaperStepContinued(_that);case _PaywallTimerTicked() when paywal
 return paywallTimerTicked(_that);case _PaywallPrimaryTapped() when paywallPrimaryTapped != null:
 return paywallPrimaryTapped(_that);case _PaywallContinueFreeTapped() when paywallContinueFreeTapped != null:
 return paywallContinueFreeTapped(_that);case _PaywallResultReceived() when paywallResultReceived != null:
-return paywallResultReceived(_that);case _:
+return paywallResultReceived(_that);case _StepBack() when stepBack != null:
+return stepBack(_that);case _:
   return null;
 
 }
@@ -158,7 +161,7 @@ return paywallResultReceived(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function()?  paywallTimerTicked,TResult Function()?  paywallPrimaryTapped,TResult Function()?  paywallContinueFreeTapped,TResult Function( bool didPurchase)?  paywallResultReceived,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  authCompleted,TResult Function( bool isLoading)?  authLoadingChanged,TResult Function( String categoryName)?  interestToggled,TResult Function()?  interestsConfirmed,TResult Function( String creatorEmail)?  creatorFollowToggled,TResult Function()?  starterPackConfirmed,TResult Function()?  firstWallpaperActionRequested,TResult Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult Function()?  firstWallpaperStepContinued,TResult Function()?  paywallTimerTicked,TResult Function()?  paywallPrimaryTapped,TResult Function()?  paywallContinueFreeTapped,TResult Function( bool didPurchase)?  paywallResultReceived,TResult Function()?  stepBack,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
@@ -174,7 +177,8 @@ return firstWallpaperStepContinued();case _PaywallTimerTicked() when paywallTime
 return paywallTimerTicked();case _PaywallPrimaryTapped() when paywallPrimaryTapped != null:
 return paywallPrimaryTapped();case _PaywallContinueFreeTapped() when paywallContinueFreeTapped != null:
 return paywallContinueFreeTapped();case _PaywallResultReceived() when paywallResultReceived != null:
-return paywallResultReceived(_that.didPurchase);case _:
+return paywallResultReceived(_that.didPurchase);case _StepBack() when stepBack != null:
+return stepBack();case _:
   return orElse();
 
 }
@@ -192,7 +196,7 @@ return paywallResultReceived(_that.didPurchase);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function()  paywallTimerTicked,required TResult Function()  paywallPrimaryTapped,required TResult Function()  paywallContinueFreeTapped,required TResult Function( bool didPurchase)  paywallResultReceived,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  authCompleted,required TResult Function( bool isLoading)  authLoadingChanged,required TResult Function( String categoryName)  interestToggled,required TResult Function()  interestsConfirmed,required TResult Function( String creatorEmail)  creatorFollowToggled,required TResult Function()  starterPackConfirmed,required TResult Function()  firstWallpaperActionRequested,required TResult Function( bool success,  int elapsedMs)  firstWallpaperActionCompleted,required TResult Function()  firstWallpaperStepContinued,required TResult Function()  paywallTimerTicked,required TResult Function()  paywallPrimaryTapped,required TResult Function()  paywallContinueFreeTapped,required TResult Function( bool didPurchase)  paywallResultReceived,required TResult Function()  stepBack,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _AuthCompleted():
@@ -208,7 +212,8 @@ return firstWallpaperStepContinued();case _PaywallTimerTicked():
 return paywallTimerTicked();case _PaywallPrimaryTapped():
 return paywallPrimaryTapped();case _PaywallContinueFreeTapped():
 return paywallContinueFreeTapped();case _PaywallResultReceived():
-return paywallResultReceived(_that.didPurchase);case _:
+return paywallResultReceived(_that.didPurchase);case _StepBack():
+return stepBack();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -225,7 +230,7 @@ return paywallResultReceived(_that.didPurchase);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function()?  paywallTimerTicked,TResult? Function()?  paywallPrimaryTapped,TResult? Function()?  paywallContinueFreeTapped,TResult? Function( bool didPurchase)?  paywallResultReceived,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  authCompleted,TResult? Function( bool isLoading)?  authLoadingChanged,TResult? Function( String categoryName)?  interestToggled,TResult? Function()?  interestsConfirmed,TResult? Function( String creatorEmail)?  creatorFollowToggled,TResult? Function()?  starterPackConfirmed,TResult? Function()?  firstWallpaperActionRequested,TResult? Function( bool success,  int elapsedMs)?  firstWallpaperActionCompleted,TResult? Function()?  firstWallpaperStepContinued,TResult? Function()?  paywallTimerTicked,TResult? Function()?  paywallPrimaryTapped,TResult? Function()?  paywallContinueFreeTapped,TResult? Function( bool didPurchase)?  paywallResultReceived,TResult? Function()?  stepBack,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _AuthCompleted() when authCompleted != null:
@@ -241,7 +246,8 @@ return firstWallpaperStepContinued();case _PaywallTimerTicked() when paywallTime
 return paywallTimerTicked();case _PaywallPrimaryTapped() when paywallPrimaryTapped != null:
 return paywallPrimaryTapped();case _PaywallContinueFreeTapped() when paywallContinueFreeTapped != null:
 return paywallContinueFreeTapped();case _PaywallResultReceived() when paywallResultReceived != null:
-return paywallResultReceived(_that.didPurchase);case _:
+return paywallResultReceived(_that.didPurchase);case _StepBack() when stepBack != null:
+return stepBack();case _:
   return null;
 
 }
@@ -868,6 +874,38 @@ as bool,
 
 
 }
+
+/// @nodoc
+
+
+class _StepBack implements OnboardingV2Event {
+  const _StepBack();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _StepBack);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'OnboardingV2Event.stepBack()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 mixin _$OnboardingInterestsData {
