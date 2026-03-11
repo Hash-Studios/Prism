@@ -30,7 +30,7 @@ class F1InterestsPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.started()),
+                        onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.stepBack()),
                         child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                       ),
                       Container(

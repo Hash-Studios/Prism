@@ -22,6 +22,25 @@ const bool defaultUseRcPaywalls = true;
 const bool defaultOnboardingV2Enabled = true;
 const List<Map<String, dynamic>> defaultOnboardingStarterPack = <Map<String, dynamic>>[];
 
+const String personalizedInterestsRemoteConfigKey = 'personalized_interests_v1';
+const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v1';
+const String personalizedFeedMixLocalKey = 'personalized_feed_mix';
+const String defaultPersonalizedInterestsJson = '''
+[
+  {"name":"Minimal","query":"minimal","imageUrl":"https://images.pexels.com/photos/6980344/pexels-photo-6980344.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
+  {"name":"Moody","query":"moody","imageUrl":"https://images.pexels.com/photos/3408744/pexels-photo-3408744.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Retro","query":"retro","imageUrl":"https://images.pexels.com/photos/1633798/pexels-photo-1633798.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven","pexels"]},
+  {"name":"Cyberpunk","query":"cyberpunk","imageUrl":"https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
+  {"name":"Nature","query":"nature","imageUrl":"https://images.pexels.com/photos/34950/pexels-photo-34950.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Architecture","query":"architecture","imageUrl":"https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Cars","query":"cars","imageUrl":"https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven","pexels"]},
+  {"name":"Anime","query":"anime","imageUrl":"https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
+  {"name":"Space","query":"space","imageUrl":"https://images.pexels.com/photos/586059/pexels-photo-586059.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven","pexels"]},
+  {"name":"Portrait","query":"portrait","imageUrl":"https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
+  {"name":"Abstract","query":"abstract","imageUrl":"https://images.pexels.com/photos/7130560/pexels-photo-7130560.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Textures","query":"textures","imageUrl":"https://images.pexels.com/photos/129731/pexels-photo-129731.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]}
+]''';
+
 const List<String> defaultTopTitleText = <String>['TOP-RATED', 'BEST OF COMMUNITY', 'FAN-FAVOURITE', 'TRENDING'];
 
 const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'flat', 'mesh gradients', 'fluids'];

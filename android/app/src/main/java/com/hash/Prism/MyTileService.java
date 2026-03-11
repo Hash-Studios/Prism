@@ -1,12 +1,10 @@
 package com.hash.prism;
 
-import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
@@ -19,8 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,23 +46,10 @@ public class MyTileService extends TileService {
         return size;
     }
     public void setWallpaper(Context context){
-        String permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        if (ContextCompat.checkSelfPermission(context, permission)
-                == PackageManager.PERMISSION_DENIED) {
-            Toast.makeText(context,
-                    "Storage permission denied!",
-                    Toast.LENGTH_SHORT)
-                    .show();
-            // Requesting the permission
-//            ActivityCompat.requestPermissions(,
-//                    new String[] { permission },
-//                    requestCode);
-        }
-        else {
-            Tile qsTile = getQsTile();
-            qsTile.setState(2);
-            qsTile.updateTile();
-            Log.d(LOG, "onReceive: " + "clicked");
+        Tile qsTile = getQsTile();
+        qsTile.setState(2);
+        qsTile.updateTile();
+        Log.d(LOG, "onReceive: " + "clicked");
 
             // if (files == null || files.length == 0) {
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q){
@@ -118,9 +101,8 @@ public class MyTileService extends TileService {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            qsTile.setState(1);
-            qsTile.updateTile();
-        }
+        qsTile.setState(1);
+        qsTile.updateTile();
 
     }
     @Override
@@ -134,23 +116,8 @@ public class MyTileService extends TileService {
     public void onTileAdded() {
         super.onTileAdded();
         Tile qsTile = getQsTile();
-        String permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        if (ContextCompat.checkSelfPermission(this, permission)
-                == PackageManager.PERMISSION_DENIED) {
-            Toast.makeText(this,
-                    "Storage permission denied!",
-                    Toast.LENGTH_SHORT)
-                    .show();
-            // Requesting the permission
-//            ActivityCompat.requestPermissions(,
-//                    new String[] { permission },
-//                    requestCode);
-            qsTile.setState(0);
-            qsTile.updateTile();
-        }else {
-            qsTile.setState(1);
-            qsTile.updateTile();
-        }
+        qsTile.setState(1);
+        qsTile.updateTile();
     }
 
     @Override

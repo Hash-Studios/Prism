@@ -1,7 +1,13 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -179,9 +185,48 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                           },
                         );
                       }
-                      return FocusedMenuHolder(
-                        provider: "ProfileWall",
-                        index: index,
+                      final wall = context.profileWalls()![index];
+                      final collections = wall.collections as List? ?? const [];
+                      final photographer = (wall.by ?? '').trim();
+                      final prismWallpaper = PrismWallpaper(
+                        core: WallpaperCore(
+                          id: wall.id,
+                          source: WallpaperSource.prism,
+                          fullUrl: wall.wallpaperUrl,
+                          thumbnailUrl: wall.wallpaperThumb ?? '',
+                          resolution: wall.resolution,
+                          sizeBytes: int.tryParse(wall.size ?? '0'),
+                          createdAt: wall.createdAt,
+                          authorName: wall.by,
+                          authorEmail: wall.email,
+                        ),
+                        collections: wall.collections,
+                      );
+                      final payload = WallpaperActionPayload(
+                        providerLabel: 'ProfileWall',
+                        title: photographer.isEmpty ? 'Prism' : photographer,
+                        subtitle: wall.id.toUpperCase(),
+                        stats: [
+                          WallpaperActionStat(
+                            kind: WallpaperActionStatKind.size,
+                            label: (wall.size ?? '').trim().isEmpty ? '0' : wall.size!,
+                          ),
+                          WallpaperActionStat(
+                            kind: WallpaperActionStatKind.resolution,
+                            label: (wall.resolution ?? '').trim().isEmpty ? '-' : wall.resolution!,
+                          ),
+                        ],
+                        fullUrl: wall.wallpaperUrl,
+                        favouriteWall: PrismFavouriteWall(id: wall.id, wallpaper: prismWallpaper),
+                        favouriteTrash: false,
+                        cardTopFactor: 4 / 10,
+                        cardHeightFactor: 6 / 10,
+                        isPremiumContent: app_state.isPremiumWall(app_state.premiumCollections, collections),
+                        contentId: wall.id,
+                        sourceContext: 'focused_menu.ProfileWall',
+                      );
+                      return FocusedMenuHolder.payload(
+                        payload: payload,
                         child: Stack(
                           children: [
                             Container(
@@ -189,9 +234,7 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                 color: animation.value,
                                 borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
-                                  image: CachedNetworkImageProvider(
-                                    context.profileWalls()![index].wallpaperThumb.toString(),
-                                  ),
+                                  image: CachedNetworkImageProvider(wall.wallpaperThumb.toString()),
                                   fit: BoxFit.cover,
                                 ),
                               ),

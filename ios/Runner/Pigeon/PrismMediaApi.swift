@@ -228,6 +228,43 @@ struct OperationResult: Hashable {
   }
 }
 
+/// Generated class from Pigeon that represents data sent in messages.
+struct DownloadItemsResult: Hashable {
+  var success: Bool
+  var items: [String]
+  var errorCode: String? = nil
+  var message: String? = nil
+
+
+  // swift-format-ignore: AlwaysUseLowerCamelCase
+  static func fromList(_ pigeonVar_list: [Any?]) -> DownloadItemsResult? {
+    let success = pigeonVar_list[0] as! Bool
+    let items = pigeonVar_list[1] as! [String]
+    let errorCode: String? = nilOrValue(pigeonVar_list[2])
+    let message: String? = nilOrValue(pigeonVar_list[3])
+
+    return DownloadItemsResult(
+      success: success,
+      items: items,
+      errorCode: errorCode,
+      message: message
+    )
+  }
+  func toList() -> [Any?] {
+    return [
+      success,
+      items,
+      errorCode,
+      message,
+    ]
+  }
+  static func == (lhs: DownloadItemsResult, rhs: DownloadItemsResult) -> Bool {
+    return deepEqualsPrismMediaApi(lhs.toList(), rhs.toList())  }
+  func hash(into hasher: inout Hasher) {
+    deepHashPrismMediaApi(value: toList(), hasher: &hasher)
+  }
+}
+
 private class PrismMediaApiPigeonCodecReader: FlutterStandardReader {
   override func readValue(ofType type: UInt8) -> Any? {
     switch type {
@@ -243,6 +280,8 @@ private class PrismMediaApiPigeonCodecReader: FlutterStandardReader {
       return DownloadRequest.fromList(self.readValue() as! [Any?])
     case 132:
       return OperationResult.fromList(self.readValue() as! [Any?])
+    case 133:
+      return DownloadItemsResult.fromList(self.readValue() as! [Any?])
     default:
       return super.readValue(ofType: type)
     }
@@ -262,6 +301,9 @@ private class PrismMediaApiPigeonCodecWriter: FlutterStandardWriter {
       super.writeValue(value.toList())
     } else if let value = value as? OperationResult {
       super.writeByte(132)
+      super.writeValue(value.toList())
+    } else if let value = value as? DownloadItemsResult {
+      super.writeByte(133)
       super.writeValue(value.toList())
     } else {
       super.writeValue(value)
@@ -287,6 +329,8 @@ class PrismMediaApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable
 protocol PrismMediaHostApi {
   func saveMedia(request: SaveMediaRequest) throws -> OperationResult
   func enqueueDownload(request: DownloadRequest) throws -> OperationResult
+  func listDownloads() throws -> DownloadItemsResult
+  func clearDownloads() throws -> OperationResult
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -324,6 +368,32 @@ class PrismMediaHostApiSetup {
       }
     } else {
       enqueueDownloadChannel.setMessageHandler(nil)
+    }
+    let listDownloadsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      listDownloadsChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.listDownloads()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      listDownloadsChannel.setMessageHandler(nil)
+    }
+    let clearDownloadsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      clearDownloadsChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.clearDownloads()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      clearDownloadsChannel.setMessageHandler(nil)
     }
   }
 }

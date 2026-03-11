@@ -24,6 +24,21 @@ class _SplashWidgetState extends State<SplashWidget> {
   bool _navigated = false;
   bool _notchMeasured = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // If startup already succeeded (e.g. returning from onboarding), the
+    // BlocConsumer listener won't fire because there's no state change.
+    // Schedule an immediate check so navigation still happens.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final s = context.read<StartupBloc>().state;
+      if (s.status == LoadStatus.success && !s.isObsoleteVersion) {
+        _navigatePostBootstrap(context);
+      }
+    });
+  }
+
   void _measureNotch(BuildContext context) {
     if (_notchMeasured) {
       return;

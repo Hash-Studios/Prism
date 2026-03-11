@@ -8,10 +8,12 @@ class CategoryDefinition {
     required this.source,
     required this.searchType,
     required this.imageUrl,
+    required this.secondaryImageUrl,
   });
 
   final String name;
   final WallpaperSource source;
   final CategorySearchType searchType;
   final String imageUrl;
+  final String secondaryImageUrl;
 }

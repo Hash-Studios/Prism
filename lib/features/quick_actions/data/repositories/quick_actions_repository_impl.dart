@@ -17,8 +17,8 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
 
   QuickActionEntity _mapAction(String action) {
     switch (action) {
-      case 'Follow_Feed':
-        return const QuickActionEntity(type: QuickActionType.followFeed, rawValue: 'Follow_Feed');
+      case 'Personalized_Feed':
+        return const QuickActionEntity(type: QuickActionType.followFeed, rawValue: 'Personalized_Feed');
       case 'Collections':
         return const QuickActionEntity(type: QuickActionType.collections, rawValue: 'Collections');
       case 'Downloads':
@@ -48,7 +48,7 @@ class QuickActionsRepositoryImpl implements QuickActionsRepository {
   Future<Result<void>> setDefaultShortcuts() async {
     try {
       await _quickActions.setShortcutItems(const <ShortcutItem>[
-        ShortcutItem(type: 'Follow_Feed', localizedTitle: 'Feed', icon: '@drawable/ic_feed'),
+        ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: '@drawable/ic_feed'),
         ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
         ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
       ]);

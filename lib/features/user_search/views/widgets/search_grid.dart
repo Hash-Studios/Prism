@@ -5,13 +5,14 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -189,7 +190,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
@@ -249,136 +250,178 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               }
             }
 
-            return SearchFocusedMenuHolder(
-              selectedProvider: widget.selectedProvider,
-              query: widget.query,
-              index: index,
-              child: AnimatedBuilder(
-                animation: offsetAnimation,
-                builder: (buildContext, child) {
-                  if (offsetAnimation.value < 0.0) {
-                    logger.d('${offsetAnimation.value + 8.0}');
-                  }
-                  return Padding(
-                    padding: index == longTapIndex
-                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                        : EdgeInsets.zero,
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: widget.selectedProvider == "WallHaven"
-                              ? wData.wallsS.isEmpty
-                                    ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                                    : BoxDecoration(
-                                        color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                          image: CachedNetworkImageProvider(
-                                            wData.wallsS[index].thumbs!["original"].toString(),
-                                          ),
-                                          fit: BoxFit.cover,
+            final tile = AnimatedBuilder(
+              animation: offsetAnimation,
+              builder: (buildContext, child) {
+                if (offsetAnimation.value < 0.0) {
+                  logger.d('${offsetAnimation.value + 8.0}');
+                }
+                return Padding(
+                  padding: index == longTapIndex
+                      ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
+                      : EdgeInsets.zero,
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: widget.selectedProvider == "WallHaven"
+                            ? wData.wallsS.isEmpty
+                                  ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                                  : BoxDecoration(
+                                      color: animation.value,
+                                      borderRadius: BorderRadius.circular(20),
+                                      image: DecorationImage(
+                                        image: CachedNetworkImageProvider(
+                                          wData.wallsS[index].thumbs!["original"].toString(),
                                         ),
-                                      )
-                              : pData.wallsPS.isEmpty
-                              ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                              : BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                    image: CachedNetworkImageProvider(pData.wallsPS[index].core.thumbnailUrl),
-                                    fit: BoxFit.cover,
-                                  ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                            : pData.wallsPS.isEmpty
+                            ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                            : BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(pData.wallsPS[index].core.thumbnailUrl),
+                                  fit: BoxFit.cover,
                                 ),
-                        ),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                              onTap: () {
-                                if (widget.selectedProvider == "WallHaven") {
-                                  if (wData.wallsS.isEmpty) {
-                                  } else {
-                                    analytics.track(
-                                      SearchResultOpenedEvent(
-                                        provider: _providerValue,
-                                        itemType: ItemTypeValue.wallpaper,
-                                        itemId: wData.wallsS[index].id,
-                                        index: index,
-                                        queryLength: _queryLength,
-                                      ),
-                                    );
-                                    context.router.push(
-                                      WallpaperRoute(
-                                        source: WallpaperSource.wallhaven,
-                                        index: index,
-                                        link: wData.wallsS[index].thumbs!["small"].toString(),
-                                      ),
-                                    );
-                                  }
-                                } else if (widget.selectedProvider == "Pexels") {
-                                  if (pData.wallsPS.isEmpty) {
-                                  } else {
-                                    analytics.track(
-                                      SearchResultOpenedEvent(
-                                        provider: _providerValue,
-                                        itemType: ItemTypeValue.wallpaper,
-                                        itemId: pData.wallsPS[index].id,
-                                        index: index,
-                                        queryLength: _queryLength,
-                                      ),
-                                    );
-                                    context.router.push(
-                                      SearchWallpaperRoute(
-                                        source: WallpaperSourceX.fromWire(widget.selectedProvider ?? "Pexels"),
-                                        query: widget.query,
-                                        index: index,
-                                        link: pData.wallsPS[index].core.thumbnailUrl,
-                                      ),
-                                    );
-                                  }
+                              ),
+                      ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                            onTap: () {
+                              if (widget.selectedProvider == "WallHaven") {
+                                if (wData.wallsS.isEmpty) {
+                                } else {
+                                  analytics.track(
+                                    SearchResultOpenedEvent(
+                                      provider: _providerValue,
+                                      itemType: ItemTypeValue.wallpaper,
+                                      itemId: wData.wallsS[index].id,
+                                      index: index,
+                                      queryLength: _queryLength,
+                                    ),
+                                  );
+                                  context.router.push(
+                                    WallpaperRoute(
+                                      source: WallpaperSource.wallhaven,
+                                      index: index,
+                                      link: wData.wallsS[index].thumbs!["small"].toString(),
+                                    ),
+                                  );
                                 }
-                              },
-                              onLongPress: () {
-                                setState(() {
-                                  longTapIndex = index;
-                                });
-                                shakeController.forward(from: 0.0);
-                                if (widget.selectedProvider == "WallHaven") {
-                                  if (wData.wallsS.isEmpty) {
-                                  } else {
-                                    HapticFeedback.vibrate();
-                                    createDynamicLink(
-                                      wData.wallsS[index].id,
-                                      WallpaperSource.wallhaven,
-                                      wData.wallsS[index].core.fullUrl,
-                                      wData.wallsS[index].core.thumbnailUrl,
-                                    );
-                                  }
-                                } else if (widget.selectedProvider == "Pexels") {
-                                  if (pData.wallsPS.isEmpty) {
-                                  } else {
-                                    HapticFeedback.vibrate();
-                                    createDynamicLink(
-                                      pData.wallsPS[index].id,
-                                      WallpaperSource.pexels,
-                                      pData.wallsPS[index].core.fullUrl,
-                                      pData.wallsPS[index].core.thumbnailUrl,
-                                    );
-                                  }
+                              } else if (widget.selectedProvider == "Pexels") {
+                                if (pData.wallsPS.isEmpty) {
+                                } else {
+                                  analytics.track(
+                                    SearchResultOpenedEvent(
+                                      provider: _providerValue,
+                                      itemType: ItemTypeValue.wallpaper,
+                                      itemId: pData.wallsPS[index].id,
+                                      index: index,
+                                      queryLength: _queryLength,
+                                    ),
+                                  );
+                                  context.router.push(
+                                    SearchWallpaperRoute(
+                                      source: WallpaperSourceX.fromWire(widget.selectedProvider ?? "Pexels"),
+                                      query: widget.query,
+                                      index: index,
+                                      link: pData.wallsPS[index].core.thumbnailUrl,
+                                    ),
+                                  );
                                 }
-                              },
-                            ),
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                longTapIndex = index;
+                              });
+                              shakeController.forward(from: 0.0);
+                              if (widget.selectedProvider == "WallHaven") {
+                                if (wData.wallsS.isEmpty) {
+                                } else {
+                                  HapticFeedback.vibrate();
+                                  createDynamicLink(
+                                    wData.wallsS[index].id,
+                                    WallpaperSource.wallhaven,
+                                    wData.wallsS[index].core.fullUrl,
+                                    wData.wallsS[index].core.thumbnailUrl,
+                                  );
+                                }
+                              } else if (widget.selectedProvider == "Pexels") {
+                                if (pData.wallsPS.isEmpty) {
+                                } else {
+                                  HapticFeedback.vibrate();
+                                  createDynamicLink(
+                                    pData.wallsPS[index].id,
+                                    WallpaperSource.pexels,
+                                    pData.wallsPS[index].core.fullUrl,
+                                    pData.wallsPS[index].core.thumbnailUrl,
+                                  );
+                                }
+                              }
+                            },
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
+
+            WallpaperActionPayload? payload;
+            if (widget.selectedProvider == "WallHaven" && index < wData.wallsS.length) {
+              final wall = wData.wallsS[index];
+              final category = wall.core.category?.trim() ?? '';
+              payload = WallpaperActionPayload(
+                providerLabel: 'WallHaven',
+                title: category.isEmpty ? 'Wallhaven' : '${category[0].toUpperCase()}${category.substring(1)}',
+                subtitle: wall.id.toUpperCase(),
+                stats: [
+                  WallpaperActionStat(kind: WallpaperActionStatKind.views, label: 'Views: ${wall.views ?? 0}'),
+                  WallpaperActionStat(kind: WallpaperActionStatKind.resolution, label: wall.core.resolution ?? '-'),
+                ],
+                fullUrl: wall.core.fullUrl,
+                favouriteWall: WallhavenFavouriteWall(id: wall.id, wallpaper: wall),
+                favouriteTrash: false,
+                cardTopFactor: 2 / 8,
+                cardHeightFactor: 6 / 8,
+                titleKind: WallpaperActionTitleKind.category,
+                titleColorHex: wall.colors == null || wall.colors!.isEmpty
+                    ? null
+                    : wall.colors!.last.toUpperCase().replaceAll('#', ''),
+                sourceContext: 'focused_menu.search.wallhaven',
+              );
+            } else if (widget.selectedProvider == "Pexels" && index < pData.wallsPS.length) {
+              final wall = pData.wallsPS[index];
+              final photographer = wall.photographer?.trim() ?? '';
+              payload = WallpaperActionPayload(
+                providerLabel: 'Pexels',
+                title: photographer.isEmpty ? 'Pexels' : photographer,
+                subtitle: wall.id.toUpperCase(),
+                stats: [
+                  WallpaperActionStat(kind: WallpaperActionStatKind.resolution, label: wall.core.resolution ?? '-'),
+                ],
+                fullUrl: wall.core.fullUrl,
+                favouriteWall: PexelsFavouriteWall(id: wall.id, wallpaper: wall),
+                favouriteTrash: false,
+                cardTopFactor: 4 / 10,
+                cardHeightFactor: 6 / 10,
+                sourceContext: 'focused_menu.search.pexels',
+              );
+            }
+
+            if (payload == null) {
+              return tile;
+            }
+            return SearchFocusedMenuHolder.payload(payload: payload, child: tile);
           },
         ),
       ),

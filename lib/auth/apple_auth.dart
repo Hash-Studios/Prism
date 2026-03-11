@@ -12,12 +12,12 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/features/category_feed/views/pages/home_screen.dart' as home;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AppleAuth {
@@ -137,7 +137,11 @@ class AppleAuth {
       );
       final String? followersTopic = followersTopicFromEmail(email);
       if (followersTopic != null) {
-        await subscribeToTopicSafely(home.f, followersTopic, sourceTag: 'apple_auth.signin.followers_topic');
+        await subscribeToTopicSafely(
+          FirebaseMessaging.instance,
+          followersTopic,
+          sourceTag: 'apple_auth.signin.followers_topic',
+        );
       }
       unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
       FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);

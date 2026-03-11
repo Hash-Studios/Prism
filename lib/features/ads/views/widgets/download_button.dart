@@ -20,7 +20,6 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class DownloadButton extends StatefulWidget {
   const DownloadButton({
@@ -480,25 +479,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
   }
 
-  Future<bool> _ensureStoragePermission() async {
-    final PermissionStatus status = await Permission.storage.status;
-    if (status.isGranted) {
-      return true;
-    }
-    final PermissionStatus requested = await Permission.storage.request();
-    return requested.isGranted;
-  }
-
   Future<bool> _performDownload() async {
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty) {
       toasts.error('No download link available.');
-      return false;
-    }
-
-    final bool storageGranted = await _ensureStoragePermission();
-    if (!storageGranted) {
-      toasts.error('Storage permission is required to download.');
       return false;
     }
 

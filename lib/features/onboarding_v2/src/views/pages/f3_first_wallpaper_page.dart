@@ -50,8 +50,12 @@ class F3FirstWallpaperPage extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          GestureDetector(
+                            onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.stepBack()),
+                            child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                          ),
+                          const SizedBox(width: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(20)),
@@ -60,6 +64,7 @@ class F3FirstWallpaperPage extends StatelessWidget {
                               style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
                             ),
                           ),
+                          const Spacer(),
                           TextButton(
                             onPressed: () => context.read<OnboardingV2Bloc>().add(
                               const OnboardingV2Event.firstWallpaperStepContinued(),

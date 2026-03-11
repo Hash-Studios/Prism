@@ -133,8 +133,8 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
   Future<Result<void>> saveInterests({required String userId, required List<String> interests}) async {
     try {
       await _firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        'interestCategories': FirestoreSentinels.arrayUnion(interests),
-        'onboardingV2': <String, dynamic>{'selectedInterests': interests},
+        'interestCategories': interests,
+        'onboardingV2.selectedInterests': interests,
       }, sourceTag: 'onboarding_v2.save_interests');
       await _settingsLocal.set(OnboardingV2Keys.selectedInterests, interests.join(','));
       return Result.success(null);

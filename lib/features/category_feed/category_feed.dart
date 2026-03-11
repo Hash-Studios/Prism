@@ -4,7 +4,6 @@ export 'views/pages/collection_screen.dart';
 export 'views/pages/collection_view_screen.dart';
 export 'views/pages/color_screen.dart';
 export 'views/pages/following_screen.dart';
-export 'views/pages/home_screen.dart';
 export 'views/widgets/categories_bar.dart';
 export 'views/widgets/collections_grid.dart';
 export 'views/widgets/collections_view_grid.dart';

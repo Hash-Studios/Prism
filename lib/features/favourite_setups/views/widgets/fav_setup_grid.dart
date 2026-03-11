@@ -6,7 +6,6 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -83,7 +82,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
+    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final likedSetups = context.favouriteSetupsAdapter(listen: false).liked;
     if (likedSetups != null) {
       _contentLoadTracker.success(

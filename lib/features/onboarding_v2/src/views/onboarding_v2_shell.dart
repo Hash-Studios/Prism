@@ -124,6 +124,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         builder: (context, state) {
           return PopScope(
             canPop: false,
+            onPopInvokedWithResult: (_, _) {
+              _bloc.add(const OnboardingV2Event.stepBack());
+            },
             child: PageView(
               controller: _pageController,
               physics: const NeverScrollableScrollPhysics(),

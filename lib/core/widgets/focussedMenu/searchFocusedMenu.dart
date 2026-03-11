@@ -1,37 +1,40 @@
-import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenuDetails.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
+import 'package:Prism/core/widgets/focussedMenu/focused_menu_data.dart';
+import 'package:Prism/core/widgets/focussedMenu/focused_menu_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class SearchFocusedMenuHolder extends StatefulWidget {
-  final String? selectedProvider;
-  final String query;
-  final Widget child;
-  final int index;
+  const SearchFocusedMenuHolder.payload({super.key, required this.payload, required this.child});
 
-  const SearchFocusedMenuHolder({
-    required this.selectedProvider,
-    required this.query,
-    required this.child,
-    required this.index,
-  });
+  final WallpaperActionPayload payload;
+  final Widget child;
 
   @override
   _SearchFocusedMenuHolderState createState() => _SearchFocusedMenuHolderState();
 }
 
 class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
-  GlobalKey containerKey = GlobalKey();
-  Offset childOffset = Offset.zero;
-  Size? childSize;
+  final GlobalKey containerKey = GlobalKey();
+  late FocusedMenuData _menuData;
 
-  void getOffset() {
-    final RenderBox renderBox = (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
-    final Size size = renderBox.size;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    setState(() {
-      childOffset = Offset(offset.dx, offset.dy);
-      childSize = size;
-    });
+  (Offset, Size)? _getOffsetAndSize() {
+    final renderBox = (containerKey.currentContext!.findRenderObject() as RenderBox?)!;
+    return (renderBox.localToGlobal(Offset.zero), renderBox.size);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _menuData = FocusedMenuDataAdapter.fromPayload(widget.payload);
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchFocusedMenuHolder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.payload != widget.payload) {
+      _menuData = FocusedMenuDataAdapter.fromPayload(widget.payload);
+    }
   }
 
   @override
@@ -44,7 +47,11 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
           alignment: Alignment.bottomRight,
           child: GestureDetector(
             onTap: () async {
-              getOffset();
+              final placement = _getOffsetAndSize();
+              if (placement == null) {
+                return;
+              }
+              final (childOffset, childSize) = placement;
               await Navigator.push(
                 context,
                 PageRouteBuilder(
@@ -53,12 +60,10 @@ class _SearchFocusedMenuHolderState extends State<SearchFocusedMenuHolder> {
                     animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                     return FadeTransition(
                       opacity: animation,
-                      child: SearchFocusedMenuDetails(
-                        selectedProvider: widget.selectedProvider,
-                        query: widget.query,
+                      child: FocusedMenuOverlay(
+                        menuData: _menuData,
                         childOffset: childOffset,
                         childSize: childSize,
-                        index: widget.index,
                         child: widget.child,
                       ),
                     );

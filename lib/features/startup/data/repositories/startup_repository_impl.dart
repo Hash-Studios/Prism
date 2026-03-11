@@ -5,6 +5,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -42,7 +43,7 @@ class StartupRepositoryImpl implements StartupRepository {
     return normalized.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(growable: false);
   }
 
-  List<Map<String, dynamic>> _parseCategories(String raw) {
+  List<Map<String, dynamic>> _parseStarterPack(String raw) {
     try {
       final decoded = json.decode(raw);
       if (decoded is List) {
@@ -82,7 +83,6 @@ class StartupRepositoryImpl implements StartupRepository {
         'bannerText': defaultBannerText,
         'bannerTextOn': defaultBannerTextOn.toString(),
         'bannerURL': defaultBannerUrl,
-        'latestCategories': '[]',
         'currentVersion': currentAppVersion,
         'obsoleteVersion': defaultObsoleteAppVersion,
         'topTitleText': defaultTopTitleText.toString(),
@@ -95,6 +95,7 @@ class StartupRepositoryImpl implements StartupRepository {
         'use_rc_paywalls': defaultUseRcPaywalls,
         'onboarding_v2_enabled': defaultOnboardingV2Enabled,
         'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
+        personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
       });
       await _remoteConfig.fetchAndActivate();
 
@@ -112,12 +113,21 @@ class StartupRepositoryImpl implements StartupRepository {
       final aiVariationsEnabled = _remoteConfig.getBool('ai_variations_enabled');
       final useRcPaywalls = _remoteConfig.getBool('use_rc_paywalls');
       topTitleText.shuffle();
-      final categories = _parseCategories(_remoteConfig.getString('latestCategories'));
-      categories.removeWhere((element) => element['name'] == 'Trending');
+      final categories = category_data.categoryDefinitions
+          .map(
+            (def) => <String, dynamic>{
+              'name': def.name,
+              'source': def.source.name,
+              'searchType': def.searchType.name,
+              'imageUrl': def.imageUrl,
+              'secondaryImageUrl': def.secondaryImageUrl,
+            },
+          )
+          .toList(growable: false);
 
       final followersTab = _settingsLocal.get<bool>('followersTab', defaultValue: true);
       final onboardingV2Enabled = _remoteConfig.getBool('onboarding_v2_enabled');
-      final onboardingStarterPack = _parseCategories(_remoteConfig.getString('onboarding_starter_pack_v1'));
+      final onboardingStarterPack = _parseStarterPack(_remoteConfig.getString('onboarding_starter_pack_v1'));
       await syncInAppNotificationsFromRemote();
 
       final entity = StartupConfigEntity(

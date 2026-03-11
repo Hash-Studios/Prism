@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -20,7 +21,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
   final CacheMaintenanceService _cacheMaintenance = getIt<CacheMaintenanceService>();
@@ -235,27 +235,14 @@ class ProfileDrawer extends StatelessWidget {
                             sourceContext: 'profile_drawer_clear_downloads_confirm',
                           );
                           Navigator.of(context).pop();
-                          final dir = Directory("storage/emulated/0/Prism/");
-                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
-                          final status = await Permission.storage.status;
-                          if (!status.isGranted) {
-                            await Permission.storage.request();
-                          }
-                          bool deletedDir = false;
-                          bool deletedDir2 = false;
+                          bool deleted = false;
                           try {
-                            dir.deleteSync(recursive: true);
-                            deletedDir = true;
+                            final result = await PrismMediaHostApi().clearDownloads();
+                            deleted = result.success;
                           } catch (e) {
                             logger.d(e.toString());
                           }
-                          try {
-                            dir2.deleteSync(recursive: true);
-                            deletedDir2 = true;
-                          } catch (e) {
-                            logger.d(e.toString());
-                          }
-                          if (deletedDir || deletedDir2) {
+                          if (deleted) {
                             Fluttertoast.showToast(
                               msg: "Deleted all downloads!",
                               toastLength: Toast.LENGTH_LONG,

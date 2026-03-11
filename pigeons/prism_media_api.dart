@@ -4,6 +4,8 @@ import 'package:pigeon/pigeon.dart';
 abstract class PrismMediaHostApi {
   OperationResult saveMedia(SaveMediaRequest request);
   OperationResult enqueueDownload(DownloadRequest request);
+  DownloadItemsResult listDownloads();
+  OperationResult clearDownloads();
 }
 
 class SaveMediaRequest {
@@ -22,10 +24,7 @@ class DownloadRequest {
   final String link;
   final String filenameWithoutExtension;
 
-  DownloadRequest({
-    required this.link,
-    required this.filenameWithoutExtension,
-  });
+  DownloadRequest({required this.link, required this.filenameWithoutExtension});
 }
 
 class OperationResult {
@@ -33,14 +32,21 @@ class OperationResult {
   final String? errorCode;
   final String? message;
 
-  OperationResult({
+  OperationResult({required this.success, this.errorCode, this.message});
+}
+
+class DownloadItemsResult {
+  final bool success;
+  final List<String> items;
+  final String? errorCode;
+  final String? message;
+
+  DownloadItemsResult({
     required this.success,
+    required this.items,
     this.errorCode,
     this.message,
   });
 }
 
-enum SaveMediaKind {
-  wallpaper,
-  setup,
-}
+enum SaveMediaKind { wallpaper, setup }
