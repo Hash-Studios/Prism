@@ -72,8 +72,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
   }
 
   Widget _buildCarousel(BuildContext context, PersonalizedFeedState state) {
-    final List<PrismFeedItem> previewWalls =
-        state.items.whereType<PrismFeedItem>().take(4).toList(growable: false);
+    final List<PrismFeedItem> previewWalls = state.items.whereType<PrismFeedItem>().take(4).toList(growable: false);
 
     return SizedBox(
       height: 200,
@@ -134,9 +133,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                       child: Center(
                         child: Container(
                           width: MediaQuery.of(context).size.width,
-                          color: app_state.bannerTextOn
-                              ? Colors.black.withValues(alpha: 0.4)
-                              : Colors.transparent,
+                          color: app_state.bannerTextOn ? Colors.black.withValues(alpha: 0.4) : Colors.transparent,
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Text(
@@ -157,8 +154,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                 );
               }
               final int feedIndex = i - 2;
-              final PrismFeedItem? wall =
-                  feedIndex >= 0 && feedIndex < previewWalls.length ? previewWalls[feedIndex] : null;
+              final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
+                  ? previewWalls[feedIndex]
+                  : null;
               return Container(
                 width: MediaQuery.of(context).size.width,
                 margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
@@ -289,9 +287,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                   physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   slivers: [
                     // Carousel: WallOfTheDay + banner + 4 wallpaper previews
-                    SliverToBoxAdapter(
-                      child: _buildCarousel(context, state),
-                    ),
+                    SliverToBoxAdapter(child: _buildCarousel(context, state)),
                     SliverToBoxAdapter(
                       child: AnimatedOpacity(
                         opacity: state.status == LoadStatus.success ? 1 : 0,
