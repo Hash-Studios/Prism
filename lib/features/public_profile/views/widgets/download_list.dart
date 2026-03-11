@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'dart:io';
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -100,23 +99,14 @@ class DownloadList extends StatelessWidget {
                         sourceContext: 'profile_download_list_clear_downloads_confirm',
                       );
                       Navigator.of(context).pop();
-                      final dir = Directory("storage/emulated/0/Prism/");
-                      final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
-                      bool deletedDir = false;
-                      bool deletedDir2 = false;
+                      bool deleted = false;
                       try {
-                        dir.deleteSync(recursive: true);
-                        deletedDir = true;
+                        final result = await PrismMediaHostApi().clearDownloads();
+                        deleted = result.success;
                       } catch (e) {
                         logger.d(e.toString());
                       }
-                      try {
-                        dir2.deleteSync(recursive: true);
-                        deletedDir2 = true;
-                      } catch (e) {
-                        logger.d(e.toString());
-                      }
-                      if (deletedDir || deletedDir2) {
+                      if (deleted) {
                         Fluttertoast.showToast(
                           msg: "Deleted all downloads!",
                           toastLength: Toast.LENGTH_LONG,

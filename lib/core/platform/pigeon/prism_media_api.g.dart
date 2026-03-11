@@ -150,6 +150,52 @@ class OperationResult {
   int get hashCode => Object.hashAll(_toList());
 }
 
+class DownloadItemsResult {
+  DownloadItemsResult({required this.success, required this.items, this.errorCode, this.message});
+
+  bool success;
+
+  List<String> items;
+
+  String? errorCode;
+
+  String? message;
+
+  List<Object?> _toList() {
+    return <Object?>[success, items, errorCode, message];
+  }
+
+  Object encode() {
+    return _toList();
+  }
+
+  static DownloadItemsResult decode(Object result) {
+    result as List<Object?>;
+    return DownloadItemsResult(
+      success: result[0]! as bool,
+      items: (result[1] as List<Object?>?)!.cast<String>(),
+      errorCode: result[2] as String?,
+      message: result[3] as String?,
+    );
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  bool operator ==(Object other) {
+    if (other is! DownloadItemsResult || other.runtimeType != runtimeType) {
+      return false;
+    }
+    if (identical(this, other)) {
+      return true;
+    }
+    return _deepEquals(encode(), other.encode());
+  }
+
+  @override
+  // ignore: avoid_equals_and_hash_code_on_mutable_classes
+  int get hashCode => Object.hashAll(_toList());
+}
+
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
   @override
@@ -169,6 +215,9 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is OperationResult) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
+    } else if (value is DownloadItemsResult) {
+      buffer.putUint8(133);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -186,6 +235,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return DownloadRequest.decode(readValue(buffer)!);
       case 132:
         return OperationResult.decode(readValue(buffer)!);
+      case 133:
+        return DownloadItemsResult.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -241,6 +292,62 @@ class PrismMediaHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[request]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as OperationResult?)!;
+    }
+  }
+
+  Future<DownloadItemsResult> listDownloads() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as DownloadItemsResult?)!;
+    }
+  }
+
+  Future<OperationResult> clearDownloads() async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(null);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);

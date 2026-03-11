@@ -22,6 +22,7 @@ import com.hash.prism.pigeon.PrismMediaApi.OperationResult;
 import com.hash.prism.pigeon.PrismMediaApi.PrismMediaHostApi;
 import com.hash.prism.pigeon.PrismMediaApi.SaveMediaKind;
 import com.hash.prism.pigeon.PrismMediaApi.SaveMediaRequest;
+import com.hash.prism.pigeon.PrismMediaApi.DownloadItemsResult;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,6 +31,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -125,6 +128,36 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
         }
     }
 
+    @Override
+    @NonNull
+    public DownloadItemsResult listDownloads() {
+        try {
+            return ioExecutor.submit(this::listDownloadsInternal).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return createDownloadItemsError("INTERRUPTED", "List downloads task interrupted");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            String message = cause != null && cause.getMessage() != null ? cause.getMessage() : e.getMessage();
+            return createDownloadItemsError("EXCEPTION", message);
+        }
+    }
+
+    @Override
+    @NonNull
+    public OperationResult clearDownloads() {
+        try {
+            return ioExecutor.submit(this::clearDownloadsInternal).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return createErrorResult("INTERRUPTED", "Clear downloads task interrupted");
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            String message = cause != null && cause.getMessage() != null ? cause.getMessage() : e.getMessage();
+            return createErrorResult("EXCEPTION", message);
+        }
+    }
+
     private Bitmap loadBitmapFromFile(String path) {
         try {
             String resolvedPath = path;
@@ -163,6 +196,129 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
                 connection.disconnect();
             }
         }
+    }
+
+    @NonNull
+    private DownloadItemsResult listDownloadsInternal() {
+        try {
+            final ArrayList<String> items = new ArrayList<>();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                String[] projection = {
+                        MediaStore.Images.Media.DATA,
+                        MediaStore.Images.Media.RELATIVE_PATH,
+                        MediaStore.Images.Media.DISPLAY_NAME
+                };
+                String selection = MediaStore.Images.Media.RELATIVE_PATH + " LIKE ? OR "
+                        + MediaStore.Images.Media.RELATIVE_PATH + " LIKE ?";
+                String[] selectionArgs = {
+                        Environment.DIRECTORY_PICTURES + "/Prism/%",
+                        "Prism/%"
+                };
+                try (android.database.Cursor cursor = context.getContentResolver().query(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        MediaStore.Images.Media.DATE_ADDED + " DESC"
+                )) {
+                    if (cursor != null) {
+                        int dataCol = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+                        int relCol = cursor.getColumnIndex(MediaStore.Images.Media.RELATIVE_PATH);
+                        int nameCol = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
+                        while (cursor.moveToNext()) {
+                            String path = dataCol >= 0 ? cursor.getString(dataCol) : null;
+                            if (path == null || path.isEmpty()) {
+                                String rel = relCol >= 0 ? cursor.getString(relCol) : null;
+                                String name = nameCol >= 0 ? cursor.getString(nameCol) : null;
+                                if (rel != null && name != null) {
+                                    path = Environment.getExternalStorageDirectory().toString() + "/" + rel + name;
+                                }
+                            }
+                            if (path != null && !path.isEmpty()) {
+                                items.add(path);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (items.isEmpty()) {
+                File prismLegacy = new File("storage/emulated/0/Prism/");
+                File prismPictures = new File("storage/emulated/0/Pictures/Prism/");
+                appendFiles(items, prismPictures);
+                appendFiles(items, prismLegacy);
+            }
+
+            return new DownloadItemsResult.Builder().setSuccess(true).setItems(items).build();
+        } catch (Exception e) {
+            return createDownloadItemsError("LIST_FAILED", e.getMessage());
+        }
+    }
+
+    @NonNull
+    private OperationResult clearDownloadsInternal() {
+        int deleted = 0;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                String selection = MediaStore.Images.Media.RELATIVE_PATH + " LIKE ? OR "
+                        + MediaStore.Images.Media.RELATIVE_PATH + " LIKE ?";
+                String[] selectionArgs = {
+                        Environment.DIRECTORY_PICTURES + "/Prism/%",
+                        "Prism/%"
+                };
+                deleted += context.getContentResolver().delete(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        selection,
+                        selectionArgs
+                );
+            }
+        } catch (Exception ignored) {
+        }
+
+        deleted += deleteDirectory(new File("storage/emulated/0/Pictures/Prism/"));
+        deleted += deleteDirectory(new File("storage/emulated/0/Prism/"));
+
+        if (deleted > 0) {
+            return createSuccessResult();
+        }
+        return createErrorResult("NO_DOWNLOADS", "No downloads found to delete");
+    }
+
+    private void appendFiles(@NonNull ArrayList<String> out, @NonNull File directory) {
+        try {
+            File[] list = directory.listFiles();
+            if (list == null) {
+                return;
+            }
+            for (File file : list) {
+                if (file.isFile()) {
+                    final String lower = file.getName().toLowerCase(Locale.US);
+                    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp")) {
+                        out.add(file.getAbsolutePath());
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private int deleteDirectory(@NonNull File directory) {
+        int deleted = 0;
+        try {
+            File[] list = directory.listFiles();
+            if (list != null) {
+                for (File file : list) {
+                    if (file.isDirectory()) {
+                        deleted += deleteDirectory(file);
+                    } else if (file.delete()) {
+                        deleted += 1;
+                    }
+                }
+            }
+            directory.delete();
+        } catch (Exception ignored) {
+        }
+        return deleted;
     }
 
     private boolean saveBitmapToPictures(Bitmap bitmap, String folderName) {
@@ -208,6 +364,15 @@ public class PrismMediaHostApiImpl implements PrismMediaHostApi {
     private OperationResult createErrorResult(String errorCode, String message) {
         return new OperationResult.Builder()
                 .setSuccess(false)
+                .setErrorCode(errorCode)
+                .setMessage(message)
+                .build();
+    }
+
+    private DownloadItemsResult createDownloadItemsError(String errorCode, String message) {
+        return new DownloadItemsResult.Builder()
+                .setSuccess(false)
+                .setItems(new ArrayList<>())
                 .setErrorCode(errorCode)
                 .setMessage(message)
                 .build();

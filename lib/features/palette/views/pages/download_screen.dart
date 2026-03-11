@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
@@ -41,29 +42,19 @@ class _DownloadScreenState extends State<DownloadScreen> {
     super.dispose();
   }
 
-  Future<String> get localfile async {
-    const String path = 'storage/emulated/0/';
-    return '${path}Prism';
-  }
-
-  Future<String> get newLocalfile async {
-    const String path = 'storage/emulated/0/';
-    return '${path}Pictures/Prism';
-  }
-
   Future<void> readData() async {
     _contentLoadTracker.start();
-    final file = await localfile;
-    final fileNew = await newLocalfile;
     try {
-      files = Directory(fileNew).listSync();
+      final result = await PrismMediaHostApi().listDownloads();
+      if (!result.success) {
+        logger.w(result.message ?? 'Unable to list downloads');
+        files = <FileSystemEntity>[];
+      } else {
+        files = result.items.map((path) => File(path)).where((file) => file.existsSync()).toList(growable: false);
+      }
     } catch (e) {
       logger.d(e.toString());
-    }
-    try {
-      files.addAll(Directory(file).listSync());
-    } catch (e) {
-      logger.d(e.toString());
+      files = <FileSystemEntity>[];
     }
     if (files.isEmpty) {
       setState(() {

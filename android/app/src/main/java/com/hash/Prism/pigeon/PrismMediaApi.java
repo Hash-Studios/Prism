@@ -386,6 +386,138 @@ public class PrismMediaApi {
     }
   }
 
+  /** Generated class from Pigeon that represents data sent in messages. */
+  public static final class DownloadItemsResult {
+    private @NonNull Boolean success;
+
+    public @NonNull Boolean getSuccess() {
+      return success;
+    }
+
+    public void setSuccess(@NonNull Boolean setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"success\" is null.");
+      }
+      this.success = setterArg;
+    }
+
+    private @NonNull List<String> items;
+
+    public @NonNull List<String> getItems() {
+      return items;
+    }
+
+    public void setItems(@NonNull List<String> setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"items\" is null.");
+      }
+      this.items = setterArg;
+    }
+
+    private @Nullable String errorCode;
+
+    public @Nullable String getErrorCode() {
+      return errorCode;
+    }
+
+    public void setErrorCode(@Nullable String setterArg) {
+      this.errorCode = setterArg;
+    }
+
+    private @Nullable String message;
+
+    public @Nullable String getMessage() {
+      return message;
+    }
+
+    public void setMessage(@Nullable String setterArg) {
+      this.message = setterArg;
+    }
+
+    /** Constructor is non-public to enforce null safety; use Builder. */
+    DownloadItemsResult() {}
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) { return true; }
+      if (o == null || getClass() != o.getClass()) { return false; }
+      DownloadItemsResult that = (DownloadItemsResult) o;
+      return success.equals(that.success) && items.equals(that.items) && Objects.equals(errorCode, that.errorCode) && Objects.equals(message, that.message);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(success, items, errorCode, message);
+    }
+
+    public static final class Builder {
+
+      private @Nullable Boolean success;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setSuccess(@NonNull Boolean setterArg) {
+        this.success = setterArg;
+        return this;
+      }
+
+      private @Nullable List<String> items;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setItems(@NonNull List<String> setterArg) {
+        this.items = setterArg;
+        return this;
+      }
+
+      private @Nullable String errorCode;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setErrorCode(@Nullable String setterArg) {
+        this.errorCode = setterArg;
+        return this;
+      }
+
+      private @Nullable String message;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setMessage(@Nullable String setterArg) {
+        this.message = setterArg;
+        return this;
+      }
+
+      public @NonNull DownloadItemsResult build() {
+        DownloadItemsResult pigeonReturn = new DownloadItemsResult();
+        pigeonReturn.setSuccess(success);
+        pigeonReturn.setItems(items);
+        pigeonReturn.setErrorCode(errorCode);
+        pigeonReturn.setMessage(message);
+        return pigeonReturn;
+      }
+    }
+
+    @NonNull
+    ArrayList<Object> toList() {
+      ArrayList<Object> toListResult = new ArrayList<>(4);
+      toListResult.add(success);
+      toListResult.add(items);
+      toListResult.add(errorCode);
+      toListResult.add(message);
+      return toListResult;
+    }
+
+    static @NonNull DownloadItemsResult fromList(@NonNull ArrayList<Object> pigeonVar_list) {
+      DownloadItemsResult pigeonResult = new DownloadItemsResult();
+      Object success = pigeonVar_list.get(0);
+      pigeonResult.setSuccess((Boolean) success);
+      Object items = pigeonVar_list.get(1);
+      pigeonResult.setItems((List<String>) items);
+      Object errorCode = pigeonVar_list.get(2);
+      pigeonResult.setErrorCode((String) errorCode);
+      Object message = pigeonVar_list.get(3);
+      pigeonResult.setMessage((String) message);
+      return pigeonResult;
+    }
+  }
+
   private static class PigeonCodec extends StandardMessageCodec {
     public static final PigeonCodec INSTANCE = new PigeonCodec();
 
@@ -404,6 +536,8 @@ public class PrismMediaApi {
           return DownloadRequest.fromList((ArrayList<Object>) readValue(buffer));
         case (byte) 132:
           return OperationResult.fromList((ArrayList<Object>) readValue(buffer));
+        case (byte) 133:
+          return DownloadItemsResult.fromList((ArrayList<Object>) readValue(buffer));
         default:
           return super.readValueOfType(type, buffer);
       }
@@ -423,6 +557,9 @@ public class PrismMediaApi {
       } else if (value instanceof OperationResult) {
         stream.write(132);
         writeValue(stream, ((OperationResult) value).toList());
+      } else if (value instanceof DownloadItemsResult) {
+        stream.write(133);
+        writeValue(stream, ((DownloadItemsResult) value).toList());
       } else {
         super.writeValue(stream, value);
       }
@@ -437,6 +574,12 @@ public class PrismMediaApi {
 
     @NonNull 
     OperationResult enqueueDownload(@NonNull DownloadRequest request);
+
+    @NonNull 
+    DownloadItemsResult listDownloads();
+
+    @NonNull 
+    OperationResult clearDownloads();
 
     /** The codec used by PrismMediaHostApi. */
     static @NonNull MessageCodec<Object> getCodec() {
@@ -483,6 +626,48 @@ public class PrismMediaApi {
                 DownloadRequest requestArg = (DownloadRequest) args.get(0);
                 try {
                   OperationResult output = api.enqueueDownload(requestArg);
+                  wrapped.add(0, output);
+                }
+ catch (Throwable exception) {
+                  wrapped = wrapError(exception);
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads" + messageChannelSuffix, getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<>();
+                try {
+                  DownloadItemsResult output = api.listDownloads();
+                  wrapped.add(0, output);
+                }
+ catch (Throwable exception) {
+                  wrapped = wrapError(exception);
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads" + messageChannelSuffix, getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<>();
+                try {
+                  OperationResult output = api.clearDownloads();
                   wrapped.add(0, output);
                 }
  catch (Throwable exception) {
