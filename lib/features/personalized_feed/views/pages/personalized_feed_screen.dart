@@ -36,6 +36,8 @@ class PersonalizedFeedScreen extends StatefulWidget {
 }
 
 class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
+  static const int _carouselPreviewCount = 4;
+
   late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
   int _current = 0;
@@ -72,151 +74,157 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
   }
 
   Widget _buildCarousel(BuildContext context, PersonalizedFeedState state) {
-    final List<PrismFeedItem> previewWalls = state.items.whereType<PrismFeedItem>().take(4).toList(growable: false);
+    final List<PrismFeedItem> previewWalls = state.items
+        .whereType<PrismFeedItem>()
+        .take(_carouselPreviewCount)
+        .toList(growable: false);
 
-    return SizedBox(
-      height: 200,
-      child: Stack(
-        alignment: AlignmentDirectional.bottomEnd,
-        children: [
-          CarouselSlider.builder(
-            carouselController: _carouselController,
-            itemCount: 6,
-            options: CarouselOptions(
-              height: 200,
-              autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 3),
-              onPageChanged: (index, reason) {
-                if (mounted) {
-                  setState(() {
-                    _current = index;
-                  });
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SizedBox(
+        height: 200,
+        child: Stack(
+          alignment: AlignmentDirectional.bottomEnd,
+          children: [
+            CarouselSlider.builder(
+              carouselController: _carouselController,
+              itemCount: 6,
+              options: CarouselOptions(
+                height: 200,
+                autoPlay: true,
+                autoPlayInterval: const Duration(seconds: 3),
+                onPageChanged: (index, reason) {
+                  if (mounted) {
+                    setState(() {
+                      _current = index;
+                    });
+                  }
+                },
+              ),
+              itemBuilder: (BuildContext context, int i, int rI) {
+                if (i == 0) {
+                  return Container(
+                    width: MediaQuery.of(context).size.width,
+                    margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
+                    child: const WallOfTheDayCard(),
+                  );
                 }
-              },
-            ),
-            itemBuilder: (BuildContext context, int i, int rI) {
-              if (i == 0) {
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                  child: const WallOfTheDayCard(),
-                );
-              }
-              if (i == 1) {
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                  child: GestureDetector(
-                    onTap: () {
-                      unawaited(
-                        analytics.track(
-                          const SurfaceActionTappedEvent(
-                            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                            action: AnalyticsActionValue.bannerTapped,
-                            sourceContext: 'personalized_feed_carousel_banner',
+                if (i == 1) {
+                  return Container(
+                    width: MediaQuery.of(context).size.width,
+                    margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
+                    child: GestureDetector(
+                      onTap: () {
+                        unawaited(
+                          analytics.track(
+                            const SurfaceActionTappedEvent(
+                              surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                              action: AnalyticsActionValue.bannerTapped,
+                              sourceContext: 'personalized_feed_carousel_banner',
+                            ),
+                          ),
+                        );
+                        openPrismLink(context, app_state.bannerURL);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: context.prismModeStyleForContext() == "Dark"
+                              ? Colors.white10
+                              : Colors.black.withValues(alpha: .1),
+                          borderRadius: BorderRadius.circular(20),
+                          image: DecorationImage(
+                            image: CachedNetworkImageProvider(app_state.topImageLink),
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      );
-                      openPrismLink(context, app_state.bannerURL);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: context.prismModeStyleForContext() == "Dark"
-                            ? Colors.white10
-                            : Colors.black.withValues(alpha: .1),
-                        borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(app_state.topImageLink),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Center(
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          color: app_state.bannerTextOn ? Colors.black.withValues(alpha: 0.4) : Colors.transparent,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                fontSize: 20,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: app_state.bannerTextOn ? Colors.black.withValues(alpha: 0.4) : Colors.transparent,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              }
-              final int feedIndex = i - 2;
-              final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
-                  ? previewWalls[feedIndex]
-                  : null;
-              return Container(
-                width: MediaQuery.of(context).size.width,
-                margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                child: GestureDetector(
-                  onTap: () {
-                    if (wall == null) return;
-                    unawaited(
-                      analytics.track(
-                        SurfaceActionTappedEvent(
-                          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                          action: AnalyticsActionValue.carouselItemOpened,
-                          sourceContext: 'personalized_feed_carousel',
-                          itemType: ItemTypeValue.wallpaper,
-                          itemId: wall.id,
-                          index: feedIndex,
+                  );
+                }
+                final int feedIndex = i - 2;
+                final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
+                    ? previewWalls[feedIndex]
+                    : null;
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (wall == null) return;
+                      unawaited(
+                        analytics.track(
+                          SurfaceActionTappedEvent(
+                            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                            action: AnalyticsActionValue.carouselItemOpened,
+                            sourceContext: 'personalized_feed_carousel',
+                            itemType: ItemTypeValue.wallpaper,
+                            itemId: wall.id,
+                            index: feedIndex,
+                          ),
                         ),
-                      ),
-                    );
-                    context.router.push(
-                      WallpaperRoute(
-                        source: WallpaperSource.prism,
-                        index: feedIndex,
-                        link: wall.wallpaper.thumbnailUrl,
-                        item: wall,
-                      ),
-                    );
-                  },
-                  child: wall == null
-                      ? Container(
-                          decoration: BoxDecoration(
-                            color: context.prismModeStyleForContext() == "Dark"
-                                ? Colors.white10
-                                : Colors.black.withValues(alpha: .1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        )
-                      : PremiumBannerWallsCarousel(
-                          comparator: !app_state.isPremiumWall(
-                            app_state.premiumCollections,
-                            wall.wallpaper.collections ?? const <String>[],
-                          ),
-                          child: Container(
+                      );
+                      context.router.push(
+                        WallpaperRoute(
+                          source: WallpaperSource.prism,
+                          index: feedIndex,
+                          link: wall.wallpaper.thumbnailUrl,
+                          item: wall,
+                        ),
+                      );
+                    },
+                    child: wall == null
+                        ? Container(
                             decoration: BoxDecoration(
                               color: context.prismModeStyleForContext() == "Dark"
                                   ? Colors.white10
                                   : Colors.black.withValues(alpha: .1),
                               borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
-                                fit: BoxFit.cover,
+                            ),
+                          )
+                        : PremiumBannerWallsCarousel(
+                            comparator: !app_state.isPremiumWall(
+                              app_state.premiumCollections,
+                              wall.wallpaper.collections ?? const <String>[],
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: context.prismModeStyleForContext() == "Dark"
+                                    ? Colors.white10
+                                    : Colors.black.withValues(alpha: .1),
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                ),
-              );
-            },
-          ),
-          CarouselDots(current: _current),
-        ],
+                  ),
+                );
+              },
+            ),
+            CarouselDots(current: _current),
+          ],
+        ),
       ),
     );
   }
@@ -230,6 +238,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
         builder: (context, state) {
           final theme = Theme.of(context);
           final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+          final visibleItems = _gridItemsWithoutCarouselPreview(state);
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
             return Stack(
@@ -288,27 +297,27 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                   slivers: [
                     // Carousel: WallOfTheDay + banner + 4 wallpaper previews
                     SliverToBoxAdapter(child: _buildCarousel(context, state)),
-                    SliverToBoxAdapter(
-                      child: AnimatedOpacity(
-                        opacity: state.status == LoadStatus.success ? 1 : 0,
-                        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                        curve: Curves.easeOut,
-                        child: AnimatedSlide(
-                          offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
-                          duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                          curve: Curves.easeOutCubic,
-                          child: PersonalizedFeedHeader(
-                            prismCount: state.sourcePrism,
-                            wallhavenCount: state.sourceWallhaven,
-                            pexelsCount: state.sourcePexels,
-                            itemCount: state.items.length,
-                            isFetchingMore: state.isFetchingMore,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // SliverToBoxAdapter(
+                    //   child: AnimatedOpacity(
+                    //     opacity: state.status == LoadStatus.success ? 1 : 0,
+                    //     duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                    //     curve: Curves.easeOut,
+                    //     child: AnimatedSlide(
+                    //       offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
+                    //       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                    //       curve: Curves.easeOutCubic,
+                    //       child: PersonalizedFeedHeader(
+                    //         prismCount: state.sourcePrism,
+                    //         wallhavenCount: state.sourceWallhaven,
+                    //         pexelsCount: state.sourcePexels,
+                    //         itemCount: state.items.length,
+                    //         isFetchingMore: state.isFetchingMore,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(5, 8, 5, 4),
+                      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                       sliver: SliverGrid(
                         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -317,7 +326,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                           crossAxisSpacing: 8,
                         ),
                         delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = state.items[index];
+                          final item = visibleItems[index];
                           final tile = switch (item) {
                             PrismFeedItem prism => WallpaperTile(item: prism, index: index),
                             WallhavenFeedItem wallhaven => WallhavenTile(item: wallhaven, index: index),
@@ -325,7 +334,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
                           };
 
                           return AnimatedFeedTile(index: index, reduceMotion: reduceMotion, child: tile);
-                        }, childCount: state.items.length),
+                        }, childCount: visibleItems.length),
                       ),
                     ),
                     SliverToBoxAdapter(child: _bottomState(context, state)),
@@ -362,5 +371,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> {
       padding: EdgeInsets.fromLTRB(20, 8, 20, 26),
       child: PersonalizedEmptyCard(message: 'You are all caught up. Pull to refresh for fresh picks.'),
     );
+  }
+
+  List<FeedItemEntity> _gridItemsWithoutCarouselPreview(PersonalizedFeedState state) {
+    var skippedPrismCount = 0;
+    return state.items
+        .where((item) {
+          if (item is PrismFeedItem && skippedPrismCount < _carouselPreviewCount) {
+            skippedPrismCount += 1;
+            return false;
+          }
+          return true;
+        })
+        .toList(growable: false);
   }
 }
