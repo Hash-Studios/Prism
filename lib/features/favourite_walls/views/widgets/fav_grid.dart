@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
@@ -212,9 +213,46 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                         crossAxisSpacing: 8,
                       ),
                       itemBuilder: (context, index) {
-                        return FocusedMenuHolder(
-                          provider: "Liked",
-                          index: index,
+                        final likedWall = context.favouriteWallsAdapter().liked![index];
+                        final isWallhaven = likedWall.provider == 'WallHaven';
+                        final isPrism = likedWall.provider == 'Prism';
+                        final isPexels = likedWall.provider == 'Pexels';
+                        final category = likedWall.category.trim();
+                        final photographer = likedWall.photographer.trim();
+                        final payload = WallpaperActionPayload(
+                          providerLabel: 'Liked',
+                          title: isWallhaven
+                              ? (category.isEmpty
+                                    ? 'Wallhaven'
+                                    : '${category[0].toUpperCase()}${category.substring(1)}')
+                              : (photographer.isEmpty ? 'Pexels' : photographer),
+                          subtitle: likedWall.id.toUpperCase(),
+                          stats: [
+                            if (isWallhaven)
+                              WallpaperActionStat(
+                                kind: WallpaperActionStatKind.views,
+                                label: 'Views: ${likedWall.views.isEmpty ? '0' : likedWall.views}',
+                              ),
+                            if (isPrism)
+                              WallpaperActionStat(
+                                kind: WallpaperActionStatKind.size,
+                                label: likedWall.size.isEmpty ? '0' : likedWall.size,
+                              ),
+                            WallpaperActionStat(
+                              kind: WallpaperActionStatKind.resolution,
+                              label: likedWall.resolution.isEmpty ? '-' : likedWall.resolution,
+                            ),
+                          ],
+                          fullUrl: likedWall.url,
+                          favouriteWall: likedWall,
+                          favouriteTrash: true,
+                          cardTopFactor: isPexels ? 1 / 2 : 2 / 8,
+                          cardHeightFactor: isPexels ? 1 / 2 : 6 / 8,
+                          sourceContext: 'focused_menu.Liked',
+                          contentId: likedWall.id,
+                        );
+                        return FocusedMenuHolder.payload(
+                          payload: payload,
                           child: Stack(
                             children: [
                               Container(
@@ -222,9 +260,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                   color: animation.value,
                                   borderRadius: BorderRadius.circular(20),
                                   image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      context.favouriteWallsAdapter().liked![index].thumb,
-                                    ),
+                                    image: CachedNetworkImageProvider(likedWall.thumb),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -247,7 +283,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                               action: AnalyticsActionValue.tileOpened,
                                               sourceContext: 'favourite_walls_grid_tile',
                                               itemType: ItemTypeValue.wallpaper,
-                                              itemId: context.favouriteWallsAdapter(listen: false).liked![index].id,
+                                              itemId: likedWall.id,
                                               index: index,
                                             ),
                                           ),

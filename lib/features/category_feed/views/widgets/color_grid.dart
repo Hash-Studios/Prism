@@ -5,11 +5,13 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
@@ -188,89 +190,107 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               );
             }
 
-            return FocusedMenuHolder(
-              provider: widget.provider,
-              index: index,
-              child: AnimatedBuilder(
-                animation: offsetAnimation,
-                builder: (buildContext, child) {
-                  if (offsetAnimation.value < 0.0) {
-                    logger.d('${offsetAnimation.value + 8.0}');
-                  }
-                  return Padding(
-                    padding: index == longTapIndex
-                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                        : EdgeInsets.zero,
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: PData.wallsC.isEmpty
-                              ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                              : BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                    image: CachedNetworkImageProvider(PData.wallsC[index].core.thumbnailUrl),
-                                    fit: BoxFit.cover,
-                                  ),
+            final tile = AnimatedBuilder(
+              animation: offsetAnimation,
+              builder: (buildContext, child) {
+                if (offsetAnimation.value < 0.0) {
+                  logger.d('${offsetAnimation.value + 8.0}');
+                }
+                return Padding(
+                  padding: index == longTapIndex
+                      ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
+                      : EdgeInsets.zero,
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: PData.wallsC.isEmpty
+                            ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                            : BoxDecoration(
+                                color: animation.value,
+                                borderRadius: BorderRadius.circular(20),
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(PData.wallsC[index].core.thumbnailUrl),
+                                  fit: BoxFit.cover,
                                 ),
-                        ),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                              onTap: () {
-                                if (PData.wallsC.isEmpty) {
-                                } else {
-                                  unawaited(
-                                    analytics.track(
-                                      SurfaceActionTappedEvent(
-                                        surface: AnalyticsSurfaceValue.homeColorGrid,
-                                        action: AnalyticsActionValue.tileOpened,
-                                        sourceContext: 'home_color_grid_tile',
-                                        itemType: ItemTypeValue.wallpaper,
-                                        itemId: PData.wallsC[index].id,
-                                        index: index,
-                                      ),
-                                    ),
-                                  );
-                                  context.router.push(
-                                    WallpaperRoute(
-                                      source: WallpaperSourceX.fromWire(widget.provider),
+                              ),
+                      ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                            onTap: () {
+                              if (PData.wallsC.isEmpty) {
+                              } else {
+                                unawaited(
+                                  analytics.track(
+                                    SurfaceActionTappedEvent(
+                                      surface: AnalyticsSurfaceValue.homeColorGrid,
+                                      action: AnalyticsActionValue.tileOpened,
+                                      sourceContext: 'home_color_grid_tile',
+                                      itemType: ItemTypeValue.wallpaper,
+                                      itemId: PData.wallsC[index].id,
                                       index: index,
-                                      link: PData.wallsC[index].core.thumbnailUrl,
                                     ),
-                                  );
-                                }
-                              },
-                              onLongPress: () {
-                                setState(() {
-                                  longTapIndex = index;
-                                });
-                                shakeController.forward(from: 0.0);
-                                if (PData.wallsC.isEmpty) {
-                                } else {
-                                  HapticFeedback.vibrate();
-                                  createDynamicLink(
-                                    PData.wallsC[index].id,
-                                    WallpaperSource.pexels,
-                                    PData.wallsC[index].core.fullUrl,
-                                    PData.wallsC[index].core.thumbnailUrl,
-                                  );
-                                }
-                              },
-                            ),
+                                  ),
+                                );
+                                context.router.push(
+                                  WallpaperRoute(
+                                    source: WallpaperSourceX.fromWire(widget.provider),
+                                    index: index,
+                                    link: PData.wallsC[index].core.thumbnailUrl,
+                                  ),
+                                );
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                longTapIndex = index;
+                              });
+                              shakeController.forward(from: 0.0);
+                              if (PData.wallsC.isEmpty) {
+                              } else {
+                                HapticFeedback.vibrate();
+                                createDynamicLink(
+                                  PData.wallsC[index].id,
+                                  WallpaperSource.pexels,
+                                  PData.wallsC[index].core.fullUrl,
+                                  PData.wallsC[index].core.thumbnailUrl,
+                                );
+                              }
+                            },
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
+
+            if (PData.wallsC.isEmpty || index >= PData.wallsC.length) {
+              return tile;
+            }
+
+            final wall = PData.wallsC[index];
+            final photographer = wall.photographer?.trim() ?? '';
+            final payload = WallpaperActionPayload(
+              providerLabel: widget.provider,
+              title: photographer.isEmpty ? 'Pexels' : photographer,
+              subtitle: wall.id.toUpperCase(),
+              stats: [
+                WallpaperActionStat(kind: WallpaperActionStatKind.resolution, label: wall.core.resolution ?? '-'),
+              ],
+              fullUrl: wall.core.fullUrl,
+              favouriteWall: PexelsFavouriteWall(id: wall.id, wallpaper: wall),
+              favouriteTrash: false,
+              cardTopFactor: 2 / 8,
+              cardHeightFactor: 6 / 8,
+              sourceContext: 'focused_menu.${widget.provider}',
+            );
+            return FocusedMenuHolder.payload(payload: payload, child: tile);
           },
         ),
       ),

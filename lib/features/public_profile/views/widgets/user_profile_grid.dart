@@ -1,9 +1,14 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -181,6 +186,46 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                       crossAxisSpacing: 8,
                     ),
                     itemBuilder: (context, index) {
+                      final wall = context.publicProfileAdapter().userProfileWalls![index];
+                      final collections = wall.collections ?? const <String>[];
+                      final photographer = (wall.by ?? '').trim();
+                      final prismWallpaper = PrismWallpaper(
+                        core: WallpaperCore(
+                          id: wall.id,
+                          source: WallpaperSource.prism,
+                          fullUrl: wall.wallpaperUrl,
+                          thumbnailUrl: wall.wallpaperThumb ?? '',
+                          resolution: wall.resolution,
+                          sizeBytes: int.tryParse(wall.size ?? '0'),
+                          createdAt: wall.createdAt,
+                          authorName: wall.by,
+                          authorEmail: wall.email,
+                        ),
+                        collections: wall.collections,
+                      );
+                      final payload = WallpaperActionPayload(
+                        providerLabel: 'UserProfileWall',
+                        title: photographer.isEmpty ? 'Prism' : photographer,
+                        subtitle: wall.id.toUpperCase(),
+                        stats: [
+                          WallpaperActionStat(
+                            kind: WallpaperActionStatKind.size,
+                            label: (wall.size ?? '').trim().isEmpty ? '0' : wall.size!,
+                          ),
+                          WallpaperActionStat(
+                            kind: WallpaperActionStatKind.resolution,
+                            label: (wall.resolution ?? '').trim().isEmpty ? '-' : wall.resolution!,
+                          ),
+                        ],
+                        fullUrl: wall.wallpaperUrl,
+                        favouriteWall: PrismFavouriteWall(id: wall.id, wallpaper: prismWallpaper),
+                        favouriteTrash: false,
+                        cardTopFactor: 4 / 10,
+                        cardHeightFactor: 6 / 10,
+                        isPremiumContent: app_state.isPremiumWall(app_state.premiumCollections, collections),
+                        contentId: wall.id,
+                        sourceContext: 'focused_menu.UserProfileWall',
+                      );
                       if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&
                           context.publicProfileAdapter(listen: false).hasMoreWalls) {
                         return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);
@@ -191,16 +236,14 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                                 app_state.premiumCollections,
                                 context.publicProfileAdapter().userProfileWalls![index].collections ?? const <String>[],
                               ),
-                              defaultChild: FocusedMenuHolder(
-                                provider: "UserProfileWall",
-                                index: index,
+                              defaultChild: FocusedMenuHolder.payload(
+                                payload: payload,
                                 child: _PhotographerWallTile(animation: animation, index: index),
                               ),
                               trueChild: _PhotographerWallTile(animation: animation, index: index),
                             )
-                          : FocusedMenuHolder(
-                              provider: "UserProfileWall",
-                              index: index,
+                          : FocusedMenuHolder.payload(
+                              payload: payload,
                               child: _PhotographerWallTile(animation: animation, index: index),
                             );
                     },

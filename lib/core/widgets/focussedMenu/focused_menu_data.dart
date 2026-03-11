@@ -80,18 +80,6 @@ final class FocusedMenuDataAdapter {
     return fromPayload(payload);
   }
 
-  static FocusedMenuData? fromSearch({required String? provider, required int index}) {
-    final payload = WallpaperActionPayloadAdapter.fromSearch(provider: provider, index: index);
-    if (payload == null) return null;
-    return fromPayload(payload);
-  }
-
-  static FocusedMenuData? fromLegacy(BuildContext context, {required String? provider, required int index}) {
-    final payload = WallpaperActionPayloadAdapter.fromLegacy(context, provider: provider, index: index);
-    if (payload == null) return null;
-    return fromPayload(payload);
-  }
-
   static FocusedMenuStat _mapStat(WallpaperActionStat stat) {
     final icon = switch (stat.kind) {
       WallpaperActionStatKind.views => JamIcons.eye,
