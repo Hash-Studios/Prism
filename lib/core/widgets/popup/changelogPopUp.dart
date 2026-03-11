@@ -122,7 +122,11 @@ void showChangelog(BuildContext context, Function func) {
             ),
             child: Stack(
               children: [
-                const SafeRiveAsset(assetName: "assets/animations/Changelog.flr", animations: <String>["changelog"]),
+                SafeRiveAsset(
+                  assetName: "assets/animations/Changelog.riv",
+                  animations: const <String>["changelog"],
+                  fallback: Center(child: Icon(JamIcons.refresh, color: Theme.of(context).colorScheme.secondary)),
+                ),
                 Positioned(
                   bottom: 10,
                   right: 14,

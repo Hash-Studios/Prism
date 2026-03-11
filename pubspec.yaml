@@ -80,7 +80,7 @@ dependencies:
   purchases_flutter: ^9.12.0
   purchases_ui_flutter: ^9.12.0
   quick_actions: ^1.1.0
-  rive: ^0.13.20
+  rive: ^0.14.4
   rxdart: ^0.28.0
   screenshot: ^3.0.0
   sentry_flutter: ^9.13.0

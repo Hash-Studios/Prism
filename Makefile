@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard secrets-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -96,6 +96,10 @@ no-shape-parse-guard:
 
 env-guard:
 	@./tool/env_define_guard.sh
+	@bash ./tool/system_ui_guard.sh
+
+system-ui-guard:
+	@bash ./tool/system_ui_guard.sh
 
 secrets-guard:
 	@./tool/doppler_guard.sh

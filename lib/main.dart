@@ -28,6 +28,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
@@ -240,10 +241,10 @@ Future<void> main() async {
       }
 
       configureDependencies();
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(systemNavigationBarColor: Color(systemOverlayColorValue)),
+        edgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light),
       );
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(
@@ -947,6 +948,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       child: ListenableBuilder(
         listenable: DebugFlags.instance,
         builder: (context, _) => MaterialApp.router(
+          builder: (context, child) {
+            final double topInset = MediaQuery.paddingOf(context).top;
+            app_state.notchSize = topInset;
+            app_state.hasNotch = topInset > 24;
+            return child ?? const SizedBox.shrink();
+          },
           routerConfig: _appRouter.config(
             deepLinkTransformer: _routerDeepLinkTransformer,
             deepLinkBuilder: _routerDeepLinkBuilder,
@@ -972,13 +979,6 @@ class RestartWidget extends StatefulWidget {
   final Widget? child;
   // ignore: unreachable_from_main
   static void restartApp(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        systemNavigationBarColor: Color(
-          _colorValueFromPrefs(localPrefs.get('systemOverlayColor'), fallback: 0xFFE57697),
-        ),
-      ),
-    );
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
   }
 

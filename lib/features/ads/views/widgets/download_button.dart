@@ -161,8 +161,9 @@ class _DownloadButtonState extends State<DownloadButton> {
                         color: Theme.of(context).hintColor,
                       ),
                       child: const SafeRiveAsset(
-                        assetName: 'assets/animations/Update.flr',
+                        assetName: 'assets/animations/Update.riv',
                         animations: <String>['update'],
+                        fallback: Center(child: Icon(Icons.system_update_alt)),
                       ),
                     ),
                     const SizedBox(height: 20),

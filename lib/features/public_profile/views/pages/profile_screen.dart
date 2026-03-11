@@ -852,8 +852,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 child: SizedBox(
                                   width: MediaQuery.of(context).size.width / 2,
                                   child: const SafeRiveAsset(
-                                    assetName: "assets/animations/Text.flr",
+                                    assetName: "assets/animations/Text.riv",
                                     animations: <String>["Untitled"],
+                                    fallback: Center(child: Text('PRISM')),
                                   ),
                                 ),
                               ),
