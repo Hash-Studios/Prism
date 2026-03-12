@@ -40,6 +40,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Version sync guard
+        run: python3 tool/verify_version_sync.py
+
       - name: Install Doppler CLI
         run: |
           (curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh

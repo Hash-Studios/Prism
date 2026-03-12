@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
@@ -38,6 +39,14 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
     lint {
         disable 'InvalidPackage'
     }
@@ -50,6 +59,23 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
+
+        // Expose the Pexels API key to native Kotlin (e.g. TileService) via BuildConfig.
+        // The value is passed in via --dart-define=PEXELS_API_KEY=... at build time and
+        // forwarded here through the project property set by the Flutter Gradle plugin.
+        def pexelsApiKey = ''
+        def dartDefinesRaw = project.findProperty('dart-defines')
+        if (dartDefinesRaw) {
+            dartDefinesRaw.toString().split(',').each { encoded ->
+                def decoded = new String(encoded.decodeBase64(), 'UTF-8')
+                if (decoded.startsWith('PEXELS_API_KEY=')) {
+                    // Strip any surrounding quotes that Doppler may inject (e.g. "value" → value)
+                    def raw = decoded.split('=', 2)[1]
+                    pexelsApiKey = raw.replaceAll(/^["']|["']$/, '')
+                }
+            }
+        }
+        buildConfigField "String", "PEXELS_API_KEY", "\"${pexelsApiKey}\""
     }
 
     signingConfigs {

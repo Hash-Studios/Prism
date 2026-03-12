@@ -10,6 +10,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -161,13 +162,9 @@ class _ShareWallpaperViewScreenState extends State<ShareWallpaperViewScreen> wit
 
   void _setStatusBarIconBrightness(Color color) {
     if (color.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
-      );
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark);
     } else {
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
-      );
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light);
     }
   }
 

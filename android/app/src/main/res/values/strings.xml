@@ -6,4 +6,6 @@
     <string name="example">Example</string>
     <string name="content_desc">Refresh widget</string>
     <string name="quick_settings">Shuffle wallpaper</string>
+    <string name="quick_settings_wotd">Wall of the Day</string>
+    <string name="quick_settings_favs">Random Favourite</string>
 </resources>

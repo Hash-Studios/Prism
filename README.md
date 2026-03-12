@@ -143,6 +143,10 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
+- `CHANGELOG.md` is auto-updated on every push to `master` (adds the latest commit under `### Unreleased`).
+- In-app changelog popup fetches the latest `CHANGELOG.md` from GitHub and caches it locally.
+- App version is sourced from `pubspec.yaml` and synced into `lib/core/constants/app_constants.dart` via `python3 tool/sync_app_version.py`.
+
 ### v2.6.9
 - Laid support for Prism v3
 - New model for users
@@ -238,8 +242,7 @@ The following packages are needed for the development of this application.
 - `github: ^8.1.0` for communicating with GitHub API
 - `google_mobile_ads: ^0.13.0` for rewarded video ads
 - `google_sign_in: ^5.0.2` for Google sign in support
-- `hive: ^2.0.4` for caching data
-- `hive_flutter: ^1.0.0` for caching data
+- `shared_preferences: ^2.3.2` for local key-value storage
 - `image: ^3.0.2` for image
 - `image_editor: ^0.7.1` for editing wallpapers during upload
 - `image_picker: ^0.7.4` for picking images

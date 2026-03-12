@@ -85,7 +85,6 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final likedWalls = context.favouriteWallsAdapter(listen: false).liked;
     if (likedWalls != null) {
       _contentLoadTracker.success(
@@ -203,7 +202,6 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                       shrinkWrap: true,
                       cacheExtent: 50000,
                       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                      controller: controller,
                       itemCount: context.favouriteWallsAdapter().liked!.length,
                       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,

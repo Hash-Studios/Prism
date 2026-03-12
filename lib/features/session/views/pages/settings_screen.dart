@@ -5,6 +5,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
@@ -144,6 +145,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.grid_view_rounded),
+              title: Text(
+                "Quick Tile Settings",
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Proxima Nova",
+                ),
+              ),
+              subtitle: const Text("Configure Android Quick Settings tiles", style: TextStyle(fontSize: 12)),
+              onTap: () {
+                context.router.push(const QuickTileSettingsRoute());
+              },
             ),
             ListTile(
               leading: const Icon(JamIcons.pie_chart_alt),

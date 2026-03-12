@@ -48,16 +48,26 @@ class GoogleAuth {
       await _ensureGoogleSignInInitialized();
       final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
       final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
+      final String? idToken = googleSignInAuthentication.idToken;
+      if (idToken == null || idToken.trim().isEmpty) {
+        throw StateError('Google sign-in returned no ID token.');
+      }
 
-      final AuthCredential credential = GoogleAuthProvider.credential(idToken: googleSignInAuthentication.idToken);
+      final AuthCredential credential = GoogleAuthProvider.credential(idToken: idToken);
 
       final UserCredential authResult = await _auth.signInWithCredential(credential);
       final User? user = authResult.user;
-      assert(user!.email != null);
-      assert(user!.displayName != null);
-      assert(user!.photoURL != null);
-      name = user!.displayName;
-      email = user.email;
+      if (user == null) {
+        throw StateError('Firebase user missing after Google sign-in.');
+      }
+      final String resolvedDisplayName = _resolvedDisplayName(user);
+      final String resolvedEmail = _resolvedEmail(user);
+      final String resolvedPhotoUrl = _resolvedPhotoUrl(user);
+      if (resolvedEmail.isEmpty) {
+        throw StateError('Google sign-in returned user without email.');
+      }
+      name = resolvedDisplayName;
+      email = resolvedEmail;
 
       final Map<String, dynamic>? usersData = await getUsersData(user);
       // User exists in database. Simply sign him in.
@@ -73,11 +83,11 @@ class GoogleAuth {
       // User exists in none. Create new data in new db and sign him in.
       else {
         app_state.prismUser = PrismUsersV2(
-          name: user.displayName!,
+          name: resolvedDisplayName,
           bio: "",
           createdAt: DateTime.now().toUtc().toIso8601String(),
-          email: user.email!,
-          username: user.displayName!,
+          email: resolvedEmail,
+          username: resolvedDisplayName,
           followers: [],
           following: [],
           id: user.uid,
@@ -85,7 +95,7 @@ class GoogleAuth {
           links: {},
           premium: false,
           loggedIn: true,
-          profilePhoto: user.photoURL!,
+          profilePhoto: resolvedPhotoUrl,
           badges: [],
           coins: 0,
           subPrisms: [],
@@ -111,7 +121,7 @@ class GoogleAuth {
         name: AnalyticsUserProperty.isPremium.wireName,
         value: app_state.prismUser.premium ? '1' : '0',
       );
-      final String? followersTopic = followersTopicFromEmail(user.email!);
+      final String? followersTopic = followersTopicFromEmail(resolvedEmail);
       if (followersTopic != null) {
         await subscribeToTopicSafely(
           FirebaseMessaging.instance,
@@ -123,7 +133,7 @@ class GoogleAuth {
       FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
       assert(!user.isAnonymous);
       final User? currentUser = _auth.currentUser;
-      assert(user.uid == currentUser!.uid);
+      assert(currentUser != null && user.uid == currentUser.uid);
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.google,
@@ -265,11 +275,14 @@ class GoogleAuth {
   }
 
   Future<Map<String, dynamic>?> getUsersData(User? user) async {
+    if (user == null) {
+      return null;
+    }
     final rows = await firestoreClient.query<Map<String, dynamic>>(
       FirestoreQuerySpec(
         collection: USER_NEW_COLLECTION,
         sourceTag: 'auth.get_user_new',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user!.uid)],
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user.uid)],
         limit: 1,
       ),
       (data, docId) => <String, dynamic>{...data, '__docId': docId},
@@ -282,5 +295,27 @@ class GoogleAuth {
       return null;
     }
     return rows.first;
+  }
+
+  String _resolvedDisplayName(User user) {
+    final String fromDisplayName = (user.displayName ?? '').trim();
+    if (fromDisplayName.isNotEmpty) {
+      return fromDisplayName;
+    }
+    final String fromEmail = (user.email ?? '').trim();
+    if (fromEmail.contains('@')) {
+      return fromEmail.split('@').first;
+    }
+    return 'Prism User';
+  }
+
+  String _resolvedEmail(User user) => (user.email ?? '').trim();
+
+  String _resolvedPhotoUrl(User user) {
+    final String candidate = (user.photoURL ?? '').trim();
+    if (candidate.isNotEmpty) {
+      return candidate;
+    }
+    return app_state.defaultProfilePhotoUrl;
   }
 }

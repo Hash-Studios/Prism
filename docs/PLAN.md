@@ -11,7 +11,7 @@ Prism is a **solid, well-architected app** with clean BLoC architecture, 3 wallp
 - [ ] **Firebase Dynamic Links are dead** (sunset Aug 2025) — deep linking for sharing is broken. Migrate to App Links (Android) + Universal Links (iOS).
 - [ ] **Referral system is a TODO** — `home_tab_page.dart:139` has a placeholder `// TODO: add referral handling`.
 - [ ] **`WillPopScope` still used in places** — deprecated, needs migration to `PopScope`.
-- [ ] **Hive adapter generation errors** — some `.g.dart` files are missing for adapters.
+- [ ] **Code generation errors** — some `.g.dart` files are stale or missing.
 - [ ] **No tests at all** — `bloc_test` and `mocktail` are in pubspec but zero test files exist.
 - [ ] **Logger package sink is stubbed** — throws `UnimplementedError`.
 

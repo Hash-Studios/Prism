@@ -1,7 +1,40 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.wallOfTheDay = void 0;
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const v2_1 = require("firebase-functions/v2");
 const notificationHelper_1 = require("./notificationHelper");
@@ -75,34 +108,82 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
         v2_1.logger.warn("Could not fetch past_picks for dedup; proceeding without exclusion.", { err });
     }
     // ------------------------------------------------------------------ //
-    // 3. Pick a new wall
+    // 3. Pick a new wall — randomly, with up to MAX_RETRIES attempts to
+    //    avoid a wall that appeared in the last 30 days.
+    //
+    //    Strategy:
+    //      a) Count all approved walls via Firestore count() aggregate.
+    //      b) Pick a random offset and fetch exactly 1 doc at that position,
+    //         ordered by document ID (stable, index-free ordering).
+    //      c) If that doc is in the exclusion set, retry up to MAX_RETRIES
+    //         times with a fresh random offset.
+    //      d) Fallback: if every retry hit an excluded wall (very unlikely
+    //         with 5,000+ walls), fall back to the first non-excluded wall
+    //         from the 100 most-recently-added approved walls.
     // ------------------------------------------------------------------ //
+    const MAX_RETRIES = 5;
     let newWall = null;
     let newWallId = null;
     try {
-        // Try to pick a wall not in past_picks (last 30 days).
-        // We fetch a batch and skip any excluded ones.
-        const candidatesSnap = await db
+        // a) Count total approved walls.
+        const countSnap = await db
             .collection("walls")
-            .where("review", "==", true) // matches the app's own query filter
-            .orderBy("createdAt", "desc")
-            .limit(100)
+            .where("review", "==", true)
+            .count()
             .get();
-        for (const doc of candidatesSnap.docs) {
-            if (!excludedWallIds.has(doc.id)) {
-                newWall = doc.data();
-                newWallId = doc.id;
-                break;
+        const totalCount = countSnap.data().count;
+        v2_1.logger.info(`Total approved walls: ${totalCount}`);
+        if (totalCount > 0) {
+            // b & c) Random-offset attempts.
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                const randomOffset = Math.floor(Math.random() * totalCount);
+                const snap = await db
+                    .collection("walls")
+                    .where("review", "==", true)
+                    .orderBy(admin.firestore.FieldPath.documentId())
+                    .offset(randomOffset)
+                    .limit(1)
+                    .get();
+                if (!snap.empty) {
+                    const doc = snap.docs[0];
+                    if (!excludedWallIds.has(doc.id)) {
+                        newWall = doc.data();
+                        newWallId = doc.id;
+                        v2_1.logger.info(`Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`, {
+                            wallId: newWallId,
+                        });
+                        break;
+                    }
+                    v2_1.logger.info(`Attempt ${attempt + 1}: wall ${doc.id} is in past_picks — retrying.`);
+                }
             }
         }
-        // Fallback: if all recent walls are excluded, just take the latest one.
-        if (!newWall && candidatesSnap.size > 0) {
-            const fallbackDoc = candidatesSnap.docs[0];
-            newWall = fallbackDoc.data();
-            newWallId = fallbackDoc.id;
-            v2_1.logger.warn("All candidate walls were in past_picks; using latest as fallback.", {
-                wallId: newWallId,
-            });
+        // d) Fallback: all retries hit excluded walls — pick the first
+        //    non-excluded wall from the 100 most-recently-added approved walls.
+        if (!newWall) {
+            v2_1.logger.warn(`All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`);
+            const fallbackSnap = await db
+                .collection("walls")
+                .where("review", "==", true)
+                .orderBy("createdAt", "desc")
+                .limit(100)
+                .get();
+            for (const doc of fallbackSnap.docs) {
+                if (!excludedWallIds.has(doc.id)) {
+                    newWall = doc.data();
+                    newWallId = doc.id;
+                    break;
+                }
+            }
+            // Last-resort: use the absolute latest wall regardless of exclusion.
+            if (!newWall && fallbackSnap.size > 0) {
+                const lastResortDoc = fallbackSnap.docs[0];
+                newWall = lastResortDoc.data();
+                newWallId = lastResortDoc.id;
+                v2_1.logger.warn("Last-resort fallback: all 100 newest walls excluded; using latest.", {
+                    wallId: newWallId,
+                });
+            }
         }
     }
     catch (err) {
@@ -142,12 +223,18 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
     // 5. Send FCM topic push + write in-app notification doc
     // ------------------------------------------------------------------ //
     const wallTitle = wotdDoc.title.trim() || "Check it out";
+    const canonicalWallUrl = _wallShareUrl({
+        wallId: newWallId,
+        wallpaperUrl: wotdDoc.url || "",
+        thumbnailUrl: wotdDoc.thumbnailUrl || "",
+    });
     await (0, notificationHelper_1.sendNotification)({
         title: "Today's Wall of the Day is here",
         body: wallTitle,
         data: {
             route: "wall_of_the_day",
             wall_id: newWallId,
+            url: canonicalWallUrl,
         },
         imageUrl: wotdDoc.thumbnailUrl || undefined,
         modifier: "all",
@@ -177,5 +264,19 @@ function _firestoreTimestampToDateString(value) {
     catch (_a) {
         return null;
     }
+}
+function _wallShareUrl({ wallId, wallpaperUrl, thumbnailUrl, }) {
+    const thumb = thumbnailUrl.trim() || wallpaperUrl.trim();
+    const params = new URLSearchParams({
+        id: wallId,
+        source: "prism",
+        provider: "Prism",
+        thumb,
+    });
+    const full = wallpaperUrl.trim();
+    if (full) {
+        params.set("url", full);
+    }
+    return `https://prismwalls.com/share?${params.toString()}`;
 }
 //# sourceMappingURL=wallOfTheDay.js.map

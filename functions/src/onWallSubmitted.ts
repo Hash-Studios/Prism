@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { logger } from "firebase-functions/v2";
-import { sendNotification, emailToTopic } from "./notificationHelper";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {logger} from "firebase-functions/v2";
+import {sendNotification, emailToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -67,7 +67,7 @@ export const onWallSubmitted = onDocumentCreated(
         imageUrl: wallThumb || undefined,
         modifier: adminEmail,
         channelId: "posts",
-        fcmTarget: { topic: adminTopic },
+        fcmTarget: {topic: adminTopic},
       });
     }
 
@@ -92,7 +92,7 @@ async function _getAdminEmails(): Promise<string[]> {
     }
     return emails.map((e) => e.toString().trim()).filter((e) => e.length > 0);
   } catch (err) {
-    logger.error("onWallSubmitted: failed to fetch admin config.", { err });
+    logger.error("onWallSubmitted: failed to fetch admin config.", {err});
     return [];
   }
 }

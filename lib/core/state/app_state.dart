@@ -14,6 +14,7 @@ import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 export 'package:Prism/core/utils/string_extensions.dart';
 
@@ -24,6 +25,9 @@ bool updateAlerted = false;
 bool hasNotch = false;
 double? notchSize;
 bool tooltipShown = false;
+
+String _runtimeAppVersion = app_constants.currentAppVersion;
+String _runtimeAppVersionCode = app_constants.currentAppVersionCode;
 
 SessionRepository? _sessionRepositoryOrNull() {
   if (!getIt.isRegistered<SessionRepository>()) {
@@ -170,8 +174,8 @@ StartupConfigEntity? get startupConfig {
   return repo.currentConfig;
 }
 
-String get currentAppVersion => app_constants.currentAppVersion;
-String get currentAppVersionCode => app_constants.currentAppVersionCode;
+String get currentAppVersion => _runtimeAppVersion;
+String get currentAppVersionCode => _runtimeAppVersionCode;
 String get obsoleteAppVersion => startupConfig?.obsoleteAppVersion ?? app_constants.defaultObsoleteAppVersion;
 
 String get topImageLink => startupConfig?.topImageLink ?? app_constants.defaultTopImageLink;
@@ -204,3 +208,15 @@ bool isPremiumWall(List<String> premiumCollections, List<Object?> wallCollection
 }
 
 GoogleAuth get gAuth => globalGoogleAuth;
+
+Future<void> initializeRuntimeAppVersion() async {
+  final PackageInfo info = await PackageInfo.fromPlatform();
+  final String version = info.version.trim();
+  final String build = info.buildNumber.trim();
+  if (version.isNotEmpty) {
+    _runtimeAppVersion = version;
+  }
+  if (build.isNotEmpty) {
+    _runtimeAppVersionCode = build;
+  }
+}

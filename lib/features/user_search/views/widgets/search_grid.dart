@@ -190,7 +190,6 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
       key: refreshHomeKey,
@@ -205,7 +204,6 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           return false;
         },
         child: GridView.builder(
-          controller: controller,
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: widget.selectedProvider == "WallHaven"
               ? wData.wallsS.isEmpty

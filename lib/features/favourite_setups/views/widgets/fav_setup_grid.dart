@@ -82,7 +82,6 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final likedSetups = context.favouriteSetupsAdapter(listen: false).liked;
     if (likedSetups != null) {
       _contentLoadTracker.success(
@@ -200,7 +199,6 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTick
                       shrinkWrap: true,
                       cacheExtent: 50000,
                       padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                      controller: controller,
                       itemCount: context.favouriteSetupsAdapter().liked!.length,
                       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,

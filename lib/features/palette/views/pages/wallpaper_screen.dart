@@ -10,6 +10,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -131,6 +132,54 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
     return null;
   }
 
+  bool _isResolvableImageInput(String value) {
+    final String trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return false;
+    }
+    if (trimmed.startsWith('/')) {
+      return true;
+    }
+    final Uri? uri = Uri.tryParse(trimmed);
+    if (uri == null) {
+      return false;
+    }
+    return (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
+  }
+
+  String _resolveSafeWallpaperLink() {
+    final String direct = widget.link.trim();
+    if (_isResolvableImageInput(direct)) {
+      return direct;
+    }
+    try {
+      if (source == WallpaperSource.wallhaven) {
+        final String candidate = _wallhavenWall.core.fullUrl.trim();
+        if (_isResolvableImageInput(candidate)) {
+          return candidate;
+        }
+      } else if (source == WallpaperSource.prism || source == WallpaperSource.wallOfTheDay) {
+        final String candidate = _prismWall.fullUrl.trim();
+        if (_isResolvableImageInput(candidate)) {
+          return candidate;
+        }
+      } else if (source == WallpaperSource.pexels) {
+        final String candidate = _pexelsWall.core.fullUrl.trim();
+        if (_isResolvableImageInput(candidate)) {
+          return candidate;
+        }
+      }
+    } catch (error, stackTrace) {
+      logger.w(
+        'Failed to resolve fallback wallpaper link.',
+        tag: 'WallpaperScreen',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    return app_state.defaultProfilePhotoUrl;
+  }
+
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
       analytics.track(
@@ -147,6 +196,14 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
   }
 
   void _updatePaletteGenerator() {
+    if (!_isResolvableImageInput(link)) {
+      logger.w(
+        'Skipping palette generation due to invalid wallpaper link.',
+        tag: 'WallpaperScreen',
+        fields: <String, Object?>{'source': source.wireValue, 'link': link},
+      );
+      return;
+    }
     _contentLoadTracker.start();
     context.read<PaletteBloc>().add(PaletteEvent.paletteRequested(imageUrl: link));
   }
@@ -205,13 +262,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
 
   void _setStatusBarIconBrightness(Color color) {
     if (color.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.dark),
-      );
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark);
     } else {
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle.dark.copyWith(statusBarIconBrightness: Brightness.light),
-      );
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light);
     }
   }
 
@@ -244,7 +297,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
     } else {
       index = widget.index ?? 0;
     }
-    link = widget.link;
+    link = _resolveSafeWallpaperLink();
     _contentLoadTracker.start();
     if (source == WallpaperSource.prism) {
       updateViews(_prismWall.id.toUpperCase());

@@ -65,7 +65,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
     final List<PrismFeedItem> subWalls = state.items.whereType<PrismFeedItem>().toList(growable: false);
 
@@ -119,7 +118,6 @@ class _WallpaperGridState extends State<WallpaperGrid> {
             return false;
           },
           child: GridView.builder(
-            controller: controller,
             physics: const ScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
             itemCount: subWalls.isEmpty ? 20 : subWalls.length,

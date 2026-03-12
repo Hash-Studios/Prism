@@ -7,11 +7,11 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
-import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
+import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_screen.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
@@ -36,6 +36,7 @@ import 'package:Prism/features/public_profile/views/pages/followers_screen.dart'
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_wall_view_screen.dart';
+import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
@@ -65,6 +66,8 @@ part 'app_router.gr.dart';
 
 @AutoRouterConfig()
 class AppRouter extends RootStackRouter {
+  AppRouter({super.navigatorKey});
+
   final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
 
@@ -149,6 +152,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/admin-review', page: AdminReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),
   ];

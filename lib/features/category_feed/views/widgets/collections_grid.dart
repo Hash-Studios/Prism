@@ -365,7 +365,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final List<Object?> rawCollections =
         CData.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;
@@ -544,7 +543,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       key: refreshKey,
       onRefresh: refreshList,
       child: GridView.builder(
-        controller: controller,
         physics: const ScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
         itemCount: itemCount,

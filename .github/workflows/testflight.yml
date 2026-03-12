@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: make get CI=true
 
+      - name: Version sync guard
+        run: python3 tool/verify_version_sync.py
+
       - name: Setup Ruby & CocoaPods
         uses: ruby/setup-ruby@v1
         with:

@@ -267,6 +267,12 @@ class _ProfileChildState extends State<_ProfileChild> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   void _trackAction(AnalyticsActionValue action, {String sourceContext = 'profile_screen'}) {
     unawaited(
       analytics.track(
@@ -313,7 +319,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final String safeUserPhoto = (widget.userPhoto ?? "").trim();
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
-    final ScrollController? controller = (widget.ownProfile ?? false) ? PrimaryScrollController.maybeOf(context) : null;
+    final ScrollController? controller = (widget.ownProfile ?? false) ? scrollController : null;
     final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
       app_state.prismUser,
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
@@ -852,8 +858,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 child: SizedBox(
                                   width: MediaQuery.of(context).size.width / 2,
                                   child: const SafeRiveAsset(
-                                    assetName: "assets/animations/Text.flr",
+                                    assetName: "assets/animations/Text.riv",
                                     animations: <String>["Untitled"],
+                                    fallback: Center(child: Text('PRISM')),
                                   ),
                                 ),
                               ),

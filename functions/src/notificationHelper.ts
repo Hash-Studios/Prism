@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { logger } from "firebase-functions/v2";
+import {logger} from "firebase-functions/v2";
 
 export interface NotificationData extends Record<string, string> {
   route: string;
@@ -39,32 +39,32 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   // 1. Write the in-app notification doc (unless pushOnly)
   // ------------------------------------------------------------------ //
   if (!payload.pushOnly) {
-  try {
-    await db.collection("notifications").add({
-      notification: {
-        title: payload.title,
-        body: payload.body,
-      },
-      data: {
-        route: payload.data.route ?? "",
-        imageUrl: payload.imageUrl ?? "",
-        url: payload.data.url ?? "",
-        pageName: payload.data.pageName ?? "",
-        arguments: [],
-        // Forward any extra fields (e.g. wall_id, follower_email)
-        ...Object.fromEntries(
-          Object.entries(payload.data).filter(
-            ([k]) => !["route", "url", "pageName"].includes(k),
+    try {
+      await db.collection("notifications").add({
+        notification: {
+          title: payload.title,
+          body: payload.body,
+        },
+        data: {
+          route: payload.data.route ?? "",
+          imageUrl: payload.imageUrl ?? "",
+          url: payload.data.url ?? "",
+          pageName: payload.data.pageName ?? "",
+          arguments: [],
+          // Forward any extra fields (e.g. wall_id, follower_email)
+          ...Object.fromEntries(
+            Object.entries(payload.data).filter(
+              ([k]) => !["route", "url", "pageName"].includes(k),
+            ),
           ),
-        ),
-      },
-      modifier: payload.modifier,
-      createdAt: admin.firestore.Timestamp.now(),
-    });
-  } catch (err) {
-    logger.error("Failed to write notification doc to Firestore.", { err, payload });
+        },
+        modifier: payload.modifier,
+        createdAt: admin.firestore.Timestamp.now(),
+      });
+    } catch (err) {
+      logger.error("Failed to write notification doc to Firestore.", {err, payload});
     // Do not throw — attempt FCM push even if Firestore write fails.
-  }
+    }
   }
 
   // ------------------------------------------------------------------ //
@@ -82,13 +82,13 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
     data: {
       ...payload.data,
       channel_id: payload.channelId,
-      ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
+      ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
     },
     android: {
       notification: {
         channelId: payload.channelId,
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
-        ...(payload.imageUrl ? { imageUrl: payload.imageUrl } : {}),
+        ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
       },
       priority: "high",
     },
@@ -100,9 +100,9 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
         },
       },
     },
-    ...("topic" in payload.fcmTarget
-      ? { topic: payload.fcmTarget.topic }
-      : { token: payload.fcmTarget.token }),
+    ...("topic" in payload.fcmTarget ?
+      {topic: payload.fcmTarget.topic} :
+      {token: payload.fcmTarget.token}),
   };
 
   try {
@@ -113,7 +113,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
       target: payload.fcmTarget,
     });
   } catch (err) {
-    logger.error("Failed to send FCM push.", { err, route: payload.data.route });
+    logger.error("Failed to send FCM push.", {err, route: payload.data.route});
   }
 }
 

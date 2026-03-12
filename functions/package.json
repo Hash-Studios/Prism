@@ -1,23 +1,31 @@
 {
-  "name": "prism-functions",
+  "name": "functions",
   "scripts": {
+    "lint": "eslint --ext .js,.ts .",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start --only functions",
+    "shell": "npm run build && firebase functions:shell",
+    "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "lint": "eslint --ext .js,.ts ."
+    "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "main": "lib/index.js",
   "dependencies": {
-    "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.3.2"
+    "firebase-admin": "^13.6.0",
+    "firebase-functions": "^7.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.0.0"
+    "@typescript-eslint/eslint-plugin": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.0",
+    "eslint": "^8.9.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-import": "^2.25.4",
+    "firebase-functions-test": "^3.4.1",
+    "typescript": "^5.7.3"
   },
   "private": true
 }
