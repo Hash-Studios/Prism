@@ -86,7 +86,7 @@ int? categories;
 int? purity;
 late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
-const double _sentryReplaySessionSampleRate = 0.1;
+const double _sentryReplaySessionSampleRate = 1.0;
 const double _sentryReplayOnErrorSampleRate = 1.0;
 final GlobalKey<NavigatorState> _sentryFeedbackNavigatorKey = GlobalKey<NavigatorState>();
 bool _sentryFeedbackSheetOpen = false;
@@ -251,35 +251,41 @@ Future<void> main() async {
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(
-        LogToastOverlay(
-          child: RestartWidget(
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
-                BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-                BlocProvider<CategoryFeedBloc>(
-                  create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                ),
-                BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
-                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-                BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
-                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-                BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
-                BlocProvider<StartupBloc>(
-                  create: (_) =>
-                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
-                ),
-                BlocProvider<ThemeLightBloc>(
-                  create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-                ),
-                BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
-                BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
-                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
-              ],
-              child: _MyApp(),
+        SentryWidget(
+          child: LogToastOverlay(
+            child: RestartWidget(
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                  BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                  BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
+                  BlocProvider<CategoryFeedBloc>(
+                    create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                  ),
+                  BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
+                  BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                  BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+                  BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
+                  BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+                  BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+                  BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                  BlocProvider<StartupBloc>(
+                    create: (_) =>
+                        getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                  ),
+                  BlocProvider<ThemeLightBloc>(
+                    create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                  ),
+                  BlocProvider<ThemeDarkBloc>(
+                    create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+                  ),
+                  BlocProvider<ThemeModeBloc>(
+                    create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
+                  ),
+                  BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+                ],
+                child: _MyApp(),
+              ),
             ),
           ),
         ),
@@ -326,6 +332,8 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.enableAutoNativeBreadcrumbs = true;
       options.replay.sessionSampleRate = _sentryReplaySessionSampleRate;
       options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
+      options.privacy.maskAllText = true;
+      options.privacy.maskAllImages = true;
       options.beforeSend = (event, hint) {
         unawaited(_showSentryFeedbackWidget(event.eventId));
         return event;
