@@ -231,9 +231,7 @@ Future<void> main() async {
 
       configureDependencies();
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setSystemUIOverlayStyle(
-        edgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light),
-      );
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(

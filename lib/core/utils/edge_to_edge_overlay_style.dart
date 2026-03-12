@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 SystemUiOverlayStyle edgeToEdgeOverlayStyle({required Brightness statusBarIconBrightness}) {
@@ -8,4 +11,11 @@ SystemUiOverlayStyle edgeToEdgeOverlayStyle({required Brightness statusBarIconBr
     statusBarBrightness: statusBarBrightness,
     systemNavigationBarIconBrightness: statusBarIconBrightness,
   );
+}
+
+void applyEdgeToEdgeOverlayStyle({required Brightness statusBarIconBrightness}) {
+  if (!kIsWeb && Platform.isAndroid) {
+    return;
+  }
+  SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: statusBarIconBrightness));
 }

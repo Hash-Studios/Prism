@@ -137,9 +137,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
       },
     );
     if (accent!.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark));
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark);
     } else {
-      SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light));
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light);
     }
   }
 
@@ -153,9 +153,9 @@ class _FavWallpaperViewScreenState extends State<FavWallpaperViewScreen> with Si
         colorChanged = true;
       });
       if (accent!.computeLuminance() > 0.5) {
-        SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark));
+        applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark);
       } else {
-        SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light));
+        applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light);
       }
     }
     _trackAction(AnalyticsActionValue.paletteCycleTapped);

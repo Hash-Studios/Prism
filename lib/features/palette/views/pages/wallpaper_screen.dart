@@ -206,9 +206,9 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
 
   void _setStatusBarIconBrightness(Color color) {
     if (color.computeLuminance() > 0.5) {
-      SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark));
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark);
     } else {
-      SystemChrome.setSystemUIOverlayStyle(edgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light));
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light);
     }
   }
 
