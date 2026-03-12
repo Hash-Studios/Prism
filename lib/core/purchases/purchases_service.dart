@@ -200,7 +200,7 @@ class PurchasesService {
     }
   }
 
-  /// Checks canonical + grandfathered paid entitlements; updates local user state and Hive.
+  /// Checks canonical + grandfathered paid entitlements; updates local user state in local persistence.
   /// Returns the new premium value. Only updates when we successfully fetch CustomerInfo.
   Future<bool> checkAndPersistPremium({SubscriptionConversionContext? conversionContext}) async {
     await ensureConfigured(app_state.prismUser.id);

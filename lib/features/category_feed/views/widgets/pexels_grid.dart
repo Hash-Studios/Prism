@@ -59,7 +59,6 @@ class _PexelsGridState extends State<PexelsGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
     final List<PexelsFeedItem> walls = state.items.whereType<PexelsFeedItem>().toList(growable: false);
 
@@ -107,7 +106,6 @@ class _PexelsGridState extends State<PexelsGrid> {
           return false;
         },
         child: GridView.builder(
-          controller: controller,
           padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
           itemCount: walls.isEmpty ? 20 : walls.length,
           shrinkWrap: true,

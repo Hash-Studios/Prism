@@ -875,6 +875,22 @@ class ProfileWallViewRouteArgs {
 }
 
 /// generated route for
+/// [QuickTileSettingsScreen]
+class QuickTileSettingsRoute extends PageRouteInfo<void> {
+  const QuickTileSettingsRoute({List<PageRouteInfo>? children})
+    : super(QuickTileSettingsRoute.name, initialChildren: children);
+
+  static const String name = 'QuickTileSettingsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const QuickTileSettingsScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [ReviewScreen]
 class ReviewRoute extends PageRouteInfo<void> {
   const ReviewRoute({List<PageRouteInfo>? children})

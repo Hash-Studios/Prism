@@ -58,41 +58,22 @@ class _LoadingCardsState extends State<LoadingCards> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
-
-    return controller != null
-        ? GridView.builder(
-            controller: controller,
-            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: 24,
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-              childAspectRatio: 0.6625,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-            ),
-            itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
-              );
-            },
-          )
-        : GridView.builder(
-            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: 24,
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-              childAspectRatio: 0.6625,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-            ),
-            itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
-              );
-            },
-          );
+    return GridView.builder(
+      primary: false,
+      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+      itemCount: 24,
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+        childAspectRatio: 0.6625,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
+        );
+      },
+    );
   }
 }

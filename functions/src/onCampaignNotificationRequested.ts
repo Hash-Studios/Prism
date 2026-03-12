@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { logger } from "firebase-functions/v2";
-import { sendNotification, emailToTopic } from "./notificationHelper";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {logger} from "firebase-functions/v2";
+import {sendNotification, emailToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -46,7 +46,7 @@ export const onCampaignNotificationRequested = onDocumentCreated(
     const data = event.data?.data();
 
     if (!data) {
-      logger.warn("onCampaignNotificationRequested: empty document, skipping.", { requestId });
+      logger.warn("onCampaignNotificationRequested: empty document, skipping.", {requestId});
       return;
     }
 
@@ -58,7 +58,7 @@ export const onCampaignNotificationRequested = onDocumentCreated(
     const channelId: string = (data.channelId ?? "recommendations").toString().trim();
 
     if (!title || !body) {
-      await _markProcessed(requestId, { error: "title and body are required" });
+      await _markProcessed(requestId, {error: "title and body are required"});
       return;
     }
 
@@ -85,10 +85,10 @@ export const onCampaignNotificationRequested = onDocumentCreated(
       imageUrl: imageUrl || undefined,
       modifier,
       channelId,
-      fcmTarget: { topic: fcmTopic },
+      fcmTarget: {topic: fcmTopic},
     });
 
-    await _markProcessed(requestId, { fcmTopic });
+    await _markProcessed(requestId, {fcmTopic});
 
     logger.info("onCampaignNotificationRequested: notification sent.", {
       requestId,
@@ -110,6 +110,6 @@ async function _markProcessed(
       ...meta,
     });
   } catch (err) {
-    logger.warn("onCampaignNotificationRequested: failed to mark request processed.", { requestId, err });
+    logger.warn("onCampaignNotificationRequested: failed to mark request processed.", {requestId, err});
   }
 }

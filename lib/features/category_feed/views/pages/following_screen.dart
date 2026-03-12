@@ -238,7 +238,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
       child: NotificationListener<ScrollNotification>(
@@ -265,7 +264,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
           itemCount: finalDocs.length + 1,
-          controller: controller,
           itemBuilder: (context, index) {
             if (index == finalDocs.length) {
               return Container(

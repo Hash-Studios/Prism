@@ -216,8 +216,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
                 child: SafeRiveAsset(
-                  assetName: isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
+                  assetName: isUploading ? "assets/animations/Upload.riv" : "assets/animations/Process.riv",
                   animations: <String>[if (isUploading) "upload" else "process"],
+                  fallback: const Center(child: CircularProgressIndicator()),
                 ),
               )
             else

@@ -240,6 +240,7 @@ class NotificationCard extends StatelessWidget {
     final PageRouteInfo? mappedRoute = await _routeMapper.fromRoute(
       route: route,
       wallId: notification.wallId,
+      profileIdentifier: notification.followerEmail,
       sourceTag: 'notification.route_mapper',
     );
     if (!context.mounted) return;

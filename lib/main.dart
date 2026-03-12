@@ -2,10 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/analytics/analytics_identity_sync.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
@@ -16,21 +12,26 @@ import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart'
 import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
+import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/persistence/prefs_compat.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -52,9 +53,6 @@ import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
-import 'package:Prism/core/debug/bloc_debug_observer.dart';
-import 'package:Prism/core/debug/debug_flags.dart';
-import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -68,9 +66,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late PrefsCompat localPrefs;
@@ -84,8 +80,10 @@ int? categories;
 int? purity;
 late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
-const double _sentryReplaySessionSampleRate = 0.1;
+const double _sentryReplaySessionSampleRate = 1.0;
 const double _sentryReplayOnErrorSampleRate = 1.0;
+final GlobalKey<NavigatorState> _sentryFeedbackNavigatorKey = GlobalKey<NavigatorState>();
+bool _sentryFeedbackSheetOpen = false;
 
 /// Top-level FCM background message handler.
 /// Must be a top-level function annotated with @pragma('vm:entry-point').
@@ -144,9 +142,24 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      try {
+        await app_state.initializeRuntimeAppVersion();
+      } catch (error, stackTrace) {
+        logger.w(
+          'Unable to read runtime app version; falling back to static constants.',
+          tag: 'AppVersion',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
       Bloc.observer = const BlocDebugObserver();
       final SentryConfig sentryConfig = _resolveSentryConfig();
       await _initializeMonitoring(sentryConfig);
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'monitoring_initialized'},
+      );
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
@@ -195,17 +208,20 @@ Future<void> main() async {
       } else {
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'firebase_init_completed', 'firebase_initialized': firebaseInitialized},
+      );
 
       await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 
-      final dir = await getApplicationDocumentsDirectory();
-      Hive.init(dir.path);
-      Hive.registerAdapter(PrismUsersAdapter());
-      Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-      Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-      Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
-      Hive.registerAdapter<Badge>(BadgeAdapter());
       await PersistenceBootstrap.initialize();
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'persistence_initialized'},
+      );
       DebugFlags.instance.loadFromStore();
       localPrefs = PrefsCompat.fromRuntime();
       logger.d("Persistence initialized");
@@ -240,42 +256,46 @@ Future<void> main() async {
       }
 
       configureDependencies();
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(systemNavigationBarColor: Color(systemOverlayColorValue)),
-      );
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
       await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(
-        LogToastOverlay(
-          child: RestartWidget(
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
-                BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-                BlocProvider<CategoryFeedBloc>(
-                  create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                ),
-                BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
-                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-                BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
-                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-                BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
-                BlocProvider<StartupBloc>(
-                  create: (_) =>
-                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
-                ),
-                BlocProvider<ThemeLightBloc>(
-                  create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-                ),
-                BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
-                BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
-                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
-              ],
-              child: _MyApp(),
+        SentryWidget(
+          child: LogToastOverlay(
+            child: RestartWidget(
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                  BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                  BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
+                  BlocProvider<CategoryFeedBloc>(
+                    create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                  ),
+                  BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
+                  BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                  BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+                  BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
+                  BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+                  BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+                  BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                  BlocProvider<StartupBloc>(
+                    create: (_) =>
+                        getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                  ),
+                  BlocProvider<ThemeLightBloc>(
+                    create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                  ),
+                  BlocProvider<ThemeDarkBloc>(
+                    create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
+                  ),
+                  BlocProvider<ThemeModeBloc>(
+                    create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
+                  ),
+                  BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+                ],
+                child: _MyApp(),
+              ),
             ),
           ),
         ),
@@ -322,6 +342,12 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.enableAutoNativeBreadcrumbs = true;
       options.replay.sessionSampleRate = _sentryReplaySessionSampleRate;
       options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
+      options.privacy.maskAllText = true;
+      options.privacy.maskAllImages = true;
+      options.beforeSend = (event, hint) {
+        unawaited(_showSentryFeedbackWidget(event.eventId));
+        return event;
+      };
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
@@ -341,6 +367,37 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       error: error,
       stackTrace: stackTrace,
     );
+  }
+}
+
+Future<void> _showSentryFeedbackWidget(SentryId eventId) async {
+  if (_sentryFeedbackSheetOpen) {
+    return;
+  }
+
+  final BuildContext? context = _sentryFeedbackNavigatorKey.currentContext;
+  if (context == null || !context.mounted) {
+    return;
+  }
+
+  _sentryFeedbackSheetOpen = true;
+
+  try {
+    final screenshot = await SentryFlutter.captureScreenshot();
+    if (!context.mounted) {
+      return;
+    }
+
+    await Navigator.of(context, rootNavigator: true).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => SentryFeedbackWidget(associatedEventId: eventId, screenshot: screenshot),
+        fullscreenDialog: true,
+      ),
+    );
+  } catch (error, stackTrace) {
+    logger.w('Unable to display Sentry feedback widget.', tag: 'SentryFeedback', error: error, stackTrace: stackTrace);
+  } finally {
+    _sentryFeedbackSheetOpen = false;
   }
 }
 
@@ -436,6 +493,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
+  final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
   final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
   bool _bootstrapCompleted = false;
@@ -841,11 +899,24 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();
+    final String rawUrl = (data['url']?.toString() ?? '').trim();
 
-    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId});
+    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId, 'url': rawUrl});
     if (route == 'wall_of_the_day') {
       unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
     }
+
+    if (rawUrl.isNotEmpty) {
+      final Uri? parsed = Uri.tryParse(rawUrl);
+      if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
+        final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
+        if (deepLinkRoute != null) {
+          _appRouter.navigate(deepLinkRoute);
+          return;
+        }
+      }
+    }
+
     final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
     if (mappedRoute != null) {
       _appRouter.navigate(mappedRoute);
@@ -879,7 +950,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _appRouter = AppRouter();
+    _appRouter = AppRouter(navigatorKey: _sentryFeedbackNavigatorKey);
     _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
@@ -943,10 +1014,34 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             });
           },
         ),
+        // Cache WOTD URL for the Wall of the Day quick tile.
+        BlocListener<WotdBloc, WotdState>(
+          listenWhen: (previous, current) => previous.entity?.url != current.entity?.url && current.entity != null,
+          listener: (context, state) {
+            final url = state.entity?.url;
+            if (url != null && url.isNotEmpty) {
+              unawaited(QuickTileConfigService.pushWotdUrl(url));
+            }
+          },
+        ),
+        // Cache favourite wall URLs for the Random Favourite quick tile.
+        BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
+          listenWhen: (previous, current) => previous.status != current.status && current.status == LoadStatus.success,
+          listener: (context, state) {
+            final urls = state.items.map((item) => item.fullUrl).toList(growable: false);
+            unawaited(QuickTileConfigService.pushFavWallUrls(urls));
+          },
+        ),
       ],
       child: ListenableBuilder(
         listenable: DebugFlags.instance,
         builder: (context, _) => MaterialApp.router(
+          builder: (context, child) {
+            final double topInset = MediaQuery.paddingOf(context).top;
+            app_state.notchSize = topInset;
+            app_state.hasNotch = topInset > 24;
+            return child ?? const SizedBox.shrink();
+          },
           routerConfig: _appRouter.config(
             deepLinkTransformer: _routerDeepLinkTransformer,
             deepLinkBuilder: _routerDeepLinkBuilder,
@@ -972,13 +1067,6 @@ class RestartWidget extends StatefulWidget {
   final Widget? child;
   // ignore: unreachable_from_main
   static void restartApp(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        systemNavigationBarColor: Color(
-          _colorValueFromPrefs(localPrefs.get('systemOverlayColor'), fallback: 0xFFE57697),
-        ),
-      ),
-    );
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
   }
 

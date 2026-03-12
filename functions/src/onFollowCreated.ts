@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { logger } from "firebase-functions/v2";
-import { sendNotification, emailToTopic } from "./notificationHelper";
+import {onDocumentUpdated} from "firebase-functions/v2/firestore";
+import {logger} from "firebase-functions/v2";
+import {sendNotification, emailToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -65,12 +65,12 @@ export const onFollowCreated = onDocumentUpdated(
           route: "follower",
           follower_email: followerEmail,
           pageName: "",
-          url: "",
+          url: _profileUrl(followerEmail),
         },
         modifier: followedUserEmail,
         channelId: "followers",
         // Send push to the followed user's own topic (they subscribe on login).
-        fcmTarget: { topic: followedTopic },
+        fcmTarget: {topic: followedTopic},
       });
 
       logger.info("onFollowCreated: follow notification sent.", {
@@ -99,7 +99,13 @@ async function _resolveUsername(email: string): Promise<string> {
       if (name) return name;
     }
   } catch (err) {
-    logger.warn("onFollowCreated: could not resolve follower username.", { email, err });
+    logger.warn("onFollowCreated: could not resolve follower username.", {email, err});
   }
   return email.split("@")[0];
+}
+
+function _profileUrl(identifier: string): string {
+  const cleaned = identifier.trim();
+  if (!cleaned) return "";
+  return `https://prismwalls.com/user/${encodeURIComponent(cleaned)}`;
 }

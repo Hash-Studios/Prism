@@ -76,6 +76,7 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
     read: notif.read ?? false,
     route: notif.route,
     wallId: notif.wallId,
+    followerEmail: notif.followerEmail,
   );
 }
 

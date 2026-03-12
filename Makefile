@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard secrets-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -96,9 +96,19 @@ no-shape-parse-guard:
 
 env-guard:
 	@./tool/env_define_guard.sh
+	@bash ./tool/system_ui_guard.sh
+
+system-ui-guard:
+	@bash ./tool/system_ui_guard.sh
 
 secrets-guard:
 	@./tool/doppler_guard.sh
+
+version-sync:
+	@python3 tool/sync_app_version.py
+
+version-guard:
+	@python3 tool/verify_version_sync.py
 
 file-gen: ensure-fvm
 	@$(DART) run build_runner build --delete-conflicting-outputs
@@ -194,7 +204,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard secrets-guard analytics-check analyze no-dynamic-guard find-unused-ci
+ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard find-unused-ci
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \

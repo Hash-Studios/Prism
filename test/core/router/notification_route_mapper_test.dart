@@ -15,9 +15,26 @@ void main() {
     expect(route, isA<ProfileTabRoute>());
   });
 
-  test('maps follower to notification route', () async {
+  test('maps follower to profile route when identifier is present', () async {
+    final route = await mapper.fromRoute(
+      route: 'follower',
+      profileIdentifier: 'creator@example.com',
+      sourceTag: 'test',
+    );
+    expect(route, isA<ProfileRoute>());
+  });
+
+  test('maps follower to notification route when identifier is absent', () async {
     final route = await mapper.fromRoute(route: 'follower', sourceTag: 'test');
     expect(route, isA<NotificationRoute>());
+  });
+
+  test('maps follower payload to profile route using follower_email', () async {
+    final route = await mapper.fromPayload(<String, dynamic>{
+      'route': 'follower',
+      'follower_email': 'user@example.com',
+    }, sourceTag: 'test');
+    expect(route, isA<ProfileRoute>());
   });
 
   test('returns null for non-whitelisted route', () async {

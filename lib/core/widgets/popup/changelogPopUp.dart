@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -25,7 +30,10 @@ class _ChangelogVersion {
   const _ChangelogVersion({required this.version, required this.changes});
 }
 
-const List<_ChangelogVersion> _changelog = [
+const String _changelogUrl = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/CHANGELOG.md';
+const String _changelogCacheKey = 'remote_changelog_markdown_cache';
+
+const List<_ChangelogVersion> _fallbackChangelog = [
   _ChangelogVersion(
     version: 'v2.6.9',
     changes: [
@@ -101,8 +109,9 @@ const List<_ChangelogVersion> _changelog = [
 // Entry point
 // ---------------------------------------------------------------------------
 
-void showChangelog(BuildContext context, Function func) {
+void showChangelog(BuildContext context, VoidCallback func) {
   final controller = ScrollController();
+  final NavigatorState? navigator = Navigator.maybeOf(context, rootNavigator: true);
   final AlertDialog aboutPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: Container(
@@ -122,7 +131,11 @@ void showChangelog(BuildContext context, Function func) {
             ),
             child: Stack(
               children: [
-                const SafeRiveAsset(assetName: "assets/animations/Changelog.flr", animations: <String>["changelog"]),
+                SafeRiveAsset(
+                  assetName: "assets/animations/Changelog.riv",
+                  animations: const <String>["changelog"],
+                  fallback: Center(child: Icon(JamIcons.refresh, color: Theme.of(context).colorScheme.secondary)),
+                ),
                 Positioned(
                   bottom: 10,
                   right: 14,
@@ -152,20 +165,7 @@ void showChangelog(BuildContext context, Function func) {
               thickness: 5,
               controller: controller,
               thumbVisibility: true,
-              child: SingleChildScrollView(
-                controller: controller,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    for (int i = 0; i < _changelog.length; i++) ...[
-                      _ChangeVersion(number: _changelog[i].version, showDivider: i > 0),
-                      for (final item in _changelog[i].changes)
-                        _ChangeRow(icon: item.icon, text: item.text, type: item.type),
-                    ],
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
+              child: _ChangelogList(controller: controller),
             ),
           ),
         ],
@@ -188,7 +188,9 @@ void showChangelog(BuildContext context, Function func) {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         onPressed: () {
-          Navigator.of(context).pop();
+          if (navigator?.canPop() ?? false) {
+            navigator?.pop();
+          }
           func();
         },
         child: const Text(
@@ -202,6 +204,136 @@ void showChangelog(BuildContext context, Function func) {
     actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
   );
   showModal(context: context, builder: (BuildContext context) => aboutPopUp);
+}
+
+ChangeType _inferChangeType(String text) {
+  final value = text.toLowerCase();
+  if (value.contains('fix') || value.contains('bug') || value.contains('crash')) {
+    return ChangeType.fix;
+  }
+  if (value.contains('improve') ||
+      value.contains('optimiz') ||
+      value.contains('performance') ||
+      value.contains('refactor')) {
+    return ChangeType.improvement;
+  }
+  return ChangeType.feature;
+}
+
+IconData _iconForType(ChangeType type) {
+  switch (type) {
+    case ChangeType.feature:
+      return JamIcons.magic;
+    case ChangeType.fix:
+      return JamIcons.bug;
+    case ChangeType.improvement:
+      return JamIcons.refresh;
+  }
+}
+
+List<_ChangelogVersion> _parseChangelogMarkdown(String markdown) {
+  final List<_ChangelogVersion> versions = <_ChangelogVersion>[];
+  String? currentVersion;
+  List<_ChangeItem> currentChanges = <_ChangeItem>[];
+
+  void flushCurrent() {
+    if (currentVersion == null || currentChanges.isEmpty) {
+      return;
+    }
+    versions.add(_ChangelogVersion(version: currentVersion!, changes: currentChanges));
+    currentVersion = null;
+    currentChanges = <_ChangeItem>[];
+  }
+
+  final lines = markdown.split('\n');
+  for (final raw in lines) {
+    final line = raw.trim();
+    if (line.startsWith('### ')) {
+      flushCurrent();
+      currentVersion = line.substring(4).trim();
+      continue;
+    }
+    if (line.startsWith('- ') && currentVersion != null) {
+      final text = line.substring(2).trim();
+      if (text.isEmpty) {
+        continue;
+      }
+      final type = _inferChangeType(text);
+      currentChanges.add(_ChangeItem(icon: _iconForType(type), text: text, type: type));
+    }
+  }
+  flushCurrent();
+
+  if (versions.isEmpty) {
+    return _fallbackChangelog;
+  }
+  return versions.take(5).toList(growable: false);
+}
+
+class _ChangelogList extends StatefulWidget {
+  final ScrollController controller;
+  const _ChangelogList({required this.controller});
+
+  @override
+  State<_ChangelogList> createState() => _ChangelogListState();
+}
+
+class _ChangelogListState extends State<_ChangelogList> {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
+  List<_ChangelogVersion> _items = _fallbackChangelog;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadRemoteChangelog());
+  }
+
+  Future<void> _loadRemoteChangelog() async {
+    final cached = _settingsLocal.get<String?>(_changelogCacheKey);
+    if (cached != null && cached.trim().isNotEmpty) {
+      final parsedCached = _parseChangelogMarkdown(cached);
+      if (mounted && parsedCached.isNotEmpty) {
+        setState(() {
+          _items = parsedCached;
+        });
+      }
+    }
+
+    try {
+      final response = await http.get(Uri.parse(_changelogUrl)).timeout(const Duration(seconds: 4));
+      if (response.statusCode < 200 || response.statusCode >= 300 || response.body.trim().isEmpty) {
+        return;
+      }
+      final parsed = _parseChangelogMarkdown(response.body);
+      if (parsed.isEmpty) {
+        return;
+      }
+      await _settingsLocal.set(_changelogCacheKey, response.body);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _items = parsed;
+      });
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      controller: widget.controller,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < _items.length; i++) ...[
+            _ChangeVersion(number: _items[i].version, showDivider: i > 0),
+            for (final item in _items[i].changes) _ChangeRow(icon: item.icon, text: item.text, type: item.type),
+          ],
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

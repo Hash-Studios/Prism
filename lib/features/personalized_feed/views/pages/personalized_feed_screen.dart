@@ -241,10 +241,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
           final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
           final visibleItems = _gridItemsWithoutCarouselPreview(state);
 
-          // Get inherited scroll controller from BottomBar for hide/show behavior
-          final inheritedScrollController = PrimaryScrollController.maybeOf(context);
-          final scrollController = inheritedScrollController ?? _scrollController;
-
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
             return const Center(child: CircularProgressIndicator.adaptive());
           }
@@ -288,7 +284,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                 return false;
               },
               child: CustomScrollView(
-                controller: scrollController,
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 slivers: [
                   // Carousel: WallOfTheDay + banner + 4 wallpaper previews

@@ -1,4 +1,4 @@
-enum LocalStoreBackend { hive, sharedPrefs }
+enum LocalStoreBackend { sharedPrefs }
 
 extension LocalStoreBackendX on LocalStoreBackend {
   static LocalStoreBackend fromDefine(String raw) {
@@ -7,10 +7,8 @@ extension LocalStoreBackendX on LocalStoreBackend {
       case 'shared_prefs':
       case 'sharedprefs':
       case 'sharedpreferences':
-        return LocalStoreBackend.sharedPrefs;
-      case 'hive':
       default:
-        return LocalStoreBackend.hive;
+        return LocalStoreBackend.sharedPrefs;
     }
   }
 }

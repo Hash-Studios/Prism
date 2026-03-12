@@ -40,6 +40,9 @@ jobs:
       - name: Env define guard
         run: make env-guard
 
+      - name: Version sync guard
+        run: make version-guard
+
       - name: Analyze
         run: make analyze CI=true
 

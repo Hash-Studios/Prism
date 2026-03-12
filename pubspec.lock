@@ -984,30 +984,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  hive_flutter_io:
-    dependency: "direct main"
-    description:
-      name: hive_flutter_io
-      sha256: "5ac4b032f777ff5fcf905d4cab4f36e6dfd2f139dd9beaf83ba9ac164d324178"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
-  hive_generator_io:
-    dependency: "direct dev"
-    description:
-      name: hive_generator_io
-      sha256: "574c0838b68738d36ef303e14af226076a9ea4c49d4372f11d5f913f89d87da2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
-  hive_io:
-    dependency: "direct main"
-    description:
-      name: hive_io
-      sha256: de5a64b6e4df9707dd8ab08a68a86efcce3633ac4be1abc4f39770a0e68b909e
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   hooks:
     dependency: transitive
     description:
@@ -1716,18 +1692,18 @@ packages:
     dependency: "direct main"
     description:
       name: rive
-      sha256: "2551a44fa766a7ed3f52aa2b94feda6d18d00edc25dee5f66e72e9b365bb6d6c"
+      sha256: "2d7f0b0dd6c8368c3e5a47d0a38ee68306896920aa665b5bf59e7c589a6d35a2"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.20"
-  rive_common:
+    version: "0.14.4"
+  rive_native:
     dependency: transitive
     description:
-      name: rive_common
-      sha256: "2ba42f80d37a4efd0696fb715787c4785f8a13361e8aea9227c50f1e78cf763a"
+      name: rive_native
+      sha256: fad6aac822340fa14a2cbcdc8cd064da4b4c74d22a5f6c827a59538d67f200e4
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.15"
+    version: "0.1.4"
   rxdart:
     dependency: "direct main"
     description:
@@ -1748,10 +1724,10 @@ packages:
     dependency: transitive
     description:
       name: sentry
-      sha256: e57e57123968b673c8ca19892eecf93113b4811b8e5cd5d165749ca7f7319fdb
+      sha256: "605ad1f6f1ae5b72018cbe8fc20f490fa3bd53e58882e5579566776030d8c8c1"
       url: "https://pub.dev"
     source: hosted
-    version: "9.13.0"
+    version: "9.14.0"
   sentry_dart_plugin:
     dependency: "direct dev"
     description:
@@ -1764,10 +1740,10 @@ packages:
     dependency: "direct main"
     description:
       name: sentry_flutter
-      sha256: c8f5b805c0346cd0c93b09e584675af7ed8c3ef36c3589181ad19b4adce35954
+      sha256: "7fd0fb80050c1f6a77ae185bda997a76d384326d6777cf5137a6c38952c4ac7d"
       url: "https://pub.dev"
     source: hosted
-    version: "9.13.0"
+    version: "9.14.0"
   share_plus:
     dependency: "direct main"
     description:

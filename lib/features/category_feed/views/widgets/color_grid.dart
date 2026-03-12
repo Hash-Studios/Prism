@@ -100,7 +100,6 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     if (PData.wallsC.isNotEmpty) {
       _contentLoadTracker.success(
         itemCount: PData.wallsC.length,
@@ -150,7 +149,6 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           return false;
         },
         child: GridView.builder(
-          controller: controller,
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
           itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
           shrinkWrap: true,
