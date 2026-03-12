@@ -233,6 +233,7 @@ def main() -> int:
             max_results=args.max_results,
             translation_language=args.translation_language,
         )
+        total_reviews = len(extract_reviews(payload))
         rows = flatten_reviews(payload, stars)
     except RuntimeError as exc:
         print(f"Error: {exc}", file=sys.stderr)
@@ -254,6 +255,7 @@ def main() -> int:
     write_json(out_json, rows)
     write_csv(out_csv, rows)
 
+    print(f"Total reviews returned by Play API: {total_reviews}")
     print(f"Fetched low-star reviews: {len(rows)}")
     print(f"Order: {'newest first' if args.order == 'desc' else 'oldest first'}")
     print(f"Wrote JSON: {out_json}")
