@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
-import { onSchedule } from "firebase-functions/v2/scheduler";
-import { logger } from "firebase-functions/v2";
-import { sendNotification } from "./notificationHelper";
+import {onSchedule} from "firebase-functions/v2/scheduler";
+import {logger} from "firebase-functions/v2";
+import {sendNotification} from "./notificationHelper";
 
 // Initialize the Admin SDK once (guarded for module reuse across functions).
 if (!admin.apps.length) {
@@ -34,7 +34,7 @@ export const wallOfTheDay = onSchedule(
     // 1. Archive yesterday's wall
     // ------------------------------------------------------------------ //
     let currentWallId: string | null = null;
-    let currentWallTitle: string = "Today's Wall";
+    let currentWallTitle = "Today's Wall";
 
     try {
       const currentSnap = await db
@@ -55,7 +55,7 @@ export const wallOfTheDay = onSchedule(
         });
       }
     } catch (err) {
-      logger.warn("Could not archive current wall (may not exist yet).", { err });
+      logger.warn("Could not archive current wall (may not exist yet).", {err});
     }
 
     // ------------------------------------------------------------------ //
@@ -77,44 +77,100 @@ export const wallOfTheDay = onSchedule(
         if (wid) excludedWallIds.add(wid);
       });
     } catch (err) {
-      logger.warn("Could not fetch past_picks for dedup; proceeding without exclusion.", { err });
+      logger.warn("Could not fetch past_picks for dedup; proceeding without exclusion.", {err});
     }
 
     // ------------------------------------------------------------------ //
-    // 3. Pick a new wall
+    // 3. Pick a new wall — randomly, with up to MAX_RETRIES attempts to
+    //    avoid a wall that appeared in the last 30 days.
+    //
+    //    Strategy:
+    //      a) Count all approved walls via Firestore count() aggregate.
+    //      b) Pick a random offset and fetch exactly 1 doc at that position,
+    //         ordered by document ID (stable, index-free ordering).
+    //      c) If that doc is in the exclusion set, retry up to MAX_RETRIES
+    //         times with a fresh random offset.
+    //      d) Fallback: if every retry hit an excluded wall (very unlikely
+    //         with 5,000+ walls), fall back to the first non-excluded wall
+    //         from the 100 most-recently-added approved walls.
     // ------------------------------------------------------------------ //
+    const MAX_RETRIES = 5;
+
     let newWall: admin.firestore.DocumentData | null = null;
     let newWallId: string | null = null;
 
     try {
-      // Try to pick a wall not in past_picks (last 30 days).
-      // We fetch a batch and skip any excluded ones.
-      const candidatesSnap = await db
+      // a) Count total approved walls.
+      const countSnap = await db
         .collection("walls")
-        .where("review", "==", true) // matches the app's own query filter
-        .orderBy("createdAt", "desc")
-        .limit(100)
+        .where("review", "==", true)
+        .count()
         .get();
+      const totalCount = countSnap.data().count;
+      logger.info(`Total approved walls: ${totalCount}`);
 
-      for (const doc of candidatesSnap.docs) {
-        if (!excludedWallIds.has(doc.id)) {
-          newWall = doc.data();
-          newWallId = doc.id;
-          break;
+      if (totalCount > 0) {
+        // b & c) Random-offset attempts.
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          const randomOffset = Math.floor(Math.random() * totalCount);
+          const snap = await db
+            .collection("walls")
+            .where("review", "==", true)
+            .orderBy(admin.firestore.FieldPath.documentId())
+            .offset(randomOffset)
+            .limit(1)
+            .get();
+
+          if (!snap.empty) {
+            const doc = snap.docs[0];
+            if (!excludedWallIds.has(doc.id)) {
+              newWall = doc.data();
+              newWallId = doc.id;
+              logger.info(`Selected wall on attempt ${attempt + 1} at offset ${randomOffset}.`, {
+                wallId: newWallId,
+              });
+              break;
+            }
+            logger.info(
+              `Attempt ${attempt + 1}: wall ${doc.id} is in past_picks — retrying.`,
+            );
+          }
         }
       }
 
-      // Fallback: if all recent walls are excluded, just take the latest one.
-      if (!newWall && candidatesSnap.size > 0) {
-        const fallbackDoc = candidatesSnap.docs[0];
-        newWall = fallbackDoc.data();
-        newWallId = fallbackDoc.id;
-        logger.warn("All candidate walls were in past_picks; using latest as fallback.", {
-          wallId: newWallId,
-        });
+      // d) Fallback: all retries hit excluded walls — pick the first
+      //    non-excluded wall from the 100 most-recently-added approved walls.
+      if (!newWall) {
+        logger.warn(
+          `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
+        );
+        const fallbackSnap = await db
+          .collection("walls")
+          .where("review", "==", true)
+          .orderBy("createdAt", "desc")
+          .limit(100)
+          .get();
+
+        for (const doc of fallbackSnap.docs) {
+          if (!excludedWallIds.has(doc.id)) {
+            newWall = doc.data();
+            newWallId = doc.id;
+            break;
+          }
+        }
+
+        // Last-resort: use the absolute latest wall regardless of exclusion.
+        if (!newWall && fallbackSnap.size > 0) {
+          const lastResortDoc = fallbackSnap.docs[0];
+          newWall = lastResortDoc.data();
+          newWallId = lastResortDoc.id;
+          logger.warn("Last-resort fallback: all 100 newest walls excluded; using latest.", {
+            wallId: newWallId,
+          });
+        }
       }
     } catch (err) {
-      logger.error("Failed to query walls collection.", { err });
+      logger.error("Failed to query walls collection.", {err});
       return;
     }
 
@@ -131,8 +187,8 @@ export const wallOfTheDay = onSchedule(
       url: newWall.wallpaper_url ?? "",
       thumbnailUrl: newWall.wallpaper_thumb ?? "",
       title: newWall.title ?? "",
-      photographer: newWall.by ?? "",       // `by` is the uploader name field
-      photographerId: newWall.email ?? "",  // `email` is the uploader identifier
+      photographer: newWall.by ?? "", // `by` is the uploader name field
+      photographerId: newWall.email ?? "", // `email` is the uploader identifier
       date: admin.firestore.Timestamp.now(),
       palette: newWall.palette ?? [],
       isPremium: newWall.premium ?? false,
@@ -145,7 +201,7 @@ export const wallOfTheDay = onSchedule(
         title: wotdDoc.title,
       });
     } catch (err) {
-      logger.error("Failed to write wall_of_the_day/current.", { err });
+      logger.error("Failed to write wall_of_the_day/current.", {err});
       return;
     }
 
@@ -169,9 +225,9 @@ export const wallOfTheDay = onSchedule(
       imageUrl: (wotdDoc.thumbnailUrl as string) || undefined,
       modifier: "all",
       channelId: "wall_of_the_day",
-      fcmTarget: { topic: "wall_of_the_day" },
+      fcmTarget: {topic: "wall_of_the_day"},
     });
-    logger.info("WOTD notification sent and in-app doc written.", { wallId: newWallId });
+    logger.info("WOTD notification sent and in-app doc written.", {wallId: newWallId});
   },
 );
 

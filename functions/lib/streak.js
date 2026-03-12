@@ -1,7 +1,40 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendStreakReminders = exports.claimDailyStreak = void 0;
-const admin = require("firebase-admin");
+const admin = __importStar(require("firebase-admin"));
 const v2_1 = require("firebase-functions/v2");
 const https_1 = require("firebase-functions/v2/https");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
@@ -51,9 +84,9 @@ exports.claimDailyStreak = (0, https_1.onCall)({
         const userData = userSnap.data();
         const previousBalance = _asInt(userData.coins, 0);
         const coinState = _normalizeCoinState(userData.coinState);
-        const effectiveOffset = _clampTimezoneOffset(((_a = request.data) === null || _a === void 0 ? void 0 : _a.timezoneOffsetMinutes) == null
-            ? _asInt(coinState.streakTimezoneOffsetMinutes, requestOffset)
-            : requestOffset);
+        const effectiveOffset = _clampTimezoneOffset(((_a = request.data) === null || _a === void 0 ? void 0 : _a.timezoneOffsetMinutes) == null ?
+            _asInt(coinState.streakTimezoneOffsetMinutes, requestOffset) :
+            requestOffset);
         coinState.streakTimezoneOffsetMinutes = effectiveOffset;
         coinState.streakReminderEnabled = reminderEnabledRequest;
         todayLocalKey = _localDateKeyFromUtc(now, effectiveOffset);
@@ -87,11 +120,11 @@ exports.claimDailyStreak = (0, https_1.onCall)({
                 sourceTag: "coins.claim_daily_streak.callable",
                 status: "completed",
                 type: "credit",
-                reason: streakDay >= 4 && streakDay <= 6
-                    ? `streak_mid_cycle_day_${streakDay}`
-                    : streakDay === 7
-                        ? "streak_day_7_daily"
-                        : "daily_login",
+                reason: streakDay >= 4 && streakDay <= 6 ?
+                    `streak_mid_cycle_day_${streakDay}` :
+                    streakDay === 7 ?
+                        "streak_day_7_daily" :
+                        "daily_login",
             });
             if (streakBonusReward > 0) {
                 const streakTxId = `ctx_streak_bonus_${baseTxId}`;
@@ -268,13 +301,13 @@ function _clampStreakDay(day) {
     return Math.max(0, Math.min(7, Math.trunc(day)));
 }
 function _normalizeCoinState(raw) {
-    const state = raw && typeof raw === "object" && !Array.isArray(raw)
-        ? Object.assign({}, raw) : {};
-    return Object.assign(Object.assign(Object.assign(Object.assign({}, state), { lastDailyClaimDate: _asString(state.lastDailyClaimDate), streakDay: _clampStreakDay(_asInt(state.streakDay, 0)), streakReminderEnabled: _asBool(state.streakReminderEnabled, true), streakTimezoneOffsetMinutes: _clampTimezoneOffset(_asInt(state.streakTimezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES)), streakReminderLastSentDate: _asString(state.streakReminderLastSentDate) }), (state.streakReminderNextAtUtc instanceof admin.firestore.Timestamp
-        ? { streakReminderNextAtUtc: state.streakReminderNextAtUtc }
-        : {})), (state.streakLastClaimServerAt instanceof admin.firestore.Timestamp
-        ? { streakLastClaimServerAt: state.streakLastClaimServerAt }
-        : {}));
+    const state = raw && typeof raw === "object" && !Array.isArray(raw) ? Object.assign({}, raw) :
+        {};
+    return Object.assign(Object.assign(Object.assign(Object.assign({}, state), { lastDailyClaimDate: _asString(state.lastDailyClaimDate), streakDay: _clampStreakDay(_asInt(state.streakDay, 0)), streakReminderEnabled: _asBool(state.streakReminderEnabled, true), streakTimezoneOffsetMinutes: _clampTimezoneOffset(_asInt(state.streakTimezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES)), streakReminderLastSentDate: _asString(state.streakReminderLastSentDate) }), (state.streakReminderNextAtUtc instanceof admin.firestore.Timestamp ?
+        { streakReminderNextAtUtc: state.streakReminderNextAtUtc } :
+        {})), (state.streakLastClaimServerAt instanceof admin.firestore.Timestamp ?
+        { streakLastClaimServerAt: state.streakLastClaimServerAt } :
+        {}));
 }
 function _computeNextStreakDay(lastClaimDate, todayLocalKey, previousStreakDay) {
     if (!lastClaimDate) {

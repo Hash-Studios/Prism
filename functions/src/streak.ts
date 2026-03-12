@@ -1,8 +1,8 @@
 import * as admin from "firebase-admin";
-import { logger } from "firebase-functions/v2";
-import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
-import { onSchedule } from "firebase-functions/v2/scheduler";
-import { sendNotification } from "./notificationHelper";
+import {logger} from "firebase-functions/v2";
+import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
+import {onSchedule} from "firebase-functions/v2/scheduler";
+import {sendNotification} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -100,9 +100,9 @@ export const claimDailyStreak = onCall(
       const coinState = _normalizeCoinState(userData.coinState);
 
       const effectiveOffset = _clampTimezoneOffset(
-        request.data?.timezoneOffsetMinutes == null
-          ? _asInt(coinState.streakTimezoneOffsetMinutes, requestOffset)
-          : requestOffset,
+        request.data?.timezoneOffsetMinutes == null ?
+          _asInt(coinState.streakTimezoneOffsetMinutes, requestOffset) :
+          requestOffset,
       );
       coinState.streakTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakReminderEnabled = reminderEnabledRequest;
@@ -144,11 +144,11 @@ export const claimDailyStreak = onCall(
           status: "completed",
           type: "credit",
           reason:
-            streakDay >= 4 && streakDay <= 6
-              ? `streak_mid_cycle_day_${streakDay}`
-              : streakDay === 7
-                ? "streak_day_7_daily"
-                : "daily_login",
+            streakDay >= 4 && streakDay <= 6 ?
+              `streak_mid_cycle_day_${streakDay}` :
+              streakDay === 7 ?
+                "streak_day_7_daily" :
+                "daily_login",
         });
 
         if (streakBonusReward > 0) {
@@ -197,7 +197,7 @@ export const claimDailyStreak = onCall(
       totalReward,
       newBalance,
       todayLocalKey,
-      ...(nextReminderAtUtcMillis != null ? { nextReminderAtUtcMillis } : {}),
+      ...(nextReminderAtUtcMillis != null ? {nextReminderAtUtcMillis} : {}),
     };
   },
 );
@@ -281,7 +281,7 @@ export const sendStreakReminders = onSchedule(
           },
           modifier: userEmail,
           channelId: REMINDER_CHANNEL_ID,
-          fcmTarget: { token: fcmToken },
+          fcmTarget: {token: fcmToken},
         });
 
         await userDoc.ref.update({
@@ -360,9 +360,9 @@ function _clampStreakDay(day: number): number {
 
 function _normalizeCoinState(raw: unknown): CoinState {
   const state: Record<string, unknown> =
-    raw && typeof raw === "object" && !Array.isArray(raw)
-      ? { ...(raw as Record<string, unknown>) }
-      : {};
+    raw && typeof raw === "object" && !Array.isArray(raw) ?
+      {...(raw as Record<string, unknown>)} :
+      {};
 
   return {
     ...state,
@@ -373,12 +373,12 @@ function _normalizeCoinState(raw: unknown): CoinState {
       _asInt(state.streakTimezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES),
     ),
     streakReminderLastSentDate: _asString(state.streakReminderLastSentDate),
-    ...(state.streakReminderNextAtUtc instanceof admin.firestore.Timestamp
-      ? { streakReminderNextAtUtc: state.streakReminderNextAtUtc }
-      : {}),
-    ...(state.streakLastClaimServerAt instanceof admin.firestore.Timestamp
-      ? { streakLastClaimServerAt: state.streakLastClaimServerAt }
-      : {}),
+    ...(state.streakReminderNextAtUtc instanceof admin.firestore.Timestamp ?
+      {streakReminderNextAtUtc: state.streakReminderNextAtUtc} :
+      {}),
+    ...(state.streakLastClaimServerAt instanceof admin.firestore.Timestamp ?
+      {streakLastClaimServerAt: state.streakLastClaimServerAt} :
+      {}),
   };
 }
 
@@ -396,10 +396,10 @@ function _computeNextStreakDay(lastClaimDate: string, todayLocalKey: string, pre
 
 function _rewardForStreakDay(streakDay: number): RewardParts {
   if (streakDay >= 1 && streakDay <= 3) {
-    return { dailyReward: DAILY_REWARD_BASE, streakBonusReward: 0, totalReward: DAILY_REWARD_BASE };
+    return {dailyReward: DAILY_REWARD_BASE, streakBonusReward: 0, totalReward: DAILY_REWARD_BASE};
   }
   if (streakDay >= 4 && streakDay <= 6) {
-    return { dailyReward: STREAK_REWARD_MID, streakBonusReward: 0, totalReward: STREAK_REWARD_MID };
+    return {dailyReward: STREAK_REWARD_MID, streakBonusReward: 0, totalReward: STREAK_REWARD_MID};
   }
   if (streakDay >= 7) {
     return {
@@ -408,7 +408,7 @@ function _rewardForStreakDay(streakDay: number): RewardParts {
       totalReward: DAILY_REWARD_BASE + STREAK_DAY7_BONUS,
     };
   }
-  return { dailyReward: DAILY_REWARD_BASE, streakBonusReward: 0, totalReward: DAILY_REWARD_BASE };
+  return {dailyReward: DAILY_REWARD_BASE, streakBonusReward: 0, totalReward: DAILY_REWARD_BASE};
 }
 
 function _localDateKeyFromUtc(utcDate: Date, offsetMinutes: number): string {

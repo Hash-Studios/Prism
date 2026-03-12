@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { logger } from "firebase-functions/v2";
-import { sendNotification, emailToTopic } from "./notificationHelper";
+import {onDocumentUpdated} from "firebase-functions/v2/firestore";
+import {logger} from "firebase-functions/v2";
+import {sendNotification, emailToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -47,7 +47,7 @@ export const onWallApproved = onDocumentUpdated(
     const wallThumb: string = (after.wallpaper_thumb ?? "").toString().trim();
 
     if (!artistEmail) {
-      logger.warn("onWallApproved: wall has no artist email, skipping.", { wallId });
+      logger.warn("onWallApproved: wall has no artist email, skipping.", {wallId});
       return;
     }
 
@@ -68,10 +68,10 @@ export const onWallApproved = onDocumentUpdated(
       imageUrl: wallThumb || undefined,
       modifier: artistEmail,
       channelId: "posts",
-      fcmTarget: { topic: artistTopic },
+      fcmTarget: {topic: artistTopic},
     });
 
-    logger.info("onWallApproved: artist notification sent.", { wallId, artistEmail });
+    logger.info("onWallApproved: artist notification sent.", {wallId, artistEmail});
 
     // ------------------------------------------------------------------ //
     // 2. Notify the artist's followers that a new wall is available
@@ -96,7 +96,7 @@ export const onWallApproved = onDocumentUpdated(
       imageUrl: wallThumb || undefined,
       modifier: artistEmail,
       channelId: "posts",
-      fcmTarget: { topic: followersTopic },
+      fcmTarget: {topic: followersTopic},
       pushOnly: true,
     });
 
@@ -144,10 +144,10 @@ async function _notifyAdmins(params: {
         imageUrl: params.wallThumb || undefined,
         modifier: email,
         channelId: "posts",
-        fcmTarget: { topic },
+        fcmTarget: {topic},
       });
     }
   } catch (err) {
-    logger.warn("onWallApproved: admin notification failed (non-fatal).", { err });
+    logger.warn("onWallApproved: admin notification failed (non-fatal).", {err});
   }
 }
