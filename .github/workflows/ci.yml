@@ -11,7 +11,8 @@ env:
   APP_SIZE_MAX_DELTA_BYTES: 1572864
   APP_SIZE_MAX_DELTA_PERCENT: 5
   APP_SIZE_TARGET_PLATFORM: android-arm64
-  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dkotlin.daemon.jvm.options=-Xmx2g
+  APP_SIZE_BUILD_MODE: profile
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dkotlin.daemon.jvm.options=-Xmx2g -Dorg.gradle.vfs.watch=false
 
 jobs:
   ci:
@@ -133,27 +134,29 @@ jobs:
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/base
-          flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
-          cp build/app/outputs/flutter-apk/app-release.apk build/size/base/app-release.apk
+          flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
+          cp build/app/outputs/flutter-apk/app-"$APP_SIZE_BUILD_MODE".apk build/size/base/app-"$APP_SIZE_BUILD_MODE".apk
+          ./android/gradlew --stop || true
 
-      - name: Build head APK + analyze-size
+      - name: Build head APK
         if: steps.changes.outputs.app_size == 'true'
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          rm -rf build .dart_tool
           git checkout --force --detach "$HEAD_SHA"
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/head
-          flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/head/build.log
-          cp build/app/outputs/flutter-apk/app-release.apk build/size/head/app-release.apk
+          flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/head/build.log
+          cp build/app/outputs/flutter-apk/app-"$APP_SIZE_BUILD_MODE".apk build/size/head/app-"$APP_SIZE_BUILD_MODE".apk
 
       - name: Compare app size and enforce thresholds
         if: steps.changes.outputs.app_size == 'true'
         run: |
           python3 tool/compare_app_size.py \
-            --base-artifact build/size/base/app-release.apk \
-            --head-artifact build/size/head/app-release.apk \
+            --base-artifact build/size/base/app-"$APP_SIZE_BUILD_MODE".apk \
+            --head-artifact build/size/head/app-"$APP_SIZE_BUILD_MODE".apk \
             --max-delta-bytes "$APP_SIZE_MAX_DELTA_BYTES" \
             --max-delta-percent "$APP_SIZE_MAX_DELTA_PERCENT" \
             --json-out build/size/report.json \
