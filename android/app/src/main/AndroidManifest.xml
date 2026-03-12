@@ -32,7 +32,7 @@
         <service
             android:name=".MyTileService"
             android:exported="true"
-            android:icon="@drawable/preview_widget"
+            android:icon="@drawable/ic_tile_shuffle"
             android:label="@string/quick_settings"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -44,7 +44,7 @@
         <service
             android:name=".WotdTileService"
             android:exported="true"
-            android:icon="@drawable/preview_widget"
+            android:icon="@drawable/ic_tile_wotd"
             android:label="@string/quick_settings_wotd"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -56,7 +56,7 @@
         <service
             android:name=".FavsTileService"
             android:exported="true"
-            android:icon="@drawable/preview_widget"
+            android:icon="@drawable/ic_tile_favs"
             android:label="@string/quick_settings_favs"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
