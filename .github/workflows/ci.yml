@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
+env:
+  APP_SIZE_MAX_DELTA_BYTES: 1572864
+  APP_SIZE_MAX_DELTA_PERCENT: 5
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -48,3 +52,71 @@ jobs:
 
       - name: Run tests
         run: make test CI=true
+
+  app_size:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Build base AAB with size analysis
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git checkout --force --detach "$BASE_SHA"
+          flutter pub get
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          mkdir -p build/size/base
+          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/base/build.log
+          cp build/app/outputs/bundle/release/app-release.aab build/size/base/app-release.aab
+
+      - name: Build head AAB with size analysis
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git checkout --force --detach "$HEAD_SHA"
+          flutter pub get
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          mkdir -p build/size/head
+          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/head/build.log
+          cp build/app/outputs/bundle/release/app-release.aab build/size/head/app-release.aab
+
+      - name: Compare app size and enforce thresholds
+        run: |
+          python3 tool/compare_app_size.py \
+            --base-aab build/size/base/app-release.aab \
+            --head-aab build/size/head/app-release.aab \
+            --max-delta-bytes "$APP_SIZE_MAX_DELTA_BYTES" \
+            --max-delta-percent "$APP_SIZE_MAX_DELTA_PERCENT" \
+            --json-out build/size/report.json \
+            --summary-out build/size/report.md
+          cat build/size/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload app size artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-size-report
+          path: build/size
