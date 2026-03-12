@@ -7,11 +7,11 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
-import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
+import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_screen.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
@@ -65,6 +65,8 @@ part 'app_router.gr.dart';
 
 @AutoRouterConfig()
 class AppRouter extends RootStackRouter {
+  AppRouter({super.navigatorKey});
+
   final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
 
