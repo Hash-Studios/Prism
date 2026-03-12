@@ -1,0 +1,43 @@
+name: Changelog And Version Sync
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-files:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync app version constants
+        run: python3 tool/sync_app_version.py
+
+      - name: Update changelog from latest commit
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: python3 tool/update_changelog.py "$COMMIT_MESSAGE" "$COMMIT_SHA"
+
+      - name: Commit and push updates
+        run: |
+          if git diff --quiet; then
+            echo "No updates required"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md lib/core/constants/app_constants.dart
+          git commit -m "chore(changelog): auto-update changelog and version sync [skip ci] [skip changelog]"
+          git push

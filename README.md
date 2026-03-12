@@ -143,6 +143,10 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
+- `CHANGELOG.md` is auto-updated on every push to `master` (adds the latest commit under `### Unreleased`).
+- In-app changelog popup fetches the latest `CHANGELOG.md` from GitHub and caches it locally.
+- App version is sourced from `pubspec.yaml` and synced into `lib/core/constants/app_constants.dart` via `python3 tool/sync_app_version.py`.
+
 ### v2.6.9
 - Laid support for Prism v3
 - New model for users
