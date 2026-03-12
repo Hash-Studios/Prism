@@ -11,6 +11,7 @@ env:
   APP_SIZE_MAX_DELTA_BYTES: 1572864
   APP_SIZE_MAX_DELTA_PERCENT: 5
   APP_SIZE_TARGET_PLATFORM: android-arm64
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dkotlin.daemon.jvm.options=-Xmx2g
 
 jobs:
   ci:
@@ -31,6 +32,16 @@ jobs:
           cache: true
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Install dependencies
         run: make get CI=true
@@ -58,22 +69,42 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
+      - name: Detect app-size relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app_size:
+              - 'lib/**'
+              - 'android/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - 'ios/**'
+              - 'assets/**'
+              - 'tool/**'
+              - '.fvmrc'
+              - '.github/workflows/ci.yml'
+
       - name: Checkout code
+        if: steps.changes.outputs.app_size == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Java
+        if: steps.changes.outputs.app_size == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Read Flutter version from .fvmrc
+        if: steps.changes.outputs.app_size == 'true'
         id: fvm
         run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Flutter
+        if: steps.changes.outputs.app_size == 'true'
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ steps.fvm.outputs.version }}
@@ -82,7 +113,19 @@ jobs:
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
-      - name: Build base AAB + analyze-size
+      - name: Cache Gradle
+        if: steps.changes.outputs.app_size == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build base APK
+        if: steps.changes.outputs.app_size == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -90,11 +133,11 @@ jobs:
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/base
-          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true
-          cp build/app/outputs/bundle/release/app-release.aab build/size/base/app-release.aab
-          flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/base/build.log
+          flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
+          cp build/app/outputs/flutter-apk/app-release.apk build/size/base/app-release.apk
 
-      - name: Build head AAB + analyze-size
+      - name: Build head APK + analyze-size
+        if: steps.changes.outputs.app_size == 'true'
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -102,15 +145,15 @@ jobs:
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/head
-          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true
-          cp build/app/outputs/bundle/release/app-release.aab build/size/head/app-release.aab
           flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/head/build.log
+          cp build/app/outputs/flutter-apk/app-release.apk build/size/head/app-release.apk
 
       - name: Compare app size and enforce thresholds
+        if: steps.changes.outputs.app_size == 'true'
         run: |
           python3 tool/compare_app_size.py \
-            --base-aab build/size/base/app-release.aab \
-            --head-aab build/size/head/app-release.aab \
+            --base-artifact build/size/base/app-release.apk \
+            --head-artifact build/size/head/app-release.apk \
             --max-delta-bytes "$APP_SIZE_MAX_DELTA_BYTES" \
             --max-delta-percent "$APP_SIZE_MAX_DELTA_PERCENT" \
             --json-out build/size/report.json \
@@ -118,8 +161,15 @@ jobs:
           cat build/size/report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload app size artifacts
-        if: always()
+        if: always() && steps.changes.outputs.app_size == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-size-report
           path: build/size
+
+      - name: Skip app-size check (no relevant changes)
+        if: steps.changes.outputs.app_size != 'true'
+        run: |
+          echo "## Android App Size Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Skipped: no app-size relevant files changed in this PR." >> "$GITHUB_STEP_SUMMARY"

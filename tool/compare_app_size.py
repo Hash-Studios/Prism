@@ -15,23 +15,45 @@ def _format_bytes(value: int) -> str:
     return f"{value:,} B ({mib:.2f} MiB)"
 
 
-def _bucket_for_zip_path(path: str) -> str:
-    if path.startswith("base/lib/"):
+def _artifact_kind(path: pathlib.Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".aab":
+        return "aab"
+    if suffix == ".apk":
+        return "apk"
+    raise ValueError(f"Unsupported artifact type: {path}. Expected .aab or .apk")
+
+
+def _bucket_for_zip_path(path: str, kind: str) -> str:
+    if kind == "aab":
+        if path.startswith("base/lib/"):
+            return "native_libs"
+        if path.startswith("base/dex/"):
+            return "dex"
+        if path.startswith("base/assets/"):
+            return "assets"
+        if path.startswith("base/res/"):
+            return "resources"
+        if path.startswith("BUNDLE-METADATA/"):
+            return "bundle_metadata"
+        if path.startswith("META-INF/"):
+            return "meta_inf"
+        return "other"
+
+    if path.startswith("lib/"):
         return "native_libs"
-    if path.startswith("base/dex/"):
-        return "dex"
-    if path.startswith("base/assets/"):
+    if path.startswith("assets/"):
         return "assets"
-    if path.startswith("base/res/"):
+    if path.startswith("res/") or path == "resources.arsc":
         return "resources"
-    if path.startswith("BUNDLE-METADATA/"):
-        return "bundle_metadata"
     if path.startswith("META-INF/"):
         return "meta_inf"
+    if path.startswith("classes") and path.endswith(".dex"):
+        return "dex"
     return "other"
 
 
-def _read_aab_buckets(path: pathlib.Path) -> dict[str, int]:
+def _read_zip_buckets(path: pathlib.Path, kind: str) -> dict[str, int]:
     buckets: dict[str, int] = {
         "native_libs": 0,
         "dex": 0,
@@ -45,7 +67,7 @@ def _read_aab_buckets(path: pathlib.Path) -> dict[str, int]:
         for info in archive.infolist():
             if info.is_dir():
                 continue
-            bucket = _bucket_for_zip_path(info.filename)
+            bucket = _bucket_for_zip_path(info.filename, kind)
             buckets[bucket] += info.file_size
     return buckets
 
@@ -68,6 +90,7 @@ def _threshold_exceeded(delta: int, pct_delta: float, abs_threshold: int, pct_th
 
 
 def _markdown_report(
+    artifact_name: str,
     base_size: int,
     head_size: int,
     delta: int,
@@ -86,11 +109,11 @@ def _markdown_report(
         "",
         "| Metric | Base | Head | Delta |",
         "|---|---:|---:|---:|",
-        f"| `app-release.aab` | {_format_bytes(base_size)} | {_format_bytes(head_size)} | {_format_bytes(delta)} ({pct_text}) |",
+        f"| `{artifact_name}` | {_format_bytes(base_size)} | {_format_bytes(head_size)} | {_format_bytes(delta)} ({pct_text}) |",
         "",
         f"Thresholds: max delta `{_format_bytes(abs_threshold)}` OR `{pct_threshold:.2f}%`.",
         "",
-        "Top AAB bucket deltas (uncompressed bytes):",
+        "Top artifact bucket deltas (uncompressed bytes):",
     ]
 
     for name, bucket_delta in top_deltas:
@@ -101,22 +124,27 @@ def _markdown_report(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Compare Android AAB sizes and enforce thresholds.")
-    parser.add_argument("--base-aab", required=True, help="Path to base app-release.aab")
-    parser.add_argument("--head-aab", required=True, help="Path to head app-release.aab")
+    parser = argparse.ArgumentParser(description="Compare Android artifact sizes and enforce thresholds.")
+    parser.add_argument("--base-artifact", required=True, help="Path to base APK/AAB")
+    parser.add_argument("--head-artifact", required=True, help="Path to head APK/AAB")
     parser.add_argument("--max-delta-bytes", type=int, required=True, help="Fail if delta exceeds this many bytes")
     parser.add_argument("--max-delta-percent", type=float, required=True, help="Fail if percent delta exceeds this value")
     parser.add_argument("--json-out", required=True, help="Output JSON report path")
     parser.add_argument("--summary-out", required=True, help="Output Markdown summary path")
     args = parser.parse_args()
 
-    base_path = pathlib.Path(args.base_aab)
-    head_path = pathlib.Path(args.head_aab)
+    base_path = pathlib.Path(args.base_artifact)
+    head_path = pathlib.Path(args.head_artifact)
 
     if not base_path.exists():
-        raise FileNotFoundError(f"Base AAB not found: {base_path}")
+        raise FileNotFoundError(f"Base artifact not found: {base_path}")
     if not head_path.exists():
-        raise FileNotFoundError(f"Head AAB not found: {head_path}")
+        raise FileNotFoundError(f"Head artifact not found: {head_path}")
+
+    base_kind = _artifact_kind(base_path)
+    head_kind = _artifact_kind(head_path)
+    if base_kind != head_kind:
+        raise ValueError(f"Artifact kinds do not match: {base_kind} vs {head_kind}")
 
     base_size = base_path.stat().st_size
     head_size = head_path.stat().st_size
@@ -124,11 +152,12 @@ def main() -> int:
     pct_delta = _pct_delta(base_size, head_size)
     exceeded = _threshold_exceeded(delta, pct_delta, args.max_delta_bytes, args.max_delta_percent)
 
-    base_buckets = _read_aab_buckets(base_path)
-    head_buckets = _read_aab_buckets(head_path)
+    base_buckets = _read_zip_buckets(base_path, base_kind)
+    head_buckets = _read_zip_buckets(head_path, head_kind)
     top_deltas = _top_bucket_deltas(base_buckets, head_buckets)
 
     summary = _markdown_report(
+        artifact_name=head_path.name,
         base_size=base_size,
         head_size=head_size,
         delta=delta,
@@ -140,8 +169,9 @@ def main() -> int:
     )
 
     report = {
-        "base_aab": str(base_path),
-        "head_aab": str(head_path),
+        "base_artifact": str(base_path),
+        "head_artifact": str(head_path),
+        "artifact_kind": base_kind,
         "base_size_bytes": base_size,
         "head_size_bytes": head_size,
         "delta_bytes": delta,
