@@ -984,30 +984,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  hive_flutter_io:
-    dependency: "direct main"
-    description:
-      name: hive_flutter_io
-      sha256: "5ac4b032f777ff5fcf905d4cab4f36e6dfd2f139dd9beaf83ba9ac164d324178"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
-  hive_generator_io:
-    dependency: "direct dev"
-    description:
-      name: hive_generator_io
-      sha256: "574c0838b68738d36ef303e14af226076a9ea4c49d4372f11d5f913f89d87da2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
-  hive_io:
-    dependency: "direct main"
-    description:
-      name: hive_io
-      sha256: de5a64b6e4df9707dd8ab08a68a86efcce3633ac4be1abc4f39770a0e68b909e
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.2.2"
   hooks:
     dependency: transitive
     description:

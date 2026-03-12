@@ -238,8 +238,7 @@ The following packages are needed for the development of this application.
 - `github: ^8.1.0` for communicating with GitHub API
 - `google_mobile_ads: ^0.13.0` for rewarded video ads
 - `google_sign_in: ^5.0.2` for Google sign in support
-- `hive: ^2.0.4` for caching data
-- `hive_flutter: ^1.0.0` for caching data
+- `shared_preferences: ^2.3.2` for local key-value storage
 - `image: ^3.0.2` for image
 - `image_editor: ^0.7.1` for editing wallpapers during upload
 - `image_picker: ^0.7.4` for picking images

@@ -2,9 +2,6 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive_io/hive_io.dart';
-
-part 'userOldModel.g.dart';
 
 Map<String, dynamic> _legacyDocumentData(Object? data) {
   if (data is Map<String, dynamic>) {
@@ -16,31 +13,18 @@ Map<String, dynamic> _legacyDocumentData(Object? data) {
   return <String, dynamic>{};
 }
 
-@HiveType(typeId: 1)
 class PrismUsers {
-  @HiveField(0)
   String username;
-  @HiveField(1)
   String email;
-  @HiveField(2)
   String id;
-  @HiveField(3)
   String createdAt;
-  @HiveField(4)
   bool premium;
-  @HiveField(5)
   DateTime lastLogin;
-  @HiveField(6)
   Map links;
-  @HiveField(7)
   List followers;
-  @HiveField(8)
   List following;
-  @HiveField(9)
   String profilePhoto;
-  @HiveField(10)
   String bio;
-  @HiveField(11)
   bool loggedIn;
 
   PrismUsers({

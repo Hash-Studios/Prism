@@ -1,30 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hive_io/hive_io.dart';
-part 'inAppNotifModel.g.dart';
 
-@HiveType(typeId: 9)
 class InAppNotif {
-  @HiveField(0)
   final String? title;
-  @HiveField(1)
   final String? pageName;
-  @HiveField(2)
   final String? body;
-  @HiveField(3)
   final String? imageUrl;
-  @HiveField(4)
   final List? arguments;
-  @HiveField(5)
   final String? url;
-  @HiveField(6)
   final DateTime? createdAt;
-  @HiveField(7)
   final bool? read;
-  @HiveField(8)
   final String? route;
-  @HiveField(9)
   final String? wallId;
-  @HiveField(10)
   final String? followerEmail;
 
   InAppNotif({

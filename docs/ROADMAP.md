@@ -31,7 +31,7 @@ Everything below must ship together as the v3.0.0 release. This is the minimum v
 |---|------|-----|--------|
 | A1 | **Replace Firebase Dynamic Links** with App Links (Android) + Universal Links (iOS) | Sharing is completely broken. No viral loop without this. | Medium |
 | A2 | **Migrate `WillPopScope` → `PopScope`** | Deprecated API, causes warnings, bad for store review | Low |
-| A3 | **Fix Hive adapter generation** | Missing `.g.dart` files cause runtime errors | Low |
+| A3 | **Fix code generation outputs** | Missing or stale `.g.dart` files cause runtime issues | Low |
 | A4 | **Remove "download anyway" ad fallback** | Leaks revenue — if ad fails, show retry + Pro upsell instead | Low |
 | A5 | **Fix code generation pipeline** | Ensure `make file-gen` produces clean output with no errors | Low |
 
@@ -158,7 +158,7 @@ These are important but not blocking the 3.0.0 release.
 ```
 A1  Fix deep links (App Links + Universal Links)
 A2  Migrate WillPopScope → PopScope
-A3  Fix Hive adapter generation
+A3  Fix code generation outputs
 A4  Remove "download anyway" fallback
 A5  Clean code generation pipeline
 B1  Coin balance system (model + Firestore sync)

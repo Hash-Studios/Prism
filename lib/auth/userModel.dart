@@ -3,7 +3,6 @@ import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'userModel.g.dart';
@@ -64,50 +63,28 @@ String _resolveTierValue({required bool premium, required Object? raw}) {
   return premium ? SubscriptionTier.pro.value : SubscriptionTier.free.value;
 }
 
-@HiveType(typeId: 15)
 @JsonSerializable(explicitToJson: true)
 class PrismUsersV2 {
-  @HiveField(0)
   String username;
-  @HiveField(1)
   String email;
-  @HiveField(2)
   String id;
-  @HiveField(3)
   String createdAt;
-  @HiveField(4)
   bool premium;
-  @HiveField(5)
   String lastLoginAt;
-  @HiveField(6)
   Map<String, String> links;
-  @HiveField(7)
   List<String> followers;
-  @HiveField(8)
   List<String> following;
-  @HiveField(9)
   String profilePhoto;
-  @HiveField(10)
   String bio;
-  @HiveField(11)
   bool loggedIn;
-  @HiveField(12)
   List<Badge> badges;
-  @HiveField(13)
   List<String> subPrisms;
-  @HiveField(14)
   int coins;
-  @HiveField(15)
   List<PrismTransaction> transactions;
-  @HiveField(16)
   String name;
-  @HiveField(17)
   String? coverPhoto;
-  @HiveField(18)
   String subscriptionTier;
-  @HiveField(19)
   String uploadsWeekStart;
-  @HiveField(20)
   int uploadsThisWeek;
 
   PrismUsersV2({

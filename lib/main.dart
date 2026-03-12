@@ -2,10 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/auth/userOldModel.dart';
 import 'package:Prism/core/analytics/analytics_identity_sync.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
@@ -35,7 +31,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -70,9 +65,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late PrefsCompat localPrefs;
@@ -202,13 +195,6 @@ Future<void> main() async {
 
       await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 
-      final dir = await getApplicationDocumentsDirectory();
-      Hive.init(dir.path);
-      Hive.registerAdapter(PrismUsersAdapter());
-      Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-      Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-      Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
-      Hive.registerAdapter<Badge>(BadgeAdapter());
       await PersistenceBootstrap.initialize();
       DebugFlags.instance.loadFromStore();
       localPrefs = PrefsCompat.fromRuntime();
