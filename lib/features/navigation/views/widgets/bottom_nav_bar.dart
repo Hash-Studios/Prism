@@ -56,16 +56,39 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
   ScrollDirection _lastDirection = ScrollDirection.idle;
   ScrollPosition? _activeScrollPosition;
 
+  void _resolveActiveScrollPosition() {
+    if (!mounted) {
+      return;
+    }
+
+    final ScrollController? primaryController = PrimaryScrollController.maybeOf(context);
+    if (primaryController != null && primaryController.hasClients) {
+      _activeScrollPosition = primaryController.position;
+      return;
+    }
+
+    final ScrollableState? localScrollable = Scrollable.maybeOf(context);
+    if (localScrollable != null) {
+      _activeScrollPosition = localScrollable.position;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolveActiveScrollPosition();
+  }
+
   bool _onUserScroll(UserScrollNotification notification) {
+    if (!mounted) {
+      return false;
+    }
+
     if (notification.metrics.axis != Axis.vertical) {
       return false;
     }
 
-    final BuildContext? notificationContext = notification.context;
-    final ScrollableState? scrollable = notificationContext == null ? null : Scrollable.maybeOf(notificationContext);
-    if (scrollable != null) {
-      _activeScrollPosition = scrollable.position;
-    }
+    _resolveActiveScrollPosition();
 
     final direction = notification.direction;
     if (direction == ScrollDirection.idle || direction == _lastDirection) {
@@ -82,6 +105,7 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
   }
 
   Future<void> _scrollToTop() async {
+    _resolveActiveScrollPosition();
     final ScrollPosition? position = _activeScrollPosition;
     if (position == null) {
       return;

@@ -27,11 +27,11 @@ const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalo
 const String personalizedFeedMixLocalKey = 'personalized_feed_mix';
 const String defaultPersonalizedInterestsJson = '''
 [
-  {"name":"Minimal","query":"minimal","imageUrl":"https://images.pexels.com/photos/6980344/pexels-photo-6980344.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
+  {"name":"Minimal","query":"minimal","imageUrl":"https://images.pexels.com/photos/2662792/pexels-photo-2662792.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
   {"name":"Moody","query":"moody","imageUrl":"https://images.pexels.com/photos/3408744/pexels-photo-3408744.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Retro","query":"retro","imageUrl":"https://images.pexels.com/photos/1633798/pexels-photo-1633798.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven","pexels"]},
   {"name":"Cyberpunk","query":"cyberpunk","imageUrl":"https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
-  {"name":"Nature","query":"nature","imageUrl":"https://images.pexels.com/photos/34950/pexels-photo-34950.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Nature","query":"nature","imageUrl":"https://images.pexels.com/photos/40896/larch-conifer-cone-branch-tree-40896.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Architecture","query":"architecture","imageUrl":"https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Cars","query":"cars","imageUrl":"https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven","pexels"]},
   {"name":"Anime","query":"anime","imageUrl":"https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
