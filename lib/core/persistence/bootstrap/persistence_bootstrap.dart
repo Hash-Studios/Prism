@@ -9,7 +9,7 @@ class PersistenceBootstrap {
 
   static Future<void> initialize() async {
     final LocalStoreBackend backend = LocalStoreBackendX.fromDefine(Env.localPersistenceBackend);
-    
+
     final LocalStore store;
     switch (backend) {
       case LocalStoreBackend.sharedPrefs:
@@ -17,7 +17,7 @@ class PersistenceBootstrap {
     }
 
     await store.init();
-    
+
     PersistenceRuntime.initialize(store: store, backend: backend);
   }
 }
