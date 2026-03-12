@@ -59,7 +59,6 @@ class _WallHavenGridState extends State<WallHavenGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final CategoryFeedState state = context.watch<CategoryFeedBloc>().state;
     final List<WallhavenFeedItem> walls = state.items.whereType<WallhavenFeedItem>().toList(growable: false);
 
@@ -107,7 +106,6 @@ class _WallHavenGridState extends State<WallHavenGrid> {
           return false;
         },
         child: GridView.builder(
-          controller: controller,
           padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
           itemCount: walls.isEmpty ? 20 : walls.length,
           shrinkWrap: true,

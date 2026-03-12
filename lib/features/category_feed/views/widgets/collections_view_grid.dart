@@ -119,7 +119,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
               shakeController.reverse();
             }
           });
-    final ScrollController? controller = PrimaryScrollController.maybeOf(context);
     final List<Map<String, dynamic>> walls = anyCollectionWalls ?? <Map<String, dynamic>>[];
     if (walls.isNotEmpty) {
       _contentLoadTracker.success(
@@ -157,7 +156,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
         return false;
       },
       child: GridView.builder(
-        controller: controller,
         padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
         itemCount: walls.length,
         shrinkWrap: true,
