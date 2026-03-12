@@ -141,9 +141,24 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      try {
+        await app_state.initializeRuntimeAppVersion();
+      } catch (error, stackTrace) {
+        logger.w(
+          'Unable to read runtime app version; falling back to static constants.',
+          tag: 'AppVersion',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
       Bloc.observer = const BlocDebugObserver();
       final SentryConfig sentryConfig = _resolveSentryConfig();
       await _initializeMonitoring(sentryConfig);
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'monitoring_initialized'},
+      );
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
@@ -192,10 +207,20 @@ Future<void> main() async {
       } else {
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'firebase_init_completed', 'firebase_initialized': firebaseInitialized},
+      );
 
       await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 
       await PersistenceBootstrap.initialize();
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'persistence_initialized'},
+      );
       DebugFlags.instance.loadFromStore();
       localPrefs = PrefsCompat.fromRuntime();
       logger.d("Persistence initialized");

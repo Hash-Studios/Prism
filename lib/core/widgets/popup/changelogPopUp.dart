@@ -111,6 +111,7 @@ const List<_ChangelogVersion> _fallbackChangelog = [
 
 void showChangelog(BuildContext context, VoidCallback func) {
   final controller = ScrollController();
+  final NavigatorState? navigator = Navigator.maybeOf(context, rootNavigator: true);
   final AlertDialog aboutPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: Container(
@@ -187,7 +188,9 @@ void showChangelog(BuildContext context, VoidCallback func) {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         ),
         onPressed: () {
-          Navigator.of(context).pop();
+          if (navigator?.canPop() ?? false) {
+            navigator?.pop();
+          }
           func();
         },
         child: const Text(

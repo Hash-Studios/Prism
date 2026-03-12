@@ -37,6 +37,13 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
   String _wallString(Map<String, dynamic> wall, String key) => _wallValue(wall, key)?.toString() ?? '';
   WallpaperSource _wallSource(Map<String, dynamic> wall) =>
       WallpaperSourceX.fromWire(_wallString(wall, 'wallpaper_provider'));
+  bool _isValidRemoteUrl(String value) {
+    final Uri? uri = Uri.tryParse(value.trim());
+    if (uri == null) {
+      return false;
+    }
+    return (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
+  }
 
   Future<void> _loadMore() async {
     if (seeMoreLoader || !collectionHasMore) {
@@ -166,6 +173,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
           final String wallpaperThumb = _wallString(wall, 'wallpaper_thumb');
           final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
           final WallpaperSource wallSource = _wallSource(wall);
+          final bool validPayload =
+              wallId.trim().isNotEmpty && _isValidRemoteUrl(wallpaperThumb) && _isValidRemoteUrl(wallpaperUrl);
           if (index == walls.length - 1 && collectionHasMore && walls.length >= 24) {
             return SeeMoreButton(
               seeMoreLoader: seeMoreLoader,
@@ -181,6 +190,20 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                 );
                 _loadMore();
               },
+            );
+          }
+          if (!validPayload) {
+            logger.w(
+              'Skipping malformed collection tile payload.',
+              tag: 'CollectionsGrid',
+              fields: <String, Object?>{'wall_id': wallId, 'thumb': wallpaperThumb, 'url': wallpaperUrl},
+            );
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).hintColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
             );
           }
           return AnimatedBuilder(
