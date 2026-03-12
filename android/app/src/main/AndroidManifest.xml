@@ -28,13 +28,37 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:label="Prism" >
+        <!-- Quick Settings tile: Random from Category -->
         <service
             android:name=".MyTileService"
             android:exported="true"
             android:icon="@drawable/preview_widget"
             android:label="@string/quick_settings"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
 
+        <!-- Quick Settings tile: Wall of the Day -->
+        <service
+            android:name=".WotdTileService"
+            android:exported="true"
+            android:icon="@drawable/preview_widget"
+            android:label="@string/quick_settings_wotd"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <!-- Quick Settings tile: Random from Favourites -->
+        <service
+            android:name=".FavsTileService"
+            android:exported="true"
+            android:icon="@drawable/preview_widget"
+            android:label="@string/quick_settings_favs"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>

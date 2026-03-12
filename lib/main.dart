@@ -21,6 +21,7 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
+import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/persistence/prefs_compat.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -1011,6 +1012,24 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(_processPendingDeepLinks());
             });
+          },
+        ),
+        // Cache WOTD URL for the Wall of the Day quick tile.
+        BlocListener<WotdBloc, WotdState>(
+          listenWhen: (previous, current) => previous.entity?.url != current.entity?.url && current.entity != null,
+          listener: (context, state) {
+            final url = state.entity?.url;
+            if (url != null && url.isNotEmpty) {
+              unawaited(QuickTileConfigService.pushWotdUrl(url));
+            }
+          },
+        ),
+        // Cache favourite wall URLs for the Random Favourite quick tile.
+        BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
+          listenWhen: (previous, current) => previous.status != current.status && current.status == LoadStatus.success,
+          listener: (context, state) {
+            final urls = state.items.map((item) => item.fullUrl).toList(growable: false);
+            unawaited(QuickTileConfigService.pushFavWallUrls(urls));
           },
         ),
       ],
