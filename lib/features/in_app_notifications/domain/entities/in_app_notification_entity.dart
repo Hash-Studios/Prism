@@ -11,6 +11,7 @@ class InAppNotificationEntity {
     required this.read,
     this.route,
     this.wallId,
+    this.followerEmail,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class InAppNotificationEntity {
   final bool read;
   final String? route;
   final String? wallId;
+  final String? followerEmail;
 
   InAppNotificationEntity copyWith({
     String? id,
@@ -37,6 +39,7 @@ class InAppNotificationEntity {
     bool? read,
     String? route,
     String? wallId,
+    String? followerEmail,
   }) {
     return InAppNotificationEntity(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class InAppNotificationEntity {
       read: read ?? this.read,
       route: route ?? this.route,
       wallId: wallId ?? this.wallId,
+      followerEmail: followerEmail ?? this.followerEmail,
     );
   }
 }

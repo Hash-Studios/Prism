@@ -65,7 +65,7 @@ export const onFollowCreated = onDocumentUpdated(
           route: "follower",
           follower_email: followerEmail,
           pageName: "",
-          url: "",
+          url: _profileUrl(followerEmail),
         },
         modifier: followedUserEmail,
         channelId: "followers",
@@ -102,4 +102,10 @@ async function _resolveUsername(email: string): Promise<string> {
     logger.warn("onFollowCreated: could not resolve follower username.", { email, err });
   }
   return email.split("@")[0];
+}
+
+function _profileUrl(identifier: string): string {
+  const cleaned = identifier.trim();
+  if (!cleaned) return "";
+  return `https://prismwalls.com/user/${encodeURIComponent(cleaned)}`;
 }

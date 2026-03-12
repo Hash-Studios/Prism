@@ -153,12 +153,18 @@ export const wallOfTheDay = onSchedule(
     // 5. Send FCM topic push + write in-app notification doc
     // ------------------------------------------------------------------ //
     const wallTitle = (wotdDoc.title as string).trim() || "Check it out";
+    const canonicalWallUrl = _wallShareUrl({
+      wallId: newWallId,
+      wallpaperUrl: (wotdDoc.url as string) || "",
+      thumbnailUrl: (wotdDoc.thumbnailUrl as string) || "",
+    });
     await sendNotification({
       title: "Today's Wall of the Day is here",
       body: wallTitle,
       data: {
         route: "wall_of_the_day",
         wall_id: newWallId,
+        url: canonicalWallUrl,
       },
       imageUrl: (wotdDoc.thumbnailUrl as string) || undefined,
       modifier: "all",
@@ -193,4 +199,27 @@ function _firestoreTimestampToDateString(
   } catch {
     return null;
   }
+}
+
+function _wallShareUrl({
+  wallId,
+  wallpaperUrl,
+  thumbnailUrl,
+}: {
+  wallId: string;
+  wallpaperUrl: string;
+  thumbnailUrl: string;
+}): string {
+  const thumb = thumbnailUrl.trim() || wallpaperUrl.trim();
+  const params = new URLSearchParams({
+    id: wallId,
+    source: "prism",
+    provider: "Prism",
+    thumb,
+  });
+  const full = wallpaperUrl.trim();
+  if (full) {
+    params.set("url", full);
+  }
+  return `https://prismwalls.com/share?${params.toString()}`;
 }

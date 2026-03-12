@@ -16,6 +16,9 @@ import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart'
 import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
@@ -25,6 +28,7 @@ import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
 import 'package:Prism/core/persistence/prefs_compat.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -53,9 +57,6 @@ import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
-import 'package:Prism/core/debug/bloc_debug_observer.dart';
-import 'package:Prism/core/debug/debug_flags.dart';
-import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -437,6 +438,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
+  final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
   final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
   bool _bootstrapCompleted = false;
@@ -842,11 +844,24 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();
+    final String rawUrl = (data['url']?.toString() ?? '').trim();
 
-    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId});
+    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId, 'url': rawUrl});
     if (route == 'wall_of_the_day') {
       unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
     }
+
+    if (rawUrl.isNotEmpty) {
+      final Uri? parsed = Uri.tryParse(rawUrl);
+      if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
+        final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
+        if (deepLinkRoute != null) {
+          _appRouter.navigate(deepLinkRoute);
+          return;
+        }
+      }
+    }
+
     final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
     if (mappedRoute != null) {
       _appRouter.navigate(mappedRoute);

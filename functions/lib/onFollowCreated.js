@@ -53,7 +53,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
                 route: "follower",
                 follower_email: followerEmail,
                 pageName: "",
-                url: "",
+                url: _profileUrl(followerEmail),
             },
             modifier: followedUserEmail,
             channelId: "followers",
@@ -88,5 +88,11 @@ async function _resolveUsername(email) {
         v2_1.logger.warn("onFollowCreated: could not resolve follower username.", { email, err });
     }
     return email.split("@")[0];
+}
+function _profileUrl(identifier) {
+    const cleaned = identifier.trim();
+    if (!cleaned)
+        return "";
+    return `https://prismwalls.com/user/${encodeURIComponent(cleaned)}`;
 }
 //# sourceMappingURL=onFollowCreated.js.map

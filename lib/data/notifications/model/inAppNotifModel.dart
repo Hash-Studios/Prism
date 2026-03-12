@@ -24,6 +24,8 @@ class InAppNotif {
   final String? route;
   @HiveField(9)
   final String? wallId;
+  @HiveField(10)
+  final String? followerEmail;
 
   InAppNotif({
     required this.pageName,
@@ -36,6 +38,7 @@ class InAppNotif {
     required this.read,
     this.route,
     this.wallId,
+    this.followerEmail,
   });
 
   static String? _optionalImageUrl(dynamic value) {
@@ -70,10 +73,13 @@ class InAppNotif {
 
   factory InAppNotif.fromSnapshot(Map<String, dynamic> data) {
     final dataMap = data['data'] is Map ? data['data'] as Map<String, dynamic> : <String, dynamic>{};
+    final notificationMap = data['notification'] is Map
+        ? data['notification'] as Map<String, dynamic>
+        : <String, dynamic>{};
     return InAppNotif(
       pageName: dataMap['pageName']?.toString() ?? '',
-      title: data['notification']?['title']?.toString() ?? '',
-      body: data['notification']?['body']?.toString() ?? '',
+      title: notificationMap['title']?.toString() ?? '',
+      body: notificationMap['body']?.toString() ?? '',
       imageUrl: _optionalImageUrl(dataMap['imageUrl']),
       arguments: dataMap['arguments'] is List ? dataMap['arguments'] as List : [],
       url: dataMap['url']?.toString() ?? '',
@@ -81,6 +87,7 @@ class InAppNotif {
       read: false,
       route: dataMap['route']?.toString(),
       wallId: dataMap['wall_id']?.toString(),
+      followerEmail: (dataMap['follower_email'] ?? dataMap['profile_identifier'] ?? dataMap['username'])?.toString(),
     );
   }
 }
