@@ -10,6 +10,7 @@ on:
 env:
   APP_SIZE_MAX_DELTA_BYTES: 1572864
   APP_SIZE_MAX_DELTA_PERCENT: 5
+  APP_SIZE_TARGET_PLATFORM: android-arm64
 
 jobs:
   ci:
@@ -81,7 +82,7 @@ jobs:
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
-      - name: Build base AAB with size analysis
+      - name: Build base AAB + analyze-size
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -89,10 +90,11 @@ jobs:
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/base
-          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/base/build.log
+          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true
           cp build/app/outputs/bundle/release/app-release.aab build/size/base/app-release.aab
+          flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/base/build.log
 
-      - name: Build head AAB with size analysis
+      - name: Build head AAB + analyze-size
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -100,8 +102,9 @@ jobs:
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/head
-          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/head/build.log
+          flutter build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true
           cp build/app/outputs/bundle/release/app-release.aab build/size/head/app-release.aab
+          flutter build apk --release --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true --analyze-size 2>&1 | tee build/size/head/build.log
 
       - name: Compare app size and enforce thresholds
         run: |

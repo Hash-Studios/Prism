@@ -6,6 +6,7 @@ DEVICE ?=
 RUN_ARGS ?=
 BUILD_ARGS ?=
 IOS_BUILD_ARGS ?=
+APP_SIZE_TARGET_PLATFORM ?= android-arm64
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
 DOPPLER_PROJECT ?= prism
 DOPPLER_CONFIG ?= dev
@@ -154,7 +155,7 @@ build-aab: ensure-fvm doppler-check
 size-android: ensure-fvm
 	@mkdir -p build/size/local
 	@printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('Size analysis stub');\n}\n" > lib/firebase_options.dart
-	@$(FLUTTER) build appbundle --release --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
+	@$(FLUTTER) build appbundle --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
 	@cp build/app/outputs/bundle/release/app-release.aab build/size/local/app-release.aab
 	@echo "AAB + size analysis log written to build/size/local"
 
