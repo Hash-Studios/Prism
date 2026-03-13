@@ -70,6 +70,7 @@ enum AnalyticsActionValue {
   uploadSheetOpened,
   uploadWallpaperSelected,
   uploadSetupSelected,
+  uploadAiSelected,
   notificationSettingsOpened,
   notificationItemOpened,
   notificationItemDismissed,
@@ -394,6 +395,8 @@ extension AnalyticsActionValueX on AnalyticsActionValue {
         return 'upload_wallpaper_selected';
       case AnalyticsActionValue.uploadSetupSelected:
         return 'upload_setup_selected';
+      case AnalyticsActionValue.uploadAiSelected:
+        return 'upload_ai_selected';
       case AnalyticsActionValue.notificationSettingsOpened:
         return 'notification_settings_opened';
       case AnalyticsActionValue.notificationItemOpened:

@@ -577,10 +577,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget build(BuildContext context) {
     final canUseAi = _isRolloutEligible;
     final current = _latest;
+    final bool canPop = Navigator.of(context).canPop();
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: canPop,
         title: const Text('AI Wallpapers'),
         actions: <Widget>[
           if (_isLoggedIn)
