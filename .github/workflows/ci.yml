@@ -1,5 +1,9 @@
 name: CI
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   push:
     branches:
@@ -193,9 +197,28 @@ jobs:
           name: app-size-report
           path: build/size
 
+      - name: Upsert app-size PR comment
+        if: always() && steps.changes.outputs.app_size == 'true'
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: app-size-report
+          path: build/size/report.md
+
       - name: Skip app-size check (no relevant changes)
         if: steps.changes.outputs.app_size != 'true'
         run: |
           echo "## Android App Size Report" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Skipped: no app-size relevant files changed in this PR." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upsert skipped app-size PR comment
+        if: steps.changes.outputs.app_size != 'true'
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: app-size-report
+          message: |
+            ## Android App Size Report
+
+            Skipped: no app-size relevant files changed in this PR.
