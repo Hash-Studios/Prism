@@ -13,6 +13,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -91,6 +92,34 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
       widget.item is WallhavenFeedItem ? widget.item as WallhavenFeedItem? : null;
   PexelsFeedItem? get _pexelsFeedItem => widget.item is PexelsFeedItem ? widget.item as PexelsFeedItem? : null;
 
+  bool _hasIndex<T>(List<T>? items, int itemIndex) {
+    return items != null && itemIndex >= 0 && itemIndex < items.length;
+  }
+
+  String _fallbackImageLink() {
+    final String direct = widget.link.trim();
+    if (_isResolvableImageInput(direct)) {
+      return direct;
+    }
+    return app_state.defaultProfilePhotoUrl;
+  }
+
+  String _resolveImageUrlOrFallback(String? candidate) {
+    final String trimmed = (candidate ?? '').trim();
+    if (_isResolvableImageInput(trimmed)) {
+      return trimmed;
+    }
+    return _fallbackImageLink();
+  }
+
+  ImageProvider<Object>? _safeNetworkImageProvider(String? candidate) {
+    final String resolved = _resolveImageUrlOrFallback(candidate);
+    if (!_isResolvableImageInput(resolved)) {
+      return null;
+    }
+    return CachedNetworkImageProvider(resolved);
+  }
+
   PrismWallpaper get _prismWall {
     if (_wotdWall case final entity?) {
       return PrismWallpaper.fromWotd(entity);
@@ -103,10 +132,36 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
 
   WallhavenWallpaper get _wallhavenWall {
     final typed = _wallhavenFeedItem?.wallpaper;
-    if (typed == null) {
+    if (typed != null) {
+      return typed;
+    }
+
+    if (_hasIndex(wdata.walls, index)) {
       return wdata.walls[index];
     }
-    return typed;
+
+    logger.w(
+      'Missing Wallhaven wallpaper for requested index.',
+      tag: 'WallpaperScreen',
+      fields: <String, Object?>{'index': index, 'listLength': wdata.walls.length, 'source': source.wireValue},
+    );
+
+    final String fallbackUrl = _fallbackImageLink();
+    return WallhavenWallpaper(
+      core: WallpaperCore(
+        id: 'unknown',
+        source: WallpaperSource.wallhaven,
+        fullUrl: fallbackUrl,
+        thumbnailUrl: fallbackUrl,
+        category: 'Unknown',
+        resolution: '',
+        sizeBytes: 0,
+        favourites: 0,
+      ),
+      views: 0,
+      favorites: 0,
+      sizeBytes: 0,
+    );
   }
 
   PexelsWallpaper get _pexelsWall {
@@ -645,7 +700,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: _wallhavenWall.core.thumbnailUrl,
+                            imageUrl: _resolveImageUrlOrFallback(_wallhavenWall.core.thumbnailUrl),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1029,9 +1084,16 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                                                               horizontal: 5,
                                                             ),
                                                             avatar: CircleAvatar(
-                                                              backgroundImage: CachedNetworkImageProvider(
-                                                                _prismWall.core.authorPhoto ?? '',
+                                                              backgroundImage: _safeNetworkImageProvider(
+                                                                _prismWall.core.authorPhoto,
                                                               ),
+                                                              child:
+                                                                  _safeNetworkImageProvider(
+                                                                        _prismWall.core.authorPhoto,
+                                                                      ) ==
+                                                                      null
+                                                                  ? const Icon(Icons.person, size: 16)
+                                                                  : null,
                                                             ),
                                                             labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                             label: Text(
@@ -1202,7 +1264,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: _prismWall.fullUrl,
+                            imageUrl: _resolveImageUrlOrFallback(_prismWall.fullUrl),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -1625,7 +1687,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: _pexelsWall.core.fullUrl,
+                            imageUrl: _resolveImageUrlOrFallback(_pexelsWall.core.fullUrl),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -2051,7 +2113,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: pdata.wallsC[index].core.thumbnailUrl,
+                            imageUrl: _resolveImageUrlOrFallback(pdata.wallsC[index].core.thumbnailUrl),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(
@@ -2469,7 +2531,7 @@ class _WallpaperScreenState extends State<WallpaperScreen> with SingleTickerProv
                             shakeController.forward(from: 0.0);
                           },
                           child: CachedNetworkImage(
-                            imageUrl: wdata.wallsS[index].core.thumbnailUrl,
+                            imageUrl: _resolveImageUrlOrFallback(wdata.wallsS[index].core.thumbnailUrl),
                             imageBuilder: (context, imageProvider) => Screenshot(
                               controller: screenshotController,
                               child: Container(

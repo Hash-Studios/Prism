@@ -293,45 +293,59 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> showRemoveAlertDialog(BuildContext context, Future<void> Function() remove, String removeWhat) async {
-    final AlertDialog deletePopUp = AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      title: Text(
-        'Delete the $removeWhat?',
-        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-      ),
-      content: Text(
-        "This is permanent, and this action can't be undone!",
-        style: TextStyle(
-          fontFamily: "Proxima Nova",
-          fontWeight: FontWeight.normal,
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-      ),
-      actions: [
-        MaterialButton(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Theme.of(context).hintColor,
-          onPressed: () async {
-            Navigator.pop(context);
-            await remove();
-          },
-          child: const Text('DELETE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-        ),
-        MaterialButton(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Theme.of(context).colorScheme.error,
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('CANCEL', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-        ),
-      ],
-      backgroundColor: Theme.of(context).primaryColor,
-      actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-    );
+    if (!mounted) {
+      return;
+    }
 
-    showModal(context: context, builder: (BuildContext context) => deletePopUp);
+    await showModal(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          title: Text(
+            'Delete the $removeWhat?',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              color: Theme.of(dialogContext).colorScheme.secondary,
+            ),
+          ),
+          content: Text(
+            "This is permanent, and this action can't be undone!",
+            style: TextStyle(
+              fontFamily: "Proxima Nova",
+              fontWeight: FontWeight.normal,
+              fontSize: 14,
+              color: Theme.of(dialogContext).colorScheme.secondary,
+            ),
+          ),
+          actions: [
+            MaterialButton(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              color: Theme.of(dialogContext).hintColor,
+              onPressed: () async {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+                if (!mounted) {
+                  return;
+                }
+                await remove();
+              },
+              child: const Text('DELETE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+            ),
+            MaterialButton(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              color: Theme.of(dialogContext).colorScheme.error,
+              onPressed: () {
+                Navigator.of(dialogContext, rootNavigator: true).pop();
+              },
+              child: const Text('CANCEL', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+            ),
+          ],
+          backgroundColor: Theme.of(dialogContext).primaryColor,
+          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+        );
+      },
+    );
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {

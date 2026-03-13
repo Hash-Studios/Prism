@@ -9,10 +9,22 @@ import 'package:palette_generator/palette_generator.dart';
 
 @LazySingleton(as: PaletteRepository)
 class PaletteRepositoryImpl implements PaletteRepository {
+  bool _isValidNetworkImageUrl(String imageUrl) {
+    final Uri? uri = Uri.tryParse(imageUrl.trim());
+    if (uri == null) {
+      return false;
+    }
+    return (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
+  }
+
   @override
   Future<Result<PaletteEntity>> generatePalette(String imageUrl) async {
     if (imageUrl.isEmpty) {
       return Result.error(const ValidationFailure('Image url cannot be empty'));
+    }
+
+    if (!_isValidNetworkImageUrl(imageUrl)) {
+      return Result.error(const ValidationFailure('Image url is not a valid network URI'));
     }
 
     try {
