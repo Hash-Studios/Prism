@@ -134,10 +134,20 @@ String? _perMonthEquivalent(Package package) {
   return '${NumberFormat.currency(symbol: _currencySymbol(currency), decimalDigits: 0).format(perMonth)}/mo';
 }
 
-bool _hasSaleOrIntroOffer(Package package) {
-  final intro = package.storeProduct.introductoryPrice;
+bool _hasIntroOffer(Package package) {
+  return package.storeProduct.introductoryPrice != null;
+}
+
+bool _hasSaleOffer(Package package) {
   final title = package.storeProduct.title.toLowerCase();
-  return (intro != null) || title.contains('sale');
+  return title.contains('sale');
+}
+
+String? _trialBadgeText(Package package) {
+  if (!_hasIntroOffer(package)) {
+    return null;
+  }
+  return 'FREE TRIAL';
 }
 
 // ---------------------------------------------------------------------------
@@ -505,7 +515,8 @@ class _PackagePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = _packageTypeLabel(package.packageType);
-    final hasSale = _hasSaleOrIntroOffer(package);
+    final hasSale = _hasSaleOffer(package);
+    final String? trialBadge = _trialBadgeText(package);
     final isAnnual = package.packageType == PackageType.annual;
     final cs = Theme.of(context).colorScheme;
     final accentColor = cs.error == Colors.black ? cs.secondary : cs.error;
@@ -545,7 +556,19 @@ class _PackagePill extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (hasSale) ...[
+                if (trialBadge != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.green.shade700, borderRadius: BorderRadius.circular(4)),
+                    child: Text(
+                      trialBadge,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                ] else if (hasSale) ...[
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -857,7 +880,10 @@ class _PurchaseCTAButtonState extends State<_PurchaseCTAButton> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final accentColor = cs.error == Colors.black ? cs.secondary : cs.error;
-    final label = 'Get ${_packageTypeLabel(widget.package.packageType)} for ${widget.package.storeProduct.priceString}';
+    final bool hasIntro = _hasIntroOffer(widget.package);
+    final label = hasIntro
+        ? 'Start free trial • ${widget.package.storeProduct.priceString} after'
+        : 'Get ${_packageTypeLabel(widget.package.packageType)} for ${widget.package.storeProduct.priceString}';
 
     return GestureDetector(
       onTap: _isPurchasing ? null : _purchase,
