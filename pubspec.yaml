@@ -113,9 +113,9 @@ sentry:
   upload_sources: true
 
 flutter_native_splash:
-  color: "#fafafa"
+  color: "#ffffff"
   image: assets/ic_launcher.png
-  color_dark: "#181818"
+  color_dark: "#000000"
   image_dark: assets/ic_launcher.png
   android: true
   ios: false
