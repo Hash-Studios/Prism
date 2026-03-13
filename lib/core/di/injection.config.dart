@@ -465,6 +465,9 @@ _i174.GetIt initGetIt(
       gh<_i817.PublicProfileRepository>(),
     ),
   );
+  gh.lazySingleton<_i446.FetchUserSummariesUseCase>(
+    () => _i446.FetchUserSummariesUseCase(gh<_i817.PublicProfileRepository>()),
+  );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
     () => _i903.PersonalizedFeedRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -565,16 +568,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i325.ConnectivityRepository>(
     () => _i657.ConnectivityRepositoryImpl(gh<_i491.ConnectivityService>()),
   );
-  gh.factory<_i717.PublicProfileBloc>(
-    () => _i717.PublicProfileBloc(
-      gh<_i446.FetchPublicProfileUseCase>(),
-      gh<_i446.FetchPublicProfileWallsUseCase>(),
-      gh<_i446.FetchPublicProfileSetupsUseCase>(),
-      gh<_i446.FollowUserUseCase>(),
-      gh<_i446.UnfollowUserUseCase>(),
-      gh<_i446.UpdatePublicProfileLinksUseCase>(),
-    ),
-  );
   gh.lazySingleton<_i58.FetchProfileWallsUseCase>(
     () => _i58.FetchProfileWallsUseCase(gh<_i668.ProfileWallsRepository>()),
   );
@@ -615,6 +608,17 @@ _i174.GetIt initGetIt(
       gh<_i108.InitializeQuickActionsUseCase>(),
       gh<_i108.SetQuickActionShortcutsUseCase>(),
       gh<_i108.ObserveQuickActionsUseCase>(),
+    ),
+  );
+  gh.factory<_i717.PublicProfileBloc>(
+    () => _i717.PublicProfileBloc(
+      gh<_i446.FetchPublicProfileUseCase>(),
+      gh<_i446.FetchPublicProfileWallsUseCase>(),
+      gh<_i446.FetchPublicProfileSetupsUseCase>(),
+      gh<_i446.FollowUserUseCase>(),
+      gh<_i446.UnfollowUserUseCase>(),
+      gh<_i446.UpdatePublicProfileLinksUseCase>(),
+      gh<_i446.FetchUserSummariesUseCase>(),
     ),
   );
   gh.factory<_i364.SessionBloc>(

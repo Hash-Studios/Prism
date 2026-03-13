@@ -15,6 +15,15 @@ abstract class PublicProfileState with _$PublicProfileState {
     required String? setupsCursor,
     required bool isFetchingMoreWalls,
     required bool isFetchingMoreSetups,
+
+    /// Follower profiles loaded for the followers list screen.
+    required List<UserSummaryEntity> followerSummaries,
+
+    /// Following profiles loaded for the following list screen.
+    required List<UserSummaryEntity> followingSummaries,
+
+    /// Whether follower/following summaries are being loaded.
+    required bool isFetchingSummaries,
     Failure? failure,
   }) = _PublicProfileState;
 
@@ -31,5 +40,8 @@ abstract class PublicProfileState with _$PublicProfileState {
     setupsCursor: null,
     isFetchingMoreWalls: false,
     isFetchingMoreSetups: false,
+    followerSummaries: <UserSummaryEntity>[],
+    followingSummaries: <UserSummaryEntity>[],
+    isFetchingSummaries: false,
   );
 }

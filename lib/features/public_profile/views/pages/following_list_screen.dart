@@ -9,24 +9,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
-class FollowersScreen extends StatefulWidget {
-  const FollowersScreen({super.key, required this.followers});
+class FollowingListScreen extends StatefulWidget {
+  const FollowingListScreen({super.key, required this.following});
 
-  /// List of follower email addresses passed from the profile screen.
-  final List<String> followers;
+  /// List of email addresses that the current user follows, passed from the
+  /// profile screen.
+  final List<String> following;
 
   @override
-  _FollowersScreenState createState() => _FollowersScreenState();
+  _FollowingListScreenState createState() => _FollowingListScreenState();
 }
 
-class _FollowersScreenState extends State<FollowersScreen> {
+class _FollowingListScreenState extends State<FollowingListScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.followers.isNotEmpty) {
+    if (widget.following.isNotEmpty) {
       context.read<PublicProfileBloc>().add(
-        PublicProfileEvent.fetchFollowerSummariesRequested(
-          emails: widget.followers,
+        PublicProfileEvent.fetchFollowingSummariesRequested(
+          emails: widget.following,
           currentUserEmail: app_state.prismUser.email,
         ),
       );
@@ -39,20 +40,20 @@ class _FollowersScreenState extends State<FollowersScreen> {
       backgroundColor: Theme.of(context).primaryColor,
       appBar: const PreferredSize(
         preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: 'Followers'),
+        child: HeadingChipBar(current: 'Following'),
       ),
       body: BlocBuilder<PublicProfileBloc, PublicProfileState>(
         buildWhen: (prev, curr) =>
-            prev.followerSummaries != curr.followerSummaries || prev.isFetchingSummaries != curr.isFetchingSummaries,
+            prev.followingSummaries != curr.followingSummaries || prev.isFetchingSummaries != curr.isFetchingSummaries,
         builder: (context, state) {
-          if (state.isFetchingSummaries && state.followerSummaries.isEmpty) {
+          if (state.isFetchingSummaries && state.followingSummaries.isEmpty) {
             return Center(child: Loader());
           }
 
-          if (state.followerSummaries.isEmpty) {
+          if (state.followingSummaries.isEmpty) {
             return Center(
               child: Text(
-                widget.followers.isEmpty ? 'No followers yet.' : 'Could not load followers.',
+                widget.following.isEmpty ? "You're not following anyone yet." : 'Could not load following list.',
                 style: TextStyle(
                   fontFamily: 'Proxima Nova',
                   color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
@@ -63,11 +64,11 @@ class _FollowersScreenState extends State<FollowersScreen> {
           }
 
           return ListView.separated(
-            itemCount: state.followerSummaries.length,
+            itemCount: state.followingSummaries.length,
             separatorBuilder: (_, __) =>
                 Divider(height: 1, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08), indent: 72),
             itemBuilder: (context, index) {
-              final user = state.followerSummaries[index];
+              final user = state.followingSummaries[index];
               return UserSummaryTile(
                 user: user,
                 onTap: () {

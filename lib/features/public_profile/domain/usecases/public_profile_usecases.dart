@@ -4,6 +4,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/entities/public_profile_page.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:injectable/injectable.dart';
 
@@ -143,5 +144,24 @@ class UpdatePublicProfileLinksUseCase implements UseCase<PublicProfileEntity, Up
   @override
   Future<Result<PublicProfileEntity>> call(UpdatePublicProfileLinksParams params) {
     return _repository.updateLinks(userId: params.userId, links: params.links);
+  }
+}
+
+class FetchUserSummariesParams {
+  const FetchUserSummariesParams({required this.emails, required this.currentUserEmail});
+
+  final List<String> emails;
+  final String currentUserEmail;
+}
+
+@lazySingleton
+class FetchUserSummariesUseCase implements UseCase<List<UserSummaryEntity>, FetchUserSummariesParams> {
+  FetchUserSummariesUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<List<UserSummaryEntity>>> call(FetchUserSummariesParams params) {
+    return _repository.fetchUserSummaries(emails: params.emails, currentUserEmail: params.currentUserEmail);
   }
 }

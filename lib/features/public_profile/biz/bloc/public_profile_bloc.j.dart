@@ -5,6 +5,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:bloc/bloc.dart';
@@ -25,6 +26,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     this._followUserUseCase,
     this._unfollowUserUseCase,
     this._updatePublicProfileLinksUseCase,
+    this._fetchUserSummariesUseCase,
   ) : super(PublicProfileState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
@@ -33,6 +35,10 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     on<_FollowRequested>(_onFollowRequested);
     on<_UnfollowRequested>(_onUnfollowRequested);
     on<_LinksUpdated>(_onLinksUpdated);
+    on<_FetchFollowerSummariesRequested>(_onFetchFollowerSummariesRequested);
+    on<_FetchFollowingSummariesRequested>(_onFetchFollowingSummariesRequested);
+    on<_FollowFromListRequested>(_onFollowFromListRequested);
+    on<_UnfollowFromListRequested>(_onUnfollowFromListRequested);
   }
 
   final FetchPublicProfileUseCase _fetchPublicProfileUseCase;
@@ -41,6 +47,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   final FollowUserUseCase _followUserUseCase;
   final UnfollowUserUseCase _unfollowUserUseCase;
   final UpdatePublicProfileLinksUseCase _updatePublicProfileLinksUseCase;
+  final FetchUserSummariesUseCase _fetchUserSummariesUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<PublicProfileState> emit) async {
     emit(state.copyWith(email: event.email));
@@ -264,5 +271,124 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       onSuccess: (profile) => emit(state.copyWith(actionStatus: ActionStatus.success, profile: profile, failure: null)),
       onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
+  }
+
+  Future<void> _onFetchFollowerSummariesRequested(
+    _FetchFollowerSummariesRequested event,
+    Emitter<PublicProfileState> emit,
+  ) async {
+    emit(state.copyWith(isFetchingSummaries: true, failure: null));
+    final result = await _fetchUserSummariesUseCase(
+      FetchUserSummariesParams(emails: event.emails, currentUserEmail: event.currentUserEmail),
+    );
+    result.fold(
+      onSuccess: (summaries) =>
+          emit(state.copyWith(followerSummaries: summaries, isFetchingSummaries: false, failure: null)),
+      onFailure: (failure) => emit(state.copyWith(isFetchingSummaries: false, failure: failure)),
+    );
+  }
+
+  Future<void> _onFetchFollowingSummariesRequested(
+    _FetchFollowingSummariesRequested event,
+    Emitter<PublicProfileState> emit,
+  ) async {
+    emit(state.copyWith(isFetchingSummaries: true, failure: null));
+    final result = await _fetchUserSummariesUseCase(
+      FetchUserSummariesParams(emails: event.emails, currentUserEmail: event.currentUserEmail),
+    );
+    result.fold(
+      onSuccess: (summaries) =>
+          emit(state.copyWith(followingSummaries: summaries, isFetchingSummaries: false, failure: null)),
+      onFailure: (failure) => emit(state.copyWith(isFetchingSummaries: false, failure: failure)),
+    );
+  }
+
+  Future<void> _onFollowFromListRequested(_FollowFromListRequested event, Emitter<PublicProfileState> emit) async {
+    final result = await _followUserUseCase(
+      FollowUserParams(
+        currentUserId: event.currentUserId,
+        currentUserEmail: event.currentUserEmail,
+        targetUserId: event.targetUserId,
+        targetUserEmail: event.targetUserEmail,
+      ),
+    );
+    if (result.isSuccess) {
+      final String artistEmailPrefix = event.targetUserEmail.split('@')[0];
+      if (artistEmailPrefix.isNotEmpty) {
+        unawaited(
+          subscribeToTopicSafely(
+            FirebaseMessaging.instance,
+            '${artistEmailPrefix}_posts',
+            sourceTag: 'follow_from_list.subscribe_posts_topic',
+          ),
+        );
+      }
+      emit(
+        state.copyWith(
+          followerSummaries: _updateSummaryFollowState(
+            state.followerSummaries,
+            event.targetUserEmail,
+            isFollowed: true,
+          ),
+          followingSummaries: _updateSummaryFollowState(
+            state.followingSummaries,
+            event.targetUserEmail,
+            isFollowed: true,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onUnfollowFromListRequested(_UnfollowFromListRequested event, Emitter<PublicProfileState> emit) async {
+    final result = await _unfollowUserUseCase(
+      UnfollowUserParams(
+        currentUserId: event.currentUserId,
+        currentUserEmail: event.currentUserEmail,
+        targetUserId: event.targetUserId,
+        targetUserEmail: event.targetUserEmail,
+      ),
+    );
+    if (result.isSuccess) {
+      final String artistEmailPrefix = event.targetUserEmail.split('@')[0];
+      if (artistEmailPrefix.isNotEmpty) {
+        unawaited(
+          unsubscribeFromTopicSafely(
+            FirebaseMessaging.instance,
+            '${artistEmailPrefix}_posts',
+            sourceTag: 'unfollow_from_list.unsubscribe_posts_topic',
+          ),
+        );
+      }
+      emit(
+        state.copyWith(
+          followerSummaries: _updateSummaryFollowState(
+            state.followerSummaries,
+            event.targetUserEmail,
+            isFollowed: false,
+          ),
+          followingSummaries: _updateSummaryFollowState(
+            state.followingSummaries,
+            event.targetUserEmail,
+            isFollowed: false,
+          ),
+        ),
+      );
+    }
+  }
+
+  List<UserSummaryEntity> _updateSummaryFollowState(
+    List<UserSummaryEntity> summaries,
+    String targetEmail, {
+    required bool isFollowed,
+  }) {
+    return summaries
+        .map((s) {
+          if (s.email.toLowerCase() == targetEmail.toLowerCase()) {
+            return s.copyWith(isFollowedByCurrentUser: isFollowed);
+          }
+          return s;
+        })
+        .toList(growable: false);
   }
 }

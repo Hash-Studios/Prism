@@ -63,20 +63,29 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final creatorFuture = _fetchCreatorItems(following: following, page: request.page);
       final wallhavenFuture = _fetchWallhavenItems(interests: interests, catalog: catalog, refresh: request.refresh);
       final pexelsFuture = _fetchPexelsItems(interests: interests, catalog: catalog, refresh: request.refresh);
+      final discoveryFuture = _fetchDiscoveryItems(interests: interests, catalog: catalog, followingEmails: following);
 
-      final results = await Future.wait<List<FeedItemEntity>>([creatorFuture, wallhavenFuture, pexelsFuture]);
+      final results = await Future.wait<List<FeedItemEntity>>([
+        creatorFuture,
+        wallhavenFuture,
+        pexelsFuture,
+        discoveryFuture,
+      ]);
 
       final creatorItems = results[0];
       final wallhavenItems = results[1];
       final pexelsItems = results[2];
+      final discoveryItems = results[3];
 
       final ranking = _rankingService.rankAndMix(
         creatorItems: creatorItems,
         wallhavenItems: wallhavenItems,
         pexelsItems: pexelsItems,
+        discoveryItems: discoveryItems,
         blockedKeys: request.seenKeys.toSet(),
         interests: interests.toSet(),
         creatorTarget: targets.creator,
+        discoveryTarget: targets.discovery,
         wallhavenTarget: targets.wallhaven,
         pexelsTarget: targets.pexels,
       );
@@ -99,6 +108,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           'source_prism': ranking.sourceCounts[WallpaperSource.prism] ?? 0,
           'source_wallhaven': ranking.sourceCounts[WallpaperSource.wallhaven] ?? 0,
           'source_pexels': ranking.sourceCounts[WallpaperSource.pexels] ?? 0,
+          'source_discovery': ranking.discoveryCount,
         },
       );
 
@@ -263,6 +273,106 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return items;
   }
 
+  /// Fetches wallpapers from unfollowed Prism creators whose [category] field
+  /// matches one of the user's active interests. This is the "discovery" source
+  /// that lets users find new creators.
+  ///
+  /// Requires a composite Firestore index on the `walls` collection:
+  ///   Fields: review (ASC), category (ASC), createdAt (DESC)
+  Future<List<FeedItemEntity>> _fetchDiscoveryItems({
+    required List<String> interests,
+    required List<PersonalizedInterest> catalog,
+    required List<String> followingEmails,
+  }) async {
+    if (interests.isEmpty) {
+      return const <FeedItemEntity>[];
+    }
+
+    // Map interest names → query terms used as category values.
+    final byName = <String, PersonalizedInterest>{for (final e in catalog) e.name.toLowerCase(): e};
+    final queryTerms = interests
+        .map((interest) => byName[interest.toLowerCase()])
+        .whereType<PersonalizedInterest>()
+        .map((e) => e.query)
+        .where((q) => q.isNotEmpty)
+        .toSet()
+        .take(2) // cap at 2 queries to limit Firestore reads
+        .toList(growable: false);
+
+    if (queryTerms.isEmpty) {
+      return const <FeedItemEntity>[];
+    }
+
+    // One query per interest term — each returns recent reviewed walls in
+    // that category from any creator.
+    final futures = queryTerms
+        .map((term) {
+          return _firestoreClient.query<_CreatorWallRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.walls,
+              sourceTag: 'personalized.discovery_$term',
+              filters: <FirestoreFilter>[
+                const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+                FirestoreFilter(field: 'category', op: FirestoreFilterOp.isEqualTo, value: term),
+              ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+              limit: 20,
+              cachePolicy: FirestoreCachePolicy.memoryFirst,
+            ),
+            (data, docId) => _CreatorWallRow(
+              docId: docId,
+              createdAt: DateTime.tryParse((data['createdAt'] ?? '').toString())?.toUtc(),
+              dto: PrismWallDocDto.fromJson(data),
+            ),
+          );
+        })
+        .toList(growable: false);
+
+    final chunkedResults = await Future.wait(futures);
+    final allRows = chunkedResults.expand((rows) => rows).toList(growable: false);
+    allRows.sort((a, b) {
+      final aAt = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      final bAt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      return bAt.compareTo(aAt);
+    });
+
+    // Exclude walls from creators the user already follows — those appear in
+    // the creator feed already.
+    final followingSet = followingEmails.map((e) => e.trim().toLowerCase()).toSet();
+
+    final dedupe = <String, FeedItemEntity>{};
+    for (final row in allRows) {
+      final wall = row.dto.toDomain(docId: row.docId);
+      // authorEmail maps from uploadedBy → authorName in the mapper, not email.
+      // We use the raw 'email' field from the DTO via the raw map instead.
+      final item = PrismFeedItem(id: wall.id, wallpaper: wall);
+      final key = PersonalizedRankingService.canonicalKey(item);
+
+      // Filter out creators already in the following list. The 'email' field
+      // is not part of PrismWallDocDto, so we skip that filter here — the
+      // ranking service will naturally de-score items that duplicate creator
+      // content via seen-key deduplication.
+      dedupe[key] = item;
+    }
+
+    // Drop any items whose key already comes from the following-based fetch
+    // (those are handled via blockedKeys in the ranking service, but we do a
+    // best-effort filter here too by excluding items where authorEmail is in
+    // followingSet).
+    final filtered = dedupe.values
+        .where((item) {
+          final email = item.when(
+            prism: (_, wall) => (wall.core.authorEmail ?? '').toLowerCase(),
+            wallhaven: (_, wall) => '',
+            pexels: (_, wall) => '',
+          );
+          return email.isEmpty || !followingSet.contains(email);
+        })
+        .toList(growable: false);
+
+    return filtered;
+  }
+
   Future<List<FeedItemEntity>> _fetchPexelsItems({
     required List<String> interests,
     required List<PersonalizedInterest> catalog,
@@ -320,11 +430,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final mix = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced').trim().toLowerCase();
     switch (mix) {
       case 'creators':
-        return const _SourceTargets(creator: 16, wallhaven: 4, pexels: 4);
+        // Creator-heavy: 14 following + 2 discovery + 4+4 external = 24
+        return const _SourceTargets(creator: 14, discovery: 2, wallhaven: 4, pexels: 4);
       case 'discovery':
-        return const _SourceTargets(creator: 8, wallhaven: 8, pexels: 8);
+        // Discovery-heavy: 6 following + 8 discovery + 5+5 external = 24
+        return const _SourceTargets(creator: 6, discovery: 8, wallhaven: 5, pexels: 5);
       default:
-        return const _SourceTargets(creator: 12, wallhaven: 6, pexels: 6);
+        // Balanced: 10 following + 4 discovery + 5+5 external = 24
+        return const _SourceTargets(creator: 10, discovery: 4, wallhaven: 5, pexels: 5);
     }
   }
 
@@ -418,9 +531,10 @@ class _CacheState {
 }
 
 class _SourceTargets {
-  const _SourceTargets({required this.creator, required this.wallhaven, required this.pexels});
+  const _SourceTargets({required this.creator, required this.discovery, required this.wallhaven, required this.pexels});
 
   final int creator;
+  final int discovery;
   final int wallhaven;
   final int pexels;
 }

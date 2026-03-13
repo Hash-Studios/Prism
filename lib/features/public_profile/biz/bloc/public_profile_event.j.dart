@@ -14,4 +14,32 @@ abstract class PublicProfileEvent with _$PublicProfileEvent {
   }) = _UnfollowRequested;
   const factory PublicProfileEvent.linksUpdated({required String userId, required Map<String, String> links}) =
       _LinksUpdated;
+
+  /// Load the profile summaries for a list of follower emails.
+  const factory PublicProfileEvent.fetchFollowerSummariesRequested({
+    required List<String> emails,
+    required String currentUserEmail,
+  }) = _FetchFollowerSummariesRequested;
+
+  /// Load the profile summaries for a list of following emails.
+  const factory PublicProfileEvent.fetchFollowingSummariesRequested({
+    required List<String> emails,
+    required String currentUserEmail,
+  }) = _FetchFollowingSummariesRequested;
+
+  /// Toggle follow status for a user shown in a list screen.
+  const factory PublicProfileEvent.followFromListRequested({
+    required String currentUserId,
+    required String currentUserEmail,
+    required String targetUserId,
+    required String targetUserEmail,
+  }) = _FollowFromListRequested;
+
+  /// Toggle unfollow status for a user shown in a list screen.
+  const factory PublicProfileEvent.unfollowFromListRequested({
+    required String currentUserId,
+    required String currentUserEmail,
+    required String targetUserId,
+    required String targetUserEmail,
+  }) = _UnfollowFromListRequested;
 }

@@ -33,6 +33,7 @@ import 'package:Prism/features/palette/views/pages/wallpaper_screen.dart';
 import 'package:Prism/features/profile_setups/views/pages/profile_setup_view_screen.dart';
 import 'package:Prism/features/profile_walls/views/pages/profile_wall_view_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
+import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_wall_view_screen.dart';
@@ -115,6 +116,7 @@ class AppRouter extends RootStackRouter {
             AutoRoute(path: 'fav-setups', page: FavouriteSetupRoute.page),
             AutoRoute(path: 'downloads', page: DownloadRoute.page),
             AutoRoute(path: 'followers', page: FollowersRoute.page),
+            AutoRoute(path: 'following', page: FollowingListRoute.page),
           ],
         ),
       ],

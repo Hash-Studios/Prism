@@ -628,6 +628,55 @@ class FollowersRouteArgs {
 }
 
 /// generated route for
+/// [FollowingListScreen]
+class FollowingListRoute extends PageRouteInfo<FollowingListRouteArgs> {
+  FollowingListRoute({
+    Key? key,
+    required List<String> following,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FollowingListRoute.name,
+         args: FollowingListRouteArgs(key: key, following: following),
+         initialChildren: children,
+       );
+
+  static const String name = 'FollowingListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<FollowingListRouteArgs>();
+      return FollowingListScreen(key: args.key, following: args.following);
+    },
+  );
+}
+
+class FollowingListRouteArgs {
+  const FollowingListRouteArgs({this.key, required this.following});
+
+  final Key? key;
+
+  final List<String> following;
+
+  @override
+  String toString() {
+    return 'FollowingListRouteArgs{key: $key, following: $following}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FollowingListRouteArgs) return false;
+    return key == other.key &&
+        const ListEquality<String>().equals(following, other.following);
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ const ListEquality<String>().hash(following);
+}
+
+/// generated route for
 /// [HomeTabPage]
 class HomeTabRoute extends PageRouteInfo<void> {
   const HomeTabRoute({List<PageRouteInfo>? children})
