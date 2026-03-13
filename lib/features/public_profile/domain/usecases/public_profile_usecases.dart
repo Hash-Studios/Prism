@@ -165,3 +165,66 @@ class FetchUserSummariesUseCase implements UseCase<List<UserSummaryEntity>, Fetc
     return _repository.fetchUserSummaries(emails: params.emails, currentUserEmail: params.currentUserEmail);
   }
 }
+
+class FetchUserSummariesPageParams {
+  const FetchUserSummariesPageParams({
+    required this.allEmails,
+    required this.currentUserEmail,
+    required this.page,
+    this.pageSize = 20,
+  });
+
+  final List<String> allEmails;
+  final String currentUserEmail;
+  final int page;
+  final int pageSize;
+}
+
+@lazySingleton
+class FetchUserSummariesPageUseCase
+    implements UseCase<({List<UserSummaryEntity> items, bool hasMore}), FetchUserSummariesPageParams> {
+  FetchUserSummariesPageUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> call(FetchUserSummariesPageParams params) {
+    return _repository.fetchUserSummariesPage(
+      allEmails: params.allEmails,
+      currentUserEmail: params.currentUserEmail,
+      page: params.page,
+      pageSize: params.pageSize,
+    );
+  }
+}
+
+class SearchUsersByUsernameParams {
+  const SearchUsersByUsernameParams({
+    required this.query,
+    required this.scopeEmails,
+    required this.currentUserEmail,
+    this.limit = 5,
+  });
+
+  final String query;
+  final List<String> scopeEmails;
+  final String currentUserEmail;
+  final int limit;
+}
+
+@lazySingleton
+class SearchUsersByUsernameUseCase implements UseCase<List<UserSummaryEntity>, SearchUsersByUsernameParams> {
+  SearchUsersByUsernameUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<List<UserSummaryEntity>>> call(SearchUsersByUsernameParams params) {
+    return _repository.searchUsersByUsername(
+      query: params.query,
+      scopeEmails: params.scopeEmails,
+      currentUserEmail: params.currentUserEmail,
+      limit: params.limit,
+    );
+  }
+}

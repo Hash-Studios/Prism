@@ -224,7 +224,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
 
     try {
-      final unique = emails.toSet().toList(growable: false);
+      final unique = emails
+          .map((e) => e.trim().toLowerCase())
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
 
       // Firestore whereIn is limited to 10 items per query — chunk accordingly.
       final List<List<String>> chunks = <List<String>>[];
@@ -279,6 +283,96 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       return Result.success(ordered);
     } catch (error) {
       return Result.error(ServerFailure('Unable to fetch user summaries: $error'));
+    }
+  }
+
+  @override
+  Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> fetchUserSummariesPage({
+    required List<String> allEmails,
+    required String currentUserEmail,
+    int page = 0,
+    int pageSize = 20,
+  }) async {
+    if (allEmails.isEmpty) {
+      return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
+    }
+
+    try {
+      final unique = allEmails
+          .map((e) => e.trim().toLowerCase())
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
+      final start = page * pageSize;
+      if (start >= unique.length) {
+        return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
+      }
+      final end = (start + pageSize).clamp(0, unique.length);
+      final pageEmails = unique.sublist(start, end);
+      final hasMore = end < unique.length;
+
+      final result = await fetchUserSummaries(emails: pageEmails, currentUserEmail: currentUserEmail);
+      return result.fold(
+        onSuccess: (summaries) => Result.success((items: summaries, hasMore: hasMore)),
+        onFailure: (failure) => Result.error(failure),
+      );
+    } catch (error) {
+      return Result.error(ServerFailure('Unable to fetch user summaries page: $error'));
+    }
+  }
+
+  @override
+  Future<Result<List<UserSummaryEntity>>> searchUsersByUsername({
+    required String query,
+    required List<String> scopeEmails,
+    required String currentUserEmail,
+    int limit = 5,
+  }) async {
+    if (query.isEmpty || scopeEmails.isEmpty) {
+      return Result.success(const <UserSummaryEntity>[]);
+    }
+
+    try {
+      // Firestore prefix range query: username >= query AND username < query + '\uf8ff'
+      final end = '$query\uf8ff';
+      final scopeSet = scopeEmails.map((e) => e.trim().toLowerCase()).toSet();
+      final Set<String> followingSet = app_state.prismUser.following.map((e) => e.trim().toLowerCase()).toSet();
+
+      final rows = await _firestoreClient.query<_UserRow>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.usersV2,
+          sourceTag: 'public_profile.search_by_username',
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'username', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: query),
+            FirestoreFilter(field: 'username', op: FirestoreFilterOp.isLessThan, value: end),
+          ],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'username', descending: false)],
+          limit: limit * 4, // over-fetch so we have enough after scope filtering
+          cachePolicy: FirestoreCachePolicy.networkOnly,
+        ),
+        (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+      );
+
+      final summaries = rows
+          .where((row) => scopeSet.contains(row.doc.email.trim().toLowerCase()))
+          .take(limit)
+          .map((row) {
+            final doc = row.doc;
+            final email = doc.email.trim();
+            return UserSummaryEntity(
+              id: doc.id.isNotEmpty ? doc.id : row.docId,
+              email: email,
+              name: doc.name,
+              username: doc.username,
+              profilePhoto: doc.profilePhoto,
+              isFollowedByCurrentUser: followingSet.contains(email.toLowerCase()),
+            );
+          })
+          .toList(growable: false);
+
+      return Result.success(summaries);
+    } catch (error) {
+      return Result.error(ServerFailure('Unable to search users: $error'));
     }
   }
 

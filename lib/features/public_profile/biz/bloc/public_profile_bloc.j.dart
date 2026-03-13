@@ -13,6 +13,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
+// ignore_for_file: invalid_use_of_visible_for_testing_member
+
 part 'public_profile_event.j.dart';
 part 'public_profile_state.j.dart';
 part 'public_profile_bloc.j.freezed.dart';
@@ -26,7 +28,8 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     this._followUserUseCase,
     this._unfollowUserUseCase,
     this._updatePublicProfileLinksUseCase,
-    this._fetchUserSummariesUseCase,
+    this._fetchUserSummariesPageUseCase,
+    this._searchUsersByUsernameUseCase,
   ) : super(PublicProfileState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
@@ -35,8 +38,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     on<_FollowRequested>(_onFollowRequested);
     on<_UnfollowRequested>(_onUnfollowRequested);
     on<_LinksUpdated>(_onLinksUpdated);
-    on<_FetchFollowerSummariesRequested>(_onFetchFollowerSummariesRequested);
-    on<_FetchFollowingSummariesRequested>(_onFetchFollowingSummariesRequested);
+    on<_FetchFollowerSummariesPageRequested>(_onFetchFollowerSummariesPageRequested);
+    on<_FetchFollowingSummariesPageRequested>(_onFetchFollowingSummariesPageRequested);
+    on<_SearchFollowerSummariesRequested>(_onSearchFollowerSummariesRequested);
+    on<_SearchFollowingSummariesRequested>(_onSearchFollowingSummariesRequested);
+    on<_ClearFollowerSearch>(_onClearFollowerSearch);
+    on<_ClearFollowingSearch>(_onClearFollowingSearch);
     on<_FollowFromListRequested>(_onFollowFromListRequested);
     on<_UnfollowFromListRequested>(_onUnfollowFromListRequested);
   }
@@ -47,7 +54,8 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   final FollowUserUseCase _followUserUseCase;
   final UnfollowUserUseCase _unfollowUserUseCase;
   final UpdatePublicProfileLinksUseCase _updatePublicProfileLinksUseCase;
-  final FetchUserSummariesUseCase _fetchUserSummariesUseCase;
+  final FetchUserSummariesPageUseCase _fetchUserSummariesPageUseCase;
+  final SearchUsersByUsernameUseCase _searchUsersByUsernameUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<PublicProfileState> emit) async {
     emit(state.copyWith(email: event.email));
@@ -273,34 +281,126 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
   }
 
-  Future<void> _onFetchFollowerSummariesRequested(
-    _FetchFollowerSummariesRequested event,
+  Future<void> _onFetchFollowerSummariesPageRequested(
+    _FetchFollowerSummariesPageRequested event,
     Emitter<PublicProfileState> emit,
   ) async {
-    emit(state.copyWith(isFetchingSummaries: true, failure: null));
-    final result = await _fetchUserSummariesUseCase(
-      FetchUserSummariesParams(emails: event.emails, currentUserEmail: event.currentUserEmail),
+    if (state.isFetchingFollowers) return;
+    if (event.page > 0 && !state.hasMoreFollowers) return;
+
+    emit(state.copyWith(isFetchingFollowers: true, failure: null));
+
+    final result = await _fetchUserSummariesPageUseCase(
+      FetchUserSummariesPageParams(
+        allEmails: event.allEmails,
+        currentUserEmail: event.currentUserEmail,
+        page: event.page,
+        pageSize: event.pageSize,
+      ),
     );
+
     result.fold(
-      onSuccess: (summaries) =>
-          emit(state.copyWith(followerSummaries: summaries, isFetchingSummaries: false, failure: null)),
-      onFailure: (failure) => emit(state.copyWith(isFetchingSummaries: false, failure: failure)),
+      onSuccess: (page) {
+        final merged = event.page == 0 ? page.items : <UserSummaryEntity>[...state.followerSummaries, ...page.items];
+        final deduped = <String, UserSummaryEntity>{
+          for (final s in merged) s.email.toLowerCase(): s,
+        }.values.toList(growable: false);
+        emit(
+          state.copyWith(
+            followerSummaries: deduped,
+            followerPage: event.page,
+            hasMoreFollowers: page.hasMore,
+            isFetchingFollowers: false,
+            failure: null,
+          ),
+        );
+      },
+      onFailure: (failure) => emit(state.copyWith(isFetchingFollowers: false, failure: failure)),
     );
   }
 
-  Future<void> _onFetchFollowingSummariesRequested(
-    _FetchFollowingSummariesRequested event,
+  Future<void> _onFetchFollowingSummariesPageRequested(
+    _FetchFollowingSummariesPageRequested event,
     Emitter<PublicProfileState> emit,
   ) async {
-    emit(state.copyWith(isFetchingSummaries: true, failure: null));
-    final result = await _fetchUserSummariesUseCase(
-      FetchUserSummariesParams(emails: event.emails, currentUserEmail: event.currentUserEmail),
+    if (state.isFetchingFollowing) return;
+    if (event.page > 0 && !state.hasMoreFollowing) return;
+
+    emit(state.copyWith(isFetchingFollowing: true, failure: null));
+
+    final result = await _fetchUserSummariesPageUseCase(
+      FetchUserSummariesPageParams(
+        allEmails: event.allEmails,
+        currentUserEmail: event.currentUserEmail,
+        page: event.page,
+        pageSize: event.pageSize,
+      ),
+    );
+
+    result.fold(
+      onSuccess: (page) {
+        final merged = event.page == 0 ? page.items : <UserSummaryEntity>[...state.followingSummaries, ...page.items];
+        final deduped = <String, UserSummaryEntity>{
+          for (final s in merged) s.email.toLowerCase(): s,
+        }.values.toList(growable: false);
+        emit(
+          state.copyWith(
+            followingSummaries: deduped,
+            followingPage: event.page,
+            hasMoreFollowing: page.hasMore,
+            isFetchingFollowing: false,
+            failure: null,
+          ),
+        );
+      },
+      onFailure: (failure) => emit(state.copyWith(isFetchingFollowing: false, failure: failure)),
+    );
+  }
+
+  Future<void> _onSearchFollowerSummariesRequested(
+    _SearchFollowerSummariesRequested event,
+    Emitter<PublicProfileState> emit,
+  ) async {
+    emit(state.copyWith(isSearchingFollowers: true, followerSearchResults: const <UserSummaryEntity>[]));
+    final result = await _searchUsersByUsernameUseCase(
+      SearchUsersByUsernameParams(
+        query: event.query,
+        scopeEmails: event.allEmails,
+        currentUserEmail: event.currentUserEmail,
+      ),
     );
     result.fold(
-      onSuccess: (summaries) =>
-          emit(state.copyWith(followingSummaries: summaries, isFetchingSummaries: false, failure: null)),
-      onFailure: (failure) => emit(state.copyWith(isFetchingSummaries: false, failure: failure)),
+      onSuccess: (summaries) => emit(state.copyWith(followerSearchResults: summaries, isSearchingFollowers: false)),
+      onFailure: (_) =>
+          emit(state.copyWith(isSearchingFollowers: false, followerSearchResults: const <UserSummaryEntity>[])),
     );
+  }
+
+  Future<void> _onSearchFollowingSummariesRequested(
+    _SearchFollowingSummariesRequested event,
+    Emitter<PublicProfileState> emit,
+  ) async {
+    emit(state.copyWith(isSearchingFollowing: true, followingSearchResults: const <UserSummaryEntity>[]));
+    final result = await _searchUsersByUsernameUseCase(
+      SearchUsersByUsernameParams(
+        query: event.query,
+        scopeEmails: event.allEmails,
+        currentUserEmail: event.currentUserEmail,
+      ),
+    );
+    result.fold(
+      onSuccess: (summaries) => emit(state.copyWith(followingSearchResults: summaries, isSearchingFollowing: false)),
+      onFailure: (_) =>
+          emit(state.copyWith(isSearchingFollowing: false, followingSearchResults: const <UserSummaryEntity>[])),
+    );
+  }
+
+  void _onClearFollowerSearch(_ClearFollowerSearch event, Emitter<PublicProfileState> emit) {
+    emit(state.copyWith(followerSearchResults: null, isSearchingFollowers: false));
+  }
+
+  void _onClearFollowingSearch(_ClearFollowingSearch event, Emitter<PublicProfileState> emit) {
+    emit(state.copyWith(followingSearchResults: null, isSearchingFollowing: false));
   }
 
   Future<void> _onFollowFromListRequested(_FollowFromListRequested event, Emitter<PublicProfileState> emit) async {
@@ -335,6 +435,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
             event.targetUserEmail,
             isFollowed: true,
           ),
+          followerSearchResults: state.followerSearchResults == null
+              ? null
+              : _updateSummaryFollowState(state.followerSearchResults!, event.targetUserEmail, isFollowed: true),
+          followingSearchResults: state.followingSearchResults == null
+              ? null
+              : _updateSummaryFollowState(state.followingSearchResults!, event.targetUserEmail, isFollowed: true),
         ),
       );
     }
@@ -372,6 +478,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
             event.targetUserEmail,
             isFollowed: false,
           ),
+          followerSearchResults: state.followerSearchResults == null
+              ? null
+              : _updateSummaryFollowState(state.followerSearchResults!, event.targetUserEmail, isFollowed: false),
+          followingSearchResults: state.followingSearchResults == null
+              ? null
+              : _updateSummaryFollowState(state.followingSearchResults!, event.targetUserEmail, isFollowed: false),
         ),
       );
     }

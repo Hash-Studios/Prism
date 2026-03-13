@@ -15,17 +15,42 @@ abstract class PublicProfileEvent with _$PublicProfileEvent {
   const factory PublicProfileEvent.linksUpdated({required String userId, required Map<String, String> links}) =
       _LinksUpdated;
 
-  /// Load the profile summaries for a list of follower emails.
-  const factory PublicProfileEvent.fetchFollowerSummariesRequested({
-    required List<String> emails,
+  /// Load a page of follower summaries. [page] is zero-indexed; [pageSize]
+  /// defaults to 20. Pass [page] = 0 for the initial load.
+  const factory PublicProfileEvent.fetchFollowerSummariesPageRequested({
+    required List<String> allEmails,
     required String currentUserEmail,
-  }) = _FetchFollowerSummariesRequested;
+    required int page,
+    @Default(20) int pageSize,
+  }) = _FetchFollowerSummariesPageRequested;
 
-  /// Load the profile summaries for a list of following emails.
-  const factory PublicProfileEvent.fetchFollowingSummariesRequested({
-    required List<String> emails,
+  /// Load a page of following summaries. [page] is zero-indexed.
+  const factory PublicProfileEvent.fetchFollowingSummariesPageRequested({
+    required List<String> allEmails,
     required String currentUserEmail,
-  }) = _FetchFollowingSummariesRequested;
+    required int page,
+    @Default(20) int pageSize,
+  }) = _FetchFollowingSummariesPageRequested;
+
+  /// Search followers by username prefix. Results are scoped to [allEmails].
+  const factory PublicProfileEvent.searchFollowerSummariesRequested({
+    required String query,
+    required List<String> allEmails,
+    required String currentUserEmail,
+  }) = _SearchFollowerSummariesRequested;
+
+  /// Search following list by username prefix. Results are scoped to [allEmails].
+  const factory PublicProfileEvent.searchFollowingSummariesRequested({
+    required String query,
+    required List<String> allEmails,
+    required String currentUserEmail,
+  }) = _SearchFollowingSummariesRequested;
+
+  /// Clear active follower search results (return to paginated list).
+  const factory PublicProfileEvent.clearFollowerSearch() = _ClearFollowerSearch;
+
+  /// Clear active following search results (return to paginated list).
+  const factory PublicProfileEvent.clearFollowingSearch() = _ClearFollowingSearch;
 
   /// Toggle follow status for a user shown in a list screen.
   const factory PublicProfileEvent.followFromListRequested({
