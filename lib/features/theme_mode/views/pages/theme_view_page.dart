@@ -71,18 +71,9 @@ class _ThemeViewState extends State<ThemeView> {
           IconButton(
             icon: Icon(JamIcons.check, size: 30, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
-              final accentColor = int.parse(
-                selectedAccentColor
-                    .toString()
-                    .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                    .replaceAll("Color(", "")
-                    .replaceAll(")", ""),
-              );
-              final hexString = selectedAccentColor
-                  .toString()
-                  .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                  .replaceAll("Color(0xff", "")
-                  .replaceAll(")", "");
+              final Color resolvedAccentColor = selectedAccentColor ?? const Color(0xFFE57697);
+              final int accentColor = resolvedAccentColor.toARGB32();
+              final String hexString = accentColor.toRadixString(16).padLeft(8, '0').substring(2);
               _settingsLocal.set("systemOverlayColor", accentColor);
               analytics.track(AccentChangedEvent(color: hexString));
               Navigator.pop(context);
