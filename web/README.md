@@ -1,56 +1,73 @@
-# prismwalls.com — Landing Page
+# Prism Wallpapers Marketing Site
 
-Static landing page for [Prism](https://github.com/Hash-Studios/Prism), deployed on [Cloudflare Workers](https://workers.cloudflare.com/).
+Next.js (App Router) + Tailwind CSS static marketing site for `prismwalls.com`.
 
-## Structure
+## Stack
 
-```
-web/
-├── public/
-│   ├── index.html          ← full page (edit copy here)
-│   ├── style.css           ← all styles
-│   ├── script.js           ← scroll animations & drag-scroll
-│   └── assets/
-│       ├── icon.svg        ← placeholder — replace with icon.png (real app icon)
-│       ├── og-image.png    ← add a 1200×630 Open Graph preview image
-│       └── screenshots/
-│           ├── screen1.svg ← placeholder — replace with screen1.png
-│           ├── screen2.svg ← placeholder — replace with screen2.png
-│           ├── screen3.svg ← placeholder — replace with screen3.png
-│           ├── screen4.svg ← placeholder — replace with screen4.png
-│           └── screen5.svg ← placeholder — replace with screen5.png
-├── wrangler.toml
-└── package.json
-```
-
-## Before deploying — checklist
-
-- [ ] Replace `assets/icon.svg` with `assets/icon.png` (real Prism app icon, 512×512 recommended)
-  - Update `index.html`: change all `icon.svg` → `icon.png` (3 occurrences)
-  - Update `<link rel="icon">` type to `image/png`
-- [ ] Replace `assets/screenshots/screen*.svg` with real PNG screenshots (390×844 px)
-  - Update `index.html`: change `screen1.svg` → `screen1.png` (etc.) in the screenshots section
-- [ ] Add `assets/og-image.png` (1200×630 px) for social sharing previews
-- [ ] Replace `#TESTFLIGHT_URL` in `index.html` (2 occurrences) with your real TestFlight invite link
-  - Search for `#TESTFLIGHT_URL` in index.html — it appears on the nav CTA and the bottom CTA
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS
+- Static export (`next build` with `output: "export"`)
+- Cloudflare Workers static assets deployment via Wrangler
 
 ## Local development
 
 ```bash
 cd web
 npm install
-npm run dev        # starts wrangler dev at localhost:8787
+npm run dev
 ```
 
-## Deploy to Cloudflare Workers
+Visit `http://localhost:3000`.
+
+## Build
 
 ```bash
 cd web
-npm install
-npx wrangler login        # first time only
+npm run build
+```
+
+This outputs static files in `web/out`.
+
+## Deploy to Cloudflare
+
+This repo is configured to deploy the static output from `web/out` through `wrangler.toml`.
+
+### 1) First-time login
+
+```bash
+cd web
+npx wrangler login
+```
+
+### 2) Deploy
+
+```bash
+cd web
 npm run deploy
 ```
 
-Then in the Cloudflare dashboard:
-- Workers & Pages → prismwalls → Settings → Domains & Routes → Custom Domains
-- Add `prismwalls.com` (make sure your DNS is pointed at Cloudflare)
+`npm run deploy` runs `next build` and then `wrangler deploy`.
+
+### 3) Domain check
+
+Confirm custom routes in Cloudflare:
+
+- `prismwalls.com`
+- `www.prismwalls.com`
+
+These are already declared in `wrangler.toml`.
+
+## Editing content and links
+
+Update these files:
+
+- `lib/site-config.ts`: app/store links, brand constants
+- `lib/marketing-content.ts`: homepage copy, feature lists, FAQ, credibility items
+
+## Images used by the site
+
+- App icon: `public/assets/ios.png`
+- Screenshots: `public/assets/screenshots/screen1.jpg` to `screen5.jpg`
+
+If you want to refresh visuals later, keep the same filenames to avoid changing code references.

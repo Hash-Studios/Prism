@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -6,6 +6,7 @@ DEVICE ?=
 RUN_ARGS ?=
 BUILD_ARGS ?=
 IOS_BUILD_ARGS ?=
+APP_SIZE_TARGET_PLATFORM ?= android-arm64
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
 DOPPLER_PROJECT ?= prism
 DOPPLER_CONFIG ?= dev
@@ -150,6 +151,13 @@ build-aab: ensure-fvm doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	$(FLUTTER) build appbundle --release $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+
+size-android: ensure-fvm
+	@mkdir -p build/size/local
+	@printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('Size analysis stub');\n}\n" > lib/firebase_options.dart
+	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
+	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
+	@echo "APK + size analysis log written to build/size/local"
 
 attach: ensure-fvm
 	@if [ -n "$(DEVICE)" ]; then \
