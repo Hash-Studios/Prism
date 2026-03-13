@@ -1,19 +1,21 @@
+import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f1_interests_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f2_starter_pack_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f3_first_wallpaper_page.dart';
-import 'package:Prism/features/onboarding_v2/src/views/pages/f4_paywall_gate_page.dart';
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage(name: 'OnboardingV2ShellRoute')
@@ -33,7 +35,6 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     F1InterestsPage(),
     F2StarterPackPage(),
     F3FirstWallpaperPage(),
-    F4PaywallGatePage(),
   ];
 
   @override
@@ -42,9 +43,23 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _bloc = getIt<OnboardingV2Bloc>();
     _pageController = PageController();
     _bloc.add(const OnboardingV2Event.started());
+    AppSoundManager.instance.playEffect(AppSoundEffect.onboardingOpenSwoosh);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      applyEdgeToEdgeOverlayStyle(
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarIconBrightness: Brightness.light,
+      );
+    });
   }
 
-  Future<void> _handleNavRequest(BuildContext context, OnboardingV2NavRequest request) async {
+  Future<void> _handleNavRequest(
+    BuildContext context,
+    OnboardingV2NavRequest request,
+  ) async {
     switch (request) {
       case OnboardingV2NavRequest.openPaywall:
         if (!context.mounted) {
@@ -59,17 +74,24 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           return;
         }
         final isPremium = app_state.prismUser.premium;
-        _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: isPremium));
+        _bloc.add(
+          OnboardingV2Event.paywallResultReceived(didPurchase: isPremium),
+        );
 
       case OnboardingV2NavRequest.completeOnboarding:
         if (!context.mounted) {
           return;
         }
-        await ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'onboarding_v2_done');
+        await ProfileCompletenessNudgeService.instance.maybeShowNudge(
+          context,
+          sourceContext: 'onboarding_v2_done',
+        );
         if (!context.mounted) {
           return;
         }
-        await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
+        await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(
+          context,
+        );
         if (!context.mounted) {
           return;
         }
@@ -78,17 +100,27 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   }
 
   void _animateToStep(OnboardingV2Step step) {
-    final index = OnboardingV2Step.values.indexOf(step);
-    final currentPage = _pageController.hasClients ? _pageController.page?.round() : null;
+    final rawIndex = OnboardingV2Step.values.indexOf(step);
+    final index = rawIndex >= _pages.length ? _pages.length - 1 : rawIndex;
+    final currentPage = _pageController.hasClients
+        ? _pageController.page?.round()
+        : null;
     logger.d(
       '_animateToStep step=$step index=$index hasClients=${_pageController.hasClients} currentPage=$currentPage',
       tag: 'OnboardingV2Shell',
     );
     if (_pageController.hasClients && currentPage != index) {
-      _pageController.animateToPage(index, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
       logger.d('animateToPage called → $index', tag: 'OnboardingV2Shell');
     } else {
-      logger.d('animateToPage SKIPPED (already on page or no clients)', tag: 'OnboardingV2Shell');
+      logger.d(
+        'animateToPage SKIPPED (already on page or no clients)',
+        tag: 'OnboardingV2Shell',
+      );
     }
   }
 
@@ -106,7 +138,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
         listenWhen: (prev, curr) {
           final stepChanged = prev.step != curr.step;
-          final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
+          final navChanged =
+              curr.navRequest != null && prev.navRequest != curr.navRequest;
           logger.d(
             'listenWhen prev.step=${prev.step} curr.step=${curr.step} stepChanged=$stepChanged navChanged=$navChanged',
             tag: 'OnboardingV2Shell',
@@ -114,23 +147,32 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           return stepChanged || navChanged;
         },
         listener: (context, state) {
-          logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
+          logger.d(
+            'listener fired step=${state.step} navRequest=${state.navRequest}',
+            tag: 'OnboardingV2Shell',
+          );
           _animateToStep(state.step);
           if (state.navRequest != null) {
             _handleNavRequest(context, state.navRequest!);
           }
         },
-        buildWhen: (_, __) => false,
+        buildWhen: (previous, current) => false,
         builder: (context, state) {
-          return PopScope(
-            canPop: false,
-            onPopInvokedWithResult: (_, _) {
-              _bloc.add(const OnboardingV2Event.stepBack());
-            },
-            child: PageView(
-              controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: _pages,
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: edgeToEdgeOverlayStyle(
+              statusBarIconBrightness: Brightness.dark,
+              systemNavigationBarIconBrightness: Brightness.light,
+            ),
+            child: PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                _bloc.add(const OnboardingV2Event.stepBack());
+              },
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: _pages,
+              ),
             ),
           );
         },

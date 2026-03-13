@@ -1,0 +1,4 @@
+Sound-Origin:    http://soundbible.com/1686-Appear.html
+Sound-Copyright: KP @ Soundbible (2011)
+License-Name:    Creative Commons 0 (CC-0)
+License-URL:     https://creativecommons.org/publicdomain/zero/1.0/

@@ -1,7 +1,12 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/creator_card.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_background.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,130 +16,154 @@ class F2StarterPackPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-      buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData || prev.actionStatus != curr.actionStatus,
+      buildWhen: (prev, curr) =>
+          prev.starterPackData != curr.starterPackData ||
+          prev.actionStatus != curr.actionStatus,
       builder: (context, state) {
-        final packData = state.starterPackData;
-        final selectedCount = packData.selectedEmails.length;
-        final canContinue = packData.canContinue;
+        final creators = state.starterPackData.creators
+            .take(3)
+            .toList(growable: false);
+        final canContinue = state.starterPackData.canContinue;
         final isLoading = state.actionStatus == ActionStatus.inProgress;
 
         return Scaffold(
-          backgroundColor: Colors.black,
-          body: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.stepBack()),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                      ),
-                      Row(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final bgSx = constraints.maxWidth / OnboardingLayout.designWidth;
+              final bgSy =
+                  constraints.maxHeight / OnboardingLayout.designHeight;
+
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  OnboardingBackground(
+                    assetPath: OnboardingAssets.wallpaperPrimary,
+                    sx: bgSx,
+                    sy: bgSy,
+                    mode: OnboardingBackgroundMode.softened,
+                  ),
+                  OnboardingFrame(
+                    builder: (context, sx, sy) {
+                      return Stack(
+                        fit: StackFit.expand,
                         children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            child: Text(
-                              '$selectedCount/${OnboardingV2Config.minFollows}',
-                              key: ValueKey(selectedCount),
-                              style: TextStyle(
-                                color: canContinue ? Theme.of(context).colorScheme.primary : Colors.white54,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: OnboardingLayout.progressY * sy,
+                              ),
+                              child: Transform.scale(
+                                alignment: Alignment.topCenter,
+                                scaleX: sx,
+                                scaleY: sy,
+                                child: const OnboardingProgressIndicator(
+                                  step: 2,
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: OnboardingLayout.stepTitleY * sy,
+                              ),
+                              child: const OnboardingHeadline(
+                                text: 'Find your people',
+                              ),
                             ),
-                            child: const Text(
-                              'Step 3 of 4',
-                              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: OnboardingLayout.creatorsY * sy,
+                                left: OnboardingLayout.creatorsX * sx,
+                                right: OnboardingLayout.creatorsX * sx,
+                              ),
+                              child: SizedBox(
+                                height: OnboardingLayout.tilesHeight * sy,
+                                child: ListView.separated(
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: 3,
+                                  separatorBuilder: (_, index) => SizedBox(
+                                    height: OnboardingLayout.creatorGap * sy,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    if (index >= creators.length) {
+                                      return SizedBox(
+                                        height:
+                                            OnboardingLayout.creatorHeight * sy,
+                                        child: const CreatorCard(
+                                          creator: null,
+                                          onToggle: null,
+                                        ),
+                                      );
+                                    }
+                                    final creator = creators[index];
+                                    return SizedBox(
+                                      height:
+                                          OnboardingLayout.creatorHeight * sy,
+                                      child: CreatorCard(
+                                        creator: creator,
+                                        onToggle: () => context
+                                            .read<OnboardingV2Bloc>()
+                                            .add(
+                                              OnboardingV2Event.creatorFollowToggled(
+                                                creator.email,
+                                              ),
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: OnboardingLayout.ctaY * sy,
+                                left: OnboardingLayout.ctaX * sx,
+                                right: OnboardingLayout.ctaX * sx,
+                              ),
+                              child: SizedBox(
+                                height: OnboardingLayout.ctaHeight * sy,
+                                child: OnboardingPrimaryButton(
+                                  label: 'continue',
+                                  onPressed: () =>
+                                      context.read<OnboardingV2Bloc>().add(
+                                        const OnboardingV2Event.starterPackConfirmed(),
+                                      ),
+                                  enabled: canContinue,
+                                  loading: isLoading,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: OnboardingLayout.helperY * sy,
+                                left: OnboardingLayout.helperStep3X * sx,
+                                right: OnboardingLayout.helperStep3X * sx,
+                              ),
+                              child: const OnboardingHelperText(
+                                text:
+                                    'follow at least 3 creators to personalize your feed',
+                              ),
                             ),
                           ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 4),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    'Get the latest drops from top creators.',
-                    style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.4),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      if (packData.creators.isEmpty)
-                        const Center(child: CircularProgressIndicator(color: Colors.white))
-                      else
-                        ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 124),
-                          itemCount: packData.creators.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final creator = packData.creators[index];
-                            return CreatorCard(
-                              creator: creator,
-                              onToggle: () => context.read<OnboardingV2Bloc>().add(
-                                OnboardingV2Event.creatorFollowToggled(creator.email),
-                              ),
-                            );
-                          },
-                        ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.black],
-                              stops: [0.0, 0.45],
-                            ),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(16, 64, 16, 20),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FilledButton(
-                              onPressed: canContinue && !isLoading
-                                  ? () => context.read<OnboardingV2Bloc>().add(
-                                      const OnboardingV2Event.starterPackConfirmed(),
-                                    )
-                                  : null,
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: const StadiumBorder(),
-                              ),
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                                    )
-                                  : const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                ],
+              );
+            },
           ),
         );
       },

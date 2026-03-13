@@ -19,6 +19,7 @@ environment:
 
 dependencies:
   async_wallpaper: ^3.0.0
+  audioplayers: ^6.5.1
   bloc: ^8.1.4
   animations: ^2.0.0
   cached_network_image: ^3.0.0
@@ -144,6 +145,7 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
+    - assets/sounds/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #  - images/a_dot_burr.jpeg
@@ -174,6 +176,20 @@ flutter:
           weight: 800
         - asset: assets/fonts/Proxima Nova Black.otf
           weight: 900
+
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces-Variable.ttf
+          weight: 400
+
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/Satoshi-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Satoshi-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Satoshi-Bold.otf
+          weight: 700
 
     - family: JamIcons
       fonts:
