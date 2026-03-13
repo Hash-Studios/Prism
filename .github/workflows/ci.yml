@@ -135,7 +135,19 @@ jobs:
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/base
           flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
-          cp build/app/outputs/flutter-apk/app-"$APP_SIZE_BUILD_MODE".apk build/size/base/app-"$APP_SIZE_BUILD_MODE".apk
+          BASE_APK_PATH=""
+          for candidate in build/app/outputs/flutter-apk/*"$APP_SIZE_BUILD_MODE"*.apk; do
+            if [ -f "$candidate" ]; then
+              BASE_APK_PATH="$candidate"
+              break
+            fi
+          done
+          if [ -z "$BASE_APK_PATH" ]; then
+            echo "Could not find base APK output for mode=$APP_SIZE_BUILD_MODE"
+            ls -la build/app/outputs/flutter-apk || true
+            exit 1
+          fi
+          cp "$BASE_APK_PATH" build/size/base/app-"$APP_SIZE_BUILD_MODE".apk
           ./android/gradlew --stop || true
 
       - name: Build head APK
@@ -143,13 +155,24 @@ jobs:
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          rm -rf build .dart_tool
           git checkout --force --detach "$HEAD_SHA"
           flutter pub get
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
           mkdir -p build/size/head
           flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/head/build.log
-          cp build/app/outputs/flutter-apk/app-"$APP_SIZE_BUILD_MODE".apk build/size/head/app-"$APP_SIZE_BUILD_MODE".apk
+          HEAD_APK_PATH=""
+          for candidate in build/app/outputs/flutter-apk/*"$APP_SIZE_BUILD_MODE"*.apk; do
+            if [ -f "$candidate" ]; then
+              HEAD_APK_PATH="$candidate"
+              break
+            fi
+          done
+          if [ -z "$HEAD_APK_PATH" ]; then
+            echo "Could not find head APK output for mode=$APP_SIZE_BUILD_MODE"
+            ls -la build/app/outputs/flutter-apk || true
+            exit 1
+          fi
+          cp "$HEAD_APK_PATH" build/size/head/app-"$APP_SIZE_BUILD_MODE".apk
 
       - name: Compare app size and enforce thresholds
         if: steps.changes.outputs.app_size == 'true'
