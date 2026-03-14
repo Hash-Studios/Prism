@@ -1643,6 +1643,82 @@ class UserSearchRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [WallpaperDetailScreen]
+class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
+  WallpaperDetailRoute({
+    Key? key,
+    required WallpaperDetailEntity entity,
+    Future<String>? viewsFuture,
+    AnalyticsSurfaceValue analyticsSurface =
+        AnalyticsSurfaceValue.wallpaperScreen,
+    List<PageRouteInfo>? children,
+  }) : super(
+         WallpaperDetailRoute.name,
+         args: WallpaperDetailRouteArgs(
+           key: key,
+           entity: entity,
+           viewsFuture: viewsFuture,
+           analyticsSurface: analyticsSurface,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'WallpaperDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<WallpaperDetailRouteArgs>();
+      return WallpaperDetailScreen(
+        key: args.key,
+        entity: args.entity,
+        viewsFuture: args.viewsFuture,
+        analyticsSurface: args.analyticsSurface,
+      );
+    },
+  );
+}
+
+class WallpaperDetailRouteArgs {
+  const WallpaperDetailRouteArgs({
+    this.key,
+    required this.entity,
+    this.viewsFuture,
+    this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
+  });
+
+  final Key? key;
+
+  final WallpaperDetailEntity entity;
+
+  final Future<String>? viewsFuture;
+
+  final AnalyticsSurfaceValue analyticsSurface;
+
+  @override
+  String toString() {
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, viewsFuture: $viewsFuture, analyticsSurface: $analyticsSurface}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WallpaperDetailRouteArgs) return false;
+    return key == other.key &&
+        entity == other.entity &&
+        viewsFuture == other.viewsFuture &&
+        analyticsSurface == other.analyticsSurface;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      entity.hashCode ^
+      viewsFuture.hashCode ^
+      analyticsSurface.hashCode;
+}
+
+/// generated route for
 /// [WallpaperFilterScreen]
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({

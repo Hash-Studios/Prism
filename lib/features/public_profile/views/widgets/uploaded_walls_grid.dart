@@ -1,3 +1,4 @@
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
@@ -8,6 +9,7 @@ import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/profile_walls/views/profile_walls_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -250,13 +252,12 @@ class _ProfileGridState extends State<ProfileGrid> with SingleTickerProviderStat
                                     if (context.profileWalls(listen: false) == null ||
                                         context.profileWalls(listen: false)!.isEmpty) {
                                     } else {
+                                      final profileWalls = context.profileWalls(listen: false)!;
+                                      final entity = WallpaperDetailEntityX.fromProfileWall(profileWalls[index]);
                                       context.router.push(
-                                        ProfileWallViewRoute(
-                                          wallIndex: index,
-                                          thumbnailUrl: context
-                                              .profileWalls(listen: false)![index]
-                                              .wallpaperThumb
-                                              .toString(),
+                                        WallpaperDetailRoute(
+                                          entity: entity,
+                                          analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
                                         ),
                                       );
                                     }

@@ -28,6 +28,7 @@ import 'package:Prism/features/palette/views/pages/download_screen.dart';
 import 'package:Prism/features/palette/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/palette/views/pages/search_wallpaper_screen.dart';
 import 'package:Prism/features/palette/views/pages/share_wall_view_screen.dart';
+import 'package:Prism/features/palette/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/palette/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/features/palette/views/pages/wallpaper_screen.dart';
 import 'package:Prism/features/profile_setups/views/pages/profile_setup_view_screen.dart';
@@ -124,6 +125,7 @@ class AppRouter extends RootStackRouter {
 
     // Global routes (pushed over entire shell as full-screen dialogs)
     AutoRoute(path: '/wallpaper', page: WallpaperRoute.page),
+    AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
     AutoRoute(path: '/search-wallpaper', page: SearchWallpaperRoute.page),
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/share', page: ShareWallpaperViewRoute.page),
