@@ -3,7 +3,6 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
-import 'package:Prism/features/profile_walls/domain/entities/profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 
 sealed class WallpaperDetailEntity {
@@ -145,26 +144,6 @@ extension WallpaperDetailEntityX on WallpaperDetailEntity {
       wallhaven: (id, wallpaper) => WallhavenDetailEntity(wallpaper: wallpaper),
       pexels: (id, wallpaper) => PexelsDetailEntity(wallpaper: wallpaper),
     );
-  }
-
-  static WallpaperDetailEntity fromProfileWall(ProfileWallEntity profileWall) {
-    final wallpaper = PrismWallpaper(
-      core: WallpaperCore(
-        id: profileWall.id,
-        source: profileWall.source ?? WallpaperSource.prism,
-        fullUrl: profileWall.wallpaperUrl,
-        thumbnailUrl: profileWall.wallpaperThumb ?? profileWall.wallpaperUrl,
-        resolution: profileWall.resolution,
-        sizeBytes: profileWall.size != null ? int.tryParse(profileWall.size!) : null,
-        authorName: profileWall.by,
-        authorEmail: profileWall.email,
-        category: profileWall.desc,
-        createdAt: profileWall.createdAt,
-      ),
-      collections: profileWall.collections,
-      review: profileWall.review,
-    );
-    return PrismDetailEntity(wallpaper: wallpaper);
   }
 
   static WallpaperDetailEntity fromPublicProfileWall(PublicProfileWallEntity publicWall) {

@@ -41,7 +41,6 @@ import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
-import 'package:Prism/features/profile_walls/profile_walls.dart';
 import 'package:Prism/features/public_profile/public_profile.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
@@ -272,7 +271,6 @@ Future<void> main() async {
                   BlocProvider<CategoryFeedBloc>(
                     create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
                   ),
-                  BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
                   BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
                   BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
                   BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
