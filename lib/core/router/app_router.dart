@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
@@ -7,15 +8,14 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
+import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
 import 'package:Prism/features/ads/views/pages/ads_not_loading_page.dart';
-import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_screen.dart';
 import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
-import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_view_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
@@ -24,18 +24,16 @@ import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/palette/views/pages/download_screen.dart';
 import 'package:Prism/features/palette/views/pages/download_wallpaper_screen.dart';
-import 'package:Prism/features/palette/views/pages/search_wallpaper_screen.dart';
-import 'package:Prism/features/palette/views/pages/share_wall_view_screen.dart';
+import 'package:Prism/features/palette/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/palette/views/pages/wallpaper_filter_screen.dart';
-import 'package:Prism/features/palette/views/pages/wallpaper_screen.dart';
 import 'package:Prism/features/profile_setups/views/pages/profile_setup_view_screen.dart';
-import 'package:Prism/features/profile_walls/views/pages/profile_wall_view_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
+import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
-import 'package:Prism/features/public_profile/views/pages/user_profile_wall_view_screen.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
@@ -55,7 +53,6 @@ import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
-import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/payments/upgrade.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
@@ -115,24 +112,21 @@ class AppRouter extends RootStackRouter {
             AutoRoute(path: 'fav-setups', page: FavouriteSetupRoute.page),
             AutoRoute(path: 'downloads', page: DownloadRoute.page),
             AutoRoute(path: 'followers', page: FollowersRoute.page),
+            AutoRoute(path: 'following', page: FollowingListRoute.page),
           ],
         ),
       ],
     ),
 
     // Global routes (pushed over entire shell as full-screen dialogs)
-    AutoRoute(path: '/wallpaper', page: WallpaperRoute.page),
-    AutoRoute(path: '/search-wallpaper', page: SearchWallpaperRoute.page),
+    AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
+    RedirectRoute(path: '/share', redirectTo: '/wallpaper-detail'), // Replaces ShareWallpaperViewRoute
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
-    AutoRoute(path: '/share', page: ShareWallpaperViewRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
-    AutoRoute(path: '/fav-wall-view', page: FavWallpaperViewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/fav-setup-view', page: FavSetupViewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
     AutoRoute(path: '/setup/:setupName', page: ShareSetupViewRoute.page),
-    AutoRoute(path: '/profile-wall-view', page: ProfileWallViewRoute.page),
     AutoRoute(path: '/profile-setup-view', page: ProfileSetupViewRoute.page),
-    AutoRoute(path: '/user-profile-wall-view', page: UserProfileWallViewRoute.page),
     AutoRoute(path: '/user-profile-setup-view', page: UserProfileSetupViewRoute.page),
     AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page, guards: [_signedInGuard]),
@@ -150,6 +144,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
     AutoRoute(path: '/ads-not-loading', page: AdsNotLoadingRoute.page),
     AutoRoute(path: '/admin-review', page: AdminReviewRoute.page, guards: [_adminGuard]),
+    AutoRoute(path: '/admin-review/swipe', page: SwipeReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),

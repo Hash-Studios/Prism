@@ -564,60 +564,82 @@ class _ProfileChildState extends State<_ProfileChild> {
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
-                                                  RichText(
-                                                    text: TextSpan(
-                                                      text: "${(widget.following ?? []).length}",
-                                                      style: TextStyle(
-                                                        fontFamily: "Proxima Nova",
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.secondary.withValues(alpha: 1),
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                      children: [
-                                                        TextSpan(
-                                                          text: " Following",
-                                                          style: TextStyle(
-                                                            color: Theme.of(
-                                                              context,
-                                                            ).colorScheme.secondary.withValues(alpha: 0.6),
-                                                            fontWeight: FontWeight.normal,
-                                                          ),
+                                                  // Following count — tappable on own profile only
+                                                  GestureDetector(
+                                                    onTap: (widget.ownProfile ?? false) && app_state.prismUser.loggedIn
+                                                        ? () => context.router.push(
+                                                            FollowingListRoute(
+                                                              following: (widget.following ?? [])
+                                                                  .whereType<String>()
+                                                                  .toList(growable: false),
+                                                            ),
+                                                          )
+                                                        : null,
+                                                    child: RichText(
+                                                      text: TextSpan(
+                                                        text: "${(widget.following ?? []).length}",
+                                                        style: TextStyle(
+                                                          fontFamily: "Proxima Nova",
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.secondary.withValues(alpha: 1),
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.bold,
                                                         ),
-                                                      ],
+                                                        children: [
+                                                          TextSpan(
+                                                            text: " Following",
+                                                            style: TextStyle(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).colorScheme.secondary.withValues(alpha: 0.6),
+                                                              fontWeight: FontWeight.normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      textAlign: TextAlign.center,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
                                                     ),
-                                                    textAlign: TextAlign.center,
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
                                                   ),
                                                   const SizedBox(width: 24),
-                                                  RichText(
-                                                    text: TextSpan(
-                                                      text: "${(widget.followers ?? []).length}",
-                                                      style: TextStyle(
-                                                        fontFamily: "Proxima Nova",
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.secondary.withValues(alpha: 1),
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                      children: [
-                                                        TextSpan(
-                                                          text: " Followers",
-                                                          style: TextStyle(
-                                                            color: Theme.of(
-                                                              context,
-                                                            ).colorScheme.secondary.withValues(alpha: 0.6),
-                                                            fontWeight: FontWeight.normal,
-                                                          ),
+                                                  // Followers count — tappable on both own and other profiles
+                                                  GestureDetector(
+                                                    onTap: () => context.router.push(
+                                                      FollowersRoute(
+                                                        followers: (widget.followers ?? []).whereType<String>().toList(
+                                                          growable: false,
                                                         ),
-                                                      ],
+                                                      ),
                                                     ),
-                                                    textAlign: TextAlign.center,
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    child: RichText(
+                                                      text: TextSpan(
+                                                        text: "${(widget.followers ?? []).length}",
+                                                        style: TextStyle(
+                                                          fontFamily: "Proxima Nova",
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.secondary.withValues(alpha: 1),
+                                                          fontSize: 16,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                        children: [
+                                                          TextSpan(
+                                                            text: " Followers",
+                                                            style: TextStyle(
+                                                              color: Theme.of(
+                                                                context,
+                                                              ).colorScheme.secondary.withValues(alpha: 0.6),
+                                                              fontWeight: FontWeight.normal,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      textAlign: TextAlign.center,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
                                                   ),
                                                 ],
                                               ),

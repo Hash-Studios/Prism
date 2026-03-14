@@ -463,11 +463,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       openPrismLink(context, wallpaperValue.primaryUrl);
                                                     } else {
                                                       context.router.push(
-                                                        ShareWallpaperViewRoute(
+                                                        WallpaperDetailRoute(
                                                           wallId: setup.wallId.toString(),
                                                           source: setup.source ?? WallpaperSource.prism,
                                                           wallpaperUrl: wallpaperValue.primaryUrl,
                                                           thumbnailUrl: wallpaperValue.primaryUrl,
+                                                          analyticsSurface: AnalyticsSurfaceValue.shareSetupViewScreen,
                                                         ),
                                                       );
                                                     }
@@ -506,11 +507,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       openPrismLink(context, wallpaperValue.primaryUrl);
                                                     } else {
                                                       context.router.push(
-                                                        ShareWallpaperViewRoute(
+                                                        WallpaperDetailRoute(
                                                           wallId: setup.wallId.toString(),
                                                           source: setup.source ?? WallpaperSource.prism,
                                                           wallpaperUrl: wallpaperValue.primaryUrl,
                                                           thumbnailUrl: wallpaperValue.primaryUrl,
+                                                          analyticsSurface: AnalyticsSurfaceValue.shareSetupViewScreen,
                                                         ),
                                                       );
                                                     }
@@ -559,11 +561,13 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                         openPrismLink(context, wallpaperValue.primaryUrl);
                                                       } else {
                                                         context.router.push(
-                                                          ShareWallpaperViewRoute(
+                                                          WallpaperDetailRoute(
                                                             wallId: setup.wallId.toString(),
                                                             source: setup.source ?? WallpaperSource.prism,
                                                             wallpaperUrl: wallpaperValue.primaryUrl,
                                                             thumbnailUrl: wallpaperValue.primaryUrl,
+                                                            analyticsSurface:
+                                                                AnalyticsSurfaceValue.shareSetupViewScreen,
                                                           ),
                                                         );
                                                       }

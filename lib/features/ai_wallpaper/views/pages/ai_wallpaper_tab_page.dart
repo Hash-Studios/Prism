@@ -180,11 +180,55 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   String _targetSizeForDevice(BuildContext context) {
+    const int minShortEdge = 720;
+    const int maxLongEdge = 2048;
+    const double maxPixelBudget = 2.9 * 1000 * 1000;
+
     final media = MediaQuery.of(context);
     final double dpr = media.devicePixelRatio.clamp(1.0, 3.0);
-    final int width = (media.size.width * dpr).round().clamp(720, 2048);
-    final int height = (media.size.height * dpr).round().clamp(1280, 2048);
+    final int rawW = (media.size.width * dpr).round().clamp(360, 4096);
+    final int rawH = (media.size.height * dpr).round().clamp(640, 4096);
+
+    final bool portrait = rawH >= rawW;
+    final int longRaw = portrait ? rawH : rawW;
+    final int shortRaw = portrait ? rawW : rawH;
+    final double aspect = longRaw / shortRaw;
+
+    int shortTarget = shortRaw.clamp(minShortEdge, maxLongEdge);
+    int longTarget = (shortTarget * aspect).round();
+    if (longTarget > maxLongEdge) {
+      longTarget = maxLongEdge;
+      shortTarget = (longTarget / aspect).round().clamp(minShortEdge, maxLongEdge);
+    }
+
+    int width = portrait ? shortTarget : longTarget;
+    int height = portrait ? longTarget : shortTarget;
+
+    final int pixels = width * height;
+    if (pixels > maxPixelBudget) {
+      final double scale = sqrt(maxPixelBudget / pixels);
+      width = (width * scale).round();
+      height = (height * scale).round();
+    }
+
+    width = ((width / 8).round() * 8).clamp(512, maxLongEdge);
+    height = ((height / 8).round() * 8).clamp(512, maxLongEdge);
     return '${width}x$height';
+  }
+
+  bool _isAspectRatioMismatch({required AiGenerationRecord generated, required String targetSize}) {
+    final List<String> parts = targetSize.split('x');
+    if (parts.length != 2) {
+      return false;
+    }
+    final int? tw = int.tryParse(parts[0]);
+    final int? th = int.tryParse(parts[1]);
+    if (tw == null || th == null || tw == 0 || th == 0 || generated.width <= 0 || generated.height <= 0) {
+      return false;
+    }
+    final double targetRatio = tw / th;
+    final double generatedRatio = generated.width / generated.height;
+    return (generatedRatio - targetRatio).abs() > 0.08;
   }
 
   Future<void> _loadHistory() async {
@@ -234,6 +278,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
 
+    final String? targetSize = variation ? null : _targetSizeForDevice(context);
+
     setState(() => _loadingGeneration = true);
 
     final reservation = await CoinsService.instance.reserveForAiGeneration(sourceTag: 'coins.reserve.ai_screen');
@@ -267,7 +313,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               prompt: prompt,
               stylePreset: _selectedStyle,
               qualityTier: _selectedQuality,
-              targetSize: _targetSizeForDevice(context),
+              targetSize: targetSize!,
               chargeMode: reservation.mode,
               coinsSpent: reservation.coinsSpent,
             );
@@ -305,6 +351,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             coinsSpent: reservation.coinsSpent,
           ),
         );
+        if (targetSize != null && _isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
+          toasts.error('Generated image ratio may not match your device perfectly.');
+        }
       }
       if (variation) {
         _variationController.clear();
@@ -528,10 +577,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget build(BuildContext context) {
     final canUseAi = _isRolloutEligible;
     final current = _latest;
+    final bool canPop = Navigator.of(context).canPop();
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: canPop,
         title: const Text('AI Wallpapers'),
         actions: <Widget>[
           if (_isLoggedIn)

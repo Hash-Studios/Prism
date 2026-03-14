@@ -64,8 +64,10 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
           const Spacer(),
           Text('Upload', style: Theme.of(context).textTheme.displayMedium),
           const Spacer(flex: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 4,
+            runSpacing: 4,
             children: <Widget>[
               _UploadTypeCard(
                 width: width,
@@ -116,6 +118,22 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                   final router = context.router;
                   Navigator.pop(context);
                   router.push(const SetupGuidelinesRoute());
+                },
+              ),
+              _UploadTypeCard(
+                width: width,
+                title: 'AI Generate',
+                imageAsset: 'assets/images/wallpaper.jpg',
+                onTap: () async {
+                  analytics.track(
+                    const UploadActionSelectedEvent(
+                      action: AnalyticsActionValue.uploadAiSelected,
+                      entrypoint: EntryPointValue.bottomNav,
+                    ),
+                  );
+                  final router = context.router;
+                  Navigator.pop(context);
+                  router.push(const AiTabRoute());
                 },
               ),
             ],

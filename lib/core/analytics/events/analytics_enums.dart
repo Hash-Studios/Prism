@@ -70,6 +70,7 @@ enum AnalyticsActionValue {
   uploadSheetOpened,
   uploadWallpaperSelected,
   uploadSetupSelected,
+  uploadAiSelected,
   notificationSettingsOpened,
   notificationItemOpened,
   notificationItemDismissed,
@@ -155,6 +156,7 @@ enum ShareTypeValue { wallpaper, user, setup, refer }
 enum AnalyticsSurfaceValue {
   wallpaperScreen,
   shareWallpaperView,
+  shareSetupViewScreen,
   searchWallpaperScreen,
   favouriteWallpaperView,
   profileWallpaperView,
@@ -394,6 +396,8 @@ extension AnalyticsActionValueX on AnalyticsActionValue {
         return 'upload_wallpaper_selected';
       case AnalyticsActionValue.uploadSetupSelected:
         return 'upload_setup_selected';
+      case AnalyticsActionValue.uploadAiSelected:
+        return 'upload_ai_selected';
       case AnalyticsActionValue.notificationSettingsOpened:
         return 'notification_settings_opened';
       case AnalyticsActionValue.notificationItemOpened:
@@ -706,6 +710,8 @@ extension AnalyticsSurfaceValueX on AnalyticsSurfaceValue {
         return 'wallpaper_screen';
       case AnalyticsSurfaceValue.shareWallpaperView:
         return 'share_wallpaper_view';
+      case AnalyticsSurfaceValue.shareSetupViewScreen:
+        return 'share_setup_view_screen';
       case AnalyticsSurfaceValue.searchWallpaperScreen:
         return 'search_wallpaper_screen';
       case AnalyticsSurfaceValue.favouriteWallpaperView:

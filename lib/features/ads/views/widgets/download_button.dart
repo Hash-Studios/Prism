@@ -13,6 +13,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -519,6 +520,12 @@ class _DownloadButtonState extends State<DownloadButton> {
           premiumContent: widget.isPremiumContent,
         ),
       );
+      if (mounted) {
+        await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+          context,
+          sourceTag: 'notifications.permission_after_download',
+        );
+      }
       toasts.codeSend(hideSetWallpaperUi ? 'Saved to Photos.' : 'Wall downloaded in Pictures/Prism!');
       return true;
     } on PlatformException catch (e) {
