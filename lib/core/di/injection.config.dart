@@ -91,10 +91,12 @@ import '../../features/onboarding_v2/src/services/first_wallpaper_service.dart'
 import '../../features/palette/biz/bloc/palette_bloc.j.dart' as _i689;
 import '../../features/palette/data/repositories/palette_repository_impl.dart'
     as _i401;
+import '../../features/palette/domain/bloc/wallpaper_detail_bloc.dart' as _i358;
 import '../../features/palette/domain/repositories/palette_repository.dart'
     as _i1019;
 import '../../features/palette/domain/usecases/generate_palette_usecase.dart'
     as _i576;
+import '../../features/palette/palette.dart' as _i806;
 import '../../features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart'
     as _i872;
 import '../../features/personalized_feed/data/personalized_feed_repository_impl.dart'
@@ -185,6 +187,8 @@ import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repo
     as _i387;
 import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
     as _i604;
+import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart'
+    as _i231;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
@@ -220,6 +224,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i578.QuickActions>(() => appModule.quickActions);
   gh.lazySingleton<_i496.LocalStore>(() => appModule.localStore);
   gh.lazySingleton<_i519.Client>(() => appModule.httpClient);
+  gh.lazySingleton<_i231.FetchWallpaperViewsUsecase>(
+    () => const _i231.FetchWallpaperViewsUsecase(),
+  );
+  gh.lazySingleton<_i231.UpdateWallpaperViewsUsecase>(
+    () => const _i231.UpdateWallpaperViewsUsecase(),
+  );
   gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
     () => _i1003.AppIconsLocalDataSource(gh<_i496.LocalStore>()),
   );
@@ -430,6 +440,16 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i340.ClearFavouriteSetupsUseCase>(
     () => _i340.ClearFavouriteSetupsUseCase(
       gh<_i841.FavouriteSetupsRepository>(),
+    ),
+  );
+  gh.factory<_i358.WallpaperDetailBloc>(
+    () => _i358.WallpaperDetailBloc(
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i231.FetchWallpaperViewsUsecase>(),
+      gh<_i231.UpdateWallpaperViewsUsecase>(),
+      gh<_i806.PaletteBloc>(),
     ),
   );
   gh.lazySingleton<_i122.ReviewBatchRepository>(

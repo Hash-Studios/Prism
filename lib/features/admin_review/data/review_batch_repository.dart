@@ -86,18 +86,25 @@ class ReviewBatchRepository {
   }
 
   Future<void> categorizeWalls(List<FirestoreDocument> walls) async {
-    final functions = FirebaseFunctions.instance;
+    final functions = FirebaseFunctions.instanceFor(region: 'asia-south1');
+    int count = 0;
 
     for (final wall in walls) {
       final category = wall.data()['category']?.toString() ?? '';
+      print('DEBUG: Wall ${wall.id} has category: "$category"');
+
       if (category.isEmpty || category == 'General') {
+        print('DEBUG: Calling categorizeWallpaper for ${wall.id}');
         try {
           await functions.httpsCallable('categorizeWallpaper').call(<String, dynamic>{'wallId': wall.id});
+          count++;
+          print('DEBUG: Successfully categorized ${wall.id}');
         } catch (e) {
-          // Log error but continue with other wallpapers
+          print('DEBUG: Failed to categorize ${wall.id}: $e');
         }
       }
     }
+    print('DEBUG: Categorized $count wallpapers');
   }
 
   Future<int> getPendingWallsCount() async {

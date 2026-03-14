@@ -24,7 +24,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   Animation<Offset>? _slideAnimation;
 
   double _dragOffset = 0;
-  bool _isDragging = false;
+  // bool _isDragging = false;
   static const double _swipeThreshold = 100;
 
   @override
@@ -44,9 +44,9 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 
   void _onPanStart(DragStartDetails details) {
-    setState(() {
-      _isDragging = true;
-    });
+    // setState(() {
+    //   _isDragging = true;
+    // });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -86,7 +86,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       }
       setState(() {
         _dragOffset = 0;
-        _isDragging = false;
+        // _isDragging = false;
       });
       _animationController.reset();
     });
@@ -101,7 +101,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     _animationController.forward(from: 0).then((_) {
       setState(() {
         _dragOffset = 0;
-        _isDragging = false;
+        // _isDragging = false;
       });
       _animationController.reset();
     });
