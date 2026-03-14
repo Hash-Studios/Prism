@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onCampaignNotificationRequested = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
+exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
 var wallOfTheDay_1 = require("./wallOfTheDay");
 Object.defineProperty(exports, "wallOfTheDay", { enumerable: true, get: function () { return wallOfTheDay_1.wallOfTheDay; } });
 var streak_1 = require("./streak");
@@ -12,6 +12,10 @@ var onFollowCreated_1 = require("./onFollowCreated");
 Object.defineProperty(exports, "onFollowCreated", { enumerable: true, get: function () { return onFollowCreated_1.onFollowCreated; } });
 var onWallSubmitted_1 = require("./onWallSubmitted");
 Object.defineProperty(exports, "onWallSubmitted", { enumerable: true, get: function () { return onWallSubmitted_1.onWallSubmitted; } });
+var onWallCategorize_1 = require("./onWallCategorize");
+Object.defineProperty(exports, "onWallCategorize", { enumerable: true, get: function () { return onWallCategorize_1.onWallCategorize; } });
+var categorizeWallpaper_1 = require("./categorizeWallpaper");
+Object.defineProperty(exports, "categorizeWallpaper", { enumerable: true, get: function () { return categorizeWallpaper_1.categorizeWallpaper; } });
 var onCampaignNotificationRequested_1 = require("./onCampaignNotificationRequested");
 Object.defineProperty(exports, "onCampaignNotificationRequested", { enumerable: true, get: function () { return onCampaignNotificationRequested_1.onCampaignNotificationRequested; } });
 //# sourceMappingURL=index.js.map

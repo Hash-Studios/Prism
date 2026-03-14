@@ -138,10 +138,59 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                 const SizedBox(height: 10),
                 Text(
                   isLow
-                      ? 'Low balance. Watch an ad or upgrade to Pro.'
+                      ? 'Low balance. Watch an ad, keep your streak, or upgrade to Pro.'
                       : 'Use coins for downloads and premium actions.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                ValueListenableBuilder<StreakStatus>(
+                  valueListenable: CoinsService.instance.streakNotifier,
+                  builder: (context, streakStatus, _) {
+                    final int streakDay = streakStatus.active ? streakStatus.streakDay.clamp(0, 7) : 0;
+                    final int nextDay = streakStatus.active ? (streakDay >= 7 ? 1 : streakDay + 1) : 1;
+                    final int nextReward = CoinPolicy.streakTotalRewardForDay(nextDay);
+                    final int day7Total = CoinPolicy.streakDailyRewardForDay(7) + CoinPolicy.streakBonusRewardForDay(7);
+                    final String statusLabel = streakStatus.claimedToday
+                        ? 'Claimed today. Tomorrow gives +$nextReward.'
+                        : 'Claim your next reward: +$nextReward.';
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).hintColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.75)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.local_fire_department_rounded, size: 18, color: Colors.orangeAccent),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Streak Day $streakDay',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(statusLabel, style: Theme.of(context).textTheme.bodySmall),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Rewards: D1-2 +${CoinPolicy.streakDay1To2Daily} • D3-4 +${CoinPolicy.streakDay3To4Daily} • D5-6 +${CoinPolicy.streakDay5To6Daily} • D7 +$day7Total',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -153,7 +202,9 @@ class _CoinBalanceChipState extends State<CoinBalanceChip> {
                             if (!mounted || !sheetContext.mounted) {
                               return;
                             }
-                            if (context.mounted) setSheetState(() => _loadingReward = true);
+                            if (context.mounted) {
+                              setSheetState(() => _loadingReward = true);
+                            }
                             await _watchRewardedAdAndCreditCoins();
                             if (mounted && sheetContext.mounted && context.mounted) {
                               setSheetState(() => _loadingReward = false);

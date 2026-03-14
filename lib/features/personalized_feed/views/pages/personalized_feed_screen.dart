@@ -16,6 +16,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/animated_feed_tile.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
@@ -182,14 +183,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                           ),
                         ),
                       );
-                      context.router.push(
-                        WallpaperRoute(
-                          source: WallpaperSource.prism,
-                          index: feedIndex,
-                          link: wall.wallpaper.thumbnailUrl,
-                          item: wall,
-                        ),
-                      );
+                      context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
                     },
                     child: wall == null
                         ? Container(

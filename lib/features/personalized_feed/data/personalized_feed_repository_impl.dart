@@ -63,20 +63,29 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       final creatorFuture = _fetchCreatorItems(following: following, page: request.page);
       final wallhavenFuture = _fetchWallhavenItems(interests: interests, catalog: catalog, refresh: request.refresh);
       final pexelsFuture = _fetchPexelsItems(interests: interests, catalog: catalog, refresh: request.refresh);
+      final discoveryFuture = _fetchDiscoveryItems(interests: interests, catalog: catalog, followingEmails: following);
 
-      final results = await Future.wait<List<FeedItemEntity>>([creatorFuture, wallhavenFuture, pexelsFuture]);
+      final results = await Future.wait<List<FeedItemEntity>>([
+        creatorFuture,
+        wallhavenFuture,
+        pexelsFuture,
+        discoveryFuture,
+      ]);
 
       final creatorItems = results[0];
       final wallhavenItems = results[1];
       final pexelsItems = results[2];
+      final discoveryItems = results[3];
 
       final ranking = _rankingService.rankAndMix(
         creatorItems: creatorItems,
         wallhavenItems: wallhavenItems,
         pexelsItems: pexelsItems,
+        discoveryItems: discoveryItems,
         blockedKeys: request.seenKeys.toSet(),
         interests: interests.toSet(),
         creatorTarget: targets.creator,
+        discoveryTarget: targets.discovery,
         wallhavenTarget: targets.wallhaven,
         pexelsTarget: targets.pexels,
       );
@@ -99,6 +108,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           'source_prism': ranking.sourceCounts[WallpaperSource.prism] ?? 0,
           'source_wallhaven': ranking.sourceCounts[WallpaperSource.wallhaven] ?? 0,
           'source_pexels': ranking.sourceCounts[WallpaperSource.pexels] ?? 0,
+          'source_discovery': ranking.discoveryCount,
         },
       );
 
@@ -263,6 +273,49 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return items;
   }
 
+  /// Fetches recent reviewed wallpapers from any Prism creator as a "discovery"
+  /// source that surfaces new creators to the user.
+  ///
+  /// Rather than filtering by category (which is unreliably populated — most
+  /// walls have category = "community"), we fetch the most recent reviewed
+  /// walls and rely on the ranking service's interest-hit scoring on the
+  /// `collections` and `tags` fields to surface relevant content.
+  ///
+  /// Requires a composite Firestore index on the `walls` collection:
+  ///   Fields: review (ASC), createdAt (DESC)
+  Future<List<FeedItemEntity>> _fetchDiscoveryItems({
+    required List<String> interests,
+    required List<PersonalizedInterest> catalog,
+    required List<String> followingEmails,
+  }) async {
+    // Fetch recent reviewed walls — no category filter so we get a broad pool.
+    // The ranking service scores them by interest-hit on collections/tags.
+    final rows = await _firestoreClient.query<_CreatorWallRow>(
+      const FirestoreQuerySpec(
+        collection: FirebaseCollections.walls,
+        sourceTag: 'personalized.discovery',
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true)],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        limit: 40,
+        cachePolicy: FirestoreCachePolicy.memoryFirst,
+      ),
+      (data, docId) => _CreatorWallRow(
+        docId: docId,
+        createdAt: DateTime.tryParse((data['createdAt'] ?? '').toString())?.toUtc(),
+        dto: PrismWallDocDto.fromJson(data),
+      ),
+    );
+
+    final dedupe = <String, FeedItemEntity>{};
+    for (final row in rows) {
+      final wall = row.dto.toDomain(docId: row.docId);
+      final item = PrismFeedItem(id: wall.id, wallpaper: wall);
+      dedupe[PersonalizedRankingService.canonicalKey(item)] = item;
+    }
+
+    return dedupe.values.toList(growable: false);
+  }
+
   Future<List<FeedItemEntity>> _fetchPexelsItems({
     required List<String> interests,
     required List<PersonalizedInterest> catalog,
@@ -320,11 +373,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final mix = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced').trim().toLowerCase();
     switch (mix) {
       case 'creators':
-        return const _SourceTargets(creator: 16, wallhaven: 4, pexels: 4);
+        // Creator-heavy: 14 following + 2 discovery + 4+4 external = 24
+        return const _SourceTargets(creator: 14, discovery: 2, wallhaven: 4, pexels: 4);
       case 'discovery':
-        return const _SourceTargets(creator: 8, wallhaven: 8, pexels: 8);
+        // Discovery-heavy: 6 following + 8 discovery + 5+5 external = 24
+        return const _SourceTargets(creator: 6, discovery: 8, wallhaven: 5, pexels: 5);
       default:
-        return const _SourceTargets(creator: 12, wallhaven: 6, pexels: 6);
+        // Balanced: 10 following + 4 discovery + 5+5 external = 24
+        return const _SourceTargets(creator: 10, discovery: 4, wallhaven: 5, pexels: 5);
     }
   }
 
@@ -418,9 +474,10 @@ class _CacheState {
 }
 
 class _SourceTargets {
-  const _SourceTargets({required this.creator, required this.wallhaven, required this.pexels});
+  const _SourceTargets({required this.creator, required this.discovery, required this.wallhaven, required this.pexels});
 
   final int creator;
+  final int discovery;
   final int wallhaven;
   final int pexels;
 }

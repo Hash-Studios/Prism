@@ -3,8 +3,12 @@ class CoinPolicy {
 
   // Earn
   static const int rewardedAd = 10;
-  static const int dailyLogin = 5;
-  static const int streak7Bonus = 25;
+  static const int streakDay1To2Daily = 5;
+  static const int streakDay3To4Daily = 8;
+  static const int streakDay5To6Daily = 12;
+  static const int streakDay7Daily = 15;
+  static const int dailyLogin = streakDay1To2Daily;
+  static const int streak7Bonus = 40;
   static const int firstWallpaperUpload = 50;
   static const int referral = 100;
   static const int profileCompletion = 25;
@@ -19,4 +23,28 @@ class CoinPolicy {
 
   // UX
   static const int lowBalanceNudgeThreshold = 10;
+
+  static int streakDailyRewardForDay(int day) {
+    if (day >= 1 && day <= 2) {
+      return streakDay1To2Daily;
+    }
+    if (day >= 3 && day <= 4) {
+      return streakDay3To4Daily;
+    }
+    if (day >= 5 && day <= 6) {
+      return streakDay5To6Daily;
+    }
+    if (day >= 7) {
+      return streakDay7Daily;
+    }
+    return streakDay1To2Daily;
+  }
+
+  static int streakBonusRewardForDay(int day) {
+    return day >= 7 ? streak7Bonus : 0;
+  }
+
+  static int streakTotalRewardForDay(int day) {
+    return streakDailyRewardForDay(day) + streakBonusRewardForDay(day);
+  }
 }

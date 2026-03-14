@@ -337,11 +337,12 @@ class _FollowingTileState extends State<_FollowingTile> {
                       ),
                     );
                     context.router.push(
-                      ShareWallpaperViewRoute(
+                      WallpaperDetailRoute(
                         wallId: widget.finalDocs[widget.index].wallId,
                         source: WallpaperSourceX.fromWire(widget.finalDocs[widget.index].wallpaperProvider),
                         wallpaperUrl: widget.finalDocs[widget.index].wallpaperUrl,
                         thumbnailUrl: widget.finalDocs[widget.index].wallpaperThumb,
+                        analyticsSurface: AnalyticsSurfaceValue.followingScreen,
                       ),
                     );
                   },

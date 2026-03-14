@@ -6,7 +6,7 @@ const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 
 const String currentAppVersion = '3.0.2';
-const String currentAppVersionCode = '314';
+const String currentAppVersionCode = '316';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 const String defaultBannerText = 'Join our Telegram';
@@ -46,6 +46,8 @@ const List<String> defaultTopTitleText = <String>['TOP-RATED', 'BEST OF COMMUNIT
 const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'flat', 'mesh gradients', 'fluids'];
 
 const List<String> defaultVerifiedUsers = <String>['akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'];
+
+const Set<String> adminEmails = <String>{'akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'};
 
 const String defaultTopImageLink =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';

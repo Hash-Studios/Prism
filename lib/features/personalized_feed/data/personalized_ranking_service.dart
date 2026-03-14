@@ -2,11 +2,19 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
 class PersonalizedRankingResult {
-  const PersonalizedRankingResult({required this.items, required this.usedKeys, required this.sourceCounts});
+  const PersonalizedRankingResult({
+    required this.items,
+    required this.usedKeys,
+    required this.sourceCounts,
+    this.discoveryCount = 0,
+  });
 
   final List<FeedItemEntity> items;
   final List<String> usedKeys;
   final Map<WallpaperSource, int> sourceCounts;
+
+  /// Number of items that came from the discovery (unfollowed creator) pool.
+  final int discoveryCount;
 }
 
 class PersonalizedRankingService {
@@ -16,23 +24,31 @@ class PersonalizedRankingService {
     required List<FeedItemEntity> creatorItems,
     required List<FeedItemEntity> wallhavenItems,
     required List<FeedItemEntity> pexelsItems,
+    List<FeedItemEntity> discoveryItems = const <FeedItemEntity>[],
     required Set<String> blockedKeys,
     required Set<String> interests,
     int limit = 24,
-    int creatorTarget = 12,
-    int wallhavenTarget = 6,
-    int pexelsTarget = 6,
+    int creatorTarget = 10,
+    int discoveryTarget = 4,
+    int wallhavenTarget = 5,
+    int pexelsTarget = 5,
   }) {
     final creatorCandidates = _score(creatorItems, sourceBase: 1000, interests: interests, blockedKeys: blockedKeys);
+    // Discovery items are Prism-hosted walls from unfollowed creators, scored
+    // between followed creators (1000) and external sources (600).
+    final discoveryCandidates = _score(discoveryItems, sourceBase: 800, interests: interests, blockedKeys: blockedKeys);
     final wallhavenCandidates = _score(wallhavenItems, sourceBase: 600, interests: interests, blockedKeys: blockedKeys);
     final pexelsCandidates = _score(pexelsItems, sourceBase: 550, interests: interests, blockedKeys: blockedKeys);
 
     final List<_Ranked> selected = <_Ranked>[];
     final Set<String> selectedKeys = <String>{};
+    // Track which keys were filled from the discovery pool for reporting.
+    final Set<String> discoverySelectedKeys = <String>{};
 
-    void pickFrom(List<_Ranked> pool, int target) {
+    void pickFrom(List<_Ranked> pool, int target, {bool isDiscovery = false}) {
+      int remaining = target;
       for (final candidate in pool) {
-        if (selected.length >= limit || target <= 0) {
+        if (selected.length >= limit || remaining <= 0) {
           return;
         }
         if (selectedKeys.contains(candidate.key)) {
@@ -40,17 +56,26 @@ class PersonalizedRankingService {
         }
         selected.add(candidate);
         selectedKeys.add(candidate.key);
-        target -= 1;
+        if (isDiscovery) {
+          discoverySelectedKeys.add(candidate.key);
+        }
+        remaining -= 1;
       }
     }
 
     pickFrom(creatorCandidates, creatorTarget);
+    pickFrom(discoveryCandidates, discoveryTarget, isDiscovery: true);
     pickFrom(wallhavenCandidates, wallhavenTarget);
     pickFrom(pexelsCandidates, pexelsTarget);
 
+    // Backfill remaining slots from all pools sorted by score.
     if (selected.length < limit) {
-      final leftovers = <_Ranked>[...creatorCandidates, ...wallhavenCandidates, ...pexelsCandidates]
-        ..sort((a, b) => b.score.compareTo(a.score));
+      final leftovers = <_Ranked>[
+        ...creatorCandidates,
+        ...discoveryCandidates,
+        ...wallhavenCandidates,
+        ...pexelsCandidates,
+      ]..sort((a, b) => b.score.compareTo(a.score));
       for (final candidate in leftovers) {
         if (selected.length >= limit) {
           break;
@@ -73,6 +98,7 @@ class PersonalizedRankingService {
       items: items,
       usedKeys: selected.map((e) => e.key).toList(growable: false),
       sourceCounts: sourceCounts,
+      discoveryCount: discoverySelectedKeys.length,
     );
   }
 

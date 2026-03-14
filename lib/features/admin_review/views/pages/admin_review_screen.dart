@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -60,6 +61,15 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         return Scaffold(
           appBar: AppBar(
             title: const Text('Admin Moderation'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.swipe),
+                tooltip: 'Swipe Review Mode',
+                onPressed: () {
+                  context.router.push(const SwipeReviewRoute());
+                },
+              ),
+            ],
             bottom: TabBar(
               controller: _controller,
               tabs: <Tab>[

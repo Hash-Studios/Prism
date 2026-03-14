@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:auto_route/auto_route.dart';
@@ -273,6 +274,8 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                       if (context.favouriteWallsAdapter(listen: false).liked == null ||
                                           context.favouriteWallsAdapter(listen: false).liked!.isEmpty) {
                                       } else {
+                                        final likedList = context.favouriteWallsAdapter(listen: false).liked!;
+                                        final entity = WallpaperDetailEntityX.fromFavouriteWall(likedList[index]);
                                         unawaited(
                                           analytics.track(
                                             SurfaceActionTappedEvent(
@@ -286,12 +289,9 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                                           ),
                                         );
                                         context.router.push(
-                                          FavWallpaperViewRoute(
-                                            wallIndex: index,
-                                            thumbnailUrl: context
-                                                .favouriteWallsAdapter(listen: false)
-                                                .liked![index]
-                                                .thumb,
+                                          WallpaperDetailRoute(
+                                            entity: entity,
+                                            analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
                                           ),
                                         );
                                       }

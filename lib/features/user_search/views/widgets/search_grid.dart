@@ -13,6 +13,7 @@ import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -296,6 +297,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                               if (widget.selectedProvider == "WallHaven") {
                                 if (wData.wallsS.isEmpty) {
                                 } else {
+                                  final entity = WallhavenDetailEntity(wallpaper: wData.wallsS[index]);
                                   analytics.track(
                                     SearchResultOpenedEvent(
                                       provider: _providerValue,
@@ -306,16 +308,16 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     ),
                                   );
                                   context.router.push(
-                                    WallpaperRoute(
-                                      source: WallpaperSource.wallhaven,
-                                      index: index,
-                                      link: wData.wallsS[index].thumbs!["small"].toString(),
+                                    WallpaperDetailRoute(
+                                      entity: entity,
+                                      analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
                                     ),
                                   );
                                 }
                               } else if (widget.selectedProvider == "Pexels") {
                                 if (pData.wallsPS.isEmpty) {
                                 } else {
+                                  final entity = PexelsDetailEntity(wallpaper: pData.wallsPS[index]);
                                   analytics.track(
                                     SearchResultOpenedEvent(
                                       provider: _providerValue,
@@ -326,11 +328,9 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                     ),
                                   );
                                   context.router.push(
-                                    SearchWallpaperRoute(
-                                      source: WallpaperSourceX.fromWire(widget.selectedProvider ?? "Pexels"),
-                                      query: widget.query,
-                                      index: index,
-                                      link: pData.wallsPS[index].core.thumbnailUrl,
+                                    WallpaperDetailRoute(
+                                      entity: entity,
+                                      analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
                                     ),
                                   );
                                 }

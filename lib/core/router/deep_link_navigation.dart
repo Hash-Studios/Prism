@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
@@ -31,11 +32,12 @@ class DeepLinkNavigation {
   Future<PageRouteInfo?> _mapActionToRoute(DeepLinkActionEntity action) async {
     switch (action) {
       case ShareLinkIntent():
-        return ShareWallpaperViewRoute(
+        return WallpaperDetailRoute(
           wallId: action.wallId,
           source: action.source,
           wallpaperUrl: action.wallpaperUrl,
           thumbnailUrl: action.thumbnailUrl,
+          analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
         );
       case UserLinkIntent():
         return ProfileRoute(profileIdentifier: action.profileIdentifier);

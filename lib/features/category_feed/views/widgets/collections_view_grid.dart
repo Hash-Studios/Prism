@@ -244,11 +244,12 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
                               ),
                             );
                             context.router.push(
-                              ShareWallpaperViewRoute(
+                              WallpaperDetailRoute(
                                 wallId: wallId,
                                 source: wallSource,
                                 wallpaperUrl: wallpaperUrl,
                                 thumbnailUrl: wallpaperThumb,
+                                analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
                               ),
                             );
                           },

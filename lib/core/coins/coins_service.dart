@@ -1020,7 +1020,7 @@ class CoinsService {
 
       if (claimed) {
         String dailyReason = 'daily_login';
-        if (streakDay >= 4 && streakDay <= 6) {
+        if (streakDay >= 3 && streakDay <= 6) {
           dailyReason = 'streak_mid_cycle_day_$streakDay';
         } else if (streakDay == 7) {
           dailyReason = 'streak_day_7_daily';

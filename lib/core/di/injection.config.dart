@@ -20,6 +20,8 @@ import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
 
+import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
+import '../../features/admin_review/data/review_batch_repository.dart' as _i122;
 import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
 import '../../features/ads/data/repositories/ads_repository_impl.dart' as _i418;
 import '../../features/ads/domain/repositories/ads_repository.dart' as _i1055;
@@ -89,10 +91,12 @@ import '../../features/onboarding_v2/src/services/first_wallpaper_service.dart'
 import '../../features/palette/biz/bloc/palette_bloc.j.dart' as _i689;
 import '../../features/palette/data/repositories/palette_repository_impl.dart'
     as _i401;
+import '../../features/palette/domain/bloc/wallpaper_detail_bloc.dart' as _i358;
 import '../../features/palette/domain/repositories/palette_repository.dart'
     as _i1019;
 import '../../features/palette/domain/usecases/generate_palette_usecase.dart'
     as _i576;
+import '../../features/palette/palette.dart' as _i806;
 import '../../features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart'
     as _i872;
 import '../../features/personalized_feed/data/personalized_feed_repository_impl.dart'
@@ -117,14 +121,6 @@ import '../../features/profile_setups/domain/repositories/profile_setups_reposit
     as _i563;
 import '../../features/profile_setups/domain/usecases/profile_setups_usecases.dart'
     as _i272;
-import '../../features/profile_walls/biz/bloc/profile_walls_bloc.j.dart'
-    as _i471;
-import '../../features/profile_walls/data/repositories/profile_walls_repository_impl.dart'
-    as _i409;
-import '../../features/profile_walls/domain/repositories/profile_walls_repository.dart'
-    as _i668;
-import '../../features/profile_walls/domain/usecases/profile_walls_usecases.dart'
-    as _i58;
 import '../../features/public_profile/biz/bloc/public_profile_bloc.j.dart'
     as _i717;
 import '../../features/public_profile/data/repositories/public_profile_repository_impl.dart'
@@ -191,6 +187,8 @@ import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repo
     as _i387;
 import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
     as _i604;
+import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart'
+    as _i231;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
@@ -226,6 +224,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i578.QuickActions>(() => appModule.quickActions);
   gh.lazySingleton<_i496.LocalStore>(() => appModule.localStore);
   gh.lazySingleton<_i519.Client>(() => appModule.httpClient);
+  gh.lazySingleton<_i231.FetchWallpaperViewsUsecase>(
+    () => const _i231.FetchWallpaperViewsUsecase(),
+  );
+  gh.lazySingleton<_i231.UpdateWallpaperViewsUsecase>(
+    () => const _i231.UpdateWallpaperViewsUsecase(),
+  );
   gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
     () => _i1003.AppIconsLocalDataSource(gh<_i496.LocalStore>()),
   );
@@ -438,8 +442,18 @@ _i174.GetIt initGetIt(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
   );
-  gh.lazySingleton<_i668.ProfileWallsRepository>(
-    () => _i409.ProfileWallsRepositoryImpl(gh<_i349.FirestoreClient>()),
+  gh.factory<_i358.WallpaperDetailBloc>(
+    () => _i358.WallpaperDetailBloc(
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i231.FetchWallpaperViewsUsecase>(),
+      gh<_i231.UpdateWallpaperViewsUsecase>(),
+      gh<_i806.PaletteBloc>(),
+    ),
+  );
+  gh.lazySingleton<_i122.ReviewBatchRepository>(
+    () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i446.FetchPublicProfileUseCase>(
     () => _i446.FetchPublicProfileUseCase(gh<_i817.PublicProfileRepository>()),
@@ -464,6 +478,18 @@ _i174.GetIt initGetIt(
     () => _i446.UpdatePublicProfileLinksUseCase(
       gh<_i817.PublicProfileRepository>(),
     ),
+  );
+  gh.lazySingleton<_i446.FetchUserSummariesUseCase>(
+    () => _i446.FetchUserSummariesUseCase(gh<_i817.PublicProfileRepository>()),
+  );
+  gh.lazySingleton<_i446.FetchUserSummariesPageUseCase>(
+    () => _i446.FetchUserSummariesPageUseCase(
+      gh<_i817.PublicProfileRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i446.SearchUsersByUsernameUseCase>(
+    () =>
+        _i446.SearchUsersByUsernameUseCase(gh<_i817.PublicProfileRepository>()),
   );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
     () => _i903.PersonalizedFeedRepositoryImpl(
@@ -573,10 +599,9 @@ _i174.GetIt initGetIt(
       gh<_i446.FollowUserUseCase>(),
       gh<_i446.UnfollowUserUseCase>(),
       gh<_i446.UpdatePublicProfileLinksUseCase>(),
+      gh<_i446.FetchUserSummariesPageUseCase>(),
+      gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
-  );
-  gh.lazySingleton<_i58.FetchProfileWallsUseCase>(
-    () => _i58.FetchProfileWallsUseCase(gh<_i668.ProfileWallsRepository>()),
   );
   gh.lazySingleton<_i975.CompleteOnboardingV2UseCase>(
     () => _i975.CompleteOnboardingV2UseCase(gh<_i897.OnboardingV2Repository>()),
@@ -646,9 +671,6 @@ _i174.GetIt initGetIt(
       gh<_i474.ClearNotificationsUseCase>(),
     ),
   );
-  gh.factory<_i471.ProfileWallsBloc>(
-    () => _i471.ProfileWallsBloc(gh<_i58.FetchProfileWallsUseCase>()),
-  );
   gh.factory<_i941.ProfileSetupsBloc>(
     () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
   );
@@ -667,6 +689,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
+  );
+  gh.factory<_i711.ReviewBatchBloc>(
+    () => _i711.ReviewBatchBloc(gh<_i122.ReviewBatchRepository>()),
   );
   gh.lazySingleton<_i410.CheckConnectionUseCase>(
     () => _i410.CheckConnectionUseCase(gh<_i325.ConnectivityRepository>()),

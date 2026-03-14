@@ -13,9 +13,11 @@ const db = admin.firestore();
 const USERS_COLLECTION = "usersv2";
 const COIN_TX_COLLECTION = "coinTransactions";
 
-const DAILY_REWARD_BASE = 5;
-const STREAK_REWARD_MID = 10;
-const STREAK_DAY7_BONUS = 25;
+const STREAK_REWARD_DAY_1_TO_2 = 5;
+const STREAK_REWARD_DAY_3_TO_4 = 8;
+const STREAK_REWARD_DAY_5_TO_6 = 12;
+const STREAK_REWARD_DAY_7_DAILY = 15;
+const STREAK_DAY7_BONUS = 40;
 
 const DEFAULT_TZ_OFFSET_MINUTES = 330;
 const REMINDER_HOUR_LOCAL = 20;
@@ -144,7 +146,7 @@ export const claimDailyStreak = onCall(
           status: "completed",
           type: "credit",
           reason:
-            streakDay >= 4 && streakDay <= 6 ?
+            streakDay >= 3 && streakDay <= 6 ?
               `streak_mid_cycle_day_${streakDay}` :
               streakDay === 7 ?
                 "streak_day_7_daily" :
@@ -395,20 +397,39 @@ function _computeNextStreakDay(lastClaimDate: string, todayLocalKey: string, pre
 }
 
 function _rewardForStreakDay(streakDay: number): RewardParts {
-  if (streakDay >= 1 && streakDay <= 3) {
-    return {dailyReward: DAILY_REWARD_BASE, streakBonusReward: 0, totalReward: DAILY_REWARD_BASE};
+  if (streakDay >= 1 && streakDay <= 2) {
+    return {
+      dailyReward: STREAK_REWARD_DAY_1_TO_2,
+      streakBonusReward: 0,
+      totalReward: STREAK_REWARD_DAY_1_TO_2,
+    };
   }
-  if (streakDay >= 4 && streakDay <= 6) {
-    return {dailyReward: STREAK_REWARD_MID, streakBonusReward: 0, totalReward: STREAK_REWARD_MID};
+  if (streakDay >= 3 && streakDay <= 4) {
+    return {
+      dailyReward: STREAK_REWARD_DAY_3_TO_4,
+      streakBonusReward: 0,
+      totalReward: STREAK_REWARD_DAY_3_TO_4,
+    };
+  }
+  if (streakDay >= 5 && streakDay <= 6) {
+    return {
+      dailyReward: STREAK_REWARD_DAY_5_TO_6,
+      streakBonusReward: 0,
+      totalReward: STREAK_REWARD_DAY_5_TO_6,
+    };
   }
   if (streakDay >= 7) {
     return {
-      dailyReward: DAILY_REWARD_BASE,
+      dailyReward: STREAK_REWARD_DAY_7_DAILY,
       streakBonusReward: STREAK_DAY7_BONUS,
-      totalReward: DAILY_REWARD_BASE + STREAK_DAY7_BONUS,
+      totalReward: STREAK_REWARD_DAY_7_DAILY + STREAK_DAY7_BONUS,
     };
   }
-  return {dailyReward: DAILY_REWARD_BASE, streakBonusReward: 0, totalReward: DAILY_REWARD_BASE};
+  return {
+    dailyReward: STREAK_REWARD_DAY_1_TO_2,
+    streakBonusReward: 0,
+    totalReward: STREAK_REWARD_DAY_1_TO_2,
+  };
 }
 
 function _localDateKeyFromUtc(utcDate: Date, offsetMinutes: number): string {

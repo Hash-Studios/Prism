@@ -1,3 +1,4 @@
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -88,7 +89,13 @@ class NotificationRouteMapper {
     if (wallpaperUrl.isEmpty && thumbnailUrl.isEmpty) {
       return null;
     }
-    return ShareWallpaperViewRoute(wallId: id, source: source, wallpaperUrl: wallpaperUrl, thumbnailUrl: thumbnailUrl);
+    return WallpaperDetailRoute(
+      wallId: id,
+      source: source,
+      wallpaperUrl: wallpaperUrl,
+      thumbnailUrl: thumbnailUrl,
+      analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+    );
   }
 }
 
