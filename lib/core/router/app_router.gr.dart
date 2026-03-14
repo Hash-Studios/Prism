@@ -467,70 +467,6 @@ class FavSetupViewRouteArgs {
 }
 
 /// generated route for
-/// [FavWallpaperViewScreen]
-class FavWallpaperViewRoute extends PageRouteInfo<FavWallpaperViewRouteArgs> {
-  FavWallpaperViewRoute({
-    Key? key,
-    required int wallIndex,
-    required String thumbnailUrl,
-    List<PageRouteInfo>? children,
-  }) : super(
-         FavWallpaperViewRoute.name,
-         args: FavWallpaperViewRouteArgs(
-           key: key,
-           wallIndex: wallIndex,
-           thumbnailUrl: thumbnailUrl,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'FavWallpaperViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<FavWallpaperViewRouteArgs>();
-      return FavWallpaperViewScreen(
-        key: args.key,
-        wallIndex: args.wallIndex,
-        thumbnailUrl: args.thumbnailUrl,
-      );
-    },
-  );
-}
-
-class FavWallpaperViewRouteArgs {
-  const FavWallpaperViewRouteArgs({
-    this.key,
-    required this.wallIndex,
-    required this.thumbnailUrl,
-  });
-
-  final Key? key;
-
-  final int wallIndex;
-
-  final String thumbnailUrl;
-
-  @override
-  String toString() {
-    return 'FavWallpaperViewRouteArgs{key: $key, wallIndex: $wallIndex, thumbnailUrl: $thumbnailUrl}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! FavWallpaperViewRouteArgs) return false;
-    return key == other.key &&
-        wallIndex == other.wallIndex &&
-        thumbnailUrl == other.thumbnailUrl;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ wallIndex.hashCode ^ thumbnailUrl.hashCode;
-}
-
-/// generated route for
 /// [FavouriteSetupScreen]
 class FavouriteSetupRoute extends PageRouteInfo<void> {
   const FavouriteSetupRoute({List<PageRouteInfo>? children})
@@ -860,70 +796,6 @@ class ProfileTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [ProfileWallViewScreen]
-class ProfileWallViewRoute extends PageRouteInfo<ProfileWallViewRouteArgs> {
-  ProfileWallViewRoute({
-    Key? key,
-    required int wallIndex,
-    required String thumbnailUrl,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ProfileWallViewRoute.name,
-         args: ProfileWallViewRouteArgs(
-           key: key,
-           wallIndex: wallIndex,
-           thumbnailUrl: thumbnailUrl,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'ProfileWallViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<ProfileWallViewRouteArgs>();
-      return ProfileWallViewScreen(
-        key: args.key,
-        wallIndex: args.wallIndex,
-        thumbnailUrl: args.thumbnailUrl,
-      );
-    },
-  );
-}
-
-class ProfileWallViewRouteArgs {
-  const ProfileWallViewRouteArgs({
-    this.key,
-    required this.wallIndex,
-    required this.thumbnailUrl,
-  });
-
-  final Key? key;
-
-  final int wallIndex;
-
-  final String thumbnailUrl;
-
-  @override
-  String toString() {
-    return 'ProfileWallViewRouteArgs{key: $key, wallIndex: $wallIndex, thumbnailUrl: $thumbnailUrl}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ProfileWallViewRouteArgs) return false;
-    return key == other.key &&
-        wallIndex == other.wallIndex &&
-        thumbnailUrl == other.thumbnailUrl;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ wallIndex.hashCode ^ thumbnailUrl.hashCode;
-}
-
-/// generated route for
 /// [QuickTileSettingsScreen]
 class QuickTileSettingsRoute extends PageRouteInfo<void> {
   const QuickTileSettingsRoute({List<PageRouteInfo>? children})
@@ -985,89 +857,6 @@ class SearchTabRoute extends PageRouteInfo<void> {
       return const SearchTabPage();
     },
   );
-}
-
-/// generated route for
-/// [SearchWallpaperScreen]
-class SearchWallpaperRoute extends PageRouteInfo<SearchWallpaperRouteArgs> {
-  SearchWallpaperRoute({
-    Key? key,
-    required WallpaperSource source,
-    required String query,
-    required int index,
-    required String link,
-    List<PageRouteInfo>? children,
-  }) : super(
-         SearchWallpaperRoute.name,
-         args: SearchWallpaperRouteArgs(
-           key: key,
-           source: source,
-           query: query,
-           index: index,
-           link: link,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'SearchWallpaperRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<SearchWallpaperRouteArgs>();
-      return SearchWallpaperScreen(
-        key: args.key,
-        source: args.source,
-        query: args.query,
-        index: args.index,
-        link: args.link,
-      );
-    },
-  );
-}
-
-class SearchWallpaperRouteArgs {
-  const SearchWallpaperRouteArgs({
-    this.key,
-    required this.source,
-    required this.query,
-    required this.index,
-    required this.link,
-  });
-
-  final Key? key;
-
-  final WallpaperSource source;
-
-  final String query;
-
-  final int index;
-
-  final String link;
-
-  @override
-  String toString() {
-    return 'SearchWallpaperRouteArgs{key: $key, source: $source, query: $query, index: $index, link: $link}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! SearchWallpaperRouteArgs) return false;
-    return key == other.key &&
-        source == other.source &&
-        query == other.query &&
-        index == other.index &&
-        link == other.link;
-  }
-
-  @override
-  int get hashCode =>
-      key.hashCode ^
-      source.hashCode ^
-      query.hashCode ^
-      index.hashCode ^
-      link.hashCode;
 }
 
 /// generated route for
@@ -1368,6 +1157,22 @@ class SplashWidgetRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [SwipeReviewScreen]
+class SwipeReviewRoute extends PageRouteInfo<void> {
+  const SwipeReviewRoute({List<PageRouteInfo>? children})
+    : super(SwipeReviewRoute.name, initialChildren: children);
+
+  static const String name = 'SwipeReviewRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SwipeReviewScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [ThemeView]
 class ThemeViewRoute extends PageRouteInfo<void> {
   const ThemeViewRoute({List<PageRouteInfo>? children})
@@ -1562,71 +1367,6 @@ class UserProfileSetupViewRouteArgs {
 }
 
 /// generated route for
-/// [UserProfileWallViewScreen]
-class UserProfileWallViewRoute
-    extends PageRouteInfo<UserProfileWallViewRouteArgs> {
-  UserProfileWallViewRoute({
-    Key? key,
-    required int wallIndex,
-    required String thumbnailUrl,
-    List<PageRouteInfo>? children,
-  }) : super(
-         UserProfileWallViewRoute.name,
-         args: UserProfileWallViewRouteArgs(
-           key: key,
-           wallIndex: wallIndex,
-           thumbnailUrl: thumbnailUrl,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'UserProfileWallViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<UserProfileWallViewRouteArgs>();
-      return UserProfileWallViewScreen(
-        key: args.key,
-        wallIndex: args.wallIndex,
-        thumbnailUrl: args.thumbnailUrl,
-      );
-    },
-  );
-}
-
-class UserProfileWallViewRouteArgs {
-  const UserProfileWallViewRouteArgs({
-    this.key,
-    required this.wallIndex,
-    required this.thumbnailUrl,
-  });
-
-  final Key? key;
-
-  final int wallIndex;
-
-  final String thumbnailUrl;
-
-  @override
-  String toString() {
-    return 'UserProfileWallViewRouteArgs{key: $key, wallIndex: $wallIndex, thumbnailUrl: $thumbnailUrl}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! UserProfileWallViewRouteArgs) return false;
-    return key == other.key &&
-        wallIndex == other.wallIndex &&
-        thumbnailUrl == other.thumbnailUrl;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ wallIndex.hashCode ^ thumbnailUrl.hashCode;
-}
-
-/// generated route for
 /// [UserSearch]
 class UserSearchRoute extends PageRouteInfo<void> {
   const UserSearchRoute({List<PageRouteInfo>? children})
@@ -1801,95 +1541,4 @@ class WallpaperFilterRouteArgs {
       finalImage.hashCode ^
       filename.hashCode ^
       finalFilename.hashCode;
-}
-
-/// generated route for
-/// [WallpaperScreen]
-class WallpaperRoute extends PageRouteInfo<WallpaperRouteArgs> {
-  WallpaperRoute({
-    Key? key,
-    required WallpaperSource source,
-    required String link,
-    int? index,
-    FeedItemEntity? item,
-    WallOfTheDayEntity? wotdWall,
-    List<PageRouteInfo>? children,
-  }) : super(
-         WallpaperRoute.name,
-         args: WallpaperRouteArgs(
-           key: key,
-           source: source,
-           link: link,
-           index: index,
-           item: item,
-           wotdWall: wotdWall,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'WallpaperRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<WallpaperRouteArgs>();
-      return WallpaperScreen(
-        key: args.key,
-        source: args.source,
-        link: args.link,
-        index: args.index,
-        item: args.item,
-        wotdWall: args.wotdWall,
-      );
-    },
-  );
-}
-
-class WallpaperRouteArgs {
-  const WallpaperRouteArgs({
-    this.key,
-    required this.source,
-    required this.link,
-    this.index,
-    this.item,
-    this.wotdWall,
-  });
-
-  final Key? key;
-
-  final WallpaperSource source;
-
-  final String link;
-
-  final int? index;
-
-  final FeedItemEntity? item;
-
-  final WallOfTheDayEntity? wotdWall;
-
-  @override
-  String toString() {
-    return 'WallpaperRouteArgs{key: $key, source: $source, link: $link, index: $index, item: $item, wotdWall: $wotdWall}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! WallpaperRouteArgs) return false;
-    return key == other.key &&
-        source == other.source &&
-        link == other.link &&
-        index == other.index &&
-        item == other.item &&
-        wotdWall == other.wotdWall;
-  }
-
-  @override
-  int get hashCode =>
-      key.hashCode ^
-      source.hashCode ^
-      link.hashCode ^
-      index.hashCode ^
-      item.hashCode ^
-      wotdWall.hashCode;
 }

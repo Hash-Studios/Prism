@@ -10,6 +10,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
+    function isConfiguredAdminEmail() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/admin_users/$(authEmail()));
+    }
+
+    function isConfiguredAdmin() {
+      return isAdmin() || isConfiguredAdminEmail();
+    }
+
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
@@ -68,22 +77,22 @@ service cloud.firestore {
 
     // Public feeds; unreviewed docs are owner/admin only.
     match /walls/{docId} {
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isAdmin();
+      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       allow create: if isSignedIn()
           && isEmailOwner(request.resource.data.email)
           && request.resource.data.review != true;
-      allow update, delete: if isAdmin()
+      allow update, delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && request.resource.data.email == resource.data.email
               && request.resource.data.review != true);
     }
 
     match /setups/{docId} {
-      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isAdmin();
+      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
       allow create: if isSignedIn()
           && isEmailOwner(request.resource.data.email)
           && request.resource.data.review != true;
-      allow update, delete: if isAdmin()
+      allow update, delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && request.resource.data.email == resource.data.email
               && request.resource.data.review != true);

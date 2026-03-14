@@ -47,6 +47,8 @@ const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'fl
 
 const List<String> defaultVerifiedUsers = <String>['akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'];
 
+const Set<String> adminEmails = <String>{'akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'};
+
 const String defaultTopImageLink =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 

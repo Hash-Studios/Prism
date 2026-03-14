@@ -1,4 +1,4 @@
-const Set<String> adminEmails = <String>{'akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'};
+import 'package:Prism/core/constants/app_constants.dart';
 
 bool isAdminEmail(String? email) {
   final String target = (email ?? '').trim().toLowerCase();

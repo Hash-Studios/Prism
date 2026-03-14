@@ -20,6 +20,8 @@ import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
 
+import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
+import '../../features/admin_review/data/review_batch_repository.dart' as _i122;
 import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
 import '../../features/ads/data/repositories/ads_repository_impl.dart' as _i418;
 import '../../features/ads/domain/repositories/ads_repository.dart' as _i1055;
@@ -117,14 +119,6 @@ import '../../features/profile_setups/domain/repositories/profile_setups_reposit
     as _i563;
 import '../../features/profile_setups/domain/usecases/profile_setups_usecases.dart'
     as _i272;
-import '../../features/profile_walls/biz/bloc/profile_walls_bloc.j.dart'
-    as _i471;
-import '../../features/profile_walls/data/repositories/profile_walls_repository_impl.dart'
-    as _i409;
-import '../../features/profile_walls/domain/repositories/profile_walls_repository.dart'
-    as _i668;
-import '../../features/profile_walls/domain/usecases/profile_walls_usecases.dart'
-    as _i58;
 import '../../features/public_profile/biz/bloc/public_profile_bloc.j.dart'
     as _i717;
 import '../../features/public_profile/data/repositories/public_profile_repository_impl.dart'
@@ -438,8 +432,8 @@ _i174.GetIt initGetIt(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
   );
-  gh.lazySingleton<_i668.ProfileWallsRepository>(
-    () => _i409.ProfileWallsRepositoryImpl(gh<_i349.FirestoreClient>()),
+  gh.lazySingleton<_i122.ReviewBatchRepository>(
+    () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i446.FetchPublicProfileUseCase>(
     () => _i446.FetchPublicProfileUseCase(gh<_i817.PublicProfileRepository>()),
@@ -589,9 +583,6 @@ _i174.GetIt initGetIt(
       gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
   );
-  gh.lazySingleton<_i58.FetchProfileWallsUseCase>(
-    () => _i58.FetchProfileWallsUseCase(gh<_i668.ProfileWallsRepository>()),
-  );
   gh.lazySingleton<_i975.CompleteOnboardingV2UseCase>(
     () => _i975.CompleteOnboardingV2UseCase(gh<_i897.OnboardingV2Repository>()),
   );
@@ -660,9 +651,6 @@ _i174.GetIt initGetIt(
       gh<_i474.ClearNotificationsUseCase>(),
     ),
   );
-  gh.factory<_i471.ProfileWallsBloc>(
-    () => _i471.ProfileWallsBloc(gh<_i58.FetchProfileWallsUseCase>()),
-  );
   gh.factory<_i941.ProfileSetupsBloc>(
     () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
   );
@@ -681,6 +669,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
+  );
+  gh.factory<_i711.ReviewBatchBloc>(
+    () => _i711.ReviewBatchBloc(gh<_i122.ReviewBatchRepository>()),
   );
   gh.lazySingleton<_i410.CheckConnectionUseCase>(
     () => _i410.CheckConnectionUseCase(gh<_i325.ConnectivityRepository>()),
