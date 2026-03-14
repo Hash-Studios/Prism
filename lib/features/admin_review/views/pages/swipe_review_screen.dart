@@ -267,6 +267,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                 onPanStart: _onPanStart,
                 onPanUpdate: _onPanUpdate,
                 onPanEnd: _onPanEnd,
+                onTap: () => _showFullImage(currentWall),
                 child: Container(color: Colors.transparent, width: double.infinity, height: double.infinity),
               ),
             ],
@@ -306,6 +307,18 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
               onTap: () {
                 _bloc.add(const ReviewBatchUndoRequested());
                 toasts.codeSend('Undo successful');
+              },
+            ),
+            _ActionButton(
+              icon: Icons.fullscreen,
+              label: 'View',
+              color: Colors.indigo,
+              enabled: state.hasMoreWalls,
+              onTap: () {
+                final wall = state.currentWall;
+                if (wall != null) {
+                  _showFullImage(wall);
+                }
               },
             ),
             _ActionButton(

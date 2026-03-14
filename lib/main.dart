@@ -712,11 +712,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     switch (action) {
       case ShareLinkIntent():
         _appRouter.push(
-          ShareWallpaperViewRoute(
+          WallpaperDetailRoute(
             wallId: action.wallId,
             source: action.source,
             wallpaperUrl: action.wallpaperUrl,
             thumbnailUrl: action.thumbnailUrl,
+            analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
           ),
         );
         unawaited(

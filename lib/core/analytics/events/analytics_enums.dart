@@ -156,6 +156,7 @@ enum ShareTypeValue { wallpaper, user, setup, refer }
 enum AnalyticsSurfaceValue {
   wallpaperScreen,
   shareWallpaperView,
+  shareSetupViewScreen,
   searchWallpaperScreen,
   favouriteWallpaperView,
   profileWallpaperView,
@@ -709,6 +710,8 @@ extension AnalyticsSurfaceValueX on AnalyticsSurfaceValue {
         return 'wallpaper_screen';
       case AnalyticsSurfaceValue.shareWallpaperView:
         return 'share_wallpaper_view';
+      case AnalyticsSurfaceValue.shareSetupViewScreen:
+        return 'share_setup_view_screen';
       case AnalyticsSurfaceValue.searchWallpaperScreen:
         return 'search_wallpaper_screen';
       case AnalyticsSurfaceValue.favouriteWallpaperView:

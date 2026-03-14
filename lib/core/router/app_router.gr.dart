@@ -1057,90 +1057,6 @@ class ShareSetupViewRouteArgs {
 }
 
 /// generated route for
-/// [ShareWallpaperViewScreen]
-class ShareWallpaperViewRoute
-    extends PageRouteInfo<ShareWallpaperViewRouteArgs> {
-  ShareWallpaperViewRoute({
-    Key? key,
-    required String wallId,
-    required WallpaperSource source,
-    required String wallpaperUrl,
-    required String thumbnailUrl,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ShareWallpaperViewRoute.name,
-         args: ShareWallpaperViewRouteArgs(
-           key: key,
-           wallId: wallId,
-           source: source,
-           wallpaperUrl: wallpaperUrl,
-           thumbnailUrl: thumbnailUrl,
-         ),
-         initialChildren: children,
-       );
-
-  static const String name = 'ShareWallpaperViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<ShareWallpaperViewRouteArgs>();
-      return ShareWallpaperViewScreen(
-        key: args.key,
-        wallId: args.wallId,
-        source: args.source,
-        wallpaperUrl: args.wallpaperUrl,
-        thumbnailUrl: args.thumbnailUrl,
-      );
-    },
-  );
-}
-
-class ShareWallpaperViewRouteArgs {
-  const ShareWallpaperViewRouteArgs({
-    this.key,
-    required this.wallId,
-    required this.source,
-    required this.wallpaperUrl,
-    required this.thumbnailUrl,
-  });
-
-  final Key? key;
-
-  final String wallId;
-
-  final WallpaperSource source;
-
-  final String wallpaperUrl;
-
-  final String thumbnailUrl;
-
-  @override
-  String toString() {
-    return 'ShareWallpaperViewRouteArgs{key: $key, wallId: $wallId, source: $source, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ShareWallpaperViewRouteArgs) return false;
-    return key == other.key &&
-        wallId == other.wallId &&
-        source == other.source &&
-        wallpaperUrl == other.wallpaperUrl &&
-        thumbnailUrl == other.thumbnailUrl;
-  }
-
-  @override
-  int get hashCode =>
-      key.hashCode ^
-      wallId.hashCode ^
-      source.hashCode ^
-      wallpaperUrl.hashCode ^
-      thumbnailUrl.hashCode;
-}
-
-/// generated route for
 /// [SplashWidget]
 class SplashWidgetRoute extends PageRouteInfo<void> {
   const SplashWidgetRoute({List<PageRouteInfo>? children})
@@ -1387,8 +1303,11 @@ class UserSearchRoute extends PageRouteInfo<void> {
 class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
   WallpaperDetailRoute({
     Key? key,
-    required WallpaperDetailEntity entity,
-    Future<String>? viewsFuture,
+    WallpaperDetailEntity? entity,
+    String? wallId,
+    WallpaperSource? source,
+    String? wallpaperUrl,
+    String? thumbnailUrl,
     AnalyticsSurfaceValue analyticsSurface =
         AnalyticsSurfaceValue.wallpaperScreen,
     List<PageRouteInfo>? children,
@@ -1397,7 +1316,10 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
          args: WallpaperDetailRouteArgs(
            key: key,
            entity: entity,
-           viewsFuture: viewsFuture,
+           wallId: wallId,
+           source: source,
+           wallpaperUrl: wallpaperUrl,
+           thumbnailUrl: thumbnailUrl,
            analyticsSurface: analyticsSurface,
          ),
          initialChildren: children,
@@ -1408,11 +1330,16 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<WallpaperDetailRouteArgs>();
+      final args = data.argsAs<WallpaperDetailRouteArgs>(
+        orElse: () => const WallpaperDetailRouteArgs(),
+      );
       return WallpaperDetailScreen(
         key: args.key,
         entity: args.entity,
-        viewsFuture: args.viewsFuture,
+        wallId: args.wallId,
+        source: args.source,
+        wallpaperUrl: args.wallpaperUrl,
+        thumbnailUrl: args.thumbnailUrl,
         analyticsSurface: args.analyticsSurface,
       );
     },
@@ -1422,22 +1349,31 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
 class WallpaperDetailRouteArgs {
   const WallpaperDetailRouteArgs({
     this.key,
-    required this.entity,
-    this.viewsFuture,
+    this.entity,
+    this.wallId,
+    this.source,
+    this.wallpaperUrl,
+    this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
   });
 
   final Key? key;
 
-  final WallpaperDetailEntity entity;
+  final WallpaperDetailEntity? entity;
 
-  final Future<String>? viewsFuture;
+  final String? wallId;
+
+  final WallpaperSource? source;
+
+  final String? wallpaperUrl;
+
+  final String? thumbnailUrl;
 
   final AnalyticsSurfaceValue analyticsSurface;
 
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, viewsFuture: $viewsFuture, analyticsSurface: $analyticsSurface}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
   }
 
   @override
@@ -1446,7 +1382,10 @@ class WallpaperDetailRouteArgs {
     if (other is! WallpaperDetailRouteArgs) return false;
     return key == other.key &&
         entity == other.entity &&
-        viewsFuture == other.viewsFuture &&
+        wallId == other.wallId &&
+        source == other.source &&
+        wallpaperUrl == other.wallpaperUrl &&
+        thumbnailUrl == other.thumbnailUrl &&
         analyticsSurface == other.analyticsSurface;
   }
 
@@ -1454,7 +1393,10 @@ class WallpaperDetailRouteArgs {
   int get hashCode =>
       key.hashCode ^
       entity.hashCode ^
-      viewsFuture.hashCode ^
+      wallId.hashCode ^
+      source.hashCode ^
+      wallpaperUrl.hashCode ^
+      thumbnailUrl.hashCode ^
       analyticsSurface.hashCode;
 }
 

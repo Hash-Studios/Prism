@@ -49,14 +49,22 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
 
     try {
       final walls = await _repository.fetchPendingWallsBatch(limit: _batchSize);
-      emit(
-        state.copyWith(
-          status: ReviewBatchStatus.loaded,
-          walls: walls,
-          currentIndex: 0,
-          totalPending: await _repository.getPendingWallsCount(),
-        ),
-      );
+
+      if (walls.isNotEmpty) {
+        await _repository.categorizeWalls(walls);
+        final categorizedWalls = await _repository.fetchPendingWallsBatch(limit: _batchSize);
+
+        emit(
+          state.copyWith(
+            status: ReviewBatchStatus.loaded,
+            walls: categorizedWalls,
+            currentIndex: 0,
+            totalPending: await _repository.getPendingWallsCount(),
+          ),
+        );
+      } else {
+        emit(state.copyWith(status: ReviewBatchStatus.loaded, walls: walls, currentIndex: 0, totalPending: 0));
+      }
     } catch (e) {
       emit(state.copyWith(status: ReviewBatchStatus.error, errorMessage: e.toString()));
     }

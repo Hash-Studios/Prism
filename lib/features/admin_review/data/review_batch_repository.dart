@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -82,6 +83,21 @@ class ReviewBatchRepository {
     await _firestoreClient.updateDoc(FirebaseCollections.walls, wallId, <String, dynamic>{
       'category': category,
     }, sourceTag: 'review_batch.update_category');
+  }
+
+  Future<void> categorizeWalls(List<FirestoreDocument> walls) async {
+    final functions = FirebaseFunctions.instance;
+
+    for (final wall in walls) {
+      final category = wall.data()['category']?.toString() ?? '';
+      if (category.isEmpty || category == 'General') {
+        try {
+          await functions.httpsCallable('categorizeWallpaper').call(<String, dynamic>{'wallId': wall.id});
+        } catch (e) {
+          // Log error but continue with other wallpapers
+        }
+      }
+    }
   }
 
   Future<int> getPendingWallsCount() async {

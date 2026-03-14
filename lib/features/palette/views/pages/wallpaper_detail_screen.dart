@@ -18,6 +18,10 @@ import 'package:Prism/core/widgets/menuButton/editButton.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
+import 'package:Prism/data/informatics/dataManager.dart';
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/data/prism/provider/prismWithoutProvider.dart' as Data;
+import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as WData;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
@@ -33,17 +37,39 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
+enum _LoadState { initial, loading, loaded, error }
+
+class WallpaperViewsState {
+  final String? views;
+  final bool isLoading;
+  final String? error;
+
+  const WallpaperViewsState({this.views, this.isLoading = false, this.error});
+
+  WallpaperViewsState copyWith({String? views, bool? isLoading, String? error}) => WallpaperViewsState(
+    views: views ?? this.views,
+    isLoading: isLoading ?? this.isLoading,
+    error: error ?? this.error,
+  );
+}
+
 @RoutePage()
 class WallpaperDetailScreen extends StatefulWidget {
   const WallpaperDetailScreen({
     super.key,
-    required this.entity,
-    this.viewsFuture,
+    this.entity,
+    this.wallId,
+    this.source,
+    this.wallpaperUrl,
+    this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
-  });
+  }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
-  final WallpaperDetailEntity entity;
-  final Future<String>? viewsFuture;
+  final WallpaperDetailEntity? entity;
+  final String? wallId;
+  final WallpaperSource? source;
+  final String? wallpaperUrl;
+  final String? thumbnailUrl;
   final AnalyticsSurfaceValue analyticsSurface;
 
   @override
@@ -54,6 +80,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+
+  _LoadState _loadState = _LoadState.initial;
+  WallpaperDetailEntity? _entity;
+  String? _errorMessage;
+  WallpaperViewsState _viewsState = const WallpaperViewsState();
 
   late AnimationController shakeController;
   List<Color?>? colors;
@@ -67,9 +98,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   bool panelCollapsed = true;
   bool _panelScrollInProgress = false;
 
-  String get _sourceContext => '${widget.entity.source.wireValue}_wallpaper_screen';
+  String get _sourceContext {
+    final source = _entity?.source ?? widget.source;
+    return '${source?.wireValue ?? 'unknown'}_wallpaper_screen';
+  }
 
-  String? get _currentItemId => widget.entity.id;
+  String? get _currentItemId => _entity?.id;
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -85,8 +119,114 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
+  @override
+  void initState() {
+    super.initState();
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+
+    if (widget.entity != null) {
+      _entity = widget.entity;
+      _loadState = _LoadState.loaded;
+      _contentLoadTracker.start();
+      _updatePaletteGenerator();
+      _fetchViewsIfNeeded();
+    } else if (widget.wallId != null && widget.source != null) {
+      _fetchWallpaper();
+    } else {
+      _loadState = _LoadState.error;
+      _errorMessage = 'Invalid arguments: no entity or wallId provided';
+    }
+  }
+
+  Future<void> _fetchWallpaper() async {
+    setState(() => _loadState = _LoadState.loading);
+
+    try {
+      final result = await _resolveWallpaper(
+        wallId: widget.wallId!,
+        source: widget.source!,
+        wallpaperUrl: widget.wallpaperUrl,
+        thumbnailUrl: widget.thumbnailUrl,
+      );
+
+      if (mounted) {
+        setState(() {
+          _entity = result;
+          _loadState = _LoadState.loaded;
+        });
+        _contentLoadTracker.start();
+        _updatePaletteGenerator();
+        _fetchViewsIfNeeded();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loadState = _LoadState.error;
+          _errorMessage = e.toString();
+        });
+      }
+    }
+  }
+
+  Future<WallpaperDetailEntity> _resolveWallpaper({
+    required String wallId,
+    required WallpaperSource source,
+    String? wallpaperUrl,
+    String? thumbnailUrl,
+  }) async {
+    switch (source) {
+      case WallpaperSource.prism:
+      case WallpaperSource.wallOfTheDay:
+        final wallpaper = await Data.getDataByID(wallId);
+        if (wallpaper == null) {
+          throw Exception('Prism wallpaper not found');
+        }
+        return PrismDetailEntity(wallpaper: wallpaper);
+
+      case WallpaperSource.wallhaven:
+        final wallpaper = await WData.getWallbyID(wallId);
+        if (wallpaper == null) {
+          throw Exception('Wallhaven wallpaper not found');
+        }
+        return WallhavenDetailEntity(wallpaper: wallpaper);
+
+      case WallpaperSource.pexels:
+        final wallpaper = await PData.getWallbyIDP(wallId);
+        if (wallpaper == null) {
+          throw Exception('Pexels wallpaper not found');
+        }
+        return PexelsDetailEntity(wallpaper: wallpaper);
+
+      default:
+        throw Exception('Unsupported source: $source');
+    }
+  }
+
+  Future<void> _fetchViewsIfNeeded() async {
+    if (_entity == null) return;
+    if (_entity!.source != WallpaperSource.prism && _entity!.source != WallpaperSource.wallOfTheDay) {
+      return;
+    }
+
+    setState(() => _viewsState = _viewsState.copyWith(isLoading: true));
+
+    try {
+      await updateViews(_entity!.id.toUpperCase());
+      final views = await getViews(_entity!.id.toUpperCase());
+
+      if (mounted) {
+        setState(() => _viewsState = WallpaperViewsState(views: views));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _viewsState = WallpaperViewsState(error: e.toString()));
+      }
+    }
+  }
+
   void _updatePaletteGenerator() {
-    final imageUrl = widget.entity.thumbnailUrl;
+    if (_entity == null) return;
+    final imageUrl = _entity!.thumbnailUrl;
     if (imageUrl.trim().isEmpty) {
       logger.w('Skipping palette generation due to empty wallpaper link.', tag: 'WallpaperDetailScreen');
       return;
@@ -97,6 +237,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   void _applyPaletteState(PaletteState state) {
     if (!mounted) return;
+    if (_loadState != _LoadState.loaded) return;
+
     if (state.status == LoadStatus.failure) {
       _contentLoadTracker.failure(
         reason: AnalyticsReasonValue.error,
@@ -156,16 +298,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   void updateAccent() {
-    if (colors!.contains(accent)) {
-      final index = colors!.indexOf(accent);
-      setState(() {
-        accent = colors![(index + 1) % 5];
-      });
-      setState(() {
-        colorChanged = true;
-      });
-      _setStatusBarIconBrightness(accent!);
-    }
+    if (colors == null || !colors!.contains(accent)) return;
+    final index = colors!.indexOf(accent);
+    setState(() {
+      accent = colors![(index + 1) % 5];
+    });
+    setState(() {
+      colorChanged = true;
+    });
+    _setStatusBarIconBrightness(accent!);
     _trackAction(AnalyticsActionValue.paletteCycleTapped);
     if (firstTime == 0) {
       toasts.codeSend("Long press to reset.");
@@ -229,21 +370,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   @override
-  void initState() {
-    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    super.initState();
-    _contentLoadTracker.start();
-    Future.delayed(Duration.zero).then((_) => _updatePaletteGenerator());
-  }
-
-  @override
   void dispose() {
     super.dispose();
     shakeController.dispose();
   }
 
   FavouriteWallEntity _toFavouriteWall() {
-    return widget.entity.when(
+    if (_entity == null) {
+      throw StateError('Cannot convert null entity to FavouriteWallEntity');
+    }
+    return _entity!.when(
       prism: (wallpaper) => PrismFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
       wallhaven: (wallpaper) => WallhavenFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
       pexels: (wallpaper) => PexelsFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
@@ -252,6 +388,56 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
+    return switch (_loadState) {
+      _LoadState.initial || _LoadState.loading => _buildLoadingState(),
+      _LoadState.error => _buildErrorState(),
+      _LoadState.loaded => _buildLoadedState(),
+    };
+  }
+
+  Widget _buildLoadingState() {
+    if (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty) {
+      return Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: widget.thumbnailUrl!,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(color: Colors.grey[900]),
+              errorWidget: (_, __, ___) => Container(color: Colors.grey[900]),
+            ),
+            const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+      );
+    }
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+
+  Widget _buildErrorState() {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              Text('Something went wrong', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text('Please try again later', style: Theme.of(context).textTheme.bodyMedium),
+              const SizedBox(height: 24),
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go Back')),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadedState() {
     final paletteState = context.watch<PaletteBloc>().state;
     final paletteLoading = paletteState.status == LoadStatus.loading || paletteState.status == LoadStatus.initial;
 
@@ -401,7 +587,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildMetadataRow(BuildContext context) {
-    return widget.entity.when(
+    if (_entity == null) return const SizedBox.shrink();
+    return _entity!.when(
       prism: (wallpaper) => _buildPrismMetadata(context, wallpaper),
       wallhaven: (wallpaper) => _buildWallhavenMetadata(context, wallpaper),
       pexels: (wallpaper) => _buildPexelsMetadata(context, wallpaper),
@@ -438,24 +625,29 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     context,
                   ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
                 ),
-                if (widget.viewsFuture != null) ...[
+                if (_viewsState.views != null) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 6.0),
                     child: Container(height: 20, color: Theme.of(context).colorScheme.secondary, width: 2),
                   ),
-                  FutureBuilder(
-                    future: widget.viewsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                        return Text(
-                          "${snapshot.data} views",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
+                  Text(
+                    "${_viewsState.views} views",
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                  ),
+                ] else if (_viewsState.isLoading) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                    child: Container(height: 20, color: Theme.of(context).colorScheme.secondary, width: 2),
+                  ),
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
+                    ),
                   ),
                 ],
               ],
@@ -537,7 +729,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               _buildInfoRow(
                 context,
                 JamIcons.database,
-                sourceDisplayName(widget.entity.source),
+                sourceDisplayName(_entity!.source),
                 reversed: true,
                 showIconLast: true,
               ),
@@ -638,7 +830,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    final url = screenshotTaken ? _imageFile.path : widget.entity.fullUrl;
+    if (_entity == null) return const SizedBox.shrink();
+    final url = screenshotTaken ? _imageFile.path : _entity!.fullUrl;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -646,17 +839,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         if (!hideSetWallpaperUi) SetWallpaperButton(colorChanged: colorChanged, url: url),
         FavouriteWallpaperButton(wall: _toFavouriteWall(), trash: false),
         ShareButton(
-          id: widget.entity.id,
-          source: widget.entity.source == WallpaperSource.wallOfTheDay ? WallpaperSource.prism : widget.entity.source,
-          url: widget.entity.fullUrl,
-          thumbUrl: widget.entity.thumbnailUrl,
+          id: _entity!.id,
+          source: _entity!.source == WallpaperSource.wallOfTheDay ? WallpaperSource.prism : _entity!.source,
+          url: _entity!.fullUrl,
+          thumbUrl: _entity!.thumbnailUrl,
         ),
-        EditButton(url: widget.entity.fullUrl),
+        EditButton(url: _entity!.fullUrl),
       ],
     );
   }
 
   Widget _buildImageBody(BuildContext context, Animation<double> offsetAnimation, bool paletteLoading) {
+    if (_entity == null) return const SizedBox.shrink();
     return Stack(
       children: [
         AnimatedBuilder(
@@ -682,7 +876,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 shakeController.forward(from: 0.0);
               },
               child: CachedNetworkImage(
-                imageUrl: widget.entity.thumbnailUrl,
+                imageUrl: _entity!.thumbnailUrl,
                 imageBuilder: (context, imageProvider) => Screenshot(
                   controller: screenshotController,
                   child: Container(
@@ -750,7 +944,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             child: IconButton(
               onPressed: () {
                 _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                final link = widget.entity.fullUrl;
+                final link = _entity!.fullUrl;
                 Navigator.push(
                   context,
                   PageRouteBuilder(
@@ -783,10 +977,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return "${date.day}/${date.month}/${date.year}";
   }
 
-  void _openPhotographerLink(BuildContext context, PexelsWallpaper wallpaper) {
-    // Pexels photographer links would be opened via url_launcher
-    // This is a placeholder - the original code used openPrismLink
-  }
+  void _openPhotographerLink(BuildContext context, PexelsWallpaper wallpaper) {}
 
   String sourceDisplayName(WallpaperSource source) {
     return switch (source) {
