@@ -62,7 +62,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       if (_dragOffset > 0 || velocity > 500) {
         _animateSwipeOff(true);
       } else {
-        _showRejectDialog();
+        _animateSwipeOff(false);
       }
     } else {
       _animateBack();
@@ -81,6 +81,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     _animationController.forward(from: 0).then((_) {
       if (isApprove) {
         _bloc.add(const ReviewBatchSwipeApproved());
+      } else {
+        _bloc.add(const ReviewBatchSwipeRejected());
       }
       setState(() {
         _dragOffset = 0;
@@ -103,46 +105,6 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
       });
       _animationController.reset();
     });
-  }
-
-  void _showRejectDialog() {
-    final reasonController = TextEditingController(
-      text: "Sorry! This item doesn't meet our expectations and failed the review.",
-    );
-
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reject Wallpaper'),
-        content: TextField(
-          controller: reasonController,
-          minLines: 2,
-          maxLines: 4,
-          decoration: const InputDecoration(labelText: 'Reason', hintText: 'Why are you rejecting this wallpaper?'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _animateBack();
-            },
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _bloc.add(ReviewBatchSwipeRejected(reason: reasonController.text.trim()));
-              setState(() {
-                _dragOffset = 0;
-                _isDragging = false;
-              });
-            },
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            child: const Text('Reject'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
