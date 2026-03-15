@@ -1,11 +1,11 @@
-import 'dart:async';
-
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
+import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/complete_onboarding_v2_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/fetch_starter_pack_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/follow_starter_pack_usecase.dart';
@@ -33,6 +33,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     this._completeOnboardingUseCase,
     this._firstWallpaperService,
     this._categoryFeedRepository,
+    this._onboardingRepository,
   ) : super(OnboardingV2State.initial()) {
     on<_Started>(_onStarted);
     on<_AuthCompleted>(_onAuthCompleted);
@@ -44,9 +45,6 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     on<_FirstWallpaperActionRequested>(_onFirstWallpaperActionRequested);
     on<_FirstWallpaperActionCompleted>(_onFirstWallpaperActionCompleted);
     on<_FirstWallpaperStepContinued>(_onFirstWallpaperStepContinued);
-    on<_PaywallTimerTicked>(_onPaywallTimerTicked);
-    on<_PaywallPrimaryTapped>(_onPaywallPrimaryTapped);
-    on<_PaywallContinueFreeTapped>(_onPaywallContinueFreeTapped);
     on<_PaywallResultReceived>(_onPaywallResultReceived);
     on<_StepBack>(_onStepBack);
   }
@@ -57,8 +55,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   final CompleteOnboardingV2UseCase _completeOnboardingUseCase;
   final FirstWallpaperService _firstWallpaperService;
   final CategoryFeedRepository _categoryFeedRepository;
+  final OnboardingV2Repository _onboardingRepository;
 
-  Timer? _paywallTimer;
   DateTime? _f3EnteredAt;
 
   Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) async {
@@ -119,8 +117,57 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     );
   }
 
-  void _onAuthCompleted(_AuthCompleted event, Emitter<OnboardingV2State> emit) {
-    emit(state.copyWith(isAuthLoading: false, step: OnboardingV2Step.interests, navRequest: null));
+  Future<void> _onAuthCompleted(_AuthCompleted event, Emitter<OnboardingV2State> emit) async {
+    emit(state.copyWith(isAuthLoading: true, navRequest: null));
+
+    final userId = app_state.prismUser.id;
+    bool skipInterests = false;
+    bool skipStarterPack = false;
+
+    if (userId.isNotEmpty) {
+      final statusResult = await _onboardingRepository.fetchUserCompletionStatus(userId: userId);
+      statusResult.fold(
+        onSuccess: (status) {
+          skipInterests = status.hasInterests;
+          skipStarterPack = status.hasFollows;
+        },
+        onFailure: (_) {
+          // Fall back to showing all steps on error
+        },
+      );
+    }
+
+    final isPremium = app_state.prismUser.premium;
+
+    if (skipInterests && skipStarterPack) {
+      // All steps already done — set skip flags then go to paywall (or complete if premium)
+      emit(state.copyWith(isAuthLoading: false, skipInterests: true, skipStarterPack: true, navRequest: null));
+      if (isPremium) {
+        await _finishOnboarding(emit, didPurchase: true);
+      } else {
+        emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
+      }
+    } else if (skipInterests) {
+      emit(
+        state.copyWith(
+          isAuthLoading: false,
+          step: OnboardingV2Step.starterPack,
+          skipInterests: true,
+          skipStarterPack: false,
+          navRequest: null,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          isAuthLoading: false,
+          step: OnboardingV2Step.interests,
+          skipInterests: false,
+          skipStarterPack: skipStarterPack,
+          navRequest: null,
+        ),
+      );
+    }
   }
 
   void _onAuthLoadingChanged(_AuthLoadingChanged event, Emitter<OnboardingV2State> emit) {
@@ -151,10 +198,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
     final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
 
+    final nextStep = state.skipStarterPack ? OnboardingV2Step.firstWallpaper : OnboardingV2Step.starterPack;
     emit(
       state.copyWith(
         actionStatus: ActionStatus.success,
-        step: OnboardingV2Step.starterPack,
+        step: nextStep,
         wallpaperData: OnboardingWallpaperData(
           wallpaper: refreshedWallpaper ?? state.wallpaperData.wallpaper,
           status: FirstWallpaperStatus.idle,
@@ -205,18 +253,27 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       tag: 'OnboardingV2Bloc',
     );
 
-    result.fold(
-      onSuccess: (_) {
-        logger.d('fold onSuccess — emitting step=firstWallpaper', tag: 'OnboardingV2Bloc');
-        _f3EnteredAt = DateTime.now();
-        emit(state.copyWith(actionStatus: ActionStatus.success, step: OnboardingV2Step.firstWallpaper));
-        logger.d('emitted firstWallpaper step, current state.step=${state.step}', tag: 'OnboardingV2Bloc');
-      },
-      onFailure: (failure) {
-        logger.d('fold onFailure — $failure', tag: 'OnboardingV2Bloc');
-        emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure));
-      },
-    );
+    if (result.isFailure) {
+      logger.d('followStarterPackUseCase failure — ${result.failure}', tag: 'OnboardingV2Bloc');
+      emit(state.copyWith(actionStatus: ActionStatus.failure, failure: result.failure));
+      return;
+    }
+
+    if (state.skipInterests) {
+      // Interests was skipped → wallpaper must also be skipped → go directly to paywall
+      logger.d('starterPackConfirmed — skipInterests=true, going directly to paywall', tag: 'OnboardingV2Bloc');
+      emit(state.copyWith(actionStatus: ActionStatus.success, navRequest: null));
+      if (app_state.prismUser.premium) {
+        await _finishOnboarding(emit, didPurchase: true);
+      } else {
+        emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
+      }
+    } else {
+      logger.d('starterPackConfirmed — emitting step=firstWallpaper', tag: 'OnboardingV2Bloc');
+      _f3EnteredAt = DateTime.now();
+      emit(state.copyWith(actionStatus: ActionStatus.success, step: OnboardingV2Step.firstWallpaper));
+      logger.d('emitted firstWallpaper step, current state.step=${state.step}', tag: 'OnboardingV2Bloc');
+    }
   }
 
   Future<void> _onFirstWallpaperActionRequested(
@@ -254,47 +311,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     );
   }
 
-  void _onFirstWallpaperStepContinued(_FirstWallpaperStepContinued event, Emitter<OnboardingV2State> emit) {
-    _startPaywallTimer();
-    emit(
-      state.copyWith(
-        step: OnboardingV2Step.paywall,
-        paywallData: OnboardingPaywallData.initial(),
-        navRequest: OnboardingV2NavRequest.openPaywall,
-      ),
-    );
-  }
-
-  void _startPaywallTimer() {
-    _paywallTimer?.cancel();
-    _paywallTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!isClosed) {
-        add(const OnboardingV2Event.paywallTimerTicked());
-      }
-    });
-  }
-
-  void _onPaywallTimerTicked(_PaywallTimerTicked event, Emitter<OnboardingV2State> emit) {
-    final remaining = state.paywallData.timerRemainingSeconds - 1;
-    if (remaining <= 0) {
-      _paywallTimer?.cancel();
-      emit(
-        state.copyWith(
-          navRequest: null,
-          paywallData: state.paywallData.copyWith(continueUnlocked: true, timerRemainingSeconds: 0),
-        ),
-      );
+  Future<void> _onFirstWallpaperStepContinued(
+    _FirstWallpaperStepContinued event,
+    Emitter<OnboardingV2State> emit,
+  ) async {
+    if (app_state.prismUser.premium) {
+      await _finishOnboarding(emit, didPurchase: true);
     } else {
-      emit(state.copyWith(navRequest: null, paywallData: state.paywallData.copyWith(timerRemainingSeconds: remaining)));
+      emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
     }
-  }
-
-  void _onPaywallPrimaryTapped(_PaywallPrimaryTapped event, Emitter<OnboardingV2State> emit) {
-    emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
-  }
-
-  Future<void> _onPaywallContinueFreeTapped(_PaywallContinueFreeTapped event, Emitter<OnboardingV2State> emit) async {
-    await _finishOnboarding(emit, didPurchase: false);
   }
 
   Future<void> _onPaywallResultReceived(_PaywallResultReceived event, Emitter<OnboardingV2State> emit) async {
@@ -318,16 +343,24 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
-    final idx = OnboardingV2Step.values.indexOf(state.step);
-    // auth (0) and paywall (4) are terminal — no backward navigation allowed.
-    if (idx > 0 && state.step != OnboardingV2Step.paywall) {
-      emit(state.copyWith(step: OnboardingV2Step.values[idx - 1], navRequest: null));
+    // auth is terminal — no backward navigation
+    if (state.step == OnboardingV2Step.auth) return;
+
+    final OnboardingV2Step? prevStep = switch (state.step) {
+      OnboardingV2Step.interests => OnboardingV2Step.auth,
+      OnboardingV2Step.starterPack => state.skipInterests ? OnboardingV2Step.auth : OnboardingV2Step.interests,
+      OnboardingV2Step.firstWallpaper =>
+        state.skipStarterPack ? OnboardingV2Step.interests : OnboardingV2Step.starterPack,
+      OnboardingV2Step.auth => null,
+    };
+
+    if (prevStep != null) {
+      emit(state.copyWith(step: prevStep, navRequest: null));
     }
   }
 
   @override
   Future<void> close() async {
-    _paywallTimer?.cancel();
     return super.close();
   }
 }

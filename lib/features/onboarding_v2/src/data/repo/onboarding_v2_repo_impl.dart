@@ -172,6 +172,36 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
   }
 
   @override
+  Future<Result<OnboardingUserStatus>> fetchUserCompletionStatus({required String userId}) async {
+    try {
+      final status = await _firestoreClient.getById<OnboardingUserStatus>(
+        FirebaseCollections.usersV2,
+        userId,
+        (data, _) {
+          final interests = data['interestCategories'];
+          final following = data['following'];
+          final interestCount = interests is List ? interests.length : 0;
+          final followCount = following is List ? following.length : 0;
+          return OnboardingUserStatus(
+            hasInterests: interestCount >= OnboardingV2Config.minInterests,
+            hasFollows: followCount >= OnboardingV2Config.minFollows,
+          );
+        },
+        sourceTag: 'onboarding_v2.fetch_user_status',
+      );
+      return Result.success(
+        status ??
+            const OnboardingUserStatus(
+              hasInterests: false,
+              hasFollows: false,
+            ),
+      );
+    } catch (error) {
+      return Result.error(ServerFailure('Failed to fetch user completion status: $error'));
+    }
+  }
+
+  @override
   Future<Result<void>> completeOnboarding({required String userId}) async {
     try {
       final now = DateTime.now().toIso8601String();
