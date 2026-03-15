@@ -496,9 +496,9 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.d(link);
       if (link.contains('com.hash.prism')) {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
-        final OperationResult result = await PrismMediaHostApi().saveMedia(request).timeout(
-          const Duration(seconds: 15),
-        );
+        final OperationResult result = await PrismMediaHostApi()
+            .saveMedia(request)
+            .timeout(const Duration(seconds: 15));
         if (!result.success) {
           toasts.error("Couldn't download! Please retry.");
           return false;
@@ -508,9 +508,9 @@ class _DownloadButtonState extends State<DownloadButton> {
           link: link,
           filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
         );
-        final OperationResult result = await PrismMediaHostApi().enqueueDownload(request).timeout(
-          const Duration(seconds: 15),
-        );
+        final OperationResult result = await PrismMediaHostApi()
+            .enqueueDownload(request)
+            .timeout(const Duration(seconds: 15));
         if (!result.success) {
           toasts.error(result.message ?? "Couldn't download! Please retry.");
           return false;
