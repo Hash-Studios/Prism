@@ -42,15 +42,17 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   Future<void> fetchNotifications() async {
+    final all = await _notificationsLocal.readAll();
     setState(() {
-      notifications = _notificationsLocal.readAll();
+      notifications = all;
     });
-    checkNewNotification();
+    await checkNewNotification();
   }
 
-  void checkNewNotification() {
-    notifications = _notificationsLocal.readAll();
-    notifications = notifications.where((element) => !element.read).toList(growable: false);
+  Future<void> checkNewNotification() async {
+    notifications = (await _notificationsLocal.readAll())
+        .where((element) => !element.read)
+        .toList(growable: false);
     if (notifications.isEmpty) {
       setState(() {
         noNotification = true;

@@ -231,13 +231,13 @@ _i174.GetIt initGetIt(
     () => const _i231.UpdateWallpaperViewsUsecase(),
   );
   gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
-    () => _i1003.AppIconsLocalDataSource(gh<_i496.LocalStore>()),
+    () => _i1003.AppIconsLocalDataSource(),
   );
   gh.lazySingleton<_i640.FavoritesLocalDataSource>(
     () => _i640.FavoritesLocalDataSource(gh<_i496.LocalStore>()),
   );
   gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
-    () => _i954.FeedCacheLocalDataSource(gh<_i496.LocalStore>()),
+    () => _i954.FeedCacheLocalDataSource(),
   );
   gh.lazySingleton<_i290.NotificationsLocalDataSource>(
     () => _i290.NotificationsLocalDataSource(gh<_i496.LocalStore>()),

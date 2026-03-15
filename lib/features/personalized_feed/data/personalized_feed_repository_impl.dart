@@ -122,7 +122,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       );
     } catch (error, stackTrace) {
       logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
-      final cachedState = _readCacheState(scope: cacheScope);
+      final cachedState = await _readCacheState(scope: cacheScope);
       if (cachedState.cachedItems.isNotEmpty) {
         return Result.success(
           PersonalizedFeedPage(
@@ -409,8 +409,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     };
   }
 
-  _CacheState _readCacheState({required String scope}) {
-    final snapshot = _feedCacheLocal.read(source: 'personalized', scope: scope);
+  Future<_CacheState> _readCacheState({required String scope}) async {
+    final snapshot = await _feedCacheLocal.read(source: 'personalized', scope: scope);
     if (snapshot == null || snapshot.payload is! Map) {
       return const _CacheState.empty();
     }
