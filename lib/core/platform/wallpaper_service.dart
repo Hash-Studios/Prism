@@ -14,7 +14,9 @@ class WallpaperService {
       source: filePath,
     );
 
-    final result = await aw.AsyncWallpaper.setWallpaper(request);
+    final result = await aw.AsyncWallpaper.setWallpaper(request).timeout(
+      const Duration(seconds: 30),
+    );
 
     return result.isSuccess;
   }
@@ -34,7 +36,9 @@ class WallpaperService {
 
   static Future<String> _resolveToLocalFile(String source) async {
     if (source.startsWith('http://') || source.startsWith('https://')) {
-      final file = await DefaultCacheManager().getSingleFile(source);
+      final file = await DefaultCacheManager().getSingleFile(source).timeout(
+        const Duration(seconds: 30),
+      );
       return file.path;
     }
     if (source.startsWith('/')) {
