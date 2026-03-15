@@ -1,5 +1,6 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
@@ -86,25 +87,35 @@ Future<void> syncInAppNotificationsFromRemote() async {
   final DateTime nowUtc = DateTime.now().toUtc();
   final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
 
-  if (lastFetchTime == null) {
+  try {
+    if (lastFetchTime == null) {
+      final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
+        sinceUtc: nowUtc.subtract(const Duration(days: 30)),
+        sourceTag: 'notifications.last_month',
+      );
+      final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+      await notificationsLocal.writeAll(entities);
+      await notificationsLocal.setLastFetchAtUtc(nowUtc);
+      return;
+    }
+
     final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
-      sinceUtc: nowUtc.subtract(const Duration(days: 30)),
-      sourceTag: 'notifications.last_month',
+      sinceUtc: lastFetchTime,
+      sourceTag: 'notifications.latest',
+      cachePolicy: FirestoreCachePolicy.memoryFirst,
     );
     final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
-    await notificationsLocal.writeAll(entities);
+    if (entities.isNotEmpty) {
+      await notificationsLocal.upsertAll(entities);
+    }
     await notificationsLocal.setLastFetchAtUtc(nowUtc);
-    return;
+  } on FirestoreError catch (e) {
+    if (e.code == 'permission-denied') {
+      logger.w(
+        'Notifications sync skipped: permission denied — check Firestore rules for collection: ${FirebaseCollections.notifications}',
+      );
+      return;
+    }
+    rethrow;
   }
-
-  final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
-    sinceUtc: lastFetchTime,
-    sourceTag: 'notifications.latest',
-    cachePolicy: FirestoreCachePolicy.memoryFirst,
-  );
-  final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
-  if (entities.isNotEmpty) {
-    await notificationsLocal.upsertAll(entities);
-  }
-  await notificationsLocal.setLastFetchAtUtc(nowUtc);
 }
