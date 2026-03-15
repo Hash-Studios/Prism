@@ -141,6 +141,9 @@ class CoinsService {
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
+
+  /// Tracks how many AI free-trial generations have been used (max 3).
+  final ValueNotifier<int> aiFreeUsedNotifier = ValueNotifier<int>(0);
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   int _deltaVersion = 0;
@@ -545,6 +548,7 @@ class CoinsService {
           final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
           if (freeUsed < 3) {
             coinState['aiFreeUsedTotal'] = freeUsed + 1;
+            aiFreeUsedNotifier.value = freeUsed + 1;
             tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
               'coins': previous,
               _coinStateField: coinState,
@@ -718,6 +722,7 @@ class CoinsService {
           final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
           if (freeUsed > 0) {
             coinState['aiFreeUsedTotal'] = freeUsed - 1;
+            aiFreeUsedNotifier.value = freeUsed - 1;
             changed = true;
           }
         } else if (mode == AiChargeMode.proIncluded) {
