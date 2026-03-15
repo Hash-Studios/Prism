@@ -78,6 +78,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(
       path: '/dashboard',
       page: DashboardRoute.page,
+      guards: [_signedInGuard],
       children: [
         // Home tab
         AutoRoute(path: 'home', page: HomeTabRoute.page),
