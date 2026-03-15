@@ -39,7 +39,7 @@ class Colors {
   static const Color _mainColor = Color(0xFFFFFFFF);
   static const Color _secondColor = Color(0xFFEDEDED);
   static const Color _accentColor = Color(0xFF2F2F2F);
-  static const Color _mainDarkColor = Color(0xFF181818);
+  static const Color _mainDarkColor = Color(0xFF000000);
   static const Color _secondDarkColor = Color(0xFF2F2F2F);
   static const Color _accentDarkColor = Color(0xFFF0F0F0);
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
