@@ -57,7 +57,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
         headers: <String, String>{'Authorization': Env.normalize(Env.pexelsApiKey)},
       );
       if (response.statusCode != 200) {
-        return _cachedOrFailure(
+        return await _cachedOrFailure(
           categoryName: categoryName,
           failure: ServerFailure(
             'Pexels feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
@@ -83,7 +83,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = _readCached(categoryName: categoryName);
+      final cached = await _readCached(categoryName: categoryName);
       if (cached != null) {
         logger.w(
           '[PexelsWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -122,8 +122,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     }
   }
 
-  Result<List<PexelsWallpaper>> _cachedOrFailure({required String categoryName, required Failure failure}) {
-    final cached = _readCached(categoryName: categoryName);
+  Future<Result<List<PexelsWallpaper>>> _cachedOrFailure({
+    required String categoryName,
+    required Failure failure,
+  }) async {
+    final cached = await _readCached(categoryName: categoryName);
     if (cached != null) {
       logger.w(
         '[PexelsWallpaperRepository] remote status failed; returning cached snapshot',
@@ -148,8 +151,8 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     );
   }
 
-  List<PexelsWallpaper>? _readCached({required String categoryName}) {
-    final snapshot = _feedCacheLocal.read(source: 'pexels', scope: _scope(categoryName));
+  Future<List<PexelsWallpaper>?> _readCached({required String categoryName}) async {
+    final snapshot = await _feedCacheLocal.read(source: 'pexels', scope: _scope(categoryName));
     if (snapshot == null || snapshot.payload is! Map) {
       return null;
     }
