@@ -50,9 +50,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   Future<void> checkNewNotification() async {
-    notifications = (await _notificationsLocal.readAll())
-        .where((element) => !element.read)
-        .toList(growable: false);
+    notifications = (await _notificationsLocal.readAll()).where((element) => !element.read).toList(growable: false);
     if (notifications.isEmpty) {
       setState(() {
         noNotification = true;
