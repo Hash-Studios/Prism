@@ -4,19 +4,25 @@ import 'dart:convert';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: StartupRepository)
 class StartupRepositoryImpl implements StartupRepository {
-  StartupRepositoryImpl(this._remoteConfig, this._settingsLocal);
+  // FirebaseRemoteConfig is intentionally NOT injected via the constructor.
+  // Accessing FirebaseRemoteConfig.instance requires Firebase to be initialized,
+  // which happens in the background after runApp(). Injecting it here would cause
+  // the DI factory to call Firebase.instance before Firebase is ready.
+  // Instead, it is accessed lazily inside bootstrap() after awaiting FirebaseInit.readyFuture.
+  StartupRepositoryImpl(this._settingsLocal);
 
-  final FirebaseRemoteConfig _remoteConfig;
   final SettingsLocalDataSource _settingsLocal;
   final StreamController<StartupConfigEntity> _configController = StreamController<StartupConfigEntity>.broadcast();
 
@@ -74,44 +80,64 @@ class StartupRepositoryImpl implements StartupRepository {
 
   @override
   Future<Result<StartupConfigEntity>> bootstrap() async {
-    try {
-      await _remoteConfig.setConfigSettings(
-        RemoteConfigSettings(fetchTimeout: const Duration(seconds: 30), minimumFetchInterval: const Duration(hours: 6)),
-      );
-      await _remoteConfig.setDefaults(<String, dynamic>{
-        'topImageLink': defaultTopImageLink,
-        'bannerText': defaultBannerText,
-        'bannerTextOn': defaultBannerTextOn.toString(),
-        'bannerURL': defaultBannerUrl,
-        'currentVersion': currentAppVersion,
-        'obsoleteVersion': defaultObsoleteAppVersion,
-        'topTitleText': defaultTopTitleText.toString(),
-        'premiumCollections': defaultPremiumCollections.toString(),
-        'verifiedUsers': defaultVerifiedUsers.toString(),
-        'ai_enabled': defaultAiEnabled,
-        'ai_rollout_percent': defaultAiRolloutPercent,
-        'ai_submit_enabled': defaultAiSubmitEnabled,
-        'ai_variations_enabled': defaultAiVariationsEnabled,
-        'use_rc_paywalls': defaultUseRcPaywalls,
-        'onboarding_v2_enabled': defaultOnboardingV2Enabled,
-        'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
-        personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
-      });
-      await _remoteConfig.fetchAndActivate();
+    // Wait for Firebase (started in background from main()) before touching RemoteConfig.
+    final bool firebaseReady = await FirebaseInit.readyFuture;
 
-      final topImageLink = _remoteConfig.getString('topImageLink');
-      final bannerText = _remoteConfig.getString('bannerText');
-      final bannerTextOn = parseRemoteBool(_remoteConfig.getString('bannerTextOn'), fallback: defaultBannerTextOn);
-      final bannerUrl = _remoteConfig.getString('bannerURL');
-      final obsoleteVersion = _remoteConfig.getString('obsoleteVersion');
-      final verifiedUsers = _parseStringList(_remoteConfig.getString('verifiedUsers'));
-      final premiumCollections = _parseStringList(_remoteConfig.getString('premiumCollections'));
-      final topTitleText = _parseStringList(_remoteConfig.getString('topTitleText'));
-      final aiEnabled = _remoteConfig.getBool('ai_enabled');
-      final aiRolloutPercent = _remoteConfig.getInt('ai_rollout_percent').clamp(0, 100);
-      final aiSubmitEnabled = _remoteConfig.getBool('ai_submit_enabled');
-      final aiVariationsEnabled = _remoteConfig.getBool('ai_variations_enabled');
-      final useRcPaywalls = _remoteConfig.getBool('use_rc_paywalls');
+    // Only access FirebaseRemoteConfig.instance after Firebase is confirmed ready.
+    final FirebaseRemoteConfig? remoteConfig = firebaseReady ? FirebaseRemoteConfig.instance : null;
+
+    try {
+      if (remoteConfig != null) {
+        await remoteConfig.setConfigSettings(
+          RemoteConfigSettings(
+            fetchTimeout: const Duration(seconds: 30),
+            minimumFetchInterval: const Duration(hours: 6),
+          ),
+        );
+        await remoteConfig.setDefaults(<String, dynamic>{
+          'topImageLink': defaultTopImageLink,
+          'bannerText': defaultBannerText,
+          'bannerTextOn': defaultBannerTextOn.toString(),
+          'bannerURL': defaultBannerUrl,
+          'currentVersion': currentAppVersion,
+          'obsoleteVersion': defaultObsoleteAppVersion,
+          'topTitleText': defaultTopTitleText.toString(),
+          'premiumCollections': defaultPremiumCollections.toString(),
+          'verifiedUsers': defaultVerifiedUsers.toString(),
+          'ai_enabled': defaultAiEnabled,
+          'ai_rollout_percent': defaultAiRolloutPercent,
+          'ai_submit_enabled': defaultAiSubmitEnabled,
+          'ai_variations_enabled': defaultAiVariationsEnabled,
+          'use_rc_paywalls': defaultUseRcPaywalls,
+          'onboarding_v2_enabled': defaultOnboardingV2Enabled,
+          'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
+          personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
+        });
+        await remoteConfig.fetchAndActivate();
+      } else {
+        logger.w('Firebase not ready; using hardcoded default config values.', tag: 'StartupRepository');
+      }
+
+      final topImageLink = remoteConfig?.getString('topImageLink') ?? defaultTopImageLink;
+      final bannerText = remoteConfig?.getString('bannerText') ?? defaultBannerText;
+      final bannerTextOn = parseRemoteBool(
+        remoteConfig?.getString('bannerTextOn') ?? defaultBannerTextOn.toString(),
+        fallback: defaultBannerTextOn,
+      );
+      final bannerUrl = remoteConfig?.getString('bannerURL') ?? defaultBannerUrl;
+      final obsoleteVersion = remoteConfig?.getString('obsoleteVersion') ?? defaultObsoleteAppVersion;
+      final verifiedUsers = _parseStringList(
+        remoteConfig?.getString('verifiedUsers') ?? defaultVerifiedUsers.toString(),
+      );
+      final premiumCollections = _parseStringList(
+        remoteConfig?.getString('premiumCollections') ?? defaultPremiumCollections.toString(),
+      );
+      final topTitleText = _parseStringList(remoteConfig?.getString('topTitleText') ?? defaultTopTitleText.toString());
+      final aiEnabled = remoteConfig?.getBool('ai_enabled') ?? defaultAiEnabled;
+      final aiRolloutPercent = (remoteConfig?.getInt('ai_rollout_percent') ?? defaultAiRolloutPercent).clamp(0, 100);
+      final aiSubmitEnabled = remoteConfig?.getBool('ai_submit_enabled') ?? defaultAiSubmitEnabled;
+      final aiVariationsEnabled = remoteConfig?.getBool('ai_variations_enabled') ?? defaultAiVariationsEnabled;
+      final useRcPaywalls = remoteConfig?.getBool('use_rc_paywalls') ?? defaultUseRcPaywalls;
       topTitleText.shuffle();
       final categories = category_data.categoryDefinitions
           .map(
@@ -126,8 +152,10 @@ class StartupRepositoryImpl implements StartupRepository {
           .toList(growable: false);
 
       final followersTab = _settingsLocal.get<bool>('followersTab', defaultValue: true);
-      final onboardingV2Enabled = _remoteConfig.getBool('onboarding_v2_enabled');
-      final onboardingStarterPack = _parseStarterPack(_remoteConfig.getString('onboarding_starter_pack_v1'));
+      final onboardingV2Enabled = remoteConfig?.getBool('onboarding_v2_enabled') ?? defaultOnboardingV2Enabled;
+      final onboardingStarterPack = _parseStarterPack(
+        remoteConfig?.getString('onboarding_starter_pack_v1') ?? defaultOnboardingStarterPack.toString(),
+      );
       await syncInAppNotificationsFromRemote();
 
       final entity = StartupConfigEntity(

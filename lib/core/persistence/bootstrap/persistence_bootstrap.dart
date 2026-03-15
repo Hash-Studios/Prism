@@ -1,5 +1,6 @@
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/local_store_backend.dart';
+import 'package:Prism/core/persistence/migrations/persistence_migration_runner.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/persistence/store_adapters/shared_prefs_store_adapter.dart';
 import 'package:Prism/env/env.dart';
@@ -17,6 +18,7 @@ class PersistenceBootstrap {
     }
 
     await store.init();
+    await PersistenceMigrationRunner.run(store);
 
     PersistenceRuntime.initialize(store: store, backend: backend);
   }

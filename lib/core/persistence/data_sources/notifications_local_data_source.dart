@@ -1,5 +1,6 @@
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:injectable/injectable.dart';
 
@@ -17,10 +18,13 @@ String buildInAppNotificationId({
 class NotificationsLocalDataSource {
   NotificationsLocalDataSource(this._store);
 
+  // _store is kept only for the small scalar notificationsLastFetchUtc key.
   final LocalStore _store;
 
-  List<InAppNotificationEntity> readAll() {
-    final raw = _store.get(PersistenceKeys.notificationsItems);
+  final LazyFileCache _cache = LazyFileCache('notifications');
+
+  Future<List<InAppNotificationEntity>> readAll() async {
+    final raw = await _cache.get(PersistenceKeys.notificationsItems);
     if (raw is! List) {
       return const <InAppNotificationEntity>[];
     }
@@ -71,11 +75,11 @@ class NotificationsLocalDataSource {
           },
         )
         .toList(growable: false);
-    return _store.set(PersistenceKeys.notificationsItems, payload);
+    return _cache.set(PersistenceKeys.notificationsItems, payload);
   }
 
   Future<void> upsertAll(List<InAppNotificationEntity> incoming) async {
-    final existing = readAll();
+    final existing = await readAll();
     final byId = <String, InAppNotificationEntity>{for (final item in existing) item.id: item};
     for (final item in incoming) {
       final prev = byId[item.id];
@@ -90,17 +94,19 @@ class NotificationsLocalDataSource {
   }
 
   Future<void> markAsRead(String id) async {
-    final updated = readAll().map((item) => item.id == id ? item.copyWith(read: true) : item).toList(growable: false);
+    final updated = (await readAll())
+        .map((item) => item.id == id ? item.copyWith(read: true) : item)
+        .toList(growable: false);
     await writeAll(updated);
   }
 
   Future<void> deleteById(String id) async {
-    final updated = readAll().where((item) => item.id != id).toList(growable: false);
+    final updated = (await readAll()).where((item) => item.id != id).toList(growable: false);
     await writeAll(updated);
   }
 
   Future<void> clearAll() {
-    return _store.delete(PersistenceKeys.notificationsItems);
+    return _cache.delete(PersistenceKeys.notificationsItems);
   }
 
   DateTime? lastFetchAtUtc() {

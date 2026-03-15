@@ -61,7 +61,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': walls.length});
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = _readCached();
+      final cached = await _readCached();
       if (cached != null) {
         logger.w(
           '[PrismWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -112,8 +112,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     );
   }
 
-  List<PrismWallpaper>? _readCached() {
-    final snapshot = _feedCacheLocal.read(source: 'prism', scope: 'main');
+  Future<List<PrismWallpaper>?> _readCached() async {
+    final snapshot = await _feedCacheLocal.read(source: 'prism', scope: 'main');
     if (snapshot == null || snapshot.payload is! Map) {
       return null;
     }

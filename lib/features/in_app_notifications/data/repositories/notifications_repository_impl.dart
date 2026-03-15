@@ -12,8 +12,8 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
 
   final NotificationsLocalDataSource _notificationsLocal;
 
-  List<InAppNotificationEntity> _readAll() {
-    final items = _notificationsLocal.readAll().toList(growable: false);
+  Future<List<InAppNotificationEntity>> _readAll() async {
+    final items = (await _notificationsLocal.readAll()).toList(growable: false);
     final sorted = items.toList(growable: false)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return sorted;
   }
@@ -24,7 +24,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
       if (syncRemote) {
         await syncInAppNotificationsFromRemote();
       }
-      return Result.success(_readAll());
+      return Result.success(await _readAll());
     } catch (error) {
       return Result.error(ServerFailure('Unable to fetch notifications: $error'));
     }
@@ -37,7 +37,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
         return Result.error(const ValidationFailure('Invalid notification id'));
       }
       await _notificationsLocal.markAsRead(id);
-      return Result.success(_readAll());
+      return Result.success(await _readAll());
     } catch (error) {
       return Result.error(CacheFailure('Unable to mark notification as read: $error'));
     }
@@ -50,7 +50,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
         return Result.error(const ValidationFailure('Invalid notification id'));
       }
       await _notificationsLocal.deleteById(id);
-      return Result.success(_readAll());
+      return Result.success(await _readAll());
     } catch (error) {
       return Result.error(CacheFailure('Unable to delete notification: $error'));
     }

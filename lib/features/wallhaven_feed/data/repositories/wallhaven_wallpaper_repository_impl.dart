@@ -54,7 +54,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     try {
       final http.Response response = await http.get(uri);
       if (response.statusCode != 200) {
-        return _cachedOrFailure(
+        return await _cachedOrFailure(
           categoryName: categoryName,
           categories: categories,
           purity: purity,
@@ -89,7 +89,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = _readCached(categoryName: categoryName, categories: categories, purity: purity);
+      final cached = await _readCached(categoryName: categoryName, categories: categories, purity: purity);
       if (cached != null) {
         logger.w(
           '[WallhavenWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -126,13 +126,13 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     }
   }
 
-  Result<List<WallhavenWallpaper>> _cachedOrFailure({
+  Future<Result<List<WallhavenWallpaper>>> _cachedOrFailure({
     required String categoryName,
     required int categories,
     required int purity,
     required Failure failure,
-  }) {
-    final cached = _readCached(categoryName: categoryName, categories: categories, purity: purity);
+  }) async {
+    final cached = await _readCached(categoryName: categoryName, categories: categories, purity: purity);
     if (cached != null) {
       logger.w(
         '[WallhavenWallpaperRepository] remote status failed; returning cached snapshot',
@@ -159,8 +159,12 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     );
   }
 
-  List<WallhavenWallpaper>? _readCached({required String categoryName, required int categories, required int purity}) {
-    final snapshot = _feedCacheLocal.read(
+  Future<List<WallhavenWallpaper>?> _readCached({
+    required String categoryName,
+    required int categories,
+    required int purity,
+  }) async {
+    final snapshot = await _feedCacheLocal.read(
       source: 'wallhaven',
       scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
     );
