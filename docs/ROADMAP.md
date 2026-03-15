@@ -29,71 +29,71 @@ Everything below must ship together as the v3.0.0 release. This is the minimum v
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| A1 | **Replace Firebase Dynamic Links** with App Links (Android) + Universal Links (iOS) | Sharing is completely broken. No viral loop without this. | Medium |
-| A2 | **Migrate `WillPopScope` → `PopScope`** | Deprecated API, causes warnings, bad for store review | Low |
-| A3 | **Fix code generation outputs** | Missing or stale `.g.dart` files cause runtime issues | Low |
-| A4 | **Remove "download anyway" ad fallback** | Leaks revenue — if ad fails, show retry + Pro upsell instead | Low |
-| A5 | **Fix code generation pipeline** | Ensure `make file-gen` produces clean output with no errors | Low |
+| A1 | [x] **Replace Firebase Dynamic Links** with App Links (Android) + Universal Links (iOS) | Sharing is completely broken. No viral loop without this. | Medium |
+| A2 | [x] **Migrate `WillPopScope` → `PopScope`** | Deprecated API, causes warnings, bad for store review | Low |
+| A3 | [x] **Fix code generation outputs** | Missing or stale `.g.dart` files cause runtime issues | Low |
+| A4 | [x] **Remove "download anyway" ad fallback** | Leaks revenue — if ad fails, show retry + Pro upsell instead | Low |
+| A5 | [x] **Fix code generation pipeline** | Ensure `make file-gen` produces clean output with no errors | Low |
 
 ### B. Prism Coins (The Economy)
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| B1 | **Coin balance system** | Store coins in user model (already has `coins` field), sync to Firestore | Medium |
-| B2 | **Coin balance UI in app bar** | Always-visible coin count, animated earn/spend | Low |
-| B3 | **Earn coins: watch rewarded ad (+10)** | Primary earn method — replaces current ad-gate-per-download | Medium |
-| B4 | **Earn coins: daily login (+5)** | Opens the app daily | Low |
-| B5 | **Earn coins: 7-day streak (+25 bonus)** | Habit formation through Day 0-7 window | Medium |
-| B6 | **Earn coins: profile completion (+25)** | Drives profile setup | Low |
-| B7 | **Spend coins: download wallpaper (-5)** | Core spend action | Low |
-| B8 | **Spend coins: download premium wallpaper (-15)** | Premium content monetization | Low |
-| B9 | **Spend coins: AI generation (-20)** | High-value action, drives more ad watches | Low |
-| B10 | **"Watch & Download" shortcut** | One-tap: watch ad → earn coins → auto-download | Low |
-| B11 | **Low balance nudge** | When coins < 10, suggest watching ad or upgrading to Pro | Low |
+| B1 | [x] **Coin balance system** | Store coins in user model (already has `coins` field), sync to Firestore | Medium |
+| B2 | [x] **Coin balance UI in app bar** | Always-visible coin count, animated earn/spend | Low |
+| B3 | [x] **Earn coins: watch rewarded ad (+10)** | Primary earn method — replaces current ad-gate-per-download | Medium |
+| B4 | [x] **Earn coins: daily login (+5)** | Opens the app daily | Low |
+| B5 | [x] **Earn coins: 7-day streak (+25 bonus)** | Habit formation through Day 0-7 window | Medium |
+| B6 | [x] **Earn coins: profile completion (+25)** | Drives profile setup | Low |
+| B7 | [x] **Spend coins: download wallpaper (-5)** | Core spend action | Low |
+| B8 | [x] **Spend coins: download premium wallpaper (-15)** | Premium content monetization | Low |
+| B9 | [x] **Spend coins: AI generation (-20)** | High-value action, drives more ad watches | Low |
+| B10 | [x] **"Watch & Download" shortcut** | One-tap: watch ad → earn coins → auto-download | Low |
+| B11 | [x] **Low balance nudge** | When coins < 10, suggest watching ad or upgrading to Pro | Low |
 
 ### C. Subscriptions Revamp
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| C1 | **New tiers: Free / Pro (₹99/mo, $3.99/mo) / Lifetime (₹1,999, $29.99)** | Replace current confusing entitlements with simple 2-tier + lifetime | Medium |
-| C2 | **Annual Pro option** | ₹999/yr ($39.99/yr) — 2 months free | Low |
-| C3 | **Pro bypasses coins** | Downloads, AI (30/day), filters, premium collections — all free for Pro | Medium |
-| C4 | **Pro gets 50 coins/day** | Bonus coins for extras (AI beyond 30, future tipping) | Low |
-| C5 | **New paywall screen** | Show clear Free vs Pro comparison, contextual upsell after 3+ ad watches | Medium |
-| C6 | **7-day free trial** | Lower barrier to Pro conversion | Low |
-| C7 | **Regional pricing via RevenueCat** | India ₹99, US $3.99, EU €3.99, etc. | Low |
+| C1 | [x] **New tiers: Free / Pro (₹99/mo, $3.99/mo) / Lifetime (₹1,999, $29.99)** | Replace current confusing entitlements with simple 2-tier + lifetime | Medium |
+| C2 | [x] **Annual Pro option** | ₹999/yr ($39.99/yr) — 2 months free | Low |
+| C3 | [x] **Pro bypasses coins** | Downloads, AI (30/day), filters, premium collections — all free for Pro | Medium |
+| C4 | [x] **Pro gets 50 coins/day** | Bonus coins for extras (AI beyond 30, future tipping) | Low |
+| C5 | [x] **New paywall screen** | Show clear Free vs Pro comparison, contextual upsell after 3+ ad watches | Medium |
+| C6 | [ ] **7-day free trial** | Lower barrier to Pro conversion | Low |
+| C7 | [x] **Regional pricing via RevenueCat** | India ₹99, US $3.99, EU €3.99, etc. | Low |
 
 ### D. AI Wallpaper Generation (The Growth Engine)
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| D1 | **Text-to-image generation** | "Describe your wallpaper" → AI generates it. THE feature of 2025-2026. | High |
-| D2 | **Style presets** | Anime, minimal, cyberpunk, watercolor, mesh gradient, abstract, nature | Medium |
-| D3 | **Device-resolution output** | Auto-detect device resolution, generate at correct aspect ratio | Low |
-| D4 | **"Made with Prism" watermark (free tier)** | Every shared AI wallpaper = free marketing. Pro removes watermark. | Low |
-| D5 | **Save to gallery + share** | One-tap save, one-tap share to Instagram/Twitter with Prism branding | Low |
-| D6 | **Generation history** | View past generations, regenerate with tweaks | Medium |
-| D7 | **3 free generations for new users** | First 3 are free (no coins), then coins required. Hook for Day 0. | Low |
-| D8 | **AI tab in navigation** | Dedicated tab or prominent entry point — not buried in settings | Low |
+| D1 | [x] **Text-to-image generation** | "Describe your wallpaper" → AI generates it. THE feature of 2025-2026. | High |
+| D2 | [x] **Style presets** | Anime, minimal, cyberpunk, watercolor, mesh gradient, abstract, nature | Medium |
+| D3 | [ ] **Device-resolution output** | Auto-detect device resolution, generate at correct aspect ratio | Low |
+| D4 | [x] **"Made with Prism" watermark (free tier)** | Every shared AI wallpaper = free marketing. Pro removes watermark. | Low |
+| D5 | [x] **Save to gallery + share** | One-tap save, one-tap share to Instagram/Twitter with Prism branding | Low |
+| D6 | [x] **Generation history** | View past generations, regenerate with tweaks | Medium |
+| D7 | [x] **3 free generations for new users** | First 3 are free (no coins), then coins required. Hook for Day 0. | Low |
+| D8 | [x] **AI tab in navigation** | Dedicated tab or prominent entry point — not buried in settings | Low |
 
 ### E. Retention Features
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| E1 | **Wall of the Day** | Firestore doc updated daily, card at top of Home tab, push notification at 9 AM. Backdrops proved this is #1 retention feature. | Medium |
-| E2 | **Login streak system** | 7-day cycle with escalating coin rewards. Visible streak counter on profile. Fire icon. FOMO. | Medium |
-| E3 | **Streak reminder push** | 8 PM notification if user hasn't opened today + has active streak | Low |
-| E4 | **"Tomorrow hook"** | End of first session: "Your first Wall of the Day drops tomorrow at 9 AM" + notification permission ask | Low |
-| E5 | **Profile completeness nudge** | Post-signup: "Complete your profile to earn 25 Prism Coins" with progress ring | Low |
-| E6 | **Smart notification permission** | Don't ask on first launch. Ask after first download/favorite with clear value prop. | Low |
+| E1 | [x] **Wall of the Day** | Firestore doc updated daily, card at top of Home tab, push notification at 9 AM. Backdrops proved this is #1 retention feature. | Medium |
+| E2 | [x] **Login streak system** | 7-day cycle with escalating coin rewards. Visible streak counter on profile. Fire icon. FOMO. | Medium |
+| E3 | [x] **Streak reminder push** | 8 PM notification if user hasn't opened today + has active streak | Low |
+| E4 | [x] **"Tomorrow hook"** | End of first session: "Your first Wall of the Day drops tomorrow at 9 AM" + notification permission ask | Low |
+| E5 | [x] **Profile completeness nudge** | Post-signup: "Complete your profile to earn 25 Prism Coins" with progress ring | Low |
+| E6 | [ ] **Smart notification permission** | Don't ask on first launch. Ask after first download/favorite with clear value prop. | Low |
 
 ### F. Onboarding Revamp
 
 | # | Item | Why | Effort |
 |---|------|-----|--------|
-| F1 | **Interest selection** | "Pick 5+ categories you love" grid after sign-in. Feeds recommendations. | Medium |
-| F2 | **Follow starter pack** | "Follow 3+ creators" — show top 10 with best wallpaper preview | Medium |
-| F3 | **Set first wallpaper** | Suggest a wallpaper based on interests, one-tap set. Deliver value in < 60 sec. | Low |
+| F1 | [x] **Interest selection** | "Pick 5+ categories you love" grid after sign-in. Feeds recommendations. | Medium |
+| F2 | [x] **Follow starter pack** | "Follow 3+ creators" — show top 10 with best wallpaper preview | Medium |
+| F3 | [x] **Set first wallpaper** | Suggest a wallpaper based on interests, one-tap set. Deliver value in < 60 sec. | Low |
 
 ---
 
@@ -105,29 +105,29 @@ These are important but not blocking the 3.0.0 release.
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| G1 | **Badge system activation** | 12 badges with triggers — infrastructure already exists in code. Unlock animations. | Medium | Month 1 |
-| G2 | **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites/collections. THE loyalty feature. | High | Month 1-2 |
-| G3 | **"For You" personalized feed** | Tag-based matching from interests + favorites + download history | High | Month 2 |
-| G4 | **Weekly challenges** | Rotating challenges with coin + badge rewards. Drives feature exploration. | Medium | Month 2 |
-| G5 | **Collection subscribe + notifications** | "New in [collection]" push when content is added | Low | Month 1 |
-| G6 | **Re-engagement push sequence** | Day 3/7/14/30/60 lapsed user notifications, then stop | Medium | Month 1 |
-| G7 | **Trending feed** | Popular wallpapers last 24h / 7d. Social proof + FOMO. | Medium | Month 2 |
+| G1 | [ ] **Badge system activation** | 12 badges with triggers — infrastructure already exists in code. Unlock animations. | Medium | Month 1 |
+| G2 | [ ] **Auto wallpaper rotation (Pro)** | Schedule-based wallpaper changing from favorites/collections. THE loyalty feature. | High | Month 1-2 |
+| G3 | [x] **"For You" personalized feed** | Tag-based matching from interests + favorites + download history | High | Month 2 |
+| G4 | [ ] **Weekly challenges** | Rotating challenges with coin + badge rewards. Drives feature exploration. | Medium | Month 2 |
+| G5 | [ ] **Collection subscribe + notifications** | "New in [collection]" push when content is added | Low | Month 1 |
+| G6 | [ ] **Re-engagement push sequence** | Day 3/7/14/30/60 lapsed user notifications, then stop | Medium | Month 1 |
+| G7 | [ ] **Trending feed** | Popular wallpapers last 24h / 7d. Social proof + FOMO. | Medium | Month 2 |
 
 ### H. Setup Features (The Differentiator)
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| H1 | **Setup of the Day** | Daily featured setup, same mechanic as Wall of the Day | Low | Month 1 |
-| H2 | **Setup sharing with deep links** | Share setups that open directly in Prism | Medium | Month 1 |
-| H3 | **Setup creation for all users** | Currently Pro-only browse. Let free users create (with coin cost or limit). | Low | Month 2 |
+| H1 | [ ] **Setup of the Day** | Daily featured setup, same mechanic as Wall of the Day | Low | Month 1 |
+| H2 | [ ] **Setup sharing with deep links** | Share setups that open directly in Prism | Medium | Month 1 |
+| H3 | [ ] **Setup creation for all users** | Currently Pro-only browse. Let free users create (with coin cost or limit). | Low | Month 2 |
 
 ### I. Growth Infrastructure
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| I1 | **Referral system** | Share referral link → friend signs up → both get 100 coins. Code placeholder already exists. | Medium | Month 2 |
-| I2 | **ASO update** | New store listing: "Prism — AI Wallpapers & Setups", screenshots showing AI, setup sharing | Low | Launch day |
-| I3 | **AI share optimization** | One-tap share to Instagram Stories with Prism template/branding | Medium | Month 1 |
+| I1 | [ ] **Referral system** | Share referral link → friend signs up → both get 100 coins. Code placeholder already exists. | Medium | Month 2 |
+| I2 | [ ] **ASO update** | New store listing: "Prism — AI Wallpapers & Setups", screenshots showing AI, setup sharing | Low | Launch day |
+| I3 | [ ] **AI share optimization** | One-tap share to Instagram Stories with Prism template/branding | Medium | Month 1 |
 
 ---
 
@@ -137,16 +137,16 @@ These are important but not blocking the 3.0.0 release.
 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
-| J1 | **Creator fund** | Top creators earn coins from engagement on their wallpapers | High | Month 3 |
-| J2 | **Coin purchase packs (IAP)** | ₹29-199 / $0.99-6.99 — additional revenue stream | Medium | Month 3 |
-| J3 | **Tip jar** | Users tip creators with Prism Coins | Medium | Month 4 |
-| J4 | **Comments on wallpapers** | Social proof, community, engagement depth | Medium | Month 3 |
-| J5 | **Home screen widget** | Shows Wall of the Day or rotates wallpapers. Keeps app visible. | High | Month 3 |
-| J6 | **Ad mediation** | Add Unity Ads + Meta Audience Network alongside AdMob for better fill rate + eCPM | Medium | Month 3 |
-| J7 | **AI style transfer** | "Reimagine my photo" — upload photo, get artistic wallpaper version | High | Month 4 |
-| J8 | **Live/video wallpapers** | Basic video wallpaper support — table stakes by 2026 | High | Month 5+ |
-| J9 | **Coin doubler events** | Weekend 2x ad rewards. Drives engagement spikes. | Low | Month 4 |
-| J10 | **Setup marketplace** | Creators sell premium setups. One-tap install. | High | Month 6 |
+| J1 | [ ] **Creator fund** | Top creators earn coins from engagement on their wallpapers | High | Month 3 |
+| J2 | [ ] **Coin purchase packs (IAP)** | ₹29-199 / $0.99-6.99 — additional revenue stream | Medium | Month 3 |
+| J3 | [ ] **Tip jar** | Users tip creators with Prism Coins | Medium | Month 4 |
+| J4 | [ ] **Comments on wallpapers** | Social proof, community, engagement depth | Medium | Month 3 |
+| J5 | [ ] **Home screen widget** | Shows Wall of the Day or rotates wallpapers. Keeps app visible. | High | Month 3 |
+| J6 | [ ] **Ad mediation** | Add Unity Ads + Meta Audience Network alongside AdMob for better fill rate + eCPM | Medium | Month 3 |
+| J7 | [ ] **AI style transfer** | "Reimagine my photo" — upload photo, get artistic wallpaper version | High | Month 4 |
+| J8 | [ ] **Live/video wallpapers** | Basic video wallpaper support — table stakes by 2026 | High | Month 5+ |
+| J9 | [ ] **Coin doubler events** | Weekend 2x ad rewards. Drives engagement spikes. | Low | Month 4 |
+| J10 | [ ] **Setup marketplace** | Creators sell premium setups. One-tap install. | High | Month 6 |
 
 ---
 

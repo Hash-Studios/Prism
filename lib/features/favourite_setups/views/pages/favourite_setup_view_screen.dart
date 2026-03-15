@@ -67,11 +67,12 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
         return;
       }
       await context.router.push(
-        ShareWallpaperViewRoute(
+        WallpaperDetailRoute(
           wallId: _setup.wallId!,
           source: _setup.source ?? WallpaperSource.unknown,
           wallpaperUrl: _wallpaperValue.primaryUrl,
           thumbnailUrl: _setup.wallpaperThumb?.isNotEmpty == true ? _setup.wallpaperThumb! : _wallpaperValue.primaryUrl,
+          analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
         ),
       );
       return;

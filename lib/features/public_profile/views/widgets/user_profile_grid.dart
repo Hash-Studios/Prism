@@ -1,3 +1,4 @@
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
@@ -9,6 +10,7 @@ import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -285,12 +287,10 @@ class _PhotographerWallTile extends StatelessWidget {
                 if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
                     context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
                 } else {
+                  final walls = context.publicProfileAdapter(listen: false).userProfileWalls!;
+                  final entity = WallpaperDetailEntityX.fromPublicProfileWall(walls[index]);
                   context.router.push(
-                    UserProfileWallViewRoute(
-                      wallIndex: index,
-                      thumbnailUrl:
-                          context.publicProfileAdapter(listen: false).userProfileWalls![index].wallpaperThumb ?? '',
-                    ),
+                    WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
                   );
                 }
               },

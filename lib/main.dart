@@ -21,8 +21,8 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
-import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/persistence/prefs_compat.dart';
+import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
@@ -39,9 +39,9 @@ import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
+import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
-import 'package:Prism/features/profile_walls/profile_walls.dart';
 import 'package:Prism/features/public_profile/public_profile.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
@@ -268,11 +268,11 @@ Future<void> main() async {
                 providers: [
                   BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
                   BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                  BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                   BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
                   BlocProvider<CategoryFeedBloc>(
                     create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
                   ),
-                  BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
                   BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
                   BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
                   BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
@@ -714,11 +714,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     switch (action) {
       case ShareLinkIntent():
         _appRouter.push(
-          ShareWallpaperViewRoute(
+          WallpaperDetailRoute(
             wallId: action.wallId,
             source: action.source,
             wallpaperUrl: action.wallpaperUrl,
             thumbnailUrl: action.thumbnailUrl,
+            analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
           ),
         );
         unawaited(

@@ -32,7 +32,7 @@ void main() {
     final DeepLinkNavigation navigation = DeepLinkNavigation(httpClient: client);
     final route = await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/l/u5lmmUq0'));
 
-    expect(route, isA<ShareWallpaperViewRoute>());
+    expect(route, isA<WallpaperDetailRoute>());
   });
 
   test('returns null for unknown links', () async {

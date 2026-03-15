@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -234,10 +235,9 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                                   ),
                                 );
                                 context.router.push(
-                                  WallpaperRoute(
-                                    source: WallpaperSourceX.fromWire(widget.provider),
-                                    index: index,
-                                    link: PData.wallsC[index].core.thumbnailUrl,
+                                  WallpaperDetailRoute(
+                                    entity: PexelsDetailEntity(wallpaper: PData.wallsC[index]),
+                                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
                                   ),
                                 );
                               }

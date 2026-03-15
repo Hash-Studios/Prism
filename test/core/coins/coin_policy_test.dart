@@ -6,7 +6,7 @@ void main() {
   test('coin earn values match revenue model', () {
     expect(CoinPolicy.rewardedAd, 10);
     expect(CoinPolicy.dailyLogin, 5);
-    expect(CoinPolicy.streak7Bonus, 25);
+    expect(CoinPolicy.streak7Bonus, 40);
     expect(CoinPolicy.firstWallpaperUpload, 50);
     expect(CoinPolicy.referral, 100);
     expect(CoinPolicy.profileCompletion, 25);
