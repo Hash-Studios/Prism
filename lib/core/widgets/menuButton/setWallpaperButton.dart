@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -19,36 +21,9 @@ class SetWallpaperButton extends StatefulWidget {
 class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   bool isLoading = false;
 
-  Future<void> _setWallPaper() async {
-    bool? result;
-    try {
-      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
-      if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
-        );
-      } else {
-        logger.d("Failed");
-        toasts.error("Something went wrong!");
-      }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
-      );
-      logger.d(e.toString());
-      toasts.error("Something went wrong!");
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
+  String _errorMessage(Object e) {
+    if (e is TimeoutException) return "Timed out - check your connection and try again.";
+    return "Something went wrong!";
   }
 
   Future<void> _setBothWallPaper() async {
@@ -75,7 +50,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
       );
       logger.d(e.toString());
-      toasts.error("Something went wrong!");
+      toasts.error(_errorMessage(e));
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -108,7 +83,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       analytics.track(
         const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
       );
-      toasts.error("Something went wrong!");
+      toasts.error(_errorMessage(e));
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -141,21 +116,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       analytics.track(
         const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
       );
-      toasts.error("Something went wrong!");
+      toasts.error(_errorMessage(e));
       if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
     }
-  }
-
-  Future<void> onPaint() async {
-    HapticFeedback.vibrate();
-    setState(() {
-      isLoading = true;
-    });
-    await _setWallPaper();
   }
 
   @override
