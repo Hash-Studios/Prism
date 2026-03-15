@@ -48,7 +48,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
       await _writeCache(rows: rows, page: page);
       return Result.success(page);
     } catch (error) {
-      final cached = _readCached();
+      final cached = await _readCached();
       if (cached != null) {
         return Result.success(cached);
       }
@@ -71,8 +71,8 @@ class SetupsRepositoryImpl implements SetupsRepository {
     );
   }
 
-  SetupsPage? _readCached() {
-    final snapshot = _feedCacheLocal.read(source: 'setups', scope: 'main');
+  Future<SetupsPage?> _readCached() async {
+    final snapshot = await _feedCacheLocal.read(source: 'setups', scope: 'main');
     if (snapshot == null || snapshot.payload is! Map) {
       return null;
     }

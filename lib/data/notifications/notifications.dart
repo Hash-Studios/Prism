@@ -82,12 +82,16 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
 }
 
 Future<void> syncInAppNotificationsFromRemote() async {
+  if (!app_state.prismUser.loggedIn) {
+    logger.d('Skipping in-app notification sync — user not signed in');
+    return;
+  }
   logger.d('Fetching in-app notifications');
-  final notificationsLocal = getIt<NotificationsLocalDataSource>();
-  final DateTime nowUtc = DateTime.now().toUtc();
-  final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
-
   try {
+    final notificationsLocal = getIt<NotificationsLocalDataSource>();
+    final DateTime nowUtc = DateTime.now().toUtc();
+    final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
+
     if (lastFetchTime == null) {
       final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
         sinceUtc: nowUtc.subtract(const Duration(days: 30)),
@@ -110,12 +114,8 @@ Future<void> syncInAppNotificationsFromRemote() async {
     }
     await notificationsLocal.setLastFetchAtUtc(nowUtc);
   } on FirestoreError catch (e) {
-    if (e.code == 'permission-denied') {
-      logger.w(
-        'Notifications sync skipped: permission denied — check Firestore rules for collection: ${FirebaseCollections.notifications}',
-      );
-      return;
-    }
-    rethrow;
+    logger.w('syncInAppNotificationsFromRemote failed (code=${e.code}): ${e.message}');
+  } catch (e) {
+    logger.w('syncInAppNotificationsFromRemote failed: $e');
   }
 }

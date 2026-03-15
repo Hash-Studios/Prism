@@ -19,8 +19,8 @@ List<AppIcon> _decodeIcons(Object? raw) {
 
 Future<List<AppIcon>> getIcons() async {
   final AppIconsLocalDataSource local = getIt<AppIconsLocalDataSource>();
-  final Map<String, dynamic> cached = local.readIconsPayload();
-  final DateTime? cachedAt = local.lastUpdatedAtUtc();
+  final Map<String, dynamic> cached = await local.readIconsPayload();
+  final DateTime? cachedAt = await local.lastUpdatedAtUtc();
   final bool cacheFresh =
       cached.isNotEmpty && cachedAt != null && DateTime.now().toUtc().difference(cachedAt) <= _iconsCacheTtl;
 

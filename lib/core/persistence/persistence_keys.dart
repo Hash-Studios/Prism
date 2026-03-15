@@ -1,7 +1,7 @@
 class PersistenceKeys {
   const PersistenceKeys._();
 
-  static const int currentSchemaVersion = 2;
+  static const int currentSchemaVersion = 3;
 
   static const String schemaVersion = 'schema.version';
   static const String schemaMigratedAtUtc = 'schema.migrated_at_utc';
@@ -31,6 +31,12 @@ class PersistenceKeys {
   static String favoriteSetup(String userId, String itemId) => '$favoritesSetupPrefix$userId.$itemId';
 
   static String favoritesSeeded(String userId) => '$favoritesSeededPrefix$userId';
+
+  /// Set-based favorites keys (v3+): store the full set of favorited IDs as a
+  /// JSON list under a single key per user scope.
+  static String favoritesWallSet(String userId) => '${favoritesWallPrefix}__set.$userId';
+
+  static String favoritesSetupSet(String userId) => '${favoritesSetupPrefix}__set.$userId';
 
   // Quick tile configuration — written as raw strings so native TileServices
   // can read them directly from SharedPreferences without the Flutter codec.
