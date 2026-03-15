@@ -1,5 +1,5 @@
-import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:injectable/injectable.dart';
 
 class FeedSnapshot {
@@ -14,12 +14,12 @@ class FeedSnapshot {
 
 @lazySingleton
 class FeedCacheLocalDataSource {
-  FeedCacheLocalDataSource(this._store);
+  FeedCacheLocalDataSource();
 
-  final LocalStore _store;
+  final LazyFileCache _cache = LazyFileCache('feed_cache');
 
-  FeedSnapshot? read({required String source, required String scope}) {
-    final raw = _store.get(PersistenceKeys.cacheFeed(source, scope));
+  Future<FeedSnapshot?> read({required String source, required String scope}) async {
+    final raw = await _cache.get(PersistenceKeys.cacheFeed(source, scope));
     if (raw is! Map) {
       return null;
     }
@@ -32,7 +32,7 @@ class FeedCacheLocalDataSource {
   }
 
   Future<void> write({required String source, required String scope, required Object? payload, required int ttlHours}) {
-    return _store.set(PersistenceKeys.cacheFeed(source, scope), <String, Object?>{
+    return _cache.set(PersistenceKeys.cacheFeed(source, scope), <String, Object?>{
       'cachedAtUtc': DateTime.now().toUtc().toIso8601String(),
       'ttlHours': ttlHours,
       'payload': payload,
@@ -40,6 +40,6 @@ class FeedCacheLocalDataSource {
   }
 
   Future<void> clearAllFeedCaches() {
-    return _store.clearPrefix(PersistenceKeys.cacheFeedPrefix);
+    return _cache.clearPrefix(PersistenceKeys.cacheFeedPrefix);
   }
 }
