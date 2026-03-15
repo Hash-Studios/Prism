@@ -1,5 +1,6 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
@@ -81,30 +82,40 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
 }
 
 Future<void> syncInAppNotificationsFromRemote() async {
-  logger.d('Fetching in-app notifications');
-  final notificationsLocal = getIt<NotificationsLocalDataSource>();
-  final DateTime nowUtc = DateTime.now().toUtc();
-  final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
-
-  if (lastFetchTime == null) {
-    final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
-      sinceUtc: nowUtc.subtract(const Duration(days: 30)),
-      sourceTag: 'notifications.last_month',
-    );
-    final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
-    await notificationsLocal.writeAll(entities);
-    await notificationsLocal.setLastFetchAtUtc(nowUtc);
+  if (!app_state.prismUser.loggedIn) {
+    logger.d('Skipping in-app notification sync — user not signed in');
     return;
   }
+  logger.d('Fetching in-app notifications');
+  try {
+    final notificationsLocal = getIt<NotificationsLocalDataSource>();
+    final DateTime nowUtc = DateTime.now().toUtc();
+    final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
 
-  final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
-    sinceUtc: lastFetchTime,
-    sourceTag: 'notifications.latest',
-    cachePolicy: FirestoreCachePolicy.memoryFirst,
-  );
-  final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
-  if (entities.isNotEmpty) {
-    await notificationsLocal.upsertAll(entities);
+    if (lastFetchTime == null) {
+      final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
+        sinceUtc: nowUtc.subtract(const Duration(days: 30)),
+        sourceTag: 'notifications.last_month',
+      );
+      final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+      await notificationsLocal.writeAll(entities);
+      await notificationsLocal.setLastFetchAtUtc(nowUtc);
+      return;
+    }
+
+    final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
+      sinceUtc: lastFetchTime,
+      sourceTag: 'notifications.latest',
+      cachePolicy: FirestoreCachePolicy.memoryFirst,
+    );
+    final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+    if (entities.isNotEmpty) {
+      await notificationsLocal.upsertAll(entities);
+    }
+    await notificationsLocal.setLastFetchAtUtc(nowUtc);
+  } on FirestoreError catch (e) {
+    logger.w('syncInAppNotificationsFromRemote failed (code=${e.code}): ${e.message}');
+  } catch (e) {
+    logger.w('syncInAppNotificationsFromRemote failed: $e');
   }
-  await notificationsLocal.setLastFetchAtUtc(nowUtc);
 }
