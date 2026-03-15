@@ -224,40 +224,38 @@ Future<void> main() async {
       DebugFlags.instance.loadFromStore();
       localPrefs = PrefsCompat.fromRuntime();
       logger.d("Persistence initialized");
+
+      // Read all prefs first, then batch writes in parallel.
       final systemOverlayColorValue = _colorValueFromPrefs(localPrefs.get("systemOverlayColor"), fallback: 0xFFE57697);
-      await localPrefs.put("systemOverlayColor", systemOverlayColorValue);
       currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      await localPrefs.put("lightThemeID", currentThemeID);
       currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      await localPrefs.put("darkThemeID", currentDarkThemeID);
       currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
-      await localPrefs.put("themeMode", currentMode);
       final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
       lightAccent = Color(lightAccentValue);
-      await localPrefs.put("lightAccent", lightAccentValue);
-
       final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
       darkAccent = Color(darkAccentValue);
-      await localPrefs.put("darkAccent", darkAccentValue);
       optimisedWallpapers = localPrefs.get('optimisedWallpapers') == true;
-      await localPrefs.put('optimisedWallpapers', false);
       categories = localPrefs.get('WHcategories') as int? ?? 100;
-      if (categories == 100) {
-        await localPrefs.put('WHcategories', 100);
-      } else {
-        await localPrefs.put('WHcategories', 111);
-      }
       purity = localPrefs.get('WHpurity') as int? ?? 100;
-      if (purity == 100) {
-        await localPrefs.put('WHpurity', 100);
-      } else {
-        await localPrefs.put('WHpurity', 110);
-      }
+
+      await Future.wait(<Future<void>>[
+        localPrefs.put("systemOverlayColor", systemOverlayColorValue),
+        localPrefs.put("lightThemeID", currentThemeID),
+        localPrefs.put("darkThemeID", currentDarkThemeID),
+        localPrefs.put("themeMode", currentMode),
+        localPrefs.put("lightAccent", lightAccentValue),
+        localPrefs.put("darkAccent", darkAccentValue),
+        localPrefs.put('optimisedWallpapers', false),
+        localPrefs.put('WHcategories', categories == 100 ? 100 : 111),
+        localPrefs.put('WHpurity', purity == 100 ? 100 : 110),
+      ]);
 
       configureDependencies();
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await Future.wait(<Future<void>>[
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
+      ]);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
-      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
       runApp(
         SentryWidget(
