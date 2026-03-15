@@ -11,7 +11,7 @@ class OnboardingTypography {
     fontFamily: serif,
     fontSize: 18,
     height: 1.233,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w900,
     color: OnboardingColors.textPrimary,
   );
 

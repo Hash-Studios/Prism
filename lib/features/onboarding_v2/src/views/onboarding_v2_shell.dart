@@ -1,22 +1,34 @@
-import 'package:Prism/core/audio/app_sound_manager.dart';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f1_interests_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f2_starter_pack_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f3_first_wallpaper_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_background.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage(name: 'OnboardingV2ShellRoute')
 class OnboardingV2Shell extends StatefulWidget {
@@ -28,7 +40,7 @@ class OnboardingV2Shell extends StatefulWidget {
 
 class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
-  late final PageController _pageController;
+  late final TapGestureRecognizer _legalTap;
 
   static const List<Widget> _pages = [F0AuthPage(), F1InterestsPage(), F2StarterPackPage(), F3FirstWallpaperPage()];
 
@@ -36,13 +48,12 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   void initState() {
     super.initState();
     _bloc = getIt<OnboardingV2Bloc>();
-    _pageController = PageController();
     _bloc.add(const OnboardingV2Event.started());
     AppSoundManager.instance.playEffect(AppSoundEffect.onboardingOpenSwoosh);
+    _legalTap = TapGestureRecognizer()
+      ..onTap = () => launchUrl(Uri.parse('https://prism-app-terms.web.app'), mode: LaunchMode.externalApplication);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       applyEdgeToEdgeOverlayStyle(
         statusBarIconBrightness: Brightness.dark,
@@ -51,60 +62,80 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     });
   }
 
+  @override
+  void dispose() {
+    _legalTap.dispose();
+    _bloc.close();
+    super.dispose();
+  }
+
   Future<void> _handleNavRequest(BuildContext context, OnboardingV2NavRequest request) async {
     switch (request) {
       case OnboardingV2NavRequest.openPaywall:
-        if (!context.mounted) {
-          return;
-        }
+        if (!context.mounted) return;
         await PaywallOrchestrator.instance.present(
           context,
           placement: OnboardingV2Config.paywallPlacement,
           source: OnboardingV2Config.paywallSource,
         );
-        if (!context.mounted) {
-          return;
-        }
+        if (!context.mounted) return;
         final isPremium = app_state.prismUser.premium;
         _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: isPremium));
 
       case OnboardingV2NavRequest.completeOnboarding:
-        if (!context.mounted) {
-          return;
-        }
+        if (!context.mounted) return;
         await ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'onboarding_v2_done');
-        if (!context.mounted) {
-          return;
-        }
+        if (!context.mounted) return;
         await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
-        if (!context.mounted) {
-          return;
-        }
+        if (!context.mounted) return;
         context.router.replaceAll([const SplashWidgetRoute()]);
     }
   }
 
-  void _animateToStep(OnboardingV2Step step) {
-    final rawIndex = OnboardingV2Step.values.indexOf(step);
-    final index = rawIndex >= _pages.length ? _pages.length - 1 : rawIndex;
-    final currentPage = _pageController.hasClients ? _pageController.page?.round() : null;
-    logger.d(
-      '_animateToStep step=$step index=$index hasClients=${_pageController.hasClients} currentPage=$currentPage',
-      tag: 'OnboardingV2Shell',
-    );
-    if (_pageController.hasClients && currentPage != index) {
-      _pageController.animateToPage(index, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
-      logger.d('animateToPage called → $index', tag: 'OnboardingV2Shell');
-    } else {
-      logger.d('animateToPage SKIPPED (already on page or no clients)', tag: 'OnboardingV2Shell');
+  Future<void> _handleGoogleSignIn() async {
+    _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
+    try {
+      final result = await app_state.gAuth.signInWithGoogle();
+      if (!mounted) return;
+      if (result == GoogleAuth.signInCancelledResult) {
+        app_state.prismUser.loggedIn = false;
+        app_state.persistPrismUser();
+        toasts.codeSend('Sign in cancelled.');
+        _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
+      } else {
+        app_state.prismUser.loggedIn = true;
+        app_state.persistPrismUser();
+        _bloc.add(const OnboardingV2Event.authCompleted());
+      }
+    } catch (_) {
+      if (mounted) toasts.error('Something went wrong, please try again!');
+      _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    _bloc.close();
-    super.dispose();
+  void _handleCtaTap(OnboardingV2Step step) {
+    switch (step) {
+      case OnboardingV2Step.auth:
+        _handleGoogleSignIn();
+      case OnboardingV2Step.interests:
+        _bloc.add(const OnboardingV2Event.interestsConfirmed());
+      case OnboardingV2Step.starterPack:
+        _bloc.add(const OnboardingV2Event.starterPackConfirmed());
+      case OnboardingV2Step.firstWallpaper:
+        final wallpaper = _bloc.state.wallpaperData.wallpaper;
+        if (wallpaper == null) {
+          _bloc.add(const OnboardingV2Event.paywallContinueFreeTapped());
+        } else {
+          _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
+        }
+      case OnboardingV2Step.paywall:
+        break;
+    }
+  }
+
+  Widget _pageFor(OnboardingV2Step step) {
+    final idx = OnboardingV2Step.values.indexOf(step).clamp(0, _pages.length - 1);
+    return KeyedSubtree(key: ValueKey(step), child: _pages[idx]);
   }
 
   @override
@@ -113,22 +144,27 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       value: _bloc,
       child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
         listenWhen: (prev, curr) {
-          final stepChanged = prev.step != curr.step;
           final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
-          logger.d(
-            'listenWhen prev.step=${prev.step} curr.step=${curr.step} stepChanged=$stepChanged navChanged=$navChanged',
-            tag: 'OnboardingV2Shell',
-          );
-          return stepChanged || navChanged;
+          final wallpaperSucceeded =
+              curr.step == OnboardingV2Step.firstWallpaper &&
+              prev.wallpaperData.status != curr.wallpaperData.status &&
+              curr.wallpaperData.status == FirstWallpaperStatus.success;
+          return navChanged || wallpaperSucceeded;
         },
         listener: (context, state) {
           logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
-          _animateToStep(state.step);
-          if (state.navRequest != null) {
-            _handleNavRequest(context, state.navRequest!);
+          if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
+          if (state.wallpaperData.status == FirstWallpaperStatus.success) {
+            _bloc.add(const OnboardingV2Event.paywallContinueFreeTapped());
           }
         },
-        buildWhen: (previous, current) => false,
+        buildWhen: (prev, curr) =>
+            prev.step != curr.step ||
+            prev.isAuthLoading != curr.isAuthLoading ||
+            prev.actionStatus != curr.actionStatus ||
+            prev.interestsData.canContinue != curr.interestsData.canContinue ||
+            prev.starterPackData.canContinue != curr.starterPackData.canContinue ||
+            prev.wallpaperData.status != curr.wallpaperData.status,
         builder: (context, state) {
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: edgeToEdgeOverlayStyle(
@@ -140,15 +176,222 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               onPopInvokedWithResult: (didPop, result) {
                 _bloc.add(const OnboardingV2Event.stepBack());
               },
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: _pages,
+              child: Material(
+                type: MaterialType.transparency,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Layer 0: animated background (blur + image cross-fade).
+                    OnboardingStepBackground(step: state.step),
+
+                    // Layer 1: unique page content — fades between steps.
+                    AnimatedSwitcher(
+                      duration: OnboardingMotion.normal,
+                      transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                      layoutBuilder: (currentChild, previousChildren) => Stack(
+                        fit: StackFit.expand,
+                        children: [...previousChildren, if (currentChild != null) currentChild],
+                      ),
+                      child: _pageFor(state.step),
+                    ),
+
+                    // Layer 2: shared animated overlay (headline, progress, button, helper).
+                    _SharedOverlay(state: state, legalTap: _legalTap, onCtaTap: () => _handleCtaTap(state.step)),
+                  ],
+                ),
               ),
             ),
           );
         },
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// _SharedOverlay — shared elements that hero across all 4 steps.
+// ---------------------------------------------------------------------------
+class _SharedOverlay extends StatelessWidget {
+  const _SharedOverlay({required this.state, required this.legalTap, required this.onCtaTap});
+
+  final OnboardingV2State state;
+  final TapGestureRecognizer legalTap;
+  final VoidCallback onCtaTap;
+
+  // ------ Headline config per step ------
+
+  static double _headlineY(OnboardingV2Step step) =>
+      step == OnboardingV2Step.auth ? OnboardingLayout.welcomeHeadlineY : OnboardingLayout.stepTitleY;
+
+  static double _headlineX(OnboardingV2Step step) => switch (step) {
+    // Auth: no horizontal constraint — the explicit \n is the only line break.
+    // Applying padding here would squeeze "Your screen," onto a second line.
+    OnboardingV2Step.auth => 0,
+    OnboardingV2Step.interests => OnboardingLayout.step2TitleX,
+    OnboardingV2Step.starterPack => OnboardingLayout.step3TitleX,
+    _ => OnboardingLayout.step4TitleX,
+  };
+
+  static String _headlineText(OnboardingV2Step step) => switch (step) {
+    OnboardingV2Step.auth => 'Your screen,\nreimagined.',
+    OnboardingV2Step.interests => 'Pick your vibe',
+    OnboardingV2Step.starterPack => 'Find your people',
+    _ => 'Make it yours',
+  };
+
+  // ------ Bottom text config per step ------
+
+  static double _bottomTextX(OnboardingV2Step step) => switch (step) {
+    OnboardingV2Step.auth => 0,
+    OnboardingV2Step.interests => 0,
+    OnboardingV2Step.starterPack => 0,
+    _ => 0,
+  };
+
+  static String _helperText(OnboardingV2Step step) => switch (step) {
+    OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
+    OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
+    _ => 'we picked this wallpaper based on your interest in Minimal',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final step = state.step;
+    return OnboardingFrame(
+      builder: (context, sx, sy) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildProgress(step, sx, sy),
+            _buildHeadline(step, sx, sy),
+            _buildButton(step, sx, sy),
+            _buildBottomText(step, sx, sy),
+          ],
+        );
+      },
+    );
+  }
+
+  // ---- Progress indicator ----
+
+  Widget _buildProgress(OnboardingV2Step step, double sx, double sy) {
+    final visible =
+        step == OnboardingV2Step.interests ||
+        step == OnboardingV2Step.starterPack ||
+        step == OnboardingV2Step.firstWallpaper;
+
+    final progressStep = switch (step) {
+      OnboardingV2Step.interests => 1,
+      OnboardingV2Step.starterPack => 2,
+      _ => 3,
+    };
+
+    return Positioned(
+      top: OnboardingLayout.progressY * sy,
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        duration: OnboardingMotion.normal,
+        opacity: visible ? 1.0 : 0.0,
+        child: Center(
+          child: Transform.scale(
+            scaleX: sx,
+            scaleY: sy,
+            alignment: Alignment.topCenter,
+            child: OnboardingProgressIndicator(step: progressStep),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---- Headline — physically moves from mid-screen (F0) to top (F1/2/3) ----
+
+  Widget _buildHeadline(OnboardingV2Step step, double sx, double sy) {
+    return AnimatedPositioned(
+      duration: OnboardingMotion.normal,
+      curve: OnboardingMotion.emphasized,
+      top: _headlineY(step) * sy,
+      left: _headlineX(step) * sx,
+      right: _headlineX(step) * sx,
+      child: AnimatedSwitcher(
+        duration: OnboardingMotion.short,
+        child: Text(
+          key: ValueKey(_headlineText(step)),
+          _headlineText(step),
+          style: OnboardingTypography.headline,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  // ---- CTA button — fixed position, label cross-fades via internal AnimatedSwitcher ----
+
+  Widget _buildButton(OnboardingV2Step step, double sx, double sy) {
+    final isLoading = switch (step) {
+      OnboardingV2Step.auth => state.isAuthLoading,
+      OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
+      OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
+      _ => false,
+    };
+
+    final isEnabled = switch (step) {
+      OnboardingV2Step.auth => true,
+      OnboardingV2Step.interests => state.interestsData.canContinue,
+      OnboardingV2Step.starterPack => state.starterPackData.canContinue,
+      OnboardingV2Step.firstWallpaper => true,
+      _ => false,
+    };
+
+    final label = switch (step) {
+      OnboardingV2Step.auth => 'continue with Google',
+      OnboardingV2Step.interests || OnboardingV2Step.starterPack => 'continue',
+      OnboardingV2Step.firstWallpaper => 'set as wallpaper',
+      _ => 'continue',
+    };
+
+    return Positioned(
+      top: OnboardingLayout.ctaY * sy,
+      left: OnboardingLayout.ctaX * sx,
+      right: OnboardingLayout.ctaX * sx,
+      height: OnboardingLayout.ctaHeight * sy,
+      child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
+    );
+  }
+
+  // ---- Bottom text — legal on F0, helper on F1/2/3 ----
+
+  Widget _buildBottomText(OnboardingV2Step step, double sx, double sy) {
+    final Widget content;
+    if (step == OnboardingV2Step.auth) {
+      content = RichText(
+        key: const ValueKey('legal'),
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          style: OnboardingTypography.helper,
+          children: [
+            const TextSpan(text: 'by continuing you agree to our '),
+            TextSpan(
+              text: 'Terms & Conditions',
+              style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
+              recognizer: legalTap,
+            ),
+          ],
+        ),
+      );
+    } else {
+      final text = _helperText(step);
+      content = OnboardingHelperText(key: ValueKey(text), text: text);
+    }
+
+    return AnimatedPositioned(
+      duration: OnboardingMotion.normal,
+      curve: OnboardingMotion.emphasized,
+      top: OnboardingLayout.helperY * sy,
+      left: _bottomTextX(step) * sx,
+      right: _bottomTextX(step) * sx,
+      child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
     );
   }
 }

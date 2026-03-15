@@ -14,11 +14,11 @@ class OnboardingLayout {
   static const double welcomeLogoWidth = 50;
 
   static const double welcomeHeadlineX = 84;
-  static const double welcomeHeadlineY = 429;
+  static const double welcomeHeadlineY = 419;
   static const double welcomeHeadlineWidth = 227;
 
   static const double welcomeBodyX = 53;
-  static const double welcomeBodyY = 545;
+  static const double welcomeBodyY = 535;
   static const double welcomeBodyWidth = 288;
 
   static const double legalY = 811;
