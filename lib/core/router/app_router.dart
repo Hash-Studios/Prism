@@ -96,8 +96,6 @@ class AppRouter extends RootStackRouter {
           page: SetupsTabRoute.page,
           children: [AutoRoute(path: '', page: SetupRoute.page)],
         ),
-        // AI tab
-        AutoRoute(path: 'ai', page: AiTabRoute.page),
         // Profile tab
         AutoRoute(
           path: 'profile',
@@ -119,6 +117,7 @@ class AppRouter extends RootStackRouter {
     ),
 
     // Global routes (pushed over entire shell as full-screen dialogs)
+    AutoRoute(path: 'ai', page: AiTabRoute.page),
     AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
     RedirectRoute(path: '/share', redirectTo: '/wallpaper-detail'), // Replaces ShareWallpaperViewRoute
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
