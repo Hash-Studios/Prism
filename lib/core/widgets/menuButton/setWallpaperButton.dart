@@ -152,17 +152,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
 
   Future<void> onPaint() async {
     HapticFeedback.vibrate();
-    if (widget.colorChanged) {
-      setState(() {
-        isLoading = true;
-      });
-      Future.delayed(const Duration(seconds: 1)).then((value) => _setWallPaper());
-    } else {
-      setState(() {
-        isLoading = true;
-      });
-      Future.delayed(const Duration(seconds: 1)).then((value) => _setWallPaper());
-    }
+    setState(() {
+      isLoading = true;
+    });
+    await _setWallPaper();
   }
 
   @override
@@ -181,7 +174,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1)).then((value) => _setHomeWallPaper());
+                    _setHomeWallPaper();
                   },
                   onTap2: () {
                     HapticFeedback.vibrate();
@@ -189,7 +182,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1)).then((value) => _setLockWallPaper());
+                    _setLockWallPaper();
                   },
                   onTap3: () {
                     HapticFeedback.vibrate();
@@ -197,7 +190,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1)).then((value) => _setBothWallPaper());
+                    _setBothWallPaper();
                   },
                 ),
               );
