@@ -16,6 +16,7 @@ import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
+import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -345,7 +346,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                       child: SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: temp.length < 3
+                          onPressed: temp.length < OnboardingV2Config.minInterests
                               ? null
                               : () => Navigator.pop(context, temp.toList(growable: false)),
                           child: const Text('Save interests'),
