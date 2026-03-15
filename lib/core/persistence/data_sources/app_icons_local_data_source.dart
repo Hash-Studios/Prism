@@ -1,15 +1,15 @@
-import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class AppIconsLocalDataSource {
-  AppIconsLocalDataSource(this._store);
+  AppIconsLocalDataSource();
 
-  final LocalStore _store;
+  final LazyFileCache _cache = LazyFileCache('icons_cache');
 
-  Map<String, dynamic> readIconsPayload() {
-    final raw = _store.get(PersistenceKeys.cacheIconsAppsPayload);
+  Future<Map<String, dynamic>> readIconsPayload() async {
+    final raw = await _cache.get(PersistenceKeys.cacheIconsAppsPayload);
     if (raw is Map<String, dynamic>) {
       return raw;
     }
@@ -20,12 +20,12 @@ class AppIconsLocalDataSource {
   }
 
   Future<void> writeIconsPayload(Map<String, dynamic> payload) async {
-    await _store.set(PersistenceKeys.cacheIconsAppsPayload, payload);
-    await _store.set(PersistenceKeys.cacheIconsAppsUpdatedAtUtc, DateTime.now().toUtc().toIso8601String());
+    await _cache.set(PersistenceKeys.cacheIconsAppsPayload, payload);
+    await _cache.set(PersistenceKeys.cacheIconsAppsUpdatedAtUtc, DateTime.now().toUtc().toIso8601String());
   }
 
-  DateTime? lastUpdatedAtUtc() {
-    final raw = _store.get(PersistenceKeys.cacheIconsAppsUpdatedAtUtc);
+  Future<DateTime?> lastUpdatedAtUtc() async {
+    final raw = await _cache.get(PersistenceKeys.cacheIconsAppsUpdatedAtUtc);
     if (raw is! String) {
       return null;
     }
@@ -33,7 +33,7 @@ class AppIconsLocalDataSource {
   }
 
   Future<void> clear() async {
-    await _store.delete(PersistenceKeys.cacheIconsAppsPayload);
-    await _store.delete(PersistenceKeys.cacheIconsAppsUpdatedAtUtc);
+    await _cache.delete(PersistenceKeys.cacheIconsAppsPayload);
+    await _cache.delete(PersistenceKeys.cacheIconsAppsUpdatedAtUtc);
   }
 }

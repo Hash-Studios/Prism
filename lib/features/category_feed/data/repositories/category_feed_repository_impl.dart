@@ -71,7 +71,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         case WallpaperSource.prism:
           final result = await _prismRepository.fetchFeed(refresh: refresh);
           if (result.isFailure || result.data == null) {
-            return _cachedOrFailure(
+            return await _cachedOrFailure(
               category: category,
               mode: mode,
               failure: result.failure ?? const UnknownFailure('Failed to fetch Prism feed'),
@@ -89,7 +89,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
             purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
           );
           if (result.isFailure || result.data == null) {
-            return _cachedOrFailure(
+            return await _cachedOrFailure(
               category: category,
               mode: mode,
               failure: result.failure ?? const UnknownFailure('Failed to fetch Wallhaven feed'),
@@ -102,7 +102,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         case WallpaperSource.pexels:
           final result = await _pexelsRepository.fetchFeed(categoryName: category.name, refresh: refresh);
           if (result.isFailure || result.data == null) {
-            return _cachedOrFailure(
+            return await _cachedOrFailure(
               category: category,
               mode: mode,
               failure: result.failure ?? const UnknownFailure('Failed to fetch Pexels feed'),
@@ -138,7 +138,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         CategoryFeedPage(items: items, hasMore: hasMore, nextCursor: items.isEmpty ? null : items.length.toString()),
       );
     } catch (error, stackTrace) {
-      final cached = _readCached(category);
+      final cached = await _readCached(category);
       if (cached != null) {
         logger.w(
           '[CategoryFeedRepository] remote fetch failed; returning cached snapshot',
@@ -176,12 +176,12 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     );
   }
 
-  Result<CategoryFeedPage> _cachedOrFailure({
+  Future<Result<CategoryFeedPage>> _cachedOrFailure({
     required CategoryEntity category,
     required String mode,
     required Failure failure,
-  }) {
-    final cached = _readCached(category);
+  }) async {
+    final cached = await _readCached(category);
     if (cached != null) {
       logger.w(
         '[CategoryFeedRepository] provider failed; returning cached snapshot',
@@ -196,8 +196,8 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
     return Result.error(failure);
   }
 
-  CategoryFeedPage? _readCached(CategoryEntity category) {
-    final snapshot = _feedCacheLocal.read(source: 'category', scope: _scopeFor(category));
+  Future<CategoryFeedPage?> _readCached(CategoryEntity category) async {
+    final snapshot = await _feedCacheLocal.read(source: 'category', scope: _scopeFor(category));
     if (snapshot == null || snapshot.payload is! Map) {
       return null;
     }
