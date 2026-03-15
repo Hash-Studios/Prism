@@ -32,21 +32,18 @@ class OnboardingBackground extends StatefulWidget {
   State<OnboardingBackground> createState() => _OnboardingBackgroundState();
 }
 
-class _OnboardingBackgroundState extends State<OnboardingBackground>
-    with SingleTickerProviderStateMixin {
+class _OnboardingBackgroundState extends State<OnboardingBackground> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleReveal;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: OnboardingMotion.backgroundReveal,
-      vsync: this,
-    );
-    _scaleReveal = Tween<double>(begin: 1.18, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: OnboardingMotion.reveal),
-    );
+    _controller = AnimationController(duration: OnboardingMotion.backgroundReveal, vsync: this);
+    _scaleReveal = Tween<double>(
+      begin: 1.18,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: OnboardingMotion.reveal));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -67,10 +64,7 @@ class _OnboardingBackgroundState extends State<OnboardingBackground>
     final viewportHeight = OnboardingLayout.designHeight * widget.sy;
     final renderedImageWidth = widget.imageWidth * widget.sx;
     final renderedImageHeight = widget.imageHeight * widget.sy;
-    final coverScale = math.max(
-      viewportWidth / renderedImageWidth,
-      viewportHeight / renderedImageHeight,
-    );
+    final coverScale = math.max(viewportWidth / renderedImageWidth, viewportHeight / renderedImageHeight);
 
     Positioned buildImage({double scale = 1}) => Positioned(
       left: widget.imageLeft * widget.sx,
@@ -81,10 +75,7 @@ class _OnboardingBackgroundState extends State<OnboardingBackground>
         animation: _scaleReveal,
         child: Image.asset(widget.assetPath, fit: BoxFit.cover),
         builder: (context, child) {
-          return Transform.scale(
-            scale: coverScale * scale * _scaleReveal.value,
-            child: child,
-          );
+          return Transform.scale(scale: coverScale * scale * _scaleReveal.value, child: child);
         },
       ),
     );
@@ -104,11 +95,7 @@ class _OnboardingBackgroundState extends State<OnboardingBackground>
                 sigmaX: OnboardingLayout.softenedBlurSigma * widget.sx,
                 sigmaY: OnboardingLayout.softenedBlurSigma * widget.sy,
               ),
-              child: ColoredBox(
-                color: OnboardingColors.blurTint.withValues(
-                  alpha: OnboardingOpacity.blurLayerTint,
-                ),
-              ),
+              child: ColoredBox(color: OnboardingColors.blurTint.withValues(alpha: OnboardingOpacity.blurLayerTint)),
             ),
           ),
         ),
@@ -122,10 +109,7 @@ class _OnboardingBackgroundState extends State<OnboardingBackground>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  OnboardingColors.bottomOverlayLeft.withValues(alpha: 0),
-                  OnboardingColors.bottomOverlayLeft,
-                ],
+                colors: [OnboardingColors.bottomOverlayLeft.withValues(alpha: 0), OnboardingColors.bottomOverlayLeft],
                 stops: const [0, 0.7],
               ),
             ),
@@ -141,10 +125,7 @@ class _OnboardingBackgroundState extends State<OnboardingBackground>
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  OnboardingColors.bottomOverlayRight.withValues(alpha: 0),
-                  OnboardingColors.bottomOverlayRight,
-                ],
+                colors: [OnboardingColors.bottomOverlayRight.withValues(alpha: 0), OnboardingColors.bottomOverlayRight],
                 stops: const [0, 0.7],
               ),
             ),

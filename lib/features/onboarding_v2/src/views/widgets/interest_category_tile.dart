@@ -2,11 +2,7 @@ import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
 class InterestCategoryTile extends StatelessWidget {
-  const InterestCategoryTile({
-    super.key,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const InterestCategoryTile({super.key, required this.isSelected, required this.onTap});
 
   final bool isSelected;
   final VoidCallback? onTap;
@@ -17,9 +13,7 @@ class InterestCategoryTile extends StatelessWidget {
       duration: OnboardingMotion.short,
       curve: OnboardingMotion.emphasized,
       decoration: BoxDecoration(
-        color: OnboardingColors.surfaceGlass.withValues(
-          alpha: OnboardingOpacity.cardBase,
-        ),
+        color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
         borderRadius: BorderRadius.circular(OnboardingRadius.tile),
       ),
       child: Material(
@@ -33,9 +27,7 @@ class InterestCategoryTile extends StatelessWidget {
             curve: OnboardingMotion.emphasized,
             decoration: BoxDecoration(
               color: isSelected
-                  ? OnboardingColors.selectionOverlay.withValues(
-                      alpha: OnboardingOpacity.selectionOverlay,
-                    )
+                  ? OnboardingColors.selectionOverlay.withValues(alpha: OnboardingOpacity.selectionOverlay)
                   : OnboardingColors.transparent,
               borderRadius: BorderRadius.circular(OnboardingRadius.tile),
             ),

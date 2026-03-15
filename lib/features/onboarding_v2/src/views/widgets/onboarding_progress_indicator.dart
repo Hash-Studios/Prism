@@ -14,10 +14,7 @@ class OnboardingProgressIndicator extends StatelessWidget {
       _ => OnboardingLayout.progressTrailingSpacing,
     };
     final inactive = switch (step) {
-      1 => const [
-        OnboardingLayout.progressTrailingSpacing,
-        OnboardingLayout.progressLastDotX,
-      ],
+      1 => const [OnboardingLayout.progressTrailingSpacing, OnboardingLayout.progressLastDotX],
       2 => const [0.0, OnboardingLayout.progressLastDotX],
       _ => const [0.0, OnboardingLayout.progressStepSpacing],
     };
@@ -27,21 +24,9 @@ class OnboardingProgressIndicator extends StatelessWidget {
       height: OnboardingLayout.progressHeight,
       child: Stack(
         children: [
-          Positioned(
-            left: inactive[0],
-            top: 0,
-            child: const _Dot(active: false, wide: false),
-          ),
-          Positioned(
-            left: inactive[1],
-            top: 0,
-            child: const _Dot(active: false, wide: false),
-          ),
-          Positioned(
-            left: activeLeft,
-            top: 0,
-            child: const _Dot(active: true, wide: true),
-          ),
+          Positioned(left: inactive[0], top: 0, child: const _Dot(active: false, wide: false)),
+          Positioned(left: inactive[1], top: 0, child: const _Dot(active: false, wide: false)),
+          Positioned(left: activeLeft, top: 0, child: const _Dot(active: true, wide: true)),
         ],
       ),
     );
@@ -59,16 +44,12 @@ class _Dot extends StatelessWidget {
     return AnimatedContainer(
       duration: OnboardingMotion.normal,
       curve: OnboardingMotion.emphasized,
-      width: wide
-          ? OnboardingLayout.progressActiveWidth
-          : OnboardingLayout.progressDotSize,
+      width: wide ? OnboardingLayout.progressActiveWidth : OnboardingLayout.progressDotSize,
       height: OnboardingLayout.progressDotSize,
       decoration: BoxDecoration(
         color: active
             ? OnboardingColors.progressActive
-            : OnboardingColors.progressInactive.withValues(
-                alpha: OnboardingOpacity.progressInactive,
-              ),
+            : OnboardingColors.progressInactive.withValues(alpha: OnboardingOpacity.progressInactive),
         borderRadius: BorderRadius.circular(OnboardingRadius.dot),
       ),
     );

@@ -14,9 +14,7 @@ class CreatorCard extends StatelessWidget {
       duration: OnboardingMotion.short,
       curve: OnboardingMotion.emphasized,
       decoration: BoxDecoration(
-        color: OnboardingColors.surfaceGlass.withValues(
-          alpha: OnboardingOpacity.cardBase,
-        ),
+        color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
         borderRadius: BorderRadius.circular(OnboardingRadius.tile),
       ),
       child: Material(
@@ -30,9 +28,7 @@ class CreatorCard extends StatelessWidget {
             curve: OnboardingMotion.emphasized,
             decoration: BoxDecoration(
               color: (creator?.isSelected ?? false)
-                  ? OnboardingColors.selectionOverlay.withValues(
-                      alpha: OnboardingOpacity.selectionOverlay,
-                    )
+                  ? OnboardingColors.selectionOverlay.withValues(alpha: OnboardingOpacity.selectionOverlay)
                   : OnboardingColors.transparent,
               borderRadius: BorderRadius.circular(OnboardingRadius.tile),
             ),

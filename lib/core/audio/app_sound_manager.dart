@@ -17,10 +17,7 @@ class AppSoundManager {
       await _player.stop();
       final targetVolume = volume ?? _defaultVolumeFor(effect);
       if (effect == AppSoundEffect.onboardingOpenSwoosh) {
-        await _playOnboardingWithFade(
-          assetPath: _assetFor(effect),
-          startVolume: targetVolume,
-        );
+        await _playOnboardingWithFade(assetPath: _assetFor(effect), startVolume: targetVolume);
         return;
       }
       await _player.play(AssetSource(_assetFor(effect)), volume: targetVolume);
@@ -42,8 +39,7 @@ class AppSoundManager {
 
   String _assetFor(AppSoundEffect effect) {
     return switch (effect) {
-      AppSoundEffect.onboardingOpenSwoosh =>
-        'sounds/onboarding_open_candidate_a.mp3',
+      AppSoundEffect.onboardingOpenSwoosh => 'sounds/onboarding_open_candidate_a.mp3',
       AppSoundEffect.tap => 'sounds/onboarding_open_candidate_a.mp3',
       AppSoundEffect.click => 'sounds/onboarding_open_candidate_a.mp3',
       AppSoundEffect.success => 'sounds/onboarding_open_candidate_a.mp3',
@@ -59,10 +55,7 @@ class AppSoundManager {
     };
   }
 
-  Future<void> _playOnboardingWithFade({
-    required String assetPath,
-    required double startVolume,
-  }) async {
+  Future<void> _playOnboardingWithFade({required String assetPath, required double startVolume}) async {
     final runId = ++_fadeRunId;
     await _player.play(AssetSource(assetPath), volume: startVolume);
 

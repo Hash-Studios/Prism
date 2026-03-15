@@ -30,12 +30,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
   late final PageController _pageController;
 
-  static const List<Widget> _pages = [
-    F0AuthPage(),
-    F1InterestsPage(),
-    F2StarterPackPage(),
-    F3FirstWallpaperPage(),
-  ];
+  static const List<Widget> _pages = [F0AuthPage(), F1InterestsPage(), F2StarterPackPage(), F3FirstWallpaperPage()];
 
   @override
   void initState() {
@@ -56,10 +51,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     });
   }
 
-  Future<void> _handleNavRequest(
-    BuildContext context,
-    OnboardingV2NavRequest request,
-  ) async {
+  Future<void> _handleNavRequest(BuildContext context, OnboardingV2NavRequest request) async {
     switch (request) {
       case OnboardingV2NavRequest.openPaywall:
         if (!context.mounted) {
@@ -74,24 +66,17 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           return;
         }
         final isPremium = app_state.prismUser.premium;
-        _bloc.add(
-          OnboardingV2Event.paywallResultReceived(didPurchase: isPremium),
-        );
+        _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: isPremium));
 
       case OnboardingV2NavRequest.completeOnboarding:
         if (!context.mounted) {
           return;
         }
-        await ProfileCompletenessNudgeService.instance.maybeShowNudge(
-          context,
-          sourceContext: 'onboarding_v2_done',
-        );
+        await ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'onboarding_v2_done');
         if (!context.mounted) {
           return;
         }
-        await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(
-          context,
-        );
+        await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
         if (!context.mounted) {
           return;
         }
@@ -102,25 +87,16 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   void _animateToStep(OnboardingV2Step step) {
     final rawIndex = OnboardingV2Step.values.indexOf(step);
     final index = rawIndex >= _pages.length ? _pages.length - 1 : rawIndex;
-    final currentPage = _pageController.hasClients
-        ? _pageController.page?.round()
-        : null;
+    final currentPage = _pageController.hasClients ? _pageController.page?.round() : null;
     logger.d(
       '_animateToStep step=$step index=$index hasClients=${_pageController.hasClients} currentPage=$currentPage',
       tag: 'OnboardingV2Shell',
     );
     if (_pageController.hasClients && currentPage != index) {
-      _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-      );
+      _pageController.animateToPage(index, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
       logger.d('animateToPage called → $index', tag: 'OnboardingV2Shell');
     } else {
-      logger.d(
-        'animateToPage SKIPPED (already on page or no clients)',
-        tag: 'OnboardingV2Shell',
-      );
+      logger.d('animateToPage SKIPPED (already on page or no clients)', tag: 'OnboardingV2Shell');
     }
   }
 
@@ -138,8 +114,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
         listenWhen: (prev, curr) {
           final stepChanged = prev.step != curr.step;
-          final navChanged =
-              curr.navRequest != null && prev.navRequest != curr.navRequest;
+          final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
           logger.d(
             'listenWhen prev.step=${prev.step} curr.step=${curr.step} stepChanged=$stepChanged navChanged=$navChanged',
             tag: 'OnboardingV2Shell',
@@ -147,10 +122,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           return stepChanged || navChanged;
         },
         listener: (context, state) {
-          logger.d(
-            'listener fired step=${state.step} navRequest=${state.navRequest}',
-            tag: 'OnboardingV2Shell',
-          );
+          logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
           _animateToStep(state.step);
           if (state.navRequest != null) {
             _handleNavRequest(context, state.navRequest!);

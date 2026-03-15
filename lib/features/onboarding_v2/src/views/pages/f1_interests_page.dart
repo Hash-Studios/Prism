@@ -16,13 +16,9 @@ class F1InterestsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-      buildWhen: (prev, curr) =>
-          prev.interestsData != curr.interestsData ||
-          prev.actionStatus != curr.actionStatus,
+      buildWhen: (prev, curr) => prev.interestsData != curr.interestsData || prev.actionStatus != curr.actionStatus,
       builder: (context, state) {
-        final available = state.interestsData.available
-            .take(6)
-            .toList(growable: false);
+        final available = state.interestsData.available.take(6).toList(growable: false);
         final canContinue = state.interestsData.canContinue;
         final isLoading = state.actionStatus == ActionStatus.inProgress;
 
@@ -30,8 +26,7 @@ class F1InterestsPage extends StatelessWidget {
           body: LayoutBuilder(
             builder: (context, constraints) {
               final bgSx = constraints.maxWidth / OnboardingLayout.designWidth;
-              final bgSy =
-                  constraints.maxHeight / OnboardingLayout.designHeight;
+              final bgSy = constraints.maxHeight / OnboardingLayout.designHeight;
 
               return Stack(
                 fit: StackFit.expand,
@@ -50,28 +45,20 @@ class F1InterestsPage extends StatelessWidget {
                           Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: OnboardingLayout.progressY * sy,
-                              ),
+                              padding: EdgeInsets.only(top: OnboardingLayout.progressY * sy),
                               child: Transform.scale(
                                 alignment: Alignment.topCenter,
                                 scaleX: sx,
                                 scaleY: sy,
-                                child: const OnboardingProgressIndicator(
-                                  step: 1,
-                                ),
+                                child: const OnboardingProgressIndicator(step: 1),
                               ),
                             ),
                           ),
                           Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: OnboardingLayout.stepTitleY * sy,
-                              ),
-                              child: const OnboardingHeadline(
-                                text: 'Pick your vibe',
-                              ),
+                              padding: EdgeInsets.only(top: OnboardingLayout.stepTitleY * sy),
+                              child: const OnboardingHeadline(text: 'Pick your vibe'),
                             ),
                           ),
                           Align(
@@ -87,34 +74,23 @@ class F1InterestsPage extends StatelessWidget {
                                 child: GridView.builder(
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: 6,
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        crossAxisSpacing:
-                                            OnboardingLayout.tileGap * sx,
-                                        mainAxisSpacing:
-                                            OnboardingLayout.tileGap * sy,
-                                        childAspectRatio:
-                                            (OnboardingLayout.tileSize * sx) /
-                                            (OnboardingLayout.tileSize * sy),
-                                      ),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: OnboardingLayout.tileGap * sx,
+                                    mainAxisSpacing: OnboardingLayout.tileGap * sy,
+                                    childAspectRatio:
+                                        (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
+                                  ),
                                   itemBuilder: (context, index) {
                                     if (index >= available.length) {
-                                      return const InterestCategoryTile(
-                                        isSelected: false,
-                                        onTap: null,
-                                      );
+                                      return const InterestCategoryTile(isSelected: false, onTap: null);
                                     }
                                     final category = available[index];
                                     return InterestCategoryTile(
-                                      isSelected: state.interestsData.selected
-                                          .contains(category),
-                                      onTap: () =>
-                                          context.read<OnboardingV2Bloc>().add(
-                                            OnboardingV2Event.interestToggled(
-                                              category,
-                                            ),
-                                          ),
+                                      isSelected: state.interestsData.selected.contains(category),
+                                      onTap: () => context.read<OnboardingV2Bloc>().add(
+                                        OnboardingV2Event.interestToggled(category),
+                                      ),
                                     );
                                   },
                                 ),
@@ -133,10 +109,9 @@ class F1InterestsPage extends StatelessWidget {
                                 height: OnboardingLayout.ctaHeight * sy,
                                 child: OnboardingPrimaryButton(
                                   label: 'continue',
-                                  onPressed: () =>
-                                      context.read<OnboardingV2Bloc>().add(
-                                        const OnboardingV2Event.interestsConfirmed(),
-                                      ),
+                                  onPressed: () => context.read<OnboardingV2Bloc>().add(
+                                    const OnboardingV2Event.interestsConfirmed(),
+                                  ),
                                   enabled: canContinue,
                                   loading: isLoading,
                                 ),
@@ -152,8 +127,7 @@ class F1InterestsPage extends StatelessWidget {
                                 right: OnboardingLayout.helperStep2X * sx,
                               ),
                               child: const OnboardingHelperText(
-                                text:
-                                    'select at least 5 categories to personalize your feed',
+                                text: 'select at least 5 categories to personalize your feed',
                               ),
                             ),
                           ),

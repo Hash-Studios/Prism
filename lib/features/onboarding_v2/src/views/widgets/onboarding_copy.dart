@@ -9,11 +9,7 @@ class OnboardingHeadline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: OnboardingTypography.headline,
-      textAlign: center ? TextAlign.center : TextAlign.left,
-    );
+    return Text(text, style: OnboardingTypography.headline, textAlign: center ? TextAlign.center : TextAlign.left);
   }
 }
 
@@ -25,11 +21,7 @@ class OnboardingBodyText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: OnboardingTypography.body,
-      textAlign: center ? TextAlign.center : TextAlign.left,
-    );
+    return Text(text, style: OnboardingTypography.body, textAlign: center ? TextAlign.center : TextAlign.left);
   }
 }
 
@@ -41,11 +33,7 @@ class OnboardingHelperText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = Text(
-      text,
-      style: OnboardingTypography.helper,
-      textAlign: TextAlign.center,
-    );
+    final child = Text(text, style: OnboardingTypography.helper, textAlign: TextAlign.center);
     if (width == null) {
       return child;
     }

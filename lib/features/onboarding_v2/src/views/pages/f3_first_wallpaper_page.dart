@@ -14,27 +14,22 @@ class F3FirstWallpaperPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
-      listenWhen: (prev, curr) =>
-          prev.wallpaperData.status != curr.wallpaperData.status,
+      listenWhen: (prev, curr) => prev.wallpaperData.status != curr.wallpaperData.status,
       listener: (context, state) {
         if (state.wallpaperData.status == FirstWallpaperStatus.success) {
-          context.read<OnboardingV2Bloc>().add(
-            const OnboardingV2Event.paywallContinueFreeTapped(),
-          );
+          context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.paywallContinueFreeTapped());
         }
       },
       buildWhen: (prev, curr) => prev.wallpaperData != curr.wallpaperData,
       builder: (context, state) {
-        final isLoading =
-            state.wallpaperData.status == FirstWallpaperStatus.loading;
+        final isLoading = state.wallpaperData.status == FirstWallpaperStatus.loading;
         final canSetWallpaper = state.wallpaperData.wallpaper != null;
 
         return Scaffold(
           body: LayoutBuilder(
             builder: (context, constraints) {
               final bgSx = constraints.maxWidth / OnboardingLayout.designWidth;
-              final bgSy =
-                  constraints.maxHeight / OnboardingLayout.designHeight;
+              final bgSy = constraints.maxHeight / OnboardingLayout.designHeight;
 
               return Stack(
                 fit: StackFit.expand,
@@ -56,16 +51,12 @@ class F3FirstWallpaperPage extends StatelessWidget {
                           Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: OnboardingLayout.progressY * sy,
-                              ),
+                              padding: EdgeInsets.only(top: OnboardingLayout.progressY * sy),
                               child: Transform.scale(
                                 alignment: Alignment.topCenter,
                                 scaleX: sx,
                                 scaleY: sy,
-                                child: const OnboardingProgressIndicator(
-                                  step: 3,
-                                ),
+                                child: const OnboardingProgressIndicator(step: 3),
                               ),
                             ),
                           ),
@@ -74,32 +65,21 @@ class F3FirstWallpaperPage extends StatelessWidget {
                             child: Padding(
                               padding: EdgeInsets.only(
                                 top: OnboardingLayout.skipY * sy,
-                                right:
-                                    (OnboardingLayout.designWidth -
-                                        OnboardingLayout.skipX -
-                                        32) *
-                                    sx,
+                                right: (OnboardingLayout.designWidth - OnboardingLayout.skipX - 32) * sx,
                               ),
                               child: GestureDetector(
                                 onTap: () => context.read<OnboardingV2Bloc>().add(
                                   const OnboardingV2Event.paywallContinueFreeTapped(),
                                 ),
-                                child: const Text(
-                                  'skip',
-                                  style: OnboardingTypography.skip,
-                                ),
+                                child: const Text('skip', style: OnboardingTypography.skip),
                               ),
                             ),
                           ),
                           Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: OnboardingLayout.stepTitleY * sy,
-                              ),
-                              child: const OnboardingHeadline(
-                                text: 'Make it yours',
-                              ),
+                              padding: EdgeInsets.only(top: OnboardingLayout.stepTitleY * sy),
+                              child: const OnboardingHeadline(text: 'Make it yours'),
                             ),
                           ),
                           Align(
@@ -139,8 +119,7 @@ class F3FirstWallpaperPage extends StatelessWidget {
                                 right: OnboardingLayout.helperStep4X * sx,
                               ),
                               child: const OnboardingHelperText(
-                                text:
-                                    'we picked this wallpaper based on your interest in Minimal',
+                                text: 'we picked this wallpaper based on your interest in Minimal',
                               ),
                             ),
                           ),

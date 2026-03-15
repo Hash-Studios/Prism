@@ -5,11 +5,8 @@ SystemUiOverlayStyle edgeToEdgeOverlayStyle({
   required Brightness statusBarIconBrightness,
   Brightness? systemNavigationBarIconBrightness,
 }) {
-  final statusBarBrightness = statusBarIconBrightness == Brightness.dark
-      ? Brightness.light
-      : Brightness.dark;
-  final navBarIconBrightness =
-      systemNavigationBarIconBrightness ?? statusBarIconBrightness;
+  final statusBarBrightness = statusBarIconBrightness == Brightness.dark ? Brightness.light : Brightness.dark;
+  final navBarIconBrightness = systemNavigationBarIconBrightness ?? statusBarIconBrightness;
 
   return SystemUiOverlayStyle(
     statusBarColor: const Color(0x00000000),

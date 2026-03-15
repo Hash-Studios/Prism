@@ -16,13 +16,9 @@ class F2StarterPackPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-      buildWhen: (prev, curr) =>
-          prev.starterPackData != curr.starterPackData ||
-          prev.actionStatus != curr.actionStatus,
+      buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData || prev.actionStatus != curr.actionStatus,
       builder: (context, state) {
-        final creators = state.starterPackData.creators
-            .take(3)
-            .toList(growable: false);
+        final creators = state.starterPackData.creators.take(3).toList(growable: false);
         final canContinue = state.starterPackData.canContinue;
         final isLoading = state.actionStatus == ActionStatus.inProgress;
 
@@ -30,8 +26,7 @@ class F2StarterPackPage extends StatelessWidget {
           body: LayoutBuilder(
             builder: (context, constraints) {
               final bgSx = constraints.maxWidth / OnboardingLayout.designWidth;
-              final bgSy =
-                  constraints.maxHeight / OnboardingLayout.designHeight;
+              final bgSy = constraints.maxHeight / OnboardingLayout.designHeight;
 
               return Stack(
                 fit: StackFit.expand,
@@ -50,28 +45,20 @@ class F2StarterPackPage extends StatelessWidget {
                           Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: OnboardingLayout.progressY * sy,
-                              ),
+                              padding: EdgeInsets.only(top: OnboardingLayout.progressY * sy),
                               child: Transform.scale(
                                 alignment: Alignment.topCenter,
                                 scaleX: sx,
                                 scaleY: sy,
-                                child: const OnboardingProgressIndicator(
-                                  step: 2,
-                                ),
+                                child: const OnboardingProgressIndicator(step: 2),
                               ),
                             ),
                           ),
                           Align(
                             alignment: Alignment.topCenter,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: OnboardingLayout.stepTitleY * sy,
-                              ),
-                              child: const OnboardingHeadline(
-                                text: 'Find your people',
-                              ),
+                              padding: EdgeInsets.only(top: OnboardingLayout.stepTitleY * sy),
+                              child: const OnboardingHeadline(text: 'Find your people'),
                             ),
                           ),
                           Align(
@@ -87,33 +74,22 @@ class F2StarterPackPage extends StatelessWidget {
                                 child: ListView.separated(
                                   physics: const NeverScrollableScrollPhysics(),
                                   itemCount: 3,
-                                  separatorBuilder: (_, index) => SizedBox(
-                                    height: OnboardingLayout.creatorGap * sy,
-                                  ),
+                                  separatorBuilder: (_, index) => SizedBox(height: OnboardingLayout.creatorGap * sy),
                                   itemBuilder: (context, index) {
                                     if (index >= creators.length) {
                                       return SizedBox(
-                                        height:
-                                            OnboardingLayout.creatorHeight * sy,
-                                        child: const CreatorCard(
-                                          creator: null,
-                                          onToggle: null,
-                                        ),
+                                        height: OnboardingLayout.creatorHeight * sy,
+                                        child: const CreatorCard(creator: null, onToggle: null),
                                       );
                                     }
                                     final creator = creators[index];
                                     return SizedBox(
-                                      height:
-                                          OnboardingLayout.creatorHeight * sy,
+                                      height: OnboardingLayout.creatorHeight * sy,
                                       child: CreatorCard(
                                         creator: creator,
-                                        onToggle: () => context
-                                            .read<OnboardingV2Bloc>()
-                                            .add(
-                                              OnboardingV2Event.creatorFollowToggled(
-                                                creator.email,
-                                              ),
-                                            ),
+                                        onToggle: () => context.read<OnboardingV2Bloc>().add(
+                                          OnboardingV2Event.creatorFollowToggled(creator.email),
+                                        ),
                                       ),
                                     );
                                   },
@@ -133,10 +109,9 @@ class F2StarterPackPage extends StatelessWidget {
                                 height: OnboardingLayout.ctaHeight * sy,
                                 child: OnboardingPrimaryButton(
                                   label: 'continue',
-                                  onPressed: () =>
-                                      context.read<OnboardingV2Bloc>().add(
-                                        const OnboardingV2Event.starterPackConfirmed(),
-                                      ),
+                                  onPressed: () => context.read<OnboardingV2Bloc>().add(
+                                    const OnboardingV2Event.starterPackConfirmed(),
+                                  ),
                                   enabled: canContinue,
                                   loading: isLoading,
                                 ),
@@ -152,8 +127,7 @@ class F2StarterPackPage extends StatelessWidget {
                                 right: OnboardingLayout.helperStep3X * sx,
                               ),
                               child: const OnboardingHelperText(
-                                text:
-                                    'follow at least 3 creators to personalize your feed',
+                                text: 'follow at least 3 creators to personalize your feed',
                               ),
                             ),
                           ),
