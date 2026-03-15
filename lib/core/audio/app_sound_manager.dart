@@ -7,25 +7,32 @@ class AppSoundManager {
 
   static final AppSoundManager instance = AppSoundManager._();
 
+  // Low-latency player for short tap/click effects.
   final AudioPlayer _player = AudioPlayer();
   bool _isConfigured = false;
+
+  // Separate media-mode player for the onboarding fade — lowLatency does not
+  // support setVolume reliably on Android.
+  final AudioPlayer _fadePlayer = AudioPlayer();
+  bool _fadePlayerConfigured = false;
   int _fadeRunId = 0;
 
   Future<void> playEffect(AppSoundEffect effect, {double? volume}) async {
     try {
-      await _ensureConfigured();
-      await _player.stop();
       final targetVolume = volume ?? _defaultVolumeFor(effect);
       if (effect == AppSoundEffect.onboardingOpenSwoosh) {
         await _playOnboardingWithFade(assetPath: _assetFor(effect), startVolume: targetVolume);
         return;
       }
+      await _ensureConfigured();
+      await _player.stop();
       await _player.play(AssetSource(_assetFor(effect)), volume: targetVolume);
     } catch (_) {}
   }
 
   Future<void> dispose() async {
     await _player.dispose();
+    await _fadePlayer.dispose();
   }
 
   Future<void> _ensureConfigured() async {
@@ -35,6 +42,15 @@ class AppSoundManager {
     await _player.setReleaseMode(ReleaseMode.stop);
     await _player.setPlayerMode(PlayerMode.lowLatency);
     _isConfigured = true;
+  }
+
+  Future<void> _ensureFadePlayerConfigured() async {
+    if (_fadePlayerConfigured) {
+      return;
+    }
+    await _fadePlayer.setReleaseMode(ReleaseMode.stop);
+    await _fadePlayer.setPlayerMode(PlayerMode.mediaPlayer);
+    _fadePlayerConfigured = true;
   }
 
   String _assetFor(AppSoundEffect effect) {
@@ -48,7 +64,7 @@ class AppSoundManager {
 
   double _defaultVolumeFor(AppSoundEffect effect) {
     return switch (effect) {
-      AppSoundEffect.onboardingOpenSwoosh => 0.11,
+      AppSoundEffect.onboardingOpenSwoosh => 0.07,
       AppSoundEffect.tap => 0.24,
       AppSoundEffect.click => 0.28,
       AppSoundEffect.success => 0.32,
@@ -56,12 +72,18 @@ class AppSoundManager {
   }
 
   Future<void> _playOnboardingWithFade({required String assetPath, required double startVolume}) async {
+    await _ensureFadePlayerConfigured();
     final runId = ++_fadeRunId;
-    await _player.play(AssetSource(assetPath), volume: startVolume);
+    await _fadePlayer.stop();
+    await _fadePlayer.play(AssetSource(assetPath), volume: startVolume);
 
-    const total = Duration(seconds: 4);
+    // Hold at full volume for the first 2 s, then fade out over the remaining 2 s.
+    const holdMs = 2000;
+    const fadeMs = 2000;
     const steps = 24;
-    final stepDelay = Duration(milliseconds: total.inMilliseconds ~/ steps);
+    final stepDelay = Duration(milliseconds: fadeMs ~/ steps);
+
+    await Future<void>.delayed(const Duration(milliseconds: holdMs));
 
     for (var i = 1; i <= steps; i++) {
       if (runId != _fadeRunId) {
@@ -69,13 +91,14 @@ class AppSoundManager {
       }
       await Future<void>.delayed(stepDelay);
       final t = i / steps;
-      final eased = 1 - t;
-      await _player.setVolume(startVolume * eased);
+      // Ease-out curve so the fade feels smooth rather than cutting abruptly.
+      final eased = (1 - t) * (1 - t);
+      await _fadePlayer.setVolume(startVolume * eased);
     }
 
     if (runId != _fadeRunId) {
       return;
     }
-    await _player.stop();
+    await _fadePlayer.stop();
   }
 }
