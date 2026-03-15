@@ -526,6 +526,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   bool _bootstrapCompleted = false;
   bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
+  static const Duration _coinSyncCooldown = Duration(seconds: 30);
+  DateTime? _lastCoinSyncAt;
 
   Future<bool> getLoginStatus() async {
     bool value = await app_state.gAuth.isSignedIn();
@@ -630,7 +632,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (!app_state.prismUser.loggedIn || app_state.prismUser.id.trim().isEmpty) {
       return;
     }
+    final now = DateTime.now();
+    if (_lastCoinSyncAt != null && now.difference(_lastCoinSyncAt!) < _coinSyncCooldown) {
+      return;
+    }
     _coinSyncInFlight = true;
+    _lastCoinSyncAt = now;
     try {
       await CoinsService.instance.bootstrapForCurrentUser();
       // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
