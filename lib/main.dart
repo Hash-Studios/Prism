@@ -142,24 +142,16 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      try {
-        await app_state.initializeRuntimeAppVersion();
-      } catch (error, stackTrace) {
+      unawaited(app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
         logger.w(
           'Unable to read runtime app version; falling back to static constants.',
           tag: 'AppVersion',
-          error: error,
-          stackTrace: stackTrace,
+          error: e,
+          stackTrace: s,
         );
-      }
+      }));
       Bloc.observer = const BlocDebugObserver();
-      final SentryConfig sentryConfig = _resolveSentryConfig();
-      await _initializeMonitoring(sentryConfig);
-      await MonitoringRuntime.reporter.addBreadcrumb(
-        message: 'Startup stage reached',
-        category: 'app.startup.stage',
-        data: <String, Object?>{'stage': 'monitoring_initialized'},
-      );
+      localNotification = LocalNotification();
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
@@ -168,8 +160,6 @@ Future<void> main() async {
         } catch (_) {}
         return true;
       };
-
-      await MobileAds.instance.initialize();
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.dumpErrorToConsole(details, forceReport: true);
         logger.e(
@@ -187,36 +177,45 @@ Future<void> main() async {
         } catch (_) {}
       };
 
-      localNotification = LocalNotification();
-
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
-      bool firebaseInitialized = false;
-      if (!skipFirebaseInit) {
-        try {
-          await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-          firebaseInitialized = true;
-          FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
-          // Register background handler before any other FCM calls.
-          FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-        } catch (error, stackTrace) {
-          logger.w(
-            'Firebase initialization failed; continuing without Firebase-backed startup features.',
-            error: error,
-            stackTrace: stackTrace,
-          );
-        }
-      } else {
+      final SentryConfig sentryConfig = _resolveSentryConfig();
+
+      // Run independent startup tasks in parallel to reduce time-to-first-frame.
+      final results = await Future.wait(<Future<Object?>>[
+        PersistenceBootstrap.initialize(),
+        _initializeMonitoring(sentryConfig),
+        if (!skipFirebaseInit)
+          _initFirebase().then((_) => true).catchError((Object e, StackTrace s) {
+            logger.w(
+              'Firebase initialization failed; continuing without Firebase-backed startup features.',
+              error: e,
+              stackTrace: s,
+            );
+            return false;
+          })
+        else
+          Future<Object?>.value(null),
+      ]);
+
+      final bool firebaseInitialized = skipFirebaseInit ? false : (results[2] == true);
+      if (!skipFirebaseInit && firebaseInitialized) {
+        FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      } else if (skipFirebaseInit) {
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
+
       await MonitoringRuntime.reporter.addBreadcrumb(
         message: 'Startup stage reached',
         category: 'app.startup.stage',
         data: <String, Object?>{'stage': 'firebase_init_completed', 'firebase_initialized': firebaseInitialized},
       );
 
-      await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
+      // Defer MobileAds and Analytics to after first frame so runApp is not blocked.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_deferredStartup(firebaseInitialized: firebaseInitialized));
+      });
 
-      await PersistenceBootstrap.initialize();
       await MonitoringRuntime.reporter.addBreadcrumb(
         message: 'Startup stage reached',
         category: 'app.startup.stage',
@@ -308,6 +307,15 @@ Future<void> main() async {
       } catch (_) {}
     },
   );
+}
+
+Future<void> _initFirebase() async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+
+Future<void> _deferredStartup({required bool firebaseInitialized}) async {
+  await MobileAds.instance.initialize();
+  await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
 }
 
 SentryConfig _resolveSentryConfig() {
