@@ -28,6 +28,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -142,14 +143,16 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      unawaited(app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
-        logger.w(
-          'Unable to read runtime app version; falling back to static constants.',
-          tag: 'AppVersion',
-          error: e,
-          stackTrace: s,
-        );
-      }));
+      unawaited(
+        app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
+          logger.w(
+            'Unable to read runtime app version; falling back to static constants.',
+            tag: 'AppVersion',
+            error: e,
+            stackTrace: s,
+          );
+        }),
+      );
       Bloc.observer = const BlocDebugObserver();
       localNotification = LocalNotification();
 
@@ -180,11 +183,11 @@ Future<void> main() async {
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
       final SentryConfig sentryConfig = _resolveSentryConfig();
 
-      // Run independent startup tasks in parallel to reduce time-to-first-frame.
-      final results = await Future.wait(<Future<Object?>>[
-        PersistenceBootstrap.initialize(),
-        _initializeMonitoring(sentryConfig),
-        if (!skipFirebaseInit)
+      // Kick off Firebase in background — does NOT block runApp.
+      // StartupRepositoryImpl.bootstrap() will await FirebaseInit.readyFuture
+      // before touching FirebaseRemoteConfig.
+      if (!skipFirebaseInit) {
+        FirebaseInit.setFuture(
           _initFirebase().then((_) => true).catchError((Object e, StackTrace s) {
             logger.w(
               'Firebase initialization failed; continuing without Firebase-backed startup features.',
@@ -192,28 +195,40 @@ Future<void> main() async {
               stackTrace: s,
             );
             return false;
-          })
-        else
-          Future<Object?>.value(null),
-      ]);
-
-      final bool firebaseInitialized = skipFirebaseInit ? false : (results[2] == true);
-      if (!skipFirebaseInit && firebaseInitialized) {
-        FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
-        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-      } else if (skipFirebaseInit) {
+          }),
+        );
+        // Register FCM/FIAM as soon as Firebase is ready (no-op if init failed).
+        unawaited(
+          FirebaseInit.readyFuture.then((initialized) {
+            if (initialized) {
+              FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
+              FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+            }
+            unawaited(
+              MonitoringRuntime.reporter.addBreadcrumb(
+                message: 'Startup stage reached',
+                category: 'app.startup.stage',
+                data: <String, Object?>{'stage': 'firebase_init_completed', 'firebase_initialized': initialized},
+              ),
+            );
+          }),
+        );
+      } else {
+        FirebaseInit.setFuture(Future<bool>.value(false));
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
 
-      await MonitoringRuntime.reporter.addBreadcrumb(
-        message: 'Startup stage reached',
-        category: 'app.startup.stage',
-        data: <String, Object?>{'stage': 'firebase_init_completed', 'firebase_initialized': firebaseInitialized},
-      );
+      // Only truly-blocking tasks remain on the critical path.
+      await Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]);
 
-      // Defer MobileAds and Analytics to after first frame so runApp is not blocked.
+      // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
+      // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(_deferredStartup(firebaseInitialized: firebaseInitialized));
+        unawaited(
+          FirebaseInit.readyFuture.then(
+            (firebaseInitialized) => _deferredStartup(firebaseInitialized: firebaseInitialized),
+          ),
+        );
       });
 
       await MonitoringRuntime.reporter.addBreadcrumb(
@@ -256,6 +271,12 @@ Future<void> main() async {
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
       ]);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
+
+      // Await Firebase init before building the widget tree.
+      // DI lazy singletons (Firestore, Auth, RemoteConfig) call .instance which
+      // requires Firebase to be ready. Firebase was kicked off at the top of
+      // main() so in practice it completes during or before Persistence init.
+      await FirebaseInit.readyFuture;
 
       runApp(
         SentryWidget(
@@ -932,7 +953,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _appRouter.navigate(const NotFoundRoute());
   }
 
-  void _listenForPushMessages() {
+  Future<void> _listenForPushMessages() async {
+    // Wait for Firebase to be ready before touching any Firebase APIs.
+    final bool firebaseReady = await FirebaseInit.readyFuture;
+    if (!firebaseReady) return;
+
     // Foreground: show a heads-up local notification + sync the inbox.
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       unawaited(localNotification.showPushNotification(message));
@@ -963,7 +988,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
-    _listenForPushMessages();
+    unawaited(_listenForPushMessages());
   }
 
   @override

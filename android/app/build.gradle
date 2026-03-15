@@ -103,7 +103,6 @@ android {
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
     implementation "com.squareup.picasso:picasso:2.71828"
-    implementation 'com.google.firebase:firebase-messaging:20.2.3'
 }
 
 flutter {

@@ -259,12 +259,6 @@ _i174.GetIt initGetIt(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
   );
-  gh.lazySingleton<_i721.StartupRepository>(
-    () => _i152.StartupRepositoryImpl(
-      gh<_i627.FirebaseRemoteConfig>(),
-      gh<_i1073.SettingsLocalDataSource>(),
-    ),
-  );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
   );
@@ -289,9 +283,6 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
-  );
-  gh.lazySingleton<_i415.BootstrapAppUseCase>(
-    () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
   gh.lazySingleton<_i366.NotificationsRepository>(
     () => _i1017.NotificationsRepositoryImpl(
@@ -348,6 +339,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i425.ThemeRepository>(
     () => _i404.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
   );
+  gh.lazySingleton<_i721.StartupRepository>(
+    () => _i152.StartupRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
+  );
   gh.lazySingleton<_i411.SetupsRepository>(
     () => _i415.SetupsRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -396,9 +390,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()),
-  );
-  gh.factory<_i313.StartupBloc>(
-    () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
   gh.lazySingleton<_i563.ProfileSetupsRepository>(
     () => _i983.ProfileSetupsRepositoryImpl(gh<_i349.FirestoreClient>()),
@@ -541,6 +532,9 @@ _i174.GetIt initGetIt(
       gh<_i663.ObserveDeepLinkActionsUseCase>(),
     ),
   );
+  gh.lazySingleton<_i415.BootstrapAppUseCase>(
+    () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
+  );
   gh.lazySingleton<_i108.InitializeQuickActionsUseCase>(
     () =>
         _i108.InitializeQuickActionsUseCase(gh<_i865.QuickActionsRepository>()),
@@ -673,6 +667,9 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i941.ProfileSetupsBloc>(
     () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
+  );
+  gh.factory<_i313.StartupBloc>(
+    () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
