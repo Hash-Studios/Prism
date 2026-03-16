@@ -64,6 +64,7 @@ class InterestCategoryTile extends StatelessWidget {
                   child: Text(
                     name,
                     style: const TextStyle(
+                      fontFamily: OnboardingTypography.sans,
                       color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
