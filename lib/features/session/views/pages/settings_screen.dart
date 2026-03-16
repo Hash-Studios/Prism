@@ -502,7 +502,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
               if (signedOut) {
                 toasts.codeSend('Log out Successful!');
-                main.RestartWidget.restartApp(context);
+                final settingsLocal = getIt<SettingsLocalDataSource>();
+                await settingsLocal.set('onboarded_v2_new', false);
+                await settingsLocal.set('onboarding_v2_interests', '');
+                await settingsLocal.set('onboarding_v2_followed_creators', '');
+                if (context.mounted) {
+                  main.RestartWidget.restartApp(context);
+                }
               }
             } catch (error, stackTrace) {
               logger.e('Sign out failed from settings.', error: error, stackTrace: stackTrace);

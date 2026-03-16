@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class _RawQueryDoc {
@@ -242,6 +243,12 @@ class FirestoreTrackedClient implements FirestoreClient {
       return cached;
     } catch (error) {
       final FirestoreError mapped = mapFirestoreError(error);
+      if (mapped.code == 'permission-denied') {
+        logger.w(
+          '[Firestore] permission-denied on query — collection: ${spec.collection}, sourceTag: ${spec.sourceTag}',
+          error: mapped,
+        );
+      }
       await _emitTelemetry(
         FirestoreTelemetryEvent(
           timestamp: DateTime.now(),
@@ -527,6 +534,12 @@ class FirestoreTrackedClient implements FirestoreClient {
       return result;
     } catch (error) {
       final FirestoreError mapped = mapFirestoreError(error);
+      if (mapped.code == 'permission-denied') {
+        logger.w(
+          '[Firestore] permission-denied on transaction — collection: $collection, sourceTag: $sourceTag',
+          error: mapped,
+        );
+      }
       await _emitTelemetry(
         FirestoreTelemetryEvent(
           timestamp: DateTime.now(),
@@ -564,6 +577,9 @@ class FirestoreTrackedClient implements FirestoreClient {
       );
     } catch (error) {
       final FirestoreError mapped = mapFirestoreError(error);
+      if (mapped.code == 'permission-denied') {
+        logger.w('[Firestore] permission-denied on batch — sourceTag: $sourceTag', error: mapped);
+      }
       await _emitTelemetry(
         FirestoreTelemetryEvent(
           timestamp: DateTime.now(),

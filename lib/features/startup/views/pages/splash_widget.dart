@@ -62,7 +62,8 @@ class _SplashWidgetState extends State<SplashWidget> {
       if (!mounted) {
         return;
       }
-      if (!isOnboarded && v2Enabled) {
+      final isLoggedIn = app_state.prismUser.loggedIn;
+      if (!isLoggedIn || (!isOnboarded && v2Enabled)) {
         context.router.replaceAll([const OnboardingV2ShellRoute()]);
       } else {
         context.router.replaceAll([const DashboardRoute()]);
