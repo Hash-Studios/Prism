@@ -141,12 +141,14 @@ class GoogleAuth {
           sourceContext: 'google_auth',
         ),
       );
-      await PurchasesService.instance.checkAndPersistPremium();
-      await CoinsService.instance.bootstrapForCurrentUser();
-      await CoinsService.instance.refreshBalance();
-      await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
-      await CoinsService.instance.maybeAwardProDailyBonus();
-      await CoinsService.instance.processPendingReferralIfEligible();
+      unawaited(() async {
+        await PurchasesService.instance.checkAndPersistPremium();
+        await CoinsService.instance.bootstrapForCurrentUser();
+        await CoinsService.instance.refreshBalance();
+        await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+        await CoinsService.instance.maybeAwardProDailyBonus();
+        await CoinsService.instance.processPendingReferralIfEligible();
+      }());
       await syncSentryUserScope(
         loggedIn: app_state.prismUser.loggedIn,
         id: app_state.prismUser.id,

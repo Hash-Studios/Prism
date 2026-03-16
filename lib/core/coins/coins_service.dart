@@ -141,6 +141,9 @@ class CoinsService {
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
+
+  /// Tracks how many AI free-trial generations have been used (max 3).
+  final ValueNotifier<int> aiFreeUsedNotifier = ValueNotifier<int>(0);
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   int _deltaVersion = 0;
@@ -545,6 +548,7 @@ class CoinsService {
           final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
           if (freeUsed < 3) {
             coinState['aiFreeUsedTotal'] = freeUsed + 1;
+            aiFreeUsedNotifier.value = freeUsed + 1;
             tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
               'coins': previous,
               _coinStateField: coinState,
@@ -718,6 +722,7 @@ class CoinsService {
           final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
           if (freeUsed > 0) {
             coinState['aiFreeUsedTotal'] = freeUsed - 1;
+            aiFreeUsedNotifier.value = freeUsed - 1;
             changed = true;
           }
         } else if (mode == AiChargeMode.proIncluded) {
@@ -1064,50 +1069,64 @@ class CoinsService {
     }
     final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
-    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
-      (tx) async {
-        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
-        if (data == null) {
-          return CoinMutationResult.noChange(
-            balance: app_state.prismUser.coins,
-            success: false,
-            reason: 'user_missing',
-          );
-        }
-        final bool isPremium = _isPremiumUserData(data);
-        final int previous = _asInt(data['coins']);
-        if (!isPremium) {
-          return CoinMutationResult.noChange(balance: previous, reason: 'not_premium');
-        }
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(
-          coinState,
-          reminderEnabled: _preferredStreakReminderEnabled(),
-          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+    CoinMutationResult? result;
+    const int maxRetries = 3;
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        result = await firestoreClient.runTransaction<CoinMutationResult>(
+          (tx) async {
+            final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+            if (data == null) {
+              return CoinMutationResult.noChange(
+                balance: app_state.prismUser.coins,
+                success: false,
+                reason: 'user_missing',
+              );
+            }
+            final bool isPremium = _isPremiumUserData(data);
+            final int previous = _asInt(data['coins']);
+            if (!isPremium) {
+              return CoinMutationResult.noChange(balance: previous, reason: 'not_premium');
+            }
+            final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+            _ensureCoinStateDefaults(
+              coinState,
+              reminderEnabled: _preferredStreakReminderEnabled(),
+              timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+            );
+            final String lastBonusDate = (coinState['proDailyBonusDate'] as String? ?? '').trim();
+            if (lastBonusDate == today) {
+              return CoinMutationResult.noChange(balance: previous, reason: 'pro_bonus_already_claimed');
+            }
+            final int current = previous + CoinPolicy.proDailyBonus;
+            coinState['proDailyBonusDate'] = today;
+            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+              'coins': current,
+              _coinStateField: coinState,
+            });
+            return CoinMutationResult(
+              success: true,
+              changed: true,
+              previousBalance: previous,
+              currentBalance: current,
+              delta: CoinPolicy.proDailyBonus,
+              reason: 'pro_daily_bonus',
+            );
+          },
+          sourceTag: 'coins.claim_pro_daily_bonus',
+          collection: FirebaseCollections.usersV2,
+          docId: userId,
         );
-        final String lastBonusDate = (coinState['proDailyBonusDate'] as String? ?? '').trim();
-        if (lastBonusDate == today) {
-          return CoinMutationResult.noChange(balance: previous, reason: 'pro_bonus_already_claimed');
+        break;
+      } on FirestoreError catch (e) {
+        if (e.code == 'unavailable' && attempt < maxRetries - 1) {
+          await Future<void>.delayed(Duration(seconds: (attempt + 1) * 2));
+          continue;
         }
-        final int current = previous + CoinPolicy.proDailyBonus;
-        coinState['proDailyBonusDate'] = today;
-        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-          'coins': current,
-          _coinStateField: coinState,
-        });
-        return CoinMutationResult(
-          success: true,
-          changed: true,
-          previousBalance: previous,
-          currentBalance: current,
-          delta: CoinPolicy.proDailyBonus,
-          reason: 'pro_daily_bonus',
-        );
-      },
-      sourceTag: 'coins.claim_pro_daily_bonus',
-      collection: FirebaseCollections.usersV2,
-      docId: userId,
-    );
+        rethrow;
+      }
+    }
+    result ??= CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'unavailable');
 
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {

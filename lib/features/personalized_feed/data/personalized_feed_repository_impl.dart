@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -90,12 +92,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         pexelsTarget: targets.pexels,
       );
 
-      final hasMore = ranking.items.length >= _pageSize;
+      final feedSeed = cacheScope.hashCode;
+      final feedItems = [...ranking.items]..shuffle(Random(feedSeed));
+
+      final hasMore = feedItems.length >= _pageSize;
       final nextSeen = _trimSeen([...request.seenKeys, ...ranking.usedKeys]);
-      final merged = _mergeCachedAndNew(
-        request.refresh ? const <FeedItemEntity>[] : request.existingItems,
-        ranking.items,
-      );
+      final merged = _mergeCachedAndNew(request.refresh ? const <FeedItemEntity>[] : request.existingItems, feedItems);
       await _writeCacheState(scope: cacheScope, seenKeys: nextSeen, cachedItems: merged);
 
       logger.i(
@@ -104,7 +106,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           'is_guest': isGuest,
           'refresh': request.refresh,
           'page': request.page,
-          'items': ranking.items.length,
+          'items': feedItems.length,
           'source_prism': ranking.sourceCounts[WallpaperSource.prism] ?? 0,
           'source_wallhaven': ranking.sourceCounts[WallpaperSource.wallhaven] ?? 0,
           'source_pexels': ranking.sourceCounts[WallpaperSource.pexels] ?? 0,
@@ -114,7 +116,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
       return Result.success(
         PersonalizedFeedPage(
-          items: ranking.items,
+          items: feedItems,
           hasMore: hasMore,
           usedKeys: ranking.usedKeys,
           sourceCounts: ranking.sourceCounts,
@@ -270,6 +272,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         items.addAll(result.data!.map((wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall)));
       }
     }
+    final seed = app_state.prismUser.id.isEmpty ? 0 : app_state.prismUser.id.hashCode;
+    items.shuffle(Random(seed));
     return items;
   }
 
@@ -333,6 +337,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         items.addAll(result.data!.map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall)));
       }
     }
+    final seed = app_state.prismUser.id.isEmpty ? 0 : app_state.prismUser.id.hashCode;
+    items.shuffle(Random(seed));
     return items;
   }
 
@@ -350,14 +356,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         .where((entry) => entry.isNotEmpty)
         .toList(growable: false);
     if (matched.isNotEmpty) {
-      return matched.take(2).toList(growable: false);
+      return matched;
     }
 
     final fallbackFromCatalog = catalog
         .where((entry) => entry.supports(source))
         .map((entry) => entry.query)
         .where((entry) => entry.isNotEmpty)
-        .take(2)
         .toList(growable: false);
     if (fallbackFromCatalog.isNotEmpty) {
       return fallbackFromCatalog;

@@ -1,6 +1,6 @@
 part of 'onboarding_v2_bloc.j.dart';
 
-enum OnboardingV2Step { auth, interests, starterPack, firstWallpaper, paywall }
+enum OnboardingV2Step { auth, interests, starterPack, firstWallpaper }
 
 enum OnboardingV2NavRequest { openPaywall, completeOnboarding }
 
@@ -48,15 +48,6 @@ abstract class OnboardingWallpaperData with _$OnboardingWallpaperData {
 }
 
 @freezed
-abstract class OnboardingPaywallData with _$OnboardingPaywallData {
-  const factory OnboardingPaywallData({required bool continueUnlocked, required int timerRemainingSeconds}) =
-      _OnboardingPaywallData;
-
-  factory OnboardingPaywallData.initial() =>
-      OnboardingPaywallData(continueUnlocked: false, timerRemainingSeconds: OnboardingV2Config.paywallSoftGateSeconds);
-}
-
-@freezed
 abstract class OnboardingV2State with _$OnboardingV2State {
   const factory OnboardingV2State({
     required OnboardingV2Step step,
@@ -66,7 +57,8 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     required OnboardingInterestsData interestsData,
     required OnboardingStarterPackData starterPackData,
     required OnboardingWallpaperData wallpaperData,
-    required OnboardingPaywallData paywallData,
+    required bool skipInterests,
+    required bool skipStarterPack,
     OnboardingV2NavRequest? navRequest,
     Failure? failure,
   }) = _OnboardingV2State;
@@ -79,6 +71,7 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     interestsData: OnboardingInterestsData.initial(),
     starterPackData: OnboardingStarterPackData.initial(),
     wallpaperData: OnboardingWallpaperData.initial(),
-    paywallData: OnboardingPaywallData.initial(),
+    skipInterests: false,
+    skipStarterPack: false,
   );
 }

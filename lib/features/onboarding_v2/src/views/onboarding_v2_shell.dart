@@ -8,7 +8,7 @@ import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f1_interests_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f2_starter_pack_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f3_first_wallpaper_page.dart';
-import 'package:Prism/features/onboarding_v2/src/views/pages/f4_paywall_gate_page.dart';
+
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:auto_route/auto_route.dart';
@@ -28,13 +28,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
   late final PageController _pageController;
 
-  static const List<Widget> _pages = [
-    F0AuthPage(),
-    F1InterestsPage(),
-    F2StarterPackPage(),
-    F3FirstWallpaperPage(),
-    F4PaywallGatePage(),
-  ];
+  static const List<Widget> _pages = [F0AuthPage(), F1InterestsPage(), F2StarterPackPage(), F3FirstWallpaperPage()];
 
   @override
   void initState() {

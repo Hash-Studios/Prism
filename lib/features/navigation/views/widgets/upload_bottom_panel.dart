@@ -33,194 +33,234 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     router.push(EditWallRoute(image: wallpaper));
   }
 
+  Future<void> _onWallpaperTap() async {
+    analytics.track(
+      const UploadActionSelectedEvent(
+        action: AnalyticsActionValue.uploadWallpaperSelected,
+        entrypoint: EntryPointValue.bottomNav,
+      ),
+    );
+    if (app_state.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+      toasts.codeSend('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+      if (mounted) {
+        Navigator.of(context).pop();
+        await PaywallOrchestrator.instance.present(
+          context,
+          placement: PaywallPlacement.uploadLimitReached,
+          source: 'upload_wallpaper_limit_reached',
+        );
+      }
+      return;
+    }
+    await _pickWallpaperImage();
+  }
+
+  Future<void> _onSetupTap() async {
+    analytics.track(
+      const UploadActionSelectedEvent(
+        action: AnalyticsActionValue.uploadSetupSelected,
+        entrypoint: EntryPointValue.bottomNav,
+      ),
+    );
+    if (!app_state.prismUser.premium) {
+      Navigator.pop(context);
+      await PaywallOrchestrator.instance.present(
+        context,
+        placement: PaywallPlacement.blockedSetupCreate,
+        source: 'upload_setup_blocked',
+      );
+      return;
+    }
+    final router = context.router;
+    Navigator.pop(context);
+    router.push(const SetupGuidelinesRoute());
+  }
+
+  void _onAiTap() {
+    analytics.track(
+      const UploadActionSelectedEvent(
+        action: AnalyticsActionValue.uploadAiSelected,
+        entrypoint: EntryPointValue.bottomNav,
+      ),
+    );
+    final router = context.router;
+    Navigator.pop(context);
+    router.push(const AiTabRoute());
+  }
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width * 0.85;
-    return Container(
-      height: MediaQuery.of(context).size.height / 1.5 > 500 ? MediaQuery.of(context).size.height / 1.5 : 500,
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-      ),
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Container(
-                  height: 5,
-                  width: 30,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).hintColor,
-                    borderRadius: BorderRadius.circular(500),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text('Upload', style: Theme.of(context).textTheme.displayMedium),
-          const Spacer(flex: 2),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 4,
-            runSpacing: 4,
-            children: <Widget>[
-              _UploadTypeCard(
-                width: width,
-                title: 'Wallpapers',
-                imageAsset: 'assets/images/wallpaper.jpg',
-                onTap: () async {
-                  analytics.track(
-                    const UploadActionSelectedEvent(
-                      action: AnalyticsActionValue.uploadWallpaperSelected,
-                      entrypoint: EntryPointValue.bottomNav,
-                    ),
-                  );
-                  if (app_state.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-                    toasts.codeSend('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      await PaywallOrchestrator.instance.present(
-                        context,
-                        placement: PaywallPlacement.uploadLimitReached,
-                        source: 'upload_wallpaper_limit_reached',
-                      );
-                    }
-                    return;
-                  }
-                  await _pickWallpaperImage();
-                },
-              ),
-              _UploadTypeCard(
-                width: width,
-                title: 'Setups',
-                imageAsset: 'assets/images/setup.jpg',
-                onTap: () async {
-                  analytics.track(
-                    const UploadActionSelectedEvent(
-                      action: AnalyticsActionValue.uploadSetupSelected,
-                      entrypoint: EntryPointValue.bottomNav,
-                    ),
-                  );
-                  if (!app_state.prismUser.premium) {
-                    Navigator.pop(context);
-                    await PaywallOrchestrator.instance.present(
-                      context,
-                      placement: PaywallPlacement.blockedSetupCreate,
-                      source: 'upload_setup_blocked',
-                    );
-                    return;
-                  }
-                  final router = context.router;
-                  Navigator.pop(context);
-                  router.push(const SetupGuidelinesRoute());
-                },
-              ),
-              _UploadTypeCard(
-                width: width,
-                title: 'AI Generate',
-                imageAsset: 'assets/images/wallpaper.jpg',
-                onTap: () async {
-                  analytics.track(
-                    const UploadActionSelectedEvent(
-                      action: AnalyticsActionValue.uploadAiSelected,
-                      entrypoint: EntryPointValue.bottomNav,
-                    ),
-                  );
-                  final router = context.router;
-                  Navigator.pop(context);
-                  router.push(const AiTabRoute());
-                },
-              ),
-            ],
-          ),
-          const Spacer(flex: 2),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width * 0.8,
-              child: Text(
-                'Please only upload high-quality original wallpapers and setups. Please do not upload wallpapers from other apps. You can also report wallpapers or setups by clicking the copyright button after opening them.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
+    final theme = Theme.of(context);
+    final secondary = theme.colorScheme.secondary;
+    final accentColor = theme.colorScheme.error;
+    final bool isPremium = app_state.prismUser.premium;
+    final int remainingUploads = UploadQuota.remainingFreeUploadsThisWeek();
+    final bool quotaLow = !isPremium && remainingUploads <= 1;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Center(
+              child: Container(
+                height: 4,
+                width: 32,
+                decoration: BoxDecoration(color: theme.hintColor, borderRadius: BorderRadius.circular(99)),
               ),
             ),
-          ),
-          const Spacer(),
-        ],
+            const SizedBox(height: 20),
+            Text('Create', style: theme.textTheme.displayMedium),
+            const SizedBox(height: 4),
+            Text(
+              'What would you like to create?',
+              style: theme.textTheme.bodySmall?.copyWith(color: secondary.withValues(alpha: 0.65)),
+            ),
+            const SizedBox(height: 24),
+            _CreateActionTile(
+              icon: JamIcons.pictures_f,
+              iconColor: accentColor,
+              title: 'Wallpapers',
+              subtitle: quotaLow
+                  ? '$remainingUploads free upload${remainingUploads == 1 ? '' : 's'} left this week'
+                  : 'From your gallery',
+              onTap: _onWallpaperTap,
+            ),
+            _TileDivider(color: secondary),
+            _CreateActionTile(
+              icon: JamIcons.instant_picture_f,
+              iconColor: accentColor,
+              title: 'Setups',
+              subtitle: isPremium ? 'Share your homescreen' : 'Requires Pro',
+              onTap: _onSetupTap,
+            ),
+            _TileDivider(color: secondary),
+            _CreateActionTile(
+              icon: Icons.auto_awesome_rounded,
+              iconColor: const Color(0xFF7C4DFF),
+              title: 'AI Generate',
+              subtitle: 'Generate any wallpaper with AI',
+              badge: 'NEW',
+              badgeColor: const Color(0xFF7C4DFF),
+              onTap: _onAiTap,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Please only upload high-quality original wallpapers and setups. Do not upload content from other apps.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: secondary.withValues(alpha: 0.4), fontFamily: 'Proxima Nova'),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _UploadTypeCard extends StatelessWidget {
-  final double width;
-  final String title;
-  final String imageAsset;
-  final Future<void> Function() onTap;
-
-  const _UploadTypeCard({required this.width, required this.title, required this.imageAsset, required this.onTap});
+class _TileDivider extends StatelessWidget {
+  final Color color;
+  const _TileDivider({required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: GestureDetector(
-            onTap: onTap,
-            child: SizedBox(
-              width: width / 2 - 20,
-              height: width / 2 / 0.6625,
-              child: Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  Container(
-                    width: width / 2 - 14,
-                    height: width / 2 / 0.6625,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
-                      border: Border.all(color: Theme.of(context).colorScheme.error, width: 3),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.asset(imageAsset, fit: BoxFit.cover),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 60.0),
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).colorScheme.error),
-                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
+    return Divider(height: 1, thickness: 0.5, color: color.withValues(alpha: 0.12), indent: 64);
+  }
+}
+
+class _CreateActionTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final String? badge;
+  final Color? badgeColor;
+  final VoidCallback onTap;
+
+  const _CreateActionTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.badge,
+    this.badgeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final secondary = theme.colorScheme.secondary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          title,
+                          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700, color: secondary),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Icon(JamIcons.plus, color: Theme.of(context).colorScheme.error, size: 40),
-                        ),
+                        if (badge != null) ...<Widget>[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: (badgeColor ?? iconColor).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: (badgeColor ?? iconColor).withValues(alpha: 0.5), width: 0.5),
+                            ),
+                            child: Text(
+                              badge!,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: badgeColor ?? iconColor,
+                                letterSpacing: 0.4,
+                                fontFamily: 'Proxima Nova',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: secondary.withValues(alpha: 0.55),
+                        fontSize: 12,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              Icon(Icons.chevron_right_rounded, color: secondary.withValues(alpha: 0.35), size: 20),
+            ],
           ),
         ),
-        Text(
-          title,
-          style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
-        ),
-      ],
+      ),
     );
   }
 }
