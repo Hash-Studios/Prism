@@ -49,18 +49,18 @@ class ProfileDrawer extends StatelessWidget {
             children: [
               Text(
                 app_state.prismUser.premium == true ? 'Prism Pro' : 'Prism',
-                style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
               const SizedBox(height: 2),
               Text(
                 app_state.prismUser.premium == true
                     ? 'Exclusive premium walls & setups!'
                     : 'Exclusive wallpapers & setups!',
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
               ),
             ],
           ),
@@ -96,10 +96,9 @@ class ProfileDrawer extends StatelessWidget {
       trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
       title: Text(
         text,
-        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-          fontFamily: 'Proxima Nova',
-          color: Theme.of(context).colorScheme.secondary,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall!.copyWith(fontFamily: 'Proxima Nova', color: Theme.of(context).colorScheme.secondary),
       ),
       onTap: onTap,
     );
@@ -128,10 +127,7 @@ class ProfileDrawer extends StatelessWidget {
             icon: Icon(JamIcons.info, color: color, size: 18),
             label: Text('About', style: TextStyle(color: color, fontSize: 12)),
             onPressed: () {
-              _trackDrawerAction(
-                AnalyticsActionValue.actionChipTapped,
-                sourceContext: 'profile_drawer_about',
-              );
+              _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
               Navigator.pop(context);
               context.router.push(const AboutRoute());
             },
@@ -223,10 +219,7 @@ class ProfileDrawer extends StatelessWidget {
               text: 'Log out',
               context: context,
               onTap: () {
-                _trackDrawerAction(
-                  AnalyticsActionValue.drawerLogoutTapped,
-                  sourceContext: 'profile_drawer_logout',
-                );
+                _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
                 Navigator.pop(context);
                 app_state.gAuth.signOutGoogle();
                 toasts.codeSend('Log out Successful!');

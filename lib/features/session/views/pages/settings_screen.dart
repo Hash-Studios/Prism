@@ -153,9 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _categories == 111,
           title: Text('Show Anime Wallpapers', style: _titleStyle),
           subtitle: Text(
-            _categories == 111
-                ? 'Disable to hide anime wallpapers'
-                : 'Enable to show anime wallpapers',
+            _categories == 111 ? 'Disable to hide anime wallpapers' : 'Enable to show anime wallpapers',
             style: _subtitleStyle,
           ),
           onChanged: (value) {
@@ -170,9 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _purity == 110,
           title: Text('Show Sketchy Wallpapers', style: _titleStyle),
           subtitle: Text(
-            _purity == 110
-                ? 'Disable to hide sketchy wallpapers'
-                : 'Enable to show sketchy wallpapers',
+            _purity == 110 ? 'Disable to hide sketchy wallpapers' : 'Enable to show sketchy wallpapers',
             style: _subtitleStyle,
           ),
           onChanged: (value) {
@@ -184,10 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(Icons.high_quality_outlined),
           title: Text('Download Quality', style: _titleStyle),
-          subtitle: Text(
-            _downloadQuality == 'original' ? 'Original resolution' : 'Compressed',
-            style: _subtitleStyle,
-          ),
+          subtitle: Text(_downloadQuality == 'original' ? 'Original resolution' : 'Compressed', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: _showDownloadQualitySheet,
         ),
@@ -199,9 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Theme.of(context).primaryColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
@@ -214,10 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     height: 4,
                     width: 36,
                     margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(ctx).hintColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                    decoration: BoxDecoration(color: Theme.of(ctx).hintColor, borderRadius: BorderRadius.circular(2)),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
