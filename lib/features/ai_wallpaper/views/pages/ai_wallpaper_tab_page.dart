@@ -9,6 +9,7 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -1102,7 +1103,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
-      appBar: AppBar(automaticallyImplyLeading: canPop, title: const Text('Generate'), actions: const <Widget>[]),
+      appBar: AppBar(
+        automaticallyImplyLeading: canPop,
+        title: const Text('Generate'),
+        actions: const <Widget>[
+          CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
+          SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
         top: false,
         child: RefreshIndicator(

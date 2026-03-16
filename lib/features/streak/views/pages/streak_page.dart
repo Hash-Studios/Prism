@@ -4,6 +4,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -44,12 +46,9 @@ class _StreakPageState extends State<StreakPage> {
               surfaceTintColor: Colors.transparent,
               floating: true,
               title: const Text('Your Streak'),
-              actions: <Widget>[
-                ValueListenableBuilder<int>(
-                  valueListenable: CoinsService.instance.balanceNotifier,
-                  builder: (context, balance, _) => _HexCoinBadge(balance: balance),
-                ),
-                const SizedBox(width: 16),
+              actions: const <Widget>[
+                CoinBalanceChip(sourceTag: 'streak_page', showStreak: false),
+                SizedBox(width: 8),
               ],
             ),
             SliverToBoxAdapter(child: _HeroSection()),
@@ -89,36 +88,6 @@ class _StreakPageState extends State<StreakPage> {
             const SliverToBoxAdapter(child: SizedBox(height: 80)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Coin badge in AppBar ──────────────────────────────────────────────────────
-
-class _HexCoinBadge extends StatelessWidget {
-  const _HexCoinBadge({required this.balance});
-
-  final int balance;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: <Color>[Color(0xFFFFC107), Color(0xFFFF8F00)]),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(Icons.monetization_on, size: 14, color: Colors.white),
-          const SizedBox(width: 4),
-          Text(
-            '$balance',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
-          ),
-        ],
       ),
     );
   }
@@ -204,24 +173,20 @@ class _HeroSection extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // Large golden coin with balance
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: <Color>[Color(0xFFFFC107), Color(0xFFFF8F00)],
-                      ),
-                      boxShadow: <BoxShadow>[BoxShadow(color: Color(0x55FFC107), blurRadius: 20, spreadRadius: 4)],
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$balance',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 22),
-                      ),
+                  // Large prism coin icon with balance below
+                  const PrismCoinIcon(size: 80),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$balance',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 28),
+                  ),
+                  const Text(
+                    'coins',
+                    style: TextStyle(
+                      color: Color(0xFFFFC107),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -343,11 +308,7 @@ class _DayCardsRow extends StatelessWidget {
                                 : const Color(0xFFFFC107).withValues(alpha: 0.6),
                           ),
                         ),
-                        child: Icon(
-                          Icons.monetization_on,
-                          size: 14,
-                          color: isCurrent ? Colors.white : const Color(0xFFFFC107),
-                        ),
+                        child: const PrismCoinIcon(size: 14),
                       ),
                       const SizedBox(height: 4),
                       Text(
