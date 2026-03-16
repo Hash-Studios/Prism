@@ -104,6 +104,77 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     }
   }
 
+  static const String _toplistScope = 'toplist.1M';
+
+  @override
+  Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1}) async {
+    final Uri uri = Uri.https(_host, _searchPath, <String, String>{
+      'sorting': 'toplist',
+      'topRange': '3d',
+      'purity': '100',
+      'categories': '100',
+      'page': page.toString(),
+    });
+
+    logger.d('[WallhavenWallpaperRepository] fetchToplist', fields: <String, Object?>{'page': page});
+
+    try {
+      final http.Response response = await http.get(uri);
+      if (response.statusCode != 200) {
+        return await _cachedToplistOrFailure(
+          failure: ServerFailure(
+            'WallHaven toplist request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
+          ),
+        );
+      }
+
+      final Map<String, dynamic> decoded = json.decode(response.body) as Map<String, dynamic>;
+      final WallhavenSearchResponseDto payload = WallhavenSearchResponseDto.fromJson(decoded);
+      final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
+
+      await _feedCacheLocal.write(
+        source: 'wallhaven',
+        scope: _toplistScope,
+        ttlHours: _feedTtlHours,
+        payload: <String, Object?>{'payload': payload.toJson()},
+      );
+
+      logger.i('[WallhavenWallpaperRepository] fetchToplist success', fields: <String, Object?>{'count': walls.length});
+      return Result.success(walls);
+    } catch (error, stackTrace) {
+      final cached = await _readCachedToplist();
+      if (cached != null) {
+        logger.w(
+          '[WallhavenWallpaperRepository] toplist fetch failed; returning cached snapshot',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return Result.success(cached);
+      }
+      logger.e('[WallhavenWallpaperRepository] fetchToplist failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure('Failed to fetch WallHaven toplist: $error'));
+    }
+  }
+
+  Future<Result<List<WallhavenWallpaper>>> _cachedToplistOrFailure({required Failure failure}) async {
+    final cached = await _readCachedToplist();
+    if (cached != null) {
+      return Result.success(cached);
+    }
+    return Result.error(failure);
+  }
+
+  Future<List<WallhavenWallpaper>?> _readCachedToplist() async {
+    final snapshot = await _feedCacheLocal.read(source: 'wallhaven', scope: _toplistScope);
+    if (snapshot == null || snapshot.payload is! Map) return null;
+    final map = _asMap(snapshot.payload);
+    final payloadMap = _asMap(map['payload']);
+    if (payloadMap.isEmpty) return null;
+    final payload = WallhavenSearchResponseDto.fromJson(payloadMap);
+    final walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
+    return walls.isEmpty ? null : walls;
+  }
+
   @override
   Future<Result<WallhavenWallpaper?>> fetchById(String id) async {
     final Uri uri = Uri.https(_host, '/api/v1/w/${id.toLowerCase()}');

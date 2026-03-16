@@ -9,6 +9,8 @@ abstract class WallhavenWallpaperRepository {
     int purity,
   });
 
+  Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1});
+
   Future<Result<WallhavenWallpaper?>> fetchById(String id);
   bool hasMoreForCategory(String categoryName);
 }

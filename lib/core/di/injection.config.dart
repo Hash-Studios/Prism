@@ -169,6 +169,8 @@ import '../../features/theme_light/domain/usecases/theme_light_usecases.dart'
 import '../../features/theme_mode/biz/bloc/theme_mode_bloc.j.dart' as _i736;
 import '../../features/theme_mode/domain/usecases/theme_mode_usecases.dart'
     as _i836;
+import '../../features/user_search/biz/bloc/search_discovery_bloc.j.dart'
+    as _i842;
 import '../../features/user_search/biz/bloc/user_search_bloc.j.dart' as _i733;
 import '../../features/user_search/data/repositories/user_search_repository_impl.dart'
     as _i352;
@@ -670,6 +672,9 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
+  );
+  gh.factory<_i842.SearchDiscoveryBloc>(
+    () => _i842.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
