@@ -21,11 +21,11 @@ abstract class AutoRotateConfigEntity with _$AutoRotateConfigEntity {
   }) = _AutoRotateConfigEntity;
 
   static AutoRotateConfigEntity get defaults => const AutoRotateConfigEntity(
-        isEnabled: false,
-        sourceType: AutoRotateSourceType.favourites,
-        target: aw.WallpaperTarget.both,
-        intervalMinutes: 60,
-        chargingTrigger: false,
-        order: AutoRotateOrder.shuffle,
-      );
+    isEnabled: false,
+    sourceType: AutoRotateSourceType.favourites,
+    target: aw.WallpaperTarget.both,
+    intervalMinutes: 60,
+    chargingTrigger: false,
+    order: AutoRotateOrder.shuffle,
+  );
 }

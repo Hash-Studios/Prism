@@ -47,10 +47,7 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
 
     // Load saved config
     final configResult = await _loadConfigUseCase(const NoParams());
-    final config = configResult.fold(
-      onSuccess: (c) => c,
-      onFailure: (_) => AutoRotateConfigEntity.defaults,
-    );
+    final config = configResult.fold(onSuccess: (c) => c, onFailure: (_) => AutoRotateConfigEntity.defaults);
 
     // Load available collections
     final collectionList = await getCollections();

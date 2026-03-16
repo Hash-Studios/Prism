@@ -16,11 +16,7 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: AutoRotateRepository)
 class AutoRotateRepositoryImpl implements AutoRotateRepository {
-  AutoRotateRepositoryImpl(
-    this._localDataSource,
-    this._fetchFavouriteWallsUseCase,
-    this._fetchCategoryFeedUseCase,
-  );
+  AutoRotateRepositoryImpl(this._localDataSource, this._fetchFavouriteWallsUseCase, this._fetchCategoryFeedUseCase);
 
   final AutoRotateLocalDataSource _localDataSource;
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
@@ -150,10 +146,7 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   Future<List<String>> _fetchCollectionUrls(String collectionName) async {
     await getCollectionWithName(collectionName);
     final walls = anyCollectionWalls ?? [];
-    return walls
-        .map((w) => w['wallpaper_url']?.toString() ?? '')
-        .where((url) => url.isNotEmpty)
-        .toList();
+    return walls.map((w) => w['wallpaper_url']?.toString() ?? '').where((url) => url.isNotEmpty).toList();
   }
 
   String _extractUrl(FeedItemEntity item) {
