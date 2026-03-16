@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Override LaunchTheme for Android 12+ to suppress the app icon splash screen -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">#000000</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon_transparent</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:forceDarkAllowed">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>
