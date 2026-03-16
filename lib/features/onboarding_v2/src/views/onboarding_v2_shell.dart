@@ -20,7 +20,6 @@ import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.d
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_progress_indicator.dart';
-import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -102,8 +101,6 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: isPremium));
 
       case OnboardingV2NavRequest.completeOnboarding:
-        if (!context.mounted) return;
-        await ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'onboarding_v2_done');
         if (!context.mounted) return;
         await TomorrowHookService.instance.maybeRunTomorrowHookAtOnboardingDone(context);
         if (!context.mounted) return;
