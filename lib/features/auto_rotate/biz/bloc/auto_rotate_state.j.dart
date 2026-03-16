@@ -13,11 +13,11 @@ abstract class AutoRotateState with _$AutoRotateState {
   }) = _AutoRotateState;
 
   factory AutoRotateState.initial() => AutoRotateState(
-        config: AutoRotateConfigEntity.defaults,
-        isRunning: false,
-        status: LoadStatus.initial,
-        actionStatus: ActionStatus.idle,
-        availableCollections: const <String>[],
-        availableCategories: categoryDefinitions,
-      );
+    config: AutoRotateConfigEntity.defaults,
+    isRunning: false,
+    status: LoadStatus.initial,
+    actionStatus: ActionStatus.idle,
+    availableCollections: const <String>[],
+    availableCategories: categoryDefinitions,
+  );
 }

@@ -27,10 +27,7 @@ class _AutoRotateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Auto Rotate'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Auto Rotate'), centerTitle: false),
       body: BlocBuilder<AutoRotateBloc, AutoRotateState>(
         builder: (context, state) {
           if (state.status == LoadStatus.loading) {
@@ -54,10 +51,10 @@ class _AutoRotateBody extends StatelessWidget {
   }
 
   TextStyle _titleStyle(BuildContext context) => TextStyle(
-        color: Theme.of(context).colorScheme.secondary,
-        fontWeight: FontWeight.w500,
-        fontFamily: 'Proxima Nova',
-      );
+    color: Theme.of(context).colorScheme.secondary,
+    fontWeight: FontWeight.w500,
+    fontFamily: 'Proxima Nova',
+  );
 
   Widget _sectionCard(BuildContext context, {required String title, required List<Widget> children}) {
     return Padding(
@@ -104,16 +101,11 @@ class _AutoRotateBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
           child: Card(
-            color: isRunning
-                ? Colors.green.withValues(alpha: 0.15)
-                : Theme.of(context).cardColor,
+            color: isRunning ? Colors.green.withValues(alpha: 0.15) : Theme.of(context).cardColor,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: isRunning ? Colors.green : Colors.transparent,
-                width: 1,
-              ),
+              side: BorderSide(color: isRunning ? Colors.green : Colors.transparent, width: 1),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -122,10 +114,7 @@ class _AutoRotateBody extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.autorenew,
-                        color: isRunning ? Colors.green : Theme.of(context).hintColor,
-                      ),
+                      Icon(Icons.autorenew, color: isRunning ? Colors.green : Theme.of(context).hintColor),
                       const SizedBox(width: 10),
                       Text(
                         isRunning ? 'Auto Rotate is Running' : 'Auto Rotate is Stopped',
@@ -139,10 +128,7 @@ class _AutoRotateBody extends StatelessWidget {
                   ),
                   if (isRunning) ...[
                     const SizedBox(height: 8),
-                    Text(
-                      _statusSubtitle(config),
-                      style: const TextStyle(fontSize: 12),
-                    ),
+                    Text(_statusSubtitle(config), style: const TextStyle(fontSize: 12)),
                     const SizedBox(height: 10),
                     TextButton.icon(
                       onPressed: () => bloc.add(const AutoRotateEvent.rotateNowRequested()),
@@ -177,9 +163,8 @@ class _AutoRotateBody extends StatelessWidget {
               subtitle: const Text('Your saved wallpapers', style: TextStyle(fontSize: 12)),
               onChanged: isRunning
                   ? null
-                  : (_) => bloc.add(const AutoRotateEvent.sourceTypeChanged(
-                        sourceType: AutoRotateSourceType.favourites,
-                      )),
+                  : (_) =>
+                        bloc.add(const AutoRotateEvent.sourceTypeChanged(sourceType: AutoRotateSourceType.favourites)),
             ),
             RadioListTile<AutoRotateSourceType>(
               activeColor: _accentColor(context),
@@ -189,10 +174,9 @@ class _AutoRotateBody extends StatelessWidget {
               subtitle: const Text('Wallpapers from a category', style: TextStyle(fontSize: 12)),
               onChanged: isRunning
                   ? null
-                  : (_) => bloc.add(const AutoRotateEvent.sourceTypeChanged(
-                        sourceType: AutoRotateSourceType.category,
-                        name: null,
-                      )),
+                  : (_) => bloc.add(
+                      const AutoRotateEvent.sourceTypeChanged(sourceType: AutoRotateSourceType.category, name: null),
+                    ),
             ),
             if (config.sourceType == AutoRotateSourceType.category)
               _CategoryDropdown(
@@ -200,10 +184,8 @@ class _AutoRotateBody extends StatelessWidget {
                 selectedName: config.categoryName,
                 accentColor: _accentColor(context),
                 enabled: !isRunning,
-                onChanged: (name) => bloc.add(AutoRotateEvent.sourceTypeChanged(
-                  sourceType: AutoRotateSourceType.category,
-                  name: name,
-                )),
+                onChanged: (name) =>
+                    bloc.add(AutoRotateEvent.sourceTypeChanged(sourceType: AutoRotateSourceType.category, name: name)),
               ),
             RadioListTile<AutoRotateSourceType>(
               activeColor: _accentColor(context),
@@ -213,10 +195,9 @@ class _AutoRotateBody extends StatelessWidget {
               subtitle: const Text('Wallpapers from a collection', style: TextStyle(fontSize: 12)),
               onChanged: isRunning
                   ? null
-                  : (_) => bloc.add(const AutoRotateEvent.sourceTypeChanged(
-                        sourceType: AutoRotateSourceType.collection,
-                        name: null,
-                      )),
+                  : (_) => bloc.add(
+                      const AutoRotateEvent.sourceTypeChanged(sourceType: AutoRotateSourceType.collection, name: null),
+                    ),
             ),
             if (config.sourceType == AutoRotateSourceType.collection)
               _CollectionDropdown(
@@ -224,10 +205,9 @@ class _AutoRotateBody extends StatelessWidget {
                 selectedName: config.collectionName,
                 accentColor: _accentColor(context),
                 enabled: !isRunning,
-                onChanged: (name) => bloc.add(AutoRotateEvent.sourceTypeChanged(
-                  sourceType: AutoRotateSourceType.collection,
-                  name: name,
-                )),
+                onChanged: (name) => bloc.add(
+                  AutoRotateEvent.sourceTypeChanged(sourceType: AutoRotateSourceType.collection, name: name),
+                ),
               ),
           ],
         ),
@@ -246,12 +226,12 @@ class _AutoRotateBody extends StatelessWidget {
                     : (selection) => bloc.add(AutoRotateEvent.targetChanged(target: selection.first)),
                 segments: const [
                   ButtonSegment(value: aw.WallpaperTarget.home, label: Text('Home'), icon: Icon(Icons.home_outlined)),
+                  ButtonSegment(value: aw.WallpaperTarget.lock, label: Text('Lock'), icon: Icon(Icons.lock_outline)),
                   ButtonSegment(
-                      value: aw.WallpaperTarget.lock, label: Text('Lock'), icon: Icon(Icons.lock_outline)),
-                  ButtonSegment(
-                      value: aw.WallpaperTarget.both,
-                      label: Text('Both'),
-                      icon: Icon(Icons.phonelink_setup_outlined)),
+                    value: aw.WallpaperTarget.both,
+                    label: Text('Both'),
+                    icon: Icon(Icons.phonelink_setup_outlined),
+                  ),
                 ],
               ),
             ),
@@ -274,7 +254,9 @@ class _AutoRotateBody extends StatelessWidget {
                     label: Text(opt.label),
                     selected: isSelected,
                     selectedColor: _accentColor(context).withValues(alpha: 0.2),
-                    onSelected: isRunning ? null : (_) => bloc.add(AutoRotateEvent.intervalChanged(minutes: opt.minutes)),
+                    onSelected: isRunning
+                        ? null
+                        : (_) => bloc.add(AutoRotateEvent.intervalChanged(minutes: opt.minutes)),
                   );
                 }).toList(),
               ),
@@ -316,11 +298,7 @@ class _AutoRotateBody extends StatelessWidget {
                     label: Text('Sequential'),
                     icon: Icon(Icons.format_list_numbered),
                   ),
-                  ButtonSegment(
-                    value: AutoRotateOrder.shuffle,
-                    label: Text('Shuffle'),
-                    icon: Icon(Icons.shuffle),
-                  ),
+                  ButtonSegment(value: AutoRotateOrder.shuffle, label: Text('Shuffle'), icon: Icon(Icons.shuffle)),
                 ],
               ),
             ),
@@ -336,24 +314,24 @@ class _AutoRotateBody extends StatelessWidget {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : isRunning
-                    ? ElevatedButton.icon(
-                        onPressed: () => bloc.add(const AutoRotateEvent.stopRequested()),
-                        icon: const Icon(Icons.stop_circle_outlined),
-                        label: const Text('Stop Auto Rotate'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                      )
-                    : ElevatedButton.icon(
-                        onPressed: _canStart(config) ? () => bloc.add(const AutoRotateEvent.startRequested()) : null,
-                        icon: const Icon(Icons.play_circle_outline),
-                        label: const Text('Start Auto Rotate'),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
+                ? ElevatedButton.icon(
+                    onPressed: () => bloc.add(const AutoRotateEvent.stopRequested()),
+                    icon: const Icon(Icons.stop_circle_outlined),
+                    label: const Text('Stop Auto Rotate'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  )
+                : ElevatedButton.icon(
+                    onPressed: _canStart(config) ? () => bloc.add(const AutoRotateEvent.startRequested()) : null,
+                    icon: const Icon(Icons.play_circle_outline),
+                    label: const Text('Start Auto Rotate'),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
           ),
         ),
       ],
@@ -429,9 +407,7 @@ class _CategoryDropdown extends StatelessWidget {
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
-        items: categories
-            .map((c) => DropdownMenuItem(value: c.name, child: Text(c.name)))
-            .toList(),
+        items: categories.map((c) => DropdownMenuItem(value: c.name, child: Text(c.name))).toList(),
         onChanged: enabled ? onChanged : null,
       ),
     );

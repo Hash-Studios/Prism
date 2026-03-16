@@ -17,10 +17,7 @@ class AutoRotateLocalDataSource {
 
     final sourceTypeRaw = _store.get(PersistenceKeys.autoRotateSourceType) as String?;
     final sourceType = sourceTypeRaw != null
-        ? AutoRotateSourceType.values.firstWhere(
-            (e) => e.name == sourceTypeRaw,
-            orElse: () => defaults.sourceType,
-          )
+        ? AutoRotateSourceType.values.firstWhere((e) => e.name == sourceTypeRaw, orElse: () => defaults.sourceType)
         : defaults.sourceType;
 
     final collectionName = _store.get(PersistenceKeys.autoRotateCollectionName) as String?;
@@ -28,23 +25,15 @@ class AutoRotateLocalDataSource {
 
     final targetRaw = _store.get(PersistenceKeys.autoRotateTarget) as String?;
     final target = targetRaw != null
-        ? aw.WallpaperTarget.values.firstWhere(
-            (e) => e.name == targetRaw,
-            orElse: () => defaults.target,
-          )
+        ? aw.WallpaperTarget.values.firstWhere((e) => e.name == targetRaw, orElse: () => defaults.target)
         : defaults.target;
 
-    final intervalMinutes =
-        _store.get(PersistenceKeys.autoRotateIntervalMinutes) as int? ?? defaults.intervalMinutes;
-    final chargingTrigger =
-        _store.get(PersistenceKeys.autoRotateChargingTrigger) as bool? ?? defaults.chargingTrigger;
+    final intervalMinutes = _store.get(PersistenceKeys.autoRotateIntervalMinutes) as int? ?? defaults.intervalMinutes;
+    final chargingTrigger = _store.get(PersistenceKeys.autoRotateChargingTrigger) as bool? ?? defaults.chargingTrigger;
 
     final orderRaw = _store.get(PersistenceKeys.autoRotateOrder) as String?;
     final order = orderRaw != null
-        ? AutoRotateOrder.values.firstWhere(
-            (e) => e.name == orderRaw,
-            orElse: () => defaults.order,
-          )
+        ? AutoRotateOrder.values.firstWhere((e) => e.name == orderRaw, orElse: () => defaults.order)
         : defaults.order;
 
     return AutoRotateConfigEntity(
