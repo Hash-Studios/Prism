@@ -15,7 +15,7 @@ class F2StarterPackPage extends StatelessWidget {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
       buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData,
       builder: (context, state) {
-        final creators = state.starterPackData.creators.take(3).toList(growable: false);
+        final creators = state.starterPackData.creators;
 
         return OnboardingFrame(
           builder: (context, sx, sy) {
@@ -27,29 +27,38 @@ class F2StarterPackPage extends StatelessWidget {
                   left: OnboardingLayout.creatorsX * sx,
                   right: OnboardingLayout.creatorsX * sx,
                   height: OnboardingLayout.tilesHeight * sy,
-                  child: ListView.separated(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 3,
-                    separatorBuilder: (_, __) => SizedBox(height: OnboardingLayout.creatorGap * sy),
-                    itemBuilder: (context, index) {
-                      if (index >= creators.length) {
-                        return SizedBox(
-                          height: OnboardingLayout.creatorHeight * sy,
-                          child: const CreatorCard(creator: null, onToggle: null),
-                        );
-                      }
-                      final creator = creators[index];
-                      return SizedBox(
-                        height: OnboardingLayout.creatorHeight * sy,
-                        child: CreatorCard(
-                          creator: creator,
-                          onToggle: () => context.read<OnboardingV2Bloc>().add(
-                            OnboardingV2Event.creatorFollowToggled(creator.email),
+                  child: creators.isEmpty
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      : ShaderMask(
+                          shaderCallback: (rect) => const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
+                            stops: [0.0, 0.08, 0.82, 1.0],
+                          ).createShader(rect),
+                          blendMode: BlendMode.dstIn,
+                          child: Padding(
+                            padding: const EdgeInsets.all(1),
+                            child: ListView.separated(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: creators.length,
+                              padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
+                              separatorBuilder: (_, __) => SizedBox(height: OnboardingLayout.creatorGap * sy),
+                              itemBuilder: (context, index) {
+                                final creator = creators[index];
+                                return SizedBox(
+                                  height: OnboardingLayout.creatorHeight * sy,
+                                  child: CreatorCard(
+                                    creator: creator,
+                                    onToggle: () => context.read<OnboardingV2Bloc>().add(
+                                      OnboardingV2Event.creatorFollowToggled(creator.email),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
             );

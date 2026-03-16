@@ -28,7 +28,7 @@ class OnboardingLayout {
   static const double stepTitleY = 120;
   static const double step2TitleX = 10;
   static const double step2TitleWidth = 259;
-  static const double step3TitleX = 44;
+  static const double step3TitleX = 10;
   static const double step3TitleWidth = 307;
   static const double step4TitleX = 74;
   static const double step4TitleWidth = 246;
@@ -49,7 +49,7 @@ class OnboardingLayout {
   static const double tileGap = 12;
 
   static const double creatorsX = 27;
-  static const double creatorsY = 208;
+  static const double creatorsY = 183;
   static const double creatorsWidth = 334;
   static const double creatorHeight = 164;
   static const double creatorGap = 12;

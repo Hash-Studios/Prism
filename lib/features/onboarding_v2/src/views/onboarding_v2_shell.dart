@@ -175,8 +175,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             prev.step != curr.step ||
             prev.isAuthLoading != curr.isAuthLoading ||
             prev.actionStatus != curr.actionStatus ||
-            prev.interestsData.canContinue != curr.interestsData.canContinue ||
-            prev.starterPackData.canContinue != curr.starterPackData.canContinue ||
+            prev.interestsData.selected.length != curr.interestsData.selected.length ||
+            prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
             prev.wallpaperData.status != curr.wallpaperData.status,
         builder: (context, state) {
           return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -421,7 +421,14 @@ class _CtaButton extends StatelessWidget {
 
     final label = switch (step) {
       OnboardingV2Step.auth => 'continue with Google',
-      OnboardingV2Step.interests || OnboardingV2Step.starterPack => 'continue',
+      OnboardingV2Step.interests => () {
+        final selected = state.interestsData.selected.length;
+        return selected < OnboardingV2Config.minInterests ? 'continue ($selected selected)' : 'continue';
+      }(),
+      OnboardingV2Step.starterPack => () {
+        final selected = state.starterPackData.selectedEmails.length;
+        return selected < OnboardingV2Config.minFollows ? 'continue ($selected selected)' : 'continue';
+      }(),
       OnboardingV2Step.firstWallpaper => 'set as wallpaper',
       _ => 'continue',
     };
