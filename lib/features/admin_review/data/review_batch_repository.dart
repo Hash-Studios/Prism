@@ -48,6 +48,7 @@ class ReviewBatchRepository {
         'review': true,
         'collections': wallCollections.isEmpty ? <String>['community'] : wallCollections,
         'reviewedAt': DateTime.now().toUtc(),
+        'createdAt': DateTime.now().toUtc(),
       });
       _addNotificationToBatch(
         batch,
