@@ -5,7 +5,6 @@ class OnboardingV2Config {
   static const int minFollows = 3;
   static const int paywallSoftGateSeconds = 4;
   static const int targetCreatorsCount = 10;
-  static const int preselectedCreatorsCount = 3;
   static const int firstWallpaperValueTargetMs = 60000;
 
   static const String paywallPlacement = 'onboarding_completion';

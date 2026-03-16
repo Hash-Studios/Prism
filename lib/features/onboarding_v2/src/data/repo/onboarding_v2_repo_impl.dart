@@ -56,13 +56,13 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
     }
   }
 
-  /// Fetches live profile data and the last 3 wallpapers for [entry] from Firestore.
+  /// Fetches live profile data and the last 5 wallpapers for [entry] from Firestore.
   /// Gracefully falls back to the original (empty) entry values on any error.
   Future<OnboardingStarterCreatorEntity> _enrichCreator(OnboardingStarterCreatorEntity entry) async {
     final results = await Future.wait([_fetchUserProfile(entry.email), _fetchPreviewUrls(entry.email)]);
 
     final profile = results[0] as _CreatorProfile?;
-    final previewUrls = results[1] as List<String>;
+    final previewUrls = (results[1]! as List<dynamic>).cast<String>();
 
     return OnboardingStarterCreatorEntity(
       userId: profile?.userId ?? entry.userId,
@@ -113,7 +113,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
             const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
           ],
           orderBy: [const FirestoreOrderBy(field: 'createdAt', descending: true)],
-          limit: 3,
+          limit: 5,
           cachePolicy: FirestoreCachePolicy.staleWhileRevalidate,
           dedupeWindowMs: 60000,
         ),

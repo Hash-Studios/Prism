@@ -107,7 +107,7 @@ class _SecondarySplash extends StatelessWidget {
           width: MediaQuery.of(context).size.width * 0.29074074074,
           height: MediaQuery.of(context).size.width * 0.29074074074,
           decoration: const BoxDecoration(
-            image: DecorationImage(image: AssetImage('assets/images/ic_launcher.png'), fit: BoxFit.cover),
+            image: DecorationImage(image: AssetImage('assets/images/ic_launcher.webp'), fit: BoxFit.cover),
           ),
         ),
       ),

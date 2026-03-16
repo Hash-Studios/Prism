@@ -10,6 +10,7 @@ enum FirstWallpaperStatus { idle, loading, success, failure }
 abstract class OnboardingInterestsData with _$OnboardingInterestsData {
   const OnboardingInterestsData._();
 
+  // ignore: sort_unnamed_constructors_first
   const factory OnboardingInterestsData({
     required List<String> available,
     required List<String> selected,
@@ -26,6 +27,7 @@ abstract class OnboardingInterestsData with _$OnboardingInterestsData {
 abstract class OnboardingStarterPackData with _$OnboardingStarterPackData {
   const OnboardingStarterPackData._();
 
+  // ignore: sort_unnamed_constructors_first
   const factory OnboardingStarterPackData({
     required List<OnboardingCreatorVm> creators,
     required List<String> selectedEmails,

@@ -19,6 +19,15 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
 
+/// Thrown when the user selects a different Google account during re-authentication.
+class WrongAccountException implements Exception {
+  final String selectedEmail;
+  final String expectedEmail;
+  const WrongAccountException({required this.selectedEmail, required this.expectedEmail});
+  @override
+  String toString() => 'WrongAccountException: selected $selectedEmail but expected $expectedEmail';
+}
+
 class GoogleAuth {
   static const String signInCancelledResult = 'signInWithGoogle canceled';
 
@@ -239,18 +248,37 @@ class GoogleAuth {
     }
     try {
       if (existingUserId.isNotEmpty) {
-        firestoreClient.updateDoc(USER_NEW_COLLECTION, existingUserId, {
+        await firestoreClient.updateDoc(USER_NEW_COLLECTION, existingUserId, {
           'loggedIn': false,
         }, sourceTag: 'auth.signout.mark_logged_out');
       }
     } catch (e, st) {
-      logger.e('Failed to mark user logged out', error: e, stackTrace: st);
+      logger.w('Failed to mark user logged out (expected if account was deleted)', error: e, stackTrace: st);
     }
     await analytics.setUserId(null);
     await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
     await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
     logger.d("User Sign Out");
     return true;
+  }
+
+  /// Re-authenticates the current Firebase user with a fresh Google credential.
+  /// Required before sensitive operations like account deletion.
+  /// Throws [WrongAccountException] if the user selects a different Google account.
+  Future<void> reauthenticateCurrentUser() async {
+    await _ensureGoogleSignInInitialized();
+    final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
+    final String? currentEmail = _auth.currentUser?.email;
+    if (currentEmail != null && googleSignInAccount.email != currentEmail) {
+      throw WrongAccountException(selectedEmail: googleSignInAccount.email, expectedEmail: currentEmail);
+    }
+    final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
+    final String? idToken = googleSignInAuthentication.idToken;
+    if (idToken == null || idToken.trim().isEmpty) {
+      throw StateError('Google re-authentication returned no ID token.');
+    }
+    final AuthCredential credential = GoogleAuthProvider.credential(idToken: idToken);
+    await _auth.currentUser!.reauthenticateWithCredential(credential);
   }
 
   Future<bool> isSignedIn() async {

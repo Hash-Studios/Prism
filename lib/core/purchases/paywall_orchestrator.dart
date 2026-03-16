@@ -4,9 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/widgets.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
@@ -53,13 +51,7 @@ class PaywallOrchestrator {
       }
     }
 
-    if (!context.mounted) {
-      return;
-    }
-    context.router.push(const UpgradeRoute());
-    analytics.track(
-      PaywallImpressionEvent(source: source, placement: normalizedPlacement, rcOrFallback: RcOrFallbackValue.fallback),
-    );
+    // RevenueCat paywall not available — no fallback screen.
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell(BuildContext context, {required String source}) async {

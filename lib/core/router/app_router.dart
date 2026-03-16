@@ -55,7 +55,6 @@ import 'package:Prism/features/streak/views/pages/streak_page.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
-import 'package:Prism/payments/upgrade.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -139,7 +138,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/premium', page: UpgradeRoute.page),
     AutoRoute(path: '/coin-transactions', page: CoinTransactionsRoute.page),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),

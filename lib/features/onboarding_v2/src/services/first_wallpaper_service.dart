@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -22,7 +24,8 @@ class FirstWallpaperService {
         if (allCategories.isEmpty) {
           return _fetchWotdVm();
         }
-        for (final interest in interests) {
+        final shuffled = [...interests]..shuffle();
+        for (final interest in shuffled) {
           final matched = allCategories.where((c) => c.name.toLowerCase() == interest.toLowerCase());
           if (matched.isEmpty) {
             continue;
@@ -32,7 +35,7 @@ class FirstWallpaperService {
           final feedResult = await _categoryFeedRepository.fetchCategoryFeed(category: category, refresh: false);
 
           if (feedResult.isSuccess && feedResult.data != null) {
-            final candidate = _pickFirstValidItem(feedResult.data!.items, sourceCategory: interest);
+            final candidate = _pickRandomValidItem(feedResult.data!.items, sourceCategory: interest);
             if (candidate != null) {
               return candidate;
             }
@@ -44,7 +47,8 @@ class FirstWallpaperService {
     return _fetchWotdVm();
   }
 
-  OnboardingWallpaperVm? _pickFirstValidItem(List<FeedItemEntity> items, {required String sourceCategory}) {
+  OnboardingWallpaperVm? _pickRandomValidItem(List<FeedItemEntity> items, {required String sourceCategory}) {
+    final valid = <OnboardingWallpaperVm>[];
     for (final item in items) {
       final vm = item.when(
         prism: (_, wall) {
@@ -85,10 +89,11 @@ class FirstWallpaperService {
         },
       );
       if (vm != null) {
-        return vm;
+        valid.add(vm);
       }
     }
-    return null;
+    if (valid.isEmpty) return null;
+    return valid[Random().nextInt(valid.length)];
   }
 
   Future<OnboardingWallpaperVm?> _fetchWotdVm() async {

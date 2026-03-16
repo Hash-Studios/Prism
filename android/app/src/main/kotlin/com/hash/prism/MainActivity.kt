@@ -3,10 +3,10 @@ package com.hash.prism
 import android.os.Bundle
 import androidx.core.view.WindowCompat
 import com.hash.prism.pigeon.PrismMediaHostApi
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
 
     // Use the engine pre-warmed in MainApplication to avoid cold-starting
     // the Dart VM inside Activity.onCreate().
