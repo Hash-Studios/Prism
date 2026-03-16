@@ -72,7 +72,6 @@ dependencies:
   path_provider: ^2.0.1
   photo_view: ^0.15.0
   photofilters: ^3.0.0
-  pixel_perfect: ^1.1.0
   provider: ^6.1.5+1
   injectable: ^2.5.1
   purchases_flutter: ^9.12.0
