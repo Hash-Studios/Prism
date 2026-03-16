@@ -2,7 +2,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
@@ -104,8 +103,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Default provider for free-text/tag searches
   static const String _defaultProvider = 'WallHaven';
-
-  String _providerStringForSource(WallpaperSource source) => source == WallpaperSource.pexels ? 'Pexels' : 'WallHaven';
 
   SearchProviderValue _providerValueFromString(String provider) {
     return provider == 'Pexels' ? SearchProviderValue.pexels : SearchProviderValue.wallhaven;
@@ -281,19 +278,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: _defaultProvider)
           : BlocProvider<SearchDiscoveryBloc>(
               create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
-              child: SearchDiscoveryWidget(
-                onSearch: (String query, WallpaperSource source) {
-                  final String provider = _providerStringForSource(source);
-                  _trackSearchSubmitted(
-                    query: query,
-                    fromSuggestion: true,
-                    sourceContext: 'discovery_category',
-                    provider: provider,
-                  );
-                  searchController.text = query;
-                  _triggerSearch(query, provider);
-                },
-              ),
+              child: const SearchDiscoveryWidget(),
             ),
     );
   }

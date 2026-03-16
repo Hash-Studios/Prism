@@ -1,7 +1,6 @@
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
@@ -13,9 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SearchDiscoveryWidget extends StatelessWidget {
-  const SearchDiscoveryWidget({super.key, required this.onSearch});
-
-  final void Function(String query, WallpaperSource source) onSearch;
+  const SearchDiscoveryWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +24,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
           const SizedBox(height: 12),
           _TrendingSection(),
           const SizedBox(height: 24),
-          _CategorySection(onSearch: onSearch),
+          const _CategorySection(),
           const SizedBox(height: 24),
           const _ColorSection(),
         ],
@@ -208,8 +205,7 @@ class _TrendingError extends StatelessWidget {
 // ─── Category Section ────────────────────────────────────────────────────────
 
 class _CategorySection extends StatelessWidget {
-  const _CategorySection({required this.onSearch});
-  final void Function(String query, WallpaperSource source) onSearch;
+  const _CategorySection();
 
   @override
   Widget build(BuildContext context) {
@@ -228,7 +224,9 @@ class _CategorySection extends StatelessWidget {
             itemBuilder: (context, index) {
               final cat = categoryDefinitions[index];
               return GestureDetector(
-                onTap: () => onSearch(cat.name, cat.source),
+                onTap: () {
+                  context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'));
+                },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: SizedBox(
