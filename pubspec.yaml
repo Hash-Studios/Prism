@@ -34,7 +34,6 @@ dependencies:
   cloud_functions: ^5.6.0
   firebase_core: ^3.15.2
   app_links: ^6.4.1
-  firebase_in_app_messaging: ^0.8.0
   firebase_messaging: ^15.0.0
   firebase_remote_config: ^5.4.0
   flutter:
