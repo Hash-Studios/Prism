@@ -210,13 +210,43 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
 
 // ---------------------------------------------------------------------------
 // _SharedOverlay — shared elements that hero across all 4 steps.
+// Staggered fade-in fires once on initial mount (F0 open).
 // ---------------------------------------------------------------------------
-class _SharedOverlay extends StatelessWidget {
+class _SharedOverlay extends StatefulWidget {
   const _SharedOverlay({required this.state, required this.legalTap, required this.onCtaTap});
 
   final OnboardingV2State state;
   final TapGestureRecognizer legalTap;
   final VoidCallback onCtaTap;
+
+  @override
+  State<_SharedOverlay> createState() => _SharedOverlayState();
+}
+
+class _SharedOverlayState extends State<_SharedOverlay> {
+  bool _headlineVisible = false;
+  bool _buttonVisible = false;
+  bool _bottomTextVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Future.delayed(const Duration(milliseconds: 450), () {
+        if (!mounted) return;
+        setState(() => _headlineVisible = true);
+      });
+      Future.delayed(const Duration(milliseconds: 750), () {
+        if (!mounted) return;
+        setState(() => _buttonVisible = true);
+      });
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (!mounted) return;
+        setState(() => _bottomTextVisible = true);
+      });
+    });
+  }
 
   // ------ Headline config per step ------
 
@@ -239,15 +269,6 @@ class _SharedOverlay extends StatelessWidget {
     _ => 'Make it yours',
   };
 
-  // ------ Bottom text config per step ------
-
-  static double _bottomTextX(OnboardingV2Step step) => switch (step) {
-    OnboardingV2Step.auth => 0,
-    OnboardingV2Step.interests => 0,
-    OnboardingV2Step.starterPack => 0,
-    _ => 0,
-  };
-
   static String _helperText(OnboardingV2Step step) => switch (step) {
     OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
     OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
@@ -256,7 +277,7 @@ class _SharedOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final step = state.step;
+    final step = widget.state.step;
     return OnboardingFrame(
       builder: (context, sx, sy) {
         return Stack(
@@ -314,13 +335,17 @@ class _SharedOverlay extends StatelessWidget {
       top: _headlineY(step) * sy,
       left: _headlineX(step) * sx,
       right: _headlineX(step) * sx,
-      child: AnimatedSwitcher(
-        duration: OnboardingMotion.short,
-        child: Text(
-          key: ValueKey(_headlineText(step)),
-          _headlineText(step),
-          style: OnboardingTypography.headline,
-          textAlign: TextAlign.center,
+      child: AnimatedOpacity(
+        opacity: _headlineVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 1000),
+        child: AnimatedSwitcher(
+          duration: OnboardingMotion.short,
+          child: Text(
+            key: ValueKey(_headlineText(step)),
+            _headlineText(step),
+            style: OnboardingTypography.headline,
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );
@@ -330,16 +355,17 @@ class _SharedOverlay extends StatelessWidget {
 
   Widget _buildButton(OnboardingV2Step step, double sx, double sy) {
     final isLoading = switch (step) {
-      OnboardingV2Step.auth => state.isAuthLoading,
-      OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
-      OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
+      OnboardingV2Step.auth => widget.state.isAuthLoading,
+      OnboardingV2Step.interests ||
+      OnboardingV2Step.starterPack => widget.state.actionStatus == ActionStatus.inProgress,
+      OnboardingV2Step.firstWallpaper => widget.state.wallpaperData.status == FirstWallpaperStatus.loading,
       _ => false,
     };
 
     final isEnabled = switch (step) {
       OnboardingV2Step.auth => true,
-      OnboardingV2Step.interests => state.interestsData.canContinue,
-      OnboardingV2Step.starterPack => state.starterPackData.canContinue,
+      OnboardingV2Step.interests => widget.state.interestsData.canContinue,
+      OnboardingV2Step.starterPack => widget.state.starterPackData.canContinue,
       OnboardingV2Step.firstWallpaper => true,
       _ => false,
     };
@@ -356,7 +382,16 @@ class _SharedOverlay extends StatelessWidget {
       left: OnboardingLayout.ctaX * sx,
       right: OnboardingLayout.ctaX * sx,
       height: OnboardingLayout.ctaHeight * sy,
-      child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
+      child: AnimatedOpacity(
+        opacity: _buttonVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 1000),
+        child: OnboardingPrimaryButton(
+          label: label,
+          onPressed: widget.onCtaTap,
+          enabled: isEnabled,
+          loading: isLoading,
+        ),
+      ),
     );
   }
 
@@ -375,7 +410,7 @@ class _SharedOverlay extends StatelessWidget {
             TextSpan(
               text: 'Terms & Conditions',
               style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
-              recognizer: legalTap,
+              recognizer: widget.legalTap,
             ),
           ],
         ),
@@ -389,9 +424,13 @@ class _SharedOverlay extends StatelessWidget {
       duration: OnboardingMotion.normal,
       curve: OnboardingMotion.emphasized,
       top: OnboardingLayout.helperY * sy,
-      left: _bottomTextX(step) * sx,
-      right: _bottomTextX(step) * sx,
-      child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        opacity: _bottomTextVisible ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 1000),
+        child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
+      ),
     );
   }
 }
