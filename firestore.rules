@@ -45,6 +45,14 @@ service cloud.firestore {
               == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1);
     }
 
+    // Allows a signed-in user to follow/unfollow via arrayUnion/arrayRemove.
+    // canToggleFollowersOnly() is incompatible with arrayUnion because the size
+    // check fails when the item already exists (arrayUnion is a no-op in that case).
+    function canFollowUser() {
+      return hasAuthEmail()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']);
+    }
+
     function canCreateUserDoc(userId) {
       return isOwner(userId)
           && request.resource.data.id is string
@@ -135,7 +143,7 @@ service cloud.firestore {
     match /usersv2/{userId} {
       allow read: if true;
       allow create: if isConfiguredAdmin() || canCreateUserDoc(userId);
-      allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly();
+      allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly() || canFollowUser();
       allow delete: if isConfiguredAdmin();
 
       // Per-user favourites subcollections.
