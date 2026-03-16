@@ -41,7 +41,7 @@ class F1InterestsPage extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.all(1),
                             child: GridView.builder(
-                              padding: const EdgeInsets.symmetric(vertical: 25),
+                              padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
                               physics: const BouncingScrollPhysics(),
                               itemCount: available.length,
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
