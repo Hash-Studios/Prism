@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -392,24 +392,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
   }
 
-  Future<void> _share(AiGenerationRecord record) async {
-    final link = record.displayUrl(isPremium: app_state.prismUser.premium);
-    await ShareService.shareText(text: link, subject: 'Made with Prism AI', context: context);
-    analytics.track(AiShareTappedEvent(generationId: record.id));
-  }
-
   Future<void> _save(AiGenerationRecord record) async {
+    final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
-      final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
-      if (!mounted) return;
-      await ShareService.shareFilePaths(
-        filePaths: <String>[file.path],
-        text: 'Generated with Prism AI',
-        context: context,
+      final request = DownloadRequest(
+        link: link,
+        filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
       );
-      toasts.codeSend('Use the share sheet to save this wallpaper.');
+      final result = await PrismMediaHostApi().enqueueDownload(request).timeout(const Duration(seconds: 15));
+      if (result.success) {
+        toasts.codeSend('Wall downloaded in Pictures/Prism!');
+      } else {
+        toasts.error(result.message ?? "Couldn't download! Please retry.");
+      }
     } catch (_) {
-      toasts.error('Unable to prepare image for saving.');
+      toasts.error("Couldn't download! Please retry.");
     }
   }
 
@@ -871,7 +868,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               isPrimary: true,
             ),
           actionButton(icon: Icons.download_outlined, label: 'Save', onTap: () => _save(current)),
-          actionButton(icon: Icons.share_outlined, label: 'Share', onTap: () => _share(current)),
           if (canVary) actionButton(icon: Icons.auto_fix_high, label: 'Vary', onTap: _showAdvancedSheet),
         ],
       ),

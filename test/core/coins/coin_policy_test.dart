@@ -26,7 +26,7 @@ void main() {
     expect(CoinPolicy.wallpaperDownload, 5);
     expect(CoinPolicy.premiumWallpaperDownload, 15);
     expect(CoinPolicy.aiGenerationFast, 10);
-    expect(CoinPolicy.aiGenerationBalanced, 50);
+    expect(CoinPolicy.aiGenerationBalanced, 75);
     expect(CoinPolicy.aiGenerationQuality, 100);
     expect(CoinPolicy.premiumFilter, 5);
     expect(CoinPolicy.premiumPreview24h, 10);

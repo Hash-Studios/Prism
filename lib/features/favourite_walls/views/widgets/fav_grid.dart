@@ -184,7 +184,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                     onNotification: (ScrollNotification notification) {
                       _scrollMilestoneTracker.onScroll(
                         metrics: notification.metrics,
-                        itemCount: context.favouriteWallsAdapter().liked!.length,
+                        itemCount: context.favouriteWallsAdapter(listen: false).liked!.length,
                         onMilestoneReached: (depth, {required int itemCount}) async {
                           await analytics.track(
                             ScrollMilestoneReachedEvent(

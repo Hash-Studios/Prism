@@ -18,7 +18,7 @@ class CoinPolicy {
   static const int wallpaperDownload = 5;
   static const int premiumWallpaperDownload = 15;
   static const int aiGenerationFast = 10;
-  static const int aiGenerationBalanced = 50;
+  static const int aiGenerationBalanced = 75;
   static const int aiGenerationQuality = 100;
   static const int premiumFilter = 5;
   static const int premiumPreview24h = 10;

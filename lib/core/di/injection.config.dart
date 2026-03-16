@@ -171,7 +171,7 @@ import '../../features/theme_mode/biz/bloc/theme_mode_bloc.j.dart' as _i736;
 import '../../features/theme_mode/domain/usecases/theme_mode_usecases.dart'
     as _i836;
 import '../../features/user_search/biz/bloc/search_discovery_bloc.j.dart'
-    as _i842;
+    as _i39;
 import '../../features/user_search/biz/bloc/user_search_bloc.j.dart' as _i733;
 import '../../features/user_search/data/repositories/user_search_repository_impl.dart'
     as _i352;
@@ -261,6 +261,9 @@ _i174.GetIt initGetIt(
     () => _i914.PexelsWallpaperRepositoryImpl(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
+  );
+  gh.factory<_i39.SearchDiscoveryBloc>(
+    () => _i39.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
   );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
@@ -376,7 +379,7 @@ _i174.GetIt initGetIt(
       gh<_i406.ClearFavouriteWallsUseCase>(),
     ),
   );
-  gh.factory<_i689.PaletteBloc>(
+  gh.lazySingleton<_i689.PaletteBloc>(
     () => _i689.PaletteBloc(gh<_i576.GeneratePaletteUseCase>()),
   );
   gh.lazySingleton<_i301.LoadCategoriesUseCase>(
@@ -676,9 +679,6 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i313.StartupBloc>(
     () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
-  );
-  gh.factory<_i842.SearchDiscoveryBloc>(
-    () => _i842.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),

@@ -17,6 +17,7 @@ mixin _$SearchDiscoveryEvent {
 
 
 
+
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchDiscoveryEvent);
@@ -43,6 +44,17 @@ $SearchDiscoveryEventCopyWith(SearchDiscoveryEvent _, $Res Function(SearchDiscov
 /// Adds pattern-matching-related methods to [SearchDiscoveryEvent].
 extension SearchDiscoveryEventPatterns on SearchDiscoveryEvent {
 /// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
 @optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _FetchRequested value)?  fetchRequested,TResult Function( _RefreshRequested value)?  refreshRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
@@ -54,6 +66,18 @@ return refreshRequested(_that);case _:
 }
 }
 /// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
 @optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _FetchRequested value)  fetchRequested,required TResult Function( _RefreshRequested value)  refreshRequested,}){
 final _that = this;
 switch (_that) {
@@ -65,6 +89,17 @@ return refreshRequested(_that);case _:
 }
 }
 /// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
 @optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _FetchRequested value)?  fetchRequested,TResult? Function( _RefreshRequested value)?  refreshRequested,}){
 final _that = this;
 switch (_that) {
@@ -76,6 +111,17 @@ return refreshRequested(_that);case _:
 }
 }
 /// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  fetchRequested,TResult Function()?  refreshRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FetchRequested() when fetchRequested != null:
@@ -86,6 +132,18 @@ return refreshRequested();case _:
 }
 }
 /// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
 @optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  fetchRequested,required TResult Function()  refreshRequested,}) {final _that = this;
 switch (_that) {
 case _FetchRequested():
@@ -96,6 +154,17 @@ return refreshRequested();case _:
 }
 }
 /// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  fetchRequested,TResult? Function()?  refreshRequested,}) {final _that = this;
 switch (_that) {
 case _FetchRequested() when fetchRequested != null:
@@ -113,6 +182,8 @@ return refreshRequested();case _:
 
 class _FetchRequested implements SearchDiscoveryEvent {
   const _FetchRequested();
+  
+
 
 
 
@@ -135,11 +206,16 @@ String toString() {
 
 }
 
+
+
+
 /// @nodoc
 
 
 class _RefreshRequested implements SearchDiscoveryEvent {
   const _RefreshRequested();
+  
+
 
 
 
@@ -231,6 +307,17 @@ as Failure?,
 /// Adds pattern-matching-related methods to [SearchDiscoveryState].
 extension SearchDiscoveryStatePatterns on SearchDiscoveryState {
 /// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
 @optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SearchDiscoveryState value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
@@ -241,6 +328,18 @@ return $default(_that);case _:
 }
 }
 /// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
 @optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SearchDiscoveryState value)  $default,){
 final _that = this;
 switch (_that) {
@@ -251,6 +350,17 @@ return $default(_that);case _:
 }
 }
 /// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
 @optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SearchDiscoveryState value)?  $default,){
 final _that = this;
 switch (_that) {
@@ -261,6 +371,17 @@ return $default(_that);case _:
 }
 }
 /// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
 @optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SearchDiscoveryState() when $default != null:
@@ -270,6 +391,18 @@ return $default(_that.status,_that.trendingWalls,_that.failure);case _:
 }
 }
 /// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
 @optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure)  $default,) {final _that = this;
 switch (_that) {
 case _SearchDiscoveryState():
@@ -279,6 +412,17 @@ return $default(_that.status,_that.trendingWalls,_that.failure);case _:
 }
 }
 /// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
 @optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure)?  $default,) {final _that = this;
 switch (_that) {
 case _SearchDiscoveryState() when $default != null:
@@ -295,7 +439,7 @@ return $default(_that.status,_that.trendingWalls,_that.failure);case _:
 
 class _SearchDiscoveryState implements SearchDiscoveryState {
   const _SearchDiscoveryState({required this.status, required final  List<WallhavenWallpaper> trendingWalls, this.failure}): _trendingWalls = trendingWalls;
-
+  
 
 @override final  LoadStatus status;
  final  List<WallhavenWallpaper> _trendingWalls;
