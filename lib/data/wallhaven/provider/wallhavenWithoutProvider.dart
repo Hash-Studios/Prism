@@ -53,7 +53,7 @@ Future<List<WallhavenWallpaper>> getWallsbyQuery(String query, int? categories, 
   );
   result.fold(
     onSuccess: (List<WallhavenWallpaper> fetched) {
-      wallsS = fetched;
+      wallsS = List<WallhavenWallpaper>.of(fetched);
       pageGetQuery = 2;
       logger.d("getWallsbyQuery done: ${wallsS.length}");
     },

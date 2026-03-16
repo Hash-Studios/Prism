@@ -265,16 +265,23 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                         decoration: widget.selectedProvider == "WallHaven"
                             ? wData.wallsS.isEmpty
                                   ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                                  : BoxDecoration(
-                                      color: animation.value,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                        image: CachedNetworkImageProvider(
-                                          wData.wallsS[index].thumbs!["original"].toString(),
-                                        ),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    )
+                                  : () {
+                                      final String thumbUrl = wData.wallsS[index].thumbs?["original"]?.toString() ?? '';
+                                      final String fullUrl = wData.wallsS[index].core.fullUrl;
+                                      return BoxDecoration(
+                                        color: animation.value,
+                                        borderRadius: BorderRadius.circular(20),
+                                        image: thumbUrl.isNotEmpty && thumbUrl != 'null'
+                                            ? DecorationImage(
+                                                image: CachedNetworkImageProvider(thumbUrl),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : DecorationImage(
+                                                image: CachedNetworkImageProvider(fullUrl),
+                                                fit: BoxFit.cover,
+                                              ),
+                                      );
+                                    }()
                             : pData.wallsPS.isEmpty
                             ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
                             : BoxDecoration(

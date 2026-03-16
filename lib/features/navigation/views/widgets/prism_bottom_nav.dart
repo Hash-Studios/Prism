@@ -67,7 +67,13 @@ class _PrismBottomNavState extends State<PrismBottomNav> with SingleTickerProvid
     if (!mounted) {
       return;
     }
-    showModalBottomSheet(isScrollControlled: true, context: context, builder: (context) => const UploadBottomPanel());
+    showModalBottomSheet<void>(
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).primaryColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      context: context,
+      builder: (context) => const UploadBottomPanel(),
+    );
   }
 
   void _onUploadPressed() {

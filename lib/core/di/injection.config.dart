@@ -224,20 +224,20 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i578.QuickActions>(() => appModule.quickActions);
   gh.lazySingleton<_i496.LocalStore>(() => appModule.localStore);
   gh.lazySingleton<_i519.Client>(() => appModule.httpClient);
+  gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
+    () => _i1003.AppIconsLocalDataSource(),
+  );
+  gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
+    () => _i954.FeedCacheLocalDataSource(),
+  );
   gh.lazySingleton<_i231.FetchWallpaperViewsUsecase>(
     () => const _i231.FetchWallpaperViewsUsecase(),
   );
   gh.lazySingleton<_i231.UpdateWallpaperViewsUsecase>(
     () => const _i231.UpdateWallpaperViewsUsecase(),
   );
-  gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
-    () => _i1003.AppIconsLocalDataSource(),
-  );
   gh.lazySingleton<_i640.FavoritesLocalDataSource>(
     () => _i640.FavoritesLocalDataSource(gh<_i496.LocalStore>()),
-  );
-  gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
-    () => _i954.FeedCacheLocalDataSource(),
   );
   gh.lazySingleton<_i290.NotificationsLocalDataSource>(
     () => _i290.NotificationsLocalDataSource(gh<_i496.LocalStore>()),
@@ -674,16 +674,6 @@ _i174.GetIt initGetIt(
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
   );
-  gh.factory<_i224.OnboardingV2Bloc>(
-    () => _i224.OnboardingV2Bloc(
-      gh<_i132.FetchStarterPackUseCase>(),
-      gh<_i95.SaveInterestsUseCase>(),
-      gh<_i74.FollowStarterPackUseCase>(),
-      gh<_i975.CompleteOnboardingV2UseCase>(),
-      gh<_i502.FirstWallpaperService>(),
-      gh<_i563.CategoryFeedRepository>(),
-    ),
-  );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
   );
@@ -700,6 +690,17 @@ _i174.GetIt initGetIt(
     () => _i736.ThemeModeBloc(
       gh<_i836.LoadThemeModeUseCase>(),
       gh<_i836.UpdateThemeModeUseCase>(),
+    ),
+  );
+  gh.factory<_i224.OnboardingV2Bloc>(
+    () => _i224.OnboardingV2Bloc(
+      gh<_i132.FetchStarterPackUseCase>(),
+      gh<_i95.SaveInterestsUseCase>(),
+      gh<_i74.FollowStarterPackUseCase>(),
+      gh<_i975.CompleteOnboardingV2UseCase>(),
+      gh<_i502.FirstWallpaperService>(),
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i897.OnboardingV2Repository>(),
     ),
   );
   gh.factory<_i301.ConnectivityBloc>(

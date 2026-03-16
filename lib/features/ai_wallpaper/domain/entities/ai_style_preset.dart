@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum AiStylePreset {
   anime,
   minimal,
@@ -6,6 +8,25 @@ enum AiStylePreset {
   meshGradient,
   abstract,
   nature;
+
+  List<Color> get swatchColors {
+    switch (this) {
+      case AiStylePreset.anime:
+        return <Color>[const Color(0xFFFF6B9D), const Color(0xFF7C4DFF)];
+      case AiStylePreset.minimal:
+        return <Color>[const Color(0xFFE0E0E0), const Color(0xFFFAFAFA)];
+      case AiStylePreset.cyberpunk:
+        return <Color>[const Color(0xFF00F5FF), const Color(0xFF7C4DFF)];
+      case AiStylePreset.watercolor:
+        return <Color>[const Color(0xFFFFB6C1), const Color(0xFFE6E6FA)];
+      case AiStylePreset.meshGradient:
+        return <Color>[const Color(0xFFFF6B6B), const Color(0xFF4ECDC4), const Color(0xFFFFE66D)];
+      case AiStylePreset.abstract:
+        return <Color>[const Color(0xFFFF6B35), const Color(0xFFD63031)];
+      case AiStylePreset.nature:
+        return <Color>[const Color(0xFF00B894), const Color(0xFF00CEC9)];
+    }
+  }
 
   String get apiValue {
     switch (this) {

@@ -13,9 +13,6 @@ abstract class OnboardingV2Event with _$OnboardingV2Event {
   const factory OnboardingV2Event.firstWallpaperActionCompleted({required bool success, required int elapsedMs}) =
       _FirstWallpaperActionCompleted;
   const factory OnboardingV2Event.firstWallpaperStepContinued() = _FirstWallpaperStepContinued;
-  const factory OnboardingV2Event.paywallTimerTicked() = _PaywallTimerTicked;
-  const factory OnboardingV2Event.paywallPrimaryTapped() = _PaywallPrimaryTapped;
-  const factory OnboardingV2Event.paywallContinueFreeTapped() = _PaywallContinueFreeTapped;
   const factory OnboardingV2Event.paywallResultReceived({required bool didPurchase}) = _PaywallResultReceived;
   const factory OnboardingV2Event.stepBack() = _StepBack;
 }

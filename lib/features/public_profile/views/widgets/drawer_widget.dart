@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
@@ -218,12 +220,18 @@ class ProfileDrawer extends StatelessWidget {
               icon: JamIcons.log_out,
               text: 'Log out',
               context: context,
-              onTap: () {
+              onTap: () async {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
                 Navigator.pop(context);
                 app_state.gAuth.signOutGoogle();
                 toasts.codeSend('Log out Successful!');
-                main.RestartWidget.restartApp(context);
+                final settingsLocal = getIt<SettingsLocalDataSource>();
+                await settingsLocal.set('onboarded_v2_new', false);
+                await settingsLocal.set('onboarding_v2_interests', '');
+                await settingsLocal.set('onboarding_v2_followed_creators', '');
+                if (context.mounted) {
+                  main.RestartWidget.restartApp(context);
+                }
               },
             ),
 
