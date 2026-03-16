@@ -50,11 +50,11 @@ class F4PaywallGatePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  _ProFeatureRow(icon: Icons.download_rounded, label: 'Unlimited downloads'),
+                  const _ProFeatureRow(icon: Icons.download_rounded, label: 'Unlimited downloads'),
                   const SizedBox(height: 12),
-                  _ProFeatureRow(icon: Icons.block_rounded, label: 'No ads, ever'),
+                  const _ProFeatureRow(icon: Icons.block_rounded, label: 'No ads, ever'),
                   const SizedBox(height: 12),
-                  _ProFeatureRow(icon: Icons.collections_bookmark_rounded, label: 'Exclusive collections'),
+                  const _ProFeatureRow(icon: Icons.collections_bookmark_rounded, label: 'Exclusive collections'),
                   const Spacer(flex: 2),
                   SizedBox(
                     width: double.infinity,
@@ -102,7 +102,7 @@ class _ProFeatureRow extends StatelessWidget {
           height: 36,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
           ),
           child: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
         ),

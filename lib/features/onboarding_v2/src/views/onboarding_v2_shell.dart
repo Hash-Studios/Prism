@@ -8,7 +8,6 @@ import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
-import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f1_interests_page.dart';
@@ -41,8 +40,14 @@ class OnboardingV2Shell extends StatefulWidget {
 class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
   late final TapGestureRecognizer _legalTap;
+  bool _imagesPrecached = false;
 
   static const List<Widget> _pages = [F0AuthPage(), F1InterestsPage(), F2StarterPackPage(), F3FirstWallpaperPage()];
+
+  static final _systemUiStyle = edgeToEdgeOverlayStyle(
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarIconBrightness: Brightness.light,
+  );
 
   @override
   void initState() {
@@ -60,6 +65,16 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         systemNavigationBarIconBrightness: Brightness.light,
       );
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_imagesPrecached) {
+      _imagesPrecached = true;
+      // wallpaperFinal reuses the same path as wallpaperPrimary, so one call covers both.
+      precacheImage(const AssetImage(OnboardingAssets.wallpaperPrimary), context);
+    }
   }
 
   @override
@@ -167,10 +182,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             prev.wallpaperData.status != curr.wallpaperData.status,
         builder: (context, state) {
           return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: edgeToEdgeOverlayStyle(
-              statusBarIconBrightness: Brightness.dark,
-              systemNavigationBarIconBrightness: Brightness.light,
-            ),
+            value: _systemUiStyle,
             child: PopScope(
               canPop: false,
               onPopInvokedWithResult: (didPop, result) {
@@ -182,7 +194,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                   fit: StackFit.expand,
                   children: [
                     // Layer 0: animated background (blur + image cross-fade).
-                    OnboardingStepBackground(step: state.step),
+                    // from page content and overlay layers. Verify background renders correctly.
+                    RepaintBoundary(child: OnboardingStepBackground(step: state.step)),
 
                     // Layer 1: unique page content — fades between steps.
                     AnimatedSwitcher(
@@ -196,7 +209,14 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                     ),
 
                     // Layer 2: shared animated overlay (headline, progress, button, helper).
-                    _SharedOverlay(state: state, legalTap: _legalTap, onCtaTap: () => _handleCtaTap(state.step)),
+                    // repaints from the background and page layers. Verify overlay renders correctly.
+                    RepaintBoundary(
+                      child: _SharedOverlay(
+                        state: state,
+                        legalTap: _legalTap,
+                        onCtaTap: () => _handleCtaTap(state.step),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -248,33 +268,6 @@ class _SharedOverlayState extends State<_SharedOverlay> {
     });
   }
 
-  // ------ Headline config per step ------
-
-  static double _headlineY(OnboardingV2Step step) =>
-      step == OnboardingV2Step.auth ? OnboardingLayout.welcomeHeadlineY : OnboardingLayout.stepTitleY;
-
-  static double _headlineX(OnboardingV2Step step) => switch (step) {
-    // Auth: no horizontal constraint — the explicit \n is the only line break.
-    // Applying padding here would squeeze "Your screen," onto a second line.
-    OnboardingV2Step.auth => 0,
-    OnboardingV2Step.interests => OnboardingLayout.step2TitleX,
-    OnboardingV2Step.starterPack => OnboardingLayout.step3TitleX,
-    _ => OnboardingLayout.step4TitleX,
-  };
-
-  static String _headlineText(OnboardingV2Step step) => switch (step) {
-    OnboardingV2Step.auth => 'Your screen,\nreimagined.',
-    OnboardingV2Step.interests => 'Pick your vibe',
-    OnboardingV2Step.starterPack => 'Find your people',
-    _ => 'Make it yours',
-  };
-
-  static String _helperText(OnboardingV2Step step) => switch (step) {
-    OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
-    OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
-    _ => 'we picked this wallpaper based on your interest in Minimal',
-  };
-
   @override
   Widget build(BuildContext context) {
     final step = widget.state.step;
@@ -283,19 +276,38 @@ class _SharedOverlayState extends State<_SharedOverlay> {
         return Stack(
           fit: StackFit.expand,
           children: [
-            _buildProgress(step, sx, sy),
-            _buildHeadline(step, sx, sy),
-            _buildButton(step, sx, sy),
-            _buildBottomText(step, sx, sy),
+            _Progress(step: step, sx: sx, sy: sy),
+            _Headline(step: step, sx: sx, sy: sy, visible: _headlineVisible),
+            _CtaButton(
+              step: step,
+              sx: sx,
+              sy: sy,
+              visible: _buttonVisible,
+              state: widget.state,
+              onCtaTap: widget.onCtaTap,
+            ),
+            _BottomText(step: step, sx: sx, sy: sy, visible: _bottomTextVisible, legalTap: widget.legalTap),
           ],
         );
       },
     );
   }
+}
 
-  // ---- Progress indicator ----
+// ---------------------------------------------------------------------------
+// Shared overlay sub-widgets — extracted from _build* methods so Flutter can
+// skip rebuilding unchanged subtrees independently.
+// ---------------------------------------------------------------------------
 
-  Widget _buildProgress(OnboardingV2Step step, double sx, double sy) {
+class _Progress extends StatelessWidget {
+  const _Progress({required this.step, required this.sx, required this.sy});
+
+  final OnboardingV2Step step;
+  final double sx;
+  final double sy;
+
+  @override
+  Widget build(BuildContext context) {
     final visible =
         step == OnboardingV2Step.interests ||
         step == OnboardingV2Step.starterPack ||
@@ -325,10 +337,38 @@ class _SharedOverlayState extends State<_SharedOverlay> {
       ),
     );
   }
+}
 
-  // ---- Headline — physically moves from mid-screen (F0) to top (F1/2/3) ----
+class _Headline extends StatelessWidget {
+  const _Headline({required this.step, required this.sx, required this.sy, required this.visible});
 
-  Widget _buildHeadline(OnboardingV2Step step, double sx, double sy) {
+  final OnboardingV2Step step;
+  final double sx;
+  final double sy;
+  final bool visible;
+
+  static double _headlineY(OnboardingV2Step step) =>
+      step == OnboardingV2Step.auth ? OnboardingLayout.welcomeHeadlineY : OnboardingLayout.stepTitleY;
+
+  static double _headlineX(OnboardingV2Step step) => switch (step) {
+    // Auth: no horizontal constraint — the explicit \n is the only line break.
+    // Applying padding here would squeeze "Your screen," onto a second line.
+    OnboardingV2Step.auth => 0,
+    OnboardingV2Step.interests => OnboardingLayout.step2TitleX,
+    OnboardingV2Step.starterPack => OnboardingLayout.step3TitleX,
+    _ => OnboardingLayout.step4TitleX,
+  };
+
+  static String _headlineText(OnboardingV2Step step) => switch (step) {
+    OnboardingV2Step.auth => 'Your screen,\nreimagined.',
+    OnboardingV2Step.interests => 'Pick your vibe',
+    OnboardingV2Step.starterPack => 'Find your people',
+    _ => 'Make it yours',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final text = _headlineText(step);
     return AnimatedPositioned(
       duration: OnboardingMotion.normal,
       curve: OnboardingMotion.emphasized,
@@ -336,36 +376,47 @@ class _SharedOverlayState extends State<_SharedOverlay> {
       left: _headlineX(step) * sx,
       right: _headlineX(step) * sx,
       child: AnimatedOpacity(
-        opacity: _headlineVisible ? 1.0 : 0.0,
+        opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
         child: AnimatedSwitcher(
           duration: OnboardingMotion.short,
-          child: Text(
-            key: ValueKey(_headlineText(step)),
-            _headlineText(step),
-            style: OnboardingTypography.headline,
-            textAlign: TextAlign.center,
-          ),
+          child: Text(key: ValueKey(text), text, style: OnboardingTypography.headline, textAlign: TextAlign.center),
         ),
       ),
     );
   }
+}
 
-  // ---- CTA button — fixed position, label cross-fades via internal AnimatedSwitcher ----
+class _CtaButton extends StatelessWidget {
+  const _CtaButton({
+    required this.step,
+    required this.sx,
+    required this.sy,
+    required this.visible,
+    required this.state,
+    required this.onCtaTap,
+  });
 
-  Widget _buildButton(OnboardingV2Step step, double sx, double sy) {
+  final OnboardingV2Step step;
+  final double sx;
+  final double sy;
+  final bool visible;
+  final OnboardingV2State state;
+  final VoidCallback onCtaTap;
+
+  @override
+  Widget build(BuildContext context) {
     final isLoading = switch (step) {
-      OnboardingV2Step.auth => widget.state.isAuthLoading,
-      OnboardingV2Step.interests ||
-      OnboardingV2Step.starterPack => widget.state.actionStatus == ActionStatus.inProgress,
-      OnboardingV2Step.firstWallpaper => widget.state.wallpaperData.status == FirstWallpaperStatus.loading,
+      OnboardingV2Step.auth => state.isAuthLoading,
+      OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
+      OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
       _ => false,
     };
 
     final isEnabled = switch (step) {
       OnboardingV2Step.auth => true,
-      OnboardingV2Step.interests => widget.state.interestsData.canContinue,
-      OnboardingV2Step.starterPack => widget.state.starterPackData.canContinue,
+      OnboardingV2Step.interests => state.interestsData.canContinue,
+      OnboardingV2Step.starterPack => state.starterPackData.canContinue,
       OnboardingV2Step.firstWallpaper => true,
       _ => false,
     };
@@ -383,21 +434,37 @@ class _SharedOverlayState extends State<_SharedOverlay> {
       right: OnboardingLayout.ctaX * sx,
       height: OnboardingLayout.ctaHeight * sy,
       child: AnimatedOpacity(
-        opacity: _buttonVisible ? 1.0 : 0.0,
+        opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
-        child: OnboardingPrimaryButton(
-          label: label,
-          onPressed: widget.onCtaTap,
-          enabled: isEnabled,
-          loading: isLoading,
-        ),
+        child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
       ),
     );
   }
+}
 
-  // ---- Bottom text — legal on F0, helper on F1/2/3 ----
+class _BottomText extends StatelessWidget {
+  const _BottomText({
+    required this.step,
+    required this.sx,
+    required this.sy,
+    required this.visible,
+    required this.legalTap,
+  });
 
-  Widget _buildBottomText(OnboardingV2Step step, double sx, double sy) {
+  final OnboardingV2Step step;
+  final double sx;
+  final double sy;
+  final bool visible;
+  final TapGestureRecognizer legalTap;
+
+  static String _helperText(OnboardingV2Step step) => switch (step) {
+    OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
+    OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
+    _ => 'we picked this wallpaper based on your interest in Minimal',
+  };
+
+  @override
+  Widget build(BuildContext context) {
     final Widget content;
     if (step == OnboardingV2Step.auth) {
       content = RichText(
@@ -410,7 +477,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
             TextSpan(
               text: 'Terms & Conditions',
               style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
-              recognizer: widget.legalTap,
+              recognizer: legalTap,
             ),
           ],
         ),
@@ -427,7 +494,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
       left: 0,
       right: 0,
       child: AnimatedOpacity(
-        opacity: _bottomTextVisible ? 1.0 : 0.0,
+        opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
         child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
       ),

@@ -9,18 +9,20 @@ class InterestCategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // eliminates 4 object allocations per tile rebuild (6 tiles × selection changes).
+    const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
     return AnimatedContainer(
       duration: OnboardingMotion.short,
       curve: OnboardingMotion.emphasized,
       decoration: BoxDecoration(
         color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
-        borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+        borderRadius: tileRadius,
       ),
       child: Material(
         color: OnboardingColors.transparent,
-        borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+        borderRadius: tileRadius,
         child: InkWell(
-          borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+          borderRadius: tileRadius,
           onTap: onTap,
           child: AnimatedContainer(
             duration: OnboardingMotion.short,
@@ -29,7 +31,7 @@ class InterestCategoryTile extends StatelessWidget {
               color: isSelected
                   ? OnboardingColors.selectionOverlay.withValues(alpha: OnboardingOpacity.selectionOverlay)
                   : OnboardingColors.transparent,
-              borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+              borderRadius: tileRadius,
             ),
           ),
         ),

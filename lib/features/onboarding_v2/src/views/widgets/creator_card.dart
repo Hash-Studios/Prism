@@ -10,19 +10,21 @@ class CreatorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // eliminates 4 object allocations per card rebuild (3 cards × follow toggles).
+    const cardRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
     return AnimatedContainer(
       duration: OnboardingMotion.short,
       curve: OnboardingMotion.emphasized,
       decoration: BoxDecoration(
         color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
-        borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+        borderRadius: cardRadius,
       ),
       child: Material(
         color: OnboardingColors.transparent,
-        borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+        borderRadius: cardRadius,
         child: InkWell(
           onTap: onToggle,
-          borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+          borderRadius: cardRadius,
           child: AnimatedContainer(
             duration: OnboardingMotion.short,
             curve: OnboardingMotion.emphasized,
@@ -30,7 +32,7 @@ class CreatorCard extends StatelessWidget {
               color: (creator?.isSelected ?? false)
                   ? OnboardingColors.selectionOverlay.withValues(alpha: OnboardingOpacity.selectionOverlay)
                   : OnboardingColors.transparent,
-              borderRadius: BorderRadius.circular(OnboardingRadius.tile),
+              borderRadius: cardRadius,
             ),
           ),
         ),

@@ -49,7 +49,13 @@ class OnboardingBackground extends StatelessWidget {
     final renderedH = imageHeight * sy;
     final coverScale = math.max(viewportWidth / renderedW, viewportHeight / renderedH);
 
-    Widget imageChild = Image.asset(assetPath, fit: BoxFit.cover);
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    Widget imageChild = Image.asset(
+      assetPath,
+      fit: BoxFit.cover,
+      cacheWidth: (imageWidth * sx * dpr).toInt(),
+      cacheHeight: (imageHeight * sy * dpr).toInt(),
+    );
     if (blurSigma > 0) {
       // ImageFiltered blurs its own subtree, unlike BackdropFilter which blurs
       // whatever is behind it. This is safe inside Opacity layers.
@@ -231,7 +237,18 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
 
         return AnimatedBuilder(
           animation: Listenable.merge([_revealAnim, _blurAnim]),
-          builder: (context, _) {
+          // wallpaperFinal has no animated params — extracted so it isn't
+          // rebuilt on every animation tick of _revealAnim / _blurAnim.
+          child: OnboardingBackground(
+            assetPath: OnboardingAssets.wallpaperFinal,
+            sx: sx,
+            sy: sy,
+            imageLeft: -88,
+            imageTop: -1,
+            imageWidth: 569,
+            imageHeight: 854,
+          ),
+          builder: (context, child) {
             final revealScale = _revealAnim.value;
             final sigma = _blurAnim.value;
             // Bottom overlay fades in with blur, reaching full opacity at sigma=70.
@@ -255,19 +272,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
                   ),
                 ),
                 // Final image — shown on firstWallpaper step.
-                AnimatedOpacity(
-                  duration: OnboardingMotion.normal,
-                  opacity: _showFinal ? 1.0 : 0.0,
-                  child: OnboardingBackground(
-                    assetPath: OnboardingAssets.wallpaperFinal,
-                    sx: sx,
-                    sy: sy,
-                    imageLeft: -88,
-                    imageTop: -1,
-                    imageWidth: 569,
-                    imageHeight: 854,
-                  ),
-                ),
+                AnimatedOpacity(duration: OnboardingMotion.normal, opacity: _showFinal ? 1.0 : 0.0, child: child),
               ],
             );
           },
