@@ -4,5 +4,6 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 abstract class PrismWallpaperRepository {
   Future<Result<List<PrismWallpaper>>> fetchFeed({required bool refresh});
   Future<Result<PrismWallpaper?>> fetchById(String id);
+  Future<Result<List<PrismWallpaper>>> fetchStreakShopWallpapers();
   bool get hasMore;
 }

@@ -2,7 +2,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
@@ -277,8 +276,6 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(width: 6),
-            const CoinBalanceChip(sourceTag: 'coins.chip.search_screen'),
-            const SizedBox(width: 4),
           ],
         ),
         bottom: PreferredSize(

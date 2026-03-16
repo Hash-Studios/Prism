@@ -23,6 +23,7 @@ import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
+import 'package:Prism/features/navigation/views/pages/streak_tab_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/palette/views/pages/download_screen.dart';
@@ -50,6 +51,7 @@ import 'package:Prism/features/setups/views/pages/share_setup_view_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_setup_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
+import 'package:Prism/features/streak/views/pages/streak_page.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
@@ -97,6 +99,8 @@ class AppRouter extends RootStackRouter {
           page: SetupsTabRoute.page,
           children: [AutoRoute(path: '', page: SetupRoute.page)],
         ),
+        // Streak tab
+        AutoRoute(path: 'streak', page: StreakTabRoute.page),
         // Profile tab
         AutoRoute(
           path: 'profile',

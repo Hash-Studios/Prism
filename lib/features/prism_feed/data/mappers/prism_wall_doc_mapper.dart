@@ -25,6 +25,9 @@ extension PrismWallDocMapper on PrismWallDocDto {
       review: review,
       tags: tags.isEmpty ? null : tags,
       aiMetadata: aiMetadata.isEmpty ? null : aiMetadata,
+      isStreakExclusive: isStreakExclusive,
+      requiredStreakDays: requiredStreakDays,
+      streakShopCoinCost: streakShopCoinCost,
     );
   }
 }

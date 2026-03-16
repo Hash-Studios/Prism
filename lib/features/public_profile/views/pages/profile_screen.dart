@@ -8,8 +8,6 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
-import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
@@ -377,13 +375,6 @@ class _ProfileChildState extends State<_ProfileChild> {
                         )
                       : null,
                   actions: [
-                    if (app_state.prismUser.loggedIn)
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4), child: StreakPill()),
-                    if (app_state.prismUser.loggedIn)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: CoinBalanceChip(sourceTag: 'coins.chip.profile_screen', showStreak: false),
-                      ),
                     if (!(widget.ownProfile ?? false))
                       if (app_state.prismUser.loggedIn)
                         Padding(

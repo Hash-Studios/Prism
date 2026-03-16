@@ -156,6 +156,7 @@ import '../../features/startup/domain/repositories/startup_repository.dart'
     as _i721;
 import '../../features/startup/domain/usecases/bootstrap_app_usecase.dart'
     as _i415;
+import '../../features/streak/bloc/streak_shop_bloc.dart' as _i456;
 import '../../features/theme_dark/biz/bloc/theme_dark_bloc.j.dart' as _i97;
 import '../../features/theme_dark/domain/usecases/theme_dark_usecases.dart'
     as _i96;
@@ -442,6 +443,9 @@ _i174.GetIt initGetIt(
       gh<_i231.UpdateWallpaperViewsUsecase>(),
       gh<_i806.PaletteBloc>(),
     ),
+  );
+  gh.factory<_i456.StreakShopBloc>(
+    () => _i456.StreakShopBloc(gh<_i727.PrismWallpaperRepository>()),
   );
   gh.lazySingleton<_i122.ReviewBatchRepository>(
     () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
