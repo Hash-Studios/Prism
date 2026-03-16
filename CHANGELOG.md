@@ -7,6 +7,7 @@
 - Fixed onboarding issue for already logged-in users
 - Fixed black background on splash screen
 - Fixed app getting stuck on splash screen
+- Optimised app size — reduced APK by ~10 MB
 - Optimised code before app launch for faster startup
 - Removed native splash screen
 - Improved AI generate UI

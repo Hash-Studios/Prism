@@ -140,7 +140,7 @@ build: ensure-fvm doppler-check
 	fi; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
-	$(FLUTTER) build apk $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 build-aab: ensure-fvm doppler-check
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
@@ -150,12 +150,12 @@ build-aab: ensure-fvm doppler-check
 	fi; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
-	$(FLUTTER) build appbundle --release $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 size-android: ensure-fvm
 	@mkdir -p build/size/local
 	@printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('Size analysis stub');\n}\n" > lib/firebase_options.dart
-	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
+	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
 	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
 	@echo "APK + size analysis log written to build/size/local"
 

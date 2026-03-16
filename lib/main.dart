@@ -59,7 +59,6 @@ import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
@@ -197,11 +196,10 @@ Future<void> main() async {
             return false;
           }),
         );
-        // Register FCM/FIAM as soon as Firebase is ready (no-op if init failed).
+        // Register FCM as soon as Firebase is ready (no-op if init failed).
         unawaited(
           FirebaseInit.readyFuture.then((initialized) {
             if (initialized) {
-              FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
               FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
             }
             unawaited(
