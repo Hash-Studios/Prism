@@ -41,15 +41,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     final String? colorHex = _parseColorCategory(categoryName);
     final Uri uri = isCurated
         ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
-        : Uri.https(
-            _host,
-            _searchPath,
-            <String, String>{
-              if (colorHex != null) 'color': colorHex else 'query': categoryName,
-              'per_page': '80',
-              'page': page.toString(),
-            },
-          );
+        : Uri.https(_host, _searchPath, <String, String>{
+            if (colorHex != null) 'color': colorHex else 'query': categoryName,
+            'per_page': '80',
+            'page': page.toString(),
+          });
 
     logger.d(
       '[PexelsWallpaperRepository] fetchFeed',
@@ -190,7 +186,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     if (!categoryName.startsWith(prefix)) return null;
     final String hex = categoryName.substring(prefix.length).trim().replaceFirst(RegExp('^#'), '');
     if (hex.length == 6 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(hex)) {
-      return hex.toLowerCase();
+      return '#${hex.toLowerCase()}';
     }
     return null;
   }
