@@ -1,0 +1,11 @@
+/* GENERATED CODE - DO NOT MODIFY BY HAND. */
+/* Run: dart run tool/generate_strings.dart */
+
+"appwidget_text" = "EXAMPLE";
+"configure" = "Select text";
+"add_widget" = "Add widget";
+"example" = "Example";
+"content_desc" = "Refresh widget";
+"quick_settings" = "Shuffle wallpaper";
+"quick_settings_wotd" = "Wall of the Day";
+"quick_settings_favs" = "Random Favourite";

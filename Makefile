@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci strings-extract strings-gen strings strings-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -73,6 +73,19 @@ format-check: ensure-fvm
 
 analyze: ensure-fvm env-guard
 	@$(FLUTTER) analyze --no-pub $(ANALYZE_FLAGS)
+
+strings-extract: ensure-fvm
+	@$(DART) run tool/extract_strings.dart
+
+strings-gen: ensure-fvm
+	@$(DART) run tool/generate_strings.dart
+	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/l10n/app_strings.g.dart
+
+strings: strings-extract strings-gen
+
+strings-check: ensure-fvm
+	@$(MAKE) strings-gen
+	@git diff --exit-code -- lib/core/l10n/app_strings.g.dart ios/Runner/Base.lproj/Localizable.strings
 
 analytics-gen: ensure-fvm
 	@$(DART) run tool/generate_analytics_schema.dart
@@ -212,7 +225,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard find-unused-ci
+ci: get format-check env-guard secrets-guard version-guard analytics-check strings-check analyze no-dynamic-guard find-unused-ci
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
