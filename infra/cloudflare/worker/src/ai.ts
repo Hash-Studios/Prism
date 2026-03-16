@@ -1427,7 +1427,8 @@ async function renderPublicWatermarkedBytes(
     return browserRenderingResult;
   }
 
-  throw new Error('watermark_renderer_unavailable');
+  console.warn('[ai] watermark_renderer_unavailable', { width, height, contentType });
+  return { bytes: imageBytes, contentType };
 }
 
 async function tryRenderWatermarkWithCanvas(
@@ -1517,6 +1518,10 @@ async function tryRenderWatermarkWithBrowserRendering(
       },
       body: JSON.stringify({
         html: renderAiWatermarkHtml(imageDataUrl, width, height),
+        gotoOptions: {
+          waitUntil: 'load',
+          timeout: 25000,
+        },
         viewport: {
           width,
           height,
