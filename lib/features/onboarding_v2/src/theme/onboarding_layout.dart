@@ -26,7 +26,7 @@ class OnboardingLayout {
   static const double legalWidth = 245;
 
   static const double stepTitleY = 120;
-  static const double step2TitleX = 68;
+  static const double step2TitleX = 10;
   static const double step2TitleWidth = 259;
   static const double step3TitleX = 44;
   static const double step3TitleWidth = 307;
@@ -42,7 +42,7 @@ class OnboardingLayout {
   static const double skipY = 76;
 
   static const double tilesX = 27;
-  static const double tilesY = 208;
+  static const double tilesY = 183;
   static const double tilesWidth = 340;
   static const double tilesHeight = 516;
   static const double tileSize = 164;

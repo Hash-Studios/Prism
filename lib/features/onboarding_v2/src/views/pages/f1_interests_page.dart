@@ -30,25 +30,38 @@ class F1InterestsPage extends StatelessWidget {
                   height: OnboardingLayout.tilesHeight * sy,
                   child: available.isEmpty
                       ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                      : GridView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: available.length,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: OnboardingLayout.tileGap * sx,
-                            mainAxisSpacing: OnboardingLayout.tileGap * sy,
-                            childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
+                      : ShaderMask(
+                          shaderCallback: (rect) => const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
+                            stops: [0.01, 0.10, 0.82, 1.0],
+                          ).createShader(rect),
+                          blendMode: BlendMode.dstIn,
+                          child: Padding(
+                            padding: const EdgeInsets.all(1),
+                            child: GridView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 25),
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: available.length,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: OnboardingLayout.tileGap * sx,
+                                mainAxisSpacing: OnboardingLayout.tileGap * sy,
+                                childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
+                              ),
+                              itemBuilder: (context, index) {
+                                final category = available[index];
+                                return InterestCategoryTile(
+                                  name: category,
+                                  imageUrl: interestsData.categoryImages[category],
+                                  isSelected: interestsData.selected.contains(category),
+                                  onTap: () =>
+                                      context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
+                                );
+                              },
+                            ),
                           ),
-                          itemBuilder: (context, index) {
-                            final category = available[index];
-                            return InterestCategoryTile(
-                              name: category,
-                              imageUrl: interestsData.categoryImages[category],
-                              isSelected: interestsData.selected.contains(category),
-                              onTap: () =>
-                                  context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
-                            );
-                          },
                         ),
                 ),
               ],

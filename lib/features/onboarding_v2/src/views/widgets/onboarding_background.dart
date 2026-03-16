@@ -75,61 +75,6 @@ class OnboardingBackground extends StatelessWidget {
           height: imageHeight * sy,
           child: Transform.scale(scale: coverScale * imageScale, child: imageChild),
         ),
-        if (bottomOverlayOpacity > 0)
-          Positioned.fill(
-            child: Opacity(
-              opacity: bottomOverlayOpacity,
-              child: _BottomOverlay(sx: sx, sy: sy),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _BottomOverlay extends StatelessWidget {
-  const _BottomOverlay({required this.sx, required this.sy});
-
-  final double sx;
-  final double sy;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned(
-          left: 0,
-          top: OnboardingLayout.bottomOverlayY * sy,
-          width: OnboardingLayout.bottomOverlayLeftWidth * sx,
-          height: OnboardingLayout.bottomOverlayHeight * sy,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [OnboardingColors.bottomOverlayLeft.withValues(alpha: 0), OnboardingColors.bottomOverlayLeft],
-                stops: const [0, 0.7],
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          left: OnboardingLayout.bottomOverlayLeftWidth * sx,
-          top: OnboardingLayout.bottomOverlayY * sy,
-          width: OnboardingLayout.bottomOverlayRightWidth * sx,
-          height: OnboardingLayout.bottomOverlayHeight * sy,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [OnboardingColors.bottomOverlayRight.withValues(alpha: 0), OnboardingColors.bottomOverlayRight],
-                stops: const [0, 0.7],
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }
