@@ -10,16 +10,10 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/coins/streak_pill.dart';
-import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
-import 'package:Prism/features/public_profile/views/widgets/about_list.dart';
-import 'package:Prism/features/public_profile/views/widgets/download_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
-import 'package:Prism/features/public_profile/views/widgets/general_list.dart';
-import 'package:Prism/features/public_profile/views/widgets/premium_list.dart';
-import 'package:Prism/features/public_profile/views/widgets/user_list.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -327,8 +321,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool showProfileCompletenessCard =
         (widget.ownProfile ?? false) && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
 
-    return !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn
-        ? DefaultTabController(
+    return DefaultTabController(
             length: 2,
             child: Stack(
               children: [
@@ -342,7 +335,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         primary: false,
                         floating: true,
                         elevation: 0,
-                        leading: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn == false
+                        leading: !(widget.ownProfile ?? false)
                             ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
@@ -364,7 +357,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                                   },
                                 ),
                               )
-                            : Padding(
+                            : app_state.prismUser.loggedIn
+                            ? Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   padding: const EdgeInsets.all(2),
@@ -380,7 +374,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                                     unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
                                   },
                                 ),
-                              ),
+                              )
+                            : null,
                         actions: [
                           if (app_state.prismUser.loggedIn)
                             const Padding(
@@ -392,7 +387,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: CoinBalanceChip(sourceTag: 'coins.chip.profile_screen', showStreak: false),
                             ),
-                          if (!(widget.ownProfile ?? false) || app_state.prismUser.loggedIn == false)
+                          if (!(widget.ownProfile ?? false))
                             if (app_state.prismUser.loggedIn)
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -854,54 +849,6 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          )
-        : Scaffold(
-            backgroundColor: Theme.of(context).primaryColor,
-            body: CustomScrollView(
-              controller: controller,
-              slivers: <Widget>[
-                SliverAppBar(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  automaticallyImplyLeading: false,
-                  expandedHeight: 280.0,
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Stack(
-                          children: <Widget>[
-                            Container(color: Theme.of(context).colorScheme.error),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
-                              child: Center(
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width / 2,
-                                  child: const SafeRiveAsset(
-                                    assetName: "assets/animations/Text.riv",
-                                    animations: <String>["Untitled"],
-                                    fallback: Center(child: Text('PRISM')),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    Padding(padding: const EdgeInsets.only(top: 10), child: PremiumList()),
-                    DownloadList(),
-                    const GeneralList(expanded: false),
-                    const UserList(expanded: false),
-                    AboutList(),
-                    const SizedBox(height: 300),
-                  ]),
                 ),
               ],
             ),
