@@ -141,24 +141,24 @@ const AI_DEFAULT_CONFIG: AiRoutingConfig = {
   enabled: true,
   version: 'v1',
   hardUserDailyCap: 50,
-  fallbackOrder: ['fal', 'gemini'],
+  fallbackOrder: ['fal'],
   providers: {
     fal: {
       enabled: true,
-      weight: 60,
+      weight: 100,
       modelByQuality: {
         fast: 'fal-ai/flux/schnell',
-        balanced: 'fal-ai/flux/schnell',
-        quality: 'fal-ai/flux/dev',
+        balanced: 'fal-ai/bytedance/seedream/v5/lite/text-to-image',
+        quality: 'fal-ai/bytedance/seedream/v4.5/text-to-image',
       },
-      estimatedCostByQualityUsd: { fast: 0.01, balanced: 0.03, quality: 0.06 },
+      estimatedCostByQualityUsd: { fast: 0.006, balanced: 0.04, quality: 0.04 },
       dailyBudgetUsd: 30,
       monthlyBudgetUsd: 600,
       timeoutMs: 25000,
     },
     gemini: {
-      enabled: true,
-      weight: 40,
+      enabled: false,
+      weight: 0,
       modelByQuality: {
         fast: 'gemini-2.5-flash-image',
         balanced: 'gemini-2.5-flash-image',
@@ -1738,18 +1738,30 @@ class FalProviderAdapter implements AiProviderAdapter {
       throw new Error('FAL_API_KEY missing');
     }
     const endpoint = `https://fal.run/${params.model}`;
-    const { width, height } = parseSize(params.targetSize);
+    const { width: rawWidth, height: rawHeight } = parseSize(params.targetSize);
+    const isSeedream = params.model.includes('seedream');
+    // Seedream requires dimensions between 1920–4096; scale up if below minimum.
+    const SEEDREAM_MIN = 1920;
+    const width = isSeedream ? Math.max(rawWidth, SEEDREAM_MIN) : rawWidth;
+    const height = isSeedream ? Math.max(rawHeight, SEEDREAM_MIN) : rawHeight;
+    const requestBody = isSeedream
+      ? {
+          prompt: `${params.prompt}, ${params.stylePreset} style`,
+          image_size: { width, height },
+          seed: params.seed,
+        }
+      : {
+          prompt: `${params.prompt}, ${params.stylePreset} style`,
+          image_size: `${width}x${height}`,
+          seed: params.seed,
+        };
     const response = await fetchWithTimeout(endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Key ${params.env.FAL_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        prompt: `${params.prompt}, ${params.stylePreset} style`,
-        image_size: `${width}x${height}`,
-        seed: params.seed,
-      }),
+      body: JSON.stringify(requestBody),
     }, params.timeoutMs);
 
     if (!response.ok) {
