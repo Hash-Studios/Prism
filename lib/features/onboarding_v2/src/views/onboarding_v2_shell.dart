@@ -24,6 +24,7 @@ import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -168,7 +169,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         listener: (context, state) {
           logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
           if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
-          if (state.wallpaperData.status == FirstWallpaperStatus.success) {
+          if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
+            toasts.success(defaultTargetPlatform == TargetPlatform.android ? 'Wallpaper set!' : 'Saved to Photos!');
             _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
           }
         },
