@@ -63,6 +63,26 @@ class PurchasesService {
     return androidKey.isNotEmpty ? androidKey : fallbackApiKey;
   }
 
+  /// Configures RevenueCat early in app startup (before runApp) so the singleton
+  /// is ready before any code—including RevenueCat UI internals—accesses it.
+  /// No-op if already configured or if API key is empty.
+  Future<void> configureEarly() async {
+    if (_configured) return;
+    final String apiKey = _resolveApiKey();
+    if (apiKey.isEmpty) return;
+    try {
+      if (kDebugMode) {
+        await Purchases.setLogLevel(LogLevel.debug);
+      }
+      final configuration = PurchasesConfiguration(apiKey);
+      await Purchases.configure(configuration);
+      _configured = true;
+      _configuredUserId = '';
+    } catch (error, stackTrace) {
+      logger.w('RevenueCat early configure failed; will retry on first use.', error: error, stackTrace: stackTrace);
+    }
+  }
+
   /// Ensures RevenueCat is configured and logged in as the given user.
   Future<void> ensureConfigured(String userId) async {
     final targetUserId = userId.trim();

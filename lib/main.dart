@@ -276,6 +276,8 @@ Future<void> main() async {
       // main() so in practice it completes during or before Persistence init.
       await FirebaseInit.readyFuture;
 
+      await PurchasesService.instance.configureEarly();
+
       runApp(
         // SentryWidget(
         //   child:
