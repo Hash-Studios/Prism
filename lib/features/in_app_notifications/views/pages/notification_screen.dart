@@ -271,7 +271,7 @@ class NotificationCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   CircleAvatar(
-                    backgroundImage: const AssetImage('assets/images/prism.png'),
+                    backgroundImage: const AssetImage('assets/images/prism.webp'),
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
                   const SizedBox(width: 12),
