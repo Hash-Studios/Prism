@@ -115,7 +115,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       if (result == GoogleAuth.signInCancelledResult) {
         app_state.prismUser.loggedIn = false;
         app_state.persistPrismUser();
-        toasts.codeSend('Sign in cancelled.');
+        toasts.error('Sign in cancelled.');
         _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
       } else {
         app_state.prismUser.loggedIn = true;
