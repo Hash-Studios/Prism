@@ -182,6 +182,11 @@ class _SearchScreenState extends State<SearchScreen> {
                             context,
                           ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: searchController,
+                          onChanged: (text) {
+                            if (text.trim().isEmpty && isSubmitted) {
+                              setState(() => isSubmitted = false);
+                            }
+                          },
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
                             border: InputBorder.none,
