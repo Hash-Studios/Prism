@@ -152,6 +152,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
+    AutoRoute(path: '/streak', page: StreakRoute.page),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),
   ];
