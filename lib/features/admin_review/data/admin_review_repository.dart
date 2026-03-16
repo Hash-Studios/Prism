@@ -47,6 +47,7 @@ class AdminReviewRepository {
         'review': true,
         'collections': collections.isEmpty ? <String>['community'] : collections,
         'reviewedAt': DateTime.now().toUtc(),
+        'createdAt': DateTime.now().toUtc(),
       });
       _addUserNotificationToBatch(
         batch,
@@ -84,6 +85,7 @@ class AdminReviewRepository {
       batch.updateDoc(FirebaseCollections.setups, setup.id, <String, dynamic>{
         'review': true,
         'reviewedAt': DateTime.now().toUtc(),
+        'created_at': DateTime.now().toUtc(),
       });
       _addUserNotificationToBatch(
         batch,
