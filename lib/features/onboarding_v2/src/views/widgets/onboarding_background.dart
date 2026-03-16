@@ -218,7 +218,6 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
     OnboardingV2Step.interests => 40,
     OnboardingV2Step.starterPack => 70,
     OnboardingV2Step.firstWallpaper => 0,
-    OnboardingV2Step.paywall => 0,
   };
 
   @override

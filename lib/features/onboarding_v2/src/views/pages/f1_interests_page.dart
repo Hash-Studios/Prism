@@ -45,9 +45,8 @@ class F1InterestsPage extends StatelessWidget {
                               name: category,
                               imageUrl: interestsData.categoryImages[category],
                               isSelected: interestsData.selected.contains(category),
-                              onTap: () => context.read<OnboardingV2Bloc>().add(
-                                OnboardingV2Event.interestToggled(category),
-                              ),
+                              onTap: () =>
+                                  context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
                             );
                           },
                         ),

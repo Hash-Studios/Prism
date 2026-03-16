@@ -38,11 +38,7 @@ class InterestCategoryTile extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (imageUrl != null)
-                  Image.network(
-                    imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
+                  Image.network(imageUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
                 AnimatedContainer(
                   duration: OnboardingMotion.short,
                   curve: OnboardingMotion.emphasized,

@@ -139,12 +139,10 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       case OnboardingV2Step.firstWallpaper:
         final wallpaper = _bloc.state.wallpaperData.wallpaper;
         if (wallpaper == null) {
-          _bloc.add(const OnboardingV2Event.paywallContinueFreeTapped());
+          _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
         } else {
           _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
         }
-      case OnboardingV2Step.paywall:
-        break;
     }
   }
 
@@ -170,7 +168,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
           if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
           if (state.wallpaperData.status == FirstWallpaperStatus.success) {
-            _bloc.add(const OnboardingV2Event.paywallContinueFreeTapped());
+            _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
           }
         },
         buildWhen: (prev, curr) =>

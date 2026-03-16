@@ -26,7 +26,7 @@ class F3FirstWallpaperPage extends StatelessWidget {
                 ),
                 child: GestureDetector(
                   onTap: () =>
-                      context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.paywallContinueFreeTapped()),
+                      context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.firstWallpaperStepContinued()),
                   child: const Text('skip', style: OnboardingTypography.skip),
                 ),
               ),
