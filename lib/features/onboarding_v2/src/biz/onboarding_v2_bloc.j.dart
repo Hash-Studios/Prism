@@ -357,8 +357,4 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
   }
 
-  @override
-  Future<void> close() async {
-    return super.close();
-  }
 }

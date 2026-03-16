@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -24,11 +24,11 @@ import 'package:Prism/features/startup/services/tomorrow_hook_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -483,7 +483,6 @@ class _CtaButton extends StatelessWidget {
       OnboardingV2Step.auth => state.isAuthLoading,
       OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
       OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
-      _ => false,
     };
 
     final isEnabled = switch (step) {
@@ -491,7 +490,6 @@ class _CtaButton extends StatelessWidget {
       OnboardingV2Step.interests => state.interestsData.canContinue,
       OnboardingV2Step.starterPack => state.starterPackData.canContinue,
       OnboardingV2Step.firstWallpaper => true,
-      _ => false,
     };
 
     final label = switch (step) {
@@ -505,7 +503,6 @@ class _CtaButton extends StatelessWidget {
         return selected < OnboardingV2Config.minFollows ? 'continue ($selected selected)' : 'continue';
       }(),
       OnboardingV2Step.firstWallpaper => 'set as wallpaper',
-      _ => 'continue',
     };
 
     return Positioned(

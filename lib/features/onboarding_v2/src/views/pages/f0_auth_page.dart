@@ -60,7 +60,6 @@ class _F0AuthPageState extends State<F0AuthPage> {
                     duration: const Duration(milliseconds: 1000),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Padding(padding: const EdgeInsets.only(top: 6), child: SvgPicture.string(prismVector)),
                         const SizedBox(width: 6),

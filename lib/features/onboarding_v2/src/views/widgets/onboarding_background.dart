@@ -61,7 +61,7 @@ class OnboardingBackground extends StatelessWidget {
             imageUrl: resolvedNetworkUrl,
             fit: BoxFit.cover,
             fadeInDuration: Duration.zero,
-            placeholder: (_, __) => Image.asset(assetPath, fit: BoxFit.cover),
+            placeholder: (_, _) => Image.asset(assetPath, fit: BoxFit.cover),
           )
         : Image.asset(
             assetPath,

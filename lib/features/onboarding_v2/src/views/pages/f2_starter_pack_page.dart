@@ -43,7 +43,7 @@ class F2StarterPackPage extends StatelessWidget {
                               physics: const BouncingScrollPhysics(),
                               itemCount: creators.length,
                               padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
-                              separatorBuilder: (_, __) => SizedBox(height: OnboardingLayout.creatorGap * sy),
+                              separatorBuilder: (_, _) => SizedBox(height: OnboardingLayout.creatorGap * sy),
                               itemBuilder: (context, index) {
                                 final creator = creators[index];
                                 return SizedBox(

@@ -69,7 +69,6 @@ class _CardContent extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Avatar
               CircleAvatar(
@@ -197,7 +196,7 @@ class _PreviewTile extends StatelessWidget {
               fit: BoxFit.cover,
               width: double.infinity,
               height: double.infinity,
-              errorWidget: (_, __, ___) => _emptyTile,
+              errorWidget: (_, _, _) => _emptyTile,
             )
           : _emptyTile,
     );

@@ -62,7 +62,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
     final results = await Future.wait([_fetchUserProfile(entry.email), _fetchPreviewUrls(entry.email)]);
 
     final profile = results[0] as _CreatorProfile?;
-    final previewUrls = results[1] as List<String>;
+    final previewUrls = (results[1]! as List<dynamic>).cast<String>();
 
     return OnboardingStarterCreatorEntity(
       userId: profile?.userId ?? entry.userId,
