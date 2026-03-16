@@ -5,15 +5,14 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pdata;
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wdata;
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
+import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
-import 'package:Prism/global/searchProviderMenu.dart';
-import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 @RoutePage()
 class SearchScreen extends StatefulWidget {
@@ -23,12 +22,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
-  String? selectedProvider;
-  SearchProviderMenuItem? selectedProviders;
-  final List providers = [
-    SearchProviderMenuItem(title: 'WallHaven', icon: JamIcons.arrow_right),
-    SearchProviderMenuItem(title: 'Pexels', icon: JamIcons.arrow_right),
-  ];
+
   final List<String> tags = [
     'Art',
     'Abstract',
@@ -101,33 +95,33 @@ class _SearchScreenState extends State<SearchScreen> {
     'Geometric',
     'Graphic',
   ];
+
   late bool isSubmitted;
   TextEditingController searchController = TextEditingController();
   Future? _future;
 
-  SearchProviderValue _providerFromTitle(String? providerTitle) {
-    switch (providerTitle) {
-      case 'Pexels':
-        return SearchProviderValue.pexels;
-      case 'WallHaven':
-        return SearchProviderValue.wallhaven;
-      default:
-        return SearchProviderValue.wallhaven;
-    }
+  // Default provider for free-text/tag searches
+  static const String _defaultProvider = 'WallHaven';
+
+  SearchProviderValue _providerValueFromString(String provider) {
+    return provider == 'Pexels' ? SearchProviderValue.pexels : SearchProviderValue.wallhaven;
   }
 
   int _queryWordCount(String query) {
     return query.trim().split(RegExp(r'\s+')).where((segment) => segment.trim().isNotEmpty).length;
   }
 
-  void _trackSearchSubmitted({required String query, required bool fromSuggestion, required String sourceContext}) {
+  void _trackSearchSubmitted({
+    required String query,
+    required bool fromSuggestion,
+    required String sourceContext,
+    String provider = _defaultProvider,
+  }) {
     final String trimmedQuery = query.trim();
-    if (trimmedQuery.isEmpty) {
-      return;
-    }
+    if (trimmedQuery.isEmpty) return;
     analytics.track(
       SearchSubmittedEvent(
-        provider: _providerFromTitle(selectedProvider),
+        provider: _providerValueFromString(provider),
         queryLength: trimmedQuery.length,
         queryWordCount: _queryWordCount(trimmedQuery),
         sourceContext: sourceContext,
@@ -136,14 +130,26 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  void _triggerSearch(String query, String provider) {
+    setState(() {
+      isSubmitted = true;
+      if (provider == 'WallHaven') {
+        wdata.wallsS = [];
+        _future = wdata.getWallsbyQuery(
+          query,
+          _settingsLocal.get<int>('WHcategories', defaultValue: 100),
+          _settingsLocal.get<int>('WHpurity', defaultValue: 100),
+        );
+      } else {
+        pdata.wallsPS = [];
+        _future = pdata.getWallsPbyQuery(query);
+      }
+    });
+  }
+
   @override
   void initState() {
     isSubmitted = false;
-
-    selectedProvider = _settingsLocal.get<String>('selectedSearchProvider', defaultValue: "WallHaven");
-    selectedProviders = selectedProvider == "WallHaven"
-        ? providers[0] as SearchProviderMenuItem
-        : providers[1] as SearchProviderMenuItem;
     tags.shuffle();
     super.initState();
   }
@@ -175,104 +181,38 @@ class _SearchScreenState extends State<SearchScreen> {
                             context,
                           ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: searchController,
+                          onChanged: (text) {
+                            if (text.trim().isEmpty && isSubmitted) {
+                              setState(() => isSubmitted = false);
+                            }
+                          },
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
                             border: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
-                            hintText: "Search",
+                            hintText: 'Search',
                             hintStyle: Theme.of(
                               context,
                             ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                             suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                           ),
                           onSubmitted: (tex) {
-                            _trackSearchSubmitted(query: tex, fromSuggestion: false, sourceContext: 'search_textfield');
-                            setState(() {
-                              isSubmitted = true;
-                              if (selectedProvider == "WallHaven") {
-                                wdata.wallsS = [];
-                                _future = wdata.getWallsbyQuery(
-                                  tex,
-                                  _settingsLocal.get<int>('WHcategories', defaultValue: 100),
-                                  _settingsLocal.get<int>('WHpurity', defaultValue: 100),
-                                );
-                              } else if (selectedProvider == "Pexels") {
-                                pdata.wallsPS = [];
-                                _future = pdata.getWallsPbyQuery(tex);
-                              }
-                            });
+                            final String query = tex.trim();
+                            if (query.isEmpty) return;
+                            _trackSearchSubmitted(
+                              query: query,
+                              fromSuggestion: false,
+                              sourceContext: 'search_textfield',
+                            );
+                            _triggerSearch(query, _defaultProvider);
                           },
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ),
-            SizedBox(
-              width: 40,
-              child: PopupMenuButton(
-                offset: const Offset(5, 30),
-                icon: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
-                elevation: 4,
-                initialValue: selectedProviders,
-                onCanceled: () {
-                  logger.d('You have not choosed anything');
-                },
-                color: Theme.of(context).hintColor,
-                tooltip: 'Providers',
-                onSelected: (dynamic choice) {
-                  final SearchProviderValue previousProvider = _providerFromTitle(selectedProvider);
-                  setState(() {
-                    selectedProviders = choice as SearchProviderMenuItem;
-                    selectedProvider = choice.title.toString();
-                    _settingsLocal.set('selectedSearchProvider', selectedProvider);
-                    analytics.track(
-                      SearchProviderChangedEvent(
-                        fromProvider: previousProvider,
-                        toProvider: _providerFromTitle(selectedProvider),
-                      ),
-                    );
-                    if (searchController.text != "") {
-                      isSubmitted = true;
-                      _trackSearchSubmitted(
-                        query: searchController.text,
-                        fromSuggestion: false,
-                        sourceContext: 'provider_switch',
-                      );
-                      if (choice.title == "WallHaven") {
-                        wdata.wallsS = [];
-                        _future = wdata.getWallsbyQuery(
-                          searchController.text,
-                          _settingsLocal.get<int>('WHcategories', defaultValue: 100),
-                          _settingsLocal.get<int>('WHpurity', defaultValue: 100),
-                        );
-                      } else if (choice.title == "Pexels") {
-                        pdata.wallsPS = [];
-                        _future = pdata.getWallsPbyQuery(searchController.text);
-                      }
-                    }
-                  });
-                },
-                itemBuilder: (BuildContext context) {
-                  return providers.map((choice) {
-                    return PopupMenuItem(
-                      textStyle: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                      value: choice,
-                      child: Row(
-                        children: <Widget>[
-                          Icon(choice.icon as IconData?, color: Theme.of(context).colorScheme.secondary),
-                          const SizedBox(width: 10),
-                          Text(choice.title.toString()),
-                        ],
-                      ),
-                    );
-                  }).toList();
-                },
               ),
             ),
             const SizedBox(width: 6),
@@ -289,14 +229,6 @@ class _SearchScreenState extends State<SearchScreen> {
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return Container();
-                  // return IconButton(
-                  //   onPressed: () {
-                  //     context.router.push(const UserSearchRoute());
-                  //   },
-                  //   icon: const Icon(
-                  //     JamIcons.users,
-                  //   ),
-                  // );
                 } else {
                   index = index - 1;
                   return Align(
@@ -321,7 +253,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             onPressed: () {
                               analytics.track(
                                 SearchTagSelectedEvent(
-                                  provider: _providerFromTitle(selectedProvider),
+                                  provider: _providerValueFromString(_defaultProvider),
                                   tag: tags[index].toLowerCase(),
                                 ),
                               );
@@ -330,21 +262,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                 fromSuggestion: true,
                                 sourceContext: 'search_tag',
                               );
-                              setState(() {
-                                searchController.text = tags[index];
-                                isSubmitted = true;
-                                if (selectedProvider == "WallHaven") {
-                                  wdata.wallsS = [];
-                                  _future = wdata.getWallsbyQuery(
-                                    tags[index],
-                                    _settingsLocal.get<int>('WHcategories', defaultValue: 100),
-                                    _settingsLocal.get<int>('WHpurity', defaultValue: 100),
-                                  );
-                                } else if (selectedProvider == "Pexels") {
-                                  pdata.wallsPS = [];
-                                  _future = pdata.getWallsPbyQuery(tags[index]);
-                                }
-                              });
+                              searchController.text = tags[index];
+                              _triggerSearch(tags[index], _defaultProvider);
                             },
                           ),
                         ),
@@ -358,74 +277,10 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: isSubmitted
-          ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: selectedProvider)
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: context.prismModeStyleForContext() == "Dark"
-                      ? SvgPicture.string(
-                          loaderDark
-                              .replaceAll(
-                                "181818",
-                                Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "E57697",
-                                Theme.of(
-                                  context,
-                                ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                              )
-                              .replaceAll(
-                                "F0F0F0",
-                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "2F2E41",
-                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "3F3D56",
-                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "2F2F2F",
-                                Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                              ),
-                        )
-                      : SvgPicture.string(
-                          loaderLight
-                              .replaceAll(
-                                "181818",
-                                Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "E57697",
-                                Theme.of(
-                                  context,
-                                ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                              )
-                              .replaceAll(
-                                "F0F0F0",
-                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "2F2E41",
-                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "3F3D56",
-                                Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                              )
-                              .replaceAll(
-                                "2F2F2F",
-                                Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                              ),
-                        ),
-                ),
-                SizedBox(width: MediaQuery.of(context).size.width, height: MediaQuery.of(context).size.height * 0.1),
-              ],
+          ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: _defaultProvider)
+          : BlocProvider<SearchDiscoveryBloc>(
+              create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
+              child: const SearchDiscoveryWidget(),
             ),
     );
   }
@@ -445,16 +300,15 @@ class _SearchLoaderState extends State<_SearchLoader> {
 
   @override
   void initState() {
-    if (widget.selectedProvider == "WallHaven") {
+    if (widget.selectedProvider == 'WallHaven') {
       wdata.wallsS = [];
       wdata.pageGetQuery = 1;
       _future = widget.future;
-    } else if (widget.selectedProvider == "Pexels") {
+    } else if (widget.selectedProvider == 'Pexels') {
       pdata.wallsPS = [];
       pdata.pageGetQueryP = 1;
       _future = widget.future;
     }
-
     super.initState();
   }
 
@@ -464,7 +318,7 @@ class _SearchLoaderState extends State<_SearchLoader> {
       future: _future,
       builder: (ctx, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
-          logger.d("snapshot none, waiting");
+          logger.d('snapshot none, waiting');
           return const LoadingCards();
         } else {
           return SearchGrid(query: widget.query, selectedProvider: widget.selectedProvider);
