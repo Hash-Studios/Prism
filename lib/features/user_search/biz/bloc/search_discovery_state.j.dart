@@ -8,8 +8,5 @@ abstract class SearchDiscoveryState with _$SearchDiscoveryState {
     Failure? failure,
   }) = _SearchDiscoveryState;
 
-  factory SearchDiscoveryState.initial() => const SearchDiscoveryState(
-    status: LoadStatus.initial,
-    trendingWalls: [],
-  );
+  factory SearchDiscoveryState.initial() => const SearchDiscoveryState(status: LoadStatus.initial, trendingWalls: []);
 }

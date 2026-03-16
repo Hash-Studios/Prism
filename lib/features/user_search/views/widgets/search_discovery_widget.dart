@@ -121,23 +121,36 @@ class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleT
   void initState() {
     super.initState();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    _animation = (context.prismModeStyleForWindow(listen: false) == 'Dark'
-            ? TweenSequence<Color?>([
-                TweenSequenceItem(tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)), weight: 1),
-                TweenSequenceItem(tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10), weight: 1),
-              ])
-            : TweenSequence<Color?>([
-                TweenSequenceItem(
-                    tween: ColorTween(
-                        begin: Colors.black.withValues(alpha: .1), end: Colors.black.withValues(alpha: .14)),
-                    weight: 1),
-                TweenSequenceItem(
-                    tween: ColorTween(
-                        begin: Colors.black.withValues(alpha: .14), end: Colors.black.withValues(alpha: .1)),
-                    weight: 1),
-              ]))
-        .animate(_controller)
-      ..addListener(() => setState(() {}));
+    _animation =
+        (context.prismModeStyleForWindow(listen: false) == 'Dark'
+                ? TweenSequence<Color?>([
+                    TweenSequenceItem(
+                      tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
+                      weight: 1,
+                    ),
+                    TweenSequenceItem(
+                      tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
+                      weight: 1,
+                    ),
+                  ])
+                : TweenSequence<Color?>([
+                    TweenSequenceItem(
+                      tween: ColorTween(
+                        begin: Colors.black.withValues(alpha: .1),
+                        end: Colors.black.withValues(alpha: .14),
+                      ),
+                      weight: 1,
+                    ),
+                    TweenSequenceItem(
+                      tween: ColorTween(
+                        begin: Colors.black.withValues(alpha: .14),
+                        end: Colors.black.withValues(alpha: .1),
+                      ),
+                      weight: 1,
+                    ),
+                  ]))
+            .animate(_controller)
+          ..addListener(() => setState(() {}));
     _controller.repeat();
   }
 
@@ -159,10 +172,7 @@ class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleT
         itemBuilder: (_, __) => Container(
           width: 120,
           height: 185,
-          decoration: BoxDecoration(
-            color: _animation.value,
-            borderRadius: BorderRadius.circular(16),
-          ),
+          decoration: BoxDecoration(color: _animation.value, borderRadius: BorderRadius.circular(16)),
         ),
       ),
     );
@@ -183,10 +193,9 @@ class _TrendingError extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Could not load trending',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium!
-                .copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
           ),
           const SizedBox(width: 8),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
@@ -247,11 +256,7 @@ class _CategorySection extends StatelessWidget {
                             textAlign: TextAlign.center,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
                       ],
@@ -330,8 +335,8 @@ class _ColorSection extends StatelessWidget {
                         swatch.name,
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-                            ),
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+                        ),
                       ),
                     ],
                   ),
@@ -365,9 +370,9 @@ class _SectionHeader extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Theme.of(context).colorScheme.secondary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

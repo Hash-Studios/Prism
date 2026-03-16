@@ -105,8 +105,7 @@ class _SearchScreenState extends State<SearchScreen> {
   // Default provider for free-text/tag searches
   static const String _defaultProvider = 'WallHaven';
 
-  String _providerStringForSource(WallpaperSource source) =>
-      source == WallpaperSource.pexels ? 'Pexels' : 'WallHaven';
+  String _providerStringForSource(WallpaperSource source) => source == WallpaperSource.pexels ? 'Pexels' : 'WallHaven';
 
   SearchProviderValue _providerValueFromString(String provider) {
     return provider == 'Pexels' ? SearchProviderValue.pexels : SearchProviderValue.wallhaven;
@@ -182,10 +181,9 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         child: TextField(
                           cursorColor: Theme.of(context).colorScheme.error,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall!
-                              .copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                           controller: searchController,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.only(left: 30, top: 15),
@@ -194,10 +192,9 @@ class _SearchScreenState extends State<SearchScreen> {
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             hintText: 'Search',
-                            hintStyle: Theme.of(context)
-                                .textTheme
-                                .headlineSmall!
-                                .copyWith(color: Theme.of(context).colorScheme.secondary),
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                             suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                           ),
                           onSubmitted: (tex) {
@@ -249,10 +246,10 @@ class _SearchScreenState extends State<SearchScreen> {
                             label: Text(
                               tags[index],
                               style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                    color: searchController.text.toLowerCase() == tags[index].toLowerCase()
-                                        ? Theme.of(context).primaryColor
-                                        : Theme.of(context).colorScheme.secondary,
-                                  ),
+                                color: searchController.text.toLowerCase() == tags[index].toLowerCase()
+                                    ? Theme.of(context).primaryColor
+                                    : Theme.of(context).colorScheme.secondary,
+                              ),
                             ),
                             onPressed: () {
                               analytics.track(
