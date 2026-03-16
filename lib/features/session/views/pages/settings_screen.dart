@@ -15,7 +15,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -471,15 +470,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         ListTile(
-          leading: const Icon(JamIcons.heart),
-          title: Text('Clear favourite setups', style: _titleStyle),
-          subtitle: const Text('Remove all favourite setups', style: TextStyle(fontSize: 12)),
-          onTap: () {
-            _trackSettingsAction(AnalyticsActionValue.clearFavouriteSetupsTapped);
-            _showClearFavSetupsDialog();
-          },
-        ),
-        ListTile(
           leading: Icon(JamIcons.log_out, color: _accentColor),
           title: Text('Logout', style: _titleStyle.copyWith(color: _accentColor)),
           subtitle: Text(app_state.prismUser.email, style: _subtitleStyle),
@@ -535,42 +525,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.of(ctx).pop();
               toasts.error('Cleared all favourite wallpapers!');
               context.favouriteWallsAdapter(listen: false).deleteData();
-            },
-            child: Text('YES', style: TextStyle(fontSize: 16.0, color: _accentColor)),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: MaterialButton(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-              color: _accentColor,
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-            ),
-          ),
-        ],
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-    );
-  }
-
-  void _showClearFavSetupsDialog() {
-    showModal(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        content: const SizedBox(
-          height: 50,
-          width: 250,
-          child: Center(child: Text('Do you want to remove all your favourite setups?')),
-        ),
-        actions: [
-          MaterialButton(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-            onPressed: () {
-              _trackSettingsAction(AnalyticsActionValue.clearFavouriteSetupsConfirmed);
-              Navigator.of(ctx).pop();
-              toasts.error('Cleared all favourite setups!');
-              context.favouriteSetupsAdapter(listen: false).deleteData();
             },
             child: Text('YES', style: TextStyle(fontSize: 16.0, color: _accentColor)),
           ),

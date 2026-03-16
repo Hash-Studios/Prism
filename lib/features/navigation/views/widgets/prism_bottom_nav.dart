@@ -19,8 +19,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> with SingleTickerProvid
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
     _NavTabConfig(index: 0, label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
     _NavTabConfig(index: 1, label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
-    _NavTabConfig(index: 2, label: 'Setups', icon: JamIcons.instant_picture_f, value: NavTabValue.setups),
-    _NavTabConfig(index: 3, label: 'Profile', icon: JamIcons.cog_f, value: NavTabValue.profile),
+    _NavTabConfig(index: 2, label: 'Profile', icon: JamIcons.cog_f, value: NavTabValue.profile),
   ];
 
   late final AnimationController _indicatorController;
@@ -136,16 +135,9 @@ class _PrismBottomNavState extends State<PrismBottomNav> with SingleTickerProvid
               tooltip: _tabs[2].label,
               isActive: activeIndex == _tabs[2].index,
               indicatorWidth: _indicatorWidth.value,
-              icon: Icon(_tabs[2].icon, color: Theme.of(context).colorScheme.secondary),
-              onPressed: () => _switchTab(tabsRouter: tabsRouter, toIndex: _tabs[2].index),
-            ),
-            _TabButton(
-              tooltip: _tabs[3].label,
-              isActive: activeIndex == _tabs[3].index,
-              indicatorWidth: _indicatorWidth.value,
               padding: const EdgeInsets.fromLTRB(0, 10, 18, 10),
               icon: _profileIcon(context),
-              onPressed: () => _switchTab(tabsRouter: tabsRouter, toIndex: _tabs[3].index),
+              onPressed: () => _switchTab(tabsRouter: tabsRouter, toIndex: _tabs[2].index),
             ),
           ],
         ),
