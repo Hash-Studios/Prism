@@ -131,8 +131,9 @@ service cloud.firestore {
     }
 
     // User profiles + private user state.
+    // Profiles are public (shown on profile pages, creator cards, onboarding).
     match /usersv2/{userId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow create: if isConfiguredAdmin() || canCreateUserDoc(userId);
       allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly();
       allow delete: if isConfiguredAdmin();
