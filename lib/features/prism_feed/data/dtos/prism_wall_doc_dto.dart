@@ -23,6 +23,9 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     @FirestoreJsonMapConverter()
     @Default(<String, Object?>{})
     Map<String, Object?> aiMetadata,
+    @JsonKey(name: 'is_streak_exclusive') @Default(false) bool isStreakExclusive,
+    @JsonKey(name: 'required_streak_days') int? requiredStreakDays,
+    @JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost,
   }) = _PrismWallDocDto;
 
   factory PrismWallDocDto.fromJson(Map<String, dynamic> json) => _$PrismWallDocDtoFromJson(json);

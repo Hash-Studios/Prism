@@ -61,6 +61,7 @@ enums:
       - ai_generation
       - premium_filter
       - premium_preview_24h
+      - streak_freeze
   - name: ai_charge_mode
     dart_type: AiChargeModeValue
     values:
@@ -217,6 +218,7 @@ enums:
       - search
       - setups
       - ai
+      - streak
       - profile
   - name: notification_preference
     dart_type: NotificationPreferenceValue

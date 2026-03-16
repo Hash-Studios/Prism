@@ -18,6 +18,8 @@ const STREAK_REWARD_DAY_3_TO_4 = 8;
 const STREAK_REWARD_DAY_5_TO_6 = 12;
 const STREAK_REWARD_DAY_7_DAILY = 15;
 const STREAK_DAY7_BONUS = 40;
+const PRO_STREAK_DAILY_BONUS = 5;
+const PRO_STREAK_7_BONUS = 20;
 
 const DEFAULT_TZ_OFFSET_MINUTES = 330;
 const REMINDER_HOUR_LOCAL = 20;
@@ -36,6 +38,7 @@ interface ClaimDailyStreakResponse {
   streakDay: number;
   dailyReward: number;
   streakBonusReward: number;
+  proBonusReward: number;
   totalReward: number;
   newBalance: number;
   todayLocalKey: string;
@@ -86,6 +89,7 @@ export const claimDailyStreak = onCall(
     let streakDay = 0;
     let dailyReward = 0;
     let streakBonusReward = 0;
+    let proBonusReward = 0;
     let totalReward = 0;
     let newBalance = 0;
     let todayLocalKey = "";
@@ -117,11 +121,16 @@ export const claimDailyStreak = onCall(
         const previousStreakDay = _clampStreakDay(_asInt(coinState.streakDay, 0));
         const nextStreakDay = _computeNextStreakDay(lastClaimDate, todayLocalKey, previousStreakDay);
         const rewardParts = _rewardForStreakDay(nextStreakDay);
+        const isPro = _asBool(userData.premium, false);
+        const proBonus = isPro
+          ? (nextStreakDay === 7 ? PRO_STREAK_7_BONUS : PRO_STREAK_DAILY_BONUS)
+          : 0;
 
         streakDay = nextStreakDay;
         dailyReward = rewardParts.dailyReward;
         streakBonusReward = rewardParts.streakBonusReward;
-        totalReward = rewardParts.totalReward;
+        proBonusReward = proBonus;
+        totalReward = rewardParts.totalReward + proBonus;
         newBalance = previousBalance + totalReward;
         claimed = true;
 
@@ -162,13 +171,33 @@ export const claimDailyStreak = onCall(
             updatedAt: nowTs,
             delta: streakBonusReward,
             balanceBefore: previousBalance + dailyReward,
-            balanceAfter: newBalance,
+            balanceAfter: previousBalance + dailyReward + streakBonusReward,
             action: "streakBonus",
             description: `7-day streak bonus (+${streakBonusReward})`,
             sourceTag: "coins.claim_daily_streak.callable",
             status: "completed",
             type: "credit",
             reason: "streak_day_7_bonus",
+          });
+        }
+
+        if (proBonusReward > 0) {
+          const proTxId = `ctx_pro_streak_bonus_${baseTxId}`;
+          const balanceBeforePro = previousBalance + dailyReward + streakBonusReward;
+          tx.set(db.collection(COIN_TX_COLLECTION).doc(proTxId), {
+            id: proTxId,
+            userId: uid,
+            createdAt: nowTs,
+            updatedAt: nowTs,
+            delta: proBonusReward,
+            balanceBefore: balanceBeforePro,
+            balanceAfter: newBalance,
+            action: "proStreakBonus",
+            description: `Pro streak bonus (+${proBonusReward})`,
+            sourceTag: "coins.claim_daily_streak.callable",
+            status: "completed",
+            type: "credit",
+            reason: "pro_streak_bonus",
           });
         }
       } else {
@@ -196,6 +225,7 @@ export const claimDailyStreak = onCall(
       streakDay,
       dailyReward,
       streakBonusReward,
+      proBonusReward,
       totalReward,
       newBalance,
       todayLocalKey,

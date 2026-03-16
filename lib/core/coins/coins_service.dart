@@ -17,6 +17,7 @@ import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
@@ -142,8 +143,6 @@ class CoinsService {
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
 
-  /// Tracks how many AI free-trial generations have been used (max 3).
-  final ValueNotifier<int> aiFreeUsedNotifier = ValueNotifier<int>(0);
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   int _deltaVersion = 0;
@@ -508,6 +507,7 @@ class CoinsService {
   }
 
   Future<_AiGenerationReservationResult> reserveForAiGeneration({
+    required AiQualityTier qualityTier,
     String sourceTag = 'coins.reserve.ai_generation',
   }) async {
     if (!_canMutateCoins()) {
@@ -521,7 +521,7 @@ class CoinsService {
       );
     }
     final String userId = app_state.prismUser.id;
-    final String today = _localDayKey(DateTime.now());
+    final int cost = qualityTier.coinCost;
     final _AiGenerationReservationResult result = await firestoreClient.runTransaction<_AiGenerationReservationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
@@ -536,7 +536,6 @@ class CoinsService {
           );
         }
         final int previous = _asInt(data['coins']);
-        final bool isPremium = _isPremiumUserData(data);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
         _ensureCoinStateDefaults(
           coinState,
@@ -544,55 +543,7 @@ class CoinsService {
           timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
         );
 
-        if (!isPremium) {
-          final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
-          if (freeUsed < 3) {
-            coinState['aiFreeUsedTotal'] = freeUsed + 1;
-            aiFreeUsedNotifier.value = freeUsed + 1;
-            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-              'coins': previous,
-              _coinStateField: coinState,
-            });
-            return _AiGenerationReservationResult(
-              mode: AiChargeMode.freeTrial,
-              mutation: CoinMutationResult(
-                success: true,
-                changed: true,
-                previousBalance: previous,
-                currentBalance: previous,
-                delta: 0,
-                reason: 'ai_free_trial_reserved',
-              ),
-            );
-          }
-        } else {
-          final String includedDate = (coinState['aiIncludedUsageDate'] as String? ?? '').trim();
-          int includedUsed = _asInt(coinState['aiIncludedUsedToday']);
-          if (includedDate != today) {
-            includedUsed = 0;
-          }
-          if (includedUsed < 30) {
-            coinState['aiIncludedUsageDate'] = today;
-            coinState['aiIncludedUsedToday'] = includedUsed + 1;
-            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-              'coins': previous,
-              _coinStateField: coinState,
-            });
-            return _AiGenerationReservationResult(
-              mode: AiChargeMode.proIncluded,
-              mutation: CoinMutationResult(
-                success: true,
-                changed: true,
-                previousBalance: previous,
-                currentBalance: previous,
-                delta: 0,
-                reason: 'ai_pro_included_reserved',
-              ),
-            );
-          }
-        }
-
-        if (previous < CoinPolicy.aiGeneration) {
+        if (previous < cost) {
           return _AiGenerationReservationResult(
             mode: AiChargeMode.insufficient,
             mutation: CoinMutationResult(
@@ -607,7 +558,7 @@ class CoinsService {
           );
         }
 
-        final int current = previous - CoinPolicy.aiGeneration;
+        final int current = previous - cost;
         final String txId = _newTransactionId('ai_generation');
         tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
           'coins': current,
@@ -618,11 +569,11 @@ class CoinsService {
           'userId': userId,
           'createdAt': DateTime.now().toUtc(),
           'updatedAt': DateTime.now().toUtc(),
-          'delta': -CoinPolicy.aiGeneration,
+          'delta': -cost,
           'balanceBefore': previous,
           'balanceAfter': current,
           'action': CoinSpendAction.aiGeneration.name,
-          'description': 'AI wallpaper generation (-${CoinPolicy.aiGeneration})',
+          'description': 'AI wallpaper generation (-$cost)',
           'sourceTag': sourceTag,
           'reason': 'ai_generation_reserved',
           'status': _txStatusReserved,
@@ -636,7 +587,7 @@ class CoinsService {
             changed: true,
             previousBalance: previous,
             currentBalance: current,
-            delta: -CoinPolicy.aiGeneration,
+            delta: -cost,
             reason: 'ai_coin_spend_reserved',
           ),
           transactionId: txId,
@@ -649,12 +600,7 @@ class CoinsService {
 
     _applyLocalBalance(result.mutation.currentBalance, delta: result.mutation.delta);
     if (result.mode == AiChargeMode.coinSpend && result.mutation.changed) {
-      _logSpend(
-        action: CoinSpendAction.aiGeneration,
-        amount: CoinPolicy.aiGeneration,
-        sourceTag: sourceTag,
-        reason: 'ai_generation',
-      );
+      _logSpend(action: CoinSpendAction.aiGeneration, amount: cost, sourceTag: sourceTag, reason: 'ai_generation');
     }
     analytics.track(
       AiChargeReservedEvent(
@@ -671,22 +617,25 @@ class CoinsService {
     AiChargeMode mode, {
     String sourceTag = 'coins.rollback.ai_generation',
     String? reservationTransactionId,
+    int? coinsToRefund,
   }) async {
     if (mode == AiChargeMode.insufficient) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
     }
 
     if (mode == AiChargeMode.coinSpend) {
+      final int refundAmount = coinsToRefund ?? CoinPolicy.aiGenerationFast;
       await _markTransactionRolledBack(reservationTransactionId, sourceTag: sourceTag, reason: 'ai_generation_failed');
       final CoinMutationResult refund = await refundSpend(
         CoinSpendAction.aiGeneration,
+        amountOverride: refundAmount,
         sourceTag: sourceTag,
         reason: 'ai_generation_failed_refund',
       );
       analytics.track(
         AiChargeRolledBackEvent(
           mode: aiChargeModeValueFromDomain(mode),
-          coinsRefunded: CoinPolicy.aiGeneration,
+          coinsRefunded: refundAmount,
           balance: app_state.prismUser.coins,
           sourceTag: sourceTag,
         ),
@@ -694,74 +643,7 @@ class CoinsService {
       return refund;
     }
 
-    if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
-    }
-    final String userId = app_state.prismUser.id;
-    final String today = _localDayKey(DateTime.now());
-    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
-      (tx) async {
-        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
-        if (data == null) {
-          return CoinMutationResult.noChange(
-            balance: app_state.prismUser.coins,
-            success: false,
-            reason: 'user_missing',
-          );
-        }
-        final int previous = _asInt(data['coins']);
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(
-          coinState,
-          reminderEnabled: _preferredStreakReminderEnabled(),
-          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
-        );
-        bool changed = false;
-
-        if (mode == AiChargeMode.freeTrial) {
-          final int freeUsed = _asInt(coinState['aiFreeUsedTotal']);
-          if (freeUsed > 0) {
-            coinState['aiFreeUsedTotal'] = freeUsed - 1;
-            aiFreeUsedNotifier.value = freeUsed - 1;
-            changed = true;
-          }
-        } else if (mode == AiChargeMode.proIncluded) {
-          final String includedDate = (coinState['aiIncludedUsageDate'] as String? ?? '').trim();
-          final int includedUsed = _asInt(coinState['aiIncludedUsedToday']);
-          if (includedDate == today && includedUsed > 0) {
-            coinState['aiIncludedUsedToday'] = includedUsed - 1;
-            changed = true;
-          }
-        }
-
-        if (changed) {
-          tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-            'coins': previous,
-            _coinStateField: coinState,
-          });
-        }
-        return CoinMutationResult(
-          success: true,
-          changed: changed,
-          previousBalance: previous,
-          currentBalance: previous,
-          delta: 0,
-          reason: changed ? 'ai_${mode.value}_rollback' : 'ai_${mode.value}_rollback_noop',
-        );
-      },
-      sourceTag: sourceTag,
-      collection: FirebaseCollections.usersV2,
-      docId: userId,
-    );
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    analytics.track(
-      AiChargeRolledBackEvent(
-        mode: aiChargeModeValueFromDomain(mode),
-        balance: app_state.prismUser.coins,
-        sourceTag: sourceTag,
-      ),
-    );
-    return result;
+    return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
   }
 
   void commitAiGenerationReservation({
@@ -793,6 +675,7 @@ class CoinsService {
           prompt: prompt,
           stylePreset: stylePreset,
           sourceTag: sourceTag,
+          coinsSpent: coinsSpent,
         ),
       );
     }
@@ -1511,6 +1394,8 @@ class CoinsService {
           return 'Premium collection preview unlock (-$amount)';
         }
         return 'Premium preview unlock (-$amount)';
+      case CoinSpendAction.streakFreeze:
+        return 'Streak freeze (-$amount)';
     }
   }
 
@@ -1537,6 +1422,7 @@ class CoinsService {
     required String? prompt,
     required String? stylePreset,
     required String sourceTag,
+    int coinsSpent = 0,
   }) async {
     final String txId = reservationTransactionId?.trim() ?? '';
     final String genId = generationId?.trim() ?? '';
@@ -1560,7 +1446,7 @@ class CoinsService {
         'referenceId': genId,
         'deepLinkUrl': canonical.toString(),
         'shortLinkUrl': shortUrl,
-        'description': 'AI wallpaper generation (-${CoinPolicy.aiGeneration})',
+        'description': 'AI wallpaper generation (-$coinsSpent)',
         'metadata': <String, dynamic>{
           if (prompt != null && prompt.trim().isNotEmpty) 'prompt': prompt.trim(),
           if (stylePreset != null && stylePreset.trim().isNotEmpty) 'stylePreset': stylePreset.trim(),
@@ -1704,9 +1590,6 @@ class CoinsService {
     changed |= _putDefaultIfMissing(coinState, 'referredByUserId', '');
     changed |= _putDefaultIfMissing(coinState, 'referralRewarded', false);
     changed |= _putDefaultIfMissing(coinState, 'premiumPreviewUnlocks', <String, int>{});
-    changed |= _putDefaultIfMissing(coinState, 'aiFreeUsedTotal', 0);
-    changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsageDate', '');
-    changed |= _putDefaultIfMissing(coinState, 'aiIncludedUsedToday', 0);
     changed |= _putDefaultIfMissing(coinState, _streakReminderEnabledField, reminderEnabled);
     changed |= _putDefaultIfMissing(coinState, _streakTimezoneOffsetMinutesField, timezoneOffsetMinutes);
     changed |= _putDefaultIfMissing(coinState, _streakReminderLastSentDateField, '');

@@ -40,6 +40,7 @@ enum CoinSpendActionValue {
   aiGeneration,
   premiumFilter,
   premiumPreview24h,
+  streakFreeze,
 }
 
 enum AiChargeModeValue { freeTrial, proIncluded, coinSpend, insufficient }
@@ -145,7 +146,7 @@ enum NotificationTypeValue { route, externalUrl, unknown }
 
 enum AuthMethodValue { google, apple }
 
-enum NavTabValue { home, search, setups, ai, profile }
+enum NavTabValue { home, search, setups, ai, streak, profile }
 
 enum NotificationPreferenceValue { followers, posts, inApp, recommendations, streakReminders }
 
@@ -323,6 +324,8 @@ extension CoinSpendActionValueX on CoinSpendActionValue {
         return 'premium_filter';
       case CoinSpendActionValue.premiumPreview24h:
         return 'premium_preview_24h';
+      case CoinSpendActionValue.streakFreeze:
+        return 'streak_freeze';
     }
   }
 }
@@ -654,6 +657,8 @@ extension NavTabValueX on NavTabValue {
         return 'setups';
       case NavTabValue.ai:
         return 'ai';
+      case NavTabValue.streak:
+        return 'streak';
       case NavTabValue.profile:
         return 'profile';
     }
@@ -860,6 +865,8 @@ CoinSpendActionValue coinSpendActionValueFromDomain(CoinSpendAction action) {
       return CoinSpendActionValue.premiumFilter;
     case CoinSpendAction.premiumPreview24h:
       return CoinSpendActionValue.premiumPreview24h;
+    case CoinSpendAction.streakFreeze:
+      return CoinSpendActionValue.streakFreeze;
   }
 }
 

@@ -17,7 +17,9 @@ class CoinPolicy {
   // Spend
   static const int wallpaperDownload = 5;
   static const int premiumWallpaperDownload = 15;
-  static const int aiGeneration = 20;
+  static const int aiGenerationFast = 10;
+  static const int aiGenerationBalanced = 50;
+  static const int aiGenerationQuality = 100;
   static const int premiumFilter = 5;
   static const int premiumPreview24h = 10;
 
@@ -47,4 +49,8 @@ class CoinPolicy {
   static int streakTotalRewardForDay(int day) {
     return streakDailyRewardForDay(day) + streakBonusRewardForDay(day);
   }
+
+  // Pro streak bonus: added on top of base daily reward
+  static const int proStreakDailyBonus = 5;
+  static const int proStreak7Bonus = 20;
 }

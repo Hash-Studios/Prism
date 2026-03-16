@@ -76,6 +76,38 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
   }
 
   @override
+  Future<Result<List<PrismWallpaper>>> fetchStreakShopWallpapers() async {
+    try {
+      final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
+        const FirestoreQuerySpec(
+          collection: FirebaseCollections.walls,
+          sourceTag: 'PrismWallpaperRepository.fetchStreakShop',
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'isStreakExclusive', op: FirestoreFilterOp.isEqualTo, value: true),
+          ],
+          limit: 50,
+          dedupeWindowMs: 1000,
+        ),
+        (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
+      );
+      final List<PrismWallpaper> walls = rows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
+      walls.sort((a, b) {
+        final aDays = a.requiredStreakDays ?? 999;
+        final bDays = b.requiredStreakDays ?? 999;
+        return aDays.compareTo(bDays);
+      });
+      logger.d(
+        '[PrismWallpaperRepository] fetchStreakShopWallpapers',
+        fields: <String, Object?>{'count': walls.length},
+      );
+      return Result.success(walls);
+    } catch (error, stackTrace) {
+      logger.e('[PrismWallpaperRepository] fetchStreakShopWallpapers failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure('Failed to fetch streak shop: $error'));
+    }
+  }
+
+  @override
   Future<Result<PrismWallpaper?>> fetchById(String id) async {
     try {
       final List<_PrismRow> results = await _firestoreClient.query<_PrismRow>(

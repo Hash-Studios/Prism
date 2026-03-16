@@ -35,7 +35,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return AutoTabsRouter(
-      routes: const [HomeTabRoute(), SearchTabRoute(), ProfileTabRoute()],
+      routes: const [HomeTabRoute(), SearchTabRoute(), StreakTabRoute(), ProfileTabRoute()],
       builder: (context, child) {
         final tabsRouter = AutoTabsRouter.of(context);
         return PopScope(

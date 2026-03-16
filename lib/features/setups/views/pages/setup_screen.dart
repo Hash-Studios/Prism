@@ -1,7 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/premiumBanners/setupOld.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
@@ -95,7 +94,6 @@ class _SetupPageState extends State<_SetupPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const CoinBalanceChip(sourceTag: 'coins.chip.setup_screen'),
                   ],
                 ),
               ),
