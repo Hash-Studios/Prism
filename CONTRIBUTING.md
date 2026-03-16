@@ -23,39 +23,8 @@ When introducing a new secret, update all three:
 Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
 
 1. Fork the repo and create your branch from `master`.
-2. You need to create a file called gitkey.dart with the following syntax that stores the Personal Access Token for the GitHub Repository where you want to save your uploaded wallpapers.
-
-[You can follow this tutorial to create token.](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
-
-Then you need to create a new repository for storing community wallpapers and remember its name. Then you need to create a new repository for storing community setups and remember its name. Then you need to create a new repository for storing views, and other data and remember its name.
-
-Then you need to get the FCM Server token from Firebase, to push notifications. You can get it from your Firebase project. Open Firebase console, then select your project. Then select Project settings, and in the Cloud Messaging tab, select Server Key. This is the FCM Server Token.
-
-You also need to create a Revenuecat account for purchases regarding Prism Premium. You can follow tutorial [here](https://docs.revenuecat.com/docs/welcome). You can skip it entirely, if you don't need premium option in the app.
-
-And last you need pexels API key, to show wallpapers from their site. Request one [here](https://www.pexels.com/api/).
-
-We are also using 9 images, which are shown to user in onboarding screen. You can put sample image links there, or leave it as it is.
-```
-const String token = 'github-personal-access-token';
-const String gitUserName = 'github-username';
-const String repoName = 'wallpapers-repository-name';
-const String repoName2 = 'setups-repository-name';
-const String repoName3 = 'views-repository-name';
-const String apiKey = 'revenuecat-payments-api-key';
-String pexelApiKey = 'pexels-api-key';
-const String fcmServerToken = 'FCM-server-token';
-const String user1Image1 = "";
-const String user1Image2 = "";
-const String user1Image3 = "";
-const String user2Image1 = "";
-const String user2Image2 = "";
-const String user2Image3 = "";
-const String user3Image1 = "";
-const String user3Image2 = "";
-const String user3Image3 = "";
-```
-3. You also need to create a Firebase project, download the google-services.json to `android/app/` directory. Then enable Cloud Firestore, and create a schema like this -
+2. Set up secrets via Doppler — all runtime secrets (API keys, tokens) are managed through Doppler, not local files. Run `make setup-dev` after getting Doppler access. See [README → Secrets with Doppler](README.md#secrets-with-doppler) and [`docs/development/doppler.md`](docs/development/doppler.md) for details.
+3. You also need to create a Firebase project, download the `google-services.json` to `android/app/` (and `GoogleService-Info.plist` to `ios/Runner/`). Then enable Cloud Firestore, and create a schema like this -
 ```
 .
 ├── notifications
@@ -142,57 +111,16 @@ service cloud.firestore {
 ```
 The project also uses composite indexes, which will be automatically created from the links Firebase provides in errors.
 
-Then you need to enable Firebase Remote Config, and add these parameters - 
-```
-Name - bannerTextOn
-Description - Top banner text on/off!
-Value - true/false
+Then you need to enable Firebase Remote Config. The app reads remote flags for features like verified users, premium collections, and dynamic categories. Check `lib/core/firestore/` and the app's Remote Config usage for the current parameter names — the exact list evolves with each release.
 
-Name - obsoleteVersion
-Description - All apps before this version are obsolete!
-Value - 2.6.0
+You also need to turn on Authentication, Cloud Messaging, and Analytics. To set up Authentication, add your debug signing keys in Firebase (see Firebase Console → Project settings → Your apps).
 
-Name - latestCategories
-Description - Categories for v2.6.3 & above!
-Value - [   {     "name": "Community",     "provider": "Prism",     "type": "non-search",     "image": "https://images.pexels.com/photos/3280130/pexels-photo-3280130.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Curated",     "provider": "Pexels",     "type": "non-search",     "image": "https://images.pexels.com/photos/1389460/pexels-photo-1389460.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Popular",     "provider": "WallHaven",     "type": "non-search",     "image": "https://images.pexels.com/photos/3848886/pexels-photo-3848886.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Cyberpunk",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/4904566/pexels-photo-4904566.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Artwork",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/1781710/pexels-photo-1781710.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Nature",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/807598/pexels-photo-807598.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "4K",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/4328961/pexels-photo-4328961.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Minimalism",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/973506/pexels-photo-973506.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Pattern",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/1493226/pexels-photo-1493226.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Blur",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/2888331/pexels-photo-2888331.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Anime",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/1049622/pexels-photo-1049622.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Textures",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/220634/pexels-photo-220634.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Technology",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/1714208/pexels-photo-1714208.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Monochrome",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/301614/pexels-photo-301614.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Fractal",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/5619761/pexels-photo-5619761.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Space",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/1169754/pexels-photo-1169754.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Cars",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/3311574/pexels-photo-3311574.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Animals",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/567540/pexels-photo-567540.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Skyscape",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/66997/pexels-photo-66997.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Neon",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/2917442/pexels-photo-2917442.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Science Fiction",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/4355348/pexels-photo-4355348.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Waves",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/355288/pexels-photo-355288.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Marvel",     "provider": "WallHaven",     "type": "search",     "image": "https://images.pexels.com/photos/4048093/pexels-photo-4048093.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   },   {     "name": "Portrait",     "provider": "Pexels",     "type": "search",     "image": "https://images.pexels.com/photos/3404200/pexels-photo-3404200.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940"   }, ]
-
-Name - verifiedUsers
-Description - Which users are verified!
-Value - ["someuser@gmail.com","someanotheuser@gmail.com",]
-
-Name - bannerURL
-Description - Link for the top banner in home
-Value - https://t.me/PrismWallpapers
-
-Name - bannerText
-Description - Text for the top banner in home
-Value - Join us on Telegram
-
-Name - topImageLink
-Description - Link for the top banner image in home
-Value - https://some.image.link
-
-Name - premiumCollections
-Description - Name of the premium collections
-Value - ["mesh gradients","dreamy","renders","faces","layers","flow",]
-
-Name - topImageLink
-Description - Link for the top banner image in home
-Value - https://some.image.link
-
-Name - currentVersion
-Description - Current version of the app available to the public
-Value - 2.6.4
-```
-These are demo values, and you can change them whenever you want. We have set the expiry time to be 6 hours, you can change it to whatever you want.
-You also need to turn on Authentication, Dynamic Links, Cloud Messaging, Analytics.
-And to setup up Authentication, you also need to put your debug signing keys in Firebase, which you can find tutorials on the Internet.
-
-4. If you've added code that should be tested, add tests.
-5. If you've changed APIs, update the documentation.
-6. Ensure the test suite passes.
-7. Make sure your code lints.
-8. Issue that pull request!
+4. Run `make file-gen` after making changes to models, routes, or DI registrations to regenerate `freezed`, `auto_route`, and `injectable` code.
+5. If you've added code that should be tested, add tests.
+6. If you've changed APIs, update the documentation.
+7. Ensure the test suite passes (`make test`).
+8. Make sure your code passes linting (`make analyze`) and formatting (`make format-check`).
+9. Issue that pull request!
 
 ## Any contributions you make will be under the BSD-3 Software License
 In short, when you submit code changes, your submissions are understood to be under the same [BSD-3 License](https://choosealicense.com/licenses/bsd-3-clause/) that covers the project. Feel free to contact the maintainers if that's a concern.
@@ -214,7 +142,12 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 People *love* thorough bug reports. We're not even kidding.
 
 ## Use a Consistent Coding Style
-* Use DART formatter
+
+- Run `make format-check` before submitting a PR (checks Dart formatting)
+- Run `make analyze` for static analysis — fix all warnings before submitting
+- Run `make test` to ensure all unit and widget tests pass
+- Run `make env-guard` to verify that `String.fromEnvironment` calls only appear in `lib/env/env.dart`
+- Run `make analytics-check` if you've added or changed analytics events (regenerates and validates the analytics schema)
 
 ## License
 By contributing, you agree that your contributions will be licensed under its BSD-3 License.
