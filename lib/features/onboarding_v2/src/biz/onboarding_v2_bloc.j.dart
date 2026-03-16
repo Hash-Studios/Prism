@@ -356,5 +356,4 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       emit(state.copyWith(step: prevStep, navRequest: null));
     }
   }
-
 }
