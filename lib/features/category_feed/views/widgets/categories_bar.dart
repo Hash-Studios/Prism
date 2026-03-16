@@ -3,7 +3,6 @@ import 'package:Prism/core/persistence/data_sources/notifications_local_data_sou
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -154,12 +153,7 @@ class _CategoriesBarState extends State<CategoriesBar> {
           ),
         ),
       ),
-      actions: const [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 10),
-          child: CoinBalanceChip(sourceTag: 'coins.chip.categories_bar'),
-        ),
-      ],
+      actions: const [],
     );
   }
 }

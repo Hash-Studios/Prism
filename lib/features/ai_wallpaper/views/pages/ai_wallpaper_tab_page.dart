@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -38,6 +37,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   final FocusNode _promptFocus = FocusNode();
 
   AiStylePreset _selectedStyle = AiStylePreset.abstract;
+  AiQualityTier _selectedQualityTier = AiQualityTier.fast;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
   AiGenerationRecord? _latest;
 
@@ -281,13 +281,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
     setState(() => _loadingGeneration = true);
 
-    final reservation = await CoinsService.instance.reserveForAiGeneration(sourceTag: 'coins.reserve.ai_screen');
+    final reservation = await CoinsService.instance.reserveForAiGeneration(
+      qualityTier: _selectedQualityTier,
+      sourceTag: 'coins.reserve.ai_screen',
+    );
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
-        requiredCoins: CoinPolicy.aiGeneration,
+        requiredCoins: _selectedQualityTier.coinCost,
       );
-      toasts.error('Need ${CoinPolicy.aiGeneration} coins or Pro to generate.');
+      toasts.error('Need ${_selectedQualityTier.coinCost} coins to generate.');
       setState(() => _loadingGeneration = false);
       return;
     }
@@ -295,7 +298,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     analytics.track(
       AiGenerateStartedEvent(
         style: _selectedStyle.apiValue,
-        quality: AiQualityTier.fast.apiValue,
+        quality: _selectedQualityTier.apiValue,
         mode: aiChargeModeValueFromDomain(reservation.mode),
       ),
     );
@@ -311,7 +314,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           : await _repository.generate(
               prompt: prompt,
               stylePreset: _selectedStyle,
-              qualityTier: AiQualityTier.fast,
+              qualityTier: _selectedQualityTier,
               targetSize: targetSize!,
               chargeMode: reservation.mode,
               coinsSpent: reservation.coinsSpent,
@@ -362,6 +365,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         reservation.mode,
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
+        coinsToRefund: _selectedQualityTier.coinCost,
       );
       analytics.track(
         AiGenerateFailedEvent(error: error.toString(), mode: aiChargeModeValueFromDomain(reservation.mode)),
@@ -658,60 +662,51 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  int get _freeRemaining {
-    final int used = CoinsService.instance.aiFreeUsedNotifier.value;
-    return (3 - used).clamp(0, 3);
-  }
-
   // ── UI builders ──────────────────────────────────────────────────────────
 
-  Widget _buildFreeBanner(int freeRemaining, bool isPro) {
-    if (isPro) return const SizedBox.shrink();
-    final theme = Theme.of(context);
-    if (freeRemaining > 0) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF7C4DFF).withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF7C4DFF).withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: <Widget>[
-            const Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C4DFF), size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                '$freeRemaining free generation${freeRemaining == 1 ? '' : 's'} remaining',
-                style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF7C4DFF), fontWeight: FontWeight.w700),
+  Widget _buildQualitySelector() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: AiQualityTier.values.map((tier) {
+          final bool selected = tier == _selectedQualityTier;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: GestureDetector(
+                onTap: () => setState(() => _selectedQualityTier = tier),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected ? const Color(0xFF7C4DFF).withValues(alpha: 0.25) : Theme.of(context).hintColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: selected ? const Color(0xFF7C4DFF) : Colors.transparent, width: 2),
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Text(
+                        tier.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: selected ? const Color(0xFF7C4DFF) : Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      Text(
+                        '${tier.coinCost}c',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
-      );
-    }
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
-      ),
-      child: Row(
-        children: <Widget>[
-          const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Free tries used · Watch an ad or go Pro',
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.amber.shade700, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }
@@ -996,16 +991,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  Widget _buildGenerateButton(bool canUseAi, bool loading, int freeRemaining, bool isPro, int coinBalance) {
+  Widget _buildGenerateButton(bool canUseAi, bool loading, int coinBalance) {
+    final int cost = _selectedQualityTier.coinCost;
     final String label;
     if (loading) {
       label = 'Crafting your wallpaper…';
-    } else if (!isPro && freeRemaining > 0) {
-      label = 'Generate  ·  Free ($freeRemaining left)';
-    } else if (isPro) {
-      label = 'Generate';
-    } else if (coinBalance >= CoinPolicy.aiGeneration) {
-      label = 'Generate  ·  ${CoinPolicy.aiGeneration} coins';
+    } else if (coinBalance >= cost) {
+      label = 'Generate  ·  $cost coins';
     } else {
       label = 'Watch Ad to Earn Coins';
     }
@@ -1105,9 +1097,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   @override
   Widget build(BuildContext context) {
     final bool canUseAi = _isRolloutEligible;
-    final bool isPro = app_state.prismUser.premium;
     final int coinBalance = CoinsService.instance.balanceNotifier.value;
-    final int freeRemaining = _freeRemaining;
     final AiGenerationRecord? current = _latest;
     final bool canPop = Navigator.of(context).canPop();
 
@@ -1116,12 +1106,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       appBar: AppBar(
         automaticallyImplyLeading: canPop,
         title: const Text('Generate'),
-        actions: <Widget>[
-          if (_isLoggedIn)
-            const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: Center(child: CoinBalanceChip(sourceTag: 'coins.chip.ai_tab')),
-            ),
+        actions: const <Widget>[
+          CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -1151,9 +1138,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     ),
                   ),
 
-                // Free trial banner
-                _buildFreeBanner(freeRemaining, isPro),
-
                 // Result area
                 _buildResultArea(current, _loadingGeneration),
                 const SizedBox(height: 12),
@@ -1165,12 +1149,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 _buildStylePicker(),
                 const SizedBox(height: 16),
 
+                // Quality selector
+                _buildQualitySelector(),
+
                 // Prompt area
                 _buildPromptArea(_loadingGeneration),
                 const SizedBox(height: 16),
 
                 // Generate button
-                _buildGenerateButton(canUseAi, _loadingGeneration, freeRemaining, isPro, coinBalance),
+                _buildGenerateButton(canUseAi, _loadingGeneration, coinBalance),
 
                 // History strip
                 _buildHistoryStrip(),

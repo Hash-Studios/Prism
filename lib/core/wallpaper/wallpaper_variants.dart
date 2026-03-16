@@ -3,13 +3,25 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 
 final class PrismWallpaper {
-  const PrismWallpaper({required this.core, this.collections, this.review, this.tags, this.aiMetadata});
+  const PrismWallpaper({
+    required this.core,
+    this.collections,
+    this.review,
+    this.tags,
+    this.aiMetadata,
+    this.isStreakExclusive = false,
+    this.requiredStreakDays,
+    this.streakShopCoinCost,
+  });
 
   final WallpaperCore core;
   final List<String>? collections;
   final bool? review;
   final List<String>? tags;
   final JsonMap? aiMetadata;
+  final bool isStreakExclusive;
+  final int? requiredStreakDays;
+  final int? streakShopCoinCost;
 
   String get id => core.id;
   WallpaperSource get source => core.source;

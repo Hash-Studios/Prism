@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PrismWallDocDto {
 
-@FirestoreStringConverter() String get id;@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String get wallpaperUrl;@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String get wallpaperThumb;@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String get wallpaperProvider;@FirestoreStringConverter() String get resolution;@JsonKey(name: 'file_size') int? get fileSize;@FirestoreDateTimeConverter() DateTime? get createdAt;@JsonKey(name: 'uploadedBy')@FirestoreStringConverter() String get uploadedBy;@FirestoreStringConverter() String get desc;@FirestoreStringListConverter() List<String> get collections;@FirestoreStringListConverter() List<String> get tags; bool get review;@JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() Map<String, Object?> get aiMetadata;
+@FirestoreStringConverter() String get id;@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String get wallpaperUrl;@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String get wallpaperThumb;@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String get wallpaperProvider;@FirestoreStringConverter() String get resolution;@JsonKey(name: 'file_size') int? get fileSize;@FirestoreDateTimeConverter() DateTime? get createdAt;@JsonKey(name: 'uploadedBy')@FirestoreStringConverter() String get uploadedBy;@FirestoreStringConverter() String get desc;@FirestoreStringListConverter() List<String> get collections;@FirestoreStringListConverter() List<String> get tags; bool get review;@JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() Map<String, Object?> get aiMetadata;@JsonKey(name: 'is_streak_exclusive') bool get isStreakExclusive;@JsonKey(name: 'required_streak_days') int? get requiredStreakDays;@JsonKey(name: 'streak_shop_coin_cost') int? get streakShopCoinCost;
 /// Create a copy of PrismWallDocDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $PrismWallDocDtoCopyWith<PrismWallDocDto> get copyWith => _$PrismWallDocDtoCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PrismWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uploadedBy, uploadedBy) || other.uploadedBy == uploadedBy)&&(identical(other.desc, desc) || other.desc == desc)&&const DeepCollectionEquality().equals(other.collections, collections)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other.aiMetadata, aiMetadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PrismWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uploadedBy, uploadedBy) || other.uploadedBy == uploadedBy)&&(identical(other.desc, desc) || other.desc == desc)&&const DeepCollectionEquality().equals(other.collections, collections)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other.aiMetadata, aiMetadata)&&(identical(other.isStreakExclusive, isStreakExclusive) || other.isStreakExclusive == isStreakExclusive)&&(identical(other.requiredStreakDays, requiredStreakDays) || other.requiredStreakDays == requiredStreakDays)&&(identical(other.streakShopCoinCost, streakShopCoinCost) || other.streakShopCoinCost == streakShopCoinCost));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,wallpaperUrl,wallpaperThumb,wallpaperProvider,resolution,fileSize,createdAt,uploadedBy,desc,const DeepCollectionEquality().hash(collections),const DeepCollectionEquality().hash(tags),review,const DeepCollectionEquality().hash(aiMetadata));
+int get hashCode => Object.hash(runtimeType,id,wallpaperUrl,wallpaperThumb,wallpaperProvider,resolution,fileSize,createdAt,uploadedBy,desc,const DeepCollectionEquality().hash(collections),const DeepCollectionEquality().hash(tags),review,const DeepCollectionEquality().hash(aiMetadata),isStreakExclusive,requiredStreakDays,streakShopCoinCost);
 
 @override
 String toString() {
-  return 'PrismWallDocDto(id: $id, wallpaperUrl: $wallpaperUrl, wallpaperThumb: $wallpaperThumb, wallpaperProvider: $wallpaperProvider, resolution: $resolution, fileSize: $fileSize, createdAt: $createdAt, uploadedBy: $uploadedBy, desc: $desc, collections: $collections, tags: $tags, review: $review, aiMetadata: $aiMetadata)';
+  return 'PrismWallDocDto(id: $id, wallpaperUrl: $wallpaperUrl, wallpaperThumb: $wallpaperThumb, wallpaperProvider: $wallpaperProvider, resolution: $resolution, fileSize: $fileSize, createdAt: $createdAt, uploadedBy: $uploadedBy, desc: $desc, collections: $collections, tags: $tags, review: $review, aiMetadata: $aiMetadata, isStreakExclusive: $isStreakExclusive, requiredStreakDays: $requiredStreakDays, streakShopCoinCost: $streakShopCoinCost)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $PrismWallDocDtoCopyWith<$Res>  {
   factory $PrismWallDocDtoCopyWith(PrismWallDocDto value, $Res Function(PrismWallDocDto) _then) = _$PrismWallDocDtoCopyWithImpl;
 @useResult
 $Res call({
-@FirestoreStringConverter() String id,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@FirestoreStringConverter() String resolution,@JsonKey(name: 'file_size') int? fileSize,@FirestoreDateTimeConverter() DateTime? createdAt,@JsonKey(name: 'uploadedBy')@FirestoreStringConverter() String uploadedBy,@FirestoreStringConverter() String desc,@FirestoreStringListConverter() List<String> collections,@FirestoreStringListConverter() List<String> tags, bool review,@JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() Map<String, Object?> aiMetadata
+@FirestoreStringConverter() String id,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@FirestoreStringConverter() String resolution,@JsonKey(name: 'file_size') int? fileSize,@FirestoreDateTimeConverter() DateTime? createdAt,@JsonKey(name: 'uploadedBy')@FirestoreStringConverter() String uploadedBy,@FirestoreStringConverter() String desc,@FirestoreStringListConverter() List<String> collections,@FirestoreStringListConverter() List<String> tags, bool review,@JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() Map<String, Object?> aiMetadata,@JsonKey(name: 'is_streak_exclusive') bool isStreakExclusive,@JsonKey(name: 'required_streak_days') int? requiredStreakDays,@JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost
 });
 
 
@@ -65,7 +65,7 @@ class _$PrismWallDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of PrismWallDocDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? wallpaperUrl = null,Object? wallpaperThumb = null,Object? wallpaperProvider = null,Object? resolution = null,Object? fileSize = freezed,Object? createdAt = freezed,Object? uploadedBy = null,Object? desc = null,Object? collections = null,Object? tags = null,Object? review = null,Object? aiMetadata = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? wallpaperUrl = null,Object? wallpaperThumb = null,Object? wallpaperProvider = null,Object? resolution = null,Object? fileSize = freezed,Object? createdAt = freezed,Object? uploadedBy = null,Object? desc = null,Object? collections = null,Object? tags = null,Object? review = null,Object? aiMetadata = null,Object? isStreakExclusive = null,Object? requiredStreakDays = freezed,Object? streakShopCoinCost = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUrl // ignore: cast_nullable_to_non_nullable
@@ -80,7 +80,10 @@ as String,collections: null == collections ? _self.collections : collections // 
 as List<String>,tags: null == tags ? _self.tags : tags // ignore: cast_nullable_to_non_nullable
 as List<String>,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
 as bool,aiMetadata: null == aiMetadata ? _self.aiMetadata : aiMetadata // ignore: cast_nullable_to_non_nullable
-as Map<String, Object?>,
+as Map<String, Object?>,isStreakExclusive: null == isStreakExclusive ? _self.isStreakExclusive : isStreakExclusive // ignore: cast_nullable_to_non_nullable
+as bool,requiredStreakDays: freezed == requiredStreakDays ? _self.requiredStreakDays : requiredStreakDays // ignore: cast_nullable_to_non_nullable
+as int?,streakShopCoinCost: freezed == streakShopCoinCost ? _self.streakShopCoinCost : streakShopCoinCost // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 
@@ -165,10 +168,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @FirestoreStringConverter()  String resolution, @JsonKey(name: 'file_size')  int? fileSize, @FirestoreDateTimeConverter()  DateTime? createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter()  String uploadedBy, @FirestoreStringConverter()  String desc, @FirestoreStringListConverter()  List<String> collections, @FirestoreStringListConverter()  List<String> tags,  bool review, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter()  Map<String, Object?> aiMetadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @FirestoreStringConverter()  String resolution, @JsonKey(name: 'file_size')  int? fileSize, @FirestoreDateTimeConverter()  DateTime? createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter()  String uploadedBy, @FirestoreStringConverter()  String desc, @FirestoreStringListConverter()  List<String> collections, @FirestoreStringListConverter()  List<String> tags,  bool review, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter()  Map<String, Object?> aiMetadata, @JsonKey(name: 'is_streak_exclusive')  bool isStreakExclusive, @JsonKey(name: 'required_streak_days')  int? requiredStreakDays, @JsonKey(name: 'streak_shop_coin_cost')  int? streakShopCoinCost)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PrismWallDocDto() when $default != null:
-return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaperProvider,_that.resolution,_that.fileSize,_that.createdAt,_that.uploadedBy,_that.desc,_that.collections,_that.tags,_that.review,_that.aiMetadata);case _:
+return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaperProvider,_that.resolution,_that.fileSize,_that.createdAt,_that.uploadedBy,_that.desc,_that.collections,_that.tags,_that.review,_that.aiMetadata,_that.isStreakExclusive,_that.requiredStreakDays,_that.streakShopCoinCost);case _:
   return orElse();
 
 }
@@ -186,10 +189,10 @@ return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaper
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @FirestoreStringConverter()  String resolution, @JsonKey(name: 'file_size')  int? fileSize, @FirestoreDateTimeConverter()  DateTime? createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter()  String uploadedBy, @FirestoreStringConverter()  String desc, @FirestoreStringListConverter()  List<String> collections, @FirestoreStringListConverter()  List<String> tags,  bool review, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter()  Map<String, Object?> aiMetadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@FirestoreStringConverter()  String id, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @FirestoreStringConverter()  String resolution, @JsonKey(name: 'file_size')  int? fileSize, @FirestoreDateTimeConverter()  DateTime? createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter()  String uploadedBy, @FirestoreStringConverter()  String desc, @FirestoreStringListConverter()  List<String> collections, @FirestoreStringListConverter()  List<String> tags,  bool review, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter()  Map<String, Object?> aiMetadata, @JsonKey(name: 'is_streak_exclusive')  bool isStreakExclusive, @JsonKey(name: 'required_streak_days')  int? requiredStreakDays, @JsonKey(name: 'streak_shop_coin_cost')  int? streakShopCoinCost)  $default,) {final _that = this;
 switch (_that) {
 case _PrismWallDocDto():
-return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaperProvider,_that.resolution,_that.fileSize,_that.createdAt,_that.uploadedBy,_that.desc,_that.collections,_that.tags,_that.review,_that.aiMetadata);case _:
+return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaperProvider,_that.resolution,_that.fileSize,_that.createdAt,_that.uploadedBy,_that.desc,_that.collections,_that.tags,_that.review,_that.aiMetadata,_that.isStreakExclusive,_that.requiredStreakDays,_that.streakShopCoinCost);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +209,10 @@ return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaper
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @FirestoreStringConverter()  String resolution, @JsonKey(name: 'file_size')  int? fileSize, @FirestoreDateTimeConverter()  DateTime? createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter()  String uploadedBy, @FirestoreStringConverter()  String desc, @FirestoreStringListConverter()  List<String> collections, @FirestoreStringListConverter()  List<String> tags,  bool review, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter()  Map<String, Object?> aiMetadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@FirestoreStringConverter()  String id, @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter()  String wallpaperUrl, @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter()  String wallpaperThumb, @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter()  String wallpaperProvider, @FirestoreStringConverter()  String resolution, @JsonKey(name: 'file_size')  int? fileSize, @FirestoreDateTimeConverter()  DateTime? createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter()  String uploadedBy, @FirestoreStringConverter()  String desc, @FirestoreStringListConverter()  List<String> collections, @FirestoreStringListConverter()  List<String> tags,  bool review, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter()  Map<String, Object?> aiMetadata, @JsonKey(name: 'is_streak_exclusive')  bool isStreakExclusive, @JsonKey(name: 'required_streak_days')  int? requiredStreakDays, @JsonKey(name: 'streak_shop_coin_cost')  int? streakShopCoinCost)?  $default,) {final _that = this;
 switch (_that) {
 case _PrismWallDocDto() when $default != null:
-return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaperProvider,_that.resolution,_that.fileSize,_that.createdAt,_that.uploadedBy,_that.desc,_that.collections,_that.tags,_that.review,_that.aiMetadata);case _:
+return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaperProvider,_that.resolution,_that.fileSize,_that.createdAt,_that.uploadedBy,_that.desc,_that.collections,_that.tags,_that.review,_that.aiMetadata,_that.isStreakExclusive,_that.requiredStreakDays,_that.streakShopCoinCost);case _:
   return null;
 
 }
@@ -221,7 +224,7 @@ return $default(_that.id,_that.wallpaperUrl,_that.wallpaperThumb,_that.wallpaper
 @JsonSerializable()
 
 class _PrismWallDocDto implements PrismWallDocDto {
-  const _PrismWallDocDto({@FirestoreStringConverter() this.id = '', @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() this.wallpaperUrl = '', @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() this.wallpaperThumb = '', @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() this.wallpaperProvider = '', @FirestoreStringConverter() this.resolution = '', @JsonKey(name: 'file_size') this.fileSize, @FirestoreDateTimeConverter() this.createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter() this.uploadedBy = '', @FirestoreStringConverter() this.desc = '', @FirestoreStringListConverter() final  List<String> collections = const <String>[], @FirestoreStringListConverter() final  List<String> tags = const <String>[], this.review = false, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() final  Map<String, Object?> aiMetadata = const <String, Object?>{}}): _collections = collections,_tags = tags,_aiMetadata = aiMetadata;
+  const _PrismWallDocDto({@FirestoreStringConverter() this.id = '', @JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() this.wallpaperUrl = '', @JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() this.wallpaperThumb = '', @JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() this.wallpaperProvider = '', @FirestoreStringConverter() this.resolution = '', @JsonKey(name: 'file_size') this.fileSize, @FirestoreDateTimeConverter() this.createdAt, @JsonKey(name: 'uploadedBy')@FirestoreStringConverter() this.uploadedBy = '', @FirestoreStringConverter() this.desc = '', @FirestoreStringListConverter() final  List<String> collections = const <String>[], @FirestoreStringListConverter() final  List<String> tags = const <String>[], this.review = false, @JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() final  Map<String, Object?> aiMetadata = const <String, Object?>{}, @JsonKey(name: 'is_streak_exclusive') this.isStreakExclusive = false, @JsonKey(name: 'required_streak_days') this.requiredStreakDays, @JsonKey(name: 'streak_shop_coin_cost') this.streakShopCoinCost}): _collections = collections,_tags = tags,_aiMetadata = aiMetadata;
   factory _PrismWallDocDto.fromJson(Map<String, dynamic> json) => _$PrismWallDocDtoFromJson(json);
 
 @override@JsonKey()@FirestoreStringConverter() final  String id;
@@ -255,6 +258,9 @@ class _PrismWallDocDto implements PrismWallDocDto {
   return EqualUnmodifiableMapView(_aiMetadata);
 }
 
+@override@JsonKey(name: 'is_streak_exclusive') final  bool isStreakExclusive;
+@override@JsonKey(name: 'required_streak_days') final  int? requiredStreakDays;
+@override@JsonKey(name: 'streak_shop_coin_cost') final  int? streakShopCoinCost;
 
 /// Create a copy of PrismWallDocDto
 /// with the given fields replaced by the non-null parameter values.
@@ -269,16 +275,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PrismWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uploadedBy, uploadedBy) || other.uploadedBy == uploadedBy)&&(identical(other.desc, desc) || other.desc == desc)&&const DeepCollectionEquality().equals(other._collections, _collections)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other._aiMetadata, _aiMetadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PrismWallDocDto&&(identical(other.id, id) || other.id == id)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperProvider, wallpaperProvider) || other.wallpaperProvider == wallpaperProvider)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.uploadedBy, uploadedBy) || other.uploadedBy == uploadedBy)&&(identical(other.desc, desc) || other.desc == desc)&&const DeepCollectionEquality().equals(other._collections, _collections)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.review, review) || other.review == review)&&const DeepCollectionEquality().equals(other._aiMetadata, _aiMetadata)&&(identical(other.isStreakExclusive, isStreakExclusive) || other.isStreakExclusive == isStreakExclusive)&&(identical(other.requiredStreakDays, requiredStreakDays) || other.requiredStreakDays == requiredStreakDays)&&(identical(other.streakShopCoinCost, streakShopCoinCost) || other.streakShopCoinCost == streakShopCoinCost));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,wallpaperUrl,wallpaperThumb,wallpaperProvider,resolution,fileSize,createdAt,uploadedBy,desc,const DeepCollectionEquality().hash(_collections),const DeepCollectionEquality().hash(_tags),review,const DeepCollectionEquality().hash(_aiMetadata));
+int get hashCode => Object.hash(runtimeType,id,wallpaperUrl,wallpaperThumb,wallpaperProvider,resolution,fileSize,createdAt,uploadedBy,desc,const DeepCollectionEquality().hash(_collections),const DeepCollectionEquality().hash(_tags),review,const DeepCollectionEquality().hash(_aiMetadata),isStreakExclusive,requiredStreakDays,streakShopCoinCost);
 
 @override
 String toString() {
-  return 'PrismWallDocDto(id: $id, wallpaperUrl: $wallpaperUrl, wallpaperThumb: $wallpaperThumb, wallpaperProvider: $wallpaperProvider, resolution: $resolution, fileSize: $fileSize, createdAt: $createdAt, uploadedBy: $uploadedBy, desc: $desc, collections: $collections, tags: $tags, review: $review, aiMetadata: $aiMetadata)';
+  return 'PrismWallDocDto(id: $id, wallpaperUrl: $wallpaperUrl, wallpaperThumb: $wallpaperThumb, wallpaperProvider: $wallpaperProvider, resolution: $resolution, fileSize: $fileSize, createdAt: $createdAt, uploadedBy: $uploadedBy, desc: $desc, collections: $collections, tags: $tags, review: $review, aiMetadata: $aiMetadata, isStreakExclusive: $isStreakExclusive, requiredStreakDays: $requiredStreakDays, streakShopCoinCost: $streakShopCoinCost)';
 }
 
 
@@ -289,7 +295,7 @@ abstract mixin class _$PrismWallDocDtoCopyWith<$Res> implements $PrismWallDocDto
   factory _$PrismWallDocDtoCopyWith(_PrismWallDocDto value, $Res Function(_PrismWallDocDto) _then) = __$PrismWallDocDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@FirestoreStringConverter() String id,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@FirestoreStringConverter() String resolution,@JsonKey(name: 'file_size') int? fileSize,@FirestoreDateTimeConverter() DateTime? createdAt,@JsonKey(name: 'uploadedBy')@FirestoreStringConverter() String uploadedBy,@FirestoreStringConverter() String desc,@FirestoreStringListConverter() List<String> collections,@FirestoreStringListConverter() List<String> tags, bool review,@JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() Map<String, Object?> aiMetadata
+@FirestoreStringConverter() String id,@JsonKey(name: 'wallpaper_url')@FirestoreStringConverter() String wallpaperUrl,@JsonKey(name: 'wallpaper_thumb')@FirestoreStringConverter() String wallpaperThumb,@JsonKey(name: 'wallpaper_provider')@FirestoreStringConverter() String wallpaperProvider,@FirestoreStringConverter() String resolution,@JsonKey(name: 'file_size') int? fileSize,@FirestoreDateTimeConverter() DateTime? createdAt,@JsonKey(name: 'uploadedBy')@FirestoreStringConverter() String uploadedBy,@FirestoreStringConverter() String desc,@FirestoreStringListConverter() List<String> collections,@FirestoreStringListConverter() List<String> tags, bool review,@JsonKey(name: 'aiMetadata')@FirestoreJsonMapConverter() Map<String, Object?> aiMetadata,@JsonKey(name: 'is_streak_exclusive') bool isStreakExclusive,@JsonKey(name: 'required_streak_days') int? requiredStreakDays,@JsonKey(name: 'streak_shop_coin_cost') int? streakShopCoinCost
 });
 
 
@@ -306,7 +312,7 @@ class __$PrismWallDocDtoCopyWithImpl<$Res>
 
 /// Create a copy of PrismWallDocDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? wallpaperUrl = null,Object? wallpaperThumb = null,Object? wallpaperProvider = null,Object? resolution = null,Object? fileSize = freezed,Object? createdAt = freezed,Object? uploadedBy = null,Object? desc = null,Object? collections = null,Object? tags = null,Object? review = null,Object? aiMetadata = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? wallpaperUrl = null,Object? wallpaperThumb = null,Object? wallpaperProvider = null,Object? resolution = null,Object? fileSize = freezed,Object? createdAt = freezed,Object? uploadedBy = null,Object? desc = null,Object? collections = null,Object? tags = null,Object? review = null,Object? aiMetadata = null,Object? isStreakExclusive = null,Object? requiredStreakDays = freezed,Object? streakShopCoinCost = freezed,}) {
   return _then(_PrismWallDocDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,wallpaperUrl: null == wallpaperUrl ? _self.wallpaperUrl : wallpaperUrl // ignore: cast_nullable_to_non_nullable
@@ -321,7 +327,10 @@ as String,collections: null == collections ? _self._collections : collections //
 as List<String>,tags: null == tags ? _self._tags : tags // ignore: cast_nullable_to_non_nullable
 as List<String>,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
 as bool,aiMetadata: null == aiMetadata ? _self._aiMetadata : aiMetadata // ignore: cast_nullable_to_non_nullable
-as Map<String, Object?>,
+as Map<String, Object?>,isStreakExclusive: null == isStreakExclusive ? _self.isStreakExclusive : isStreakExclusive // ignore: cast_nullable_to_non_nullable
+as bool,requiredStreakDays: freezed == requiredStreakDays ? _self.requiredStreakDays : requiredStreakDays // ignore: cast_nullable_to_non_nullable
+as int?,streakShopCoinCost: freezed == streakShopCoinCost ? _self.streakShopCoinCost : streakShopCoinCost // ignore: cast_nullable_to_non_nullable
+as int?,
   ));
 }
 

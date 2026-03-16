@@ -1,5 +1,6 @@
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/streak_shop_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -24,15 +25,18 @@ void main() {
   test('coin spend values match revenue model', () {
     expect(CoinPolicy.wallpaperDownload, 5);
     expect(CoinPolicy.premiumWallpaperDownload, 15);
-    expect(CoinPolicy.aiGeneration, 20);
+    expect(CoinPolicy.aiGenerationFast, 10);
+    expect(CoinPolicy.aiGenerationBalanced, 50);
+    expect(CoinPolicy.aiGenerationQuality, 100);
     expect(CoinPolicy.premiumFilter, 5);
     expect(CoinPolicy.premiumPreview24h, 10);
     expect(CoinPolicy.lowBalanceNudgeThreshold, 10);
 
     expect(CoinSpendAction.wallpaperDownload.cost(), CoinPolicy.wallpaperDownload);
     expect(CoinSpendAction.premiumWallpaperDownload.cost(), CoinPolicy.premiumWallpaperDownload);
-    expect(CoinSpendAction.aiGeneration.cost(), CoinPolicy.aiGeneration);
+    expect(CoinSpendAction.aiGeneration.cost(), CoinPolicy.aiGenerationFast);
     expect(CoinSpendAction.premiumFilter.cost(), CoinPolicy.premiumFilter);
     expect(CoinSpendAction.premiumPreview24h.cost(), CoinPolicy.premiumPreview24h);
+    expect(CoinSpendAction.streakFreeze.cost(), StreakShopPolicy.streakFreezeCoins);
   });
 }

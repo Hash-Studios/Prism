@@ -1,4 +1,3 @@
-import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -26,12 +25,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
         widget.current,
         style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
       ),
-      actions: const [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-          child: CoinBalanceChip(sourceTag: 'coins.chip.heading_bar'),
-        ),
-      ],
+      actions: const [],
     );
   }
 }

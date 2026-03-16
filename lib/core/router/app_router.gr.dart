@@ -1073,6 +1073,38 @@ class SplashWidgetRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [StreakPage]
+class StreakRoute extends PageRouteInfo<void> {
+  const StreakRoute({List<PageRouteInfo>? children})
+    : super(StreakRoute.name, initialChildren: children);
+
+  static const String name = 'StreakRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const StreakPage();
+    },
+  );
+}
+
+/// generated route for
+/// [StreakTabPage]
+class StreakTabRoute extends PageRouteInfo<void> {
+  const StreakTabRoute({List<PageRouteInfo>? children})
+    : super(StreakTabRoute.name, initialChildren: children);
+
+  static const String name = 'StreakTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const StreakTabPage();
+    },
+  );
+}
+
+/// generated route for
 /// [SwipeReviewScreen]
 class SwipeReviewRoute extends PageRouteInfo<void> {
   const SwipeReviewRoute({List<PageRouteInfo>? children})

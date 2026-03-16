@@ -1737,32 +1737,6 @@ class RevenueRecordedEvent extends AnalyticsEvent {
   }
 }
 
-class AppCrashFatalEvent extends AnalyticsEvent {
-  const AppCrashFatalEvent();
-
-  @override
-  String get eventName => 'app_crash_fatal';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return const <String, Object?>{};
-  }
-}
-
-class QualityDailySnapshotEvent extends AnalyticsEvent {
-  const QualityDailySnapshotEvent({required this.crashFreeUsersPct});
-
-  final double crashFreeUsersPct;
-
-  @override
-  String get eventName => 'quality_daily_snapshot';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
-  }
-}
-
 class OnboardingV2InterestsCompletedEvent extends AnalyticsEvent {
   const OnboardingV2InterestsCompletedEvent({required this.selectedCount});
 
@@ -1842,6 +1816,32 @@ class OnboardingV2CompletedEvent extends AnalyticsEvent {
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'did_purchase': didPurchase, 'total_elapsed_ms': totalElapsedMs};
+    return <String, Object?>{'did_purchase': didPurchase ? 1 : 0, 'total_elapsed_ms': totalElapsedMs};
+  }
+}
+
+class AppCrashFatalEvent extends AnalyticsEvent {
+  const AppCrashFatalEvent();
+
+  @override
+  String get eventName => 'app_crash_fatal';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class QualityDailySnapshotEvent extends AnalyticsEvent {
+  const QualityDailySnapshotEvent({required this.crashFreeUsersPct});
+
+  final double crashFreeUsersPct;
+
+  @override
+  String get eventName => 'quality_daily_snapshot';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
   }
 }

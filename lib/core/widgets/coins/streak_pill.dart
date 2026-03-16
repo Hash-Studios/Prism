@@ -1,7 +1,8 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/coins/streak_details_sheet.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 class StreakPill extends StatelessWidget {
@@ -26,7 +27,7 @@ class StreakPill extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(999),
-            onTap: () => showStreakDetailsSheet(context),
+            onTap: () => context.router.push(const StreakRoute()),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 6 : 8),
               decoration: BoxDecoration(
