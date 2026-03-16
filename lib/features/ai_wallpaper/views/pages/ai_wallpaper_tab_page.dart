@@ -11,11 +11,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
-import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart' show AiQualityTier;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -38,7 +38,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   final FocusNode _promptFocus = FocusNode();
 
   AiStylePreset _selectedStyle = AiStylePreset.abstract;
-  AiQualityTier _selectedQuality = AiQualityTier.balanced;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
   AiGenerationRecord? _latest;
 
@@ -296,7 +295,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     analytics.track(
       AiGenerateStartedEvent(
         style: _selectedStyle.apiValue,
-        quality: _selectedQuality.apiValue,
+        quality: AiQualityTier.fast.apiValue,
         mode: aiChargeModeValueFromDomain(reservation.mode),
       ),
     );
@@ -312,7 +311,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           : await _repository.generate(
               prompt: prompt,
               stylePreset: _selectedStyle,
-              qualityTier: _selectedQuality,
+              qualityTier: AiQualityTier.fast,
               targetSize: targetSize!,
               chargeMode: reservation.mode,
               coinsSpent: reservation.coinsSpent,
@@ -443,7 +442,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
 
       final String communityId = _buildCommunityId(record.id);
-      await WallStore.createRecord(
+      await wallstore.createRecord(
         communityId,
         'Prism',
         record.watermarkedImageUrl,
@@ -495,94 +494,628 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return 'AI$suffix';
   }
 
+  // One-tap confirm submit sheet — auto-fills from prompt + style
   Future<Map<String, dynamic>?> _showSubmissionEditor(Map<String, dynamic> metadata) async {
-    final titleController = TextEditingController(text: (metadata['title'] ?? '').toString());
-    final descController = TextEditingController(text: (metadata['description'] ?? '').toString());
-    final categoryController = TextEditingController(text: (metadata['category'] ?? 'General').toString());
-    final tags = metadata['tags'] is List
+    Map<String, dynamic>? output;
+    final title = (metadata['title'] ?? '').toString().trim();
+    final desc = (metadata['description'] ?? '').toString().trim();
+    final category = (metadata['category'] ?? _selectedStyle.label).toString().trim();
+    final existingTags = metadata['tags'] is List
         ? (metadata['tags'] as List<Object?>)
               .map((Object? item) => item?.toString().trim() ?? '')
               .where((item) => item.isNotEmpty)
               .toList(growable: false)
-        : <String>[];
-    final tagsController = TextEditingController(text: tags.join(', '));
-    Map<String, dynamic>? output;
+        : <String>[_selectedStyle.apiValue];
 
-    await showDialog<void>(
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Submit AI Wallpaper'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: descController,
-                minLines: 2,
-                maxLines: 4,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: categoryController,
-                decoration: const InputDecoration(labelText: 'Category'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: tagsController,
-                decoration: const InputDecoration(labelText: 'Tags (comma-separated)'),
-              ),
-            ],
+      backgroundColor: Theme.of(context).primaryColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  height: 4,
+                  width: 32,
+                  decoration: BoxDecoration(color: Theme.of(ctx).hintColor, borderRadius: BorderRadius.circular(99)),
+                ),
+                const SizedBox(height: 16),
+                if (_latest != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 60,
+                      height: 100,
+                      child: Image.network(
+                        _latest!.displayUrl(isPremium: app_state.prismUser.premium),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Text('Submit to Community?', style: Theme.of(ctx).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                Text(
+                  '"${(title.isNotEmpty ? title : _promptController.text.trim()).split(',').first.trim()}"  ·  ${_selectedStyle.label}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    ctx,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.secondary.withValues(alpha: 0.65)),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.upload_outlined, size: 18),
+                    label: const Text('Submit'),
+                    onPressed: () {
+                      final prompt = _promptController.text.trim();
+                      final autoTags = <String>[
+                        ...prompt
+                            .split(' ')
+                            .take(3)
+                            .map((w) => w.toLowerCase().replaceAll(RegExp('[^a-z]'), ''))
+                            .where((w) => w.length > 2),
+                        ...existingTags,
+                      ];
+                      output = <String, dynamic>{
+                        'title': title.isNotEmpty ? title : prompt.split(',').first.trim(),
+                        'description': desc.isNotEmpty ? desc : prompt,
+                        'category': category.isNotEmpty ? category : _selectedStyle.label,
+                        'tags': autoTags.toSet().toList(),
+                      };
+                      Navigator.of(ctx).pop();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+              ],
+            ),
           ),
+        );
+      },
+    );
+    return output;
+  }
+
+  // Variation / advanced options sheet
+  void _showAdvancedSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).primaryColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Center(
+                    child: Container(
+                      height: 4,
+                      width: 32,
+                      decoration: BoxDecoration(
+                        color: Theme.of(ctx).hintColor,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Variation', style: Theme.of(ctx).textTheme.displaySmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Describe what to change from the last result.',
+                    style: Theme.of(
+                      ctx,
+                    ).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.secondary.withValues(alpha: 0.6)),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _variationController,
+                    minLines: 2,
+                    maxLines: 4,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Darker background, more neon, colder tones…',
+                      filled: true,
+                      fillColor: Theme.of(ctx).hintColor,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.auto_fix_high, size: 18),
+                      label: const Text('Generate Variation'),
+                      onPressed: !app_state.aiVariationsEnabled || _latest == null || _loadingGeneration
+                          ? null
+                          : () {
+                              Navigator.of(ctx).pop();
+                              _generate(variation: true);
+                            },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  int get _freeRemaining {
+    final int used = CoinsService.instance.aiFreeUsedNotifier.value;
+    return (3 - used).clamp(0, 3);
+  }
+
+  // ── UI builders ──────────────────────────────────────────────────────────
+
+  Widget _buildFreeBanner(int freeRemaining, bool isPro) {
+    if (isPro) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    if (freeRemaining > 0) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF7C4DFF).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF7C4DFF).withValues(alpha: 0.4)),
         ),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              final title = titleController.text.trim();
-              final desc = descController.text.trim();
-              final category = categoryController.text.trim();
-              final tags = tagsController.text
-                  .split(',')
-                  .map((tag) => tag.trim().toLowerCase())
-                  .where((tag) => tag.isNotEmpty)
-                  .toSet()
-                  .toList();
-              if (title.isEmpty || desc.isEmpty || category.isEmpty) {
-                toasts.error('Please complete all fields.');
-                return;
-              }
-              output = <String, dynamic>{'title': title, 'description': desc, 'category': category, 'tags': tags};
-              Navigator.of(context).pop();
-            },
-            child: const Text('Submit'),
+        child: Row(
+          children: <Widget>[
+            const Icon(Icons.auto_awesome_rounded, color: Color(0xFF7C4DFF), size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '$freeRemaining free generation${freeRemaining == 1 ? '' : 's'} remaining',
+                style: theme.textTheme.bodySmall?.copyWith(color: const Color(0xFF7C4DFF), fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(Icons.info_outline_rounded, color: Colors.amber, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Free tries used · Watch an ad or go Pro',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.amber.shade700, fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
     );
+  }
 
-    titleController.dispose();
-    descController.dispose();
-    categoryController.dispose();
-    tagsController.dispose();
-    return output;
+  Widget _buildResultArea(AiGenerationRecord? current, bool loading) {
+    final bool canSubmit =
+        current != null && current.submittedWallId == null && app_state.aiSubmitEnabled && !_submitting;
+
+    return AspectRatio(
+      aspectRatio: 9 / 16,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: loading
+              ? _buildResultShimmer(key: const ValueKey<String>('shimmer'))
+              : current == null
+              ? _buildResultPlaceholder(key: const ValueKey<String>('placeholder'))
+              : Stack(
+                  key: ValueKey<String>(current.id),
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    Image.network(
+                      current.displayUrl(isPremium: app_state.prismUser.premium),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black26),
+                    ),
+                    if (canSubmit)
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => _submitToCommunity(current),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(99)),
+                            child: const Icon(Icons.upload_outlined, color: Colors.white, size: 18),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultShimmer({Key? key}) {
+    return Container(
+      key: key,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF7C4DFF), Color(0xFF311B92)],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.3, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+            onEnd: () {
+              if (mounted) setState(() {});
+            },
+            builder: (_, v, child) => Opacity(opacity: v, child: child),
+            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white70, size: 52),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Crafting your wallpaper…',
+            style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Proxima Nova'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultPlaceholder({Key? key}) {
+    final theme = Theme.of(context);
+    return Container(
+      key: key,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            const Color(0xFF7C4DFF).withValues(alpha: 0.22),
+            const Color(0xFF311B92).withValues(alpha: 0.10),
+          ],
+        ),
+        border: Border.all(color: const Color(0xFF7C4DFF).withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(Icons.auto_awesome_rounded, size: 52, color: const Color(0xFF7C4DFF).withValues(alpha: 0.5)),
+          const SizedBox(height: 14),
+          Text(
+            'Your wallpaper appears here',
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.45)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget actionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isPrimary = false,
+  }) {
+    return Material(
+      color: isPrimary ? const Color(0xFF7C4DFF) : Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(icon, size: 22, color: isPrimary ? Colors.white : Theme.of(context).colorScheme.onSurface),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isPrimary ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionRow(AiGenerationRecord current) {
+    final bool canVary = app_state.aiVariationsEnabled && !_loadingGeneration;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: <Widget>[
+          if (!hideSetWallpaperUi)
+            actionButton(
+              icon: Icons.wallpaper_outlined,
+              label: 'Set',
+              onTap: () => _setWallpaper(current),
+              isPrimary: true,
+            ),
+          actionButton(icon: Icons.download_outlined, label: 'Save', onTap: () => _save(current)),
+          actionButton(icon: Icons.share_outlined, label: 'Share', onTap: () => _share(current)),
+          if (canVary) actionButton(icon: Icons.auto_fix_high, label: 'Vary', onTap: _showAdvancedSheet),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStylePicker() {
+    return SizedBox(
+      height: 110,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemCount: AiStylePreset.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (_, index) {
+          final style = AiStylePreset.values[index];
+          final bool selected = style == _selectedStyle;
+          final List<Color> colors = style.swatchColors;
+          return GestureDetector(
+            onTap: () {
+              setState(() => _selectedStyle = style);
+              _shufflePrompt();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 80,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: selected ? Colors.white : Colors.transparent, width: selected ? 2.5 : 0),
+                boxShadow: selected
+                    ? <BoxShadow>[
+                        BoxShadow(color: colors.first.withValues(alpha: 0.45), blurRadius: 10, spreadRadius: 1),
+                      ]
+                    : null,
+              ),
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    style.label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Proxima Nova',
+                      shadows: <Shadow>[Shadow(blurRadius: 4, color: Colors.black45)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPromptArea(bool loading) {
+    final theme = Theme.of(context);
+    final List<String> scenes = (_scenePoolByStyle[_selectedStyle] ?? _scenePoolByStyle[AiStylePreset.abstract]!)
+        .take(3)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: scenes.map((scene) {
+            final short = scene.length > 28 ? '${scene.substring(0, 28)}…' : scene;
+            return ActionChip(
+              label: Text(short, style: const TextStyle(fontSize: 12)),
+              onPressed: loading
+                  ? null
+                  : () => setState(() {
+                      _promptController.text = '$scene, vertical phone wallpaper, no text';
+                      _promptController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _promptController.text.length),
+                      );
+                    }),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            Expanded(
+              child: TextField(
+                controller: _promptController,
+                focusNode: _promptFocus,
+                minLines: 2,
+                maxLines: 5,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  hintText: 'Describe your wallpaper…',
+                  filled: true,
+                  fillColor: theme.hintColor,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'New idea',
+              onPressed: loading ? null : _shufflePrompt,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGenerateButton(bool canUseAi, bool loading, int freeRemaining, bool isPro, int coinBalance) {
+    final String label;
+    if (loading) {
+      label = 'Crafting your wallpaper…';
+    } else if (!isPro && freeRemaining > 0) {
+      label = 'Generate  ·  Free ($freeRemaining left)';
+    } else if (isPro) {
+      label = 'Generate';
+    } else if (coinBalance >= CoinPolicy.aiGeneration) {
+      label = 'Generate  ·  ${CoinPolicy.aiGeneration} coins';
+    } else {
+      label = 'Watch Ad to Earn Coins';
+    }
+
+    final bool enabled = canUseAi && !loading;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: enabled ? const LinearGradient(colors: <Color>[Color(0xFF7C4DFF), Color(0xFF311B92)]) : null,
+        color: enabled ? null : Theme.of(context).hintColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            disabledBackgroundColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            disabledForegroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shadowColor: Colors.transparent,
+          ),
+          onPressed: enabled ? () => _generate() : null,
+          icon: loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                )
+              : const Icon(Icons.auto_awesome_rounded, size: 18),
+          label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryStrip() {
+    if (_loadingHistory) {
+      return const Center(
+        child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
+      );
+    }
+    if (_history.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SizedBox(height: 24),
+        Row(
+          children: <Widget>[
+            Text('Recent', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 104,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _history.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (_, index) {
+              final item = _history[index];
+              final bool isSelected = item.id == _latest?.id;
+              return GestureDetector(
+                onTap: () => setState(() => _latest = item),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: isSelected ? 1.0 : 0.5,
+                  child: Container(
+                    width: 60,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: isSelected ? Border.all(color: const Color(0xFF7C4DFF), width: 2) : null,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        item.displayUrl(isPremium: app_state.prismUser.premium),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black26),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final canUseAi = _isRolloutEligible;
-    final current = _latest;
+    final bool canUseAi = _isRolloutEligible;
+    final bool isPro = app_state.prismUser.premium;
+    final int coinBalance = CoinsService.instance.balanceNotifier.value;
+    final int freeRemaining = _freeRemaining;
+    final AiGenerationRecord? current = _latest;
     final bool canPop = Navigator.of(context).canPop();
+
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
         automaticallyImplyLeading: canPop,
-        title: const Text('AI Wallpapers'),
+        title: const Text('Generate'),
         actions: <Widget>[
           if (_isLoggedIn)
             const Padding(
@@ -595,191 +1128,54 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         top: false,
         child: RefreshIndicator(
           onRefresh: _loadHistory,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-            children: <Widget>[
-              if (!canUseAi)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // Rollout gating notice
+                if (!canUseAi)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).hintColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Text(
                       app_state.aiEnabled
-                          ? 'AI generation is rolling out (${app_state.aiRolloutPercent}%).'
+                          ? "AI generation is rolling out (${app_state.aiRolloutPercent}%). You'll get access soon!"
                           : 'AI generation is currently disabled.',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const Text('Describe your wallpaper'),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _promptController,
-                        focusNode: _promptFocus,
-                        minLines: 2,
-                        maxLines: 4,
-                        textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          hintText: 'A minimalist mountain wallpaper with sunrise glow and soft fog...',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: OutlinedButton.icon(
-                          onPressed: _loadingGeneration ? null : _shufflePrompt,
-                          icon: const Icon(Icons.shuffle),
-                          label: const Text('Shuffle Prompt'),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: AiStylePreset.values.map((style) {
-                          final selected = style == _selectedStyle;
-                          return ChoiceChip(
-                            label: Text(style.label),
-                            selected: selected,
-                            onSelected: (_) => setState(() => _selectedStyle = style),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<AiQualityTier>(
-                        initialValue: _selectedQuality,
-                        decoration: const InputDecoration(labelText: 'Quality'),
-                        items: AiQualityTier.values
-                            .map((tier) => DropdownMenuItem(value: tier, child: Text(tier.label)))
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _selectedQuality = value);
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: canUseAi && !_loadingGeneration ? () => _generate() : null,
-                          icon: _loadingGeneration
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Icon(Icons.auto_awesome),
-                          label: Text(_loadingGeneration ? 'Generating...' : 'Generate Wallpaper'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'New users: first 3 free. Then ${CoinPolicy.aiGeneration} coins per generation. Pro includes 30/day.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (current != null) ...<Widget>[
-                Text('Latest Result', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AspectRatio(
-                    aspectRatio: 9 / 16,
-                    child: Image.network(
-                      current.displayUrl(isPremium: app_state.prismUser.premium),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    OutlinedButton.icon(
-                      onPressed: _loadingGeneration || !app_state.aiVariationsEnabled
-                          ? null
-                          : () => _generate(variation: true),
-                      icon: const Icon(Icons.auto_fix_high),
-                      label: const Text('Variation'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => _save(current),
-                      icon: const Icon(Icons.download_outlined),
-                      label: const Text('Save'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => _share(current),
-                      icon: const Icon(Icons.share_outlined),
-                      label: const Text('Share'),
-                    ),
-                    if (!hideSetWallpaperUi)
-                      OutlinedButton.icon(
-                        onPressed: () => _setWallpaper(current),
-                        icon: const Icon(Icons.wallpaper_outlined),
-                        label: const Text('Set'),
-                      ),
-                    OutlinedButton.icon(
-                      onPressed: _submitting || !app_state.aiSubmitEnabled ? null : () => _submitToCommunity(current),
-                      icon: const Icon(Icons.upload_outlined),
-                      label: Text(_submitting ? 'Submitting...' : 'Submit'),
-                    ),
-                  ],
-                ),
-                if (app_state.aiVariationsEnabled) ...<Widget>[
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _variationController,
-                    decoration: const InputDecoration(
-                      hintText: 'Variation prompt (optional): darker background, more neon...',
-                    ),
-                  ),
-                ],
+
+                // Free trial banner
+                _buildFreeBanner(freeRemaining, isPro),
+
+                // Result area
+                _buildResultArea(current, _loadingGeneration),
+                const SizedBox(height: 12),
+
+                // Action row (only when result is available)
+                if (current != null) ...<Widget>[_buildActionRow(current), const SizedBox(height: 16)],
+
+                // Style picker
+                _buildStylePicker(),
                 const SizedBox(height: 16),
+
+                // Prompt area
+                _buildPromptArea(_loadingGeneration),
+                const SizedBox(height: 16),
+
+                // Generate button
+                _buildGenerateButton(canUseAi, _loadingGeneration, freeRemaining, isPro, coinBalance),
+
+                // History strip
+                _buildHistoryStrip(),
               ],
-              Text('History', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              if (_loadingHistory)
-                const Center(
-                  child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()),
-                )
-              else if (_history.isEmpty)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('No generations yet. Your history will appear here.'),
-                  ),
-                )
-              else
-                ..._history.map(
-                  (item) => Card(
-                    child: ListTile(
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: SizedBox(
-                          width: 42,
-                          height: 72,
-                          child: Image.network(
-                            item.displayUrl(isPremium: app_state.prismUser.premium),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
-                          ),
-                        ),
-                      ),
-                      title: Text(item.stylePreset.label),
-                      subtitle: Text(item.prompt, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      trailing: Text(item.chargeMode.value),
-                      onTap: () => setState(() => _latest = item),
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),

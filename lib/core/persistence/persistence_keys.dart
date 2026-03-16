@@ -38,6 +38,13 @@ class PersistenceKeys {
 
   static String favoritesSetupSet(String userId) => '${favoritesSetupPrefix}__set.$userId';
 
+  // Notification preferences
+  static const String notifWotd = 'notif.wotd';
+  static const String notifPromo = 'notif.promo';
+
+  // Download quality: 'original' | 'compressed'
+  static const String downloadQuality = 'downloadQuality';
+
   // Quick tile configuration — written as raw strings so native TileServices
   // can read them directly from SharedPreferences without the Flutter codec.
   static const String quickTileCategoryName = 'quick_tile.category.name';

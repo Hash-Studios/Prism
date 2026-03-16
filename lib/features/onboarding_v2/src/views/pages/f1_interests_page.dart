@@ -15,7 +15,8 @@ class F1InterestsPage extends StatelessWidget {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
       buildWhen: (prev, curr) => prev.interestsData != curr.interestsData,
       builder: (context, state) {
-        final available = state.interestsData.available.take(6).toList(growable: false);
+        final interestsData = state.interestsData;
+        final available = interestsData.available;
 
         return OnboardingFrame(
           builder: (context, sx, sy) {
@@ -27,26 +28,29 @@ class F1InterestsPage extends StatelessWidget {
                   left: OnboardingLayout.tilesX * sx,
                   right: OnboardingLayout.tilesX * sx,
                   height: OnboardingLayout.tilesHeight * sy,
-                  child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: 6,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: OnboardingLayout.tileGap * sx,
-                      mainAxisSpacing: OnboardingLayout.tileGap * sy,
-                      childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
-                    ),
-                    itemBuilder: (context, index) {
-                      if (index >= available.length) {
-                        return const InterestCategoryTile(isSelected: false, onTap: null);
-                      }
-                      final category = available[index];
-                      return InterestCategoryTile(
-                        isSelected: state.interestsData.selected.contains(category),
-                        onTap: () => context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
-                      );
-                    },
-                  ),
+                  child: available.isEmpty
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      : GridView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: available.length,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: OnboardingLayout.tileGap * sx,
+                            mainAxisSpacing: OnboardingLayout.tileGap * sy,
+                            childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
+                          ),
+                          itemBuilder: (context, index) {
+                            final category = available[index];
+                            return InterestCategoryTile(
+                              name: category,
+                              imageUrl: interestsData.categoryImages[category],
+                              isSelected: interestsData.selected.contains(category),
+                              onTap: () => context.read<OnboardingV2Bloc>().add(
+                                OnboardingV2Event.interestToggled(category),
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ],
             );

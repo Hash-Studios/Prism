@@ -59,7 +59,6 @@ import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
@@ -83,8 +82,8 @@ late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 const double _sentryReplaySessionSampleRate = 1.0;
 const double _sentryReplayOnErrorSampleRate = 1.0;
-final GlobalKey<NavigatorState> _sentryFeedbackNavigatorKey = GlobalKey<NavigatorState>();
-bool _sentryFeedbackSheetOpen = false;
+// final GlobalKey<NavigatorState> _sentryFeedbackNavigatorKey = GlobalKey<NavigatorState>();
+// bool _sentryFeedbackSheetOpen = false;
 
 /// Top-level FCM background message handler.
 /// Must be a top-level function annotated with @pragma('vm:entry-point').
@@ -197,11 +196,10 @@ Future<void> main() async {
             return false;
           }),
         );
-        // Register FCM/FIAM as soon as Firebase is ready (no-op if init failed).
+        // Register FCM as soon as Firebase is ready (no-op if init failed).
         unawaited(
           FirebaseInit.readyFuture.then((initialized) {
             if (initialized) {
-              FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
               FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
             }
             unawaited(
@@ -279,44 +277,41 @@ Future<void> main() async {
       await FirebaseInit.readyFuture;
 
       runApp(
-        SentryWidget(
-          child: LogToastOverlay(
-            child: RestartWidget(
-              child: MultiBlocProvider(
-                providers: [
-                  BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                  BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
-                  BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
-                  BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-                  BlocProvider<CategoryFeedBloc>(
-                    create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                  ),
-                  BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-                  BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-                  BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
-                  BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-                  BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-                  BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
-                  BlocProvider<StartupBloc>(
-                    create: (_) =>
-                        getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
-                  ),
-                  BlocProvider<ThemeLightBloc>(
-                    create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-                  ),
-                  BlocProvider<ThemeDarkBloc>(
-                    create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started()),
-                  ),
-                  BlocProvider<ThemeModeBloc>(
-                    create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started()),
-                  ),
-                  BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
-                ],
-                child: _MyApp(),
-              ),
+        // SentryWidget(
+        //   child:
+        LogToastOverlay(
+          child: RestartWidget(
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
+                BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
+                BlocProvider<CategoryFeedBloc>(
+                  create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
+                ),
+                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+                BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
+                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+                BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                BlocProvider<StartupBloc>(
+                  create: (_) =>
+                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                ),
+                BlocProvider<ThemeLightBloc>(
+                  create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                ),
+                BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
+                BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
+                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+              ],
+              child: _MyApp(),
             ),
           ),
         ),
+        // ),  // SentryWidget closing
       );
     },
     (obj, stacktrace) {
@@ -371,10 +366,10 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
       options.privacy.maskAllText = true;
       options.privacy.maskAllImages = true;
-      options.beforeSend = (event, hint) {
-        unawaited(_showSentryFeedbackWidget(event.eventId));
-        return event;
-      };
+      // options.beforeSend = (event, hint) {
+      //   unawaited(_showSentryFeedbackWidget(event.eventId));
+      //   return event;
+      // };
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
@@ -397,36 +392,44 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
   }
 }
 
-Future<void> _showSentryFeedbackWidget(SentryId eventId) async {
-  if (_sentryFeedbackSheetOpen) {
-    return;
-  }
-
-  final BuildContext? context = _sentryFeedbackNavigatorKey.currentContext;
-  if (context == null || !context.mounted) {
-    return;
-  }
-
-  _sentryFeedbackSheetOpen = true;
-
-  try {
-    final screenshot = await SentryFlutter.captureScreenshot();
-    if (!context.mounted) {
-      return;
-    }
-
-    await Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute<void>(
-        builder: (context) => SentryFeedbackWidget(associatedEventId: eventId, screenshot: screenshot),
-        fullscreenDialog: true,
-      ),
-    );
-  } catch (error, stackTrace) {
-    logger.w('Unable to display Sentry feedback widget.', tag: 'SentryFeedback', error: error, stackTrace: stackTrace);
-  } finally {
-    _sentryFeedbackSheetOpen = false;
-  }
-}
+// Future<void> _showSentryFeedbackWidget(SentryId eventId) async {
+//   if (_sentryFeedbackSheetOpen) {
+//     return;
+//   }
+//
+//   final BuildContext? context = _sentryFeedbackNavigatorKey.currentContext;
+//   if (context == null || !context.mounted) {
+//     return;
+//   }
+//
+//   _sentryFeedbackSheetOpen = true;
+//
+//   try {
+//     final screenshot = await SentryFlutter.captureScreenshot();
+//     if (!context.mounted) {
+//       return;
+//     }
+//
+//     await Navigator.of(context, rootNavigator: true).push<void>(
+//       MaterialPageRoute<void>(
+//         builder: (context) => SentryFeedbackWidget(
+//           associatedEventId: eventId,
+//           screenshot: screenshot,
+//         ),
+//         fullscreenDialog: true,
+//       ),
+//     );
+//   } catch (error, stackTrace) {
+//     logger.w(
+//       'Unable to display Sentry feedback widget.',
+//       tag: 'SentryFeedback',
+//       error: error,
+//       stackTrace: stackTrace,
+//     );
+//   } finally {
+//     _sentryFeedbackSheetOpen = false;
+//   }
+// }
 
 Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) async {
   final bool mixpanelEnabled = _isMixpanelEnabled();
@@ -526,6 +529,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   bool _bootstrapCompleted = false;
   bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
+  static const Duration _coinSyncCooldown = Duration(seconds: 30);
+  DateTime? _lastCoinSyncAt;
 
   Future<bool> getLoginStatus() async {
     bool value = await app_state.gAuth.isSignedIn();
@@ -630,7 +635,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (!app_state.prismUser.loggedIn || app_state.prismUser.id.trim().isEmpty) {
       return;
     }
+    final now = DateTime.now();
+    if (_lastCoinSyncAt != null && now.difference(_lastCoinSyncAt!) < _coinSyncCooldown) {
+      return;
+    }
     _coinSyncInFlight = true;
+    _lastCoinSyncAt = now;
     try {
       await CoinsService.instance.bootstrapForCurrentUser();
       // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
@@ -982,7 +992,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _appRouter = AppRouter(navigatorKey: _sentryFeedbackNavigatorKey);
+    _appRouter = AppRouter(/* navigatorKey: _sentryFeedbackNavigatorKey */);
     _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
