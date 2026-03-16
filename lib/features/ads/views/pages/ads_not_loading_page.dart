@@ -1,4 +1,4 @@
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -112,11 +112,19 @@ class AdsNotLoading extends StatelessWidget {
                     if (app_state.prismUser.loggedIn == false) {
                       googleSignInPopUp(context, () {
                         Navigator.of(context).pop();
-                        context.router.push(const UpgradeRoute());
+                        PaywallOrchestrator.instance.present(
+                          context,
+                          placement: PaywallPlacement.mainUpsell,
+                          source: 'ads_not_loading',
+                        );
                       });
                     } else {
                       Navigator.of(context).pop();
-                      context.router.push(const UpgradeRoute());
+                      PaywallOrchestrator.instance.present(
+                        context,
+                        placement: PaywallPlacement.mainUpsell,
+                        source: 'ads_not_loading',
+                      );
                     }
                   },
                   child: Text(

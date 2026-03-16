@@ -7,45 +7,25 @@ part of 'userModel.dart';
 // **************************************************************************
 
 PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) => PrismUsersV2(
-  username: json['username'] as String? ?? '',
-  email: json['email'] as String? ?? '',
-  id: json['id'] as String? ?? '',
-  createdAt: json['createdAt'] as String? ?? '',
-  premium: json['premium'] as bool? ?? false,
-  lastLoginAt: json['lastLoginAt'] as String? ?? '',
-  links: json['links'] is Map
-      ? (json['links'] as Map).map<String, String>((dynamic key, dynamic value) {
-          return MapEntry(key.toString(), value?.toString() ?? '');
-        })
-      : <String, String>{},
-  followers:
-      (json['followers'] as List<dynamic>?)?.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList() ??
-      <String>[],
-  following:
-      (json['following'] as List<dynamic>?)?.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList() ??
-      <String>[],
-  profilePhoto: json['profilePhoto'] as String? ?? '',
-  bio: json['bio'] as String? ?? '',
-  loggedIn: json['loggedIn'] as bool? ?? false,
-  badges:
-      (json['badges'] as List<dynamic>?)
-          ?.whereType<Map>()
-          .map((e) => Badge.fromJson(e.map<String, dynamic>((key, value) => MapEntry(key.toString(), value))))
-          .toList() ??
-      <Badge>[],
-  subPrisms:
-      (json['subPrisms'] as List<dynamic>?)?.map((e) => e?.toString() ?? '').where((e) => e.isNotEmpty).toList() ??
-      <String>[],
-  coins: (json['coins'] as num?)?.toInt() ?? 0,
-  transactions:
-      (json['transactions'] as List<dynamic>?)
-          ?.whereType<Map>()
-          .map(
-            (e) => PrismTransaction.fromJson(e.map<String, dynamic>((key, value) => MapEntry(key.toString(), value))),
-          )
-          .toList() ??
-      <PrismTransaction>[],
-  name: json['name'] as String? ?? '',
+  username: json['username'] as String,
+  email: json['email'] as String,
+  id: json['id'] as String,
+  createdAt: json['createdAt'] as String,
+  premium: json['premium'] as bool,
+  lastLoginAt: json['lastLoginAt'] as String,
+  links: Map<String, String>.from(json['links'] as Map),
+  followers: (json['followers'] as List<dynamic>).map((e) => e as String).toList(),
+  following: (json['following'] as List<dynamic>).map((e) => e as String).toList(),
+  profilePhoto: json['profilePhoto'] as String,
+  bio: json['bio'] as String,
+  loggedIn: json['loggedIn'] as bool,
+  badges: (json['badges'] as List<dynamic>).map((e) => Badge.fromJson(e as Map<String, dynamic>)).toList(),
+  subPrisms: (json['subPrisms'] as List<dynamic>).map((e) => e as String).toList(),
+  coins: (json['coins'] as num).toInt(),
+  transactions: (json['transactions'] as List<dynamic>)
+      .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  name: json['name'] as String,
   coverPhoto: json['coverPhoto'] as String?,
   subscriptionTier: json['subscriptionTier'] as String? ?? 'free',
   uploadsWeekStart: json['uploadsWeekStart'] as String? ?? '',

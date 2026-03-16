@@ -1,141 +1,68 @@
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/creator_card.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// F2 unique content: starter pack creator cards.
+/// Background, headline, progress, button, and helper text are owned by the shell overlay.
 class F2StarterPackPage extends StatelessWidget {
   const F2StarterPackPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-      buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData || prev.actionStatus != curr.actionStatus,
+      buildWhen: (prev, curr) => prev.starterPackData != curr.starterPackData,
       builder: (context, state) {
-        final packData = state.starterPackData;
-        final selectedCount = packData.selectedEmails.length;
-        final canContinue = packData.canContinue;
-        final isLoading = state.actionStatus == ActionStatus.inProgress;
+        final creators = state.starterPackData.creators;
 
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        return OnboardingFrame(
+          builder: (context, sx, sy) {
+            return Stack(
+              fit: StackFit.expand,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.stepBack()),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                      ),
-                      Row(
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            child: Text(
-                              '$selectedCount/${OnboardingV2Config.minFollows}',
-                              key: ValueKey(selectedCount),
-                              style: TextStyle(
-                                color: canContinue ? Theme.of(context).colorScheme.primary : Colors.white54,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Step 3 of 4',
-                              style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    'Get the latest drops from top creators.',
-                    style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.4),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      if (packData.creators.isEmpty)
-                        const Center(child: CircularProgressIndicator(color: Colors.white))
-                      else
-                        ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 124),
-                          itemCount: packData.creators.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final creator = packData.creators[index];
-                            return CreatorCard(
-                              creator: creator,
-                              onToggle: () => context.read<OnboardingV2Bloc>().add(
-                                OnboardingV2Event.creatorFollowToggled(creator.email),
-                              ),
-                            );
-                          },
-                        ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.black],
-                              stops: [0.0, 0.45],
-                            ),
-                          ),
-                          padding: const EdgeInsets.fromLTRB(16, 64, 16, 20),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FilledButton(
-                              onPressed: canContinue && !isLoading
-                                  ? () => context.read<OnboardingV2Bloc>().add(
-                                      const OnboardingV2Event.starterPackConfirmed(),
-                                    )
-                                  : null,
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: const StadiumBorder(),
-                              ),
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                                    )
-                                  : const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                Positioned(
+                  top: OnboardingLayout.creatorsY * sy,
+                  left: OnboardingLayout.creatorsX * sx,
+                  right: OnboardingLayout.creatorsX * sx,
+                  height: OnboardingLayout.tilesHeight * sy,
+                  child: creators.isEmpty
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      : ShaderMask(
+                          shaderCallback: (rect) => const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
+                            stops: [0.0, 0.08, 0.82, 1.0],
+                          ).createShader(rect),
+                          blendMode: BlendMode.dstIn,
+                          child: Padding(
+                            padding: const EdgeInsets.all(1),
+                            child: ListView.separated(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: creators.length,
+                              padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
+                              separatorBuilder: (_, _) => SizedBox(height: OnboardingLayout.creatorGap * sy),
+                              itemBuilder: (context, index) {
+                                final creator = creators[index];
+                                return SizedBox(
+                                  height: OnboardingLayout.creatorHeight * sy,
+                                  child: CreatorCard(
+                                    creator: creator,
+                                    onToggle: () => context.read<OnboardingV2Bloc>().add(
+                                      OnboardingV2Event.creatorFollowToggled(creator.email),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
-            ),
-          ),
+            );
+          },
         );
       },
     );

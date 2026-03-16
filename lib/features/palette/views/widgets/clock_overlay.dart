@@ -101,11 +101,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
-                  Image.asset("assets/images/dialer.png", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/messages.png", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/prism.png", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/playstore.png", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/chrome.png", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/dialer.webp", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/messages.webp", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/prism.webp", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/playstore.webp", width: MediaQuery.of(context).size.width * 0.14),
+                  Image.asset("assets/images/chrome.webp", width: MediaQuery.of(context).size.width * 0.14),
                 ],
               ),
             ),

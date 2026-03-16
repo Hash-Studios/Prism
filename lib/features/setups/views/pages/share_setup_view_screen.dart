@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -668,10 +669,18 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                       GestureDetector(
                                         onTap: () async {
                                           if (app_state.prismUser.loggedIn == true) {
-                                            context.router.push(const UpgradeRoute());
+                                            await PaywallOrchestrator.instance.present(
+                                              context,
+                                              placement: PaywallPlacement.mainUpsell,
+                                              source: 'share_setup_view',
+                                            );
                                           } else {
                                             googleSignInPopUp(context, () {
-                                              context.router.push(const UpgradeRoute());
+                                              PaywallOrchestrator.instance.present(
+                                                context,
+                                                placement: PaywallPlacement.mainUpsell,
+                                                source: 'share_setup_view',
+                                              );
                                             });
                                           }
                                           toasts.codeSend("This is a premium wallpaper.");

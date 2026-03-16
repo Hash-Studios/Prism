@@ -14,6 +14,7 @@ const String _defaultPhotoUrl =
 PrismUsersV2 _user({
   required String id,
   required bool loggedIn,
+  bool premium = false,
   String profilePhoto = _defaultPhotoUrl,
   String username = '',
   String bio = '',
@@ -25,7 +26,7 @@ PrismUsersV2 _user({
     email: 'user@example.com',
     id: id,
     createdAt: now,
-    premium: false,
+    premium: premium,
     lastLoginAt: now,
     links: links ?? const <String, String>{},
     followers: const <String>[],
@@ -110,7 +111,7 @@ void main() {
   });
 
   testWidgets('shows once per user and persists shown flag', (tester) async {
-    app_state.prismUser = _user(id: 'incomplete_user', loggedIn: true, username: 'creator_01');
+    app_state.prismUser = _user(id: 'incomplete_user', loggedIn: true, premium: true, username: 'creator_01');
 
     int launchCount = 0;
     final Map<String, dynamic> prefs = <String, dynamic>{};
@@ -152,10 +153,10 @@ void main() {
 
     final context = await _pumpContext(tester);
 
-    app_state.prismUser = _user(id: 'onboarding_user', loggedIn: true, username: 'u1');
+    app_state.prismUser = _user(id: 'onboarding_user', loggedIn: true, premium: true, username: 'u1');
     await service.maybeShowNudge(context, sourceContext: 'onboarding_done');
 
-    app_state.prismUser = _user(id: 'dashboard_user', loggedIn: true, username: 'u2');
+    app_state.prismUser = _user(id: 'dashboard_user', loggedIn: true, premium: true, username: 'u2');
     await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
 
     expect(launchCount, 2);
@@ -166,7 +167,7 @@ void main() {
   });
 
   testWidgets('complete-now action attempts to open edit profile route', (tester) async {
-    app_state.prismUser = _user(id: 'cta_user', loggedIn: true, username: 'u1');
+    app_state.prismUser = _user(id: 'cta_user', loggedIn: true, premium: true, username: 'u1');
 
     bool editOpened = false;
     final Map<String, dynamic> prefs = <String, dynamic>{};

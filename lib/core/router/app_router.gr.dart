@@ -1137,22 +1137,6 @@ class ThemeViewRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [UpgradeScreen]
-class UpgradeRoute extends PageRouteInfo<void> {
-  const UpgradeRoute({List<PageRouteInfo>? children})
-    : super(UpgradeRoute.name, initialChildren: children);
-
-  static const String name = 'UpgradeRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const UpgradeScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [UploadSetupScreen]
 class UploadSetupRoute extends PageRouteInfo<UploadSetupRouteArgs> {
   UploadSetupRoute({

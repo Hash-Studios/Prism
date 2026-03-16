@@ -87,7 +87,7 @@ class _AboutScreenState extends State<AboutScreen> {
         child: ListView(
           children: [
             const SizedBox(height: 20),
-            Padding(padding: const EdgeInsets.all(8.0), child: Image.asset("assets/images/prism.png", height: 70)),
+            Padding(padding: const EdgeInsets.all(8.0), child: Image.asset("assets/images/prism.webp", height: 70)),
             const SizedBox(height: 10),
             Text(
               "Prism Wallpapers",

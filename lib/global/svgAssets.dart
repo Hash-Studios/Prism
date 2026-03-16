@@ -806,3 +806,9 @@ String defaultHeader = """
 </defs>
 </svg>
 """;
+
+String prismVector = """
+<svg width="14" height="16" viewBox="0 0 14 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14 12.1244L7 0L0 12.1244L7 15.1281L14 12.1244Z" fill="black"/>
+</svg>
+""";

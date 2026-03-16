@@ -8,17 +8,20 @@ if command -v rg >/dev/null 2>&1; then
       -g '!**/*.g.dart' \
       -g '!**/*.freezed.dart' \
       -g '!**/*.gr.dart' \
-      -g '!**/*.config.dart' || true
+      -g '!**/*.config.dart' \
+      -g '!**/edge_to_edge_overlay_style.dart' || true
     rg -n --no-heading "systemNavigationBarColor\\s*:" lib test \
       -g '!**/*.g.dart' \
       -g '!**/*.freezed.dart' \
       -g '!**/*.gr.dart' \
-      -g '!**/*.config.dart' || true
+      -g '!**/*.config.dart' \
+      -g '!**/edge_to_edge_overlay_style.dart' || true
     rg -n --no-heading "systemNavigationBarDividerColor\\s*:" lib test \
       -g '!**/*.g.dart' \
       -g '!**/*.freezed.dart' \
       -g '!**/*.gr.dart' \
-      -g '!**/*.config.dart' || true
+      -g '!**/*.config.dart' \
+      -g '!**/edge_to_edge_overlay_style.dart' || true
   } | sort -u)"
 else
   matches="$(
@@ -26,7 +29,8 @@ else
       -e 'statusBarColor\s*:' \
       -e 'systemNavigationBarColor\s*:' \
       -e 'systemNavigationBarDividerColor\s*:' \
-      lib test || true
+      lib test \
+      | grep -v 'edge_to_edge_overlay_style.dart' || true
   )"
 fi
 

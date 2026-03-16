@@ -1,228 +1,211 @@
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_creator_vm.j.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CreatorCard extends StatelessWidget {
   const CreatorCard({super.key, required this.creator, required this.onToggle});
 
-  final OnboardingCreatorVm creator;
-  final VoidCallback onToggle;
+  final OnboardingCreatorVm? creator;
+  final VoidCallback? onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isSelected = creator.isSelected;
+    const cardRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
+    const innerRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
+    final accent = Theme.of(context).colorScheme.primary;
+    final isSelected = creator?.isSelected ?? false;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      margin: EdgeInsets.zero,
+      duration: OnboardingMotion.short,
+      curve: OnboardingMotion.emphasized,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isSelected ? colorScheme.primary : Colors.transparent, width: 1.5),
+        color: Colors.black.withValues(alpha: 0.35),
+        borderRadius: cardRadius,
+        border: isSelected ? Border.all(color: accent, width: 2) : null,
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: onToggle,
-              child: Row(
-                children: [
-                  _Avatar(photoUrl: creator.photoUrl, name: creator.name),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          creator.name,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+      child: Material(
+        color: OnboardingColors.transparent,
+        borderRadius: cardRadius,
+        child: InkWell(
+          onTap: onToggle == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onToggle!();
+                },
+          borderRadius: cardRadius,
+          child: ClipRRect(
+            borderRadius: isSelected ? innerRadius : cardRadius,
+            child: creator == null ? const SizedBox.shrink() : _CardContent(creator: creator!, accent: accent),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardContent extends StatelessWidget {
+  const _CardContent({required this.creator, required this.accent});
+
+  final OnboardingCreatorVm creator;
+  final Color accent;
+
+  static String _formatCount(int count) {
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
+    return count.toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final previews = creator.previewUrls.take(5).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Top row: avatar + info + follow button ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          child: Row(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.white.withValues(alpha: 0.15),
+                backgroundImage: creator.photoUrl.isNotEmpty ? CachedNetworkImageProvider(creator.photoUrl) : null,
+                child: creator.photoUrl.isEmpty
+                    ? Text(
+                        creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                          fontFamily: OnboardingTypography.sans,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _formatFollowerCount(creator.followerCount),
-                          style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 120),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? colorScheme.primary : Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 120),
-                      child: isSelected
-                          ? const Text(
-                              'Following',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                            )
-                          : const Text(
-                              'Follow',
-                              style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                    ),
-                  ),
-                ],
+                      )
+                    : null,
               ),
-            ),
-            if (creator.bio.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                creator.bio,
-                style: const TextStyle(color: Colors.white60, fontSize: 12, height: 1.4),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            if (creator.previewUrls.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 80,
-                child: Row(
+              const SizedBox(width: 10),
+
+              // Name + followers
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ...creator.previewUrls
-                        .take(2)
-                        .map(
-                          (e) => [
-                            Expanded(
-                              child: _PreviewThumbnail(
-                                imageUrl: e,
-                                onTap: () => context.pushRoute(ProfileRoute(profileIdentifier: creator.email)),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                          ],
-                        )
-                        .flattenedToList,
-                    if (creator.previewUrls.length > 2) ...[
-                      Expanded(
-                        child: _PreviewThumbnail(
-                          imageUrl: creator.previewUrls[2],
-                          showMoreOverlay: true,
-                          onTap: () => context.pushRoute(ProfileRoute(profileIdentifier: creator.email)),
+                    if (creator.name.isNotEmpty)
+                      Text(
+                        creator.name,
+                        style: const TextStyle(
+                          fontFamily: OnboardingTypography.sans,
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
+                    Text(
+                      '${_formatCount(creator.followerCount)} followers',
+                      style: TextStyle(
+                        fontFamily: OnboardingTypography.sans,
+                        color: Colors.white.withValues(alpha: 0.55),
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+
+              // Follow / Following button
+              _FollowButton(isSelected: creator.isSelected, accent: accent),
             ],
-            const SizedBox(height: 12),
-          ],
+          ),
         ),
-      ),
-    );
-  }
 
-  static String _formatFollowerCount(int count) {
-    if (count >= 1000000) {
-      final value = count / 1000000;
-      final formatted = value == value.truncate() ? '${value.truncate()}M' : '${value.toStringAsFixed(1)}M';
-      return '$formatted followers';
-    }
-    if (count >= 1000) {
-      final value = count / 1000;
-      final formatted = value == value.truncate() ? '${value.truncate()}K' : '${value.toStringAsFixed(1)}K';
-      return '$formatted followers';
-    }
-    return '$count followers';
-  }
-}
-
-class _PreviewThumbnail extends StatelessWidget {
-  const _PreviewThumbnail({required this.imageUrl, required this.onTap, this.showMoreOverlay = false});
-
-  final String imageUrl;
-  final VoidCallback onTap;
-  final bool showMoreOverlay;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedNetworkImage(
-              imageUrl: imageUrl,
-              height: 80,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => Container(color: const Color(0xFF2A2A2A)),
-              errorWidget: (_, _, _) => const ColoredBox(
-                color: Color(0xFF2A2A2A),
-                child: Icon(Icons.broken_image_outlined, size: 20, color: Colors.white24),
-              ),
+        // ── Bottom row: 3 preview wallpapers ──
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(6, 0, 12, 12),
+            child: Row(
+              children: List.generate(5, (i) {
+                final url = i < previews.length ? previews[i] : null;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: _PreviewTile(url: url),
+                  ),
+                );
+              }),
             ),
-            if (showMoreOverlay) ...[
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: const Icon(JamIcons.chevron_right, color: Colors.white, size: 12),
-              ),
-            ],
-          ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FollowButton extends StatelessWidget {
+  const _FollowButton({required this.isSelected, required this.accent});
+
+  final bool isSelected;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: OnboardingMotion.short,
+      curve: OnboardingMotion.emphasized,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: isSelected ? accent : Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: AnimatedSwitcher(
+        duration: OnboardingMotion.short,
+        child: Text(
+          isSelected ? 'following' : 'follow',
+          key: ValueKey(isSelected),
+          style: OnboardingTypography.cta.copyWith(
+            color: Colors.white,
+            fontSize: 13,
+            fontFamily: OnboardingTypography.sans,
+          ),
         ),
       ),
     );
   }
 }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.photoUrl, required this.name});
+class _PreviewTile extends StatelessWidget {
+  const _PreviewTile({required this.url});
 
-  final String photoUrl;
-  final String name;
+  final String? url;
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: const Color(0xFF2A2A2A),
-      child: photoUrl.isNotEmpty
-          ? ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: photoUrl,
-                width: 44,
-                height: 44,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => const SizedBox.shrink(),
-                errorWidget: (_, _, _) => _Initials(name: name),
-              ),
+    const radius = BorderRadius.all(Radius.circular(10));
+    return ClipRRect(
+      borderRadius: radius,
+      child: url != null
+          ? CachedNetworkImage(
+              imageUrl: url!,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorWidget: (_, _, _) => _emptyTile,
             )
-          : _Initials(name: name),
+          : _emptyTile,
     );
   }
-}
 
-class _Initials extends StatelessWidget {
-  const _Initials({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    return Text(
-      initial,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
-    );
-  }
+  static final _emptyTile = DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.08),
+      borderRadius: const BorderRadius.all(Radius.circular(10)),
+    ),
+  );
 }

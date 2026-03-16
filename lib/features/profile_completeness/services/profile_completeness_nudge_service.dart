@@ -52,6 +52,9 @@ class ProfileCompletenessNudgeService {
     if (!app_state.prismUser.loggedIn) {
       return;
     }
+    if (!app_state.prismUser.premium) {
+      return;
+    }
 
     final String userId = app_state.prismUser.id.trim();
     if (userId.isEmpty) {
