@@ -11,6 +11,22 @@
 part of 'app_router.dart';
 
 /// generated route for
+/// [AutoRotateScreen]
+class AutoRotateRoute extends PageRouteInfo<void> {
+  const AutoRotateRoute({List<PageRouteInfo>? children})
+    : super(AutoRotateRoute.name, initialChildren: children);
+
+  static const String name = 'AutoRotateRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AutoRotateScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [AboutScreen]
 class AboutRoute extends PageRouteInfo<void> {
   const AboutRoute({List<PageRouteInfo>? children})
