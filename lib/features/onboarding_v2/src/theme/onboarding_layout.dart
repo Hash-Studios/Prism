@@ -30,7 +30,7 @@ class OnboardingLayout {
   static const double step2TitleWidth = 259;
   static const double step3TitleX = 10;
   static const double step3TitleWidth = 307;
-  static const double step4TitleX = 74;
+  static const double step4TitleX = 10;
   static const double step4TitleWidth = 246;
 
   static const double progressX = 169;

@@ -177,7 +177,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             prev.actionStatus != curr.actionStatus ||
             prev.interestsData.selected.length != curr.interestsData.selected.length ||
             prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
-            prev.wallpaperData.status != curr.wallpaperData.status,
+            prev.wallpaperData.status != curr.wallpaperData.status ||
+            prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl,
         builder: (context, state) {
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: _systemUiStyle,
@@ -193,7 +194,12 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                   children: [
                     // Layer 0: animated background (blur + image cross-fade).
                     // from page content and overlay layers. Verify background renders correctly.
-                    RepaintBoundary(child: OnboardingStepBackground(step: state.step)),
+                    RepaintBoundary(
+                      child: OnboardingStepBackground(
+                        step: state.step,
+                        wallpaperUrl: state.wallpaperData.wallpaper?.fullUrl,
+                      ),
+                    ),
 
                     // Layer 1: unique page content — fades between steps.
                     AnimatedSwitcher(

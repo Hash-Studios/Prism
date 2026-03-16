@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 // ---------------------------------------------------------------------------
@@ -15,6 +16,7 @@ class OnboardingBackground extends StatelessWidget {
     required this.assetPath,
     required this.sx,
     required this.sy,
+    this.networkUrl,
     this.imageLeft = -87,
     this.imageTop = 0,
     this.imageWidth = 567,
@@ -25,6 +27,9 @@ class OnboardingBackground extends StatelessWidget {
   });
 
   final String assetPath;
+
+  /// If provided and non-empty, renders a network image instead of the asset.
+  final String? networkUrl;
   final double sx;
   final double sy;
   final double imageLeft;
@@ -50,12 +55,22 @@ class OnboardingBackground extends StatelessWidget {
     final coverScale = math.max(viewportWidth / renderedW, viewportHeight / renderedH);
 
     final dpr = MediaQuery.devicePixelRatioOf(context);
-    Widget imageChild = Image.asset(
-      assetPath,
-      fit: BoxFit.cover,
-      cacheWidth: (imageWidth * sx * dpr).toInt(),
-      cacheHeight: (imageHeight * sy * dpr).toInt(),
-    );
+    final resolvedNetworkUrl = networkUrl;
+    Widget imageChild = (resolvedNetworkUrl != null && resolvedNetworkUrl.isNotEmpty)
+        ? CachedNetworkImage(
+            imageUrl: resolvedNetworkUrl,
+            fit: BoxFit.cover,
+            memCacheWidth: (imageWidth * sx * dpr).toInt(),
+            memCacheHeight: (imageHeight * sy * dpr).toInt(),
+            fadeInDuration: Duration.zero,
+            placeholder: (_, __) => Image.asset(assetPath, fit: BoxFit.cover),
+          )
+        : Image.asset(
+            assetPath,
+            fit: BoxFit.cover,
+            cacheWidth: (imageWidth * sx * dpr).toInt(),
+            cacheHeight: (imageHeight * sy * dpr).toInt(),
+          );
     if (blurSigma > 0) {
       // ImageFiltered blurs its own subtree, unlike BackdropFilter which blurs
       // whatever is behind it. This is safe inside Opacity layers.
@@ -91,9 +106,10 @@ class OnboardingBackground extends StatelessWidget {
 //     firstWallpaper step.
 // ---------------------------------------------------------------------------
 class OnboardingStepBackground extends StatefulWidget {
-  const OnboardingStepBackground({super.key, required this.step});
+  const OnboardingStepBackground({super.key, required this.step, this.wallpaperUrl});
 
   final OnboardingV2Step step;
+  final String? wallpaperUrl;
 
   @override
   State<OnboardingStepBackground> createState() => _OnboardingStepBackgroundState();
@@ -185,6 +201,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
           // rebuilt on every animation tick of _revealAnim / _blurAnim.
           child: OnboardingBackground(
             assetPath: OnboardingAssets.wallpaperFinal,
+            networkUrl: widget.wallpaperUrl,
             sx: sx,
             sy: sy,
             imageLeft: -88,
