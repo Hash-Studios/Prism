@@ -38,13 +38,18 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
     final int page = _pageNumbers[categoryName] ?? 1;
     final bool isCurated = categoryName == 'Curated';
+    final String? colorHex = _parseColorCategory(categoryName);
     final Uri uri = isCurated
         ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
-        : Uri.https(_host, _searchPath, <String, String>{
-            'query': categoryName,
-            'per_page': '80',
-            'page': page.toString(),
-          });
+        : Uri.https(
+            _host,
+            _searchPath,
+            <String, String>{
+              if (colorHex != null) 'color': colorHex else 'query': categoryName,
+              'per_page': '80',
+              'page': page.toString(),
+            },
+          );
 
     logger.d(
       '[PexelsWallpaperRepository] fetchFeed',
@@ -176,6 +181,18 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
   String _scope(String categoryName) {
     return categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
+  }
+
+  /// Parses "color: ff0000" style category into Pexels color param (hex without #).
+  /// Returns null if not a color search.
+  static String? _parseColorCategory(String categoryName) {
+    const String prefix = 'color: ';
+    if (!categoryName.startsWith(prefix)) return null;
+    final String hex = categoryName.substring(prefix.length).trim().replaceFirst(RegExp('^#'), '');
+    if (hex.length == 6 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(hex)) {
+      return hex.toLowerCase();
+    }
+    return null;
   }
 }
 
