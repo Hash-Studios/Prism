@@ -281,6 +281,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return _sectionCard(
       title: 'ANDROID WIDGETS',
       children: [
+        if (Platform.isAndroid)
+          ListTile(
+            leading: const Icon(Icons.autorenew),
+            title: Text('Auto Rotate', style: _titleStyle),
+            subtitle: const Text('Cycle wallpapers automatically', style: TextStyle(fontSize: 12)),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.router.push(const AutoRotateRoute()),
+          ),
         ListTile(
           leading: const Icon(Icons.grid_view_rounded),
           title: Text('Quick Tile Settings', style: _titleStyle),

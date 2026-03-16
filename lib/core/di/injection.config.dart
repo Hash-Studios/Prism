@@ -20,6 +20,15 @@ import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
 
+import '../../features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart' as _i1100;
+import '../../features/auto_rotate/data/data_sources/auto_rotate_local_data_source.dart'
+    as _i1101;
+import '../../features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart'
+    as _i1102;
+import '../../features/auto_rotate/domain/repositories/auto_rotate_repository.dart'
+    as _i1103;
+import '../../features/auto_rotate/domain/usecases/auto_rotate_usecases.dart'
+    as _i1104;
 import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
 import '../../features/admin_review/data/review_batch_repository.dart' as _i122;
 import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
@@ -711,6 +720,41 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i183.WotdBloc>(
     () => _i183.WotdBloc(gh<_i398.FetchWallOfTheDayUseCase>()),
+  );
+  // Auto Rotate
+  gh.lazySingleton<_i1101.AutoRotateLocalDataSource>(
+    () => _i1101.AutoRotateLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i1103.AutoRotateRepository>(
+    () => _i1102.AutoRotateRepositoryImpl(
+      gh<_i1101.AutoRotateLocalDataSource>(),
+      gh<_i406.FetchFavouriteWallsUseCase>(),
+      gh<_i301.FetchCategoryFeedUseCase>(),
+    ),
+  );
+  gh.lazySingleton<_i1104.LoadAutoRotateConfigUseCase>(
+    () => _i1104.LoadAutoRotateConfigUseCase(gh<_i1103.AutoRotateRepository>()),
+  );
+  gh.lazySingleton<_i1104.SaveAutoRotateConfigUseCase>(
+    () => _i1104.SaveAutoRotateConfigUseCase(gh<_i1103.AutoRotateRepository>()),
+  );
+  gh.lazySingleton<_i1104.StartAutoRotateUseCase>(
+    () => _i1104.StartAutoRotateUseCase(gh<_i1103.AutoRotateRepository>()),
+  );
+  gh.lazySingleton<_i1104.StopAutoRotateUseCase>(
+    () => _i1104.StopAutoRotateUseCase(gh<_i1103.AutoRotateRepository>()),
+  );
+  gh.lazySingleton<_i1104.GetAutoRotateStatusUseCase>(
+    () => _i1104.GetAutoRotateStatusUseCase(gh<_i1103.AutoRotateRepository>()),
+  );
+  gh.factory<_i1100.AutoRotateBloc>(
+    () => _i1100.AutoRotateBloc(
+      gh<_i1104.LoadAutoRotateConfigUseCase>(),
+      gh<_i1104.SaveAutoRotateConfigUseCase>(),
+      gh<_i1104.StartAutoRotateUseCase>(),
+      gh<_i1104.StopAutoRotateUseCase>(),
+      gh<_i1104.GetAutoRotateStatusUseCase>(),
+    ),
   );
   return getIt;
 }

@@ -58,4 +58,14 @@ class PersistenceKeys {
   static const String quickTileFavsTarget = 'quick_tile.favs.target';
   // JSON-encoded list of full-resolution URLs from the user's favourites.
   static const String quickTileFavWallUrls = 'quick_tile.favs.wall_urls';
+
+  // Auto-rotate configuration
+  static const String autoRotateEnabled = 'auto_rotate.enabled';
+  static const String autoRotateSourceType = 'auto_rotate.source_type';
+  static const String autoRotateCollectionName = 'auto_rotate.collection_name';
+  static const String autoRotateCategoryName = 'auto_rotate.category_name';
+  static const String autoRotateTarget = 'auto_rotate.target';
+  static const String autoRotateIntervalMinutes = 'auto_rotate.interval_minutes';
+  static const String autoRotateChargingTrigger = 'auto_rotate.charging_trigger';
+  static const String autoRotateOrder = 'auto_rotate.order';
 }

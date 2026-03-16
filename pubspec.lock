@@ -101,10 +101,10 @@ packages:
     dependency: "direct main"
     description:
       name: async_wallpaper
-      sha256: "4812b92a2d1ace8d44903f3964dc016b0881dd50f9a9c5cad33385092411e0f4"
+      sha256: "7daedf936bb5966a948b1f05cd30853eba10572f2ef34e996d38d56104f743cc"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "3.1.0"
   auto_route:
     dependency: "direct main"
     description:
