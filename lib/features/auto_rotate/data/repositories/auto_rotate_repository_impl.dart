@@ -2,7 +2,6 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/categories/categories.dart';
-import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/features/auto_rotate/data/data_sources/auto_rotate_local_data_source.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config_entity.dart';
