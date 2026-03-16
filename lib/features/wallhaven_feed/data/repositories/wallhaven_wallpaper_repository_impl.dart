@@ -110,7 +110,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1}) async {
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
       'sorting': 'toplist',
-      'topRange': '1M',
+      'topRange': '3d',
       'purity': '100',
       'categories': '100',
       'page': page.toString(),
