@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -480,6 +481,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         ListTile(
+          leading: Icon(Icons.delete_forever_rounded, color: Colors.red[400]),
+          title: Text('Delete Account', style: _titleStyle.copyWith(color: Colors.red[400])),
+          subtitle: const Text('Permanently delete your account and data', style: TextStyle(fontSize: 12)),
+          onTap: () => _showDeleteAccountDialog(),
+        ),
+        ListTile(
           leading: Icon(JamIcons.log_out, color: _accentColor),
           title: Text('Logout', style: _titleStyle.copyWith(color: _accentColor)),
           subtitle: Text(app_state.prismUser.email, style: _subtitleStyle),
@@ -581,6 +588,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: _accentColor,
               onPressed: () => Navigator.of(ctx).pop(),
               child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+            ),
+          ),
+        ],
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    showModal(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+        title: Text('Delete Account', style: _titleStyle.copyWith(color: Colors.red[400])),
+        content: const SizedBox(
+          width: 250,
+          child: Text(
+            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers and setups will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
+          ),
+        ),
+        actions: [
+          MaterialButton(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+            color: Colors.red[400],
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final loaderDialog = Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  width: MediaQuery.of(context).size.width * .7,
+                  height: MediaQuery.of(context).size.height * .3,
+                  child: const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Deleting account...')],
+                    ),
+                  ),
+                ),
+              );
+              showDialog(barrierDismissible: false, context: context, builder: (_) => loaderDialog);
+              try {
+                await DeleteAccountService.instance.deleteAccount();
+                if (!mounted) return;
+                Navigator.pop(context);
+                main.RestartWidget.restartApp(context);
+              } catch (error) {
+                if (!mounted) return;
+                Navigator.pop(context);
+                logger.e('Delete account failed.', error: error);
+                final String message = error.toString().contains('requires-recent-login')
+                    ? 'Please sign out and sign in again, then try deleting your account.'
+                    : 'Something went wrong, please try again.';
+                toasts.error(message);
+              }
+            },
+            child: const Text('DELETE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: MaterialButton(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('CANCEL', style: TextStyle(fontSize: 16.0, color: _accentColor)),
             ),
           ),
         ],
