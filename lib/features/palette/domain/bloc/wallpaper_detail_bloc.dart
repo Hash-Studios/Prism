@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_state.dart';
@@ -79,10 +80,14 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
 
     result.fold(
       onFailure: (failure) {
-        emit(currentState.copyWith(viewsLoading: false, viewsError: failure.message));
+        final latestState = state;
+        if (latestState is! WallpaperDetailLoaded) return;
+        emit(latestState.copyWith(viewsLoading: false, viewsError: failure.message));
       },
       onSuccess: (views) {
-        emit(currentState.copyWith(views: views, viewsLoading: false));
+        final latestState = state;
+        if (latestState is! WallpaperDetailLoaded) return;
+        emit(latestState.copyWith(views: views, viewsLoading: false));
       },
     );
   }
@@ -203,6 +208,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
 
   void _requestPalette(String imageUrl) {
     if (imageUrl.trim().isEmpty) return;
+    _paletteBloc.add(PaletteEvent.paletteCleared());
     _paletteBloc.add(PaletteEvent.paletteRequested(imageUrl: imageUrl));
   }
 
