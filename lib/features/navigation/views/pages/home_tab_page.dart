@@ -89,8 +89,6 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
         action = AnalyticsActionValue.quickActionFollowFeed;
       case 'Collections':
         action = AnalyticsActionValue.quickActionCollections;
-      case 'Setups':
-        action = AnalyticsActionValue.quickActionSetups;
       case 'AI_Wallpapers':
         action = AnalyticsActionValue.quickActionAiWallpapers;
       case 'Downloads':
@@ -151,10 +149,6 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       } else if (shortcutType == 'Collections') {
         logger.d('Collections');
         tabController!.animateTo(1);
-      } else if (shortcutType == 'Setups') {
-        logger.d('Setups');
-        final tabsRouter = AutoTabsRouter.of(context);
-        tabsRouter.setActiveIndex(2);
       } else if (shortcutType == 'Downloads') {
         logger.d('Downloads');
         context.router.push(const DownloadRoute());
@@ -164,7 +158,6 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
     quickActions.setShortcutItems(<ShortcutItem>[
       const ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: '@drawable/ic_feed'),
       const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
-      const ShortcutItem(type: 'Setups', localizedTitle: 'Setups', icon: '@drawable/ic_setups'),
       const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
     saveFavToLocal();

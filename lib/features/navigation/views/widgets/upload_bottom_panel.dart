@@ -55,27 +55,6 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     await _pickWallpaperImage();
   }
 
-  Future<void> _onSetupTap() async {
-    analytics.track(
-      const UploadActionSelectedEvent(
-        action: AnalyticsActionValue.uploadSetupSelected,
-        entrypoint: EntryPointValue.bottomNav,
-      ),
-    );
-    if (!app_state.prismUser.premium) {
-      Navigator.pop(context);
-      await PaywallOrchestrator.instance.present(
-        context,
-        placement: PaywallPlacement.blockedSetupCreate,
-        source: 'upload_setup_blocked',
-      );
-      return;
-    }
-    final router = context.router;
-    Navigator.pop(context);
-    router.push(const SetupGuidelinesRoute());
-  }
-
   void _onAiTap() {
     analytics.track(
       const UploadActionSelectedEvent(
@@ -130,14 +109,6 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             ),
             _TileDivider(color: secondary),
             _CreateActionTile(
-              icon: JamIcons.instant_picture_f,
-              iconColor: accentColor,
-              title: 'Setups',
-              subtitle: isPremium ? 'Share your homescreen' : 'Requires Pro',
-              onTap: _onSetupTap,
-            ),
-            _TileDivider(color: secondary),
-            _CreateActionTile(
               icon: Icons.auto_awesome_rounded,
               iconColor: const Color(0xFF7C4DFF),
               title: 'AI Generate',
@@ -148,7 +119,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Please only upload high-quality original wallpapers and setups. Do not upload content from other apps.',
+              'Please only upload high-quality original wallpapers. Do not upload content from other apps.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 11, color: secondary.withValues(alpha: 0.4), fontFamily: 'Proxima Nova'),
             ),
