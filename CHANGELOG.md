@@ -1,5 +1,42 @@
 ## Changelog
 
+### v3.0.3
+- Refactored settings screen with modular sections and state management
+- Fixed personalised feed not fetching all interests + shuffled feed order
+- Fixed auth taking too long on startup
+- Fixed onboarding issue for already logged-in users
+- Fixed black background on splash screen
+- Fixed app getting stuck on splash screen
+- Optimised code before app launch for faster startup
+- Removed native splash screen
+- Improved AI generate UI
+- Fixed create with AI button
+- Fixed remove delay in wallpaper set
+- Minor bug fixes and improvements
+
+### v3.0.2
+- New AI wallpaper generation pipeline (Cloudflare Worker)
+- New coins economy — earn and spend Prism coins
+- RevenueCat subscriptions with redesigned paywall UI
+- Discovery feed for new creators
+- Wallpaper of the day
+- Daily streak reminders and rewards
+- Smart notifications system
+- Deep links support (replaced Firebase Dynamic Links)
+- Sentry error monitoring integration
+- Mixpanel analytics with type-safe, provider-agnostic event tracking
+- New onboarding flow
+- New navigation framework with AutoRoute
+- BLoC architecture refactor — replaced global state with blocs
+- Centralised analytics layer
+- Consolidated share service
+- Admin app for wallpaper review
+- Profile completeness feature
+- Improved Firestore performance and optimisations
+- Updated app icon and splash screen
+- CI improvements
+- Minor bug fixes and improvements
+
 ### v3.0.0
 - Prism v3 — full app redesign and architecture overhaul
 - New user model with username, bio, cover photo, and social links

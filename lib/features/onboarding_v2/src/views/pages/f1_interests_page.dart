@@ -73,11 +73,11 @@ class F1InterestsPage extends StatelessWidget {
                         const Center(child: CircularProgressIndicator(color: Colors.white))
                       else
                         GridView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 140),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
                           ),
                           itemCount: interestsData.available.length,
                           itemBuilder: (context, index) {
