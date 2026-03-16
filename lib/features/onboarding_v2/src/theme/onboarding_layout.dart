@@ -10,7 +10,7 @@ class OnboardingLayout {
   static const double ctaHeight = 64;
 
   static const double welcomeLogoX = 172;
-  static const double welcomeLogoY = 74;
+  static const double welcomeLogoY = 54;
   static const double welcomeLogoWidth = 50;
 
   static const double welcomeHeadlineX = 84;
@@ -25,7 +25,8 @@ class OnboardingLayout {
   static const double legalX = 74;
   static const double legalWidth = 245;
 
-  static const double stepTitleY = 120;
+  static const double stepTitleY = 100;
+  static const double step4BadgeY = 184;
   static const double step2TitleX = 10;
   static const double step2TitleWidth = 259;
   static const double step3TitleX = 10;
@@ -34,22 +35,22 @@ class OnboardingLayout {
   static const double step4TitleWidth = 246;
 
   static const double progressX = 169;
-  static const double progressY = 83;
+  static const double progressY = 63;
   static const double progressWidth = 56;
   static const double progressHeight = 8;
 
   static const double skipX = 332;
-  static const double skipY = 76;
+  static const double skipY = 56;
 
   static const double tilesX = 27;
-  static const double tilesY = 183;
+  static const double tilesY = 163;
   static const double tilesWidth = 340;
-  static const double tilesHeight = 516;
+  static const double tilesHeight = 536;
   static const double tileSize = 164;
   static const double tileGap = 12;
 
   static const double creatorsX = 27;
-  static const double creatorsY = 183;
+  static const double creatorsY = 163;
   static const double creatorsWidth = 334;
   static const double creatorHeight = 164;
   static const double creatorGap = 12;

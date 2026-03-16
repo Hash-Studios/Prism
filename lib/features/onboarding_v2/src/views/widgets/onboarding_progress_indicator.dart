@@ -2,9 +2,10 @@ import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingProgressIndicator extends StatelessWidget {
-  const OnboardingProgressIndicator({super.key, required this.step});
+  const OnboardingProgressIndicator({super.key, required this.step, this.color = OnboardingColors.progressActive});
 
   final int step;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +25,21 @@ class OnboardingProgressIndicator extends StatelessWidget {
       height: OnboardingLayout.progressHeight,
       child: Stack(
         children: [
-          Positioned(left: inactive[0], top: 0, child: const _Dot(active: false, wide: false)),
-          Positioned(left: inactive[1], top: 0, child: const _Dot(active: false, wide: false)),
-          Positioned(left: activeLeft, top: 0, child: const _Dot(active: true, wide: true)),
+          Positioned(
+            left: inactive[0],
+            top: 0,
+            child: _Dot(active: false, wide: false, color: color),
+          ),
+          Positioned(
+            left: inactive[1],
+            top: 0,
+            child: _Dot(active: false, wide: false, color: color),
+          ),
+          Positioned(
+            left: activeLeft,
+            top: 0,
+            child: _Dot(active: true, wide: true, color: color),
+          ),
         ],
       ),
     );
@@ -34,10 +47,11 @@ class OnboardingProgressIndicator extends StatelessWidget {
 }
 
 class _Dot extends StatelessWidget {
-  const _Dot({required this.active, required this.wide});
+  const _Dot({required this.active, required this.wide, required this.color});
 
   final bool active;
   final bool wide;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +61,7 @@ class _Dot extends StatelessWidget {
       width: wide ? OnboardingLayout.progressActiveWidth : OnboardingLayout.progressDotSize,
       height: OnboardingLayout.progressDotSize,
       decoration: BoxDecoration(
-        color: active
-            ? OnboardingColors.progressActive
-            : OnboardingColors.progressInactive.withValues(alpha: OnboardingOpacity.progressInactive),
+        color: active ? color : color.withValues(alpha: OnboardingOpacity.progressInactive),
         borderRadius: BorderRadius.circular(OnboardingRadius.dot),
       ),
     );

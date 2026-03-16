@@ -60,8 +60,6 @@ class OnboardingBackground extends StatelessWidget {
         ? CachedNetworkImage(
             imageUrl: resolvedNetworkUrl,
             fit: BoxFit.cover,
-            memCacheWidth: (imageWidth * sx * dpr).toInt(),
-            memCacheHeight: (imageHeight * sy * dpr).toInt(),
             fadeInDuration: Duration.zero,
             placeholder: (_, __) => Image.asset(assetPath, fit: BoxFit.cover),
           )

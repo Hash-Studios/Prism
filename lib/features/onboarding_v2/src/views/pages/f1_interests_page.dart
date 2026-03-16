@@ -14,8 +14,7 @@ class F1InterestsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
-      listenWhen: (prev, curr) =>
-          prev.starterPackData.creators.isEmpty && curr.starterPackData.creators.isNotEmpty,
+      listenWhen: (prev, curr) => prev.starterPackData.creators.isEmpty && curr.starterPackData.creators.isNotEmpty,
       listener: (context, state) {
         for (final creator in state.starterPackData.creators) {
           if (creator.photoUrl.isNotEmpty) {

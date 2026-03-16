@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
@@ -26,7 +28,9 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage(name: 'OnboardingV2ShellRoute')
@@ -252,6 +256,11 @@ class _SharedOverlayState extends State<_SharedOverlay> {
   bool _buttonVisible = false;
   bool _bottomTextVisible = false;
 
+  // Defaults to white so F3 is always legible before palette resolves.
+  Color _wallpaperHeadlineColor = OnboardingColors.textOnDark;
+  // Defaults to light icons (for dark wallpaper) before palette resolves.
+  Brightness _statusBarIconBrightness = Brightness.light;
+
   @override
   void initState() {
     super.initState();
@@ -273,15 +282,53 @@ class _SharedOverlayState extends State<_SharedOverlay> {
   }
 
   @override
+  void didUpdateWidget(_SharedOverlay old) {
+    super.didUpdateWidget(old);
+    final oldUrl = old.state.wallpaperData.wallpaper?.thumbnailUrl;
+    final newUrl = widget.state.wallpaperData.wallpaper?.thumbnailUrl;
+    if (newUrl != null && newUrl.isNotEmpty && newUrl != oldUrl) {
+      _computeWallpaperHeadlineColor(newUrl);
+    }
+  }
+
+  Future<void> _computeWallpaperHeadlineColor(String thumbnailUrl) async {
+    try {
+      final palette = await PaletteGenerator.fromImageProvider(
+        CachedNetworkImageProvider(thumbnailUrl),
+        maximumColorCount: 8,
+      );
+      final dominant = palette.dominantColor?.color ?? Colors.black;
+      final brightness = ThemeData.estimateBrightnessForColor(dominant);
+      if (mounted) {
+        setState(() {
+          _wallpaperHeadlineColor = brightness == Brightness.light
+              ? OnboardingColors.textPrimary
+              : OnboardingColors.textOnDark;
+          _statusBarIconBrightness = brightness == Brightness.light ? Brightness.dark : Brightness.light;
+        });
+      }
+    } catch (_) {
+      // Keep current color on error.
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final step = widget.state.step;
-    return OnboardingFrame(
+    final overlayStyle = step == OnboardingV2Step.firstWallpaper
+        ? edgeToEdgeOverlayStyle(
+            statusBarIconBrightness: _statusBarIconBrightness,
+            systemNavigationBarIconBrightness: Brightness.light,
+          )
+        : null;
+    final content = OnboardingFrame(
       builder: (context, sx, sy) {
         return Stack(
           fit: StackFit.expand,
           children: [
-            _Progress(step: step, sx: sx, sy: sy),
-            _Headline(step: step, sx: sx, sy: sy, visible: _headlineVisible),
+            _Progress(step: step, sx: sx, sy: sy, wallpaperColor: _wallpaperHeadlineColor),
+            _Headline(step: step, sx: sx, sy: sy, visible: _headlineVisible, wallpaperColor: _wallpaperHeadlineColor),
+            _ProBadge(step: step, sx: sx, sy: sy, visible: _headlineVisible, color: _wallpaperHeadlineColor),
             _CtaButton(
               step: step,
               sx: sx,
@@ -290,11 +337,19 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               state: widget.state,
               onCtaTap: widget.onCtaTap,
             ),
-            _BottomText(step: step, sx: sx, sy: sy, visible: _bottomTextVisible, legalTap: widget.legalTap),
+            _BottomText(
+              step: step,
+              sx: sx,
+              sy: sy,
+              visible: _bottomTextVisible,
+              legalTap: widget.legalTap,
+              wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
+            ),
           ],
         );
       },
     );
+    return overlayStyle != null ? AnnotatedRegion<SystemUiOverlayStyle>(value: overlayStyle, child: content) : content;
   }
 }
 
@@ -304,11 +359,12 @@ class _SharedOverlayState extends State<_SharedOverlay> {
 // ---------------------------------------------------------------------------
 
 class _Progress extends StatelessWidget {
-  const _Progress({required this.step, required this.sx, required this.sy});
+  const _Progress({required this.step, required this.sx, required this.sy, required this.wallpaperColor});
 
   final OnboardingV2Step step;
   final double sx;
   final double sy;
+  final Color wallpaperColor;
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +379,8 @@ class _Progress extends StatelessWidget {
       _ => 3,
     };
 
+    final color = step == OnboardingV2Step.firstWallpaper ? wallpaperColor : OnboardingColors.progressActive;
+
     return Positioned(
       top: OnboardingLayout.progressY * sy,
       left: 0,
@@ -335,7 +393,7 @@ class _Progress extends StatelessWidget {
             scaleX: sx,
             scaleY: sy,
             alignment: Alignment.topCenter,
-            child: OnboardingProgressIndicator(step: progressStep),
+            child: OnboardingProgressIndicator(step: progressStep, color: color),
           ),
         ),
       ),
@@ -344,12 +402,21 @@ class _Progress extends StatelessWidget {
 }
 
 class _Headline extends StatelessWidget {
-  const _Headline({required this.step, required this.sx, required this.sy, required this.visible});
+  const _Headline({
+    required this.step,
+    required this.sx,
+    required this.sy,
+    required this.visible,
+    required this.wallpaperColor,
+  });
 
   final OnboardingV2Step step;
   final double sx;
   final double sy;
   final bool visible;
+
+  /// Color used for the headline on the firstWallpaper step, derived from the wallpaper palette.
+  final Color wallpaperColor;
 
   static double _headlineY(OnboardingV2Step step) =>
       step == OnboardingV2Step.auth ? OnboardingLayout.welcomeHeadlineY : OnboardingLayout.stepTitleY;
@@ -373,6 +440,9 @@ class _Headline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = _headlineText(step);
+    final style = step == OnboardingV2Step.firstWallpaper
+        ? OnboardingTypography.headline.copyWith(color: wallpaperColor)
+        : OnboardingTypography.headline;
     return AnimatedPositioned(
       duration: OnboardingMotion.normal,
       curve: OnboardingMotion.emphasized,
@@ -384,7 +454,7 @@ class _Headline extends StatelessWidget {
         duration: const Duration(milliseconds: 1000),
         child: AnimatedSwitcher(
           duration: OnboardingMotion.short,
-          child: Text(key: ValueKey(text), text, style: OnboardingTypography.headline, textAlign: TextAlign.center),
+          child: Text(key: ValueKey(text), text, style: style, textAlign: TextAlign.center),
         ),
       ),
     );
@@ -460,6 +530,7 @@ class _BottomText extends StatelessWidget {
     required this.sy,
     required this.visible,
     required this.legalTap,
+    this.wallpaperCategory,
   });
 
   final OnboardingV2Step step;
@@ -467,11 +538,15 @@ class _BottomText extends StatelessWidget {
   final double sy;
   final bool visible;
   final TapGestureRecognizer legalTap;
+  final String? wallpaperCategory;
 
-  static String _helperText(OnboardingV2Step step) => switch (step) {
+  String _helperText() => switch (step) {
     OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
     OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
-    _ => 'we picked this wallpaper based on your interest in Minimal',
+    _ =>
+      (wallpaperCategory != null && wallpaperCategory!.isNotEmpty)
+          ? 'we picked this wallpaper based on your interest in $wallpaperCategory'
+          : 'we picked this wallpaper just for you',
   };
 
   @override
@@ -494,7 +569,7 @@ class _BottomText extends StatelessWidget {
         ),
       );
     } else {
-      final text = _helperText(step);
+      final text = _helperText();
       content = OnboardingHelperText(key: ValueKey(text), text: text);
     }
 
@@ -508,6 +583,65 @@ class _BottomText extends StatelessWidget {
         opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
         child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
+      ),
+    );
+  }
+}
+
+class _ProBadge extends StatelessWidget {
+  const _ProBadge({required this.step, required this.sx, required this.sy, required this.visible, required this.color});
+
+  final OnboardingV2Step step;
+  final double sx;
+  final double sy;
+  final bool visible;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: OnboardingLayout.step4BadgeY * sy,
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        opacity: (visible && step == OnboardingV2Step.firstWallpaper) ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 1000),
+        child: Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(
+                sigmaX: OnboardingLayout.softenedBlurSigma,
+                sigmaY: OnboardingLayout.softenedBlurSigma,
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  border: Border.all(color: color.withValues(alpha: 0.5)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontFamily: OnboardingTypography.sans,
+                      fontSize: 12,
+                      height: 1.2,
+                      color: color,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    children: const [
+                      TextSpan(
+                        text: 'PRO',
+                        style: TextStyle(decoration: TextDecoration.lineThrough, decorationThickness: 2.5),
+                      ),
+                      TextSpan(text: '  →  free for you'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

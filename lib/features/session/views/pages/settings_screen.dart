@@ -594,6 +594,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               } catch (error) {
                 if (!mounted) return;
                 Navigator.pop(context);
+                if (error is WrongAccountException) {
+                  logger.w('Delete account cancelled: wrong account selected.', error: error);
+                  toasts.error('Please select the account you are currently signed in with.');
+                  return;
+                }
                 logger.e('Delete account failed.', error: error);
                 final String message = error.toString().contains('requires-recent-login')
                     ? 'Please sign out and sign in again, then try deleting your account.'

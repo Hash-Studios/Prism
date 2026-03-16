@@ -84,7 +84,6 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final List<OnboardingCreatorVm> creatorVms = starterPackResult.fold(
       onSuccess: (entities) {
         final sorted = [...entities]..sort((a, b) => a.rank.compareTo(b.rank));
-        final preselected = sorted.take(OnboardingV2Config.preselectedCreatorsCount).map((e) => e.email).toList();
         return sorted
             .map(
               (e) => OnboardingCreatorVm(
@@ -94,7 +93,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
                 photoUrl: e.photoUrl,
                 previewUrls: e.previewUrls,
                 rank: e.rank,
-                isSelected: preselected.contains(e.email),
+                isSelected: false,
                 bio: e.bio,
                 followerCount: e.followerCount,
               ),
@@ -104,14 +103,13 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       onFailure: (_) => <OnboardingCreatorVm>[],
     );
 
-    final preselectedEmails = creatorVms.where((c) => c.isSelected).map((c) => c.email).toList();
     final wallpaperVm = await _firstWallpaperService.recommendForOnboarding(<String>[]);
 
     emit(
       state.copyWith(
         loadStatus: LoadStatus.success,
         interestsData: state.interestsData.copyWith(available: availableCategories, categoryImages: categoryImages),
-        starterPackData: OnboardingStarterPackData(creators: creatorVms, selectedEmails: preselectedEmails),
+        starterPackData: OnboardingStarterPackData(creators: creatorVms, selectedEmails: []),
         wallpaperData: OnboardingWallpaperData(wallpaper: wallpaperVm, status: FirstWallpaperStatus.idle),
       ),
     );
