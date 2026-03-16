@@ -42,7 +42,8 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     final Uri uri = isCurated
         ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
         : Uri.https(_host, _searchPath, <String, String>{
-            if (colorHex != null) 'color': colorHex else 'query': categoryName,
+            'query': colorHex != null ? 'wallpaper' : categoryName,
+            if (colorHex != null) 'color': colorHex,
             'per_page': '80',
             'page': page.toString(),
           });
