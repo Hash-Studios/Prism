@@ -1744,17 +1744,11 @@ class FalProviderAdapter implements AiProviderAdapter {
     const SEEDREAM_MIN = 1920;
     const width = isSeedream ? Math.max(rawWidth, SEEDREAM_MIN) : rawWidth;
     const height = isSeedream ? Math.max(rawHeight, SEEDREAM_MIN) : rawHeight;
-    const requestBody = isSeedream
-      ? {
-          prompt: `${params.prompt}, ${params.stylePreset} style`,
-          image_size: { width, height },
-          seed: params.seed,
-        }
-      : {
-          prompt: `${params.prompt}, ${params.stylePreset} style`,
-          image_size: `${width}x${height}`,
-          seed: params.seed,
-        };
+    const requestBody = {
+      prompt: `${params.prompt}, ${params.stylePreset} style`,
+      image_size: { width, height },
+      seed: params.seed,
+    };
     const response = await fetchWithTimeout(endpoint, {
       method: 'POST',
       headers: {
