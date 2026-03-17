@@ -7,14 +7,10 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
 import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallhaven_tile.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
@@ -302,35 +298,20 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                   //     ),
                   //   ),
                   // ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                        childAspectRatio: 0.6625,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                      ),
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = visibleItems[index];
-                        final tile = switch (item) {
-                          PrismFeedItem prism => WallpaperTile(item: prism, index: index),
-                          WallhavenFeedItem wallhaven => WallhavenTile(item: wallhaven, index: index),
-                          PexelsFeedItem pexels => PexelsTile(item: pexels, index: index),
-                        };
-
-                        final payload = WallpaperActionPayloadAdapter.fromFeedItem(
-                          item,
-                          sourceContext: 'focused_menu.personalized_feed.${item.source.wireValue}',
-                        );
-
-                        return AnimatedFeedTile(
-                          index: index,
-                          reduceMotion: reduceMotion,
-                          child: FocusedMenuHolder.payload(payload: payload, child: tile),
-                        );
-                      }, childCount: visibleItems.length),
+                  SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+                      childAspectRatio: 0.5,
                     ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final item = visibleItems[index];
+
+                      return AnimatedFeedTile(
+                        index: index,
+                        reduceMotion: reduceMotion,
+                        child: WallpaperTile(item: item, index: index),
+                      );
+                    }, childCount: visibleItems.length),
                   ),
                   SliverToBoxAdapter(child: _bottomState(context, state)),
                 ],
