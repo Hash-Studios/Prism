@@ -55,7 +55,7 @@ Future<bool> getCollectionWithName(String name) async {
     ),
     (data, docId) => <String, dynamic>{...data, '__docId': docId},
   );
-  anyCollectionWalls = rows;
+  anyCollectionWalls = List<Map<String, dynamic>>.from(rows);
   collectionHasMore = rows.length == 24;
   if (rows.isNotEmpty) {
     _lastCollectionCursorDocId = rows.last['__docId']?.toString();
