@@ -146,7 +146,7 @@ enum NotificationTypeValue { route, externalUrl, unknown }
 
 enum AuthMethodValue { google, apple }
 
-enum NavTabValue { home, search, setups, ai, streak, profile }
+enum NavTabValue { home, search, setups, ai, streak, profile, collection }
 
 enum NotificationPreferenceValue { followers, posts, inApp, recommendations, streakReminders }
 
@@ -661,6 +661,8 @@ extension NavTabValueX on NavTabValue {
         return 'streak';
       case NavTabValue.profile:
         return 'profile';
+      case NavTabValue.collection:
+        return 'collection';
     }
   }
 }

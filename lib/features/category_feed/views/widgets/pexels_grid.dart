@@ -8,7 +8,7 @@ import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
-import 'package:Prism/features/category_feed/views/widgets/pexels_tile.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -106,14 +106,14 @@ class _PexelsGridState extends State<PexelsGrid> {
           return false;
         },
         child: GridView.builder(
-          padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
+          padding: EdgeInsets.zero,
           itemCount: walls.isEmpty ? 20 : walls.length,
           shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-            childAspectRatio: 0.6625,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+            childAspectRatio: 0.5,
+            mainAxisSpacing: 0,
+            crossAxisSpacing: 0,
           ),
           itemBuilder: (context, index) {
             if (walls.isEmpty) {
@@ -143,7 +143,7 @@ class _PexelsGridState extends State<PexelsGrid> {
                 },
               );
             }
-            return PexelsTile(item: walls[index], index: index);
+            return WallpaperTile(item: walls[index], index: index);
           },
         ),
       ),
