@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -13,10 +13,13 @@ DOPPLER_CONFIG ?= dev
 DOPPLER_REQUIRED ?= true
 DOPPLER_ARGS = --project $(DOPPLER_PROJECT) --config $(DOPPLER_CONFIG)
 ENV_DART_DEFINES ?= $(shell DOPPLER_PROJECT=$(DOPPLER_PROJECT) DOPPLER_CONFIG=$(DOPPLER_CONFIG) ./tool/dart_defines_from_doppler.sh)
+SENTRY_SIZE_AAB ?= build/app/outputs/bundle/release/app-release.aab
 SENTRY_ENV ?=
 SENTRY_RELEASE ?=
 SENTRY_DIST ?=
 SENTRY_ENABLED ?=
+SENTRY_UPLOAD ?= true
+SENTRY_DOPPLER_CONFIG ?= prd
 SENTRY_DART_DEFINES = $(strip \
 	$(if $(SENTRY_ENV),--dart-define=SENTRY_ENV=$(SENTRY_ENV),) \
 	$(if $(SENTRY_RELEASE),--dart-define=SENTRY_RELEASE=$(SENTRY_RELEASE),) \
@@ -151,6 +154,9 @@ build-aab: ensure-fvm doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	$(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
+	fi
 
 size-android: ensure-fvm
 	@mkdir -p build/size/local
@@ -158,6 +164,9 @@ size-android: ensure-fvm
 	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
 	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
 	@echo "APK + size analysis log written to build/size/local"
+
+sentry-size-upload:
+	@DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) AAB_PATH=$(SENTRY_SIZE_AAB) ./tool/sentry_size_upload.sh
 
 attach: ensure-fvm
 	@if [ -n "$(DEVICE)" ]; then \

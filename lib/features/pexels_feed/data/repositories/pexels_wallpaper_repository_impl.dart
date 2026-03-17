@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/env/env.dart';
@@ -67,7 +66,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
         );
       }
 
-      final Map<String, dynamic> decoded = json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       final PexelsSearchResponseDto payload = PexelsSearchResponseDto.fromJson(decoded);
       final int currentPage = payload.page == 0 ? page : payload.page;
       final int totalPages = payload.perPage > 0 ? (payload.totalResults / payload.perPage).ceil() : currentPage;
@@ -116,7 +115,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
         );
       }
 
-      final Map<String, dynamic> decoded = json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       return Result.success(PexelsPhotoDto.fromJson(decoded).toDomain());
     } catch (error, stackTrace) {
       logger.e('[PexelsWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
@@ -159,8 +158,8 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       return null;
     }
 
-    final map = _asMap(snapshot.payload);
-    final payloadMap = _asMap(map['payload']);
+    final map = toJsonMap(snapshot.payload);
+    final payloadMap = toJsonMap(map['payload']);
     if (payloadMap.isEmpty) {
       return null;
     }
@@ -176,9 +175,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return walls;
   }
 
-  String _scope(String categoryName) {
-    return categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
-  }
+  String _scope(String categoryName) => categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
 
   /// Parses "color: ff0000" style category into Pexels color param (hex without #).
   /// Returns null if not a color search.
@@ -191,14 +188,4 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     }
     return null;
   }
-}
-
-Map<String, dynamic> _asMap(Object? value) {
-  if (value is Map<String, dynamic>) {
-    return value;
-  }
-  if (value is Map) {
-    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
-  }
-  return <String, dynamic>{};
 }
