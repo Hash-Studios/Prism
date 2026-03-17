@@ -5,10 +5,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/focussedMenu/searchFocusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as wData;
@@ -214,11 +212,11 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               ? 24
               : pData.wallsPS.length,
           shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-            childAspectRatio: 0.6625,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+            childAspectRatio: 0.5,
+            mainAxisSpacing: 0,
+            crossAxisSpacing: 0,
           ),
           itemBuilder: (context, index) {
             if (widget.selectedProvider == "WallHaven") {
@@ -264,14 +262,13 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                       Container(
                         decoration: widget.selectedProvider == "WallHaven"
                             ? wData.wallsS.isEmpty
-                                  ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                                  ? BoxDecoration(color: animation.value)
                                   : () {
                                       final String thumbUrl = wData.wallsS[index].thumbs?["original"]?.toString() ?? '';
                                       final String fullUrl = wData.wallsS[index].core.fullUrl;
                                       return BoxDecoration(
                                         color: animation.value,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: thumbUrl.isNotEmpty && thumbUrl != 'null'
+                                                        image: thumbUrl.isNotEmpty && thumbUrl != 'null'
                                             ? DecorationImage(
                                                 image: CachedNetworkImageProvider(thumbUrl),
                                                 fit: BoxFit.cover,
@@ -283,19 +280,16 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                       );
                                     }()
                             : pData.wallsPS.isEmpty
-                            ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                            ? BoxDecoration(color: animation.value)
                             : BoxDecoration(
                                 color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
+                                        image: DecorationImage(
                                   image: CachedNetworkImageProvider(pData.wallsPS[index].core.thumbnailUrl),
                                   fit: BoxFit.cover,
                                 ),
                               ),
                       ),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Material(
+                      Material(
                           color: Colors.transparent,
                           child: InkWell(
                             splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
@@ -374,59 +368,13 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                             },
                           ),
                         ),
-                      ),
                     ],
                   ),
                 );
               },
             );
 
-            WallpaperActionPayload? payload;
-            if (widget.selectedProvider == "WallHaven" && index < wData.wallsS.length) {
-              final wall = wData.wallsS[index];
-              final category = wall.core.category?.trim() ?? '';
-              payload = WallpaperActionPayload(
-                providerLabel: 'WallHaven',
-                title: category.isEmpty ? 'Wallhaven' : '${category[0].toUpperCase()}${category.substring(1)}',
-                subtitle: wall.id.toUpperCase(),
-                stats: [
-                  WallpaperActionStat(kind: WallpaperActionStatKind.views, label: 'Views: ${wall.views ?? 0}'),
-                  WallpaperActionStat(kind: WallpaperActionStatKind.resolution, label: wall.core.resolution ?? '-'),
-                ],
-                fullUrl: wall.core.fullUrl,
-                favouriteWall: WallhavenFavouriteWall(id: wall.id, wallpaper: wall),
-                favouriteTrash: false,
-                cardTopFactor: 2 / 8,
-                cardHeightFactor: 6 / 8,
-                titleKind: WallpaperActionTitleKind.category,
-                titleColorHex: wall.colors == null || wall.colors!.isEmpty
-                    ? null
-                    : wall.colors!.last.toUpperCase().replaceAll('#', ''),
-                sourceContext: 'focused_menu.search.wallhaven',
-              );
-            } else if (widget.selectedProvider == "Pexels" && index < pData.wallsPS.length) {
-              final wall = pData.wallsPS[index];
-              final photographer = wall.photographer?.trim() ?? '';
-              payload = WallpaperActionPayload(
-                providerLabel: 'Pexels',
-                title: photographer.isEmpty ? 'Pexels' : photographer,
-                subtitle: wall.id.toUpperCase(),
-                stats: [
-                  WallpaperActionStat(kind: WallpaperActionStatKind.resolution, label: wall.core.resolution ?? '-'),
-                ],
-                fullUrl: wall.core.fullUrl,
-                favouriteWall: PexelsFavouriteWall(id: wall.id, wallpaper: wall),
-                favouriteTrash: false,
-                cardTopFactor: 4 / 10,
-                cardHeightFactor: 6 / 10,
-                sourceContext: 'focused_menu.search.pexels',
-              );
-            }
-
-            if (payload == null) {
-              return tile;
-            }
-            return SearchFocusedMenuHolder.payload(payload: payload, child: tile);
+            return tile;
           },
         ),
       ),

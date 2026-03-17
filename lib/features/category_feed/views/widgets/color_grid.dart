@@ -5,10 +5,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -150,14 +148,14 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
           return false;
         },
         child: GridView.builder(
-          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+          padding: EdgeInsets.zero,
           itemCount: PData.wallsC.isEmpty ? 24 : PData.wallsC.length,
           shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-            childAspectRatio: 0.6625,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+            childAspectRatio: 0.5,
+            mainAxisSpacing: 0,
+            crossAxisSpacing: 0,
           ),
           itemBuilder: (context, index) {
             if (index == PData.wallsC.length - 1) {
@@ -202,19 +200,16 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                     children: [
                       Container(
                         decoration: PData.wallsC.isEmpty
-                            ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
+                            ? BoxDecoration(color: animation.value)
                             : BoxDecoration(
                                 color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(PData.wallsC[index].core.thumbnailUrl),
                                   fit: BoxFit.cover,
                                 ),
                               ),
                       ),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Material(
+                      Material(
                           color: Colors.transparent,
                           child: InkWell(
                             splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
@@ -260,7 +255,6 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                             },
                           ),
                         ),
-                      ),
                     ],
                   ),
                 );
@@ -271,23 +265,7 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               return tile;
             }
 
-            final wall = PData.wallsC[index];
-            final photographer = wall.photographer?.trim() ?? '';
-            final payload = WallpaperActionPayload(
-              providerLabel: widget.provider,
-              title: photographer.isEmpty ? 'Pexels' : photographer,
-              subtitle: wall.id.toUpperCase(),
-              stats: [
-                WallpaperActionStat(kind: WallpaperActionStatKind.resolution, label: wall.core.resolution ?? '-'),
-              ],
-              fullUrl: wall.core.fullUrl,
-              favouriteWall: PexelsFavouriteWall(id: wall.id, wallpaper: wall),
-              favouriteTrash: false,
-              cardTopFactor: 2 / 8,
-              cardHeightFactor: 6 / 8,
-              sourceContext: 'focused_menu.${widget.provider}',
-            );
-            return FocusedMenuHolder.payload(payload: payload, child: tile);
+            return tile;
           },
         ),
       ),

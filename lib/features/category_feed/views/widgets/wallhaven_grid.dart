@@ -106,14 +106,14 @@ class _WallHavenGridState extends State<WallHavenGrid> {
           return false;
         },
         child: GridView.builder(
-          padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
+          padding: EdgeInsets.zero,
           itemCount: walls.isEmpty ? 20 : walls.length,
           shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-            childAspectRatio: 0.6625,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+            childAspectRatio: 0.5,
+            mainAxisSpacing: 0,
+            crossAxisSpacing: 0,
           ),
           itemBuilder: (context, index) {
             if (walls.isEmpty) {

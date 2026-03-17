@@ -5,8 +5,6 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/wallpaper/wallpaper_action_payload.dart';
-import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
@@ -202,13 +200,13 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                     child: GridView.builder(
                       shrinkWrap: true,
                       cacheExtent: 50000,
-                      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                      padding: EdgeInsets.zero,
                       itemCount: context.favouriteWallsAdapter().liked!.length,
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                        childAspectRatio: 0.6625,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+                        childAspectRatio: 0.5,
+                        mainAxisSpacing: 0,
+                        crossAxisSpacing: 0,
                       ),
                       itemBuilder: (context, index) {
                         final likedWall = context.favouriteWallsAdapter().liked![index];
@@ -217,90 +215,51 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                         final isPexels = likedWall.provider == 'Pexels';
                         final category = likedWall.category.trim();
                         final photographer = likedWall.photographer.trim();
-                        final payload = WallpaperActionPayload(
-                          providerLabel: 'Liked',
-                          title: isWallhaven
-                              ? (category.isEmpty
-                                    ? 'Wallhaven'
-                                    : '${category[0].toUpperCase()}${category.substring(1)}')
-                              : (photographer.isEmpty ? 'Pexels' : photographer),
-                          subtitle: likedWall.id.toUpperCase(),
-                          stats: [
-                            if (isWallhaven)
-                              WallpaperActionStat(
-                                kind: WallpaperActionStatKind.views,
-                                label: 'Views: ${likedWall.views.isEmpty ? '0' : likedWall.views}',
+                        return Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: animation.value,
+                                image: DecorationImage(
+                                  image: CachedNetworkImageProvider(likedWall.thumb),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            if (isPrism)
-                              WallpaperActionStat(
-                                kind: WallpaperActionStatKind.size,
-                                label: likedWall.size.isEmpty ? '0' : likedWall.size,
+                            ),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                                onTap: () {
+                                  if (context.favouriteWallsAdapter(listen: false).liked == null ||
+                                      context.favouriteWallsAdapter(listen: false).liked!.isEmpty) {
+                                  } else {
+                                    final likedList = context.favouriteWallsAdapter(listen: false).liked!;
+                                    final entity = WallpaperDetailEntityX.fromFavouriteWall(likedList[index]);
+                                    unawaited(
+                                      analytics.track(
+                                        SurfaceActionTappedEvent(
+                                          surface: AnalyticsSurfaceValue.favouriteWallsGrid,
+                                          action: AnalyticsActionValue.tileOpened,
+                                          sourceContext: 'favourite_walls_grid_tile',
+                                          itemType: ItemTypeValue.wallpaper,
+                                          itemId: likedWall.id,
+                                          index: index,
+                                        ),
+                                      ),
+                                    );
+                                    context.router.push(
+                                      WallpaperDetailRoute(
+                                        entity: entity,
+                                        analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
+                                      ),
+                                    );
+                                  }
+                                },
                               ),
-                            WallpaperActionStat(
-                              kind: WallpaperActionStatKind.resolution,
-                              label: likedWall.resolution.isEmpty ? '-' : likedWall.resolution,
                             ),
                           ],
-                          fullUrl: likedWall.url,
-                          favouriteWall: likedWall,
-                          favouriteTrash: true,
-                          cardTopFactor: isPexels ? 1 / 2 : 2 / 8,
-                          cardHeightFactor: isPexels ? 1 / 2 : 6 / 8,
-                          sourceContext: 'focused_menu.Liked',
-                          contentId: likedWall.id,
-                        );
-                        return FocusedMenuHolder.payload(
-                          payload: payload,
-                          child: Stack(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: animation.value,
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(
-                                    image: CachedNetworkImageProvider(likedWall.thumb),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                    highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                    onTap: () {
-                                      if (context.favouriteWallsAdapter(listen: false).liked == null ||
-                                          context.favouriteWallsAdapter(listen: false).liked!.isEmpty) {
-                                      } else {
-                                        final likedList = context.favouriteWallsAdapter(listen: false).liked!;
-                                        final entity = WallpaperDetailEntityX.fromFavouriteWall(likedList[index]);
-                                        unawaited(
-                                          analytics.track(
-                                            SurfaceActionTappedEvent(
-                                              surface: AnalyticsSurfaceValue.favouriteWallsGrid,
-                                              action: AnalyticsActionValue.tileOpened,
-                                              sourceContext: 'favourite_walls_grid_tile',
-                                              itemType: ItemTypeValue.wallpaper,
-                                              itemId: likedWall.id,
-                                              index: index,
-                                            ),
-                                          ),
-                                        );
-                                        context.router.push(
-                                          WallpaperDetailRoute(
-                                            entity: entity,
-                                            analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         );
                       },
                     ),
