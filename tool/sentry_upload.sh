@@ -17,7 +17,13 @@ fi
 echo "Fetching Sentry credentials from Doppler ($PROJECT/$CONFIG)..."
 
 fetch_secret() {
-  doppler secrets get "$1" --plain --project "$PROJECT" --config "$CONFIG" 2>/dev/null || true
+  local result
+  result=$(doppler secrets get "$1" --plain --project "$PROJECT" --config "$CONFIG" 2>&1) || {
+    echo "sentry_upload: doppler fetch failed for $1: $result" >&2
+    echo ""
+    return 0
+  }
+  echo "$result"
 }
 
 export SENTRY_AUTH_TOKEN="${SENTRY_AUTH_TOKEN:-$(fetch_secret SENTRY_AUTH_TOKEN)}"
