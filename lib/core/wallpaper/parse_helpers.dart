@@ -38,14 +38,6 @@ int? parseInt(Object? v) {
   return null;
 }
 
-List<String> parseStringList(Object? v) {
-  if (v == null) return const <String>[];
-  if (v is List) {
-    return v.whereType<Object>().map((Object e) => e.toString()).toList();
-  }
-  return const <String>[];
-}
-
 T? parseEnum<T extends Enum>(Object? v, List<T> values) {
   if (v == null) return null;
   final String s = v.toString().toLowerCase().trim();
