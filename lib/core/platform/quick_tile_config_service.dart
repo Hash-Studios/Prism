@@ -98,7 +98,6 @@ class QuickTileConfigService {
       WallpaperSource.pexels => 'pexels',
       WallpaperSource.wallhaven => 'wallhaven',
       WallpaperSource.prism => 'prism',
-      WallpaperSource.wallOfTheDay => 'wall_of_the_day',
       WallpaperSource.downloaded => 'downloaded',
       WallpaperSource.unknown => 'unknown',
     };
@@ -108,7 +107,7 @@ class QuickTileConfigService {
     return switch (raw) {
       'wallhaven' => WallpaperSource.wallhaven,
       'prism' => WallpaperSource.prism,
-      'wall_of_the_day' => WallpaperSource.wallOfTheDay,
+      'wall_of_the_day' => WallpaperSource.prism, // legacy: WOTD was always Prism
       'downloaded' => WallpaperSource.downloaded,
       _ => WallpaperSource.pexels,
     };

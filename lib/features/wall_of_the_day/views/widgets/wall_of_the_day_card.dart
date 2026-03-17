@@ -5,8 +5,6 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -59,10 +57,9 @@ class _WotdCardContent extends StatelessWidget {
 
   void _openWallpaper(BuildContext context) {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
-    final prismWallpaper = PrismWallpaper.fromWotd(entity);
     context.router.push(
       WallpaperDetailRoute(
-        entity: WallpaperDetailEntityX.fromFeedItem(FeedItemEntity.prism(id: entity.wallId, wallpaper: prismWallpaper)),
+        entity: WallpaperDetailEntityX.fromWotd(entity),
         analyticsSurface: AnalyticsSurfaceValue.wallpaperScreen,
       ),
     );
@@ -70,10 +67,9 @@ class _WotdCardContent extends StatelessWidget {
 
   void _setAsWallpaperAction(BuildContext context) {
     unawaited(analytics.track(WotdSetAsWallpaperEvent(wallId: entity.wallId)));
-    final prismWallpaper = PrismWallpaper.fromWotd(entity);
     context.router.push(
       WallpaperDetailRoute(
-        entity: WallpaperDetailEntityX.fromFeedItem(FeedItemEntity.prism(id: entity.wallId, wallpaper: prismWallpaper)),
+        entity: WallpaperDetailEntityX.fromWotd(entity),
         analyticsSurface: AnalyticsSurfaceValue.wallpaperScreen,
       ),
     );

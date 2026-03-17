@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 
 sealed class WallpaperDetailEntity {
   const WallpaperDetailEntity();
@@ -101,34 +102,15 @@ final class PexelsDetailEntity extends WallpaperDetailEntity {
   }
 }
 
-final class WallOfTheDayDetailEntity extends WallpaperDetailEntity {
-  const WallOfTheDayDetailEntity({required this.wallpaper});
-
-  final PrismWallpaper wallpaper;
-
-  @override
-  String get id => wallpaper.id;
-
-  @override
-  WallpaperSource get source => WallpaperSource.wallOfTheDay;
-
-  @override
-  String get fullUrl => wallpaper.fullUrl;
-
-  @override
-  String get thumbnailUrl => wallpaper.thumbnailUrl;
-
-  @override
-  T when<T>({
-    required T Function(PrismWallpaper wallpaper) prism,
-    required T Function(WallhavenWallpaper wallpaper) wallhaven,
-    required T Function(PexelsWallpaper wallpaper) pexels,
-  }) {
-    return prism(wallpaper);
-  }
-}
-
 extension WallpaperDetailEntityX on WallpaperDetailEntity {
+  static WallpaperDetailEntity fromWotd(WallOfTheDayEntity entity) {
+    return switch (entity.source) {
+      WallpaperSource.wallhaven => WallhavenDetailEntity(wallpaper: WallhavenWallpaper.fromWotd(entity)),
+      WallpaperSource.pexels => PexelsDetailEntity(wallpaper: PexelsWallpaper.fromWotd(entity)),
+      _ => PrismDetailEntity(wallpaper: PrismWallpaper.fromWotd(entity)),
+    };
+  }
+
   static WallpaperDetailEntity fromFavouriteWall(FavouriteWallEntity favourite) {
     return switch (favourite) {
       PrismFavouriteWall(:final wallpaper) => PrismDetailEntity(wallpaper: wallpaper),

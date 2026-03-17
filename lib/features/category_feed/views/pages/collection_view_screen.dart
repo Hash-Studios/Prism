@@ -111,7 +111,6 @@ class _CategoryFeedContent extends StatelessWidget {
             return const PexelsGrid();
           case WallpaperSource.prism:
             return const WallpaperGrid();
-          case WallpaperSource.wallOfTheDay:
           case WallpaperSource.downloaded:
           case WallpaperSource.unknown:
             return const WallpaperGrid();

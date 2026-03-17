@@ -142,7 +142,6 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
             src: PexelsSrc(original: dto.url, medium: dto.thumb),
           ),
         );
-      case WallpaperSource.wallOfTheDay:
       case WallpaperSource.downloaded:
       case WallpaperSource.unknown:
         return LegacyFavouriteWall(

@@ -648,12 +648,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
         if (!hideSetWallpaperUi) SetWallpaperButton(colorChanged: state.colorChanged, url: url),
         FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
-        ShareButton(
-          id: entity.id,
-          source: entity.source == WallpaperSource.wallOfTheDay ? WallpaperSource.prism : entity.source,
-          url: entity.fullUrl,
-          thumbUrl: entity.thumbnailUrl,
-        ),
+        ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
         EditButton(url: entity.fullUrl),
       ],
     );
@@ -791,7 +786,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     WallpaperSource.prism => 'Prism',
     WallpaperSource.wallhaven => 'Wallhaven',
     WallpaperSource.pexels => 'Pexels',
-    WallpaperSource.wallOfTheDay => 'Prism',
     WallpaperSource.downloaded => 'Downloaded',
     WallpaperSource.unknown => 'Unknown',
   };

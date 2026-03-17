@@ -198,7 +198,6 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
           wallhaven += 1;
         case WallpaperSource.pexels:
           pexels += 1;
-        case WallpaperSource.wallOfTheDay:
         case WallpaperSource.downloaded:
         case WallpaperSource.unknown:
           // Ignored in personalized source chips.
