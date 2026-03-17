@@ -245,23 +245,23 @@ class _PhotographerWallTile extends StatelessWidget {
           ),
         ),
         Material(
-            color: Colors.transparent,
-            child: InkWell(
-              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-              onTap: () {
-                if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
-                    context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
-                } else {
-                  final walls = context.publicProfileAdapter(listen: false).userProfileWalls!;
-                  final entity = WallpaperDetailEntityX.fromPublicProfileWall(walls[index]);
-                  context.router.push(
-                    WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
-                  );
-                }
-              },
-            ),
+          color: Colors.transparent,
+          child: InkWell(
+            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+            onTap: () {
+              if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
+                  context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
+              } else {
+                final walls = context.publicProfileAdapter(listen: false).userProfileWalls!;
+                final entity = WallpaperDetailEntityX.fromPublicProfileWall(walls[index]);
+                context.router.push(
+                  WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
+                );
+              }
+            },
           ),
+        ),
       ],
     );
   }

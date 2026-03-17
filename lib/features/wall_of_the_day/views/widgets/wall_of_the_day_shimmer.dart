@@ -37,63 +37,63 @@ class _WallOfTheDayShimmerState extends State<WallOfTheDayShimmer> with SingleTi
       animation: _animation,
       builder: (context, _) {
         return Container(
-            constraints: const BoxConstraints.expand(),
-            color: Color.lerp(baseColor, highlightColor, _animation.value),
-            child: Stack(
-              children: [
-                // Label placeholder
-                Positioned(
-                  top: 12,
-                  left: 14,
-                  child: Container(
-                    width: 130,
-                    height: 26,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+          constraints: const BoxConstraints.expand(),
+          color: Color.lerp(baseColor, highlightColor, _animation.value),
+          child: Stack(
+            children: [
+              // Label placeholder
+              Positioned(
+                top: 12,
+                left: 14,
+                child: Container(
+                  width: 130,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                // Text placeholders
-                Positioned(
-                  bottom: 36,
-                  left: 14,
-                  right: 140,
-                  child: Container(
-                    height: 14,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+              ),
+              // Text placeholders
+              Positioned(
+                bottom: 36,
+                left: 14,
+                right: 140,
+                child: Container(
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
-                Positioned(
-                  bottom: 16,
-                  left: 14,
-                  right: 180,
-                  child: Container(
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+              ),
+              Positioned(
+                bottom: 16,
+                left: 14,
+                right: 180,
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
-                // Button placeholder
-                Positioned(
-                  bottom: 12,
-                  right: 14,
-                  child: Container(
-                    width: 110,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+              ),
+              // Button placeholder
+              Positioned(
+                bottom: 12,
+                right: 14,
+                child: Container(
+                  width: 110,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
         );
       },
     );

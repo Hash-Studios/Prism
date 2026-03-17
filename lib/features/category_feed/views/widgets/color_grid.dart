@@ -210,51 +210,51 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
                               ),
                       ),
                       Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                            onTap: () {
-                              if (PData.wallsC.isEmpty) {
-                              } else {
-                                unawaited(
-                                  analytics.track(
-                                    SurfaceActionTappedEvent(
-                                      surface: AnalyticsSurfaceValue.homeColorGrid,
-                                      action: AnalyticsActionValue.tileOpened,
-                                      sourceContext: 'home_color_grid_tile',
-                                      itemType: ItemTypeValue.wallpaper,
-                                      itemId: PData.wallsC[index].id,
-                                      index: index,
-                                    ),
+                        color: Colors.transparent,
+                        child: InkWell(
+                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          onTap: () {
+                            if (PData.wallsC.isEmpty) {
+                            } else {
+                              unawaited(
+                                analytics.track(
+                                  SurfaceActionTappedEvent(
+                                    surface: AnalyticsSurfaceValue.homeColorGrid,
+                                    action: AnalyticsActionValue.tileOpened,
+                                    sourceContext: 'home_color_grid_tile',
+                                    itemType: ItemTypeValue.wallpaper,
+                                    itemId: PData.wallsC[index].id,
+                                    index: index,
                                   ),
-                                );
-                                context.router.push(
-                                  WallpaperDetailRoute(
-                                    entity: PexelsDetailEntity(wallpaper: PData.wallsC[index]),
-                                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                                  ),
-                                );
-                              }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                longTapIndex = index;
-                              });
-                              shakeController.forward(from: 0.0);
-                              if (PData.wallsC.isEmpty) {
-                              } else {
-                                HapticFeedback.vibrate();
-                                createDynamicLink(
-                                  PData.wallsC[index].id,
-                                  WallpaperSource.pexels,
-                                  PData.wallsC[index].core.fullUrl,
-                                  PData.wallsC[index].core.thumbnailUrl,
-                                );
-                              }
-                            },
-                          ),
+                                ),
+                              );
+                              context.router.push(
+                                WallpaperDetailRoute(
+                                  entity: PexelsDetailEntity(wallpaper: PData.wallsC[index]),
+                                  analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                                ),
+                              );
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              longTapIndex = index;
+                            });
+                            shakeController.forward(from: 0.0);
+                            if (PData.wallsC.isEmpty) {
+                            } else {
+                              HapticFeedback.vibrate();
+                              createDynamicLink(
+                                PData.wallsC[index].id,
+                                WallpaperSource.pexels,
+                                PData.wallsC[index].core.fullUrl,
+                                PData.wallsC[index].core.thumbnailUrl,
+                              );
+                            }
+                          },
                         ),
+                      ),
                     ],
                   ),
                 );

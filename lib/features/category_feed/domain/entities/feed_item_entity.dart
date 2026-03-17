@@ -21,9 +21,6 @@ sealed class FeedItemEntity with _$FeedItemEntity {
     pexels: (_, _) => WallpaperSource.pexels,
   );
 
-  String get thumbnailUrl => when(
-    prism: (_, w) => w.thumbnailUrl,
-    wallhaven: (_, w) => w.thumbnailUrl,
-    pexels: (_, w) => w.thumbnailUrl,
-  );
+  String get thumbnailUrl =>
+      when(prism: (_, w) => w.thumbnailUrl, wallhaven: (_, w) => w.thumbnailUrl, pexels: (_, w) => w.thumbnailUrl);
 }

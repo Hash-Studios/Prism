@@ -268,7 +268,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                                       final String fullUrl = wData.wallsS[index].core.fullUrl;
                                       return BoxDecoration(
                                         color: animation.value,
-                                                        image: thumbUrl.isNotEmpty && thumbUrl != 'null'
+                                        image: thumbUrl.isNotEmpty && thumbUrl != 'null'
                                             ? DecorationImage(
                                                 image: CachedNetworkImageProvider(thumbUrl),
                                                 fit: BoxFit.cover,
@@ -283,91 +283,91 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
                             ? BoxDecoration(color: animation.value)
                             : BoxDecoration(
                                 color: animation.value,
-                                        image: DecorationImage(
+                                image: DecorationImage(
                                   image: CachedNetworkImageProvider(pData.wallsPS[index].core.thumbnailUrl),
                                   fit: BoxFit.cover,
                                 ),
                               ),
                       ),
                       Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                            onTap: () {
-                              if (widget.selectedProvider == "WallHaven") {
-                                if (wData.wallsS.isEmpty) {
-                                } else {
-                                  final entity = WallhavenDetailEntity(wallpaper: wData.wallsS[index]);
-                                  analytics.track(
-                                    SearchResultOpenedEvent(
-                                      provider: _providerValue,
-                                      itemType: ItemTypeValue.wallpaper,
-                                      itemId: wData.wallsS[index].id,
-                                      index: index,
-                                      queryLength: _queryLength,
-                                    ),
-                                  );
-                                  context.router.push(
-                                    WallpaperDetailRoute(
-                                      entity: entity,
-                                      analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                                    ),
-                                  );
-                                }
-                              } else if (widget.selectedProvider == "Pexels") {
-                                if (pData.wallsPS.isEmpty) {
-                                } else {
-                                  final entity = PexelsDetailEntity(wallpaper: pData.wallsPS[index]);
-                                  analytics.track(
-                                    SearchResultOpenedEvent(
-                                      provider: _providerValue,
-                                      itemType: ItemTypeValue.wallpaper,
-                                      itemId: pData.wallsPS[index].id,
-                                      index: index,
-                                      queryLength: _queryLength,
-                                    ),
-                                  );
-                                  context.router.push(
-                                    WallpaperDetailRoute(
-                                      entity: entity,
-                                      analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                                    ),
-                                  );
-                                }
+                        color: Colors.transparent,
+                        child: InkWell(
+                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          onTap: () {
+                            if (widget.selectedProvider == "WallHaven") {
+                              if (wData.wallsS.isEmpty) {
+                              } else {
+                                final entity = WallhavenDetailEntity(wallpaper: wData.wallsS[index]);
+                                analytics.track(
+                                  SearchResultOpenedEvent(
+                                    provider: _providerValue,
+                                    itemType: ItemTypeValue.wallpaper,
+                                    itemId: wData.wallsS[index].id,
+                                    index: index,
+                                    queryLength: _queryLength,
+                                  ),
+                                );
+                                context.router.push(
+                                  WallpaperDetailRoute(
+                                    entity: entity,
+                                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                                  ),
+                                );
                               }
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                longTapIndex = index;
-                              });
-                              shakeController.forward(from: 0.0);
-                              if (widget.selectedProvider == "WallHaven") {
-                                if (wData.wallsS.isEmpty) {
-                                } else {
-                                  HapticFeedback.vibrate();
-                                  createDynamicLink(
-                                    wData.wallsS[index].id,
-                                    WallpaperSource.wallhaven,
-                                    wData.wallsS[index].core.fullUrl,
-                                    wData.wallsS[index].core.thumbnailUrl,
-                                  );
-                                }
-                              } else if (widget.selectedProvider == "Pexels") {
-                                if (pData.wallsPS.isEmpty) {
-                                } else {
-                                  HapticFeedback.vibrate();
-                                  createDynamicLink(
-                                    pData.wallsPS[index].id,
-                                    WallpaperSource.pexels,
-                                    pData.wallsPS[index].core.fullUrl,
-                                    pData.wallsPS[index].core.thumbnailUrl,
-                                  );
-                                }
+                            } else if (widget.selectedProvider == "Pexels") {
+                              if (pData.wallsPS.isEmpty) {
+                              } else {
+                                final entity = PexelsDetailEntity(wallpaper: pData.wallsPS[index]);
+                                analytics.track(
+                                  SearchResultOpenedEvent(
+                                    provider: _providerValue,
+                                    itemType: ItemTypeValue.wallpaper,
+                                    itemId: pData.wallsPS[index].id,
+                                    index: index,
+                                    queryLength: _queryLength,
+                                  ),
+                                );
+                                context.router.push(
+                                  WallpaperDetailRoute(
+                                    entity: entity,
+                                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                                  ),
+                                );
                               }
-                            },
-                          ),
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              longTapIndex = index;
+                            });
+                            shakeController.forward(from: 0.0);
+                            if (widget.selectedProvider == "WallHaven") {
+                              if (wData.wallsS.isEmpty) {
+                              } else {
+                                HapticFeedback.vibrate();
+                                createDynamicLink(
+                                  wData.wallsS[index].id,
+                                  WallpaperSource.wallhaven,
+                                  wData.wallsS[index].core.fullUrl,
+                                  wData.wallsS[index].core.thumbnailUrl,
+                                );
+                              }
+                            } else if (widget.selectedProvider == "Pexels") {
+                              if (pData.wallsPS.isEmpty) {
+                              } else {
+                                HapticFeedback.vibrate();
+                                createDynamicLink(
+                                  pData.wallsPS[index].id,
+                                  WallpaperSource.pexels,
+                                  pData.wallsPS[index].core.fullUrl,
+                                  pData.wallsPS[index].core.thumbnailUrl,
+                                );
+                              }
+                            }
+                          },
                         ),
+                      ),
                     ],
                   ),
                 );
