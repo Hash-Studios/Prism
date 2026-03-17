@@ -3,22 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 const _lightAppBarOverlayStyle = SystemUiOverlayStyle(
-  statusBarColor: Color(0x00000000),
   statusBarIconBrightness: Brightness.dark,
   statusBarBrightness: Brightness.light,
-  systemNavigationBarColor: Color(0x00000000),
-  systemNavigationBarDividerColor: Color(0x00000000),
   systemNavigationBarIconBrightness: Brightness.dark,
   systemNavigationBarContrastEnforced: false,
   systemStatusBarContrastEnforced: false,
 );
 
 const _darkAppBarOverlayStyle = SystemUiOverlayStyle(
-  statusBarColor: Color(0x00000000),
   statusBarIconBrightness: Brightness.light,
   statusBarBrightness: Brightness.dark,
-  systemNavigationBarColor: Color(0x00000000),
-  systemNavigationBarDividerColor: Color(0x00000000),
   systemNavigationBarIconBrightness: Brightness.light,
   systemNavigationBarContrastEnforced: false,
   systemStatusBarContrastEnforced: false,
