@@ -114,7 +114,10 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         FirestoreQuerySpec(
           collection: FirebaseCollections.walls,
           sourceTag: 'PrismWallpaperRepository.fetchById',
-          filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: id)],
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: id),
+            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+          ],
           limit: 1,
         ),
         (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
