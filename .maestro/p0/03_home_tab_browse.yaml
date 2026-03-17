@@ -1,0 +1,52 @@
+appId: com.hash.prism
+---
+# P0-03: Home Tab Browse
+# Validates: Home tab loads, feed cards visible, scroll works, sub-tabs reachable
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Ensure we are on Home tab
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+
+# Feed cards should be visible (at least one wallpaper_card semantics label)
+- extendedWaitUntil:
+    visible:
+      id: "wallpaper_card"
+    timeout: 10000
+
+# Scroll down through feed
+- swipe:
+    direction: DOWN
+    duration: 1000
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "wallpaper_card"
+    timeout: 5000
+
+# Scroll back up
+- swipe:
+    direction: UP
+    duration: 800
+- waitForAnimationToEnd
+
+# Switch to Collections sub-tab
+- extendedWaitUntil:
+    visible:
+      text: "Collections"
+    timeout: 5000
+- tapOn:
+    text: "Collections"
+- waitForAnimationToEnd
+
+# Switch back to For You sub-tab
+- extendedWaitUntil:
+    visible:
+      text: "For You"
+    timeout: 5000
+- tapOn:
+    text: "For You"
+- waitForAnimationToEnd

@@ -1,0 +1,88 @@
+appId: com.hash.prism
+---
+# P0-02: Onboarding Complete Flow
+# Validates: F0 auth → F1 interests (5 picks) → F2 creators (3 picks) → F3 first wallpaper (skip) → Dashboard
+# Requires a fresh app state (unauthed) — run with clearState: true for a clean test
+
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# F0 — Auth screen: "Your screen,"
+- extendedWaitUntil:
+    visible:
+      text: "Your screen,"
+    timeout: 10000
+- tapOn:
+    text: "continue with Google"
+
+# After sign-in the app may show a loader; wait for F1
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# F1 — Interests: "Pick your vibe"
+- extendedWaitUntil:
+    visible:
+      text: "Pick your vibe"
+    timeout: 15000
+# Pick 5 interests by tapping the first 5 visible chips
+- tapOn:
+    index: 0
+    childOf:
+      text: "Pick your vibe"
+- tapOn:
+    index: 1
+    childOf:
+      text: "Pick your vibe"
+- tapOn:
+    index: 2
+    childOf:
+      text: "Pick your vibe"
+- tapOn:
+    index: 3
+    childOf:
+      text: "Pick your vibe"
+- tapOn:
+    index: 4
+    childOf:
+      text: "Pick your vibe"
+- tapOn:
+    text: "continue"
+- waitForAnimationToEnd
+
+# F2 — Creators: "Find your people"
+- extendedWaitUntil:
+    visible:
+      text: "Find your people"
+    timeout: 10000
+# Follow 3 creators
+- tapOn:
+    text: "Follow"
+    index: 0
+- tapOn:
+    text: "Follow"
+    index: 0
+- tapOn:
+    text: "Follow"
+    index: 0
+- tapOn:
+    text: "continue"
+- waitForAnimationToEnd
+
+# F3 — First wallpaper: "Make it yours"
+- extendedWaitUntil:
+    visible:
+      text: "Make it yours"
+    timeout: 10000
+- tapOn:
+    text: "skip"
+
+# Dashboard should be visible
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 10000

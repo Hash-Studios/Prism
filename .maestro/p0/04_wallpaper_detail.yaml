@@ -1,0 +1,62 @@
+appId: com.hash.prism
+---
+# P0-04: Wallpaper Detail
+# Validates: tap feed card → detail screen opens; panel swipes up; action row visible; back returns to feed
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Navigate to Home tab
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+
+# Wait for feed to load
+- extendedWaitUntil:
+    visible:
+      id: "wallpaper_card"
+    timeout: 10000
+
+# Tap the first wallpaper card
+- tapOn:
+    id: "wallpaper_card"
+    index: 0
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Verify detail screen is open — action buttons should be visible
+- extendedWaitUntil:
+    visible:
+      id: "download_button"
+    timeout: 10000
+
+# Swipe up to open info panel
+- swipe:
+    direction: UP
+    duration: 500
+- waitForAnimationToEnd
+
+# Action row should remain visible
+- extendedWaitUntil:
+    visible:
+      id: "download_button"
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: "favourite_button"
+    timeout: 5000
+
+# Swipe down to collapse panel
+- swipe:
+    direction: DOWN
+    duration: 500
+- waitForAnimationToEnd
+
+# Back button returns to feed
+- tapOn:
+    text: "Back"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "wallpaper_card"
+    timeout: 5000

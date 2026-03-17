@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset maestro-install maestro-test maestro-test-p0 maestro-test-p1 maestro-test-flow
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -272,3 +272,25 @@ find-unused-html: ensure-fvm ## Find unused code + open HTML visual report
 find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
 	@$(DART) run tool/find_unused_code.dart --json > /tmp/prism_find_unused_ci.json
 	@$(DART) run tool/validate_find_unused_allowlist.dart /tmp/prism_find_unused_ci.json tool/find_unused_allowlist.json
+
+MAESTRO_BIN_DIR ?= $(HOME)/.maestro/bin
+MAESTRO ?= $(if $(shell command -v maestro 2>/dev/null),maestro,$(MAESTRO_BIN_DIR)/maestro)
+MAESTRO_FLOWS_DIR ?= .maestro
+MAESTRO_DEVICE ?=
+MAESTRO_DEVICE_ARG = $(if $(MAESTRO_DEVICE),--device $(MAESTRO_DEVICE),)
+
+maestro-install:
+	curl -Ls "https://get.maestro.mobile.dev" | bash
+	@echo "Maestro installed. Add $$HOME/.maestro/bin to your PATH or use 'make maestro-test' directly."
+
+maestro-test:
+	$(MAESTRO) test $(MAESTRO_DEVICE_ARG) $(MAESTRO_FLOWS_DIR)
+
+maestro-test-p0:
+	$(MAESTRO) test $(MAESTRO_DEVICE_ARG) $(MAESTRO_FLOWS_DIR)/p0/*.yaml
+
+maestro-test-p1:
+	$(MAESTRO) test $(MAESTRO_DEVICE_ARG) $(MAESTRO_FLOWS_DIR)/p1/*.yaml
+
+maestro-test-flow:
+	$(MAESTRO) test $(MAESTRO_DEVICE_ARG) $(FLOW)

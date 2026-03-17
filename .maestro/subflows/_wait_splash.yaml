@@ -1,0 +1,15 @@
+appId: com.hash.prism
+---
+- waitForAnimationToEnd
+- assertTrue:
+    condition: ${maestro.platform == 'android' || maestro.platform == 'ios'}
+# Wait until the app reaches either onboarding or the Home tab
+- runFlow:
+    when:
+      notVisible:
+        text: "Home"
+        timeout: 500
+    commands:
+      - waitForAnimationToEnd
+      - wait:
+          duration: 2000

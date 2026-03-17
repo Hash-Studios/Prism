@@ -1,0 +1,17 @@
+appId: com.hash.prism
+---
+# P0-01: App Launch & Splash
+# Validates: app opens and within 10s arrives at onboarding OR dashboard
+
+- runFlow: ../subflows/_launch_app.yaml
+
+# If NOT on onboarding, we must be on the dashboard — wait for Home nav
+- runFlow:
+    when:
+      notVisible:
+        text: "Your screen,"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Home"
+          timeout: 10000
