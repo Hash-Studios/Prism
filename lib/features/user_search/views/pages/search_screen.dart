@@ -159,6 +159,9 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
+        backgroundColor: Theme.of(context).primaryColor,
+        elevation: 0,
+        surfaceTintColor: Theme.of(context).primaryColor,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
         title: Row(
@@ -171,15 +174,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: Column(
                     children: [
                       Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(500),
-                          color: Theme.of(context).hintColor,
-                        ),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(500)),
                         child: TextField(
                           cursorColor: Theme.of(context).colorScheme.error,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                            fontFamily: 'Satoshi',
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
                           controller: searchController,
                           onChanged: (text) {
                             if (text.trim().isEmpty && isSubmitted) {
@@ -187,15 +188,16 @@ class _SearchScreenState extends State<SearchScreen> {
                             }
                           },
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                            contentPadding: const EdgeInsets.only(left: 24, top: 12),
                             border: InputBorder.none,
                             disabledBorder: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
-                            hintText: 'Search',
-                            hintStyle: Theme.of(
-                              context,
-                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            hintText: 'Search...',
+                            hintStyle: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                              fontFamily: 'Satoshi',
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
                             suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
                           ),
                           onSubmitted: (tex) {
@@ -218,69 +220,26 @@ class _SearchScreenState extends State<SearchScreen> {
             const SizedBox(width: 6),
           ],
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size(double.infinity, 54),
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: 53,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: tags.length + 1,
-              itemBuilder: (context, index) {
-                if (index == 0) {
-                  return Container();
-                } else {
-                  index = index - 1;
-                  return Align(
-                    child: Stack(
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(5, 0, 2, 0),
-                          child: ActionChip(
-                            pressElevation: 5,
-                            padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
-                            backgroundColor: searchController.text.toLowerCase() == tags[index].toLowerCase()
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(context).hintColor,
-                            label: Text(
-                              tags[index],
-                              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                color: searchController.text.toLowerCase() == tags[index].toLowerCase()
-                                    ? Theme.of(context).primaryColor
-                                    : Theme.of(context).colorScheme.secondary,
-                              ),
-                            ),
-                            onPressed: () {
-                              analytics.track(
-                                SearchTagSelectedEvent(
-                                  provider: _providerValueFromString(_defaultProvider),
-                                  tag: tags[index].toLowerCase(),
-                                ),
-                              );
-                              _trackSearchSubmitted(
-                                query: tags[index],
-                                fromSuggestion: true,
-                                sourceContext: 'search_tag',
-                              );
-                              searchController.text = tags[index];
-                              _triggerSearch(tags[index], _defaultProvider);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
-        ),
       ),
       body: isSubmitted
           ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: _defaultProvider)
           : BlocProvider<SearchDiscoveryBloc>(
               create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
-              child: const SearchDiscoveryWidget(),
+              child: SearchDiscoveryWidget(
+                tags: tags,
+                selectedTag: searchController.text,
+                onTagPressed: (tag) {
+                  analytics.track(
+                    SearchTagSelectedEvent(
+                      provider: _providerValueFromString(_defaultProvider),
+                      tag: tag.toLowerCase(),
+                    ),
+                  );
+                  _trackSearchSubmitted(query: tag, fromSuggestion: true, sourceContext: 'search_tag');
+                  searchController.text = tag;
+                  _triggerSearch(tag, _defaultProvider);
+                },
+              ),
             ),
     );
   }
