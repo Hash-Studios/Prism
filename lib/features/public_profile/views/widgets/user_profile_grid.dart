@@ -182,7 +182,6 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                       crossAxisSpacing: 0,
                     ),
                     itemBuilder: (context, index) {
-                      final wall = context.publicProfileAdapter().userProfileWalls![index];
                       if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&
                           context.publicProfileAdapter(listen: false).hasMoreWalls) {
                         return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);
