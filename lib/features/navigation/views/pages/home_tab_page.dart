@@ -562,9 +562,9 @@ class _ProfileAvatar extends StatelessWidget {
           child: ShaderMask(
             shaderCallback: (Rect bounds) {
               return const RadialGradient(
-                colors: [Colors.white, Colors.white38],
+                colors: [Colors.white, Colors.white60],
                 center: Alignment(0.1, 0.2),
-                stops: [0.8, 1],
+                stops: [0.7, 1],
               ).createShader(bounds);
             },
             child: CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover),
