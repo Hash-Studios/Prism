@@ -1,6 +1,6 @@
 typedef JsonMap = Map<String, Object?>;
 
-enum WallpaperSource { prism, wallhaven, pexels, wallOfTheDay, downloaded, unknown }
+enum WallpaperSource { prism, wallhaven, pexels, downloaded, unknown }
 
 extension WallpaperSourceX on WallpaperSource {
   static WallpaperSource fromWire(Object? v) {
@@ -14,7 +14,7 @@ extension WallpaperSourceX on WallpaperSource {
         return WallpaperSource.pexels;
       case 'wall_of_the_day':
       case 'walloftheday':
-        return WallpaperSource.wallOfTheDay;
+        return WallpaperSource.prism;
       case 'downloaded':
       case 'downloads':
         return WallpaperSource.downloaded;
@@ -31,8 +31,6 @@ extension WallpaperSourceX on WallpaperSource {
         return 'wallhaven';
       case WallpaperSource.pexels:
         return 'pexels';
-      case WallpaperSource.wallOfTheDay:
-        return 'wall_of_the_day';
       case WallpaperSource.downloaded:
         return 'downloaded';
       case WallpaperSource.unknown:
@@ -48,8 +46,6 @@ extension WallpaperSourceX on WallpaperSource {
         return 'WallHaven';
       case WallpaperSource.pexels:
         return 'Pexels';
-      case WallpaperSource.wallOfTheDay:
-        return 'WallOfTheDay';
       case WallpaperSource.downloaded:
         return 'Downloads';
       case WallpaperSource.unknown:

@@ -112,7 +112,6 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
           items = walls.map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall)).toList(growable: false);
           hasMore = _pexelsRepository.hasMoreForCategory(category.name);
 
-        case WallpaperSource.wallOfTheDay:
         case WallpaperSource.downloaded:
         case WallpaperSource.unknown:
           return Result.error(const ValidationFailure('Unsupported category source'));

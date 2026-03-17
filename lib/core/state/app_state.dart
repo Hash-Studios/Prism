@@ -1,16 +1,12 @@
 import 'dart:async';
 
-import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/premium_wall_utils.dart' as premium_wall_utils;
-import 'package:Prism/features/session/domain/entities/badge_entity.dart';
-import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -69,101 +65,6 @@ Future<void> persistPrismUser() async {
     return;
   }
   _fallbackUser = prismUser;
-}
-
-Future<void> patchPrismUser({
-  String? id,
-  String? email,
-  String? username,
-  String? name,
-  String? bio,
-  String? profilePhoto,
-  String? coverPhoto,
-  bool? loggedIn,
-  bool? premium,
-  String? subscriptionTier,
-  int? coins,
-  Map<String, String>? links,
-  List<String>? followers,
-  List<String>? following,
-  List<BadgeEntity>? badges,
-  List<String>? subPrisms,
-  List<TransactionEntity>? transactions,
-  String? uploadsWeekStart,
-  int? uploadsThisWeek,
-}) async {
-  final repo = _sessionRepositoryOrNull();
-  if (repo != null) {
-    await repo.patchCurrentUser(
-      id: id,
-      email: email,
-      username: username,
-      name: name,
-      bio: bio,
-      profilePhoto: profilePhoto,
-      coverPhoto: coverPhoto,
-      loggedIn: loggedIn,
-      premium: premium,
-      subscriptionTier: subscriptionTier,
-      coins: coins,
-      links: links,
-      followers: followers,
-      following: following,
-      badges: badges,
-      subPrisms: subPrisms,
-      transactions: transactions,
-      uploadsWeekStart: uploadsWeekStart,
-      uploadsThisWeek: uploadsThisWeek,
-    );
-    return;
-  }
-  if (id != null) _fallbackUser.id = id;
-  if (email != null) _fallbackUser.email = email;
-  if (username != null) _fallbackUser.username = username;
-  if (name != null) _fallbackUser.name = name;
-  if (bio != null) _fallbackUser.bio = bio;
-  if (profilePhoto != null) _fallbackUser.profilePhoto = profilePhoto;
-  if (coverPhoto != null) _fallbackUser.coverPhoto = coverPhoto;
-  if (loggedIn != null) _fallbackUser.loggedIn = loggedIn;
-  if (premium != null) _fallbackUser.premium = premium;
-  if (subscriptionTier != null) _fallbackUser.subscriptionTier = subscriptionTier;
-  if (coins != null) _fallbackUser.coins = coins;
-  if (links != null) _fallbackUser.links = links;
-  if (followers != null) _fallbackUser.followers = followers;
-  if (following != null) _fallbackUser.following = following;
-  if (badges != null) {
-    _fallbackUser.badges = badges
-        .map(
-          (badge) => Badge(
-            id: badge.id,
-            name: badge.name,
-            description: badge.description,
-            imageUrl: badge.imageUrl,
-            color: badge.color,
-            url: badge.url,
-            awardedAt: badge.awardedAt,
-          ),
-        )
-        .toList(growable: false);
-  }
-  if (subPrisms != null) _fallbackUser.subPrisms = subPrisms;
-  if (transactions != null) {
-    _fallbackUser.transactions = transactions
-        .map(
-          (transaction) => PrismTransaction(
-            id: transaction.id,
-            name: transaction.name,
-            description: transaction.description,
-            amount: transaction.amount,
-            credit: transaction.credit,
-            by: transaction.by,
-            processedAt: transaction.processedAt,
-          ),
-        )
-        .toList(growable: false);
-  }
-  if (uploadsWeekStart != null) _fallbackUser.uploadsWeekStart = uploadsWeekStart;
-  if (uploadsThisWeek != null) _fallbackUser.uploadsThisWeek = uploadsThisWeek;
 }
 
 StartupConfigEntity? get startupConfig {
