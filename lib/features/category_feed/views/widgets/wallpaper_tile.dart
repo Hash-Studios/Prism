@@ -31,37 +31,35 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: context.prismModeStyleForContext() == "Dark" ? Colors.white10 : Colors.black.withValues(alpha: .1),
-            image: DecorationImage(image: CachedNetworkImageProvider(item.thumbnailUrl), fit: BoxFit.cover),
-          ),
+    final width = (MediaQuery.of(context).size.width / 3).toInt();
+    final height = (width * 2 * 1.5).toInt();
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+        highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+        onTap: () {
+          unawaited(
+            analytics.track(
+              SurfaceActionTappedEvent(
+                surface: _surface,
+                action: AnalyticsActionValue.tileOpened,
+                sourceContext: _sourceContext,
+                itemType: ItemTypeValue.wallpaper,
+                itemId: item.id,
+                index: index,
+              ),
+            ),
+          );
+          context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(item)));
+        },
+        child: CachedNetworkImage(
+          imageUrl: item.thumbnailUrl,
+          fit: BoxFit.cover,
+          fadeInDuration: Duration.zero,
+          memCacheHeight: height,
         ),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-            onTap: () {
-              unawaited(
-                analytics.track(
-                  SurfaceActionTappedEvent(
-                    surface: _surface,
-                    action: AnalyticsActionValue.tileOpened,
-                    sourceContext: _sourceContext,
-                    itemType: ItemTypeValue.wallpaper,
-                    itemId: item.id,
-                    index: index,
-                  ),
-                ),
-              );
-              context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(item)));
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
