@@ -67,8 +67,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
-    if (currentState.entity.source != WallpaperSource.prism &&
-        currentState.entity.source != WallpaperSource.wallOfTheDay) {
+    if (currentState.entity.source != WallpaperSource.prism) {
       return;
     }
 
@@ -171,7 +170,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   Future<WallpaperDetailEntity> _fetchWallpaper({required String wallId, required WallpaperSource source}) async {
     switch (source) {
       case WallpaperSource.prism:
-      case WallpaperSource.wallOfTheDay:
         final result = await _prismRepository.fetchById(wallId);
         return result.fold(
           onFailure: (failure) => throw Exception(failure.message),
@@ -213,7 +211,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   }
 
   Future<void> _fetchAndUpdateViews(WallpaperDetailEntity entity) async {
-    if (entity.source != WallpaperSource.prism && entity.source != WallpaperSource.wallOfTheDay) {
+    if (entity.source != WallpaperSource.prism) {
       return;
     }
     add(const FetchViews());

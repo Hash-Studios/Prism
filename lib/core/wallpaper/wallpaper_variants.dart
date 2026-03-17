@@ -32,7 +32,7 @@ final class PrismWallpaper {
     return PrismWallpaper(
       core: WallpaperCore(
         id: entity.wallId,
-        source: WallpaperSource.wallOfTheDay,
+        source: WallpaperSource.prism,
         fullUrl: entity.url,
         thumbnailUrl: entity.thumbnailUrl,
         authorName: entity.photographer,
@@ -56,6 +56,21 @@ final class WallhavenWallpaper {
     this.tags,
     this.sizeBytes,
   });
+
+  factory WallhavenWallpaper.fromWotd(WallOfTheDayEntity entity) {
+    return WallhavenWallpaper(
+      core: WallpaperCore(
+        id: entity.wallId,
+        source: WallpaperSource.wallhaven,
+        fullUrl: entity.url,
+        thumbnailUrl: entity.thumbnailUrl,
+        authorName: entity.photographer,
+        authorId: entity.photographerId,
+        category: entity.title,
+        createdAt: entity.date,
+      ),
+    );
+  }
 
   final WallpaperCore core;
   final int? views;
@@ -97,6 +112,22 @@ final class PexelsSrc {
 
 final class PexelsWallpaper {
   const PexelsWallpaper({required this.core, this.photographer, this.photographerUrl, this.src});
+
+  factory PexelsWallpaper.fromWotd(WallOfTheDayEntity entity) {
+    return PexelsWallpaper(
+      core: WallpaperCore(
+        id: entity.wallId,
+        source: WallpaperSource.pexels,
+        fullUrl: entity.url,
+        thumbnailUrl: entity.thumbnailUrl,
+        authorName: entity.photographer,
+        authorId: entity.photographerId,
+        category: entity.title,
+        createdAt: entity.date,
+      ),
+      photographer: entity.photographer,
+    );
+  }
 
   final WallpaperCore core;
   final String? photographer;
