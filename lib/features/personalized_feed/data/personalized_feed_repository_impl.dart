@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -419,7 +420,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     if (snapshot == null || snapshot.payload is! Map) {
       return const _CacheState.empty();
     }
-    final payload = _asMap(snapshot.payload);
+    final payload = toJsonMap(snapshot.payload);
     final seen = _toStringList(payload['seenKeys']);
     final rawItems = payload['items'];
     if (rawItems is! List) {
@@ -428,7 +429,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
     final items = rawItems
         .whereType<Map>()
-        .map((entry) => _decodeFeedItem(_asMap(entry)))
+        .map((entry) => _decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
         .toList(growable: false);
 
@@ -487,16 +488,6 @@ class _SourceTargets {
   final int pexels;
 }
 
-Map<String, dynamic> _asMap(Object? value) {
-  if (value is Map<String, dynamic>) {
-    return value;
-  }
-  if (value is Map) {
-    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
-  }
-  return <String, dynamic>{};
-}
-
 List<String> _toStringList(Object? value) {
   if (value is! List) {
     return const <String>[];
@@ -513,7 +504,7 @@ Map<String, Object?> _encodeFeedItem(FeedItemEntity item) => item.when(
 FeedItemEntity? _decodeFeedItem(Map<String, dynamic> map) {
   final type = map['type']?.toString();
   final id = map['id']?.toString() ?? '';
-  final wallMap = _asMap(map['wall']);
+  final wallMap = toJsonMap(map['wall']);
   if (id.isEmpty || wallMap.isEmpty) {
     return null;
   }
@@ -581,11 +572,11 @@ Map<String, Object?> _encodePrism(PrismWallpaper wall) {
 
 PrismWallpaper _decodePrism(Map<String, dynamic> map) {
   return PrismWallpaper(
-    core: _decodeWallpaperCore(_asMap(map['core'])),
+    core: _decodeWallpaperCore(toJsonMap(map['core'])),
     collections: _toStringList(map['collections']),
     review: map['review'] == true,
     tags: _toStringList(map['tags']),
-    aiMetadata: _asMap(map['aiMetadata']),
+    aiMetadata: toJsonMap(map['aiMetadata']),
   );
 }
 
@@ -605,13 +596,13 @@ Map<String, Object?> _encodeWallhaven(WallhavenWallpaper wall) {
 
 WallhavenWallpaper _decodeWallhaven(Map<String, dynamic> map) {
   return WallhavenWallpaper(
-    core: _decodeWallpaperCore(_asMap(map['core'])),
+    core: _decodeWallpaperCore(toJsonMap(map['core'])),
     views: (map['views'] as num?)?.toInt(),
     favorites: (map['favorites'] as num?)?.toInt(),
     dimensionX: (map['dimensionX'] as num?)?.toInt(),
     dimensionY: (map['dimensionY'] as num?)?.toInt(),
     colors: _toStringList(map['colors']),
-    thumbs: _asMap(map['thumbs']).map((key, value) => MapEntry(key, value.toString())),
+    thumbs: toJsonMap(map['thumbs']).map((key, value) => MapEntry(key, value.toString())),
     tags: _toStringList(map['tags']),
     sizeBytes: (map['sizeBytes'] as num?)?.toInt(),
   );
@@ -638,7 +629,7 @@ Map<String, Object?> _encodePexels(PexelsWallpaper wall) {
 }
 
 PexelsWallpaper _decodePexels(Map<String, dynamic> map) {
-  final src = _asMap(map['src']);
+  final src = toJsonMap(map['src']);
   final pexelsSrc = src.isEmpty
       ? null
       : PexelsSrc(
@@ -653,7 +644,7 @@ PexelsWallpaper _decodePexels(Map<String, dynamic> map) {
         );
 
   return PexelsWallpaper(
-    core: _decodeWallpaperCore(_asMap(map['core'])),
+    core: _decodeWallpaperCore(toJsonMap(map['core'])),
     photographer: map['photographer']?.toString(),
     photographerUrl: map['photographerUrl']?.toString(),
     src: pexelsSrc,

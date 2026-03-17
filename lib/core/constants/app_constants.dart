@@ -5,8 +5,8 @@ import 'package:Prism/auth/userModel.dart';
 const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 
-const String currentAppVersion = '3.0.3';
-const String currentAppVersionCode = '321';
+const String currentAppVersion = '3.0.4';
+const String currentAppVersionCode = '322';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 const String defaultBannerText = 'Join our Telegram';
@@ -38,7 +38,7 @@ const String defaultPersonalizedInterestsJson = '''
   {"name":"Abstract","query":"abstract","imageUrl":"https://images.pexels.com/photos/7130560/pexels-photo-7130560.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Aerial","query":"aerial photography","imageUrl":"https://images.pexels.com/photos/1004409/pexels-photo-1004409.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Artistic","query":"art painting","imageUrl":"https://images.pexels.com/photos/1269968/pexels-photo-1269968.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Gradients","query":"colorful gradient","imageUrl":"https://images.pexels.com/photos/3681628/pexels-photo-3681628.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Gradients","query":"colorful gradient","imageUrl":"https://images.pexels.com/photos/7415261/pexels-photo-7415261.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Clouds","query":"sky clouds","imageUrl":"https://images.pexels.com/photos/844297/pexels-photo-844297.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Textures","query":"texture","imageUrl":"https://images.pexels.com/photos/129731/pexels-photo-129731.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Flowers","query":"flowers","imageUrl":"https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
@@ -48,15 +48,15 @@ const String defaultPersonalizedInterestsJson = '''
   {"name":"Illustration","query":"illustration art","imageUrl":"https://images.pexels.com/photos/1633798/pexels-photo-1633798.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Architecture","query":"architecture buildings","imageUrl":"https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Portraits","query":"portrait","imageUrl":"https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
-  {"name":"Under the Sea","query":"underwater ocean","imageUrl":"https://images.pexels.com/photos/1049700/pexels-photo-1049700.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Under the Sea","query":"underwater ocean","imageUrl":"https://images.pexels.com/photos/10017673/pexels-photo-10017673.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Quotes","query":"typography quotes","imageUrl":"https://images.pexels.com/photos/6980830/pexels-photo-6980830.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
   {"name":"Robots","query":"robot technology","imageUrl":"https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Spiritual","query":"spiritual meditation","imageUrl":"https://images.pexels.com/photos/3560044/pexels-photo-3560044.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"3D Renders","query":"3d render art","imageUrl":"https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Fashion","query":"fashion style","imageUrl":"https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Kawaii","query":"cute kawaii","imageUrl":"https://images.pexels.com/photos/45201/pexels-photo-45201.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
-  {"name":"Sports","query":"sports","imageUrl":"https://images.pexels.com/photos/46798/pexels-photo-46798.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Comic","query":"comic superhero","imageUrl":"https://images.pexels.com/photos/3756533/pexels-photo-3756533.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
+  {"name":"Kawaii","query":"cute kawaii","imageUrl":"https://images.pexels.com/photos/1643457/pexels-photo-1643457.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
+  {"name":"Sports","query":"sports","imageUrl":"https://images.pexels.com/photos/34563722/pexels-photo-34563722.png?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Comic","query":"comic superhero","imageUrl":"https://images.pexels.com/photos/7809122/pexels-photo-7809122.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
   {"name":"Tech","query":"technology circuit","imageUrl":"https://images.pexels.com/photos/2582937/pexels-photo-2582937.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Gaming","query":"gaming setup","imageUrl":"https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
   {"name":"Food","query":"food photography","imageUrl":"https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},

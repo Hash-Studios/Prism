@@ -6,7 +6,6 @@
       "MixpanelFlutterClient"
     ],
     "lib/core/utils/url_launcher_compat.dart": [
-      "LaunchMode",
       "launch"
     ],
     "lib/core/analytics/events/analytics_user_properties.dart": [
@@ -58,6 +57,15 @@
     "lib/core/utils/string_extensions.dart": [
       "CapExtension"
     ],
+    "lib/core/platform/quick_tile_config_service.dart": [
+      "QuickTileCategoryConfig",
+      "QuickTileWotdConfig",
+      "QuickTileFavsConfig"
+    ],
+    "lib/features/in_app_notifications/views/pages/notification_screen.dart": [
+      "NotificationCard",
+      "NotificationSettingsSheet"
+    ],
     "lib/features/category_feed/views/category_feed_bloc_adapter.dart": [
       "CategoryFeedBlocAdapterX"
     ],
@@ -73,10 +81,7 @@
       "ProfileSetupsAdapter",
       "ProfileSetupsBlocAdapterX"
     ],
-    "lib/features/profile_walls/views/profile_walls_bloc_adapter.dart": [
-      "ProfileWallsBlocAdapterX"
-    ],
-    "lib/features/public_profile/views/public_profile_bloc_adapter.dart": [
+"lib/features/public_profile/views/public_profile_bloc_adapter.dart": [
       "PublicProfileAdapter",
       "PublicProfileBlocAdapterX"
     ],
@@ -103,16 +108,15 @@
       "updateDownloadsSetup",
       "updateFavsSetup"
     ],
+    "lib/core/widgets/popup/changelogPopUp.dart": [
+      "ChangeType"
+    ],
     "lib/core/analytics/trackers/content_load_tracker.dart": [
       "ContentLoadSuccessCallback",
       "ContentLoadFailureCallback"
     ],
     "lib/features/favourite_walls/domain/entities/favourite_wall_view.dart": [
       "FavouriteWallViewX"
-    ],
-    "lib/core/wallpaper/wallpaper_legacy_extensions.dart": [
-      "WallhavenLegacyThumbsX",
-      "PexelsLegacySrcX"
     ],
     "lib/features/favourite_setups/domain/entities/favourite_setup_mappers.dart": [
       "SetupEntityToFavouriteSetupX",
@@ -121,6 +125,37 @@
     ],
     "lib/core/analytics/trackers/scroll_milestone_tracker.dart": [
       "ScrollMilestoneEmitCallback"
+    ],
+    "lib/features/onboarding_v2/src/views/widgets/onboarding_background.dart": [
+      "OnboardingBackground"
+    ],
+    "lib/features/onboarding_v2/src/views/widgets/onboarding_copy.dart": [
+      "OnboardingHeadline"
+    ],
+    "lib/features/onboarding_v2/src/views/widgets/onboarding_frame.dart": [
+      "OnboardingFrameBuilder"
+    ],
+    "lib/features/admin_review/biz/bloc/review_batch_bloc.dart": [
+      "ReviewAction"
+    ],
+    "lib/features/public_profile/domain/usecases/public_profile_usecases.dart": [
+      "FetchUserSummariesParams"
+    ],
+    "lib/core/persistence/data_sources/feed_cache_local_data_source.dart": [
+      "FeedSnapshot"
+    ],
+    "lib/data/pexels/provider/pexelsWithoutProvider.dart": [
+      "getWallbyIDP"
+    ],
+    "lib/data/wallhaven/provider/wallhavenWithoutProvider.dart": [
+      "getWallbyID"
+    ],
+    "lib/features/personalized_feed/data/personalized_ranking_service.dart": [
+      "PersonalizedRankingResult"
+    ],
+    "lib/core/widgets/focussedMenu/focused_menu_data.dart": [
+      "FocusedMenuTapAction",
+      "FocusedMenuStat"
     ],
     "lib/features/pexels_feed/data/mappers/pexels_dto_mapper.dart": [
       "PexelsPhotoDtoMapper"

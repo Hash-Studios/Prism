@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
@@ -64,7 +63,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
         );
       }
 
-      final Map<String, dynamic> decoded = json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       final WallhavenSearchResponseDto payload = WallhavenSearchResponseDto.fromJson(decoded);
       final int currentPage = payload.meta?.currentPage ?? page;
       final int lastPage = payload.meta?.lastPage ?? currentPage;
@@ -128,7 +127,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
         );
       }
 
-      final Map<String, dynamic> decoded = json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       final WallhavenSearchResponseDto payload = WallhavenSearchResponseDto.fromJson(decoded);
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
 
@@ -167,8 +166,8 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   Future<List<WallhavenWallpaper>?> _readCachedToplist() async {
     final snapshot = await _feedCacheLocal.read(source: 'wallhaven', scope: _toplistScope);
     if (snapshot == null || snapshot.payload is! Map) return null;
-    final map = _asMap(snapshot.payload);
-    final payloadMap = _asMap(map['payload']);
+    final map = toJsonMap(snapshot.payload);
+    final payloadMap = toJsonMap(map['payload']);
     if (payloadMap.isEmpty) return null;
     final payload = WallhavenSearchResponseDto.fromJson(payloadMap);
     final walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
@@ -188,7 +187,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
         );
       }
 
-      final Map<String, dynamic> decoded = json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> decoded = decodeJsonMap(response.body);
       final WallhavenSingleResponseDto payload = WallhavenSingleResponseDto.fromJson(decoded);
       return Result.success(payload.data?.toDomain());
     } catch (error, stackTrace) {
@@ -243,8 +242,8 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       return null;
     }
 
-    final map = _asMap(snapshot.payload);
-    final payloadMap = _asMap(map['payload']);
+    final map = toJsonMap(snapshot.payload);
+    final payloadMap = toJsonMap(map['payload']);
     if (payloadMap.isEmpty) {
       return null;
     }
@@ -264,14 +263,4 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     final normalizedCategory = categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
     return '$normalizedCategory.$categories.$purity';
   }
-}
-
-Map<String, dynamic> _asMap(Object? value) {
-  if (value is Map<String, dynamic>) {
-    return value;
-  }
-  if (value is Map) {
-    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
-  }
-  return <String, dynamic>{};
 }
