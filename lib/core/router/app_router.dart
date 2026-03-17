@@ -20,6 +20,7 @@ import 'package:Prism/features/in_app_notifications/views/pages/notification_scr
 import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
+import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
@@ -100,19 +101,16 @@ class AppRouter extends RootStackRouter {
         ),
         // Streak tab
         AutoRoute(path: 'streak', page: StreakTabRoute.page),
+        // Collection tab
+        AutoRoute(path: 'collection', page: CollectionTabRoute.page),
         // Profile tab
         AutoRoute(
           path: 'profile',
           page: ProfileTabRoute.page,
           children: [
             AutoRoute(path: '', page: ProfileRoute.page),
-            AutoRoute(path: 'settings', page: SettingsRoute.page),
-            AutoRoute(path: 'about', page: AboutRoute.page),
             AutoRoute(path: 'share-prism', page: SharePrismRoute.page),
             AutoRoute(path: 'edit', page: EditProfilePanelRoute.page),
-            AutoRoute(path: 'fav-walls', page: FavouriteWallpaperRoute.page),
-            AutoRoute(path: 'fav-setups', page: FavouriteSetupRoute.page),
-            AutoRoute(path: 'downloads', page: DownloadRoute.page),
             AutoRoute(path: 'followers', page: FollowersRoute.page),
             AutoRoute(path: 'following', page: FollowingListRoute.page),
           ],
@@ -126,6 +124,11 @@ class AppRouter extends RootStackRouter {
     RedirectRoute(path: '/share', redirectTo: '/wallpaper-detail'), // Replaces ShareWallpaperViewRoute
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
+    AutoRoute(path: '/settings', page: SettingsRoute.page),
+    AutoRoute(path: '/about', page: AboutRoute.page),
+    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
+    AutoRoute(path: '/fav-setups', page: FavouriteSetupRoute.page),
+    AutoRoute(path: '/downloads', page: DownloadRoute.page),
     AutoRoute(path: '/fav-setup-view', page: FavSetupViewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
     AutoRoute(path: '/setup/:setupName', page: ShareSetupViewRoute.page),

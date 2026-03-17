@@ -11,8 +11,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/features/category_feed/views/pages/collection_screen.dart';
-import 'package:Prism/features/category_feed/views/widgets/categories_bar.dart';
+import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
@@ -20,7 +23,6 @@ import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -28,8 +30,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
-
-TabController? tabController;
 
 @RoutePage()
 class HomeTabPage extends StatefulWidget {
@@ -39,15 +39,22 @@ class HomeTabPage extends StatefulWidget {
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
 
-class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin {
+class _HomeTabPageState extends State<HomeTabPage> {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
+  late final InAppNotificationsBloc _notificationsBloc;
   int page = 0;
   bool result = true;
   String shortcut = "No Action Set";
   bool _hasHandledQuickActionInvocation = false;
   bool _isChangelogCheckPending = true;
   int _personalizedFeedVersion = 0;
+
+  @override
+  void dispose() {
+    _notificationsBloc.close();
+    super.dispose();
+  }
 
   Future<void> _ensureDefaultTopicSubscriptions() async {
     if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
@@ -135,7 +142,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 2, vsync: this);
+    _notificationsBloc = getIt<InAppNotificationsBloc>()..add(const InAppNotificationsEvent.started(syncRemote: false));
     context.read<AdsBloc>().add(const AdsEvent.started());
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
@@ -143,13 +150,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       setState(() {
         shortcut = shortcutType;
       });
-      if (shortcutType == 'Personalized_Feed') {
-        logger.d('Personalized_Feed');
-        tabController!.animateTo(0);
-      } else if (shortcutType == 'Collections') {
-        logger.d('Collections');
-        tabController!.animateTo(1);
-      } else if (shortcutType == 'Downloads') {
+      if (shortcutType == 'Downloads') {
         logger.d('Downloads');
         context.router.push(const DownloadRoute());
       }
@@ -176,58 +177,14 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
       });
     }
 
-    return PopScope(
-      canPop: tabController?.index == 0,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          return;
-        }
-        if (tabController?.index != 0) {
-          tabController?.animateTo(0);
-        }
-      },
+    return BlocProvider<InAppNotificationsBloc>.value(
+      value: _notificationsBloc,
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          flexibleSpace: const PreferredSize(preferredSize: Size(double.infinity, 55), child: CategoriesBar()),
-          bottom: TabBar(
-            controller: tabController,
-            indicatorColor: Theme.of(context).colorScheme.secondary,
-            indicatorSize: TabBarIndicatorSize.label,
-            onTap: (index) {
-              if (index == 0 && tabController?.index == 0 && !(tabController?.indexIsChanging ?? false)) {
-                unawaited(_openForYouMenu());
-              }
-            },
-            tabs: [
-              Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(JamIcons.users, color: Theme.of(context).colorScheme.secondary),
-                    const SizedBox(width: 3),
-                    Icon(
-                      JamIcons.chevron_down,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                    ),
-                  ],
-                ),
-              ),
-              Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
-            ],
-          ),
-        ),
+        appBar: _HomeAppBar(onLogoTap: _openForYouMenu),
         body: Stack(
           children: <Widget>[
-            TabBarView(
-              controller: tabController,
-              children: <Widget>[
-                PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
-                const CollectionScreen(),
-              ],
-            ),
+            PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
             if (!result) ConnectivityWidget() else Container(),
           ],
         ),
@@ -441,3 +398,134 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
 }
 
 enum _ForYouMenuAction { editInterests, feedMix, reset }
+
+class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _HomeAppBar({required this.onLogoTap});
+
+  final VoidCallback onLogoTap;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).primaryColor,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 56,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Row(
+              children: [
+                // Notification button
+                BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
+                  builder: (context, state) => _NotificationButton(hasUnread: state.unreadCount > 0),
+                ),
+                // Centered logo
+                Expanded(
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: onLogoTap,
+                      behavior: HitTestBehavior.opaque,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _PrismLogo(),
+                          SizedBox(width: 4),
+                          Text(
+                            'prism',
+                            style: TextStyle(
+                              fontFamily: 'Fraunces',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.white,
+                              fontVariations: [FontVariation('WONK', 1)],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Profile avatar
+                _ProfileAvatar(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrismLogo extends StatelessWidget {
+  const _PrismLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.string(
+      prismVector,
+      width: 10,
+      height: 12,
+      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+    );
+  }
+}
+
+class _NotificationButton extends StatelessWidget {
+  const _NotificationButton({this.hasUnread = false});
+
+  final bool hasUnread;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.router.push(const NotificationRoute()),
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: Stack(
+          children: [
+            // Bell icon with inner shadow approximation
+            const Positioned(left: 12, top: 12, child: Icon(JamIcons.bell_f, color: Color(0xFFDEDEDE), size: 16)),
+            // Pink nudge dot
+            if (hasUnread)
+              Positioned(
+                top: 11,
+                left: 22,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFFF69A9),
+                    boxShadow: [BoxShadow(color: Color(0x80E57697), blurRadius: 4, spreadRadius: 1)],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = app_state.prismUser.profilePhoto;
+    return GestureDetector(
+      onTap: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email)),
+      child: Container(
+        width: 40,
+        height: 40,
+        padding: const EdgeInsets.all(8),
+        child: ClipOval(
+          child: CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover),
+        ),
+      ),
+    );
+  }
+}
