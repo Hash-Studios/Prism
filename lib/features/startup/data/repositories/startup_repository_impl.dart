@@ -89,10 +89,7 @@ class StartupRepositoryImpl implements StartupRepository {
     try {
       if (remoteConfig != null) {
         await remoteConfig.setConfigSettings(
-          RemoteConfigSettings(
-            fetchTimeout: const Duration(seconds: 30),
-            minimumFetchInterval: const Duration(hours: 6),
-          ),
+          RemoteConfigSettings(fetchTimeout: const Duration(seconds: 30), minimumFetchInterval: Duration.zero),
         );
         await remoteConfig.setDefaults(<String, dynamic>{
           'topImageLink': defaultTopImageLink,
