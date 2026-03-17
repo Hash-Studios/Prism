@@ -88,7 +88,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
               height: 240,
               viewportFraction: 1.0,
               autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 3),
+              autoPlayInterval: const Duration(seconds: 5),
               onPageChanged: (index, reason) {
                 if (mounted) {
                   setState(() {
