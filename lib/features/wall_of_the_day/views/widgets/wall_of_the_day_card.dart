@@ -7,7 +7,6 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
-import 'package:Prism/features/wall_of_the_day/views/widgets/wall_of_the_day_shimmer.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +33,7 @@ class _WallOfTheDayCardState extends State<WallOfTheDayCard> {
     return BlocBuilder<WotdBloc, WotdState>(
       builder: (context, state) {
         if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
-          return const WallOfTheDayShimmer();
+          return const SizedBox.shrink();
         }
         if (state.status == LoadStatus.failure || state.entity == null) {
           return const SizedBox.shrink();

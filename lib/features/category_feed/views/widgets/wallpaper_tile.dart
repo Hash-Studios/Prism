@@ -12,10 +12,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperTile extends StatelessWidget {
-  const WallpaperTile({super.key, required this.item, required this.index});
+  const WallpaperTile({super.key, required this.item, required this.index, this.memCacheHeight});
 
   final FeedItemEntity item;
   final int index;
+  final int? memCacheHeight;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
     WallpaperSource.wallhaven => AnalyticsSurfaceValue.homeWallhavenGrid,
@@ -32,7 +33,7 @@ class WallpaperTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = (MediaQuery.of(context).size.width / 3).toInt();
-    final height = (width * 2 * 1.5).toInt();
+    final height = memCacheHeight ?? (width * 2 * 1.5).toInt();
     return Material(
       color: Colors.transparent,
       child: InkWell(
