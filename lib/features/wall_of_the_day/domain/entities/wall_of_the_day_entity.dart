@@ -24,6 +24,7 @@ class WallOfTheDayEntity {
   final DateTime date;
   final List<String> palette;
   final bool isPremium;
+
   /// The provider this wallpaper originates from. Defaults to [WallpaperSource.prism].
   /// Future Firestore documents may set this to [WallpaperSource.wallhaven] or
   /// [WallpaperSource.pexels] to support multi-provider WOTD.
