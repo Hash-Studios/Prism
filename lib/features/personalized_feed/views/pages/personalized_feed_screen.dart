@@ -76,145 +76,131 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
         .take(_carouselPreviewCount)
         .toList(growable: false);
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: SizedBox(
-        height: 200,
-        child: Stack(
-          alignment: AlignmentDirectional.bottomEnd,
-          children: [
-            CarouselSlider.builder(
-              carouselController: _carouselController,
-              itemCount: 6,
-              options: CarouselOptions(
-                height: 200,
-                autoPlay: true,
-                autoPlayInterval: const Duration(seconds: 3),
-                onPageChanged: (index, reason) {
-                  if (mounted) {
-                    setState(() {
-                      _current = index;
-                    });
-                  }
-                },
-              ),
-              itemBuilder: (BuildContext context, int i, int rI) {
-                if (i == 0) {
-                  return Container(
-                    width: MediaQuery.of(context).size.width,
-                    margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                    child: const WallOfTheDayCard(),
-                  );
+    return SizedBox(
+      height: 240,
+      child: Stack(
+        alignment: AlignmentDirectional.bottomEnd,
+        children: [
+          CarouselSlider.builder(
+            carouselController: _carouselController,
+            itemCount: 6,
+            options: CarouselOptions(
+              height: 240,
+              viewportFraction: 1.0,
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 3),
+              onPageChanged: (index, reason) {
+                if (mounted) {
+                  setState(() {
+                    _current = index;
+                  });
                 }
-                if (i == 1) {
-                  return Container(
-                    width: MediaQuery.of(context).size.width,
-                    margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                    child: GestureDetector(
-                      onTap: () {
-                        unawaited(
-                          analytics.track(
-                            const SurfaceActionTappedEvent(
-                              surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                              action: AnalyticsActionValue.bannerTapped,
-                              sourceContext: 'personalized_feed_carousel_banner',
-                            ),
-                          ),
-                        );
-                        openPrismLink(context, app_state.bannerURL);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: context.prismModeStyleForContext() == "Dark"
-                              ? Colors.white10
-                              : Colors.black.withValues(alpha: .1),
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(
-                            image: CachedNetworkImageProvider(app_state.topImageLink),
-                            fit: BoxFit.cover,
-                          ),
+              },
+            ),
+            itemBuilder: (BuildContext context, int i, int rI) {
+              if (i == 0) {
+                return SizedBox(width: MediaQuery.of(context).size.width, child: const WallOfTheDayCard());
+              }
+              if (i == 1) {
+                return GestureDetector(
+                  onTap: () {
+                    unawaited(
+                      analytics.track(
+                        const SurfaceActionTappedEvent(
+                          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                          action: AnalyticsActionValue.bannerTapped,
+                          sourceContext: 'personalized_feed_carousel_banner',
                         ),
-                        child: Center(
-                          child: Container(
-                            width: MediaQuery.of(context).size.width,
-                            color: app_state.bannerTextOn ? Colors.black.withValues(alpha: 0.4) : Colors.transparent,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                      ),
+                    );
+                    openPrismLink(context, app_state.bannerURL);
+                  },
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(
+                      color: context.prismModeStyleForContext() == "Dark"
+                          ? Colors.white10
+                          : Colors.black.withValues(alpha: .1),
+                      image: DecorationImage(
+                        image: CachedNetworkImageProvider(app_state.topImageLink),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        color: app_state.bannerTextOn ? Colors.black.withValues(alpha: 0.4) : Colors.transparent,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  );
-                }
-                final int feedIndex = i - 2;
-                final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
-                    ? previewWalls[feedIndex]
-                    : null;
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  margin: const EdgeInsets.fromLTRB(3, 1, 3, 6),
-                  child: GestureDetector(
-                    onTap: () {
-                      if (wall == null) return;
-                      unawaited(
-                        analytics.track(
-                          SurfaceActionTappedEvent(
-                            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                            action: AnalyticsActionValue.carouselItemOpened,
-                            sourceContext: 'personalized_feed_carousel',
-                            itemType: ItemTypeValue.wallpaper,
-                            itemId: wall.id,
-                            index: feedIndex,
-                          ),
-                        ),
-                      );
-                      context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
-                    },
-                    child: wall == null
-                        ? Container(
-                            decoration: BoxDecoration(
-                              color: context.prismModeStyleForContext() == "Dark"
-                                  ? Colors.white10
-                                  : Colors.black.withValues(alpha: .1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          )
-                        : PremiumBannerWallsCarousel(
-                            comparator: !app_state.isPremiumWall(
-                              app_state.premiumCollections,
-                              wall.wallpaper.collections ?? const <String>[],
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: context.prismModeStyleForContext() == "Dark"
-                                    ? Colors.white10
-                                    : Colors.black.withValues(alpha: .1),
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                  image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ),
                   ),
                 );
-              },
-            ),
-            CarouselDots(current: _current),
-          ],
-        ),
+              }
+              final int feedIndex = i - 2;
+              final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
+                  ? previewWalls[feedIndex]
+                  : null;
+              return GestureDetector(
+                onTap: () {
+                  if (wall == null) return;
+                  unawaited(
+                    analytics.track(
+                      SurfaceActionTappedEvent(
+                        surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                        action: AnalyticsActionValue.carouselItemOpened,
+                        sourceContext: 'personalized_feed_carousel',
+                        itemType: ItemTypeValue.wallpaper,
+                        itemId: wall.id,
+                        index: feedIndex,
+                      ),
+                    ),
+                  );
+                  context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
+                },
+                child: wall == null
+                    ? Container(
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          color: context.prismModeStyleForContext() == "Dark"
+                              ? Colors.white10
+                              : Colors.black.withValues(alpha: .1),
+                        ),
+                      )
+                    : PremiumBannerWallsCarousel(
+                        comparator: !app_state.isPremiumWall(
+                          app_state.premiumCollections,
+                          wall.wallpaper.collections ?? const <String>[],
+                        ),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          decoration: BoxDecoration(
+                            color: context.prismModeStyleForContext() == "Dark"
+                                ? Colors.white10
+                                : Colors.black.withValues(alpha: .1),
+                            image: DecorationImage(
+                              image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+              );
+            },
+          ),
+          CarouselDots(current: _current),
+        ],
       ),
     );
   }

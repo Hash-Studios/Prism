@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
@@ -13,8 +12,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-const Color _kBrandPink = Color(0xFFE57697);
 
 class WallOfTheDayCard extends StatefulWidget {
   const WallOfTheDayCard({super.key});
@@ -65,123 +62,54 @@ class _WotdCardContent extends StatelessWidget {
     );
   }
 
-  void _setAsWallpaperAction(BuildContext context) {
-    unawaited(analytics.track(WotdSetAsWallpaperEvent(wallId: entity.wallId)));
-    context.router.push(
-      WallpaperDetailRoute(
-        entity: WallpaperDetailEntityX.fromWotd(entity),
-        analyticsSurface: AnalyticsSurfaceValue.wallpaperScreen,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => _openWallpaper(context),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: SizedBox.expand(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Background image
-              CachedNetworkImage(
-                imageUrl: entity.thumbnailUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => Container(color: Colors.white10),
-                errorWidget: (_, _, _) => Container(color: Colors.white10),
-              ),
+      child: SizedBox.expand(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Background image
+            CachedNetworkImage(
+              imageUrl: entity.thumbnailUrl,
+              fit: BoxFit.cover,
+              placeholder: (_, _) => const SizedBox.shrink(),
+              errorWidget: (_, _, _) => const SizedBox.shrink(),
+            ),
 
-              // Gradient overlay
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black87],
-                    stops: [0.4, 1.0],
+            // Centered text
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'wall of the day',
+                    style: TextStyle(
+                      fontFamily: 'Fraunces',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-              ),
-
-              // Top-left label
-              Positioned(
-                top: 12,
-                left: 14,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.calendar_today_rounded, color: _kBrandPink, size: 14),
-                      SizedBox(width: 5),
-                      Text(
-                        'Wall of the Day',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Bottom content
-              Positioned(
-                bottom: 12,
-                left: 14,
-                right: 14,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Title + photographer
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (entity.title.isNotEmpty)
-                            Text(
-                              entity.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                            ),
-                          if (entity.photographer.isNotEmpty)
-                            Text(
-                              'by ${entity.photographer}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11),
-                            ),
-                        ],
+                  if (entity.photographer.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'by ${entity.photographer}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Fraunces',
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
-                    if (!hideSetWallpaperUi) ...<Widget>[
-                      const SizedBox(width: 8),
-                      // Set Wallpaper CTA
-                      GestureDetector(
-                        onTap: () => _setAsWallpaperAction(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                          decoration: BoxDecoration(color: _kBrandPink, borderRadius: BorderRadius.circular(20)),
-                          child: const Text(
-                            'Set Wallpaper',
-                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

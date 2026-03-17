@@ -36,9 +36,7 @@ class _WallOfTheDayShimmerState extends State<WallOfTheDayShimmer> with SingleTi
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, _) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
+        return Container(
             constraints: const BoxConstraints.expand(),
             color: Color.lerp(baseColor, highlightColor, _animation.value),
             child: Stack(
@@ -96,7 +94,6 @@ class _WallOfTheDayShimmerState extends State<WallOfTheDayShimmer> with SingleTi
                 ),
               ],
             ),
-          ),
         );
       },
     );
