@@ -1,5 +1,7 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +28,34 @@ class LocalNotification {
     if (!context.mounted) {
       return;
     }
-    if (notificationAppLaunchDetails?.notificationResponse?.payload == "downloaded") {
+    final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
+    if (payload == "downloaded") {
       context.router.push(const DownloadRoute());
+    } else if (payload == "reengagement") {
+      await _recordReengagementOpen(payload: payload);
+      if (context.mounted) {
+        context.router.push(const AiTabRoute());
+      }
+    }
+  }
+
+  /// Records a re-engagement notification open so the server-side
+  /// state tracker updates seqNOpenedAt.  The sequence is unknown at this
+  /// point (payload is just the route string), so we record sequence 0 as
+  /// a sentinel and let the backend handle it gracefully.
+  Future<void> _recordReengagementOpen({String? payload}) async {
+    try {
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      await FirebaseFirestore.instance.collection('reengagementEvents').add(<String, dynamic>{
+        'userId': uid,
+        'sequence': 0,
+        'source': 'push',
+        'action': 'open',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Non-critical.
     }
   }
 

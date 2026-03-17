@@ -46,6 +46,14 @@ final class ShortCodeIntent extends DeepLinkActionEntity {
   final String code;
 }
 
+final class ReengagementIntent extends DeepLinkActionEntity {
+  const ReengagementIntent({required this.sequence, required this.source, required this.userId, required super.rawUri});
+
+  final int sequence;
+  final String source;
+  final String userId;
+}
+
 final class UnknownIntent extends DeepLinkActionEntity {
   const UnknownIntent({required super.rawUri});
 }

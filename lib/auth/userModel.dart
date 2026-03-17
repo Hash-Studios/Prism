@@ -86,6 +86,8 @@ class PrismUsersV2 {
   String subscriptionTier;
   String uploadsWeekStart;
   int uploadsThisWeek;
+  bool emailOptOut;
+  bool pushSuppressed;
 
   PrismUsersV2({
     required this.username,
@@ -109,6 +111,8 @@ class PrismUsersV2 {
     this.subscriptionTier = 'free',
     this.uploadsWeekStart = '',
     this.uploadsThisWeek = 0,
+    this.emailOptOut = false,
+    this.pushSuppressed = false,
   }) {
     logger.d("Default constructor !!!!");
   }
@@ -141,6 +145,8 @@ class PrismUsersV2 {
       subscriptionTier: tierValue,
       uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',
       uploadsThisWeek: data['uploadsThisWeek'] as int? ?? 0,
+      emailOptOut: data['emailOptOut'] as bool? ?? false,
+      pushSuppressed: data['pushSuppressed'] as bool? ?? false,
     );
   }
 
@@ -173,6 +179,8 @@ class PrismUsersV2 {
       subscriptionTier: tierValue,
       uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',
       uploadsThisWeek: data['uploadsThisWeek'] as int? ?? 0,
+      emailOptOut: data['emailOptOut'] as bool? ?? false,
+      pushSuppressed: data['pushSuppressed'] as bool? ?? false,
     );
   }
   Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);

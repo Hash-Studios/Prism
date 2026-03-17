@@ -14,12 +14,14 @@ const db = admin.firestore();
  * collection.  This is the campaign / broadcast notification system.
  *
  * A request document should have:
- *   title:      string   — notification headline
- *   body:       string   — notification body text
- *   modifier:   string   — audience: "all" | "premium" | "free" | userEmail
- *   route:      string   — client-side route: "announcement" | "wall_of_the_day" | "wall" | "follower"
- *   imageUrl?:  string   — optional thumbnail image URL
- *   channelId?: string   — Android channel (default: "recommendations")
+ *   title:        string   — notification headline
+ *   body:         string   — notification body text
+ *   modifier:     string   — audience: "all" | "premium" | "free" | userEmail
+ *   route:        string   — client-side route: "announcement" | "wall_of_the_day" | "wall" | "follower" | "reengagement"
+ *   imageUrl?:    string   — optional thumbnail image URL
+ *   channelId?:   string   — Android channel (default: "recommendations")
+ *   campaignId?:  string   — optional: links this notification to a reengagementCampaigns doc
+ *   sequence?:    number   — optional: campaign sequence (1 | 2 | 3) for state tracking
  *
  * To trigger from the Flutter admin app, write to `notificationRequests`:
  *
@@ -56,6 +58,8 @@ export const onCampaignNotificationRequested = onDocumentCreated(
     const route: string = (data.route ?? "announcement").toString().trim();
     const imageUrl: string = (data.imageUrl ?? "").toString().trim();
     const channelId: string = (data.channelId ?? "recommendations").toString().trim();
+    const campaignId: string = (data.campaignId ?? "").toString().trim();
+    const sequence: number = Number(data.sequence ?? 0);
 
     if (!title || !body) {
       await _markProcessed(requestId, {error: "title and body are required"});
@@ -88,7 +92,11 @@ export const onCampaignNotificationRequested = onDocumentCreated(
       fcmTarget: {topic: fcmTopic},
     });
 
-    await _markProcessed(requestId, {fcmTopic});
+    await _markProcessed(requestId, {
+      fcmTopic,
+      ...(campaignId ? {campaignId} : {}),
+      ...(sequence ? {sequence} : {}),
+    });
 
     logger.info("onCampaignNotificationRequested: notification sent.", {
       requestId,

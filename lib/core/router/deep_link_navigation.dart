@@ -5,6 +5,8 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 class DeepLinkNavigation {
@@ -45,6 +47,9 @@ class DeepLinkNavigation {
         return ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl);
       case ReferLinkIntent():
         return null;
+      case ReengagementIntent():
+        await _handleReengagementOpen(action);
+        return const AiTabRoute();
       case ShortCodeIntent():
         final DeepLinkActionEntity? resolved = await _resolveShortCode(action.code);
         if (resolved == null) {
@@ -53,6 +58,25 @@ class DeepLinkNavigation {
         return _mapActionToRoute(resolved);
       case UnknownIntent():
         return null;
+    }
+  }
+
+  /// Records the re-engagement open event in Firestore so the server-side
+  /// state tracker can mark seqNOpenedAt and clear suppression if applicable.
+  Future<void> _handleReengagementOpen(ReengagementIntent action) async {
+    try {
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      await FirebaseFirestore.instance.collection('reengagementEvents').add(<String, dynamic>{
+        'userId': uid,
+        'sequence': action.sequence,
+        'source': action.source,
+        'action': 'open',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Non-critical — analytics failure must not break navigation.
     }
   }
 

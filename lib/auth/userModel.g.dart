@@ -30,6 +30,8 @@ PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) => PrismUsersV2(
   subscriptionTier: json['subscriptionTier'] as String? ?? 'free',
   uploadsWeekStart: json['uploadsWeekStart'] as String? ?? '',
   uploadsThisWeek: (json['uploadsThisWeek'] as num?)?.toInt() ?? 0,
+  emailOptOut: json['emailOptOut'] as bool? ?? false,
+  pushSuppressed: json['pushSuppressed'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dynamic>{
@@ -54,4 +56,6 @@ Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dyn
   'subscriptionTier': instance.subscriptionTier,
   'uploadsWeekStart': instance.uploadsWeekStart,
   'uploadsThisWeek': instance.uploadsThisWeek,
+  'emailOptOut': instance.emailOptOut,
+  'pushSuppressed': instance.pushSuppressed,
 };
