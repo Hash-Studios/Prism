@@ -17,6 +17,8 @@ SENTRY_ENV ?=
 SENTRY_RELEASE ?=
 SENTRY_DIST ?=
 SENTRY_ENABLED ?=
+SENTRY_UPLOAD ?= true
+SENTRY_DOPPLER_CONFIG ?= prd
 SENTRY_DART_DEFINES = $(strip \
 	$(if $(SENTRY_ENV),--dart-define=SENTRY_ENV=$(SENTRY_ENV),) \
 	$(if $(SENTRY_RELEASE),--dart-define=SENTRY_RELEASE=$(SENTRY_RELEASE),) \
@@ -151,6 +153,9 @@ build-aab: ensure-fvm doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
 	$(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
+	fi
 
 size-android: ensure-fvm
 	@mkdir -p build/size/local
