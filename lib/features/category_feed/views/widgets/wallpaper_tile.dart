@@ -6,7 +6,6 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';

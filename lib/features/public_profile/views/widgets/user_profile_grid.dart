@@ -1,13 +1,9 @@
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
-import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -187,22 +183,6 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                     ),
                     itemBuilder: (context, index) {
                       final wall = context.publicProfileAdapter().userProfileWalls![index];
-                      final collections = wall.collections ?? const <String>[];
-                      final photographer = (wall.by ?? '').trim();
-                      final prismWallpaper = PrismWallpaper(
-                        core: WallpaperCore(
-                          id: wall.id,
-                          source: WallpaperSource.prism,
-                          fullUrl: wall.wallpaperUrl,
-                          thumbnailUrl: wall.wallpaperThumb ?? '',
-                          resolution: wall.resolution,
-                          sizeBytes: int.tryParse(wall.size ?? '0'),
-                          createdAt: wall.createdAt,
-                          authorName: wall.by,
-                          authorEmail: wall.email,
-                        ),
-                        collections: wall.collections,
-                      );
                       if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&
                           context.publicProfileAdapter(listen: false).hasMoreWalls) {
                         return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);

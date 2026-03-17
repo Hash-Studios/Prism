@@ -210,11 +210,6 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                       ),
                       itemBuilder: (context, index) {
                         final likedWall = context.favouriteWallsAdapter().liked![index];
-                        final isWallhaven = likedWall.provider == 'WallHaven';
-                        final isPrism = likedWall.provider == 'Prism';
-                        final isPexels = likedWall.provider == 'Pexels';
-                        final category = likedWall.category.trim();
-                        final photographer = likedWall.photographer.trim();
                         return Stack(
                           children: [
                             Container(

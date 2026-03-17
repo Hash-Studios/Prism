@@ -28,7 +28,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gradient_borders/box_borders/gradient_box_border.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
 
