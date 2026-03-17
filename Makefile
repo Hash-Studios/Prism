@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -7,6 +7,7 @@ RUN_ARGS ?=
 BUILD_ARGS ?=
 IOS_BUILD_ARGS ?=
 APP_SIZE_TARGET_PLATFORM ?= android-arm64
+RIVE_SKIP_SETUP ?= false
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
 DOPPLER_PROJECT ?= prism
 DOPPLER_CONFIG ?= dev
@@ -26,7 +27,30 @@ SENTRY_DART_DEFINES = $(strip \
 	$(if $(SENTRY_DIST),--dart-define=SENTRY_DIST=$(SENTRY_DIST),) \
 	$(if $(SENTRY_ENABLED),--dart-define=SENTRY_ENABLED=$(SENTRY_ENABLED),))
 ANDROID_JAVA_HOME ?= $(shell /usr/libexec/java_home -v 17 2>/dev/null)
-GRADLE_USER_HOME_DIR ?= $(CURDIR)/.gradle-local
+ifeq ($(OS),Windows_NT)
+  GRADLE_USER_HOME_DIR ?= $(HOME)/.gradle-prism
+else
+  GRADLE_USER_HOME_DIR ?= $(CURDIR)/.gradle-local
+endif
+GRADLE_USER_HOME_DIR_POSIX := $(subst \,/,$(GRADLE_USER_HOME_DIR))
+GRADLE_COMMON_OPTS ?= -Dorg.gradle.vfs.watch=false
+RIVE_SETUP_ENV := $(if $(filter true,$(RIVE_SKIP_SETUP)),env "ORG_GRADLE_PROJECT_rive.native.skipSetup=true",)
+
+# Ensure POSIX shell recipes work when running make from PowerShell/cmd on Windows.
+ifeq ($(OS),Windows_NT)
+  ifneq ($(wildcard C:/Progra~1/Git/bin/bash.exe),)
+    SHELL := C:/Progra~1/Git/bin/bash.exe
+  else ifneq ($(wildcard C:/Program Files/Git/bin/bash.exe),)
+    SHELL := C:/Program Files/Git/bin/bash.exe
+  else ifneq ($(wildcard C:/msys64/usr/bin/bash.exe),)
+    SHELL := C:/msys64/usr/bin/bash.exe
+  else
+    SHELL := bash
+  endif
+  MAKESHELL := $(SHELL)
+  .SHELLFLAGS := -lc
+  GRADLE_COMMON_OPTS += -Dorg.gradle.daemon=false
+endif
 
 # CI support: when CI=true, use plain flutter/dart instead of fvm-prefixed
 ifeq ($(CI),true)
@@ -127,12 +151,13 @@ run: ensure-fvm doppler-check
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
 		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
 	fi; \
-	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
-	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
+	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	if [ -n "$(DEVICE)" ]; then \
-		$(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(RIVE_SETUP_ENV) $(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	else \
-		$(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(RIVE_SETUP_ENV) $(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	fi
 
 build: ensure-fvm doppler-check
@@ -141,9 +166,10 @@ build: ensure-fvm doppler-check
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
 		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
 	fi; \
-	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
-	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
-	$(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	$(RIVE_SETUP_ENV) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 build-aab: ensure-fvm doppler-check
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
@@ -151,12 +177,19 @@ build-aab: ensure-fvm doppler-check
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
 		$(FLUTTER) config --jdk-dir "$$JAVA_HOME" >/dev/null; \
 	fi; \
-	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR)"; \
-	mkdir -p "$(GRADLE_USER_HOME_DIR)"; \
-	$(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
+	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
+	$(RIVE_SETUP_ENV) $(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
+
+gradle-reset:
+	@echo "Stopping Gradle daemons and clearing transform cache..."
+	@./android/gradlew --stop >/dev/null 2>&1 || true
+	@rm -rf "$(GRADLE_USER_HOME_DIR_POSIX)/caches/8.14/transforms" "$(GRADLE_USER_HOME_DIR_POSIX)/daemon" "$(GRADLE_USER_HOME_DIR_POSIX)/workers" || true
+	@echo "Gradle cache reset complete."
 
 size-android: ensure-fvm
 	@mkdir -p build/size/local
@@ -203,11 +236,11 @@ ensure-fvm:
 	@true
 else
 ensure-fvm:
-	@command -v fvm >/dev/null 2>&1 || { \
-		echo "fvm is not installed."; \
-		echo "Install it first (example): dart pub global activate fvm"; \
-		exit 1; \
-	}
+	@fvm --version >NUL 2>&1 || fvm --version >/dev/null 2>&1 || ( \
+		echo fvm is not installed. && \
+		echo Install it first example: dart pub global activate fvm && \
+		exit 1 \
+	)
 endif
 
 update-flutter: ensure-fvm
