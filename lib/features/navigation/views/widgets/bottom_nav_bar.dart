@@ -1,4 +1,5 @@
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
+import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -14,7 +15,6 @@ class BottomBar extends StatefulWidget {
 
 class _BottomBarState extends State<BottomBar> {
   late final floating.BottomBarController _bottomBarController;
-
   @override
   void initState() {
     super.initState();
@@ -26,6 +26,7 @@ class _BottomBarState extends State<BottomBar> {
     return floating.BottomBar(
       hideOnScroll: false,
       showIcon: false,
+      width: MediaQuery.of(context).size.width,
       barColor: Colors.transparent,
       borderRadius: BorderRadius.circular(500),
       controller: _bottomBarController,
@@ -35,25 +36,39 @@ class _BottomBarState extends State<BottomBar> {
       iconWidth: 32,
       iconHeight: 32,
       barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
-      child: const PrismBottomNav(),
-      body: (context, _) =>
-          _BottomBarScrollVisibility(controller: _bottomBarController, child: widget.child ?? const SizedBox.shrink()),
+      child: const Align(
+        heightFactor: 1.0,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            IntrinsicWidth(child: PrismBottomNav()),
+            SizedBox(width: 12),
+            PrismFab(),
+          ],
+        ),
+      ),
+      body: (context, scrollController) => _BottomBarScrollVisibility(
+        controller: _bottomBarController,
+        scrollController: scrollController,
+        child: widget.child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
 
 class _BottomBarScrollVisibility extends StatefulWidget {
   final floating.BottomBarController controller;
+  final ScrollController scrollController;
   final Widget child;
 
-  const _BottomBarScrollVisibility({required this.controller, required this.child});
+  const _BottomBarScrollVisibility({required this.controller, required this.scrollController, required this.child});
 
   @override
   State<_BottomBarScrollVisibility> createState() => _BottomBarScrollVisibilityState();
 }
 
 class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> {
-  ScrollDirection _lastDirection = ScrollDirection.idle;
   ScrollPosition? _activeScrollPosition;
 
   void _resolveActiveScrollPosition() {
@@ -80,25 +95,11 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
   }
 
   bool _onUserScroll(UserScrollNotification notification) {
-    if (!mounted) {
-      return false;
-    }
-
-    if (notification.metrics.axis != Axis.vertical) {
-      return false;
-    }
-
+    if (!mounted || notification.metrics.axis != Axis.vertical) return false;
     _resolveActiveScrollPosition();
-
-    final direction = notification.direction;
-    if (direction == ScrollDirection.idle || direction == _lastDirection) {
-      return false;
-    }
-
-    _lastDirection = direction;
-    if (direction == ScrollDirection.reverse) {
+    if (notification.direction == ScrollDirection.reverse) {
       widget.controller.hide();
-    } else if (direction == ScrollDirection.forward) {
+    } else if (notification.direction == ScrollDirection.forward) {
       widget.controller.show();
     }
     return false;
@@ -161,9 +162,12 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<UserScrollNotification>(
-      onNotification: _onUserScroll,
-      child: Stack(fit: StackFit.expand, children: <Widget>[widget.child, _buildScrollToTopButton(context)]),
+    return PrimaryScrollController(
+      controller: widget.scrollController,
+      child: NotificationListener<UserScrollNotification>(
+        onNotification: _onUserScroll,
+        child: Stack(fit: StackFit.expand, children: <Widget>[widget.child, _buildScrollToTopButton(context)]),
+      ),
     );
   }
 }

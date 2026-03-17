@@ -160,11 +160,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                       childAspectRatio: 0.5,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => WallpaperTile(
-                        item: visibleItems[index],
-                        index: index,
-                        memCacheHeight: tileMemCacheHeight,
-                      ),
+                      (context, index) =>
+                          WallpaperTile(item: visibleItems[index], index: index, memCacheHeight: tileMemCacheHeight),
                       childCount: visibleItems.length,
                     ),
                   ),
@@ -233,8 +230,9 @@ class _FeedCarouselState extends State<_FeedCarousel> {
   @override
   Widget build(BuildContext context) {
     final previewWalls = widget.previewWalls;
+    final height = MediaQuery.of(context).size.width * 2 / 3;
     return SizedBox(
-      height: 240,
+      height: height,
       child: Stack(
         alignment: AlignmentDirectional.bottomEnd,
         children: [
@@ -242,7 +240,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
             carouselController: _carouselController,
             itemCount: 6,
             options: CarouselOptions(
-              height: 240,
+              height: height,
               viewportFraction: 1.0,
               autoPlay: true,
               autoPlayInterval: const Duration(seconds: 5),
@@ -300,8 +298,9 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                 );
               }
               final int feedIndex = i - 2;
-              final PrismFeedItem? wall =
-                  feedIndex >= 0 && feedIndex < previewWalls.length ? previewWalls[feedIndex] : null;
+              final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
+                  ? previewWalls[feedIndex]
+                  : null;
               return GestureDetector(
                 onTap: () {
                   if (wall == null) return;

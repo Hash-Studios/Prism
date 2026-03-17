@@ -406,18 +406,18 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onLogoTap;
 
   @override
-  Size get preferredSize => const Size.fromHeight(76);
+  Size get preferredSize => const Size.fromHeight(56);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
+    return ColoredBox(
+      color: Theme.of(context).primaryColor,
       child: SafeArea(
         bottom: false,
         child: SizedBox(
-          height: 76,
+          height: 56,
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
               children: [
                 // Notification button
@@ -434,13 +434,13 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           _PrismLogo(),
-                          SizedBox(width: 6),
+                          SizedBox(width: 4),
                           Text(
                             'prism',
                             style: TextStyle(
                               fontFamily: 'Fraunces',
                               fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              fontSize: 14,
                               color: Colors.white,
                               fontVariations: [FontVariation('WONK', 1)],
                             ),
@@ -468,8 +468,8 @@ class _PrismLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return SvgPicture.string(
       prismVector,
-      width: 14,
-      height: 16,
+      width: 10,
+      height: 12,
       colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
     );
   }
@@ -489,26 +489,6 @@ class _NotificationButton extends StatelessWidget {
         height: 40,
         child: Stack(
           children: [
-            // Background circle with gradient + border
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                border: GradientBoxBorder(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF474747), Color(0xFF1A1A1A)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF232323), Color(0xFF383838)],
-                ),
-              ),
-            ),
             // Bell icon with inner shadow approximation
             const Positioned(left: 12, top: 12, child: Icon(JamIcons.bell_f, color: Color(0xFFDEDEDE), size: 16)),
             // Pink nudge dot
@@ -542,33 +522,9 @@ class _ProfileAvatar extends StatelessWidget {
       child: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          border: GradientBoxBorder(
-            gradient: LinearGradient(
-              colors: [Color(0xFF474747), Color(0xFF1A1A1A)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF232323), Color(0xFF383838)],
-          ),
-        ),
-        padding: const EdgeInsets.all(4),
+        padding: const EdgeInsets.all(8),
         child: ClipOval(
-          child: ShaderMask(
-            shaderCallback: (Rect bounds) {
-              return const RadialGradient(
-                colors: [Colors.white, Colors.white60],
-                center: Alignment(0.1, 0.2),
-                stops: [0.7, 1],
-              ).createShader(bounds);
-            },
-            child: CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover),
-          ),
+          child: CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover),
         ),
       ),
     );

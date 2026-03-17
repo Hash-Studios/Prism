@@ -20,6 +20,7 @@ import 'package:Prism/features/in_app_notifications/views/pages/notification_scr
 import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
+import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
@@ -100,6 +101,8 @@ class AppRouter extends RootStackRouter {
         ),
         // Streak tab
         AutoRoute(path: 'streak', page: StreakTabRoute.page),
+        // Collection tab
+        AutoRoute(path: 'collection', page: CollectionTabRoute.page),
         // Profile tab
         AutoRoute(
           path: 'profile',
