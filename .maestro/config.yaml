@@ -1,0 +1,4 @@
+appId: com.hash.prism
+flows:
+  - "p0/*.yaml"
+  - "p1/*.yaml"

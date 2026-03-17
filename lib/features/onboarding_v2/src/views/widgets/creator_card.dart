@@ -167,7 +167,7 @@ class _FollowButton extends StatelessWidget {
       child: AnimatedSwitcher(
         duration: OnboardingMotion.short,
         child: Text(
-          isSelected ? 'following' : 'follow',
+          isSelected ? 'Following' : 'Follow',
           key: ValueKey(isSelected),
           style: OnboardingTypography.cta.copyWith(
             color: Colors.white,

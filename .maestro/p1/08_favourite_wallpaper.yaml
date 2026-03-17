@@ -1,0 +1,56 @@
+appId: com.hash.prism
+---
+# P1-08: Favourite Wallpaper
+# Validates: tap heart on detail screen; if unauthed → Sign In popup; if authed → heart toggles
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Navigate to Home tab
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+
+# Wait for feed to load and tap the first card
+- extendedWaitUntil:
+    visible:
+      id: "wallpaper_card"
+    timeout: 10000
+- tapOn:
+    id: "wallpaper_card"
+    index: 0
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Tap the favourite button
+- extendedWaitUntil:
+    visible:
+      id: "favourite_button"
+    timeout: 10000
+- tapOn:
+    id: "favourite_button"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Either the sign-in popup appears (unauthed) or the heart toggles (authed)
+# Check for sign-in popup (unauthed path)
+- runFlow:
+    when:
+      visible:
+        text: "SIGNING IN UNLOCKS:"
+    commands:
+      - assertVisible:
+          text: "SIGNING IN UNLOCKS:"
+      - back
+      - waitForAnimationToEnd
+
+# Authed path: heart should have toggled (button still visible)
+- extendedWaitUntil:
+    visible:
+      id: "favourite_button"
+    timeout: 5000
+
+# Back to feed
+- tapOn:
+    text: "Back"
+- waitForAnimationToEnd

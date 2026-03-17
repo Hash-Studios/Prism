@@ -1,0 +1,37 @@
+appId: com.hash.prism
+---
+# P1-10: Streak Tab
+# Validates: Streak tab opens; "Your Streak" title visible; scrollable
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Navigate to Streak tab
+- tapOn:
+    text: "Streak"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# "Your Streak" title should be visible
+- extendedWaitUntil:
+    visible:
+      text: "Your Streak"
+    timeout: 10000
+
+# Scroll down to verify the tab is scrollable
+- swipe:
+    direction: DOWN
+    duration: 800
+- waitForAnimationToEnd
+
+# Scroll back up
+- swipe:
+    direction: UP
+    duration: 500
+- waitForAnimationToEnd
+
+# Title should still be accessible after scroll
+- extendedWaitUntil:
+    visible:
+      text: "Your Streak"
+    timeout: 5000

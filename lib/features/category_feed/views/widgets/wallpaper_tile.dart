@@ -18,7 +18,9 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
+    return Semantics(
+      label: 'wallpaper_card',
+      child: Stack(
       children: [
         Container(
           decoration: BoxDecoration(
@@ -53,6 +55,7 @@ class WallpaperTile extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }

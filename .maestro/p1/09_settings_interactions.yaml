@@ -1,0 +1,66 @@
+appId: com.hash.prism
+---
+# P1-09: Settings Interactions
+# Validates: Clear Cache → toast; Clear Downloads → YES/NO dialog; themes nav
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Navigate to Profile → Settings
+- tapOn:
+    text: "Profile"
+- waitForAnimationToEnd
+- tapOn:
+    text: "Settings"
+- waitForAnimationToEnd
+
+# Scroll to STORAGE section
+- scrollUntilVisible:
+    element:
+      text: "Clear Cache"
+    direction: DOWN
+    timeout: 10000
+
+# Tap Clear Cache
+- tapOn:
+    text: "Clear Cache"
+- waitForAnimationToEnd
+
+# Verify "Cleared cache!" toast appeared
+- extendedWaitUntil:
+    visible:
+      text: "Cleared cache!"
+    timeout: 5000
+
+# Scroll to find Clear Downloads
+- scrollUntilVisible:
+    element:
+      text: "Clear Downloads"
+    direction: DOWN
+    timeout: 10000
+
+# Tap Clear Downloads — should show YES/NO dialog
+- tapOn:
+    text: "Clear Downloads"
+- waitForAnimationToEnd
+
+# Dismiss with NO
+- extendedWaitUntil:
+    visible:
+      text: "YES"
+    timeout: 5000
+- tapOn:
+    text: "NO"
+- waitForAnimationToEnd
+
+# Scroll to APPEARANCE and tap Themes
+- scrollUntilVisible:
+    element:
+      text: "APPEARANCE"
+    direction: UP
+    timeout: 10000
+- tapOn:
+    text: "Themes"
+- waitForAnimationToEnd
+- back
+- waitForAnimationToEnd

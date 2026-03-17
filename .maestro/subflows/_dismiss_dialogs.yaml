@@ -1,0 +1,11 @@
+appId: com.hash.prism
+---
+# Dismiss the "What's new" changelog popup if visible
+- runFlow:
+    when:
+      visible:
+        text: "CLOSE"
+    commands:
+      - tapOn:
+          text: "CLOSE"
+      - waitForAnimationToEnd

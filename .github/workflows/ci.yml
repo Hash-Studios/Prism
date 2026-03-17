@@ -222,3 +222,96 @@ jobs:
             ## Android App Size Report
 
             Skipped: no app-size relevant files changed in this PR.
+
+  e2e:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect E2E-relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            e2e:
+              - 'lib/**'
+              - '.maestro/**'
+              - 'pubspec.yaml'
+              - 'android/**'
+
+      - name: Checkout code
+        if: steps.changes.outputs.e2e == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        if: steps.changes.outputs.e2e == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Read Flutter version from .fvmrc
+        if: steps.changes.outputs.e2e == 'true'
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        if: steps.changes.outputs.e2e == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Cache Gradle
+        if: steps.changes.outputs.e2e == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.changes.outputs.e2e == 'true'
+        run: make get CI=true
+
+      - name: Generate Firebase options stub for CI
+        if: steps.changes.outputs.e2e == 'true'
+        run: |
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+
+      - name: Build debug APK
+        if: steps.changes.outputs.e2e == 'true'
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
+        run: |
+          flutter build apk --debug \
+            --dart-define=SKIP_FIREBASE_INIT=true \
+            --dart-define=E2E_MODE=true
+
+      - name: Install Maestro CLI
+        if: steps.changes.outputs.e2e == 'true'
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run P0 flows via Maestro Cloud
+        if: steps.changes.outputs.e2e == 'true'
+        env:
+          MAESTRO_CLOUD_API_KEY: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
+        run: |
+          maestro cloud \
+            --apiKey "$MAESTRO_CLOUD_API_KEY" \
+            --app build/app/outputs/flutter-apk/app-debug.apk \
+            .maestro/p0
+
+      - name: Skip E2E check (no relevant changes)
+        if: steps.changes.outputs.e2e != 'true'
+        run: |
+          echo "## E2E Test Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Skipped: no E2E-relevant files changed in this PR." >> "$GITHUB_STEP_SUMMARY"

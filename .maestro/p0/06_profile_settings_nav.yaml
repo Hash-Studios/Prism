@@ -1,0 +1,63 @@
+appId: com.hash.prism
+---
+# P0-06: Profile & Settings Nav
+# Validates: Profile tab → Settings; all section headers visible; back returns to profile
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Navigate to Profile tab
+- tapOn:
+    text: "Profile"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Open settings — look for the settings icon or "Settings" text
+- tapOn:
+    text: "Settings"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+
+# Verify main settings section headers
+- extendedWaitUntil:
+    visible:
+      text: "APPEARANCE"
+    timeout: 5000
+
+# Scroll to see more sections
+- swipe:
+    direction: DOWN
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      text: "NOTIFICATIONS"
+    timeout: 5000
+
+- swipe:
+    direction: DOWN
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      text: "STORAGE"
+    timeout: 5000
+
+- extendedWaitUntil:
+    visible:
+      text: "ACCOUNT"
+    timeout: 5000
+
+- swipe:
+    direction: DOWN
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      text: "ABOUT"
+    timeout: 5000
+
+# Back returns to profile
+- back
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Profile"
+    timeout: 5000

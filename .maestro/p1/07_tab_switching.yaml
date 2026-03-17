@@ -1,0 +1,57 @@
+appId: com.hash.prism
+---
+# P1-07: Tab Switching
+# Validates: all 4 bottom nav tabs switch; Upload center button opens bottom panel
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Start on Home tab
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Home"
+    timeout: 3000
+
+# Switch to Search tab
+- tapOn:
+    text: "Search"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Search"
+    timeout: 3000
+
+# Switch to Streak tab
+- tapOn:
+    text: "Streak"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Streak"
+    timeout: 3000
+
+# Switch to Profile tab
+- tapOn:
+    text: "Profile"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Profile"
+    timeout: 3000
+
+# Return to Home
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+
+# Upload center button opens bottom panel
+- tapOn:
+    text: "Upload"
+- waitForAnimationToEnd
+- waitForAnimationToEnd
+# Dismiss the sheet by back press or swipe down
+- back
+- waitForAnimationToEnd

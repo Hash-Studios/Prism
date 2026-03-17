@@ -202,20 +202,30 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
             },
             tabs: [
               Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(JamIcons.users, color: Theme.of(context).colorScheme.secondary),
-                    const SizedBox(width: 3),
-                    Icon(
-                      JamIcons.chevron_down,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                    ),
-                  ],
+                key: const ValueKey('tab_for_you'),
+                child: Semantics(
+                  label: 'For You',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(JamIcons.users, color: Theme.of(context).colorScheme.secondary),
+                      const SizedBox(width: 3),
+                      Icon(
+                        JamIcons.chevron_down,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              Tab(icon: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary)),
+              Tab(
+                key: const ValueKey('tab_collections'),
+                child: Semantics(
+                  label: 'Collections',
+                  child: Icon(JamIcons.pictures, color: Theme.of(context).colorScheme.secondary),
+                ),
+              ),
             ],
           ),
         ),

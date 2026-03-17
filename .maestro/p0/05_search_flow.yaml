@@ -1,0 +1,30 @@
+appId: com.hash.prism
+---
+# P0-05: Search Flow
+# Validates: Search tab opens; search field visible; manual text query returns results
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Navigate to Search tab
+- tapOn:
+    text: "Search"
+- waitForAnimationToEnd
+
+# Search tab should be visible
+- extendedWaitUntil:
+    visible:
+      text: "Search"
+    timeout: 5000
+
+# Try a manual text search by tapping the first text input
+- tapOn:
+    id: "search_field"
+    optional: true
+- inputText: "nature"
+- pressKey: Enter
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      id: "wallpaper_card"
+    timeout: 10000

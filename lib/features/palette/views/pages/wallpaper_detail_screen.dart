@@ -645,11 +645,27 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
-        if (!hideSetWallpaperUi) SetWallpaperButton(colorChanged: state.colorChanged, url: url),
-        FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
-        ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
-        EditButton(url: entity.fullUrl),
+        Semantics(
+          label: 'download_button',
+          child: DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
+        ),
+        if (!hideSetWallpaperUi)
+          Semantics(
+            label: 'set_wallpaper_button',
+            child: SetWallpaperButton(colorChanged: state.colorChanged, url: url),
+          ),
+        Semantics(
+          label: 'favourite_button',
+          child: FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
+        ),
+        Semantics(
+          label: 'share_button',
+          child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
+        ),
+        Semantics(
+          label: 'edit_button',
+          child: EditButton(url: entity.fullUrl),
+        ),
       ],
     );
   }
@@ -727,6 +743,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           child: Padding(
             padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
             child: IconButton(
+              tooltip: 'Back',
               onPressed: () {
                 _trackAction(state, AnalyticsActionValue.backTapped);
                 Navigator.pop(context);

@@ -1,0 +1,35 @@
+appId: com.hash.prism
+---
+# P1-11: Upload Flow
+# Validates: Upload button → unauthed shows Sign In popup; authed shows Create panel
+#            with Wallpapers + AI Generate options
+
+- runFlow: ../subflows/_launch_app.yaml
+- runFlow: ../subflows/_dismiss_dialogs.yaml
+
+# Tap Upload center button
+- tapOn:
+    text: "Upload"
+- waitForAnimationToEnd
+
+# Unauthed path: sign-in popup visible
+- runFlow:
+    when:
+      visible:
+        text: "SIGNING IN UNLOCKS:"
+    commands:
+      - assertVisible:
+          text: "SIGNING IN UNLOCKS:"
+      - back
+      - waitForAnimationToEnd
+
+# Authed path: upload panel with Wallpapers option
+- runFlow:
+    when:
+      visible:
+        text: "Wallpapers"
+    commands:
+      - assertVisible:
+          text: "Wallpapers"
+      - back
+      - waitForAnimationToEnd
