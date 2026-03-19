@@ -1,0 +1,173 @@
+{
+  "unreachable_files": [],
+  "unused_symbols": {
+    "lib/core/analytics/providers/mixpanel_analytics_provider.dart": [
+      "MixpanelClient",
+      "MixpanelFlutterClient"
+    ],
+    "lib/core/utils/url_launcher_compat.dart": [
+      "launch"
+    ],
+    "lib/core/analytics/events/analytics_user_properties.dart": [
+      "AnalyticsUserPropertyX"
+    ],
+    "lib/core/analytics/analytics_route_observer.dart": [
+      "AnalyticsScreenViewCallback"
+    ],
+    "lib/core/analytics/events/analytics_enums.dart": [
+      "WallpaperTargetValueX",
+      "BinaryResultValueX",
+      "SubscriptionResultValueX",
+      "RcOrFallbackValueX",
+      "PaywallResultValueX",
+      "SubscriptionEntitlementRefreshResultValueX",
+      "CoinEarnActionValueX",
+      "CoinSpendActionValueX",
+      "AiChargeModeValueX",
+      "SettingValueX",
+      "AnalyticsActionValueX",
+      "EventResultValueX",
+      "AnalyticsReasonValueX",
+      "SearchProviderValueX",
+      "ItemTypeValueX",
+      "TargetTypeValueX",
+      "EntryPointValueX",
+      "LaunchStateValueX",
+      "ShareChannelValueX",
+      "DismissModeValueX",
+      "NotificationTypeValueX",
+      "AuthMethodValueX",
+      "NavTabValueX",
+      "NotificationPreferenceValueX",
+      "DeepLinkSourceValueX",
+      "ShareTypeValueX",
+      "AnalyticsSurfaceValueX",
+      "ScrollListNameValueX",
+      "ScrollDepthPercentValueX",
+      "LinkDestinationValueX"
+    ],
+    "lib/core/coins/coin_action.dart": [
+      "CoinEarnActionX",
+      "CoinSpendActionX"
+    ],
+    "lib/core/profile/profile_completeness_evaluator.dart": [
+      "ProfileCompletenessStep",
+      "ProfileCompletenessStepX"
+    ],
+    "lib/core/utils/string_extensions.dart": [
+      "CapExtension"
+    ],
+    "lib/core/platform/quick_tile_config_service.dart": [
+      "QuickTileCategoryConfig",
+      "QuickTileWotdConfig",
+      "QuickTileFavsConfig"
+    ],
+    "lib/features/in_app_notifications/views/pages/notification_screen.dart": [
+      "NotificationCard",
+      "NotificationSettingsSheet"
+    ],
+    "lib/features/category_feed/views/category_feed_bloc_adapter.dart": [
+      "CategoryFeedBlocAdapterX"
+    ],
+    "lib/features/favourite_setups/views/favourite_setups_bloc_adapter.dart": [
+      "FavouriteSetupsAdapter",
+      "FavouriteSetupsBlocAdapterX"
+    ],
+    "lib/features/favourite_walls/views/favourite_walls_bloc_adapter.dart": [
+      "FavouriteWallsAdapter",
+      "FavouriteWallsBlocAdapterX"
+    ],
+    "lib/features/profile_setups/views/profile_setups_bloc_adapter.dart": [
+      "ProfileSetupsAdapter",
+      "ProfileSetupsBlocAdapterX"
+    ],
+"lib/features/public_profile/views/public_profile_bloc_adapter.dart": [
+      "PublicProfileAdapter",
+      "PublicProfileBlocAdapterX"
+    ],
+    "lib/features/setups/views/setups_bloc_adapter.dart": [
+      "SetupsAdapter",
+      "SetupsBlocAdapterX"
+    ],
+    "lib/features/theme_mode/views/theme_mode_bloc_utils.dart": [
+      "PrismThemeContextX"
+    ],
+    "lib/logger/app_logger.dart": [
+      "AppLogLevelLabel"
+    ],
+    "lib/core/wallpaper/setup_wallpaper_extensions.dart": [
+      "SetupEntityWallpaperX",
+      "ProfileSetupEntityWallpaperX",
+      "PublicProfileSetupEntityWallpaperX",
+      "FavouriteSetupEntityWallpaperX"
+    ],
+    "lib/data/informatics/dataManager.dart": [
+      "getMapFromGitHub",
+      "updateDownloads",
+      "updateFavorites",
+      "updateDownloadsSetup",
+      "updateFavsSetup"
+    ],
+    "lib/core/widgets/popup/changelogPopUp.dart": [
+      "ChangeType"
+    ],
+    "lib/core/analytics/trackers/content_load_tracker.dart": [
+      "ContentLoadSuccessCallback",
+      "ContentLoadFailureCallback"
+    ],
+    "lib/features/favourite_walls/domain/entities/favourite_wall_view.dart": [
+      "FavouriteWallViewX"
+    ],
+    "lib/features/favourite_setups/domain/entities/favourite_setup_mappers.dart": [
+      "SetupEntityToFavouriteSetupX",
+      "ProfileSetupEntityToFavouriteSetupX",
+      "PublicProfileSetupEntityToFavouriteSetupX"
+    ],
+    "lib/core/analytics/trackers/scroll_milestone_tracker.dart": [
+      "ScrollMilestoneEmitCallback"
+    ],
+    "lib/features/onboarding_v2/src/views/widgets/onboarding_background.dart": [
+      "OnboardingBackground"
+    ],
+    "lib/features/onboarding_v2/src/views/widgets/onboarding_copy.dart": [
+      "OnboardingHeadline"
+    ],
+    "lib/features/onboarding_v2/src/views/widgets/onboarding_frame.dart": [
+      "OnboardingFrameBuilder"
+    ],
+    "lib/features/admin_review/biz/bloc/review_batch_bloc.dart": [
+      "ReviewAction"
+    ],
+    "lib/features/public_profile/domain/usecases/public_profile_usecases.dart": [
+      "FetchUserSummariesParams"
+    ],
+    "lib/core/persistence/data_sources/feed_cache_local_data_source.dart": [
+      "FeedSnapshot"
+    ],
+    "lib/data/pexels/provider/pexelsWithoutProvider.dart": [
+      "getWallbyIDP"
+    ],
+    "lib/data/wallhaven/provider/wallhavenWithoutProvider.dart": [
+      "getWallbyID"
+    ],
+    "lib/features/personalized_feed/data/personalized_ranking_service.dart": [
+      "PersonalizedRankingResult"
+    ],
+    "lib/core/widgets/focussedMenu/focused_menu_data.dart": [
+      "FocusedMenuTapAction",
+      "FocusedMenuStat"
+    ],
+    "lib/features/pexels_feed/data/mappers/pexels_dto_mapper.dart": [
+      "PexelsPhotoDtoMapper"
+    ],
+    "lib/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart": [
+      "PrismWallDocMapper"
+    ],
+    "lib/features/wallhaven_feed/data/mappers/wallhaven_dto_mapper.dart": [
+      "WallhavenWallpaperDtoMapper"
+    ],
+    "lib/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart": [
+      "ProfileCompletenessNudgeSheet"
+    ]
+  }
+}

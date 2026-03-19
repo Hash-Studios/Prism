@@ -1,25 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.hash.prism" >
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:node="remove" />
     <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
 
     <application
-        android:name="io.flutter.app.FlutterApplication"
+        android:name=".MainApplication"
+        android:extractNativeLibs="false"
         android:icon="@mipmap/ic_launcher"
         android:label="Prism" >
+        <!-- Quick Settings tile: Random from Category -->
         <service
             android:name=".MyTileService"
-            android:icon="@drawable/preview_widget"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_shuffle"
             android:label="@string/quick_settings"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
 
+        <!-- Quick Settings tile: Wall of the Day -->
+        <service
+            android:name=".WotdTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_wotd"
+            android:label="@string/quick_settings_wotd"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+
+        <!-- Quick Settings tile: Random from Favourites -->
+        <service
+            android:name=".FavsTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_favs"
+            android:label="@string/quick_settings_favs"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE"/>
             </intent-filter>
@@ -27,17 +67,20 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:windowSoftInputMode="adjustResize" >
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data
-                    android:host="prismwallpapers.page.link"
-                    android:scheme="https"/>
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/share" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/user" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/setup" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/refer" />
+                <data android:scheme="https" android:host="prismwalls.com" android:pathPrefix="/l" />
             </intent-filter>
             <!--
                  Specifies an Android theme to apply to this Activity as soon as

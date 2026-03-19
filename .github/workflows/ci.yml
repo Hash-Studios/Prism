@@ -1,41 +1,224 @@
-# # ci.yml
-# name: CI
+name: CI
 
-# on:
-#   pull_request:
-#     branches:
-#       - master
+permissions:
+  contents: read
+  pull-requests: write
 
-# jobs:
-#   build_apk:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v2
-#       - name: Setup Java
-#         uses: actions/setup-java@v1
-#         with:
-#           java-version: 12.x
-#       - name: Decrypt Android keys
-#         run: sh ./.github/scripts/decrypt_android_keys.sh
-#         env:
-#           ANDROID_KEYS_SECRET_PASSPHRASE: $
-#       - name: Setup Flutter
-#         uses: subosito/flutter-action@v1
-#         with:
-#           flutter-version: 2.2.0
-#       - name: Install Flutter dependencies
-#         run: flutter pub get
-#       - name: Format files
-#         run: flutter format --set-exit-if-changed .
-#       - name: Analyze files
-#         run: flutter analyze .
-#       - name: Run the tests
-#         run: flutter test
-#       - name: Build the APK
-#         run: flutter build apk --release
-#       - name: Upload artifact
-#         uses: actions/upload-artifact@v1
-#         with:
-#           name: release-apk
-#           path: build/app/outputs/apk/release/app-release.apk
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  APP_SIZE_MAX_DELTA_BYTES: 1572864
+  APP_SIZE_MAX_DELTA_PERCENT: 5
+  APP_SIZE_TARGET_PLATFORM: android-arm64
+  APP_SIZE_BUILD_MODE: profile
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dkotlin.daemon.jvm.options=-Xmx2g -Dorg.gradle.vfs.watch=false
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: make get CI=true
+
+      - name: Generate Firebase options stub for CI
+        run: |
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+
+      - name: Check formatting
+        run: make format-check CI=true
+
+      - name: Env define guard
+        run: make env-guard
+
+      - name: Version sync guard
+        run: make version-guard
+
+      - name: Analyze
+        run: make analyze CI=true
+
+      - name: Run tests
+        run: make test CI=true
+
+  app_size:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect app-size relevant changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app_size:
+              - 'lib/**'
+              - 'android/**'
+              - 'pubspec.yaml'
+              - 'pubspec.lock'
+              - 'ios/**'
+              - 'assets/**'
+              - 'tool/**'
+              - '.fvmrc'
+              - '.github/workflows/ci.yml'
+
+      - name: Checkout code
+        if: steps.changes.outputs.app_size == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        if: steps.changes.outputs.app_size == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Read Flutter version from .fvmrc
+        if: steps.changes.outputs.app_size == 'true'
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        if: steps.changes.outputs.app_size == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Cache Gradle
+        if: steps.changes.outputs.app_size == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build base APK
+        if: steps.changes.outputs.app_size == 'true'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git checkout --force --detach "$BASE_SHA"
+          flutter pub get
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          mkdir -p build/size/base
+          flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
+          BASE_APK_PATH=""
+          for candidate in build/app/outputs/flutter-apk/*"$APP_SIZE_BUILD_MODE"*.apk; do
+            if [ -f "$candidate" ]; then
+              BASE_APK_PATH="$candidate"
+              break
+            fi
+          done
+          if [ -z "$BASE_APK_PATH" ]; then
+            echo "Could not find base APK output for mode=$APP_SIZE_BUILD_MODE"
+            ls -la build/app/outputs/flutter-apk || true
+            exit 1
+          fi
+          cp "$BASE_APK_PATH" build/size/base/app-"$APP_SIZE_BUILD_MODE".apk
+          ./android/gradlew --stop || true
+
+      - name: Build head APK
+        if: steps.changes.outputs.app_size == 'true'
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git checkout --force --detach "$HEAD_SHA"
+          flutter pub get
+          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          mkdir -p build/size/head
+          flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/head/build.log
+          HEAD_APK_PATH=""
+          for candidate in build/app/outputs/flutter-apk/*"$APP_SIZE_BUILD_MODE"*.apk; do
+            if [ -f "$candidate" ]; then
+              HEAD_APK_PATH="$candidate"
+              break
+            fi
+          done
+          if [ -z "$HEAD_APK_PATH" ]; then
+            echo "Could not find head APK output for mode=$APP_SIZE_BUILD_MODE"
+            ls -la build/app/outputs/flutter-apk || true
+            exit 1
+          fi
+          cp "$HEAD_APK_PATH" build/size/head/app-"$APP_SIZE_BUILD_MODE".apk
+
+      - name: Compare app size and enforce thresholds
+        if: steps.changes.outputs.app_size == 'true'
+        run: |
+          python3 tool/compare_app_size.py \
+            --base-artifact build/size/base/app-"$APP_SIZE_BUILD_MODE".apk \
+            --head-artifact build/size/head/app-"$APP_SIZE_BUILD_MODE".apk \
+            --max-delta-bytes "$APP_SIZE_MAX_DELTA_BYTES" \
+            --max-delta-percent "$APP_SIZE_MAX_DELTA_PERCENT" \
+            --json-out build/size/report.json \
+            --summary-out build/size/report.md
+          cat build/size/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload app size artifacts
+        if: always() && steps.changes.outputs.app_size == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-size-report
+          path: build/size
+
+      - name: Upsert app-size PR comment
+        if: always() && steps.changes.outputs.app_size == 'true'
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: app-size-report
+          path: build/size/report.md
+
+      - name: Skip app-size check (no relevant changes)
+        if: steps.changes.outputs.app_size != 'true'
+        run: |
+          echo "## Android App Size Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Skipped: no app-size relevant files changed in this PR." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upsert skipped app-size PR comment
+        if: steps.changes.outputs.app_size != 'true'
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: app-size-report
+          message: |
+            ## Android App Size Report
+
+            Skipped: no app-size relevant files changed in this PR.

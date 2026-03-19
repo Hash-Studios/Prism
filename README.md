@@ -1,6 +1,6 @@
 # <div align="center"><img src="android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" alt="icon" width=30> Prism</div>
 
-<div align="center">Prism is a beautiful open-source wallpapers app for Android. It is built with Dart on top of Google's Flutter Framework.
+<div align="center">Prism is a beautiful open-source wallpapers and home screen setups app for Android and iOS. It is built with Dart on top of Google's Flutter Framework.
 
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
@@ -70,15 +70,20 @@ Our main goal is to create an unimaginable self-sustainable experience where peo
 - Low internet usage with excessive caching
 - In-built wallpaper optimisation and sketchy walls filter.
 
+<b>➡AI GENERATION</b>
+- Generate unique wallpapers with AI using text prompts
+- Multiple style presets to guide the generation
+- Share or set generated wallpapers instantly
+
 <b>Introducing Prism Premium -</b>
-Now get access to more premium and exclusive stuff by buying Prism Premium. It also removes the download wallpaper ad.
+Now get access to more premium and exclusive stuff by buying Prism Premium.
 
 - Support development of the app
 - Be a part of exclusive giveaways
 - The ability to set and view details of setups (only 5 free setups can be applied in the free version)
 - The ability to use wallpaper filters
 - Get uploads reviewed instantly
-- Get rid of all rewarded video ads (Used for downloads)
+- Earn and spend Prism Coins (watch ads or complete daily streaks to earn; spend on downloads and AI generation)
 - Get PRO badge in front of your profile
 - The ability to view premium collections
 
@@ -98,42 +103,41 @@ You can also report bugs, upload your setups/walls on our telegram channel
 3. [Demo](#demo)
 4. [Support](#support)
 5. [Dependencies](#dependencies)
-6. [Usage](#usage)
-7. [Contributing](#contributing)
-8. [License](#license)
-9. [Privacy Policy](#privacy)
-10. [Contributors](#contributors)
-11. [To-Do](#to-do)
+6. [Development Setup (FVM)](#development-setup-fvm)
+7. [Secrets with Doppler](#secrets-with-doppler)
+8. [Usage](#usage)
+9. [Contributing](#contributing)
+10. [License](#license)
+11. [Privacy Policy](#privacy)
+12. [Contributors](#contributors)
 
 ## Features
 
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
-- Over 2000+ exclusive wallpapers, making it the best selection ever
-- Community wallpapers uploaded by users all-around the world
-- Homescreen setups - Unique and exclusive setups designed with the perfect combination of wallpapers, icon pack and widgets
-- Exclusive collections updated daily with premium wallpapers
-- Each wallpaper comes with 5 color variants and 20+ filters
-- Follow creators for the latest and greatest
+- Over 2000+ exclusive wallpapers with 5 color variants each
+- Community wallpapers uploaded by users all around the world
+- Homescreen setups — unique setups combining wallpapers, icon packs, and widgets
+- Exclusive collections updated daily with 30+ premium categories
+- 20+ wallpaper filters (Clarendon, Hudson, Mayfair, and more)
+- AI wallpaper generation with text prompts and style presets
+- Coins economy — earn coins via ads or daily streaks, spend on downloads and AI generation
+- Wall of the Day with daily rewards and streak system
+- Personalized feed based on your interests
+- Follow creators for the latest content
 - AMOLED Dark Mode supported
-- Optional Sign-in
-- Each wallpaper/setup/creator has a unique link, makes sharing them easier
-- Option to add Twitter/Instagram to your profile
-- Low Internet usage due to minimal loading and persistent data using Provider/ CacheNetworkImage
-- Save Liked Images for later (works even after uninstalling the app)
-- Download any wallpaper to Gallery by watching a quick video ad
-- Set random wallpaper from the downloaded ones, by using quick tile
-- Secure data and favorites storage on Google Firebase
-- Search for Wallpapers by keyword
-- Check how the wallpaper will look with fake clock and app icons
-- Search for Wallpapers by color
-- Find wallpapers with a similar color
-- Set any wallpaper on the home screen, lock screen or both
-- Find wallpapers by category (Curated, Abstract, Nature, Landscape, Art, 4K, Sports, Architecture, Marvel, Neon, etc.)
-- Extensive settings menu with various options
-- Toast/Snackbar supported buttons
-- Minimal design with smooth transitions and animations
-- Clear Cache, Downloads and Favourites with one-tap
-- Optimized storage using minimal packages
+- Optional Sign-in with Google or Apple
+- Each wallpaper/setup/creator has a unique deep link for easy sharing
+- Option to add Twitter/Instagram/links to your profile
+- Low internet usage with aggressive caching
+- Save favourite wallpapers and setups (synced to cloud)
+- Set random wallpaper from downloaded ones via quick tile
+- Secure data storage on Google Firebase
+- Search wallpapers by keyword, color, or tags
+- Preview wallpaper with clock and app icon overlay before applying
+- Set any wallpaper on the home screen, lock screen, or both
+- Extensive settings with modular sections
+- Minimal design with smooth animations
+- Clear Cache, Downloads, or Favourites with one-tap
 - Application size about 12 MB
 - Adaptive UI (changes color based on wallpaper)
 
@@ -141,16 +145,19 @@ You can also report bugs, upload your setups/walls on our telegram channel
 
 Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/master/CHANGELOG.md).
 
-### v2.6.9
-- Laid support for Prism v3
-- New model for users
-- Removed banner ads
-- Show an information sheet when ads don't load
-- Fixed the downloads bug
-- Add an option to save setups as drafts before uploading.
-- New improved profiles with username, bio, cover photo, links & more!
-- Added 20+ new filters
-- Added option to pick icons from a given list of apps
+- `CHANGELOG.md` is auto-updated on every push to `master` (adds the latest commit under `### Unreleased`).
+- In-app changelog popup fetches the latest `CHANGELOG.md` from GitHub and caches it locally.
+- App version is sourced from `pubspec.yaml` and synced into `lib/core/constants/app_constants.dart` via `python3 tool/sync_app_version.py`.
+
+### v3.0.3
+- Refactored settings screen with modular sections and state management
+- Fixed personalised feed not fetching all interests + shuffled feed order
+- Fixed auth taking too long on startup
+- Fixed onboarding issue for already logged-in users
+- Fixed black background on splash screen
+- Optimised app size — reduced APK by ~10 MB
+- Improved AI generate UI
+- Fixed create with AI button
 - Minor bug fixes and improvements
 
 ## Demo
@@ -209,56 +216,132 @@ Prism Wallpapers app is now available on Google Play, so you can support us by g
 
 The following packages are needed for the development of this application.
 
-- `animations: ^2.0.0` for dialog/transition animations
+**State Management & Architecture**
+- `bloc: ^8.1.4` + `flutter_bloc: ^8.1.6` for BLoC state management
+- `provider: ^6.1.5` for additional caching and state
+- `get_it: ^9.2.0` + `injectable: ^2.5.1` for dependency injection
+- `rxdart: ^0.28.0` for reactive streams
+- `freezed_annotation: ^3.1.0` + `json_annotation: ^4.9.0` for immutable data models
+
+**Navigation**
+- `auto_route: ^11.1.0` for type-safe, code-generated routing
+- `app_links: ^6.4.1` for deep link handling (replaces Firebase Dynamic Links)
+
+**Firebase & Backend**
+- `firebase_core: ^3.15.2` for Firebase support
+- `cloud_firestore: ^5.6.12` for storing user data and wallpapers
+- `firebase_auth: ^5.6.0` for user authentication
+- `cloud_functions: ^5.6.0` for server-side logic
+- `firebase_analytics: ^11.5.0` for event analytics
+- `firebase_messaging: ^15.0.0` for push notifications
+- `firebase_remote_config: ^5.4.0` for remote feature flags
+
+**Payments & Monetisation**
+- `purchases_flutter: ^9.12.0` + `purchases_ui_flutter: ^9.12.0` for RevenueCat subscriptions
+- `google_mobile_ads: ^7.0.0` for rewarded ads (used in coins economy)
+
+**Monitoring & Analytics**
+- `sentry_flutter: ^9.14.0` for error monitoring and crash reporting
+- `mixpanel_flutter: ^2.5.0` for type-safe product analytics
+
+**Image & Media**
 - `cached_network_image: ^3.0.0` for caching wallpapers
-- `carousel_slider: ^3.0.0` for carousel widget
-- `cloud_firestore: ^1.0.7` for storing liked images and other user based data
-- `confetti: ^0.5.5` for showing confetti animations
-- `data_connection_checker: ^0.3.4` for checking Internet connection
-- `device_apps: ^2.1.1` for opening installed apps from Prism
-- `device_info: ^2.0.0` for getting device info for bug reports
-- `extended_image: ^0.9.0` for cropping wallpapers before uploading
-- `firebase_analytics: ^8.0.2` for analytics
-- `firebase_auth: ^1.1.2` for user authentication
-- `firebase_core: ^1.1.0` for firebase support
-- `firebase_dynamic_links: ^0.5.1` for wallpaper link generation and handling
-- `firebase_messaging: ^9.1.3` for notifications
-- `firebase_remote_config: ^0.6.0` for manipulating the app remotely
-- `flare_flutter: ^2.0.5` for animations
-- `flare_splash_screen: ^3.0.1` for the animated splash screen
-- `flutter_displaymode: ^0.3.1-nullsafety.0` for checking display resolution and refresh rate
-- `flutter_image_compress: ^1.0.0` for compressing uploaded images
-- `flutter_local_notifications: ^5.0.0+3` for showing local notifications
-- `flutter_staggered_grid_view: ^0.4.0` for showing staggered grid view in followers feed
-- `flutter_svg: ^0.22.0` for svg assets
-- `fluttertoast: ^8.0.6` for toast notifications
-- `gallery_saver: ^2.1.0` for saving wallpapers to gallery
-- `github: ^8.1.0` for communicating with GitHub API
-- `google_mobile_ads: ^0.13.0` for rewarded video ads
-- `google_sign_in: ^5.0.2` for Google sign in support
-- `hive: ^2.0.4` for caching data
-- `hive_flutter: ^1.0.0` for caching data
-- `image: ^3.0.2` for image
-- `image_editor: ^0.7.1` for editing wallpapers during upload
-- `image_picker: ^0.7.4` for picking images
-- `in_app_update: ^2.0.0` for updating app
-- `palette_generator: ^0.3.0` for generating wallpaper colors
-- `path_provider: ^2.0.1` for getting Application storage directory path
-- `permission_handler: ^7.1.0` for handling required device permissions
-- `photo_view: ^0.11.1` for showing images before uploading
-- `photofilters: ^2.0.1` for editing filters
-- `provider: ^4.1.3` for caching data, and state management
-- `purchases_flutter: ^3.2.1` for RevenueCat support
-- `quick_actions: ^0.6.0+1` for showing shortcuts/quick actions in launcher
-- `rate_my_app: ^1.1.0+1` for showing app rating popup
-- `screenshot: ^0.3.0` for setting wallpapers
-- `share: ^2.0.1` for sharing the wallpaper links
-- `sliding_up_panel: ^2.0.0+1` for sliding info panel
-- `smooth_star_rating: ^1.1.1` for showing rate dialog
-- `timeago: ^3.0.2` for showing time in a readible manner
-- `url_launcher: ^6.0.3` for launching urls
+- `extended_image: ^10.0.1` for cropping and advanced image display
+- `flutter_image_compress: ^2.4.0` for compressing uploaded images
+- `image: ^3.0.2` for image processing
+- `image_editor: ^1.6.0` for editing wallpapers during upload
+- `image_picker: ^1.2.1` for picking images from the device
+- `palette_generator: ^0.3.0` for generating wallpaper color palettes
+- `photo_view: ^0.15.0` for full-screen image viewing
+- `photofilters: ^3.0.0` for wallpaper filter effects
+- `screenshot: ^3.0.0` for applying wallpapers via screenshot method
+- `async_wallpaper: ^3.0.0` for setting wallpapers natively
+
+**UI & Animations**
+- `animations: ^2.0.0` for dialog/transition animations
+- `rive: ^0.14.4` for vector animations
+- `carousel_slider: ^5.1.2` for carousel widget
+- `flutter_floating_bottom_bar: ^1.4.0` for the floating bottom navigation bar
+- `flutter_staggered_grid_view: ^0.7.0` for staggered grid layouts
+- `flutter_svg: ^2.2.3` for SVG assets
+- `sliding_up_panel: ^2.0.0+1` for the sliding info panel
+
+**Authentication**
+- `google_sign_in: ^7.2.0` for Google sign-in
+- `sign_in_with_apple: ^7.0.0` for Apple sign-in
+
+**Utilities**
+- `shared_preferences: ^2.3.2` for local key-value storage
+- `path_provider: ^2.0.1` for accessing storage directories
+- `permission_handler: ^12.0.1` for handling device permissions
+- `internet_connection_checker: ^3.0.1` for connectivity monitoring
+- `in_app_update: ^4.2.5` for in-app update prompts
+- `flutter_displaymode: ^0.7.0` for display refresh rate management
+- `device_info_plus: ^11.5.0` for device metadata
+- `package_info_plus: ^8.3.0` for app version info
+- `github: ^9.25.0` for communicating with the GitHub API (community uploads)
+- `http: ^1.6.0` for HTTP requests
+- `share_plus: ^11.1.0` for sharing wallpaper links
+- `url_launcher: ^6.0.3` for launching external URLs
+- `quick_actions: ^1.1.0` for launcher shortcuts/quick actions
+- `timeago: ^3.0.2` for human-readable relative timestamps
+- `fluttertoast: ^8.2.14` for toast notifications
+- `intl: ^0.17.0` for internationalisation
+- `file_encrypter: ^2.0.2` for local data encryption
+- `logger: ^2.6.2` for structured logging
+- `crypto: ^3.0.6` for hashing utilities
 
 More details about these can be found in the [`pubspec.yaml`](https://github.com/Hash-Studios/Prism/tree/master/pubspec.yaml) file.
+
+## Development Setup (FVM)
+
+This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.41.4`).
+
+Run this single command from the project root:
+
+```sh
+make setup
+```
+
+This will:
+- install the pinned Flutter SDK with FVM
+- link the project SDK
+- run `pub get` using the pinned SDK
+
+To update the pinned Flutter version later:
+
+```sh
+make update-flutter VERSION=3.42.0
+```
+
+Then commit the updated [`.fvmrc`](.fvmrc).
+
+## Secrets with Doppler
+
+Prism uses Doppler as the source of truth for runtime secrets. `.env.example` is reference-only and is not used as runtime input by Make targets.
+
+Install Doppler CLI:
+
+- <https://docs.doppler.com/docs/install-cli>
+
+Run one-click setup from project root:
+
+```sh
+make setup-dev
+```
+
+This validates access to `prism/dev`, installs dependencies, and prepares local development.
+
+Useful commands:
+
+```sh
+make doppler-login   # interactive Doppler login/setup
+make secrets-print   # show available keys with masked values
+make run             # run app with Doppler-injected dart-defines
+```
+
+Release workflows use Doppler Service Tokens (GitHub secret: `DOPPLER_TOKEN_PRODUCTION`).
+See detailed guide: [`docs/development/doppler.md`](docs/development/doppler.md).
 
 ## Usage
 
@@ -314,73 +397,11 @@ DISCLAIMER: Google Play and the Google Play logo are trademarks of Google LLC.
 ```
 ## Privacy
 
-We store all our data on Firebase and GitHub servers, and we do not store personal information of the user.
-Link to the full privacy policy can be found [here](https://github.com/Hash-Studios/Prism/tree/master/PRIVACY.md).
+We collect usage analytics, crash logs, and optional account info (name, email, profile photo) when signed in. Third-party services include Firebase, Sentry, Mixpanel, RevenueCat, Google Mobile Ads, Pexels, and WallHaven.
 
-**Privacy Policy**
+Full privacy policy: [PRIVACY.md](PRIVACY.md)
 
-Hash Studios built the Prism app as an Open Source app. This SERVICE is provided by Hash Studios at no cost and is intended for use as is.
-
-This page is used to inform visitors regarding our policies with the collection, use, and disclosure of Personal Information if anyone decided to use our Service.
-
-If you choose to use our Service, then you agree to the collection and use of information in relation to this policy. The Personal Information that we collect is used for providing and improving the Service. We will not use or share your information with anyone except as described in this Privacy Policy.
-
-The terms used in this Privacy Policy have the same meanings as in our Terms and Conditions, which is accessible at Prism unless otherwise defined in this Privacy Policy.
-
-**Information Collection and Use**
-
-For a better experience, while using our Service, we may require you to provide us with certain personally identifiable information, including but not limited to name, email, profile image. The information that we request will be retained by us and used as described in this privacy policy.
-
-The app does use third party services that may collect information used to identify you.
-
-Link to privacy policy of third party service providers used by the app
-
-*   [Google Play Services](https://www.google.com/policies/privacy/)
-*   [Google Analytics for Firebase](https://firebase.google.com/policies/analytics)
-*   [Firebase Crashlytics](https://firebase.google.com/support/privacy/)
-
-**Log Data**
-
-We want to inform you that whenever you use our Service, in a case of an error in the app we collect data and information (through third party products) on your phone called Log Data. This Log Data may include information such as your device Internet Protocol (“IP”) address, device name, operating system version, the configuration of the app when utilizing our Service, the time and date of your use of the Service, and other statistics.
-
-**Cookies**
-
-Cookies are files with a small amount of data that are commonly used as anonymous unique identifiers. These are sent to your browser from the websites that you visit and are stored on your device's internal memory.
-
-This Service does not use these “cookies” explicitly. However, the app may use third party code and libraries that use “cookies” to collect information and improve their services. You have the option to either accept or refuse these cookies and know when a cookie is being sent to your device. If you choose to refuse our cookies, you may not be able to use some portions of this Service.
-
-**Service Providers**
-
-We may employ third-party companies and individuals due to the following reasons:
-
-*   To facilitate our Service;
-*   To provide the Service on our behalf;
-*   To perform Service-related services; or
-*   To assist us in analyzing how our Service is used.
-
-We want to inform users of this Service that these third parties have access to your Personal Information. The reason is to perform the tasks assigned to them on our behalf. However, they are obligated not to disclose or use the information for any other purpose.
-
-**Security**
-
-We value your trust in providing us your Personal Information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and we cannot guarantee its absolute security.
-
-**Links to Other Sites**
-
-This Service may contain links to other sites. If you click on a third-party link, you will be directed to that site. Note that these external sites are not operated by us. Therefore, we strongly advise you to review the Privacy Policy of these websites. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party sites or services.
-
-**Children’s Privacy**
-
-These Services do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children under 13\. In the case we discover that a child under 13 has provided us with personal information, we immediately delete this from our servers. If you are a parent or guardian and you are aware that your child has provided us with personal information, please contact us so that we will be able to do necessary actions.
-
-**Changes to This Privacy Policy**
-
-We may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. We will notify you of any changes by posting the new Privacy Policy on this page.
-
-This policy is effective as of 2020-07-18
-
-**Contact Us**
-
-If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at hash.studios.inc@gmail.com.
+Contact: hash.studios.inc+prism@gmail.com
 
 ## Contributors
 
