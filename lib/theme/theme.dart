@@ -1,10 +1,28 @@
 import 'package:Prism/theme/config.dart' as config;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+const _lightAppBarOverlayStyle = SystemUiOverlayStyle(
+  statusBarIconBrightness: Brightness.dark,
+  statusBarBrightness: Brightness.light,
+  systemNavigationBarIconBrightness: Brightness.dark,
+  systemNavigationBarContrastEnforced: false,
+  systemStatusBarContrastEnforced: false,
+);
+
+const _darkAppBarOverlayStyle = SystemUiOverlayStyle(
+  statusBarIconBrightness: Brightness.light,
+  statusBarBrightness: Brightness.dark,
+  systemNavigationBarIconBrightness: Brightness.light,
+  systemNavigationBarContrastEnforced: false,
+  systemStatusBarContrastEnforced: false,
+);
 
 ThemeData kLightTheme = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: Colors.white,
   brightness: Brightness.light,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _lightAppBarOverlayStyle),
   focusColor: config.Colors().mainColor(1),
   hintColor: config.Colors().secondColor(1),
   textTheme: TextTheme(
@@ -74,6 +92,7 @@ ThemeData kDarkTheme = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: config.Colors().mainDarkColor(1),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: config.Colors().secondDarkColor(1),
   textTheme: TextTheme(
@@ -143,6 +162,7 @@ ThemeData kLightTheme2 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFFF7F1E3),
   brightness: Brightness.light,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _lightAppBarOverlayStyle),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFFF1E6D0),
   textTheme: TextTheme(
@@ -212,6 +232,7 @@ ThemeData kDarkTheme2 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: Colors.black,
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: Colors.black,
   hintColor: Colors.black,
   textTheme: TextTheme(
@@ -271,6 +292,7 @@ ThemeData kLightTheme3 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFFC5A79F),
   brightness: Brightness.light,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _lightAppBarOverlayStyle),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFFBE9C93),
   textTheme: TextTheme(
@@ -340,6 +362,7 @@ ThemeData kLightTheme4 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF8399BE),
   brightness: Brightness.light,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _lightAppBarOverlayStyle),
   focusColor: config.Colors().mainColor(1),
   hintColor: const Color(0xFF788CAF),
   textTheme: TextTheme(
@@ -409,6 +432,7 @@ ThemeData kDarkTheme3 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF202113),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF35371F),
   textTheme: TextTheme(
@@ -478,6 +502,7 @@ ThemeData kDarkTheme4 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF041B29),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF152836),
   textTheme: TextTheme(
@@ -547,6 +572,7 @@ ThemeData kDarkTheme5 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF12210E),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF1D2B1A),
   textTheme: TextTheme(
@@ -616,6 +642,7 @@ ThemeData kDarkTheme6 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF290D02),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF361B12),
   textTheme: TextTheme(
@@ -685,6 +712,7 @@ ThemeData kDarkTheme7 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF142431),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF193543),
   textTheme: TextTheme(
@@ -754,6 +782,7 @@ ThemeData kDarkTheme8 = ThemeData(
   canvasColor: Colors.transparent,
   primaryColor: const Color(0xFF393D46),
   brightness: Brightness.dark,
+  appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
   focusColor: config.Colors().mainDarkColor(1),
   hintColor: const Color(0xFF33363F),
   textTheme: TextTheme(
