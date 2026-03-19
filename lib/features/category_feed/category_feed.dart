@@ -9,8 +9,6 @@ export 'views/widgets/collections_view_grid.dart';
 export 'views/widgets/color_grid.dart';
 export 'views/widgets/color_loader.dart';
 export 'views/widgets/pexels_grid.dart';
-export 'views/widgets/pexels_tile.dart';
 export 'views/widgets/wallhaven_grid.dart';
-export 'views/widgets/wallhaven_tile.dart';
 export 'views/widgets/wallpaper_grid.dart';
 export 'views/widgets/wallpaper_tile.dart';

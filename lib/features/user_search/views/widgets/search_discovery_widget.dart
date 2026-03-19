@@ -6,13 +6,18 @@ import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SearchDiscoveryWidget extends StatelessWidget {
-  const SearchDiscoveryWidget({super.key});
+  const SearchDiscoveryWidget({super.key, required this.tags, required this.selectedTag, required this.onTagPressed});
+
+  final List<String> tags;
+  final String selectedTag;
+  final void Function(String tag) onTagPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -22,12 +27,54 @@ class SearchDiscoveryWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
+          _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
+          const SizedBox(height: 12),
           _TrendingSection(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           const _CategorySection(),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           const _ColorSection(),
+          const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+}
+
+class _TagsRow extends StatelessWidget {
+  const _TagsRow({required this.tags, required this.selectedTag, required this.onTagPressed});
+
+  final List<String> tags;
+  final String selectedTag;
+  final void Function(String tag) onTagPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: tags.length,
+        itemBuilder: (context, index) {
+          final tag = tags[index];
+          final isSelected = selectedTag.toLowerCase() == tag.toLowerCase();
+          return ActionChip(
+            pressElevation: 5,
+            side: BorderSide.none,
+            padding: const EdgeInsets.fromLTRB(4, 2, 4, 2),
+            backgroundColor: Colors.transparent,
+            label: Text(
+              "#$tag",
+              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                fontFamily: 'Satoshi',
+                fontSize: 12,
+                color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+            onPressed: () => onTagPressed(tag),
+          );
+        },
       ),
     );
   }
@@ -41,7 +88,7 @@ class _TrendingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(label: 'Trending Right Now', icon: Icons.local_fire_department_rounded),
+        const _SectionHeader(label: 'Trending Right Now', icon: JamIcons.flame_f),
         const SizedBox(height: 12),
         BlocBuilder<SearchDiscoveryBloc, SearchDiscoveryState>(
           builder: (context, state) {
@@ -72,10 +119,10 @@ class _TrendingList extends StatelessWidget {
     return SizedBox(
       height: 185,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(0),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        separatorBuilder: (_, __) => const SizedBox.shrink(),
         itemBuilder: (context, index) {
           final wall = items[index];
           final thumbUrl = wall.thumbs?['original'] ?? wall.core.thumbnailUrl;
@@ -88,13 +135,10 @@ class _TrendingList extends StatelessWidget {
                 ),
               );
             },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SizedBox(
-                width: 120,
-                height: 185,
-                child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
-              ),
+            child: SizedBox(
+              width: (MediaQuery.of(context).size.width) / 3.5,
+              height: (MediaQuery.of(context).size.width) / 3.5 * 2,
+              child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
             ),
           );
         },
@@ -159,18 +203,16 @@ class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleT
 
   @override
   Widget build(BuildContext context) {
+    final itemWidth = MediaQuery.of(context).size.width / 3.5;
+    final itemHeight = itemWidth * 2;
     return SizedBox(
-      height: 185,
+      height: itemHeight,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.zero,
         scrollDirection: Axis.horizontal,
         itemCount: 6,
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (_, __) => Container(
-          width: 120,
-          height: 185,
-          decoration: BoxDecoration(color: _animation.value, borderRadius: BorderRadius.circular(16)),
-        ),
+        separatorBuilder: (_, __) => const SizedBox.shrink(),
+        itemBuilder: (_, __) => Container(width: itemWidth, height: itemHeight, color: _animation.value),
       ),
     );
   }
@@ -190,9 +232,10 @@ class _TrendingError extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Could not load trending',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+              fontFamily: 'Satoshi',
+              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+            ),
           ),
           const SizedBox(width: 8),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
@@ -212,53 +255,55 @@ class _CategorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(label: 'Browse by Category', icon: Icons.grid_view_rounded),
+        const _SectionHeader(label: 'Browse by Category', icon: JamIcons.grid_f),
         const SizedBox(height: 12),
         SizedBox(
-          height: 165,
+          height: MediaQuery.of(context).size.width / 3.5 * 2,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.zero,
             scrollDirection: Axis.horizontal,
             itemCount: categoryDefinitions.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, __) => const SizedBox.shrink(),
             itemBuilder: (context, index) {
               final cat = categoryDefinitions[index];
               return GestureDetector(
                 onTap: () {
                   context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'));
                 },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: SizedBox(
-                    width: 120,
-                    height: 165,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CachedNetworkImage(imageUrl: cat.imageUrl, fit: BoxFit.cover),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
-                            ),
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width / 3.5,
+                  height: MediaQuery.of(context).size.width / 3.5 * 2,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CachedNetworkImage(imageUrl: cat.imageUrl, fit: BoxFit.cover),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
                           ),
                         ),
-                        Positioned(
-                          left: 8,
-                          right: 8,
-                          bottom: 10,
-                          child: Text(
-                            cat.name,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Positioned(
+                        left: 8,
+                        right: 8,
+                        bottom: 10,
+                        child: Text(
+                          cat.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Satoshi',
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -301,47 +346,22 @@ class _ColorSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(label: 'Search by Color', icon: Icons.palette_rounded),
+        const _SectionHeader(label: 'Search by Color', icon: JamIcons.brush_f),
         const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: _presetColors.map((swatch) {
-              final color = Color(int.parse('FF${swatch.hex}', radix: 16));
-              return GestureDetector(
-                onTap: () => context.router.push(ColorRoute(hexColor: swatch.hex)),
-                child: SizedBox(
-                  width: 52,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: color,
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        swatch.name,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+        GridView.builder(
+          padding: const EdgeInsets.all(0),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+          itemCount: _presetColors.length,
+          itemBuilder: (context, index) {
+            final swatch = _presetColors[index];
+            final color = Color(int.parse('FF${swatch.hex}', radix: 16));
+            return GestureDetector(
+              onTap: () => context.router.push(ColorRoute(hexColor: swatch.hex)),
+              child: Container(decoration: BoxDecoration(color: color)),
+            );
+          },
         ),
       ],
     );
@@ -358,16 +378,18 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 18, color: Theme.of(context).colorScheme.secondary),
+            Icon(icon, size: 12, color: Theme.of(context).colorScheme.secondary),
             const SizedBox(width: 6),
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
+            style: TextStyle(
+              fontFamily: 'Satoshi',
+              fontSize: 12,
               color: Theme.of(context).colorScheme.secondary,
               fontWeight: FontWeight.bold,
             ),

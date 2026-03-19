@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 @RoutePage()
 class DashboardPage extends StatefulWidget {
@@ -34,20 +36,27 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AutoTabsRouter(
-      routes: const [HomeTabRoute(), SearchTabRoute(), StreakTabRoute(), ProfileTabRoute()],
-      builder: (context, child) {
-        final tabsRouter = AutoTabsRouter.of(context);
-        return PopScope(
-          canPop: tabsRouter.activeIndex == 0,
-          onPopInvokedWithResult: (didPop, result) {
-            if (!didPop) {
-              tabsRouter.setActiveIndex(0);
-            }
-          },
-          child: BottomBar(child: child),
-        );
-      },
+    final brightness = Theme.of(context).brightness;
+    final overlayStyle = edgeToEdgeOverlayStyle(
+      statusBarIconBrightness: brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+    );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: AutoTabsRouter(
+        routes: const [HomeTabRoute(), SearchTabRoute(), StreakTabRoute(), CollectionTabRoute()],
+        builder: (context, child) {
+          final tabsRouter = AutoTabsRouter.of(context);
+          return PopScope(
+            canPop: tabsRouter.activeIndex == 0,
+            onPopInvokedWithResult: (didPop, result) {
+              if (!didPop) {
+                tabsRouter.setActiveIndex(0);
+              }
+            },
+            child: BottomBar(child: child),
+          );
+        },
+      ),
     );
   }
 }

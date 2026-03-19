@@ -91,6 +91,22 @@ class CoinTransactionsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [CollectionTabPage]
+class CollectionTabRoute extends PageRouteInfo<void> {
+  const CollectionTabRoute({List<PageRouteInfo>? children})
+    : super(CollectionTabRoute.name, initialChildren: children);
+
+  static const String name = 'CollectionTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const CollectionTabPage();
+    },
+  );
+}
+
+/// generated route for
 /// [CollectionViewScreen]
 class CollectionViewRoute extends PageRouteInfo<CollectionViewRouteArgs> {
   CollectionViewRoute({
