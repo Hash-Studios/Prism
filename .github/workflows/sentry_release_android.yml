@@ -1,0 +1,108 @@
+name: Android Release With Sentry Symbols
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target Sentry environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  build_android_with_sentry:
+    runs-on: ubuntu-latest
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
+      DOPPLER_PROJECT: prism
+      DOPPLER_CONFIG: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.0'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Version sync guard
+        run: python3 tool/verify_version_sync.py
+
+      - name: Install Doppler CLI
+        run: |
+          (curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh
+
+      - name: Inject required app secrets
+        run: |
+          FIREBASE_SECRET="$(doppler secrets get FIREBASE_SECRET --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          GITKEY_DART="$(doppler secrets get GITKEY_DART --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          if [ -z "$FIREBASE_SECRET" ] || [ -z "$GITKEY_DART" ]; then
+            echo "FIREBASE_SECRET and GITKEY_DART secrets are required."
+            exit 1
+          fi
+          echo "$FIREBASE_SECRET" > android/app/google-services.json
+          echo "$GITKEY_DART" > lib/gitkey.dart
+
+      - name: Resolve Sentry environment variables
+        env:
+          INPUT_ENV: ${{ github.event.inputs.environment }}
+        run: |
+          SENTRY_DSN_STAGING="$(doppler secrets get SENTRY_DSN_STAGING --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          SENTRY_DSN_PRODUCTION="$(doppler secrets get SENTRY_DSN_PRODUCTION --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          SENTRY_PROJECT_STAGING="$(doppler secrets get SENTRY_PROJECT_STAGING --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          SENTRY_PROJECT_PRODUCTION="$(doppler secrets get SENTRY_PROJECT_PRODUCTION --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+
+          if [ "$INPUT_ENV" = "production" ]; then
+            echo "SENTRY_DSN=$SENTRY_DSN_PRODUCTION" >> $GITHUB_ENV
+            echo "SENTRY_PROJECT=$SENTRY_PROJECT_PRODUCTION" >> $GITHUB_ENV
+            echo "SENTRY_ENV=production" >> $GITHUB_ENV
+          else
+            echo "SENTRY_DSN=$SENTRY_DSN_STAGING" >> $GITHUB_ENV
+            echo "SENTRY_PROJECT=$SENTRY_PROJECT_STAGING" >> $GITHUB_ENV
+            echo "SENTRY_ENV=staging" >> $GITHUB_ENV
+          fi
+
+          echo "SENTRY_RELEASE=Prism@${GITHUB_REF_NAME}+${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+          echo "SENTRY_DIST=${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Validate Sentry secrets
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ] || [ -z "$SENTRY_ORG" ] || [ -z "$SENTRY_PROJECT" ] || [ -z "$SENTRY_DSN" ]; then
+            echo "Missing one or more Sentry secrets: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT_*, SENTRY_DSN_*"
+            exit 1
+          fi
+
+      - name: Build release AAB with split debug info
+        run: |
+          DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols \
+            $DART_DEFINES \
+            --dart-define=SENTRY_DSN="$SENTRY_DSN" \
+            --dart-define=SENTRY_ENV="$SENTRY_ENV" \
+            --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
+            --dart-define=SENTRY_DIST="$SENTRY_DIST" \
+            --dart-define=SENTRY_ENABLED=true
+
+      - name: Upload debug symbols and mappings to Sentry
+        run: dart run sentry_dart_plugin
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ github.event.inputs.environment }}
+          path: build/app/outputs/bundle/release/app-release.aab

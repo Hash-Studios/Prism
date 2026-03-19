@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <rect width="390" height="844" fill="#181818"/>
+  <!-- Tab bar -->
+  <rect x="0" y="800" width="390" height="44" fill="#1f1f1f"/>
+  <circle cx="78" cy="822" r="14" fill="#E5769720"/>
+  <circle cx="195" cy="822" r="14" fill="#2a2a2a"/>
+  <circle cx="312" cy="822" r="14" fill="#2a2a2a"/>
+  <!-- Header -->
+  <rect x="24" y="60" width="100" height="28" rx="6" fill="#333"/>
+  <!-- Setup cards -->
+  <rect x="12" y="108" width="366" height="260" rx="16" fill="#2a2a2a"/>
+  <rect x="28" y="296" width="260" height="20" rx="5" fill="#333"/>
+  <rect x="28" y="324" width="120" height="14" rx="4" fill="#2a2a2a"/>
+  <!-- Avatar + name row -->
+  <circle cx="44" cy="340" r="14" fill="#E5769740"/>
+  <rect x="64" y="333" width="80" height="12" rx="4" fill="#444"/>
+  <rect x="12" y="384" width="175" height="200" rx="12" fill="#1f2a2f"/>
+  <rect x="203" y="384" width="175" height="200" rx="12" fill="#2a1f2a"/>
+  <rect x="28" y="404" width="100" height="12" rx="4" fill="#444"/>
+  <rect x="218" y="404" width="100" height="12" rx="4" fill="#444"/>
+  <!-- Filter pills -->
+  <rect x="24" y="596" width="80" height="32" rx="16" fill="#E57697"/>
+  <rect x="112" y="596" width="90" height="32" rx="16" fill="#2a2a2a"/>
+  <rect x="210" y="596" width="70" height="32" rx="16" fill="#2a2a2a"/>
+  <rect x="288" y="596" width="80" height="32" rx="16" fill="#2a2a2a"/>
+</svg>

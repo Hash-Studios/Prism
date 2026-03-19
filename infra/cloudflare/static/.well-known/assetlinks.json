@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.hash.prism",
+      "sha256_cert_fingerprints": [
+        "46:F7:AD:7F:C2:4B:A1:F3:22:53:A8:72:C1:72:C2:67:D4:0E:96:1B:94:14:3F:B0:A1:B8:20:5B:97:83:05:2F"
+      ]
+    }
+  }
+]

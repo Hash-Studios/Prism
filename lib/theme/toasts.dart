@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+void success(String msg) {
+  Fluttertoast.showToast(
+    msg: msg,
+    toastLength: Toast.LENGTH_LONG,
+    gravity: ToastGravity.BOTTOM,
+    textColor: Colors.white,
+    backgroundColor: Colors.green[600],
+  );
+}
+
 void codeSend(String msg) {
   Fluttertoast.showToast(
-      msg: msg,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.BOTTOM,
-      textColor: Colors.white,
-      backgroundColor: Colors.green[400]);
+    msg: msg,
+    toastLength: Toast.LENGTH_LONG,
+    gravity: ToastGravity.BOTTOM,
+    textColor: Colors.white,
+    backgroundColor: Colors.green[400],
+  );
 }
 
 void error(String msg) {

@@ -1,28 +1,16 @@
 import 'package:Prism/logger/logger.dart';
-import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'badgeModel.g.dart';
 
-@HiveType(typeId: 12)
-@JsonSerializable(
-  explicitToJson: true,
-)
+@JsonSerializable(explicitToJson: true)
 class Badge {
-  @HiveField(0)
   String name;
-  @HiveField(1)
   String description;
-  @HiveField(2)
   String id;
-  @HiveField(3)
   String awardedAt;
-  @HiveField(4)
   String imageUrl;
-  @HiveField(5)
   String color;
-  @HiveField(6)
   String url;
 
   Badge({

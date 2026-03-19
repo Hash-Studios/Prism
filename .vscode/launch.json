@@ -1,14 +1,44 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "args": ["--no-sound-null-safety"],
-            "name": "Prism",
-            "request": "launch",
-            "type": "dart"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Prism: Flutter Debug (stable VM ports)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--host-vmservice-port=43000",
+        "--dds-port=43001"
+      ]
+    },
+    {
+      "name": "Prism: Run (make)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "make run"
+    },
+    {
+      "name": "Prism: Run (direct fvm + env)",
+      "type": "dart",
+      "request": "launch",
+      "flutterMode": "debug",
+      "program": "lib/main.dart",
+      "preLaunchTask": "Prism: Prepare Dart Defines",
+      "toolArgs": [
+        "--dart-define-from-file=.dart_tool/vscode/dart_defines.generated.json",
+        "--host-vmservice-port=43000",
+        "--dds-port=43001"
+      ],
+      "env": {
+        "GRADLE_USER_HOME": "${workspaceFolder}/.gradle-local"
+      }
+    },
+    {
+      "name": "Prism: Build APK (make)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "make build"
+    }
+  ]
 }

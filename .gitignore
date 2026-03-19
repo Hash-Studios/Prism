@@ -23,6 +23,7 @@
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/
+.fvm/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
@@ -43,6 +44,8 @@ key.jks
 pubspec.lock
 android/app/google-services.json
 lib/gitkey.dart
+.env
+.doppler.yaml
 android/app/.settings/org.eclipse.buildship.core.prefs
 android/app/.project
 android/app/.classpath
@@ -54,3 +57,16 @@ android/app/build.gradle
 android/google-play-console.json
 android/key.jks
 android/android_keys.zip
+.gradle-local/**
+lib/firebase_options.dart
+firebase.json
+ios/Runner/GoogleService-Info.plist
+docs/**
+!docs/development/
+!docs/development/doppler.md
+sentry.properties
+infra/cloudflare/worker/.wrangler/**
+AuthKey.p8
+functions/node_modules/**
+dead_code_report.html
+web/node_modules/**
