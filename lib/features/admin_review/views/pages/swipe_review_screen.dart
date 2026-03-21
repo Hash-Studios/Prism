@@ -5,10 +5,11 @@ import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.d
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class SwipeReviewScreen extends StatefulWidget {
@@ -26,6 +27,12 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   double _dragOffset = 0;
   // bool _isDragging = false;
   static const double _swipeThreshold = 100;
+
+  static String? _uploadedAgo(FirestoreDocument doc) {
+    final DateTime? at = doc.createdAt;
+    if (at == null) return null;
+    return timeago.format(at.toLocal());
+  }
 
   @override
   void initState() {
@@ -196,6 +203,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                       category: state.walls[state.currentIndex + 1].data()['category']?.toString() ?? 'General',
                       authorName: state.walls[state.currentIndex + 1].by,
                       authorPhoto: state.walls[state.currentIndex + 1].userPhoto,
+                      uploadedAgo: _uploadedAgo(state.walls[state.currentIndex + 1]),
                       isTopCard: false,
                     ),
                   ),
@@ -216,8 +224,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                         category: currentWall.data()['category']?.toString() ?? 'General',
                         authorName: currentWall.by,
                         authorPhoto: currentWall.userPhoto,
+                        uploadedAgo: _uploadedAgo(currentWall),
                         swipeProgress: swipeProgress,
-                        isTopCard: true,
                         onTap: () => _showFullImage(currentWall),
                       ),
                     ),
