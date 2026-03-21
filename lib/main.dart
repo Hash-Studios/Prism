@@ -1017,7 +1017,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       }
       return;
     }
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.paused) {
       unawaited(analytics.flush());
     }
   }
