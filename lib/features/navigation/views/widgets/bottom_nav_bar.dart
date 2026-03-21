@@ -76,6 +76,11 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
       return;
     }
 
+    if (widget.scrollController.positions.length == 1) {
+      _activeScrollPosition = widget.scrollController.position;
+      return;
+    }
+
     final ScrollController? primaryController = PrimaryScrollController.maybeOf(context);
     if (primaryController != null && primaryController.positions.length == 1) {
       _activeScrollPosition = primaryController.position;
@@ -162,12 +167,9 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
 
   @override
   Widget build(BuildContext context) {
-    return PrimaryScrollController(
-      controller: widget.scrollController,
-      child: NotificationListener<UserScrollNotification>(
-        onNotification: _onUserScroll,
-        child: Stack(fit: StackFit.expand, children: <Widget>[widget.child, _buildScrollToTopButton(context)]),
-      ),
+    return NotificationListener<UserScrollNotification>(
+      onNotification: _onUserScroll,
+      child: Stack(fit: StackFit.expand, children: <Widget>[widget.child, _buildScrollToTopButton(context)]),
     );
   }
 }
