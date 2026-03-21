@@ -676,46 +676,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 if (!paletteLoading) _handleAccentTap(context, state);
                 shakeController.forward(from: 0.0);
               },
-              child: CachedNetworkImage(
-                imageUrl: entity.thumbnailUrl,
-                imageBuilder: (context, imageProvider) => Screenshot(
-                  controller: screenshotController,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(
-                      vertical: offsetAnimation.value * 1.25,
-                      horizontal: offsetAnimation.value / 2,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(offsetAnimation.value),
-                      image: DecorationImage(
-                        colorFilter: state.colorChanged && state.accent != null
-                            ? ColorFilter.mode(state.accent!, BlendMode.hue)
-                            : null,
-                        image: imageProvider,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+              child: Screenshot(
+                controller: screenshotController,
+                child: Container(
+                  margin: EdgeInsets.symmetric(
+                    vertical: offsetAnimation.value * 1.25,
+                    horizontal: offsetAnimation.value / 2,
                   ),
-                ),
-                progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                  children: [
-                    const SizedBox.expand(child: Text("")),
-                    Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
-                        value: downloadProgress.progress,
-                      ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(offsetAnimation.value),
+                    child: _buildProgressiveWallpaperImage(
+                      context: context,
+                      entity: entity,
+                      state: state,
+                      paletteLoading: paletteLoading,
                     ),
-                  ],
-                ),
-                errorWidget: (context, url, error) => Center(
-                  child: Icon(
-                    JamIcons.close_circle_f,
-                    color: paletteLoading
-                        ? Theme.of(context).colorScheme.secondary
-                        : (state.accent?.computeLuminance() ?? 0) > 0.5
-                        ? Colors.black
-                        : Colors.white,
                   ),
                 ),
               ),
@@ -778,6 +753,95 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ),
       ],
     );
+  }
+
+  /// Thumbnail first, loader while full resolution downloads, then full image on top (Wallhaven/Pexels).
+  Widget _buildProgressiveWallpaperImage({
+    required BuildContext context,
+    required WallpaperDetailEntity entity,
+    required WallpaperDetailLoaded state,
+    required bool paletteLoading,
+  }) {
+    final String thumb = entity.thumbnailUrl.trim();
+    final String full = entity.fullUrl.trim();
+    final bool useProgressive = thumb.isNotEmpty && full.isNotEmpty && full != thumb;
+
+    Widget imageLayer;
+    if (useProgressive) {
+      imageLayer = Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            imageUrl: thumb,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            placeholder: (context, url) => Container(color: Colors.grey[900]),
+            errorWidget: (context, url, error) => Center(
+              child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
+            ),
+          ),
+          CachedNetworkImage(
+            imageUrl: full,
+            fit: BoxFit.cover,
+            fadeInDuration: const Duration(milliseconds: 280),
+            fadeOutDuration: Duration.zero,
+            imageBuilder: (context, imageProvider) => SizedBox.expand(
+              child: Image(image: imageProvider, fit: BoxFit.cover),
+            ),
+            progressIndicatorBuilder: (context, url, downloadProgress) => Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                value: downloadProgress.progress,
+              ),
+            ),
+            errorWidget: (context, url, error) => const SizedBox.shrink(),
+          ),
+        ],
+      );
+    } else {
+      final String url = full.isNotEmpty ? full : thumb;
+      if (url.isEmpty) {
+        imageLayer = Center(
+          child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
+        );
+      } else {
+        imageLayer = CachedNetworkImage(
+          imageUrl: url,
+          imageBuilder: (context, imageProvider) => SizedBox.expand(
+            child: Image(image: imageProvider, fit: BoxFit.cover),
+          ),
+          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
+            children: [
+              const SizedBox.expand(child: Text('')),
+              Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                  value: downloadProgress.progress,
+                ),
+              ),
+            ],
+          ),
+          errorWidget: (context, url, error) => Center(
+            child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
+          ),
+        );
+      }
+    }
+
+    if (state.colorChanged && state.accent != null) {
+      imageLayer = ColorFiltered(colorFilter: ColorFilter.mode(state.accent!, BlendMode.hue), child: imageLayer);
+    }
+
+    return SizedBox.expand(child: imageLayer);
+  }
+
+  Color _wallpaperErrorIconColor(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
+    return paletteLoading
+        ? Theme.of(context).colorScheme.secondary
+        : (state.accent?.computeLuminance() ?? 0) > 0.5
+        ? Colors.black
+        : Colors.white;
   }
 
   String _formatDate(DateTime date) => "${date.day}/${date.month}/${date.year}";
