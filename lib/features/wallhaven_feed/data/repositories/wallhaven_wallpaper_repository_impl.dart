@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -135,7 +137,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
         source: 'wallhaven',
         scope: _toplistScope,
         ttlHours: _feedTtlHours,
-        payload: <String, Object?>{'payload': payload.toJson()},
+        payload: <String, Object?>{'payload': jsonDecode(jsonEncode(payload.toJson()))},
       );
 
       logger.i('[WallhavenWallpaperRepository] fetchToplist success', fields: <String, Object?>{'count': walls.length});
@@ -225,7 +227,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       source: 'wallhaven',
       scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
       ttlHours: _feedTtlHours,
-      payload: <String, Object?>{'payload': payload.toJson(), 'nextPage': nextPage, 'hasMore': hasMore},
+      payload: <String, Object?>{'payload': jsonDecode(jsonEncode(payload.toJson())), 'nextPage': nextPage, 'hasMore': hasMore},
     );
   }
 
