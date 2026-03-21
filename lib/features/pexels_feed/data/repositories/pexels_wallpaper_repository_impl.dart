@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -148,7 +150,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       source: 'pexels',
       scope: _scope(categoryName),
       ttlHours: _feedTtlHours,
-      payload: <String, Object?>{'payload': payload.toJson(), 'nextPage': nextPage, 'hasMore': hasMore},
+      payload: <String, Object?>{
+        'payload': jsonDecode(jsonEncode(payload.toJson())),
+        'nextPage': nextPage,
+        'hasMore': hasMore,
+      },
     );
   }
 

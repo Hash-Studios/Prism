@@ -79,6 +79,7 @@ class _EditButtonState extends State<EditButton> {
     final File file3 = File(filePathAndNameThumb);
     final List<int> imageBytesThumb = await compute<File, List<int>>(_resizeImage, file2);
     file3.writeAsBytesSync(imageBytesThumb);
+    if (!mounted) return;
     setState(() {
       imageData = filePathAndName;
       imageThumbData = filePathAndNameThumb;
