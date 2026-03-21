@@ -38,10 +38,14 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
 
   Future<void> _maybePromptNotificationPermission() async {
     if (!widget.promptNotificationPermissionOnSuccess || !mounted) return;
-    await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
-      context,
-      sourceTag: 'notifications.permission_after_set_wallpaper',
-    );
+    try {
+      await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'notifications.permission_after_set_wallpaper',
+      );
+    } catch (e, st) {
+      logger.w('_maybePromptNotificationPermission: maybePromptAfterValueAction failed', error: e, stackTrace: st);
+    }
   }
 
   Future<void> _setBothWallPaper() async {
