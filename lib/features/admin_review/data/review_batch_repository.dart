@@ -21,8 +21,8 @@ class ReviewBatchRepository {
     final querySpec = FirestoreQuerySpec(
       collection: FirebaseCollections.walls,
       sourceTag: 'review_batch.pending_walls',
-      filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
-      orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt')],
+      filters: <FirestoreFilter>[const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
+      orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
       limit: limit,
       startAfterDocId: startAfterDocId,
       isStream: false,
@@ -109,7 +109,7 @@ class ReviewBatchRepository {
   }
 
   Future<int> getPendingWallsCount() async {
-    final querySpec = FirestoreQuerySpec(
+    const querySpec = FirestoreQuerySpec(
       collection: FirebaseCollections.walls,
       sourceTag: 'review_batch.pending_count',
       filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],

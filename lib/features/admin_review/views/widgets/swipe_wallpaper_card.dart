@@ -7,6 +7,7 @@ class SwipeWallpaperCard extends StatelessWidget {
   final String category;
   final String authorName;
   final String? authorPhoto;
+  final String? uploadedAgo;
   final VoidCallback? onTap;
   final double swipeProgress;
   final bool isTopCard;
@@ -18,6 +19,7 @@ class SwipeWallpaperCard extends StatelessWidget {
     required this.category,
     required this.authorName,
     this.authorPhoto,
+    this.uploadedAgo,
     this.onTap,
     this.swipeProgress = 0,
     this.isTopCard = true,
@@ -113,6 +115,10 @@ class SwipeWallpaperCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      if (uploadedAgo != null && uploadedAgo!.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 6),
+                        Text(uploadedAgo!, style: TextStyle(color: Colors.white.withOpacity(0.72), fontSize: 12)),
+                      ],
                     ],
                   ),
                 ),

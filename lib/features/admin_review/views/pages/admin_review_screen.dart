@@ -8,7 +8,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -226,7 +225,7 @@ class _WallCard extends StatelessWidget {
             Text('By: ${wall.by.isNotEmpty ? wall.by : '-'}'),
             Text('Email: ${wall.email.isNotEmpty ? wall.email : '-'}'),
             Text(
-              'Added ${wall.createdAt != null ? timeago.format(_adminReviewToDateTime(wall.createdAt)) : '—'}',
+              wall.createdAt != null ? 'Uploaded ${timeago.format(wall.createdAt!.toLocal())}' : 'Uploaded —',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -297,7 +296,7 @@ class _SetupCard extends StatelessWidget {
             Text('Email: ${setup.email.isNotEmpty ? setup.email : '-'}'),
             Text('Name: ${setup.name.isNotEmpty ? setup.name : '-'}'),
             Text(
-              'Added ${setup.createdAt != null ? timeago.format(_adminReviewToDateTime(setup.createdAt)) : '—'}',
+              setup.createdAt != null ? 'Uploaded ${timeago.format(setup.createdAt!.toLocal())}' : 'Uploaded —',
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -333,24 +332,6 @@ class _SetupCard extends StatelessWidget {
       ),
     );
   }
-}
-
-DateTime _adminReviewToDateTime(dynamic value) {
-  if (value == null) return DateTime.now().toUtc();
-  if (value is DateTime) return value.toUtc();
-  if (value is Timestamp) return value.toDate().toUtc();
-  if (value is int) {
-    if (value > 10000000000) return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
-    return DateTime.fromMillisecondsSinceEpoch(value * 1000, isUtc: true);
-  }
-  if (value is String) {
-    try {
-      return DateTime.parse(value).toUtc();
-    } catch (_) {
-      return DateTime.now().toUtc();
-    }
-  }
-  return DateTime.now().toUtc();
 }
 
 class _PortraitPreview extends StatelessWidget {

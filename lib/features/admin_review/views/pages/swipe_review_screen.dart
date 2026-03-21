@@ -5,10 +5,11 @@ import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.d
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class SwipeReviewScreen extends StatefulWidget {
@@ -18,14 +19,24 @@ class SwipeReviewScreen extends StatefulWidget {
   State<SwipeReviewScreen> createState() => _SwipeReviewScreenState();
 }
 
+enum _SwipePhase { idle, dragging, animating }
+
 class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTickerProviderStateMixin {
   late final ReviewBatchBloc _bloc;
   late AnimationController _animationController;
-  Animation<Offset>? _slideAnimation;
+  Animation<double>? _xAnimation;
 
-  double _dragOffset = 0;
-  // bool _isDragging = false;
+  _SwipePhase _phase = _SwipePhase.idle;
+  double _dragX = 0;
+
   static const double _swipeThreshold = 100;
+  static const double _velocityThreshold = 500;
+
+  static String? _uploadedAgo(FirestoreDocument doc) {
+    final DateTime? at = doc.createdAt;
+    if (at == null) return null;
+    return timeago.format(at.toLocal());
+  }
 
   @override
   void initState() {
@@ -43,65 +54,108 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     super.dispose();
   }
 
+  double _maxDragX(double screenWidth) => screenWidth * 1.5;
+
+  double get _displayX {
+    if (_phase == _SwipePhase.animating && _xAnimation != null) {
+      return _xAnimation!.value;
+    }
+    return _dragX;
+  }
+
   void _onPanStart(DragStartDetails details) {
-    // setState(() {
-    //   _isDragging = true;
-    // });
+    if (_phase == _SwipePhase.animating) return;
+    setState(() {
+      _phase = _SwipePhase.dragging;
+    });
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
+    if (_phase != _SwipePhase.dragging) return;
+    final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
     setState(() {
-      _dragOffset += details.delta.dx;
+      _dragX = (_dragX + details.delta.dx).clamp(-maxX, maxX);
     });
   }
 
   void _onPanEnd(DragEndDetails details) {
-    final velocity = details.velocity.pixelsPerSecond.dx;
+    if (_phase != _SwipePhase.dragging) return;
+    final vx = details.velocity.pixelsPerSecond.dx;
+    final dx = _dragX;
 
-    if (_dragOffset.abs() > _swipeThreshold || velocity.abs() > 500) {
-      if (_dragOffset > 0 || velocity > 500) {
-        _animateSwipeOff(true);
+    if (dx.abs() > _swipeThreshold || vx.abs() > _velocityThreshold) {
+      if (dx > 0 || vx > _velocityThreshold) {
+        _startDismissAnimation(approve: true);
       } else {
-        _animateSwipeOff(false);
+        _startDismissAnimation(approve: false);
       }
+    } else if (dx.abs() < 0.5) {
+      setState(() {
+        _phase = _SwipePhase.idle;
+        _dragX = 0;
+      });
     } else {
-      _animateBack();
+      _startSnapBackAnimation();
     }
   }
 
-  void _animateSwipeOff(bool isApprove) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final targetX = isApprove ? screenWidth * 1.5 : -screenWidth * 1.5;
+  void _onPanCancel() {
+    if (_phase != _SwipePhase.dragging) return;
+    if (_dragX.abs() < 0.5) {
+      setState(() {
+        _phase = _SwipePhase.idle;
+        _dragX = 0;
+      });
+    } else {
+      _startSnapBackAnimation();
+    }
+  }
 
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(_dragOffset, 0),
-      end: Offset(targetX, 0),
+  void _startDismissAnimation({required bool approve}) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final targetX = approve ? screenWidth * 1.5 : -screenWidth * 1.5;
+
+    _xAnimation = Tween<double>(
+      begin: _dragX,
+      end: targetX,
     ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
 
+    setState(() {
+      _phase = _SwipePhase.animating;
+    });
+
     _animationController.forward(from: 0).then((_) {
-      if (isApprove) {
+      if (!mounted) return;
+      if (approve) {
         _bloc.add(const ReviewBatchSwipeApproved());
       } else {
         _bloc.add(const ReviewBatchSwipeRejected());
       }
       setState(() {
-        _dragOffset = 0;
-        // _isDragging = false;
+        _phase = _SwipePhase.idle;
+        _dragX = 0;
+        _xAnimation = null;
       });
       _animationController.reset();
     });
   }
 
-  void _animateBack() {
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(_dragOffset, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.elasticOut));
+  void _startSnapBackAnimation() {
+    _xAnimation = Tween<double>(
+      begin: _dragX,
+      end: 0,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+
+    setState(() {
+      _phase = _SwipePhase.animating;
+    });
 
     _animationController.forward(from: 0).then((_) {
+      if (!mounted) return;
       setState(() {
-        _dragOffset = 0;
-        // _isDragging = false;
+        _phase = _SwipePhase.idle;
+        _dragX = 0;
+        _xAnimation = null;
       });
       _animationController.reset();
     });
@@ -176,8 +230,6 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     final currentWall = state.currentWall;
     if (currentWall == null) return const SizedBox.shrink();
 
-    final swipeProgress = _dragOffset / _swipeThreshold;
-
     return Column(
       children: [
         Expanded(
@@ -196,6 +248,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                       category: state.walls[state.currentIndex + 1].data()['category']?.toString() ?? 'General',
                       authorName: state.walls[state.currentIndex + 1].by,
                       authorPhoto: state.walls[state.currentIndex + 1].userPhoto,
+                      uploadedAgo: _uploadedAgo(state.walls[state.currentIndex + 1]),
                       isTopCard: false,
                     ),
                   ),
@@ -203,34 +256,43 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
               AnimatedBuilder(
                 animation: _animationController,
                 builder: (context, child) {
-                  final offset = _slideAnimation?.value ?? Offset(_dragOffset, 0);
-                  return Transform.translate(
-                    offset: offset,
-                    child: Transform.rotate(
-                      angle: (_dragOffset / 1000) * 0.3,
-                      child: SwipeWallpaperCard(
-                        imageUrl: currentWall.wallpaperThumb.isNotEmpty
-                            ? currentWall.wallpaperThumb
-                            : currentWall.wallpaperUrl,
-                        title: currentWall.data()['title']?.toString() ?? '',
-                        category: currentWall.data()['category']?.toString() ?? 'General',
-                        authorName: currentWall.by,
-                        authorPhoto: currentWall.userPhoto,
-                        swipeProgress: swipeProgress,
-                        isTopCard: true,
-                        onTap: () => _showFullImage(currentWall),
+                  final x = _displayX;
+                  final swipeProgress = x / _swipeThreshold;
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Transform.translate(
+                          offset: Offset(x, 0),
+                          child: Transform.rotate(
+                            angle: (x / 1000) * 0.3,
+                            child: SwipeWallpaperCard(
+                              imageUrl: currentWall.wallpaperThumb.isNotEmpty
+                                  ? currentWall.wallpaperThumb
+                                  : currentWall.wallpaperUrl,
+                              title: currentWall.data()['title']?.toString() ?? '',
+                              category: currentWall.data()['category']?.toString() ?? 'General',
+                              authorName: currentWall.by,
+                              authorPhoto: currentWall.userPhoto,
+                              uploadedAgo: _uploadedAgo(currentWall),
+                              swipeProgress: swipeProgress,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      SwipeActionOverlay(swipeProgress: swipeProgress, isApprove: true),
+                    ],
                   );
                 },
               ),
-              SwipeActionOverlay(swipeProgress: swipeProgress, isApprove: true),
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onPanStart: _onPanStart,
                 onPanUpdate: _onPanUpdate,
                 onPanEnd: _onPanEnd,
+                onPanCancel: _onPanCancel,
                 onTap: () => _showFullImage(currentWall),
-                child: Container(color: Colors.transparent, width: double.infinity, height: double.infinity),
+                child: const SizedBox.expand(),
               ),
             ],
           ),

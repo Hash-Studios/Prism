@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -12,7 +13,16 @@ import 'package:flutter/services.dart';
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
   final bool colorChanged;
-  const SetWallpaperButton({super.key, required this.url, required this.colorChanged});
+
+  /// When true, may show the OS notification permission prompt once after a successful set (e.g. wallpaper detail).
+  final bool promptNotificationPermissionOnSuccess;
+
+  const SetWallpaperButton({
+    super.key,
+    required this.url,
+    required this.colorChanged,
+    this.promptNotificationPermissionOnSuccess = false,
+  });
 
   @override
   _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
@@ -26,6 +36,18 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     return "Something went wrong!";
   }
 
+  Future<void> _maybePromptNotificationPermission() async {
+    if (!widget.promptNotificationPermissionOnSuccess || !mounted) return;
+    try {
+      await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'notifications.permission_after_set_wallpaper',
+      );
+    } catch (e, st) {
+      logger.w('_maybePromptNotificationPermission: maybePromptAfterValueAction failed', error: e, stackTrace: st);
+    }
+  }
+
   Future<void> _setBothWallPaper() async {
     bool? result;
     try {
@@ -36,6 +58,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
         );
         toasts.codeSend("Wallpaper set successfully!");
+        await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -69,6 +92,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
         );
         toasts.codeSend("Wallpaper set successfully!");
+        await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -102,6 +126,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
         );
         toasts.codeSend("Wallpaper set successfully!");
+        await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
