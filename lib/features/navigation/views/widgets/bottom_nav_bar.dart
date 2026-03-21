@@ -76,6 +76,11 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
       return;
     }
 
+    if (widget.scrollController.hasClients) {
+      _activeScrollPosition = widget.scrollController.position;
+      return;
+    }
+
     final ScrollController? primaryController = PrimaryScrollController.maybeOf(context);
     if (primaryController != null && primaryController.positions.length == 1) {
       _activeScrollPosition = primaryController.position;
