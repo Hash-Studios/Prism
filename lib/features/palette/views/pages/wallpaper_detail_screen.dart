@@ -68,6 +68,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   PanelController panelController = PanelController();
   int _toastFirstTime = 0;
 
+  /// Identity for the wallpaper currently shown; resets capture readiness when it changes.
+  String? _wallpaperLoadIdentity;
+  int _wallpaperCaptureGeneration = 0;
+  bool _wallpaperReadyForCapture = false;
+
   String _getSourceContext(WallpaperDetailState? blocState) {
     final source = blocState is WallpaperDetailLoaded ? blocState.entity.source : widget.source;
     return '${source?.wireValue ?? 'unknown'}_wallpaper_screen';
@@ -95,23 +100,56 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
     if (state.panelClosed) {
       logger.d('Screenshot Starting');
-      final capture = state.colorChanged
-          ? screenshotController.capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-          : _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
-          ? screenshotController.capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-          : Future<Uint8List?>.value(null);
-
-      capture
-          .then((Uint8List? image) {
-            if (image != null) {
-              bloc.add(CaptureScreenshot(imageBytes: image));
-              logger.d('Screenshot Taken');
-            }
-          })
-          .catchError((onError) {
-            logger.d(onError.toString());
-          });
+      final gen = _wallpaperCaptureGeneration;
+      unawaited(_captureWallpaperScreenshotWhenReady(context, bloc, gen));
     }
+  }
+
+  Future<void> _captureWallpaperScreenshotWhenReady(
+    BuildContext context,
+    WallpaperDetailBloc bloc,
+    int captureGeneration,
+  ) async {
+    while (mounted && captureGeneration == _wallpaperCaptureGeneration && !_wallpaperReadyForCapture) {
+      await Future<void>.delayed(const Duration(milliseconds: 16));
+    }
+    if (!mounted || captureGeneration != _wallpaperCaptureGeneration) return;
+
+    final current = bloc.state;
+    if (current is! WallpaperDetailLoaded) return;
+
+    final capture = current.colorChanged
+        ? screenshotController.capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+        : _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
+        ? screenshotController.capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
+        : Future<Uint8List?>.value();
+
+    try {
+      final Uint8List? image = await capture;
+      if (image != null && mounted && captureGeneration == _wallpaperCaptureGeneration) {
+        bloc.add(CaptureScreenshot(imageBytes: image));
+        logger.d('Screenshot Taken');
+      }
+    } catch (e, st) {
+      logger.d('$e\n$st');
+    }
+  }
+
+  void _syncWallpaperIdentity(WallpaperDetailEntity entity) {
+    final key = '${entity.id}|${entity.fullUrl}|${entity.thumbnailUrl}';
+    if (_wallpaperLoadIdentity != key) {
+      _wallpaperLoadIdentity = key;
+      _wallpaperCaptureGeneration++;
+      _wallpaperReadyForCapture = false;
+    }
+  }
+
+  void _scheduleWallpaperDisplayReady() {
+    if (_wallpaperReadyForCapture) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _wallpaperReadyForCapture) return;
+      setState(() => _wallpaperReadyForCapture = true);
+    });
   }
 
   void _handlePanelClosed(BuildContext context, WallpaperDetailLoaded state) {
@@ -662,6 +700,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     WallpaperDetailLoaded state,
   ) {
     final entity = state.entity;
+    _syncWallpaperIdentity(entity);
     return Stack(
       children: [
         AnimatedBuilder(
@@ -691,6 +730,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                       entity: entity,
                       state: state,
                       paletteLoading: paletteLoading,
+                      progressOutsideScreenshot: true,
+                      onWallpaperDisplayReady: _scheduleWallpaperDisplayReady,
                     ),
                   ),
                 ),
@@ -698,6 +739,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             );
           },
         ),
+        if (!_wallpaperReadyForCapture)
+          Positioned.fill(
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ),
         Align(
           alignment: Alignment.topLeft,
           child: Padding(
@@ -757,11 +806,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   /// Thumbnail first, loader while full resolution downloads, then full image on top (Wallhaven/Pexels).
+  ///
+  /// When [progressOutsideScreenshot] is true, download progress is not painted inside this subtree
+  /// (so [Screenshot] cannot capture spinners); use [onWallpaperDisplayReady] when the full bitmap
+  /// is shown or an error/empty state is finalized.
   Widget _buildProgressiveWallpaperImage({
     required BuildContext context,
     required WallpaperDetailEntity entity,
     required WallpaperDetailLoaded state,
     required bool paletteLoading,
+    bool progressOutsideScreenshot = false,
+    VoidCallback? onWallpaperDisplayReady,
   }) {
     final String thumb = entity.thumbnailUrl.trim();
     final String full = entity.fullUrl.trim();
@@ -778,54 +833,76 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             width: double.infinity,
             height: double.infinity,
             placeholder: (context, url) => Container(color: Colors.grey[900]),
-            errorWidget: (context, url, error) => Center(
-              child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
-            ),
+            errorWidget: (context, url, error) {
+              onWallpaperDisplayReady?.call();
+              return Center(
+                child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
+              );
+            },
           ),
           CachedNetworkImage(
             imageUrl: full,
             fit: BoxFit.cover,
             fadeInDuration: const Duration(milliseconds: 280),
             fadeOutDuration: Duration.zero,
-            imageBuilder: (context, imageProvider) => SizedBox.expand(
-              child: Image(image: imageProvider, fit: BoxFit.cover),
-            ),
-            progressIndicatorBuilder: (context, url, downloadProgress) => Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
-                value: downloadProgress.progress,
-              ),
-            ),
-            errorWidget: (context, url, error) => const SizedBox.shrink(),
+            imageBuilder: (context, imageProvider) {
+              onWallpaperDisplayReady?.call();
+              return SizedBox.expand(
+                child: Image(image: imageProvider, fit: BoxFit.cover),
+              );
+            },
+            progressIndicatorBuilder: progressOutsideScreenshot
+                ? (context, url, downloadProgress) => const SizedBox.shrink()
+                : (context, url, downloadProgress) => Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                      value: downloadProgress.progress,
+                    ),
+                  ),
+            errorWidget: (context, url, error) {
+              onWallpaperDisplayReady?.call();
+              return const SizedBox.shrink();
+            },
           ),
         ],
       );
     } else {
       final String url = full.isNotEmpty ? full : thumb;
       if (url.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onWallpaperDisplayReady?.call();
+        });
         imageLayer = Center(
           child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
         );
       } else {
         imageLayer = CachedNetworkImage(
           imageUrl: url,
-          imageBuilder: (context, imageProvider) => SizedBox.expand(
-            child: Image(image: imageProvider, fit: BoxFit.cover),
-          ),
-          progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-            children: [
-              const SizedBox.expand(child: Text('')),
-              Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
-                  value: downloadProgress.progress,
+          imageBuilder: (context, imageProvider) {
+            onWallpaperDisplayReady?.call();
+            return SizedBox.expand(
+              child: Image(image: imageProvider, fit: BoxFit.cover),
+            );
+          },
+          progressIndicatorBuilder: progressOutsideScreenshot
+              ? (context, url, downloadProgress) => const SizedBox.shrink()
+              : (context, url, downloadProgress) => Stack(
+                  children: [
+                    const SizedBox.expand(child: Text('')),
+                    Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                        value: downloadProgress.progress,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          errorWidget: (context, url, error) => Center(
-            child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
-          ),
+          errorWidget: (context, url, error) {
+            onWallpaperDisplayReady?.call();
+            return Center(
+              child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
+            );
+          },
         );
       }
     }
