@@ -150,7 +150,11 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       source: 'pexels',
       scope: _scope(categoryName),
       ttlHours: _feedTtlHours,
-      payload: <String, Object?>{'payload': jsonDecode(jsonEncode(payload.toJson())), 'nextPage': nextPage, 'hasMore': hasMore},
+      payload: <String, Object?>{
+        'payload': jsonDecode(jsonEncode(payload.toJson())),
+        'nextPage': nextPage,
+        'hasMore': hasMore,
+      },
     );
   }
 

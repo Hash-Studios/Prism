@@ -227,7 +227,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       source: 'wallhaven',
       scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
       ttlHours: _feedTtlHours,
-      payload: <String, Object?>{'payload': jsonDecode(jsonEncode(payload.toJson())), 'nextPage': nextPage, 'hasMore': hasMore},
+      payload: <String, Object?>{
+        'payload': jsonDecode(jsonEncode(payload.toJson())),
+        'nextPage': nextPage,
+        'hasMore': hasMore,
+      },
     );
   }
 
