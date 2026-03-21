@@ -742,9 +742,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         if (!_wallpaperReadyForCapture)
           Positioned.fill(
             child: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
-              ),
+              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error)),
             ),
           ),
         Align(

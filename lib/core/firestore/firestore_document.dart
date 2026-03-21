@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreDocument {
   const FirestoreDocument(this.id, this.payload);
@@ -57,6 +58,9 @@ class FirestoreDocument {
     final value = payload[key];
     if (value is DateTime) {
       return value;
+    }
+    if (value is Timestamp) {
+      return value.toDate();
     }
     if (value is int) {
       return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
