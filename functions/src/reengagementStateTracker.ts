@@ -54,10 +54,27 @@ export const onReengagementEventCreated = onDocumentCreated(
     const stateRef = db.collection(REENGAGEMENT_STATE_COLLECTION).doc(userId);
     const stateUpdate: Record<string, unknown> = {};
 
+    // sequence === 0 is a sentinel from cold-start push taps where the
+    // sequence wasn't encoded in the payload.  Infer it from the current state.
+    let resolvedSequence = sequence;
+    if (action === "open" && resolvedSequence === 0) {
+      try {
+        const stateSnap = await stateRef.get();
+        if (stateSnap.exists) {
+          const s = stateSnap.data() as Record<string, unknown>;
+          if (s.seq3SentAt && !s.seq3OpenedAt) resolvedSequence = 3;
+          else if (s.seq2SentAt && !s.seq2OpenedAt) resolvedSequence = 2;
+          else if (s.seq1SentAt && !s.seq1OpenedAt) resolvedSequence = 1;
+        }
+      } catch (err) {
+        logger.warn("onReengagementEventCreated: could not infer sequence from state.", {userId, err});
+      }
+    }
+
     if (action === "open") {
-      if (sequence === 1) stateUpdate.seq1OpenedAt = now;
-      else if (sequence === 2) stateUpdate.seq2OpenedAt = now;
-      else if (sequence === 3) {
+      if (resolvedSequence === 1) stateUpdate.seq1OpenedAt = now;
+      else if (resolvedSequence === 2) stateUpdate.seq2OpenedAt = now;
+      else if (resolvedSequence === 3) {
         stateUpdate.seq3OpenedAt = now;
         // User re-engaged via seq3 — clear suppression so future campaigns can reach them.
         stateUpdate.suppressed = false;

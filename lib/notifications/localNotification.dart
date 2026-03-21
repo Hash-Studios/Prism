@@ -31,25 +31,33 @@ class LocalNotification {
     final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
     if (payload == "downloaded") {
       context.router.push(const DownloadRoute());
-    } else if (payload == "reengagement") {
-      await _recordReengagementOpen(payload: payload);
+    } else if (payload != null && payload.startsWith('reengagement')) {
+      // Payload is either "reengagement" (legacy) or "reengagement:<seq>"
+      final int sequence = _parseSequenceFromPayload(payload);
+      await _recordReengagementOpen(sequence: sequence);
       if (context.mounted) {
         context.router.push(const AiTabRoute());
       }
     }
   }
 
+  int _parseSequenceFromPayload(String payload) {
+    final List<String> parts = payload.split(':');
+    if (parts.length >= 2) {
+      return int.tryParse(parts[1]) ?? 0;
+    }
+    return 0;
+  }
+
   /// Records a re-engagement notification open so the server-side
-  /// state tracker updates seqNOpenedAt.  The sequence is unknown at this
-  /// point (payload is just the route string), so we record sequence 0 as
-  /// a sentinel and let the backend handle it gracefully.
-  Future<void> _recordReengagementOpen({String? payload}) async {
+  /// state tracker can update seqNOpenedAt.
+  Future<void> _recordReengagementOpen({required int sequence}) async {
     try {
       final String? uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
       await FirebaseFirestore.instance.collection('reengagementEvents').add(<String, dynamic>{
         'userId': uid,
-        'sequence': 0,
+        'sequence': sequence,
         'source': 'push',
         'action': 'open',
         'timestamp': FieldValue.serverTimestamp(),
@@ -135,8 +143,19 @@ class LocalNotification {
       title: notification.title,
       body: notification.body,
       notificationDetails: platformDetails,
-      payload: message.data['route']?.toString(),
+      // For reengagement pushes, encode "reengagement:<seq>" so cold-start
+      // can pass the correct sequence number to the state tracker.
+      payload: _buildPayload(message.data),
     );
+  }
+
+  String _buildPayload(Map<String, dynamic> data) {
+    final String route = data['route']?.toString() ?? '';
+    if (route == 'reengagement') {
+      final String seq = data['seq']?.toString() ?? '0';
+      return 'reengagement:$seq';
+    }
+    return route;
   }
 
   Future<void> cancelDownloadNotification() async {

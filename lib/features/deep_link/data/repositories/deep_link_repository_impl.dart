@@ -26,6 +26,7 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
       UserLinkIntent() => TargetTypeValue.user,
       SetupLinkIntent() => TargetTypeValue.setup,
       ReferLinkIntent() => TargetTypeValue.refer,
+      ReengagementIntent() => TargetTypeValue.reengagement,
       ShortCodeIntent() => TargetTypeValue.shortCode,
       UnknownIntent() => TargetTypeValue.unknown,
     };

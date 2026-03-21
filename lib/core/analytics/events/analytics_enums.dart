@@ -132,7 +132,7 @@ enum SearchProviderValue { wallhaven, pexels, user }
 
 enum ItemTypeValue { wallpaper, user, notification }
 
-enum TargetTypeValue { share, user, setup, refer, shortCode, unknown }
+enum TargetTypeValue { share, user, setup, refer, shortCode, reengagement, unknown }
 
 enum EntryPointValue { bottomNav, quickAction }
 
@@ -570,6 +570,8 @@ extension TargetTypeValueX on TargetTypeValue {
         return 'refer';
       case TargetTypeValue.shortCode:
         return 'short_code';
+      case TargetTypeValue.reengagement:
+        return 'reengagement';
       case TargetTypeValue.unknown:
         return 'unknown';
     }
