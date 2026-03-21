@@ -209,6 +209,27 @@ service cloud.firestore {
       allow read, write: if isConfiguredAdmin() || isOwner(userId);
     }
 
+    // reengagementEvents — app writes its own open events
+    match /reengagementEvents/{eventId} {
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    // reengagementState — read-only for users (server writes via Admin SDK)
+    match /reengagementState/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // reengagementCampaigns — admin only
+    match /reengagementCampaigns/{campaignId} {
+      allow read, write: if isConfiguredAdmin();
+    }
+
+    // mail — server write only (Admin SDK bypasses rules, but lock it anyway)
+    match /mail/{docId} {
+      allow read, write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

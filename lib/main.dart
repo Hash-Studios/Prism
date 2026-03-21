@@ -16,6 +16,8 @@ import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
@@ -58,6 +60,8 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -575,6 +579,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (value) {
       await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
+      unawaited(_updateLastLoginAtOnResume());
     }
     app_state.persistPrismUser();
     await syncSentryUserScope(
@@ -629,6 +634,40 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   /// Throttle getNotifs on resume to avoid repeated queries with 0 results.
   static const Duration _getNotifsResumeThrottle = Duration(minutes: 5);
   DateTime? _lastGetNotifsResume;
+
+  /// Throttle lastLoginAt update on resume for reengagement segmentation accuracy.
+  static const Duration _lastLoginAtResumeThrottle = Duration(hours: 1);
+  DateTime? _lastLastLoginAtResume;
+
+  Future<void> _handleReengagementOpen(ReengagementIntent action) async {
+    try {
+      final String? uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      await FirebaseFirestore.instance.collection('reengagementEvents').add(<String, dynamic>{
+        'userId': uid,
+        'sequence': action.sequence,
+        'source': action.source,
+        'action': 'open',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Non-critical — analytics failure must not break navigation.
+    }
+  }
+
+  Future<void> _updateLastLoginAtOnResume() async {
+    final userId = app_state.prismUser.id.trim();
+    if (userId.isEmpty || !app_state.prismUser.loggedIn) return;
+    try {
+      await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, {
+        'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
+      }, sourceTag: 'app_resumed.last_login_at');
+      _lastLastLoginAtResume = DateTime.now();
+    } catch (error, stackTrace) {
+      logger.w('Failed to update lastLoginAt on app resume.', error: error, stackTrace: stackTrace);
+    }
+  }
 
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
     if (_coinSyncInFlight) {
@@ -718,6 +757,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       UserLinkIntent() => TargetTypeValue.user,
       SetupLinkIntent() => TargetTypeValue.setup,
       ReferLinkIntent() => TargetTypeValue.refer,
+      ReengagementIntent() => TargetTypeValue.reengagement,
       ShortCodeIntent() => TargetTypeValue.shortCode,
       UnknownIntent() => TargetTypeValue.unknown,
     };
@@ -806,6 +846,17 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         );
       case ShortCodeIntent():
         await _resolveAndNavigateShortCode(action.code);
+      case ReengagementIntent():
+        unawaited(_handleReengagementOpen(action));
+        _appRouter.push(const AiTabRoute());
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(
+              targetType: TargetTypeValue.unknown,
+              result: EventResultValue.navigated,
+            ),
+          ),
+        );
       case UnknownIntent():
         _appRouter.push(const NotFoundRoute());
         unawaited(
@@ -1014,6 +1065,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       if (_lastGetNotifsResume == null || now.difference(_lastGetNotifsResume!) >= _getNotifsResumeThrottle) {
         _lastGetNotifsResume = now;
         unawaited(syncInAppNotificationsFromRemote());
+      }
+      if (app_state.prismUser.loggedIn &&
+          app_state.prismUser.id.trim().isNotEmpty &&
+          (_lastLastLoginAtResume == null || now.difference(_lastLastLoginAtResume!) >= _lastLoginAtResumeThrottle)) {
+        _lastLastLoginAtResume = now;
+        unawaited(_updateLastLoginAtOnResume());
       }
       return;
     }
