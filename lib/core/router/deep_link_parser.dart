@@ -9,6 +9,7 @@ class DeepLinkParser {
   static const Set<String> _setupRoots = <String>{'setup', 'share-setup'};
   static const Set<String> _referRoots = <String>{'refer', 'referral'};
   static const Set<String> _shortCodeRoots = <String>{'l'};
+  static const Set<String> _reengagementRoots = <String>{'reengagement'};
 
   Uri transform(Uri uri) {
     final List<String> segments = _segments(uri);
@@ -112,6 +113,13 @@ class DeepLinkParser {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ShortCodeIntent(code: code, rawUri: uri.toString());
+    }
+
+    if (_reengagementRoots.contains(root)) {
+      final int sequence = int.tryParse(uri.queryParameters['seq'] ?? '') ?? 1;
+      final String source = uri.queryParameters['source'] ?? 'push';
+      final String userId = uri.queryParameters['uid'] ?? '';
+      return ReengagementIntent(sequence: sequence, source: source, userId: userId, rawUri: uri.toString());
     }
 
     return UnknownIntent(rawUri: uri.toString());
