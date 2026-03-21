@@ -646,7 +646,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
-        if (!hideSetWallpaperUi) SetWallpaperButton(colorChanged: state.colorChanged, url: url),
+        if (!hideSetWallpaperUi)
+          SetWallpaperButton(colorChanged: state.colorChanged, url: url, promptNotificationPermissionOnSuccess: true),
         FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
         ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
         EditButton(url: entity.fullUrl),
