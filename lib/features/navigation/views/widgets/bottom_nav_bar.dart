@@ -162,12 +162,9 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
 
   @override
   Widget build(BuildContext context) {
-    return PrimaryScrollController(
-      controller: widget.scrollController,
-      child: NotificationListener<UserScrollNotification>(
-        onNotification: _onUserScroll,
-        child: Stack(fit: StackFit.expand, children: <Widget>[widget.child, _buildScrollToTopButton(context)]),
-      ),
+    return NotificationListener<UserScrollNotification>(
+      onNotification: _onUserScroll,
+      child: Stack(fit: StackFit.expand, children: <Widget>[widget.child, _buildScrollToTopButton(context)]),
     );
   }
 }
