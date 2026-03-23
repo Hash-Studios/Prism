@@ -446,8 +446,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       await wallstore.createRecord(
         communityId,
         'Prism',
-        record.watermarkedImageUrl,
-        record.watermarkedImageUrl,
+        record.imageUrl,
+        record.imageUrl,
         '${record.width}x${record.height}',
         'AI',
         edited['title']?.toString(),
