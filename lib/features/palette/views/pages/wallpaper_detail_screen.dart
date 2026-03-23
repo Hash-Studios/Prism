@@ -518,15 +518,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 _buildInfoRow(context, JamIcons.save, "${(wallpaper.core.sizeBytes! / 1000000).toStringAsFixed(2)} MB"),
             ],
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildPrismAuthorRow(context, wallpaper),
-              if (wallpaper.core.createdAt != null)
-                _buildInfoRow(context, JamIcons.calendar, _formatDate(wallpaper.core.createdAt!), reversed: true),
-              _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
-            ],
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildPrismAuthorRow(context, wallpaper),
+                if (wallpaper.core.createdAt != null)
+                  _buildInfoRow(context, JamIcons.calendar, _formatDate(wallpaper.core.createdAt!), reversed: true),
+                _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
+              ],
+            ),
           ),
         ],
       ),
@@ -559,40 +561,42 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 ),
             ],
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (wallpaper.core.authorName != null && wallpaper.core.authorName!.isNotEmpty) ...[
-                _buildWallhavenAuthorLink(context, wallpaper.core.authorName!),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (wallpaper.core.authorName != null && wallpaper.core.authorName!.isNotEmpty) ...[
+                  _buildWallhavenAuthorLink(context, wallpaper.core.authorName!),
+                  const SizedBox(height: 5),
+                ],
+                if (wallpaper.core.category != null)
+                  _buildInfoRow(
+                    context,
+                    JamIcons.unordered_list,
+                    wallpaper.core.category!,
+                    reversed: true,
+                    showIconLast: true,
+                  ),
                 const SizedBox(height: 5),
+                if (wallpaper.core.resolution != null)
+                  _buildInfoRow(
+                    context,
+                    JamIcons.set_square,
+                    wallpaper.core.resolution!,
+                    reversed: true,
+                    showIconLast: true,
+                  ),
+                const SizedBox(height: 5),
+                _buildInfoRow(
+                  context,
+                  JamIcons.database,
+                  sourceDisplayName(entity.source),
+                  reversed: true,
+                  showIconLast: true,
+                ),
               ],
-              if (wallpaper.core.category != null)
-                _buildInfoRow(
-                  context,
-                  JamIcons.unordered_list,
-                  wallpaper.core.category!,
-                  reversed: true,
-                  showIconLast: true,
-                ),
-              const SizedBox(height: 5),
-              if (wallpaper.core.resolution != null)
-                _buildInfoRow(
-                  context,
-                  JamIcons.set_square,
-                  wallpaper.core.resolution!,
-                  reversed: true,
-                  showIconLast: true,
-                ),
-              const SizedBox(height: 5),
-              _buildInfoRow(
-                context,
-                JamIcons.database,
-                sourceDisplayName(entity.source),
-                reversed: true,
-                showIconLast: true,
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -618,14 +622,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 _buildInfoRow(context, JamIcons.set_square, "${wallpaper.core.width}x${wallpaper.core.height}"),
             ],
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (wallpaper.photographer != null && wallpaper.photographer!.isNotEmpty)
-                _buildPexelsPhotographerLink(context, wallpaper.photographer!, wallpaper.photographerUrl),
-              _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true, showIconLast: true),
-            ],
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (wallpaper.photographer != null && wallpaper.photographer!.isNotEmpty)
+                  _buildPexelsPhotographerLink(context, wallpaper.photographer!, wallpaper.photographerUrl),
+                _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true, showIconLast: true),
+              ],
+            ),
           ),
         ],
       ),
