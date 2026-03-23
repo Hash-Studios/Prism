@@ -89,10 +89,13 @@ service cloud.firestore {
       allow create: if isSignedIn()
           && isEmailOwner(request.resource.data.email)
           && request.resource.data.review != true;
-      allow update, delete: if isConfiguredAdmin()
+      // delete: request.resource is null — do not use request.resource.data here.
+      allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && request.resource.data.email == resource.data.email
               && request.resource.data.review != true);
+      allow delete: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email) && resource.data.review != true);
     }
 
     match /setups/{docId} {
@@ -100,10 +103,12 @@ service cloud.firestore {
       allow create: if isSignedIn()
           && isEmailOwner(request.resource.data.email)
           && request.resource.data.review != true;
-      allow update, delete: if isConfiguredAdmin()
+      allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
               && request.resource.data.email == resource.data.email
               && request.resource.data.review != true);
+      allow delete: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email) && resource.data.review != true);
     }
 
     // Drafts are private to their owner.
