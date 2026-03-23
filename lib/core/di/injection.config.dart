@@ -633,6 +633,11 @@ _i174.GetIt initGetIt(
       gh<_i340.ClearFavouriteSetupsUseCase>(),
     ),
   );
+  gh.lazySingleton<_i212.GetPersistedSeenKeysUseCase>(
+    () => _i212.GetPersistedSeenKeysUseCase(
+      gh<_i567.PersonalizedFeedRepository>(),
+    ),
+  );
   gh.lazySingleton<_i212.FetchPersonalizedFeedUseCase>(
     () => _i212.FetchPersonalizedFeedUseCase(
       gh<_i567.PersonalizedFeedRepository>(),
@@ -645,6 +650,12 @@ _i174.GetIt initGetIt(
       gh<_i108.ObserveQuickActionsUseCase>(),
     ),
   );
+  gh.factory<_i872.PersonalizedFeedBloc>(
+    () => _i872.PersonalizedFeedBloc(
+      gh<_i212.FetchPersonalizedFeedUseCase>(),
+      gh<_i212.GetPersistedSeenKeysUseCase>(),
+    ),
+  );
   gh.factory<_i364.SessionBloc>(
     () => _i364.SessionBloc(
       gh<_i986.GetSessionUseCase>(),
@@ -652,9 +663,6 @@ _i174.GetIt initGetIt(
       gh<_i986.SignOutUseCase>(),
       sessionRepository: gh<_i738.SessionRepository>(),
     ),
-  );
-  gh.factory<_i872.PersonalizedFeedBloc>(
-    () => _i872.PersonalizedFeedBloc(gh<_i212.FetchPersonalizedFeedUseCase>()),
   );
   gh.factory<_i318.SetupsBloc>(
     () => _i318.SetupsBloc(gh<_i247.FetchSetupsUseCase>()),

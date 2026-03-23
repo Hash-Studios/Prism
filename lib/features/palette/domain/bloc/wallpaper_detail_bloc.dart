@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
@@ -47,6 +48,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(WallpaperDetailLoaded(entity: event.entity));
     _requestPalette(event.entity.thumbnailUrl);
     _fetchAndUpdateViews(event.entity);
+    await _enrichWallhavenFromFeedIfNeeded(event.entity, emit);
   }
 
   Future<void> _onLoadFromId(LoadFromId event, Emitter<WallpaperDetailState> emit) async {
@@ -215,5 +217,41 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
       return;
     }
     add(const FetchViews());
+  }
+
+  /// Search/list responses often omit `uploader`; single-wall API includes it.
+  Future<void> _enrichWallhavenFromFeedIfNeeded(
+    WallpaperDetailEntity entity,
+    Emitter<WallpaperDetailState> emit,
+  ) async {
+    if (entity is! WallhavenDetailEntity) {
+      return;
+    }
+    final String? author = entity.wallpaper.core.authorName;
+    if (author != null && author.isNotEmpty) {
+      return;
+    }
+    final String wallId = entity.wallpaper.id;
+    final result = await _wallhavenRepository.fetchById(wallId);
+    result.fold(
+      onFailure: (_) {},
+      onSuccess: (WallhavenWallpaper? wallpaper) {
+        if (wallpaper == null) {
+          return;
+        }
+        final String? enrichedAuthor = wallpaper.core.authorName;
+        if (enrichedAuthor == null || enrichedAuthor.isEmpty) {
+          return;
+        }
+        final WallpaperDetailState latest = state;
+        if (latest is! WallpaperDetailLoaded) {
+          return;
+        }
+        if (latest.entity.id != wallId || latest.entity.source != WallpaperSource.wallhaven) {
+          return;
+        }
+        emit(latest.copyWith(entity: WallhavenDetailEntity(wallpaper: wallpaper)));
+      },
+    );
   }
 }

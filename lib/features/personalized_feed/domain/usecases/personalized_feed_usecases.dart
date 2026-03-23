@@ -5,6 +5,15 @@ import 'package:Prism/features/personalized_feed/domain/entities/personalized_fe
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:injectable/injectable.dart';
 
+@lazySingleton
+class GetPersistedSeenKeysUseCase {
+  GetPersistedSeenKeysUseCase(this._repository);
+
+  final PersonalizedFeedRepository _repository;
+
+  Future<List<String>> call() => _repository.readPersistedSeenKeys();
+}
+
 class FetchPersonalizedFeedParams {
   const FetchPersonalizedFeedParams({
     required this.page,

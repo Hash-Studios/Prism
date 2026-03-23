@@ -58,6 +58,8 @@ class WallpaperTile extends StatelessWidget {
           fit: BoxFit.cover,
           fadeInDuration: Duration.zero,
           memCacheHeight: height,
+          placeholder: (_, _) => ColoredBox(color: Colors.grey.shade900),
+          errorWidget: (_, _, _) => ColoredBox(color: Colors.grey.shade900),
         ),
       ),
     );

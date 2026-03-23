@@ -21,20 +21,44 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
     }
 
     try {
-      final rows = await _firestoreClient.query<Map<String, dynamic>>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.usersV2,
-          sourceTag: 'user_search.search_users',
-          filters: <FirestoreFilter>[
-            FirestoreFilter(field: 'name', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: trimmed),
-            FirestoreFilter(field: 'name', op: FirestoreFilterOp.isLessThanOrEqualTo, value: '$trimmed\uf8ff'),
-          ],
-          limit: 20,
-        ),
-        (data, docId) => <String, dynamic>{...data, '__docId': docId},
-      );
+      final rangeEnd = '$trimmed\uf8ff';
 
-      final users = rows
+      final results = await Future.wait([
+        _firestoreClient.query<Map<String, dynamic>>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.usersV2,
+            sourceTag: 'user_search.search_users_by_name',
+            filters: <FirestoreFilter>[
+              FirestoreFilter(field: 'name', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: trimmed),
+              FirestoreFilter(field: 'name', op: FirestoreFilterOp.isLessThanOrEqualTo, value: rangeEnd),
+            ],
+            limit: 20,
+          ),
+          (data, docId) => <String, dynamic>{...data, '__docId': docId},
+        ),
+        _firestoreClient.query<Map<String, dynamic>>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.usersV2,
+            sourceTag: 'user_search.search_users_by_username',
+            filters: <FirestoreFilter>[
+              FirestoreFilter(field: 'username', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: trimmed),
+              FirestoreFilter(field: 'username', op: FirestoreFilterOp.isLessThanOrEqualTo, value: rangeEnd),
+            ],
+            limit: 20,
+          ),
+          (data, docId) => <String, dynamic>{...data, '__docId': docId},
+        ),
+      ]);
+
+      // Merge and deduplicate by doc ID
+      final seen = <String>{};
+      final merged = <Map<String, dynamic>>[];
+      for (final row in [...results[0], ...results[1]]) {
+        final id = (row['__docId'] ?? '').toString();
+        if (seen.add(id)) merged.add(row);
+      }
+
+      final users = merged
           .map((data) {
             return UserSearchUser(
               id: (data['id'] ?? data['__docId'] ?? '').toString(),

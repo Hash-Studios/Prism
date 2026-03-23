@@ -48,6 +48,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   static const int _seenWindow = 300;
 
   @override
+  Future<List<String>> readPersistedSeenKeys() async {
+    final userId = app_state.prismUser.id.trim();
+    final cacheScope = userId.isEmpty ? 'guest' : userId.toLowerCase();
+    final cached = await _readCacheState(scope: cacheScope);
+    return cached.seenKeys;
+  }
+
+  @override
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
     final userId = app_state.prismUser.id.trim();
     final isGuest = userId.isEmpty;

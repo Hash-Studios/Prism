@@ -8,6 +8,7 @@ import 'package:Prism/features/personalized_feed/domain/usecases/personalized_fe
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
+import 'package:Prism/logger/logger.dart';
 
 part 'personalized_feed_event.j.dart';
 part 'personalized_feed_state.j.dart';
@@ -15,7 +16,8 @@ part 'personalized_feed_bloc.j.freezed.dart';
 
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
-  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase) : super(PersonalizedFeedState.initial()) {
+  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase, this._getPersistedSeenKeysUseCase)
+    : super(PersonalizedFeedState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
@@ -23,12 +25,23 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
+  final GetPersistedSeenKeysUseCase _getPersistedSeenKeysUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
-    await _load(emit, refresh: true);
+    // Restore persisted seen keys so the feed shows wallpapers the user hasn't
+    // seen before, rather than re-serving the same top-ranked items each time.
+    List<String> persistedSeenKeys = const <String>[];
+    try {
+      persistedSeenKeys = await _getPersistedSeenKeysUseCase();
+    } catch (e) {
+      logger.w('[PersonalizedFeed] failed to load persisted seen keys: $e');
+    }
+    await _load(emit, refresh: true, initialSeenKeys: persistedSeenKeys);
   }
 
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) async {
+    // Manual pull-to-refresh intentionally clears seen keys — the user wants a
+    // completely fresh set of content.
     await _load(emit, refresh: true);
   }
 
@@ -95,14 +108,18 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     await _load(emit, refresh: true);
   }
 
-  Future<void> _load(Emitter<PersonalizedFeedState> emit, {required bool refresh}) async {
+  Future<void> _load(
+    Emitter<PersonalizedFeedState> emit, {
+    required bool refresh,
+    List<String> initialSeenKeys = const <String>[],
+  }) async {
     final baseState = refresh
         ? state.copyWith(
             status: LoadStatus.loading,
             actionStatus: ActionStatus.inProgress,
             page: 1,
             items: const <FeedItemEntity>[],
-            seenKeys: const <String>[],
+            seenKeys: initialSeenKeys,
             hasMore: true,
             isFetchingMore: false,
             failure: null,
@@ -111,11 +128,11 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     emit(baseState);
 
     final result = await _fetchPersonalizedFeedUseCase(
-      const FetchPersonalizedFeedParams(
+      FetchPersonalizedFeedParams(
         page: 1,
         refresh: true,
-        seenKeys: <String>[],
-        existingItems: <FeedItemEntity>[],
+        seenKeys: initialSeenKeys,
+        existingItems: const <FeedItemEntity>[],
       ),
     );
 
