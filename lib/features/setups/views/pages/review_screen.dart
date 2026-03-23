@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -353,12 +354,12 @@ class _WallTile extends StatelessWidget {
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
                                               Navigator.pop(context);
-                                              await firestoreClient.deleteDoc(
-                                                FirebaseCollections.walls,
-                                                wallpaper.id,
+                                              await _reviewDeleteDoc(
+                                                collection: FirebaseCollections.walls,
+                                                id: wallpaper.id,
                                                 sourceTag: 'review.wall.delete',
+                                                successToast: "Wallpaper successfully deleted from server!",
                                               );
-                                              toasts.codeSend("Wallpaper successfully deleted from server!");
                                             },
                                             child: const Text(
                                               'DELETE',
@@ -593,12 +594,12 @@ class _RejectedWallTile extends StatelessWidget {
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
                                               Navigator.pop(context);
-                                              await firestoreClient.deleteDoc(
-                                                FirebaseCollections.rejectedWalls,
-                                                wallpaper.id,
+                                              await _reviewDeleteDoc(
+                                                collection: FirebaseCollections.rejectedWalls,
+                                                id: wallpaper.id,
                                                 sourceTag: 'review.rejectedWall.delete',
+                                                successToast: "Wallpaper successfully deleted from server!",
                                               );
-                                              toasts.codeSend("Wallpaper successfully deleted from server!");
                                             },
                                             child: const Text(
                                               'DELETE',
@@ -1089,19 +1090,19 @@ class SetupTile extends StatelessWidget {
                                       onPressed: () async {
                                         Navigator.pop(context);
                                         if (draft) {
-                                          await firestoreClient.deleteDoc(
-                                            FirebaseCollections.draftSetups,
-                                            wallpaper.id,
+                                          await _reviewDeleteDoc(
+                                            collection: FirebaseCollections.draftSetups,
+                                            id: wallpaper.id,
                                             sourceTag: 'review.draftSetup.delete',
+                                            successToast: "Draft successfully deleted from server!",
                                           );
-                                          toasts.codeSend("Draft successfully deleted from server!");
                                         } else {
-                                          await firestoreClient.deleteDoc(
-                                            FirebaseCollections.setups,
-                                            wallpaper.id,
+                                          await _reviewDeleteDoc(
+                                            collection: FirebaseCollections.setups,
+                                            id: wallpaper.id,
                                             sourceTag: 'review.setup.delete',
+                                            successToast: "Setup successfully deleted from server!",
                                           );
-                                          toasts.codeSend("Setup successfully deleted from server!");
                                         }
                                       },
                                       child: const Text(
@@ -1472,12 +1473,12 @@ class _RejectedSetupTile extends StatelessWidget {
                                             color: Theme.of(context).hintColor,
                                             onPressed: () async {
                                               Navigator.pop(context);
-                                              await firestoreClient.deleteDoc(
-                                                FirebaseCollections.rejectedSetups,
-                                                wallpaper.id,
+                                              await _reviewDeleteDoc(
+                                                collection: FirebaseCollections.rejectedSetups,
+                                                id: wallpaper.id,
                                                 sourceTag: 'review.rejectedSetup.delete',
+                                                successToast: "Setup successfully deleted from server!",
                                               );
-                                              toasts.codeSend("Setup successfully deleted from server!");
                                             },
                                             child: const Text(
                                               'DELETE',
@@ -1545,4 +1546,23 @@ DateTime _toDateTime(dynamic value) {
     return withToDate.toDate() as DateTime;
   }
   return DateTime.now().toUtc();
+}
+
+Future<void> _reviewDeleteDoc({
+  required String collection,
+  required String id,
+  required String sourceTag,
+  required String successToast,
+}) async {
+  try {
+    await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
+    toasts.codeSend(successToast);
+  } on FirestoreError catch (e, st) {
+    logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);
+    toasts.codeSend(
+      e.code == 'permission-denied'
+          ? "Couldn't delete: permission denied. Check you're signed in with the same account you used to upload."
+          : "Couldn't delete. Please try again.",
+    );
+  }
 }

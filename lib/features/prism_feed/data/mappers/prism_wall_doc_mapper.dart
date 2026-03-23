@@ -7,9 +7,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
   PrismWallpaper toDomain({required String docId}) {
     final String resolvedId = id.isNotEmpty ? id : docId;
     final String fullUrl = wallpaperUrl;
-    final String thumbnailUrl = wallpaperThumb.isNotEmpty
-        ? wallpaperThumb
-        : fullUrl;
+    final String thumbnailUrl = wallpaperThumb.isNotEmpty ? wallpaperThumb : fullUrl;
     final String? displayAuthor = by.isNotEmpty
         ? by
         : uploadedBy.isEmpty

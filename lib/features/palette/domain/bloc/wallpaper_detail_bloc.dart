@@ -14,8 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
 @injectable
-class WallpaperDetailBloc
-    extends Bloc<WallpaperDetailEvent, WallpaperDetailState> {
+class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailState> {
   WallpaperDetailBloc(
     this._prismRepository,
     this._wallhavenRepository,
@@ -45,27 +44,18 @@ class WallpaperDetailBloc
   final UpdateWallpaperViewsUsecase _updateViewsUsecase;
   final PaletteBloc _paletteBloc;
 
-  Future<void> _onLoadFromEntity(
-    LoadFromEntity event,
-    Emitter<WallpaperDetailState> emit,
-  ) async {
+  Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoaded(entity: event.entity));
     _requestPalette(event.entity.thumbnailUrl);
     _fetchAndUpdateViews(event.entity);
     await _enrichWallhavenFromFeedIfNeeded(event.entity, emit);
   }
 
-  Future<void> _onLoadFromId(
-    LoadFromId event,
-    Emitter<WallpaperDetailState> emit,
-  ) async {
+  Future<void> _onLoadFromId(LoadFromId event, Emitter<WallpaperDetailState> emit) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
 
     try {
-      final result = await _fetchWallpaper(
-        wallId: event.wallId,
-        source: event.source,
-      );
+      final result = await _fetchWallpaper(wallId: event.wallId, source: event.source);
 
       emit(WallpaperDetailLoaded(entity: result));
       _requestPalette(result.thumbnailUrl);
@@ -75,10 +65,7 @@ class WallpaperDetailBloc
     }
   }
 
-  Future<void> _onFetchViews(
-    FetchViews event,
-    Emitter<WallpaperDetailState> emit,
-  ) async {
+  Future<void> _onFetchViews(FetchViews event, Emitter<WallpaperDetailState> emit) async {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
@@ -96,12 +83,7 @@ class WallpaperDetailBloc
       onFailure: (failure) {
         final latestState = state;
         if (latestState is! WallpaperDetailLoaded) return;
-        emit(
-          latestState.copyWith(
-            viewsLoading: false,
-            viewsError: failure.message,
-          ),
-        );
+        emit(latestState.copyWith(viewsLoading: false, viewsError: failure.message));
       },
       onSuccess: (views) {
         final latestState = state;
@@ -111,20 +93,14 @@ class WallpaperDetailBloc
     );
   }
 
-  void _onSelectAccentColor(
-    SelectAccentColor event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onSelectAccentColor(SelectAccentColor event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(accent: event.color, colorChanged: true));
   }
 
-  void _onCycleAccentColor(
-    CycleAccentColor event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onCycleAccentColor(CycleAccentColor event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
@@ -140,20 +116,14 @@ class WallpaperDetailBloc
     emit(currentState.copyWith(accent: nextColor, colorChanged: true));
   }
 
-  void _onResetAccentColor(
-    ResetAccentColor event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onResetAccentColor(ResetAccentColor event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(colorChanged: false));
   }
 
-  void _onCaptureScreenshot(
-    CaptureScreenshot event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onCaptureScreenshot(CaptureScreenshot event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
@@ -175,47 +145,31 @@ class WallpaperDetailBloc
     emit(currentState.copyWith(panelCollapsed: true, panelClosed: true));
   }
 
-  void _onPanelScrollStart(
-    OnPanelScrollStart event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onPanelScrollStart(OnPanelScrollStart event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(panelScrollInProgress: true));
   }
 
-  void _onPanelScrollEnd(
-    OnPanelScrollEnd event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onPanelScrollEnd(OnPanelScrollEnd event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(panelScrollInProgress: false));
   }
 
-  void _onUpdateColorsFromPalette(
-    UpdateColorsFromPalette event,
-    Emitter<WallpaperDetailState> emit,
-  ) {
+  void _onUpdateColorsFromPalette(UpdateColorsFromPalette event, Emitter<WallpaperDetailState> emit) {
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
-    final limitedColors = event.colors.length > 5
-        ? event.colors.sublist(0, 5)
-        : event.colors;
-    final newAccent = limitedColors.isNotEmpty
-        ? limitedColors[0]
-        : currentState.accent;
+    final limitedColors = event.colors.length > 5 ? event.colors.sublist(0, 5) : event.colors;
+    final newAccent = limitedColors.isNotEmpty ? limitedColors[0] : currentState.accent;
 
     emit(currentState.copyWith(colors: limitedColors, accent: newAccent));
   }
 
-  Future<WallpaperDetailEntity> _fetchWallpaper({
-    required String wallId,
-    required WallpaperSource source,
-  }) async {
+  Future<WallpaperDetailEntity> _fetchWallpaper({required String wallId, required WallpaperSource source}) async {
     switch (source) {
       case WallpaperSource.prism:
         final result = await _prismRepository.fetchById(wallId);
@@ -223,8 +177,7 @@ class WallpaperDetailBloc
           onFailure: (failure) => throw Exception(failure.message),
           onSuccess: (wallpaper) {
             if (wallpaper == null) throw Exception('Wallpaper not found');
-            return PrismDetailEntity(wallpaper: wallpaper)
-                as WallpaperDetailEntity;
+            return PrismDetailEntity(wallpaper: wallpaper) as WallpaperDetailEntity;
           },
         );
 
@@ -294,13 +247,10 @@ class WallpaperDetailBloc
         if (latest is! WallpaperDetailLoaded) {
           return;
         }
-        if (latest.entity.id != wallId ||
-            latest.entity.source != WallpaperSource.wallhaven) {
+        if (latest.entity.id != wallId || latest.entity.source != WallpaperSource.wallhaven) {
           return;
         }
-        emit(
-          latest.copyWith(entity: WallhavenDetailEntity(wallpaper: wallpaper)),
-        );
+        emit(latest.copyWith(entity: WallhavenDetailEntity(wallpaper: wallpaper)));
       },
     );
   }
