@@ -31,6 +31,13 @@ abstract class WallhavenMetaDto with _$WallhavenMetaDto {
 }
 
 @freezed
+abstract class WallhavenUploaderDto with _$WallhavenUploaderDto {
+  const factory WallhavenUploaderDto({String? username}) = _WallhavenUploaderDto;
+
+  factory WallhavenUploaderDto.fromJson(Map<String, dynamic> json) => _$WallhavenUploaderDtoFromJson(json);
+}
+
+@freezed
 abstract class WallhavenWallpaperDto with _$WallhavenWallpaperDto {
   const factory WallhavenWallpaperDto({
     required String id,
@@ -45,6 +52,7 @@ abstract class WallhavenWallpaperDto with _$WallhavenWallpaperDto {
     @Default(<String>[]) List<String> colors,
     WallhavenThumbsDto? thumbs,
     @Default(<WallhavenTagDto>[]) List<WallhavenTagDto> tags,
+    WallhavenUploaderDto? uploader,
   }) = _WallhavenWallpaperDto;
 
   factory WallhavenWallpaperDto.fromJson(Map<String, dynamic> json) => _$WallhavenWallpaperDtoFromJson(json);

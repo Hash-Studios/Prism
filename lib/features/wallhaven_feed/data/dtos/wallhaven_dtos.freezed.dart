@@ -862,9 +862,272 @@ as int,
 
 
 /// @nodoc
+mixin _$WallhavenUploaderDto {
+
+ String? get username;
+/// Create a copy of WallhavenUploaderDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$WallhavenUploaderDtoCopyWith<WallhavenUploaderDto> get copyWith => _$WallhavenUploaderDtoCopyWithImpl<WallhavenUploaderDto>(this as WallhavenUploaderDto, _$identity);
+
+  /// Serializes this WallhavenUploaderDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallhavenUploaderDto&&(identical(other.username, username) || other.username == username));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,username);
+
+@override
+String toString() {
+  return 'WallhavenUploaderDto(username: $username)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $WallhavenUploaderDtoCopyWith<$Res>  {
+  factory $WallhavenUploaderDtoCopyWith(WallhavenUploaderDto value, $Res Function(WallhavenUploaderDto) _then) = _$WallhavenUploaderDtoCopyWithImpl;
+@useResult
+$Res call({
+ String? username
+});
+
+
+
+
+}
+/// @nodoc
+class _$WallhavenUploaderDtoCopyWithImpl<$Res>
+    implements $WallhavenUploaderDtoCopyWith<$Res> {
+  _$WallhavenUploaderDtoCopyWithImpl(this._self, this._then);
+
+  final WallhavenUploaderDto _self;
+  final $Res Function(WallhavenUploaderDto) _then;
+
+/// Create a copy of WallhavenUploaderDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? username = freezed,}) {
+  return _then(_self.copyWith(
+username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [WallhavenUploaderDto].
+extension WallhavenUploaderDtoPatterns on WallhavenUploaderDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _WallhavenUploaderDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _WallhavenUploaderDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _WallhavenUploaderDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _WallhavenUploaderDto():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _WallhavenUploaderDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _WallhavenUploaderDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? username)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _WallhavenUploaderDto() when $default != null:
+return $default(_that.username);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? username)  $default,) {final _that = this;
+switch (_that) {
+case _WallhavenUploaderDto():
+return $default(_that.username);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? username)?  $default,) {final _that = this;
+switch (_that) {
+case _WallhavenUploaderDto() when $default != null:
+return $default(_that.username);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _WallhavenUploaderDto implements WallhavenUploaderDto {
+  const _WallhavenUploaderDto({this.username});
+  factory _WallhavenUploaderDto.fromJson(Map<String, dynamic> json) => _$WallhavenUploaderDtoFromJson(json);
+
+@override final  String? username;
+
+/// Create a copy of WallhavenUploaderDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$WallhavenUploaderDtoCopyWith<_WallhavenUploaderDto> get copyWith => __$WallhavenUploaderDtoCopyWithImpl<_WallhavenUploaderDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$WallhavenUploaderDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallhavenUploaderDto&&(identical(other.username, username) || other.username == username));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,username);
+
+@override
+String toString() {
+  return 'WallhavenUploaderDto(username: $username)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$WallhavenUploaderDtoCopyWith<$Res> implements $WallhavenUploaderDtoCopyWith<$Res> {
+  factory _$WallhavenUploaderDtoCopyWith(_WallhavenUploaderDto value, $Res Function(_WallhavenUploaderDto) _then) = __$WallhavenUploaderDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String? username
+});
+
+
+
+
+}
+/// @nodoc
+class __$WallhavenUploaderDtoCopyWithImpl<$Res>
+    implements _$WallhavenUploaderDtoCopyWith<$Res> {
+  __$WallhavenUploaderDtoCopyWithImpl(this._self, this._then);
+
+  final _WallhavenUploaderDto _self;
+  final $Res Function(_WallhavenUploaderDto) _then;
+
+/// Create a copy of WallhavenUploaderDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? username = freezed,}) {
+  return _then(_WallhavenUploaderDto(
+username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$WallhavenWallpaperDto {
 
- String get id; String get path; String get resolution;@JsonKey(name: 'file_size') int? get fileSize; String get category; int? get views;@JsonKey(name: 'favorites') int? get favorites;@JsonKey(name: 'dimension_x') int? get dimensionX;@JsonKey(name: 'dimension_y') int? get dimensionY; List<String> get colors; WallhavenThumbsDto? get thumbs; List<WallhavenTagDto> get tags;
+ String get id; String get path; String get resolution;@JsonKey(name: 'file_size') int? get fileSize; String get category; int? get views;@JsonKey(name: 'favorites') int? get favorites;@JsonKey(name: 'dimension_x') int? get dimensionX;@JsonKey(name: 'dimension_y') int? get dimensionY; List<String> get colors; WallhavenThumbsDto? get thumbs; List<WallhavenTagDto> get tags; WallhavenUploaderDto? get uploader;
 /// Create a copy of WallhavenWallpaperDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -877,16 +1140,16 @@ $WallhavenWallpaperDtoCopyWith<WallhavenWallpaperDto> get copyWith => _$Wallhave
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallhavenWallpaperDto&&(identical(other.id, id) || other.id == id)&&(identical(other.path, path) || other.path == path)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.favorites, favorites) || other.favorites == favorites)&&(identical(other.dimensionX, dimensionX) || other.dimensionX == dimensionX)&&(identical(other.dimensionY, dimensionY) || other.dimensionY == dimensionY)&&const DeepCollectionEquality().equals(other.colors, colors)&&(identical(other.thumbs, thumbs) || other.thumbs == thumbs)&&const DeepCollectionEquality().equals(other.tags, tags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WallhavenWallpaperDto&&(identical(other.id, id) || other.id == id)&&(identical(other.path, path) || other.path == path)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.favorites, favorites) || other.favorites == favorites)&&(identical(other.dimensionX, dimensionX) || other.dimensionX == dimensionX)&&(identical(other.dimensionY, dimensionY) || other.dimensionY == dimensionY)&&const DeepCollectionEquality().equals(other.colors, colors)&&(identical(other.thumbs, thumbs) || other.thumbs == thumbs)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.uploader, uploader) || other.uploader == uploader));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,path,resolution,fileSize,category,views,favorites,dimensionX,dimensionY,const DeepCollectionEquality().hash(colors),thumbs,const DeepCollectionEquality().hash(tags));
+int get hashCode => Object.hash(runtimeType,id,path,resolution,fileSize,category,views,favorites,dimensionX,dimensionY,const DeepCollectionEquality().hash(colors),thumbs,const DeepCollectionEquality().hash(tags),uploader);
 
 @override
 String toString() {
-  return 'WallhavenWallpaperDto(id: $id, path: $path, resolution: $resolution, fileSize: $fileSize, category: $category, views: $views, favorites: $favorites, dimensionX: $dimensionX, dimensionY: $dimensionY, colors: $colors, thumbs: $thumbs, tags: $tags)';
+  return 'WallhavenWallpaperDto(id: $id, path: $path, resolution: $resolution, fileSize: $fileSize, category: $category, views: $views, favorites: $favorites, dimensionX: $dimensionX, dimensionY: $dimensionY, colors: $colors, thumbs: $thumbs, tags: $tags, uploader: $uploader)';
 }
 
 
@@ -897,11 +1160,11 @@ abstract mixin class $WallhavenWallpaperDtoCopyWith<$Res>  {
   factory $WallhavenWallpaperDtoCopyWith(WallhavenWallpaperDto value, $Res Function(WallhavenWallpaperDto) _then) = _$WallhavenWallpaperDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String path, String resolution,@JsonKey(name: 'file_size') int? fileSize, String category, int? views,@JsonKey(name: 'favorites') int? favorites,@JsonKey(name: 'dimension_x') int? dimensionX,@JsonKey(name: 'dimension_y') int? dimensionY, List<String> colors, WallhavenThumbsDto? thumbs, List<WallhavenTagDto> tags
+ String id, String path, String resolution,@JsonKey(name: 'file_size') int? fileSize, String category, int? views,@JsonKey(name: 'favorites') int? favorites,@JsonKey(name: 'dimension_x') int? dimensionX,@JsonKey(name: 'dimension_y') int? dimensionY, List<String> colors, WallhavenThumbsDto? thumbs, List<WallhavenTagDto> tags, WallhavenUploaderDto? uploader
 });
 
 
-$WallhavenThumbsDtoCopyWith<$Res>? get thumbs;
+$WallhavenThumbsDtoCopyWith<$Res>? get thumbs;$WallhavenUploaderDtoCopyWith<$Res>? get uploader;
 
 }
 /// @nodoc
@@ -914,7 +1177,7 @@ class _$WallhavenWallpaperDtoCopyWithImpl<$Res>
 
 /// Create a copy of WallhavenWallpaperDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? path = null,Object? resolution = null,Object? fileSize = freezed,Object? category = null,Object? views = freezed,Object? favorites = freezed,Object? dimensionX = freezed,Object? dimensionY = freezed,Object? colors = null,Object? thumbs = freezed,Object? tags = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? path = null,Object? resolution = null,Object? fileSize = freezed,Object? category = null,Object? views = freezed,Object? favorites = freezed,Object? dimensionX = freezed,Object? dimensionY = freezed,Object? colors = null,Object? thumbs = freezed,Object? tags = null,Object? uploader = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
@@ -928,7 +1191,8 @@ as int?,dimensionY: freezed == dimensionY ? _self.dimensionY : dimensionY // ign
 as int?,colors: null == colors ? _self.colors : colors // ignore: cast_nullable_to_non_nullable
 as List<String>,thumbs: freezed == thumbs ? _self.thumbs : thumbs // ignore: cast_nullable_to_non_nullable
 as WallhavenThumbsDto?,tags: null == tags ? _self.tags : tags // ignore: cast_nullable_to_non_nullable
-as List<WallhavenTagDto>,
+as List<WallhavenTagDto>,uploader: freezed == uploader ? _self.uploader : uploader // ignore: cast_nullable_to_non_nullable
+as WallhavenUploaderDto?,
   ));
 }
 /// Create a copy of WallhavenWallpaperDto
@@ -942,6 +1206,18 @@ $WallhavenThumbsDtoCopyWith<$Res>? get thumbs {
 
   return $WallhavenThumbsDtoCopyWith<$Res>(_self.thumbs!, (value) {
     return _then(_self.copyWith(thumbs: value));
+  });
+}/// Create a copy of WallhavenWallpaperDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WallhavenUploaderDtoCopyWith<$Res>? get uploader {
+    if (_self.uploader == null) {
+    return null;
+  }
+
+  return $WallhavenUploaderDtoCopyWith<$Res>(_self.uploader!, (value) {
+    return _then(_self.copyWith(uploader: value));
   });
 }
 }
@@ -1025,10 +1301,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String path,  String resolution, @JsonKey(name: 'file_size')  int? fileSize,  String category,  int? views, @JsonKey(name: 'favorites')  int? favorites, @JsonKey(name: 'dimension_x')  int? dimensionX, @JsonKey(name: 'dimension_y')  int? dimensionY,  List<String> colors,  WallhavenThumbsDto? thumbs,  List<WallhavenTagDto> tags)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String path,  String resolution, @JsonKey(name: 'file_size')  int? fileSize,  String category,  int? views, @JsonKey(name: 'favorites')  int? favorites, @JsonKey(name: 'dimension_x')  int? dimensionX, @JsonKey(name: 'dimension_y')  int? dimensionY,  List<String> colors,  WallhavenThumbsDto? thumbs,  List<WallhavenTagDto> tags,  WallhavenUploaderDto? uploader)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WallhavenWallpaperDto() when $default != null:
-return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.category,_that.views,_that.favorites,_that.dimensionX,_that.dimensionY,_that.colors,_that.thumbs,_that.tags);case _:
+return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.category,_that.views,_that.favorites,_that.dimensionX,_that.dimensionY,_that.colors,_that.thumbs,_that.tags,_that.uploader);case _:
   return orElse();
 
 }
@@ -1046,10 +1322,10 @@ return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.catego
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String path,  String resolution, @JsonKey(name: 'file_size')  int? fileSize,  String category,  int? views, @JsonKey(name: 'favorites')  int? favorites, @JsonKey(name: 'dimension_x')  int? dimensionX, @JsonKey(name: 'dimension_y')  int? dimensionY,  List<String> colors,  WallhavenThumbsDto? thumbs,  List<WallhavenTagDto> tags)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String path,  String resolution, @JsonKey(name: 'file_size')  int? fileSize,  String category,  int? views, @JsonKey(name: 'favorites')  int? favorites, @JsonKey(name: 'dimension_x')  int? dimensionX, @JsonKey(name: 'dimension_y')  int? dimensionY,  List<String> colors,  WallhavenThumbsDto? thumbs,  List<WallhavenTagDto> tags,  WallhavenUploaderDto? uploader)  $default,) {final _that = this;
 switch (_that) {
 case _WallhavenWallpaperDto():
-return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.category,_that.views,_that.favorites,_that.dimensionX,_that.dimensionY,_that.colors,_that.thumbs,_that.tags);case _:
+return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.category,_that.views,_that.favorites,_that.dimensionX,_that.dimensionY,_that.colors,_that.thumbs,_that.tags,_that.uploader);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1066,10 +1342,10 @@ return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.catego
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String path,  String resolution, @JsonKey(name: 'file_size')  int? fileSize,  String category,  int? views, @JsonKey(name: 'favorites')  int? favorites, @JsonKey(name: 'dimension_x')  int? dimensionX, @JsonKey(name: 'dimension_y')  int? dimensionY,  List<String> colors,  WallhavenThumbsDto? thumbs,  List<WallhavenTagDto> tags)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String path,  String resolution, @JsonKey(name: 'file_size')  int? fileSize,  String category,  int? views, @JsonKey(name: 'favorites')  int? favorites, @JsonKey(name: 'dimension_x')  int? dimensionX, @JsonKey(name: 'dimension_y')  int? dimensionY,  List<String> colors,  WallhavenThumbsDto? thumbs,  List<WallhavenTagDto> tags,  WallhavenUploaderDto? uploader)?  $default,) {final _that = this;
 switch (_that) {
 case _WallhavenWallpaperDto() when $default != null:
-return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.category,_that.views,_that.favorites,_that.dimensionX,_that.dimensionY,_that.colors,_that.thumbs,_that.tags);case _:
+return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.category,_that.views,_that.favorites,_that.dimensionX,_that.dimensionY,_that.colors,_that.thumbs,_that.tags,_that.uploader);case _:
   return null;
 
 }
@@ -1081,7 +1357,7 @@ return $default(_that.id,_that.path,_that.resolution,_that.fileSize,_that.catego
 @JsonSerializable()
 
 class _WallhavenWallpaperDto implements WallhavenWallpaperDto {
-  const _WallhavenWallpaperDto({required this.id, this.path = '', this.resolution = '', @JsonKey(name: 'file_size') this.fileSize, this.category = '', this.views, @JsonKey(name: 'favorites') this.favorites, @JsonKey(name: 'dimension_x') this.dimensionX, @JsonKey(name: 'dimension_y') this.dimensionY, final  List<String> colors = const <String>[], this.thumbs, final  List<WallhavenTagDto> tags = const <WallhavenTagDto>[]}): _colors = colors,_tags = tags;
+  const _WallhavenWallpaperDto({required this.id, this.path = '', this.resolution = '', @JsonKey(name: 'file_size') this.fileSize, this.category = '', this.views, @JsonKey(name: 'favorites') this.favorites, @JsonKey(name: 'dimension_x') this.dimensionX, @JsonKey(name: 'dimension_y') this.dimensionY, final  List<String> colors = const <String>[], this.thumbs, final  List<WallhavenTagDto> tags = const <WallhavenTagDto>[], this.uploader}): _colors = colors,_tags = tags;
   factory _WallhavenWallpaperDto.fromJson(Map<String, dynamic> json) => _$WallhavenWallpaperDtoFromJson(json);
 
 @override final  String id;
@@ -1108,6 +1384,7 @@ class _WallhavenWallpaperDto implements WallhavenWallpaperDto {
   return EqualUnmodifiableListView(_tags);
 }
 
+@override final  WallhavenUploaderDto? uploader;
 
 /// Create a copy of WallhavenWallpaperDto
 /// with the given fields replaced by the non-null parameter values.
@@ -1122,16 +1399,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallhavenWallpaperDto&&(identical(other.id, id) || other.id == id)&&(identical(other.path, path) || other.path == path)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.favorites, favorites) || other.favorites == favorites)&&(identical(other.dimensionX, dimensionX) || other.dimensionX == dimensionX)&&(identical(other.dimensionY, dimensionY) || other.dimensionY == dimensionY)&&const DeepCollectionEquality().equals(other._colors, _colors)&&(identical(other.thumbs, thumbs) || other.thumbs == thumbs)&&const DeepCollectionEquality().equals(other._tags, _tags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WallhavenWallpaperDto&&(identical(other.id, id) || other.id == id)&&(identical(other.path, path) || other.path == path)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.fileSize, fileSize) || other.fileSize == fileSize)&&(identical(other.category, category) || other.category == category)&&(identical(other.views, views) || other.views == views)&&(identical(other.favorites, favorites) || other.favorites == favorites)&&(identical(other.dimensionX, dimensionX) || other.dimensionX == dimensionX)&&(identical(other.dimensionY, dimensionY) || other.dimensionY == dimensionY)&&const DeepCollectionEquality().equals(other._colors, _colors)&&(identical(other.thumbs, thumbs) || other.thumbs == thumbs)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.uploader, uploader) || other.uploader == uploader));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,path,resolution,fileSize,category,views,favorites,dimensionX,dimensionY,const DeepCollectionEquality().hash(_colors),thumbs,const DeepCollectionEquality().hash(_tags));
+int get hashCode => Object.hash(runtimeType,id,path,resolution,fileSize,category,views,favorites,dimensionX,dimensionY,const DeepCollectionEquality().hash(_colors),thumbs,const DeepCollectionEquality().hash(_tags),uploader);
 
 @override
 String toString() {
-  return 'WallhavenWallpaperDto(id: $id, path: $path, resolution: $resolution, fileSize: $fileSize, category: $category, views: $views, favorites: $favorites, dimensionX: $dimensionX, dimensionY: $dimensionY, colors: $colors, thumbs: $thumbs, tags: $tags)';
+  return 'WallhavenWallpaperDto(id: $id, path: $path, resolution: $resolution, fileSize: $fileSize, category: $category, views: $views, favorites: $favorites, dimensionX: $dimensionX, dimensionY: $dimensionY, colors: $colors, thumbs: $thumbs, tags: $tags, uploader: $uploader)';
 }
 
 
@@ -1142,11 +1419,11 @@ abstract mixin class _$WallhavenWallpaperDtoCopyWith<$Res> implements $Wallhaven
   factory _$WallhavenWallpaperDtoCopyWith(_WallhavenWallpaperDto value, $Res Function(_WallhavenWallpaperDto) _then) = __$WallhavenWallpaperDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String path, String resolution,@JsonKey(name: 'file_size') int? fileSize, String category, int? views,@JsonKey(name: 'favorites') int? favorites,@JsonKey(name: 'dimension_x') int? dimensionX,@JsonKey(name: 'dimension_y') int? dimensionY, List<String> colors, WallhavenThumbsDto? thumbs, List<WallhavenTagDto> tags
+ String id, String path, String resolution,@JsonKey(name: 'file_size') int? fileSize, String category, int? views,@JsonKey(name: 'favorites') int? favorites,@JsonKey(name: 'dimension_x') int? dimensionX,@JsonKey(name: 'dimension_y') int? dimensionY, List<String> colors, WallhavenThumbsDto? thumbs, List<WallhavenTagDto> tags, WallhavenUploaderDto? uploader
 });
 
 
-@override $WallhavenThumbsDtoCopyWith<$Res>? get thumbs;
+@override $WallhavenThumbsDtoCopyWith<$Res>? get thumbs;@override $WallhavenUploaderDtoCopyWith<$Res>? get uploader;
 
 }
 /// @nodoc
@@ -1159,7 +1436,7 @@ class __$WallhavenWallpaperDtoCopyWithImpl<$Res>
 
 /// Create a copy of WallhavenWallpaperDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? path = null,Object? resolution = null,Object? fileSize = freezed,Object? category = null,Object? views = freezed,Object? favorites = freezed,Object? dimensionX = freezed,Object? dimensionY = freezed,Object? colors = null,Object? thumbs = freezed,Object? tags = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? path = null,Object? resolution = null,Object? fileSize = freezed,Object? category = null,Object? views = freezed,Object? favorites = freezed,Object? dimensionX = freezed,Object? dimensionY = freezed,Object? colors = null,Object? thumbs = freezed,Object? tags = null,Object? uploader = freezed,}) {
   return _then(_WallhavenWallpaperDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,path: null == path ? _self.path : path // ignore: cast_nullable_to_non_nullable
@@ -1173,7 +1450,8 @@ as int?,dimensionY: freezed == dimensionY ? _self.dimensionY : dimensionY // ign
 as int?,colors: null == colors ? _self._colors : colors // ignore: cast_nullable_to_non_nullable
 as List<String>,thumbs: freezed == thumbs ? _self.thumbs : thumbs // ignore: cast_nullable_to_non_nullable
 as WallhavenThumbsDto?,tags: null == tags ? _self._tags : tags // ignore: cast_nullable_to_non_nullable
-as List<WallhavenTagDto>,
+as List<WallhavenTagDto>,uploader: freezed == uploader ? _self.uploader : uploader // ignore: cast_nullable_to_non_nullable
+as WallhavenUploaderDto?,
   ));
 }
 
@@ -1188,6 +1466,18 @@ $WallhavenThumbsDtoCopyWith<$Res>? get thumbs {
 
   return $WallhavenThumbsDtoCopyWith<$Res>(_self.thumbs!, (value) {
     return _then(_self.copyWith(thumbs: value));
+  });
+}/// Create a copy of WallhavenWallpaperDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$WallhavenUploaderDtoCopyWith<$Res>? get uploader {
+    if (_self.uploader == null) {
+    return null;
+  }
+
+  return $WallhavenUploaderDtoCopyWith<$Res>(_self.uploader!, (value) {
+    return _then(_self.copyWith(uploader: value));
   });
 }
 }

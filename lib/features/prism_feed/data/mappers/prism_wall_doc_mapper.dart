@@ -8,6 +8,11 @@ extension PrismWallDocMapper on PrismWallDocDto {
     final String resolvedId = id.isNotEmpty ? id : docId;
     final String fullUrl = wallpaperUrl;
     final String thumbnailUrl = wallpaperThumb.isNotEmpty ? wallpaperThumb : fullUrl;
+    final String? displayAuthor = by.isNotEmpty
+        ? by
+        : uploadedBy.isEmpty
+        ? null
+        : uploadedBy;
 
     return PrismWallpaper(
       core: WallpaperCore(
@@ -17,7 +22,9 @@ extension PrismWallDocMapper on PrismWallDocDto {
         thumbnailUrl: thumbnailUrl,
         resolution: resolution.isEmpty ? null : resolution,
         sizeBytes: fileSize,
-        authorName: uploadedBy.isEmpty ? null : uploadedBy,
+        authorName: displayAuthor,
+        authorEmail: email.isEmpty ? null : email,
+        authorPhoto: userPhoto.isEmpty ? null : userPhoto,
         category: desc.isEmpty ? null : desc,
         createdAt: createdAt,
       ),

@@ -7,6 +7,8 @@ extension WallhavenWallpaperDtoMapper on WallhavenWallpaperDto {
   WallhavenWallpaper toDomain() {
     final String fullUrl = path;
     final String thumbnailUrl = thumbs?.large ?? thumbs?.original ?? thumbs?.small ?? fullUrl;
+    final String? uploaderUsername = uploader?.username?.trim();
+    final bool hasUploader = uploaderUsername != null && uploaderUsername.isNotEmpty;
 
     return WallhavenWallpaper(
       core: WallpaperCore(
@@ -16,7 +18,10 @@ extension WallhavenWallpaperDtoMapper on WallhavenWallpaperDto {
         thumbnailUrl: thumbnailUrl,
         resolution: resolution.isEmpty ? null : resolution,
         sizeBytes: fileSize,
+        authorName: hasUploader ? uploaderUsername : null,
+        authorId: hasUploader ? uploaderUsername : null,
         category: category.isEmpty ? null : category,
+        favourites: favorites,
       ),
       views: views,
       favorites: favorites,

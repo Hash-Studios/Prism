@@ -7,9 +7,11 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
@@ -516,16 +518,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 _buildInfoRow(context, JamIcons.save, "${(wallpaper.core.sizeBytes! / 1000000).toStringAsFixed(2)} MB"),
             ],
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (wallpaper.core.authorName != null)
-                _buildInfoRow(context, JamIcons.user, wallpaper.core.authorName!, reversed: true),
-              if (wallpaper.core.createdAt != null)
-                _buildInfoRow(context, JamIcons.calendar, _formatDate(wallpaper.core.createdAt!), reversed: true),
-              _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
-            ],
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildPrismAuthorRow(context, wallpaper),
+                if (wallpaper.core.createdAt != null)
+                  _buildInfoRow(context, JamIcons.calendar, _formatDate(wallpaper.core.createdAt!), reversed: true),
+                _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
+              ],
+            ),
           ),
         ],
       ),
@@ -558,36 +561,42 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 ),
             ],
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (wallpaper.core.category != null)
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (wallpaper.core.authorName != null && wallpaper.core.authorName!.isNotEmpty) ...[
+                  _buildWallhavenAuthorLink(context, wallpaper.core.authorName!),
+                  const SizedBox(height: 5),
+                ],
+                if (wallpaper.core.category != null)
+                  _buildInfoRow(
+                    context,
+                    JamIcons.unordered_list,
+                    wallpaper.core.category!,
+                    reversed: true,
+                    showIconLast: true,
+                  ),
+                const SizedBox(height: 5),
+                if (wallpaper.core.resolution != null)
+                  _buildInfoRow(
+                    context,
+                    JamIcons.set_square,
+                    wallpaper.core.resolution!,
+                    reversed: true,
+                    showIconLast: true,
+                  ),
+                const SizedBox(height: 5),
                 _buildInfoRow(
                   context,
-                  JamIcons.unordered_list,
-                  wallpaper.core.category!,
+                  JamIcons.database,
+                  sourceDisplayName(entity.source),
                   reversed: true,
                   showIconLast: true,
                 ),
-              const SizedBox(height: 5),
-              if (wallpaper.core.resolution != null)
-                _buildInfoRow(
-                  context,
-                  JamIcons.set_square,
-                  wallpaper.core.resolution!,
-                  reversed: true,
-                  showIconLast: true,
-                ),
-              const SizedBox(height: 5),
-              _buildInfoRow(
-                context,
-                JamIcons.database,
-                sourceDisplayName(entity.source),
-                reversed: true,
-                showIconLast: true,
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -613,34 +622,175 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 _buildInfoRow(context, JamIcons.set_square, "${wallpaper.core.width}x${wallpaper.core.height}"),
             ],
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (wallpaper.photographer != null)
-                SizedBox(
-                  width: 160,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: ActionChip(
-                      onPressed: () {},
-                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                      avatar: Icon(JamIcons.camera, color: Theme.of(context).colorScheme.secondary),
-                      labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
-                      label: Text(
-                        wallpaper.photographer!,
-                        style: Theme.of(context).textTheme.bodyMedium!
-                            .copyWith(color: Theme.of(context).colorScheme.secondary)
-                            .copyWith(fontSize: 16),
-                        overflow: TextOverflow.fade,
-                      ),
-                    ),
-                  ),
-                ),
-              _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true, showIconLast: true),
-            ],
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (wallpaper.photographer != null && wallpaper.photographer!.isNotEmpty)
+                  _buildPexelsPhotographerLink(context, wallpaper.photographer!, wallpaper.photographerUrl),
+                _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true, showIconLast: true),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPrismAuthorRow(BuildContext context, PrismWallpaper wallpaper) {
+    final String nameTrimmed = wallpaper.core.authorName?.trim() ?? '';
+    final String photoTrimmed = wallpaper.core.authorPhoto?.trim() ?? '';
+    final String emailTrimmed = wallpaper.core.authorEmail?.trim() ?? '';
+    final bool hasName = nameTrimmed.isNotEmpty;
+    final bool hasPhoto = photoTrimmed.isNotEmpty;
+
+    final String? displayLabel = hasName
+        ? nameTrimmed
+        : emailTrimmed.isNotEmpty
+        ? emailTrimmed
+        : null;
+
+    if (displayLabel == null && !hasPhoto) {
+      return const SizedBox.shrink();
+    }
+
+    final String initialChar = displayLabel != null && displayLabel.isNotEmpty
+        ? displayLabel.characters.first.toUpperCase()
+        : '?';
+
+    final Color secondary = Theme.of(context).colorScheme.secondary;
+    final Widget avatar = CircleAvatar(
+      radius: 18,
+      backgroundColor: secondary.withValues(alpha: 0.15),
+      child: hasPhoto
+          ? ClipOval(
+              child: CachedNetworkImage(
+                imageUrl: photoTrimmed,
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                errorWidget: (context, url, error) => Text(
+                  initialChar,
+                  style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+              ),
+            )
+          : Text(
+              initialChar,
+              style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+    );
+
+    final bool canNavigate = emailTrimmed.isNotEmpty;
+
+    if (displayLabel == null) {
+      final Widget solo = Padding(padding: const EdgeInsets.only(bottom: 4), child: avatar);
+      if (!canNavigate) {
+        return solo;
+      }
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: emailTrimmed)),
+          borderRadius: BorderRadius.circular(8),
+          child: solo,
+        ),
+      );
+    }
+
+    Widget row = Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              displayLabel,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: secondary),
+            ),
+          ),
+          const SizedBox(width: 10),
+          avatar,
+        ],
+      ),
+    );
+
+    if (canNavigate) {
+      row = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: emailTrimmed)),
+          borderRadius: BorderRadius.circular(8),
+          child: row,
+        ),
+      );
+    }
+    return row;
+  }
+
+  Widget _buildWallhavenAuthorLink(BuildContext context, String username) {
+    return SizedBox(
+      width: 200,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: InkWell(
+          onTap: () async {
+            final Uri uri = Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(username)}');
+            final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+            if (!ok && context.mounted) {
+              toasts.codeSend('Could not open profile');
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Text(
+              username,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPexelsPhotographerLink(BuildContext context, String photographer, String? photographerUrl) {
+    final String urlForLaunch = photographerUrl?.trim() ?? '';
+    final bool hasUrl = urlForLaunch.isNotEmpty;
+    final TextStyle style = Theme.of(
+      context,
+    ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: SizedBox(
+        width: 200,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: hasUrl
+              ? InkWell(
+                  onTap: () async {
+                    final Uri? uri = Uri.tryParse(urlForLaunch);
+                    if (uri == null) {
+                      return;
+                    }
+                    final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    if (!ok && context.mounted) {
+                      toasts.codeSend('Could not open profile');
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(photographer, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style),
+                  ),
+                )
+              : Text(photographer, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style),
+        ),
       ),
     );
   }

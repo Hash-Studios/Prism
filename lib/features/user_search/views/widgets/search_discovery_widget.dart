@@ -28,6 +28,8 @@ class SearchDiscoveryWidget extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
           _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
+          const SizedBox(height: 8),
+          const _FindCreatorsRow(),
           const SizedBox(height: 12),
           _TrendingSection(),
           const SizedBox(height: 16),
@@ -75,6 +77,53 @@ class _TagsRow extends StatelessWidget {
             onPressed: () => onTagPressed(tag),
           );
         },
+      ),
+    );
+  }
+}
+
+// ─── Find Creators Row ───────────────────────────────────────────────────────
+
+class _FindCreatorsRow extends StatelessWidget {
+  const _FindCreatorsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.router.push(const UserSearchRoute()),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(JamIcons.user_circle, size: 18, color: Theme.of(context).colorScheme.secondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Find Creators',
+                    style: TextStyle(
+                      fontFamily: 'Satoshi',
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  Text(
+                    'Search Prism users by name',
+                    style: TextStyle(
+                      fontFamily: 'Satoshi',
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+          ],
+        ),
       ),
     );
   }

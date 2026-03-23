@@ -19,6 +19,9 @@ _PrismWallDocDto _$PrismWallDocDtoFromJson(Map<String, dynamic> json) => _PrismW
   fileSize: (json['file_size'] as num?)?.toInt(),
   createdAt: const FirestoreDateTimeConverter().fromJson(json['createdAt']),
   uploadedBy: json['uploadedBy'] == null ? '' : const FirestoreStringConverter().fromJson(json['uploadedBy']),
+  by: json['by'] == null ? '' : const FirestoreStringConverter().fromJson(json['by']),
+  email: json['email'] == null ? '' : const FirestoreStringConverter().fromJson(json['email']),
+  userPhoto: json['userPhoto'] == null ? '' : const FirestoreStringConverter().fromJson(json['userPhoto']),
   desc: json['desc'] == null ? '' : const FirestoreStringConverter().fromJson(json['desc']),
   collections: json['collections'] == null
       ? const <String>[]
@@ -42,6 +45,9 @@ Map<String, dynamic> _$PrismWallDocDtoToJson(_PrismWallDocDto instance) => <Stri
   'file_size': instance.fileSize,
   'createdAt': const FirestoreDateTimeConverter().toJson(instance.createdAt),
   'uploadedBy': const FirestoreStringConverter().toJson(instance.uploadedBy),
+  'by': const FirestoreStringConverter().toJson(instance.by),
+  'email': const FirestoreStringConverter().toJson(instance.email),
+  'userPhoto': const FirestoreStringConverter().toJson(instance.userPhoto),
   'desc': const FirestoreStringConverter().toJson(instance.desc),
   'collections': const FirestoreStringListConverter().toJson(instance.collections),
   'tags': const FirestoreStringListConverter().toJson(instance.tags),
