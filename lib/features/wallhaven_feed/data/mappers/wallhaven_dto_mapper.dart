@@ -6,11 +6,9 @@ import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
 extension WallhavenWallpaperDtoMapper on WallhavenWallpaperDto {
   WallhavenWallpaper toDomain() {
     final String fullUrl = path;
-    final String thumbnailUrl =
-        thumbs?.large ?? thumbs?.original ?? thumbs?.small ?? fullUrl;
+    final String thumbnailUrl = thumbs?.large ?? thumbs?.original ?? thumbs?.small ?? fullUrl;
     final String? uploaderUsername = uploader?.username?.trim();
-    final bool hasUploader =
-        uploaderUsername != null && uploaderUsername.isNotEmpty;
+    final bool hasUploader = uploaderUsername != null && uploaderUsername.isNotEmpty;
 
     return WallhavenWallpaper(
       core: WallpaperCore(
@@ -35,10 +33,7 @@ extension WallhavenWallpaperDtoMapper on WallhavenWallpaperDto {
         if ((thumbs?.original ?? '').isNotEmpty) 'original': thumbs!.original!,
         if ((thumbs?.small ?? '').isNotEmpty) 'small': thumbs!.small!,
       },
-      tags: tags
-          .map((tag) => tag.name)
-          .where((name) => name.isNotEmpty)
-          .toList(growable: false),
+      tags: tags.map((tag) => tag.name).where((name) => name.isNotEmpty).toList(growable: false),
     );
   }
 }

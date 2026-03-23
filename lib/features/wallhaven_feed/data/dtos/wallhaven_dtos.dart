@@ -10,17 +10,14 @@ abstract class WallhavenSearchResponseDto with _$WallhavenSearchResponseDto {
     WallhavenMetaDto? meta,
   }) = _WallhavenSearchResponseDto;
 
-  factory WallhavenSearchResponseDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenSearchResponseDtoFromJson(json);
+  factory WallhavenSearchResponseDto.fromJson(Map<String, dynamic> json) => _$WallhavenSearchResponseDtoFromJson(json);
 }
 
 @freezed
 abstract class WallhavenSingleResponseDto with _$WallhavenSingleResponseDto {
-  const factory WallhavenSingleResponseDto({WallhavenWallpaperDto? data}) =
-      _WallhavenSingleResponseDto;
+  const factory WallhavenSingleResponseDto({WallhavenWallpaperDto? data}) = _WallhavenSingleResponseDto;
 
-  factory WallhavenSingleResponseDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenSingleResponseDtoFromJson(json);
+  factory WallhavenSingleResponseDto.fromJson(Map<String, dynamic> json) => _$WallhavenSingleResponseDtoFromJson(json);
 }
 
 @freezed
@@ -30,17 +27,14 @@ abstract class WallhavenMetaDto with _$WallhavenMetaDto {
     @JsonKey(name: 'last_page') @Default(1) int lastPage,
   }) = _WallhavenMetaDto;
 
-  factory WallhavenMetaDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenMetaDtoFromJson(json);
+  factory WallhavenMetaDto.fromJson(Map<String, dynamic> json) => _$WallhavenMetaDtoFromJson(json);
 }
 
 @freezed
 abstract class WallhavenUploaderDto with _$WallhavenUploaderDto {
-  const factory WallhavenUploaderDto({String? username}) =
-      _WallhavenUploaderDto;
+  const factory WallhavenUploaderDto({String? username}) = _WallhavenUploaderDto;
 
-  factory WallhavenUploaderDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenUploaderDtoFromJson(json);
+  factory WallhavenUploaderDto.fromJson(Map<String, dynamic> json) => _$WallhavenUploaderDtoFromJson(json);
 }
 
 @freezed
@@ -61,26 +55,19 @@ abstract class WallhavenWallpaperDto with _$WallhavenWallpaperDto {
     WallhavenUploaderDto? uploader,
   }) = _WallhavenWallpaperDto;
 
-  factory WallhavenWallpaperDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenWallpaperDtoFromJson(json);
+  factory WallhavenWallpaperDto.fromJson(Map<String, dynamic> json) => _$WallhavenWallpaperDtoFromJson(json);
 }
 
 @freezed
 abstract class WallhavenThumbsDto with _$WallhavenThumbsDto {
-  const factory WallhavenThumbsDto({
-    String? large,
-    String? original,
-    String? small,
-  }) = _WallhavenThumbsDto;
+  const factory WallhavenThumbsDto({String? large, String? original, String? small}) = _WallhavenThumbsDto;
 
-  factory WallhavenThumbsDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenThumbsDtoFromJson(json);
+  factory WallhavenThumbsDto.fromJson(Map<String, dynamic> json) => _$WallhavenThumbsDtoFromJson(json);
 }
 
 @freezed
 abstract class WallhavenTagDto with _$WallhavenTagDto {
   const factory WallhavenTagDto({@Default('') String name}) = _WallhavenTagDto;
 
-  factory WallhavenTagDto.fromJson(Map<String, dynamic> json) =>
-      _$WallhavenTagDtoFromJson(json);
+  factory WallhavenTagDto.fromJson(Map<String, dynamic> json) => _$WallhavenTagDtoFromJson(json);
 }
