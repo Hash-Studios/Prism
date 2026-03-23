@@ -1,5 +1,43 @@
 ## Changelog
 
+### v3.0.6
+- Version and build number update for release
+
+### v3.0.5
+- Improved wallpaper screenshot handling and notification permission prompt
+- Admin panel shows submission time
+- Fixed swipe-to-review gesture in admin review
+- Fixed scroll issues in several screens
+- Open profile from wallpaper detail
+- Fixed watermark incorrectly appearing on submitted wallpapers
+- Fixed layout overflow in wallpaper detail bottom sheet
+- Restored persisted “seen” keys on cold start for better feed discovery
+- Fixed followers and following routes when opened from a public profile
+- Added creator search entry point with redesigned result cards
+- Fixed crash when editing with a null image URL
+- AI submissions use watermarked image for wallpaper thumbnails where appropriate
+- Trimmed author fields and fixed visibility for email-only authors on wallpaper detail
+- Firestore rules: allow deleting reviewed wallpapers during review cleanup
+- Additional Sentry crash fixes and minor stability improvements
+
+### v3.0.4
+- Home screen revamp
+- Search revamp
+- Search discovery sections: trending, categories, and colors
+- Fixed Wallhaven wallpaper quality
+- Fixed notification enable prompt
+- Admin review queue shows newest items first
+- New streak page
+- Refined onboarding flow
+- Fal.ai used as the default AI generation backend
+- Consolidated wallpaper source types (removed redundant Wall of the Day enum)
+- Major Sentry error fixes; fixed Sentry debug symbol upload in CI
+- RevenueCat initialised earlier on startup to avoid billing errors
+- Setups temporarily removed from the app
+- Updated app icon foreground sizing
+- Makefile fixes for development on Windows
+- Admin review documents include `createdAt` for ordering and tooling
+
 ### v3.0.3
 - Refactored settings screen with modular sections and state management
 - Fixed personalised feed not fetching all interests + shuffled feed order
