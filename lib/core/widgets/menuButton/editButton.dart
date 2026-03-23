@@ -65,12 +65,16 @@ class _EditButtonState extends State<EditButton> {
   }
 
   Future<void> onEdit(String? url) async {
+    if (url == null) {
+      toasts.error('No wallpaper URL available');
+      return;
+    }
     setState(() {
       isLoading = true;
     });
     toasts.codeSend("Loading Wallpaper");
     try {
-      final response = await http.get(Uri.parse(url!));
+      final response = await http.get(Uri.parse(url));
       final documentDirectory = await getApplicationDocumentsDirectory();
       final firstPath = "${documentDirectory.path}/images";
       final filePathAndName = "${documentDirectory.path}/images/pic.jpg";
