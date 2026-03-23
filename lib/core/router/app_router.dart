@@ -147,6 +147,8 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/color', page: ColorRoute.page),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
+    AutoRoute(path: '/followers', page: FollowersRoute.page),
+    AutoRoute(path: '/following', page: FollowingListRoute.page),
     AutoRoute(path: '/ads-not-loading', page: AdsNotLoadingRoute.page),
     AutoRoute(path: '/admin-review', page: AdminReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-review/swipe', page: SwipeReviewRoute.page, guards: [_adminGuard]),
