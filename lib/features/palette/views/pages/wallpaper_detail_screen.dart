@@ -639,19 +639,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildPrismAuthorRow(BuildContext context, PrismWallpaper wallpaper) {
-    final String? name = wallpaper.core.authorName;
-    final String? photo = wallpaper.core.authorPhoto;
-    final String? email = wallpaper.core.authorEmail;
-    final bool hasName = name != null && name.isNotEmpty;
-    final bool hasPhoto = photo != null && photo.isNotEmpty;
-    if (!hasName && !hasPhoto) {
-      return const SizedBox.shrink();
-    }
+    final String nameTrimmed = wallpaper.core.authorName?.trim() ?? '';
+    final String photoTrimmed = wallpaper.core.authorPhoto?.trim() ?? '';
+    final String emailTrimmed = wallpaper.core.authorEmail?.trim() ?? '';
+    final bool hasName = nameTrimmed.isNotEmpty;
+    final bool hasPhoto = photoTrimmed.isNotEmpty;
 
     final String? displayLabel = hasName
-        ? name
-        : (email != null && email.isNotEmpty)
-        ? email
+        ? nameTrimmed
+        : emailTrimmed.isNotEmpty
+        ? emailTrimmed
         : null;
 
     if (displayLabel == null && !hasPhoto) {
@@ -669,7 +666,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       child: hasPhoto
           ? ClipOval(
               child: CachedNetworkImage(
-                imageUrl: photo,
+                imageUrl: photoTrimmed,
                 width: 36,
                 height: 36,
                 fit: BoxFit.cover,
@@ -685,7 +682,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             ),
     );
 
-    final bool canNavigate = email != null && email.isNotEmpty;
+    final bool canNavigate = emailTrimmed.isNotEmpty;
 
     if (displayLabel == null) {
       final Widget solo = Padding(padding: const EdgeInsets.only(bottom: 4), child: avatar);
@@ -695,7 +692,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       return Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: email)),
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: emailTrimmed)),
           borderRadius: BorderRadius.circular(8),
           child: solo,
         ),
@@ -725,7 +722,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       row = Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: email)),
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: emailTrimmed)),
           borderRadius: BorderRadius.circular(8),
           child: row,
         ),
