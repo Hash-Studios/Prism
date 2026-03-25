@@ -6,6 +6,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -70,61 +71,91 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final secondary = theme.colorScheme.secondary;
-    final accentColor = theme.colorScheme.error;
+    final ColorScheme scheme = theme.colorScheme;
+    final secondary = scheme.secondary;
+    final accentColor = scheme.error;
+    final Color aiAccent = scheme.primary;
     final bool isPremium = app_state.prismUser.premium;
     final int remainingUploads = UploadQuota.remainingFreeUploadsThisWeek();
     final bool quotaLow = !isPremium && remainingUploads <= 1;
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: AiSheetChrome.bodyPadding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Center(
-              child: Container(
-                height: 4,
-                width: 32,
-                decoration: BoxDecoration(color: theme.hintColor, borderRadius: BorderRadius.circular(99)),
-              ),
-            ),
-            const SizedBox(height: 20),
+            const AiSheetDragHandle(),
+            const SizedBox(height: 16),
             Text('Create', style: theme.textTheme.displayMedium),
             const SizedBox(height: 4),
             Text(
               'What would you like to create?',
               style: theme.textTheme.bodySmall?.copyWith(color: secondary.withValues(alpha: 0.65)),
             ),
-            const SizedBox(height: 24),
-            _CreateActionTile(
-              icon: JamIcons.pictures_f,
-              iconColor: accentColor,
-              title: 'Wallpapers',
-              subtitle: quotaLow
-                  ? '$remainingUploads free upload${remainingUploads == 1 ? '' : 's'} left this week'
-                  : 'From your gallery',
-              onTap: _onWallpaperTap,
+            const SizedBox(height: 20),
+            _PressScaleWrapper(
+              child: _CreateActionTile(
+                icon: JamIcons.pictures_f,
+                iconColor: accentColor,
+                title: 'Wallpapers',
+                subtitle: quotaLow
+                    ? '$remainingUploads free upload${remainingUploads == 1 ? '' : 's'} left this week'
+                    : 'From your gallery',
+                onTap: _onWallpaperTap,
+              ),
             ),
             _TileDivider(color: secondary),
-            _CreateActionTile(
-              icon: Icons.auto_awesome_rounded,
-              iconColor: const Color(0xFF7C4DFF),
-              title: 'AI Generate',
-              subtitle: 'Generate any wallpaper with AI',
-              badge: 'NEW',
-              badgeColor: const Color(0xFF7C4DFF),
-              onTap: _onAiTap,
+            _PressScaleWrapper(
+              child: _CreateActionTile(
+                icon: Icons.auto_awesome_rounded,
+                iconColor: aiAccent,
+                title: 'AI wallpaper',
+                subtitle: 'Describe a scene and generate a phone wallpaper',
+                badge: 'NEW',
+                badgeColor: aiAccent,
+                onTap: _onAiTap,
+              ),
             ),
             const SizedBox(height: 20),
             Text(
               'Please only upload high-quality original wallpapers. Do not upload content from other apps.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: secondary.withValues(alpha: 0.4), fontFamily: 'Proxima Nova'),
+              style: theme.textTheme.bodySmall?.copyWith(fontSize: 11, color: secondary.withValues(alpha: 0.4)),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PressScaleWrapper extends StatefulWidget {
+  const _PressScaleWrapper({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PressScaleWrapper> createState() => _PressScaleWrapperState();
+}
+
+class _PressScaleWrapperState extends State<_PressScaleWrapper> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool motion = !MediaQuery.of(context).disableAnimations;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => setState(() => _pressed = true),
+      onPointerUp: (_) => setState(() => _pressed = false),
+      onPointerCancel: (_) => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed && motion ? 0.98 : 1.0,
+        duration: motion ? const Duration(milliseconds: 100) : Duration.zero,
+        curve: Curves.easeOutCubic,
+        child: widget.child,
       ),
     );
   }
@@ -204,12 +235,11 @@ class _CreateActionTile extends StatelessWidget {
                             ),
                             child: Text(
                               badge!,
-                              style: TextStyle(
+                              style: theme.textTheme.labelSmall?.copyWith(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: badgeColor ?? iconColor,
                                 letterSpacing: 0.4,
-                                fontFamily: 'Proxima Nova',
                               ),
                             ),
                           ),
