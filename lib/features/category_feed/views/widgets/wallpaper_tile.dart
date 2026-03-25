@@ -11,11 +11,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperTile extends StatelessWidget {
-  const WallpaperTile({super.key, required this.item, required this.index, this.memCacheHeight});
+  const WallpaperTile({super.key, required this.item, required this.index, this.memCacheHeight, this.crossAxisCount});
 
   final FeedItemEntity item;
   final int index;
   final int? memCacheHeight;
+
+  /// When null, uses the app's standard grid (3 columns portrait, 5 landscape).
+  final int? crossAxisCount;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
     WallpaperSource.wallhaven => AnalyticsSurfaceValue.homeWallhavenGrid,
@@ -31,7 +34,8 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width / 3).toInt();
+    final columns = crossAxisCount ?? (MediaQuery.orientationOf(context) == Orientation.portrait ? 3 : 5);
+    final width = (MediaQuery.sizeOf(context).width / columns).toInt();
     final height = memCacheHeight ?? (width * 2 * 1.5).toInt();
     return Material(
       color: Colors.transparent,
@@ -58,8 +62,8 @@ class WallpaperTile extends StatelessWidget {
           fit: BoxFit.cover,
           fadeInDuration: Duration.zero,
           memCacheHeight: height,
-          placeholder: (_, _) => ColoredBox(color: Colors.grey.shade900),
-          errorWidget: (_, _, _) => ColoredBox(color: Colors.grey.shade900),
+          placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+          errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
         ),
       ),
     );

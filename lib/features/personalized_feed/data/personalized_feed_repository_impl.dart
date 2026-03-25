@@ -47,6 +47,23 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   static const int _cacheTtlHours = 2;
   static const int _seenWindow = 300;
 
+  /// Reused on `page > 1` to avoid Remote Config + Firestore user doc on every scroll page.
+  String? _feedBootstrapScope;
+  Map<String, dynamic>? _cachedUserDoc;
+  List<PersonalizedInterest>? _cachedCatalog;
+  List<String>? _cachedInterests;
+  List<String>? _cachedFollowing;
+  _SourceTargets? _cachedTargets;
+
+  void _clearFeedBootstrapCache() {
+    _feedBootstrapScope = null;
+    _cachedUserDoc = null;
+    _cachedCatalog = null;
+    _cachedInterests = null;
+    _cachedFollowing = null;
+    _cachedTargets = null;
+  }
+
   @override
   Future<List<String>> readPersistedSeenKeys() async {
     final userId = app_state.prismUser.id.trim();
@@ -62,14 +79,47 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     final cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
     try {
-      final userDoc = isGuest ? const <String, dynamic>{} : await _resolveUserDoc(userId: userId);
-      final catalog = await PersonalizedInterestsCatalog.load(
-        remoteConfig: FirebaseRemoteConfig.instance,
-        settingsLocal: _settingsLocal,
-      );
-      final interests = _resolveInterests(userDoc, catalog);
-      final following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
-      final targets = _resolveTargets();
+      if (request.refresh) {
+        _clearFeedBootstrapCache();
+      }
+
+      final bool useBootstrapCache =
+          !request.refresh &&
+          request.page > 1 &&
+          _feedBootstrapScope == cacheScope &&
+          _cachedCatalog != null &&
+          _cachedInterests != null &&
+          _cachedFollowing != null &&
+          _cachedTargets != null;
+
+      late final Map<String, dynamic> userDoc;
+      late final List<PersonalizedInterest> catalog;
+      late final List<String> interests;
+      late final List<String> following;
+      late final _SourceTargets targets;
+
+      if (useBootstrapCache) {
+        userDoc = _cachedUserDoc ?? const <String, dynamic>{};
+        catalog = _cachedCatalog!;
+        interests = _cachedInterests!;
+        following = _cachedFollowing!;
+        targets = _cachedTargets!;
+      } else {
+        userDoc = isGuest ? const <String, dynamic>{} : await _resolveUserDoc(userId: userId);
+        catalog = await PersonalizedInterestsCatalog.load(
+          remoteConfig: FirebaseRemoteConfig.instance,
+          settingsLocal: _settingsLocal,
+        );
+        interests = _resolveInterests(userDoc, catalog);
+        following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
+        targets = _resolveTargets();
+        _feedBootstrapScope = cacheScope;
+        _cachedUserDoc = userDoc;
+        _cachedCatalog = catalog;
+        _cachedInterests = interests;
+        _cachedFollowing = following;
+        _cachedTargets = targets;
+      }
 
       final creatorFuture = _fetchCreatorItems(following: following, page: request.page);
       final wallhavenFuture = _fetchWallhavenItems(interests: interests, catalog: catalog, refresh: request.refresh);
