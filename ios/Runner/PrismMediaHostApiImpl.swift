@@ -22,14 +22,65 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     return performBlocking {
       do {
         let data = try self.resolveImageData(link: request.link, isLocalFile: false)
-        try self.saveToPhotoLibrary(data: data)
-        return OperationResult(success: true, errorCode: nil, message: nil)
+        let ext = URL(string: request.link)?.pathExtension.lowercased() ?? ""
+        let resolvedExt = ["jpg", "jpeg", "png", "webp", "gif"].contains(ext) ? ext : "jpg"
+        let dir = try self.downloadsDirectory()
+        let filename = "\(request.filenameWithoutExtension).\(resolvedExt)"
+        let dest = dir.appendingPathComponent(filename)
+        try data.write(to: dest, options: .atomic)
+        return OperationResult(success: true, errorCode: nil, message: dest.path)
       } catch let error as PrismMediaSaveError {
         return OperationResult(success: false, errorCode: error.code, message: error.message)
       } catch {
         return OperationResult(success: false, errorCode: "EXCEPTION", message: error.localizedDescription)
       }
     }
+  }
+
+  func listDownloads() throws -> DownloadItemsResult {
+    do {
+      let dir = try downloadsDirectory()
+      let contents = try FileManager.default.contentsOfDirectory(
+        at: dir,
+        includingPropertiesForKeys: [.isRegularFileKey],
+        options: .skipsHiddenFiles
+      )
+      let paths = contents
+        .filter { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true }
+        .map { $0.path }
+      return DownloadItemsResult(success: true, items: paths, errorCode: nil, message: nil)
+    } catch {
+      return DownloadItemsResult(success: false, items: [], errorCode: "LIST_FAILED", message: error.localizedDescription)
+    }
+  }
+
+  func clearDownloads() throws -> OperationResult {
+    do {
+      let dir = try downloadsDirectory()
+      let contents = try FileManager.default.contentsOfDirectory(
+        at: dir,
+        includingPropertiesForKeys: nil,
+        options: .skipsHiddenFiles
+      )
+      guard !contents.isEmpty else {
+        return OperationResult(success: false, errorCode: "NO_DOWNLOADS", message: "No downloads found.")
+      }
+      for file in contents {
+        try FileManager.default.removeItem(at: file)
+      }
+      return OperationResult(success: true, errorCode: nil, message: nil)
+    } catch {
+      return OperationResult(success: false, errorCode: "CLEAR_FAILED", message: error.localizedDescription)
+    }
+  }
+
+  private func downloadsDirectory() throws -> URL {
+    let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    let dir = docs.appendingPathComponent("PrismDownloads", isDirectory: true)
+    if !FileManager.default.fileExists(atPath: dir.path) {
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+    return dir
   }
 
   private func performBlocking(_ task: @escaping () -> OperationResult) -> OperationResult {
