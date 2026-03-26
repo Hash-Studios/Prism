@@ -873,7 +873,7 @@ class CoinsService {
     try {
       final HttpsCallable callable = FirebaseFunctions.instanceFor(
         region: 'asia-south1',
-      ).httpsCallable('claimDailyStreak');
+      ).httpsCallable('claimDailyStreak', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)));
       final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
         'reminderEnabled': reminderEnabled,
