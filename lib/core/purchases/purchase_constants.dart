@@ -44,8 +44,11 @@ class PurchaseConstants {
       'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/'
       'Replacement%20Thumbnails%2Fprism%20mock.png?alt=media&token=a86d1386-dbb5-493f-8399-ff0160b1a86a';
 
-  /// Terms of Use / legal URL for paywall footer.
-  static const String termsOfUseUrl = 'https://github.com/Hash-Studios/Prism/blob/master/PRIVACY.md';
+  /// Privacy Policy URL for paywall footer.
+  static const String privacyPolicyUrl = 'https://github.com/Hash-Studios/Prism/blob/master/PRIVACY.md';
+
+  /// Terms of Use / EULA URL for paywall footer (Apple standard EULA).
+  static const String termsOfUseUrl = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
   /// Sample wallpaper preview URLs shown as floating cards in the paywall hero.
   /// Replace these with your own premium wallpaper thumbnail URLs.
