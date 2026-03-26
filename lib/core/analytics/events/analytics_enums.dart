@@ -59,6 +59,7 @@ enum AnalyticsActionValue {
   buyPremiumTapped,
   clearCacheTapped,
   restartAppTapped,
+  restorePurchaseTapped,
   signInTapped,
   logoutTapped,
   clearFavouriteWallsTapped,
@@ -369,6 +370,8 @@ extension SettingValueX on SettingValue {
 extension AnalyticsActionValueX on AnalyticsActionValue {
   String get wireValue {
     switch (this) {
+      case AnalyticsActionValue.restorePurchaseTapped:
+        return 'restore_purchase_tapped';
       case AnalyticsActionValue.buyPremiumTapped:
         return 'buy_premium_tapped';
       case AnalyticsActionValue.clearCacheTapped:

@@ -11,6 +11,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
@@ -468,6 +469,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
             _showClearFavWallsDialog();
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.restore_rounded),
+          title: Text('Restore Purchases', style: _titleStyle),
+          subtitle: const Text('Restore a previously purchased subscription', style: TextStyle(fontSize: 12)),
+          onTap: () async {
+            _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
+            try {
+              await PurchasesService.instance.restore();
+              toasts.codeSend('Purchases restored!');
+            } catch (e) {
+              toasts.error('Could not restore purchases. Please try again.');
+            }
           },
         ),
         ListTile(
