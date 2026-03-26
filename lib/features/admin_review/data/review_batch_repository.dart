@@ -97,7 +97,7 @@ class ReviewBatchRepository {
       if (category.isEmpty || category == 'General') {
         print('DEBUG: Calling categorizeWallpaper for ${wall.id}');
         try {
-          await functions.httpsCallable('categorizeWallpaper').call(<String, dynamic>{'wallId': wall.id});
+          await functions.httpsCallable('categorizeWallpaper', options: HttpsCallableOptions(timeout: const Duration(seconds: 30))).call(<String, dynamic>{'wallId': wall.id});
           count++;
           print('DEBUG: Successfully categorized ${wall.id}');
         } catch (e) {
