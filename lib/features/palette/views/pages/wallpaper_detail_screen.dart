@@ -421,72 +421,103 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildColorBar(BuildContext context, WallpaperDetailLoaded state) {
     final colors = state.colors;
     final thumbnailUrl = state.entity.thumbnailUrl.trim();
-    final count = colors?.length ?? 5;
+    final colorCount = colors?.length ?? 0;
+
+    // Build the default (no-filter) swatch + one swatch per palette color.
+    final swatches = <Widget>[
+      _buildColorSwatch(
+        context: context,
+        thumbnailUrl: thumbnailUrl,
+        color: null,
+        isSelected: !state.colorChanged,
+        onTap: () {
+          context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
+          _setStatusBarIconBrightness(state.accent ?? Colors.white);
+        },
+        onLongPress: null,
+      ),
+      ...List.generate(colorCount, (index) {
+        final color = colors![index];
+        final isSelected = state.colorChanged && color == state.accent;
+        return _buildColorSwatch(
+          context: context,
+          thumbnailUrl: thumbnailUrl,
+          color: color,
+          isSelected: isSelected,
+          onTap: color != null ? () => _handleColorSelected(context, state, color) : null,
+          onLongPress: color != null
+              ? () {
+                  HapticFeedback.vibrate();
+                  Clipboard.setData(
+                    ClipboardData(text: color.toString().replaceAll('Color(0xff', '').replaceAll(')', '')),
+                  ).then((_) => toasts.color(color));
+                }
+              : null,
+        );
+      }),
+    ];
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       height: 96,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: Row(
-          children: List.generate(count, (index) {
-            final color = colors != null && index < colors.length ? colors[index] : null;
-            final isSelected = color != null && color == state.accent;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  if (color != null) _handleColorSelected(context, state, color);
-                },
-                onLongPress: () {
-                  if (color != null) {
-                    HapticFeedback.vibrate();
-                    Clipboard.setData(
-                      ClipboardData(text: color.toString().replaceAll('Color(0xff', '').replaceAll(')', '')),
-                    ).then((_) => toasts.color(color));
-                  }
-                },
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    color != null && thumbnailUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: thumbnailUrl,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            imageBuilder: (ctx, imageProvider) => Container(
-                              decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: imageProvider,
-                                  fit: BoxFit.cover,
-                                  colorFilter: ColorFilter.mode(color, BlendMode.hue),
-                                ),
-                                border: Border(bottom: BorderSide(color: color, width: 10)),
-                              ),
-                            ),
-                            placeholder: (_, _u) => Container(color: color),
-                            errorWidget: (_, _u, _e) => Container(color: color),
-                          )
-                        : Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
-                    AnimatedOpacity(
-                      duration: const Duration(milliseconds: 200),
-                      opacity: isSelected ? 1.0 : 0.0,
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        alignment: Alignment.center,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                          child: const Icon(JamIcons.check, size: 14, color: Colors.black),
-                        ),
-                      ),
-                    ),
-                  ],
+        child: Row(children: swatches.map((s) => Expanded(child: s)).toList()),
+      ),
+    );
+  }
+
+  Widget _buildColorSwatch({
+    required BuildContext context,
+    required String thumbnailUrl,
+    required Color? color,
+    required bool isSelected,
+    required VoidCallback? onTap,
+    required VoidCallback? onLongPress,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (thumbnailUrl.isNotEmpty)
+            CachedNetworkImage(
+              imageUrl: thumbnailUrl,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
+              imageBuilder: (ctx, imageProvider) => Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: imageProvider,
+                    fit: BoxFit.cover,
+                    colorFilter: color != null ? ColorFilter.mode(color, BlendMode.hue) : null,
+                  ),
+                  border: Border(bottom: BorderSide(color: color ?? Theme.of(ctx).colorScheme.secondary, width: 10)),
                 ),
               ),
-            );
-          }),
-        ),
+              placeholder: (_, _u) =>
+                  Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+              errorWidget: (_, _u, _e) =>
+                  Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+            )
+          else
+            Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: isSelected ? 1.0 : 0.0,
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.25),
+              alignment: Alignment.center,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                child: const Icon(JamIcons.check, size: 14, color: Colors.black),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
