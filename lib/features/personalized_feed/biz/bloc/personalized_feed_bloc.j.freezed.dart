@@ -55,14 +55,13 @@ extension PersonalizedFeedEventPatterns on PersonalizedFeedEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult Function( _RetryRequested value)?  retryRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _RetryRequested() when retryRequested != null:
-return retryRequested(_that);case _:
+return fetchMoreRequested(_that);case _:
   return orElse();
 
 }
@@ -80,14 +79,13 @@ return retryRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,required TResult Function( _RetryRequested value)  retryRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
 return refreshRequested(_that);case _FetchMoreRequested():
-return fetchMoreRequested(_that);case _RetryRequested():
-return retryRequested(_that);case _:
+return fetchMoreRequested(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -104,14 +102,13 @@ return retryRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult? Function( _RetryRequested value)?  retryRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _RetryRequested() when retryRequested != null:
-return retryRequested(_that);case _:
+return fetchMoreRequested(_that);case _:
   return null;
 
 }
@@ -128,13 +125,12 @@ return retryRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,TResult Function()?  retryRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _RetryRequested() when retryRequested != null:
-return retryRequested();case _:
+return fetchMoreRequested();case _:
   return orElse();
 
 }
@@ -152,13 +148,12 @@ return retryRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,required TResult Function()  retryRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _RefreshRequested():
 return refreshRequested();case _FetchMoreRequested():
-return fetchMoreRequested();case _RetryRequested():
-return retryRequested();case _:
+return fetchMoreRequested();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -175,13 +170,12 @@ return retryRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,TResult? Function()?  retryRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _RetryRequested() when retryRequested != null:
-return retryRequested();case _:
+return fetchMoreRequested();case _:
   return null;
 
 }
@@ -277,38 +271,6 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'PersonalizedFeedEvent.fetchMoreRequested()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
-
-
-class _RetryRequested implements PersonalizedFeedEvent {
-  const _RetryRequested();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RetryRequested);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'PersonalizedFeedEvent.retryRequested()';
 }
 
 

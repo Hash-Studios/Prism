@@ -551,25 +551,25 @@ class _HowCoinsUsedSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const _SpendRow(
+          _SpendRow(
             icon: Icons.auto_awesome_rounded,
             label: 'AI Generation (Fast)',
             cost: '${CoinPolicy.aiGenerationFast}c',
-            accentColor: Color(0xFF9C27B0),
+            accentColor: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 8),
-          const _SpendRow(
+          _SpendRow(
             icon: Icons.auto_awesome_rounded,
             label: 'AI Generation (Balanced)',
             cost: '${CoinPolicy.aiGenerationBalanced}c',
-            accentColor: Color(0xFF9C27B0),
+            accentColor: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 8),
-          const _SpendRow(
+          _SpendRow(
             icon: Icons.auto_awesome_rounded,
             label: 'AI Generation (Quality)',
             cost: '${CoinPolicy.aiGenerationQuality}c',
-            accentColor: Color(0xFF9C27B0),
+            accentColor: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 8),
           const _SpendRow(
