@@ -1036,16 +1036,31 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
-            if (!hideSetWallpaperUi)
-              SetWallpaperButton(
+            _SheetActionTapScale(
+              child: DownloadButton(
                 colorChanged: state.colorChanged,
-                url: url,
-                promptNotificationPermissionOnSuccess: true,
+                link: url,
+                sourceContext: _getSourceContext(state),
               ),
-            FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
-            ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
-            EditButton(url: entity.fullUrl),
+            ),
+            if (!hideSetWallpaperUi)
+              _SheetActionTapScale(
+                child: SetWallpaperButton(
+                  colorChanged: state.colorChanged,
+                  url: url,
+                  promptNotificationPermissionOnSuccess: true,
+                ),
+              ),
+            _SheetActionTapScale(child: FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false)),
+            _SheetActionTapScale(
+              child: ShareButton(
+                id: entity.id,
+                source: entity.source,
+                url: entity.fullUrl,
+                thumbUrl: entity.thumbnailUrl,
+              ),
+            ),
+            _SheetActionTapScale(child: EditButton(url: entity.fullUrl)),
           ],
         ),
       ),
@@ -1305,4 +1320,69 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     WallpaperSource.downloaded => 'Downloaded',
     WallpaperSource.unknown => 'Unknown',
   };
+}
+
+/// Press feedback for the wallpaper sheet action row: scale only (no layout animation).
+/// Skips motion when [MediaQuery.disableAnimations] is true (e.g. reduce motion).
+class _SheetActionTapScale extends StatefulWidget {
+  const _SheetActionTapScale({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_SheetActionTapScale> createState() => _SheetActionTapScaleState();
+}
+
+class _SheetActionTapScaleState extends State<_SheetActionTapScale> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 110),
+      reverseDuration: const Duration(milliseconds: 85),
+    );
+    _scale = Tween<double>(
+      begin: 1,
+      end: 0.92,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic, reverseCurve: Curves.easeOutCubic));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _setPressed(bool pressed) {
+    if (!mounted) return;
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    if (pressed) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _setPressed(true),
+      onPointerUp: (_) => _setPressed(false),
+      onPointerCancel: (_) => _setPressed(false),
+      child: AnimatedBuilder(
+        animation: _scale,
+        builder: (context, child) {
+          final s = reduceMotion ? 1.0 : _scale.value;
+          return Transform.scale(scale: s, filterQuality: FilterQuality.low, child: child);
+        },
+        child: widget.child,
+      ),
+    );
+  }
 }
