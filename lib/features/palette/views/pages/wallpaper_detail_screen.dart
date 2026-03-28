@@ -68,6 +68,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   late AnimationController shakeController;
+  late Animation<double> _offsetAnimation;
   ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
   int _toastFirstTime = 0;
@@ -201,6 +202,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void initState() {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    _offsetAnimation = Tween(begin: 0.0, end: 48.0)
+        .chain(CurveTween(curve: Curves.easeOutCubic))
+        .animate(shakeController)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) shakeController.reverse();
+      });
     _contentLoadTracker.start();
 
     final bloc = context.read<WallpaperDetailBloc>();
@@ -310,14 +317,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildLoadedState(BuildContext context, WallpaperDetailLoaded state) {
-    final paletteState = context.watch<PaletteBloc>().state;
-    final paletteLoading = paletteState.status == LoadStatus.loading || paletteState.status == LoadStatus.initial;
-
-    final Animation<double> offsetAnimation =
-        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) shakeController.reverse();
-          });
+    final paletteLoading = context.select<PaletteBloc, bool>((bloc) {
+      final status = bloc.state.status;
+      return status == LoadStatus.loading || status == LoadStatus.initial;
+    });
 
     return Scaffold(
       key: _scaffoldKey,
@@ -337,7 +340,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         controller: panelController,
         backdropOpacity: 0,
         panel: _buildInfoPanel(context, state),
-        body: _buildImageBody(context, offsetAnimation, paletteLoading, state),
+        body: _buildImageBody(context, _offsetAnimation, paletteLoading, state),
       ),
     );
   }
@@ -399,8 +402,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: AnimatedOpacity(
-          duration: Duration.zero,
+        child: Opacity(
           opacity: state.panelCollapsed ? 0.0 : 1.0,
           child: GestureDetector(
             onTap: () {
