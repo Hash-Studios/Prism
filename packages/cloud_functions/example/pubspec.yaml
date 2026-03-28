@@ -1,0 +1,15 @@
+name: cloud_functions_example
+description: Demonstrates how to use the cloud_functions plugin.
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+  flutter: '>=3.3.0'
+
+dependencies:
+  cloud_functions: ^6.1.0
+  firebase_core: ^4.6.0
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
