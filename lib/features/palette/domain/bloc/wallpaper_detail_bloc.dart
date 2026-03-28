@@ -112,7 +112,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (!colors.contains(accent)) return;
 
     final currentIndex = colors.indexOf(accent);
-    final nextColor = colors[(currentIndex + 1) % 5];
+    final nextColor = colors[(currentIndex + 1) % colors.length];
 
     emit(currentState.copyWith(accent: nextColor, colorChanged: true));
   }
