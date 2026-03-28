@@ -419,38 +419,74 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildColorBar(BuildContext context, WallpaperDetailLoaded state) {
-    final circleSize = (64.0 * 0.7).clamp(32.0, 56.0);
     final colors = state.colors;
-    return SizedBox(
-      height: 64,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(colors == null ? 5 : colors.length, (index) {
-          final color = colors != null && index < colors.length ? colors[index] : null;
-          return GestureDetector(
-            onTap: () {
-              if (color != null) {
-                _handleColorSelected(context, state, color);
-              }
-            },
-            onLongPress: () {
-              if (color != null) {
-                HapticFeedback.vibrate();
-                Clipboard.setData(
-                  ClipboardData(text: color.toString().replaceAll('Color(0xff', '').replaceAll(')', '')),
-                ).then((_) => toasts.color(color));
-              }
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+    final thumbnailUrl = state.entity.thumbnailUrl.trim();
+    final count = colors?.length ?? 5;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      height: 96,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Row(
+          children: List.generate(count, (index) {
+            final color = colors != null && index < colors.length ? colors[index] : null;
+            final isSelected = color != null && color == state.accent;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  if (color != null) _handleColorSelected(context, state, color);
+                },
+                onLongPress: () {
+                  if (color != null) {
+                    HapticFeedback.vibrate();
+                    Clipboard.setData(
+                      ClipboardData(text: color.toString().replaceAll('Color(0xff', '').replaceAll(')', '')),
+                    ).then((_) => toasts.color(color));
+                  }
+                },
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    color != null && thumbnailUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: thumbnailUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            imageBuilder: (ctx, imageProvider) => Container(
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                  colorFilter: ColorFilter.mode(color, BlendMode.hue),
+                                ),
+                                border: Border(bottom: BorderSide(color: color, width: 10)),
+                              ),
+                            ),
+                            placeholder: (_, _u) => Container(color: color),
+                            errorWidget: (_, _u, _e) => Container(color: color),
+                          )
+                        : Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: isSelected ? 1.0 : 0.0,
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        alignment: Alignment.center,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          child: const Icon(JamIcons.check, size: 14, color: Colors.black),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              height: circleSize,
-              width: circleSize,
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -901,7 +937,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         if (!_wallpaperReadyForCapture)
           Positioned.fill(
             child: Center(
-              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary)),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
+              ),
             ),
           ),
         Align(
