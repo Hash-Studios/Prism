@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -16,11 +20,23 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart' show AiQualityTier;
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+
+abstract final class _AiGenSpace {
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;
+  static const double lg = 20;
+  static const double xl = 24;
+}
 
 class AiWallpaperTabPage extends StatefulWidget {
   const AiWallpaperTabPage({super.key});
@@ -44,6 +60,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
   bool _submitting = false;
+
+  static const int _maxPromptChars = 4000;
+  static const int _maxVariationChars = 2000;
 
   static const Map<AiStylePreset, List<String>> _scenePoolByStyle = <AiStylePreset, List<String>>{
     AiStylePreset.anime: <String>[
@@ -115,6 +134,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     'vibrant but natural colors',
   ];
 
+  static const List<String> _loadingStatusLines = <String>[
+    'Matching your screen size…',
+    'Applying your style…',
+    'Finalizing your wallpaper…',
+  ];
+
+  bool _motionAllowed(BuildContext context) => !MediaQuery.of(context).disableAnimations;
+
   @override
   void initState() {
     super.initState();
@@ -131,6 +158,76 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   bool get _isLoggedIn => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
+
+  /// Decode size for the main 9:16 preview (logical width ≈ screen minus horizontal padding).
+  ({int cacheWidth, int cacheHeight}) _mainPreviewDecodeExtents(BuildContext context) {
+    final double logicalW = (MediaQuery.sizeOf(context).width - 32).clamp(120.0, 560.0);
+    final double logicalH = logicalW * (16 / 9);
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final int cacheW = (logicalW * dpr).round().clamp(64, 4096);
+    final int cacheH = (logicalH * dpr).round().clamp(64, 4096);
+    return (cacheWidth: cacheW, cacheHeight: cacheH);
+  }
+
+  ({int cacheWidth, int cacheHeight}) _thumbDecodeExtents(
+    BuildContext context, {
+    required double logicalW,
+    required double logicalH,
+  }) {
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final int cacheW = (logicalW * dpr).round().clamp(32, 2048);
+    final int cacheH = (logicalH * dpr).round().clamp(32, 2048);
+    return (cacheWidth: cacheW, cacheHeight: cacheH);
+  }
+
+  Future<bool> _hasNetworkOrUnknown() async {
+    try {
+      return await getIt<ConnectivityService>().hasConnection();
+    } catch (error, stackTrace) {
+      logger.w('Connectivity check failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      return true;
+    }
+  }
+
+  bool _isOfflineOrNetworkError(Object error) {
+    if (error is SocketException || error is TimeoutException || error is http.ClientException) {
+      return true;
+    }
+    if (error is FirebaseException && (error.code == 'unavailable' || error.code == 'deadline-exceeded')) {
+      return true;
+    }
+    if (error is FirestoreError) {
+      final Object? original = error.original;
+      if (original is FirebaseException && (original.code == 'unavailable' || original.code == 'deadline-exceeded')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _toastForHistoryFailure(Object error) {
+    if (_isOfflineOrNetworkError(error)) {
+      return "You're offline or the network failed. Pull to refresh when you're back.";
+    }
+    return "Couldn't load history. Pull to refresh.";
+  }
+
+  String _toastForGenerateFailure(Object error) {
+    if (error is AiGenerationApiException) {
+      return error.message;
+    }
+    if (_isOfflineOrNetworkError(error)) {
+      return 'No connection. Check your network and try again.';
+    }
+    return 'Something went wrong. Try again.';
+  }
+
+  String _toastForDownloadFailure(Object error) {
+    if (_isOfflineOrNetworkError(error)) {
+      return 'No connection. Check your network and try again.';
+    }
+    return "Couldn't save that file. Try again.";
+  }
 
   void _seedDefaultPromptIfEmpty() {
     if (_promptController.text.trim().isNotEmpty) {
@@ -240,14 +337,22 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     setState(() => _loadingHistory = true);
     try {
+      final bool online = await _hasNetworkOrUnknown();
+      if (!online) {
+        if (mounted) {
+          toasts.error("You're offline. History will refresh when you're connected.");
+        }
+        return;
+      }
       final result = await _repository.fetchHistory(userId: app_state.prismUser.id);
       setState(() {
         _history = result;
         _latest = result.isEmpty ? null : result.first;
       });
       analytics.track(AiHistoryOpenedEvent(count: result.length));
-    } catch (_) {
-      toasts.error('Unable to load AI history right now.');
+    } catch (error, stackTrace) {
+      logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      toasts.error(_toastForHistoryFailure(error));
     } finally {
       if (mounted) {
         setState(() => _loadingHistory = false);
@@ -268,12 +373,33 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
     final String prompt = variation ? _variationController.text.trim() : _promptController.text.trim();
     if (!variation && prompt.isEmpty) {
-      toasts.error('Describe the wallpaper you want to generate.');
+      toasts.error('Add a description or tap a starting chip, then try again.');
       _promptFocus.requestFocus();
       return;
     }
+    if (variation && prompt.isEmpty) {
+      toasts.error('Say what you want different—colors, mood, details, and so on.');
+      return;
+    }
+    if (!variation && prompt.length > _maxPromptChars) {
+      toasts.error('Description is too long (max $_maxPromptChars characters).');
+      return;
+    }
+    if (variation && prompt.length > _maxVariationChars) {
+      toasts.error('That refinement is too long (max $_maxVariationChars characters).');
+      return;
+    }
     if (variation && (_latest == null || !app_state.aiVariationsEnabled)) {
-      toasts.error('Variation is not available right now.');
+      toasts.error('Refinements are not available right now.');
+      return;
+    }
+
+    final bool online = await _hasNetworkOrUnknown();
+    if (!online) {
+      toasts.error('No connection. Connect to the internet, then try again.');
+      return;
+    }
+    if (!mounted) {
       return;
     }
 
@@ -337,6 +463,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
       });
 
+      if (mounted && _motionAllowed(context)) {
+        HapticFeedback.lightImpact();
+      }
+
       if (variation) {
         analytics.track(
           AiVariationUsedEvent(
@@ -354,13 +484,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           ),
         );
         if (targetSize != null && _isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
-          toasts.error('Generated image ratio may not match your device perfectly.');
+          toasts.error('Crop may differ slightly on your device.');
         }
       }
       if (variation) {
         _variationController.clear();
       }
-    } catch (error) {
+    } catch (error, stackTrace) {
+      logger.w('AI generation failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       await CoinsService.instance.rollbackAiGenerationReservation(
         reservation.mode,
         sourceTag: 'coins.rollback.ai_screen',
@@ -370,11 +501,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       analytics.track(
         AiGenerateFailedEvent(error: error.toString(), mode: aiChargeModeValueFromDomain(reservation.mode)),
       );
-      if (error is AiGenerationApiException) {
-        toasts.error(error.message);
-      } else {
-        toasts.error('Generation failed. Please try again.');
-      }
+      toasts.error(_toastForGenerateFailure(error));
     } finally {
       if (mounted) {
         setState(() => _loadingGeneration = false);
@@ -387,8 +514,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final file = await _downloadToTempFile(record.displayUrl(isPremium: app_state.prismUser.premium));
       if (!mounted) return;
       context.router.push(DownloadWallpaperRoute(source: WallpaperSource.prism, file: file));
-    } catch (_) {
-      toasts.error('Unable to prepare wallpaper file.');
+    } catch (error, stackTrace) {
+      logger.w('AI set-wallpaper prep failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      toasts.error(_toastForDownloadFailure(error));
     }
   }
 
@@ -405,15 +533,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       } else {
         toasts.error(result.message ?? "Couldn't download! Please retry.");
       }
-    } catch (_) {
-      toasts.error("Couldn't download! Please retry.");
+    } catch (error, stackTrace) {
+      logger.w('AI gallery save failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      toasts.error(_toastForDownloadFailure(error));
     }
   }
 
   Future<File> _downloadToTempFile(String url) async {
     final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('download_failed');
+      throw HttpException('download_failed', uri: Uri.parse(url));
     }
     final directory = await getTemporaryDirectory();
     final path = '${directory.path}/ai_${DateTime.now().millisecondsSinceEpoch}.png';
@@ -479,9 +608,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         }
       });
       analytics.track(AiSubmitSuccessEvent(generationId: record.id));
-      toasts.codeSend('AI wallpaper submitted for review.');
-    } catch (error) {
-      toasts.error('Unable to submit wallpaper right now.');
+      if (mounted && _motionAllowed(context)) {
+        HapticFeedback.selectionClick();
+      }
+      toasts.codeSend('Submitted for review.');
+    } catch (error, stackTrace) {
+      logger.w('AI community submit failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      toasts.error(
+        _isOfflineOrNetworkError(error) ? 'No connection. Try again when online.' : 'Submit failed. Try again.',
+      );
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
@@ -513,70 +648,95 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       backgroundColor: Theme.of(context).primaryColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
+        final ({int cacheWidth, int cacheHeight}) submitThumb = _thumbDecodeExtents(ctx, logicalW: 72, logicalH: 120);
+        final TextTheme textTheme = Theme.of(ctx).textTheme;
+        final ColorScheme scheme = Theme.of(ctx).colorScheme;
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            padding: AiSheetChrome.bodyPadding,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Container(
-                  height: 4,
-                  width: 32,
-                  decoration: BoxDecoration(color: Theme.of(ctx).hintColor, borderRadius: BorderRadius.circular(99)),
-                ),
-                const SizedBox(height: 16),
+                const AiSheetDragHandle(),
+                const SizedBox(height: _AiGenSpace.md),
                 if (_latest != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: SizedBox(
-                      width: 60,
-                      height: 100,
-                      child: Image.network(
-                        _latest!.displayUrl(isPremium: app_state.prismUser.premium),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: 72,
+                          height: 120,
+                          child: _DecodedNetworkImage(
+                            url: _latest!.displayUrl(isPremium: app_state.prismUser.premium),
+                            cacheWidth: submitThumb.cacheWidth,
+                            cacheHeight: submitThumb.cacheHeight,
+                            filterQuality: FilterQuality.low,
+                            errorColor: scheme.surfaceContainerHighest,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: _AiGenSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text('Share with the community?', style: textTheme.titleMedium),
+                            const SizedBox(height: _AiGenSpace.xs),
+                            Text(
+                              'Moderators review submissions before they appear in Prism. Only share work you have rights to.',
+                              style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+                            ),
+                            const SizedBox(height: _AiGenSpace.sm),
+                            Text(
+                              '"${(title.isNotEmpty ? title : _promptController.text.trim()).split(',').first.trim()}"  ·  ${_selectedStyle.label}',
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodySmall?.copyWith(color: scheme.secondary.withValues(alpha: 0.72)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text('Share with the community?', style: textTheme.titleMedium),
+                      const SizedBox(height: _AiGenSpace.xs),
+                      Text(
+                        'Moderators review submissions before they appear in Prism. Only share work you have rights to.',
+                        style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+                      ),
+                    ],
                   ),
-                const SizedBox(height: 12),
-                Text('Submit to Community?', style: Theme.of(ctx).textTheme.titleMedium),
-                const SizedBox(height: 6),
-                Text(
-                  '"${(title.isNotEmpty ? title : _promptController.text.trim()).split(',').first.trim()}"  ·  ${_selectedStyle.label}',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    ctx,
-                  ).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.secondary.withValues(alpha: 0.65)),
+                const SizedBox(height: _AiGenSpace.lg),
+                FilledButton.icon(
+                  icon: const Icon(Icons.upload_outlined, size: 18),
+                  label: const Text('Submit for review'),
+                  onPressed: () {
+                    final prompt = _promptController.text.trim();
+                    final autoTags = <String>[
+                      ...prompt
+                          .split(' ')
+                          .take(3)
+                          .map((w) => w.toLowerCase().replaceAll(RegExp('[^a-z]'), ''))
+                          .where((w) => w.length > 2),
+                      ...existingTags,
+                    ];
+                    output = <String, dynamic>{
+                      'title': title.isNotEmpty ? title : prompt.split(',').first.trim(),
+                      'description': desc.isNotEmpty ? desc : prompt,
+                      'category': category.isNotEmpty ? category : _selectedStyle.label,
+                      'tags': autoTags.toSet().toList(),
+                    };
+                    Navigator.of(ctx).pop();
+                  },
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.upload_outlined, size: 18),
-                    label: const Text('Submit'),
-                    onPressed: () {
-                      final prompt = _promptController.text.trim();
-                      final autoTags = <String>[
-                        ...prompt
-                            .split(' ')
-                            .take(3)
-                            .map((w) => w.toLowerCase().replaceAll(RegExp('[^a-z]'), ''))
-                            .where((w) => w.length > 2),
-                        ...existingTags,
-                      ];
-                      output = <String, dynamic>{
-                        'title': title.isNotEmpty ? title : prompt.split(',').first.trim(),
-                        'description': desc.isNotEmpty ? desc : prompt,
-                        'category': category.isNotEmpty ? category : _selectedStyle.label,
-                        'tags': autoTags.toSet().toList(),
-                      };
-                      Navigator.of(ctx).pop();
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: _AiGenSpace.xs),
                 TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
               ],
             ),
@@ -599,49 +759,42 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              padding: AiSheetChrome.bodyPadding,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Center(
-                    child: Container(
-                      height: 4,
-                      width: 32,
-                      decoration: BoxDecoration(
-                        color: Theme.of(ctx).hintColor,
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Variation', style: Theme.of(ctx).textTheme.displaySmall),
-                  const SizedBox(height: 4),
+                  const AiSheetDragHandle(),
+                  const SizedBox(height: _AiGenSpace.md),
+                  Text('Refine this wallpaper', style: Theme.of(ctx).textTheme.displaySmall),
+                  const SizedBox(height: _AiGenSpace.xs),
                   Text(
-                    'Describe what to change from the last result.',
+                    'Say what should change. We keep the rest of the composition as close as we can.',
                     style: Theme.of(
                       ctx,
-                    ).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.secondary.withValues(alpha: 0.6)),
+                    ).textTheme.bodySmall?.copyWith(color: Theme.of(ctx).colorScheme.onSurfaceVariant, height: 1.35),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: _AiGenSpace.md),
                   TextField(
                     controller: _variationController,
                     minLines: 2,
                     maxLines: 4,
                     autofocus: true,
+                    inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(_maxVariationChars)],
                     decoration: InputDecoration(
-                      hintText: 'Darker background, more neon, colder tones…',
+                      labelText: 'Changes you want',
+                      hintText: 'Darker sky, warmer palette, softer edges…',
                       filled: true,
                       fillColor: Theme.of(ctx).hintColor,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: _AiGenSpace.md),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
                       icon: const Icon(Icons.auto_fix_high, size: 18),
-                      label: const Text('Generate Variation'),
+                      label: const Text('Generate refinement'),
                       onPressed: !app_state.aiVariationsEnabled || _latest == null || _loadingGeneration
                           ? null
                           : () {
@@ -662,152 +815,202 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   // ── UI builders ──────────────────────────────────────────────────────────
 
   Widget _buildQualitySelector() {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: AiQualityTier.values.map((tier) {
-          final bool selected = tier == _selectedQualityTier;
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedQualityTier = tier),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFF7C4DFF).withValues(alpha: 0.25) : Theme.of(context).hintColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: selected ? const Color(0xFF7C4DFF) : Colors.transparent, width: 2),
-                  ),
-                  child: Column(
-                    children: <Widget>[
-                      Text(
-                        tier.label,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: selected ? const Color(0xFF7C4DFF) : Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      Text(
-                        '${tier.coinCost}c',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildResultArea(AiGenerationRecord? current, bool loading) {
-    final bool canSubmit =
-        current != null && current.submittedWallId == null && app_state.aiSubmitEnabled && !_submitting;
-
-    return AspectRatio(
-      aspectRatio: 9 / 16,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
-          child: loading
-              ? _buildResultShimmer(key: const ValueKey<String>('shimmer'))
-              : current == null
-              ? _buildResultPlaceholder(key: const ValueKey<String>('placeholder'))
-              : Stack(
-                  key: ValueKey<String>(current.id),
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    Image.network(
-                      current.displayUrl(isPremium: app_state.prismUser.premium),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black26),
-                    ),
-                    if (canSubmit)
-                      Positioned(
-                        bottom: 12,
-                        right: 12,
-                        child: GestureDetector(
-                          onTap: () => _submitToCommunity(current),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(99)),
-                            child: const Icon(Icons.upload_outlined, color: Colors.white, size: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            'Quality & cost',
+            style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: AiQualityTier.values.map((tier) {
+              final bool selected = tier == _selectedQualityTier;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Semantics(
+                    button: true,
+                    selected: selected,
+                    label: '${tier.label}, ${tier.coinCost} coins',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => setState(() => _selectedQualityTier = tier),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: selected ? scheme.primary.withValues(alpha: 0.22) : Theme.of(context).hintColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: selected ? scheme.primary : Colors.transparent, width: 2),
+                          ),
+                          child: Column(
+                            children: <Widget>[
+                              Text(
+                                tier.label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: selected ? scheme.primary : scheme.secondary,
+                                ),
+                              ),
+                              Text(
+                                '${tier.coinCost}c',
+                                style: TextStyle(fontSize: 11, color: scheme.secondary.withValues(alpha: 0.8)),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                  ],
+                    ),
+                  ),
                 ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultShimmer({Key? key}) {
-    return Container(
-      key: key,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFF7C4DFF), Color(0xFF311B92)],
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.3, end: 1.0),
-            duration: const Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-            onEnd: () {
-              if (mounted) setState(() {});
-            },
-            builder: (_, v, child) => Opacity(opacity: v, child: child),
-            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white70, size: 52),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Crafting your wallpaper…',
-            style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Proxima Nova'),
+              );
+            }).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildResultPlaceholder({Key? key}) {
-    final theme = Theme.of(context);
+  Widget _buildResultArea(AiGenerationRecord? current, bool loading) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool canSubmit =
+        current != null && current.submittedWallId == null && app_state.aiSubmitEnabled && !_submitting;
+    final ({int cacheWidth, int cacheHeight}) decode = _mainPreviewDecodeExtents(context);
+
+    return RepaintBoundary(
+      child: AspectRatio(
+        aspectRatio: 9 / 16,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AnimatedSwitcher(
+            duration: Duration(milliseconds: _motionAllowed(context) ? 320 : 0),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeOutCubic,
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              if (!_motionAllowed(context)) {
+                return child;
+              }
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(
+                    begin: 0.98,
+                    end: 1,
+                  ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+                  child: child,
+                ),
+              );
+            },
+            child: loading
+                ? _buildResultShimmer(key: const ValueKey<String>('shimmer'))
+                : current == null
+                ? _buildResultPlaceholder(key: const ValueKey<String>('placeholder'))
+                : Stack(
+                    key: ValueKey<String>(current.id),
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      _DecodedNetworkImage(
+                        url: current.displayUrl(isPremium: app_state.prismUser.premium),
+                        cacheWidth: decode.cacheWidth,
+                        cacheHeight: decode.cacheHeight,
+                        errorColor: scheme.surfaceContainerHighest,
+                      ),
+                      if (canSubmit)
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Semantics(
+                            button: true,
+                            label: 'Submit wallpaper for community review',
+                            child: Material(
+                              color: scheme.inverseSurface.withValues(alpha: 0.88),
+                              shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () => _submitToCommunity(current),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Icon(Icons.upload_outlined, color: scheme.onInverseSurface, size: 20),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultShimmer({Key? key}) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final TextStyle? lineStyle = theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant);
     return Container(
       key: key,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            const Color(0xFF7C4DFF).withValues(alpha: 0.22),
-            const Color(0xFF311B92).withValues(alpha: 0.10),
-          ],
-        ),
-        border: Border.all(color: const Color(0xFF7C4DFF).withValues(alpha: 0.18)),
+        color: scheme.surfaceContainerHighest,
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.primary)),
+          const SizedBox(height: _AiGenSpace.md),
+          Text('Crafting your wallpaper…', style: lineStyle?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: _AiGenSpace.xs),
+          if (_motionAllowed(context))
+            _AiCyclingStatusLine(lines: _loadingStatusLines, textStyle: lineStyle)
+          else
+            Text(_loadingStatusLines.first, textAlign: TextAlign.center, style: lineStyle),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultPlaceholder({Key? key}) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return Container(
+      key: key,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.65)),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Icon(Icons.auto_awesome_rounded, size: 52, color: const Color(0xFF7C4DFF).withValues(alpha: 0.5)),
-          const SizedBox(height: 14),
+          Icon(Icons.auto_awesome_rounded, size: 48, color: scheme.primary.withValues(alpha: 0.45)),
+          const SizedBox(height: _AiGenSpace.sm),
           Text(
-            'Your wallpaper appears here',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.45)),
+            'Your next wallpaper',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.92),
+            ),
+          ),
+          const SizedBox(height: _AiGenSpace.xs),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Text(
+              'Pick a style, describe the scene, then tap Generate. Chips below drop in a full idea you can edit.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.4),
+            ),
           ),
         ],
       ),
@@ -819,30 +1022,36 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     required String label,
     required VoidCallback onTap,
     bool isPrimary = false,
+    String? semanticLabel,
   }) {
-    return Material(
-      color: isPrimary ? const Color(0xFF7C4DFF) : Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: semanticLabel ?? label,
+      child: Material(
+        color: isPrimary ? scheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(icon, size: 22, color: isPrimary ? Colors.white : Theme.of(context).colorScheme.onSurface),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isPrimary ? Colors.white : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isPrimary ? scheme.onPrimary : scheme.onSurface.withValues(alpha: 0.8),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -864,11 +1073,23 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             actionButton(
               icon: Icons.wallpaper_outlined,
               label: 'Set',
+              semanticLabel: 'Set as wallpaper',
               onTap: () => _setWallpaper(current),
               isPrimary: true,
             ),
-          actionButton(icon: Icons.download_outlined, label: 'Save', onTap: () => _save(current)),
-          if (canVary) actionButton(icon: Icons.auto_fix_high, label: 'Vary', onTap: _showAdvancedSheet),
+          actionButton(
+            icon: Icons.download_outlined,
+            label: 'Save',
+            semanticLabel: 'Save image to your device',
+            onTap: () => _save(current),
+          ),
+          if (canVary)
+            actionButton(
+              icon: Icons.auto_fix_high,
+              label: 'Refine',
+              semanticLabel: 'Refine this wallpaper with a follow-up description',
+              onTap: _showAdvancedSheet,
+            ),
         ],
       ),
     );
@@ -886,36 +1107,42 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           final style = AiStylePreset.values[index];
           final bool selected = style == _selectedStyle;
           final List<Color> colors = style.swatchColors;
-          return GestureDetector(
-            onTap: () {
-              setState(() => _selectedStyle = style);
-              _shufflePrompt();
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 80,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: selected ? Colors.white : Colors.transparent, width: selected ? 2.5 : 0),
-                boxShadow: selected
-                    ? <BoxShadow>[
-                        BoxShadow(color: colors.first.withValues(alpha: 0.45), blurRadius: 10, spreadRadius: 1),
-                      ]
-                    : null,
-              ),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    style.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'Proxima Nova',
-                      shadows: <Shadow>[Shadow(blurRadius: 4, color: Colors.black45)],
+          return Semantics(
+            button: true,
+            selected: selected,
+            label: 'Style: ${style.label}',
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _selectedStyle = style);
+                _shufflePrompt();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: 80,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: selected ? Colors.white : Colors.transparent, width: selected ? 2.5 : 0),
+                  boxShadow: selected
+                      ? <BoxShadow>[
+                          BoxShadow(color: colors.first.withValues(alpha: 0.45), blurRadius: 10, spreadRadius: 1),
+                        ]
+                      : null,
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      style.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: 'Proxima Nova',
+                        shadows: <Shadow>[Shadow(blurRadius: 4, color: Colors.black45)],
+                      ),
                     ),
                   ),
                 ),
@@ -929,6 +1156,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Widget _buildPromptArea(bool loading) {
     final theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     final List<String> scenes = (_scenePoolByStyle[_selectedStyle] ?? _scenePoolByStyle[AiStylePreset.abstract]!)
         .take(3)
         .toList();
@@ -936,6 +1164,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        Text(
+          'Starting points',
+          style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: _AiGenSpace.xs),
         Wrap(
           spacing: 8,
           runSpacing: 6,
@@ -943,6 +1176,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             final short = scene.length > 28 ? '${scene.substring(0, 28)}…' : scene;
             return ActionChip(
               label: Text(short, style: const TextStyle(fontSize: 12)),
+              tooltip: 'Use this scene in your description (editable)',
               onPressed: loading
                   ? null
                   : () => setState(() {
@@ -955,7 +1189,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             );
           }).toList(),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: _AiGenSpace.xs),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
@@ -966,8 +1200,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                 minLines: 2,
                 maxLines: 5,
                 textInputAction: TextInputAction.done,
+                inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(_maxPromptChars)],
                 decoration: InputDecoration(
-                  hintText: 'Describe your wallpaper…',
+                  labelText: 'Description',
+                  floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  hintText: 'e.g. misty peaks at dawn, soft light, no text on image',
+                  helperText:
+                      'Subject, mood, and lighting work well. The box may start with an example—edit it or tap refresh for another.',
+                  helperMaxLines: 3,
                   filled: true,
                   fillColor: theme.hintColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
@@ -977,7 +1217,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             ),
             const SizedBox(width: 8),
             IconButton(
-              tooltip: 'New idea',
+              tooltip: 'Shuffle a new example description',
               onPressed: loading ? null : _shufflePrompt,
               icon: const Icon(Icons.refresh_rounded),
             ),
@@ -988,22 +1228,41 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Widget _buildGenerateButton(bool canUseAi, bool loading, int coinBalance) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final int cost = _selectedQualityTier.coinCost;
+    final bool hasCoins = coinBalance >= cost;
     final String label;
     if (loading) {
-      label = 'Crafting your wallpaper…';
-    } else if (coinBalance >= cost) {
+      label = 'Crafting…';
+    } else if (hasCoins) {
       label = 'Generate  ·  $cost coins';
     } else {
-      label = 'Watch Ad to Earn Coins';
+      label = 'Get coins · need $cost';
     }
 
-    final bool enabled = canUseAi && !loading;
+    final bool canPress = canUseAi && !loading;
+    final VoidCallback? onPressed;
+    if (!canPress) {
+      onPressed = null;
+    } else if (!hasCoins) {
+      onPressed = () => context.router.push(const CoinTransactionsRoute());
+    } else {
+      onPressed = () => _generate();
+    }
+
+    final bool showAccent = canPress;
 
     return Container(
       decoration: BoxDecoration(
-        gradient: enabled ? const LinearGradient(colors: <Color>[Color(0xFF7C4DFF), Color(0xFF311B92)]) : null,
-        color: enabled ? null : Theme.of(context).hintColor,
+        gradient: showAccent
+            ? LinearGradient(
+                colors: <Color>[
+                  scheme.primary,
+                  Color.alphaBlend(scheme.primary.withValues(alpha: 0.88), scheme.surface),
+                ],
+              )
+            : null,
+        color: showAccent ? null : Theme.of(context).hintColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: SizedBox(
@@ -1013,19 +1272,19 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           style: FilledButton.styleFrom(
             backgroundColor: Colors.transparent,
             disabledBackgroundColor: Colors.transparent,
-            foregroundColor: Colors.white,
-            disabledForegroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+            foregroundColor: showAccent ? scheme.onPrimary : scheme.secondary.withValues(alpha: 0.4),
+            disabledForegroundColor: scheme.secondary.withValues(alpha: 0.4),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             shadowColor: Colors.transparent,
           ),
-          onPressed: enabled ? () => _generate() : null,
+          onPressed: onPressed,
           icon: loading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary.withValues(alpha: 0.85)),
                 )
-              : const Icon(Icons.auto_awesome_rounded, size: 18),
+              : Icon(hasCoins ? Icons.auto_awesome_rounded : Icons.account_balance_wallet_outlined, size: 18),
           label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
         ),
       ),
@@ -1038,50 +1297,83 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
       );
     }
-    if (_history.isEmpty) return const SizedBox.shrink();
-
     final theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    if (_history.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: _AiGenSpace.xl),
+        child: Text(
+          'Each generation you keep appears here so you can compare or switch back.',
+          style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SizedBox(height: 24),
+        const SizedBox(height: _AiGenSpace.xl),
         Row(
           children: <Widget>[
             Text('Recent', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
             const Spacer(),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: _AiGenSpace.sm),
         SizedBox(
           height: 104,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _history.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (_, index) {
-              final item = _history[index];
-              final bool isSelected = item.id == _latest?.id;
-              return GestureDetector(
-                onTap: () => setState(() => _latest = item),
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: isSelected ? 1.0 : 0.5,
-                  child: Container(
-                    width: 60,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: isSelected ? Border.all(color: const Color(0xFF7C4DFF), width: 2) : null,
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        item.displayUrl(isPremium: app_state.prismUser.premium),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black26),
+          child: Builder(
+            builder: (BuildContext listContext) {
+              final ({int cacheWidth, int cacheHeight}) hx = _thumbDecodeExtents(
+                listContext,
+                logicalW: 60,
+                logicalH: 104,
+              );
+              return ListView.separated(
+                scrollDirection: Axis.horizontal,
+                addAutomaticKeepAlives: false,
+                itemCount: _history.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, index) {
+                  final item = _history[index];
+                  final bool isSelected = item.id == _latest?.id;
+                  final bool motion = _motionAllowed(listContext);
+                  return Semantics(
+                    button: true,
+                    selected: isSelected,
+                    label: isSelected ? 'Selected generation' : 'Past generation',
+                    child: GestureDetector(
+                      onTap: () => setState(() => _latest = item),
+                      child: AnimatedOpacity(
+                        duration: Duration(milliseconds: motion ? 200 : 0),
+                        curve: Curves.easeOutCubic,
+                        opacity: isSelected ? 1.0 : 0.5,
+                        child: AnimatedScale(
+                          duration: Duration(milliseconds: motion ? 200 : 0),
+                          curve: Curves.easeOutCubic,
+                          scale: isSelected ? 1.0 : 0.96,
+                          child: Container(
+                            width: 60,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: isSelected ? Border.all(color: theme.colorScheme.primary, width: 2) : null,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _DecodedNetworkImage(
+                                url: item.displayUrl(isPremium: app_state.prismUser.premium),
+                                cacheWidth: hx.cacheWidth,
+                                cacheHeight: hx.cacheHeight,
+                                filterQuality: FilterQuality.low,
+                                errorColor: theme.colorScheme.surfaceContainerHighest,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               );
             },
           ),
@@ -1093,7 +1385,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   @override
   Widget build(BuildContext context) {
     final bool canUseAi = _isRolloutEligible;
-    final int coinBalance = CoinsService.instance.balanceNotifier.value;
     final AiGenerationRecord? current = _latest;
     final bool canPop = Navigator.of(context).canPop();
 
@@ -1101,7 +1392,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
         automaticallyImplyLeading: canPop,
-        title: const Text('Generate'),
+        title: const Text('AI wallpaper'),
         actions: const <Widget>[
           CoinBalanceChip(sourceTag: 'ai_gen_page', showStreak: false),
           SizedBox(width: 8),
@@ -1113,55 +1404,139 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           onRefresh: _loadHistory,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            padding: const EdgeInsets.fromLTRB(16, _AiGenSpace.sm, 16, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                // Rollout gating notice
                 if (!canUseAi)
                   Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: _AiGenSpace.md),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).hintColor,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      app_state.aiEnabled
-                          ? "AI generation is rolling out (${app_state.aiRolloutPercent}%). You'll get access soon!"
-                          : 'AI generation is currently disabled.',
-                      style: Theme.of(context).textTheme.bodySmall,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          app_state.aiEnabled ? 'Opening gradually' : 'Unavailable',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          app_state.aiEnabled
+                              ? 'AI wallpaper is rolling out (${app_state.aiRolloutPercent}% of accounts). Try again soon.'
+                              : 'AI wallpaper is turned off right now.',
+                          textAlign: TextAlign.start,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.35),
+                        ),
+                      ],
                     ),
                   ),
-
-                // Result area
                 _buildResultArea(current, _loadingGeneration),
-                const SizedBox(height: 12),
-
-                // Action row (only when result is available)
-                if (current != null) ...<Widget>[_buildActionRow(current), const SizedBox(height: 16)],
-
-                // Style picker
+                if (current != null) ...<Widget>[
+                  const SizedBox(height: _AiGenSpace.sm),
+                  _buildActionRow(current),
+                  const SizedBox(height: _AiGenSpace.lg),
+                ] else
+                  const SizedBox(height: _AiGenSpace.lg),
                 _buildStylePicker(),
-                const SizedBox(height: 16),
-
-                // Quality selector
+                const SizedBox(height: _AiGenSpace.md),
                 _buildQualitySelector(),
-
-                // Prompt area
+                const SizedBox(height: _AiGenSpace.md),
                 _buildPromptArea(_loadingGeneration),
-                const SizedBox(height: 16),
-
-                // Generate button
-                _buildGenerateButton(canUseAi, _loadingGeneration, coinBalance),
-
-                // History strip
+                const SizedBox(height: _AiGenSpace.md),
+                ValueListenableBuilder<int>(
+                  valueListenable: CoinsService.instance.balanceNotifier,
+                  builder: (BuildContext context, int coinBalance, _) {
+                    return _buildGenerateButton(canUseAi, _loadingGeneration, coinBalance);
+                  },
+                ),
                 _buildHistoryStrip(),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AiCyclingStatusLine extends StatefulWidget {
+  const _AiCyclingStatusLine({required this.lines, required this.textStyle});
+
+  final List<String> lines;
+  final TextStyle? textStyle;
+
+  @override
+  State<_AiCyclingStatusLine> createState() => _AiCyclingStatusLineState();
+}
+
+class _AiCyclingStatusLineState extends State<_AiCyclingStatusLine> {
+  Timer? _timer;
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.lines.length <= 1) {
+      return;
+    }
+    _timer = Timer.periodic(const Duration(milliseconds: 2500), (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _index = (_index + 1) % widget.lines.length);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String line = widget.lines[_index % widget.lines.length];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 280),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeOutCubic,
+        child: Text(line, key: ValueKey<String>(line), textAlign: TextAlign.center, style: widget.textStyle),
+      ),
+    );
+  }
+}
+
+class _DecodedNetworkImage extends StatelessWidget {
+  const _DecodedNetworkImage({
+    required this.url,
+    required this.cacheWidth,
+    required this.cacheHeight,
+    this.filterQuality = FilterQuality.medium,
+    required this.errorColor,
+  });
+
+  final String url;
+  final int cacheWidth;
+  final int cacheHeight;
+  final FilterQuality filterQuality;
+  final Color errorColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      cacheWidth: cacheWidth,
+      cacheHeight: cacheHeight,
+      filterQuality: filterQuality,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => ColoredBox(color: errorColor),
     );
   }
 }

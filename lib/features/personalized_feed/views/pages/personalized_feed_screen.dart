@@ -14,7 +14,6 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -96,24 +95,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
               onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 100, 20, 20),
+                padding: const EdgeInsets.fromLTRB(24, 120, 24, 32),
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.14)),
-                    ),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.wifi_tethering_error_rounded, size: 28),
-                        SizedBox(height: 10),
-                        Text("Couldn't load your personalized feed."),
-                        SizedBox(height: 6),
-                        Text('Pull down to retry.'),
-                      ],
-                    ),
+                  PersonalizedFeedEditorialNote(
+                    title: "Couldn't load your feed",
+                    detail: 'Check your connection, then pull down to try again.',
+                    accentColor: theme.colorScheme.error,
                   ),
                 ],
               ),
@@ -135,33 +122,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                 slivers: [
                   // Carousel: WallOfTheDay + banner + 4 wallpaper previews
                   SliverToBoxAdapter(child: _FeedCarousel(previewWalls: previewWalls)),
-                  // SliverToBoxAdapter(
-                  //   child: AnimatedOpacity(
-                  //     opacity: state.status == LoadStatus.success ? 1 : 0,
-                  //     duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                  //     curve: Curves.easeOut,
-                  //     child: AnimatedSlide(
-                  //       offset: state.status == LoadStatus.success ? Offset.zero : const Offset(0, 0.06),
-                  //       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
-                  //       curve: Curves.easeOutCubic,
-                  //       child: PersonalizedFeedHeader(
-                  //         prismCount: state.sourcePrism,
-                  //         wallhavenCount: state.sourceWallhaven,
-                  //         pexelsCount: state.sourcePexels,
-                  //         itemCount: state.items.length,
-                  //         isFetchingMore: state.isFetchingMore,
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
                   SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
                       childAspectRatio: 0.5,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          WallpaperTile(item: visibleItems[index], index: index, memCacheHeight: tileMemCacheHeight),
+                      (context, index) => WallpaperTile(
+                        item: visibleItems[index],
+                        index: index,
+                        crossAxisCount: crossAxisCount,
+                        memCacheHeight: tileMemCacheHeight,
+                      ),
                       childCount: visibleItems.length,
                     ),
                   ),
@@ -178,8 +150,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   Widget _bottomState(BuildContext context, PersonalizedFeedState state) {
     if (state.items.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.fromLTRB(20, 8, 20, 26),
-        child: PersonalizedEmptyCard(message: 'Follow more creators or pick interests to improve your For You feed.'),
+        padding: EdgeInsets.fromLTRB(24, 12, 24, 28),
+        child: PersonalizedEmptyCard(
+          title: 'Shape this feed',
+          detail: 'Follow creators or choose interests so we can surface more of what you like.',
+        ),
       );
     }
 
@@ -195,8 +170,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
     }
 
     return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 8, 20, 26),
-      child: PersonalizedEmptyCard(message: 'You are all caught up. Pull to refresh for fresh picks.'),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, 28),
+      child: PersonalizedEmptyCard(
+        title: "You're caught up",
+        detail: 'Pull down to refresh — new picks will land here.',
+      ),
     );
   }
 
@@ -268,17 +246,17 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: context.prismModeStyleForContext() == "Dark"
-                          ? Colors.white10
-                          : Colors.black.withValues(alpha: .1),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       image: DecorationImage(
                         image: CachedNetworkImageProvider(app_state.topImageLink),
                         fit: BoxFit.cover,
                       ),
                     ),
                     child: Center(
-                      child: Container(
-                        color: app_state.bannerTextOn ? Colors.black.withValues(alpha: 0.4) : Colors.transparent,
+                      child: ColoredBox(
+                        color: app_state.bannerTextOn
+                            ? Theme.of(context).colorScheme.scrim.withValues(alpha: 0.45)
+                            : Colors.transparent,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
@@ -287,6 +265,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                             maxLines: 1,
                             style: Theme.of(context).textTheme.displayMedium!.copyWith(
                               fontSize: 20,
+                              // High-contrast on arbitrary photography under [ColorScheme.scrim].
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
@@ -319,13 +298,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                   context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
                 },
                 child: wall == null
-                    ? Container(
-                        decoration: BoxDecoration(
-                          color: context.prismModeStyleForContext() == "Dark"
-                              ? Colors.white10
-                              : Colors.black.withValues(alpha: .1),
-                        ),
-                      )
+                    ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest)
                     : PremiumBannerWallsCarousel(
                         comparator: !app_state.isPremiumWall(
                           app_state.premiumCollections,
@@ -333,9 +306,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                         ),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: context.prismModeStyleForContext() == "Dark"
-                                ? Colors.white10
-                                : Colors.black.withValues(alpha: .1),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             image: DecorationImage(
                               image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
                               fit: BoxFit.cover,

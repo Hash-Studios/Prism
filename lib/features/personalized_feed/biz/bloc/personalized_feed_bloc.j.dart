@@ -5,14 +5,19 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/domain/usecases/personalized_feed_usecases.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
-import 'package:Prism/logger/logger.dart';
 
 part 'personalized_feed_event.j.dart';
 part 'personalized_feed_state.j.dart';
 part 'personalized_feed_bloc.j.freezed.dart';
+
+int _elapsedLoadMs(Stopwatch sw) {
+  sw.stop();
+  return sw.elapsedMilliseconds;
+}
 
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
@@ -21,7 +26,6 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
-    on<_RetryRequested>(_onRetryRequested);
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
@@ -53,9 +57,11 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress, failure: null));
 
     final nextPage = state.page + 1;
+    final loadMoreStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
       FetchPersonalizedFeedParams(page: nextPage, refresh: false, seenKeys: state.seenKeys, existingItems: state.items),
     );
+    final loadMoreMs = _elapsedLoadMs(loadMoreStopwatch);
 
     result.fold(
       onSuccess: (page) {
@@ -83,7 +89,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
             result: page.items.isEmpty ? EventResultValue.empty : EventResultValue.success,
-            loadTimeMs: 0,
+            loadTimeMs: loadMoreMs,
             sourceContext: 'personalized_feed_more',
             itemCount: merged.length,
           ),
@@ -92,20 +98,16 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
       onFailure: (failure) {
         emit(state.copyWith(actionStatus: ActionStatus.failure, isFetchingMore: false, failure: failure));
         analytics.track(
-          const SurfaceContentLoadedEvent(
+          SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
             result: EventResultValue.failure,
-            loadTimeMs: 0,
+            loadTimeMs: loadMoreMs,
             sourceContext: 'personalized_feed_more',
             reason: AnalyticsReasonValue.error,
           ),
         );
       },
     );
-  }
-
-  Future<void> _onRetryRequested(_RetryRequested event, Emitter<PersonalizedFeedState> emit) async {
-    await _load(emit, refresh: true);
   }
 
   Future<void> _load(
@@ -127,6 +129,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
         : state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress, failure: null);
     emit(baseState);
 
+    final initialStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
       FetchPersonalizedFeedParams(
         page: 1,
@@ -135,6 +138,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
         existingItems: const <FeedItemEntity>[],
       ),
     );
+    final initialLoadMs = _elapsedLoadMs(initialStopwatch);
 
     result.fold(
       onSuccess: (page) {
@@ -161,7 +165,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
             result: page.items.isEmpty ? EventResultValue.empty : EventResultValue.success,
-            loadTimeMs: 0,
+            loadTimeMs: initialLoadMs,
             sourceContext: refresh ? 'personalized_feed_refresh' : 'personalized_feed_initial',
             itemCount: page.items.length,
           ),
@@ -173,7 +177,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
           SurfaceContentLoadedEvent(
             surface: AnalyticsSurfaceValue.homeWallpaperGrid,
             result: EventResultValue.failure,
-            loadTimeMs: 0,
+            loadTimeMs: initialLoadMs,
             sourceContext: refresh ? 'personalized_feed_refresh' : 'personalized_feed_initial',
             reason: AnalyticsReasonValue.error,
           ),
