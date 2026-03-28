@@ -758,7 +758,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             ),
     );
 
-    final bool canNavigate = emailTrimmed.isNotEmpty;
+    // Prefer email; fall back to name as username (getUserProfile handles both).
+    final String profileIdentifier = emailTrimmed.isNotEmpty ? emailTrimmed : nameTrimmed;
+    final bool canNavigate = profileIdentifier.isNotEmpty;
 
     if (displayLabel == null) {
       final Widget solo = Padding(padding: const EdgeInsets.only(bottom: 4), child: avatar);
@@ -768,7 +770,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       return Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: emailTrimmed)),
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
           borderRadius: BorderRadius.circular(8),
           child: solo,
         ),
@@ -798,7 +800,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       row = Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: emailTrimmed)),
+          onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
           borderRadius: BorderRadius.circular(8),
           child: row,
         ),
