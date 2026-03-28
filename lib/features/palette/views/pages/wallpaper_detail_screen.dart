@@ -66,6 +66,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
+  static const double _sheetHPad = 24.0;
+
   late AnimationController shakeController;
   late Animation<double> _offsetAnimation;
   ScreenshotController screenshotController = ScreenshotController();
@@ -386,7 +388,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     ),
                   ),
                 ),
-                Expanded(flex: 5, child: _buildActionButtons(context, state)),
+                _buildActionButtons(context, state),
+                const SizedBox(height: _sheetHPad),
               ],
             ),
           ),
@@ -398,7 +401,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildCollapseHandle(BuildContext context, WallpaperDetailLoaded state) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: GestureDetector(
           onTap: () {
             if (state.panelScrollInProgress) return;
@@ -458,7 +461,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: _sheetHPad, vertical: 8),
       height: 88,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -532,19 +535,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildPrismMetadata(BuildContext context, PrismWallpaper wallpaper, WallpaperDetailLoaded state) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.36,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+          Flexible(
+            flex: 5,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
                     runSpacing: 4,
@@ -558,18 +561,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                       if (state.views != null) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Container(height: 20, color: Theme.of(context).colorScheme.secondary, width: 2),
+                          child: Container(
+                            height: 16,
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
                         ),
                         Text(
                           "${state.views} views",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
+                          ),
                         ),
                       ] else if (state.viewsLoading) ...[
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Container(height: 20, color: Theme.of(context).colorScheme.secondary, width: 2),
+                          child: Container(
+                            height: 16,
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+                            width: 1,
+                          ),
                         ),
                         SizedBox(
                           width: 12,
@@ -583,25 +594,40 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     ],
                   ),
                 ),
-              ),
-              if (wallpaper.collections?.isNotEmpty == true)
-                _buildInfoRow(context, JamIcons.folder, wallpaper.collections!.take(2).join(', ')),
-              if (wallpaper.core.category != null)
-                _buildInfoRow(context, JamIcons.unordered_list, wallpaper.core.category!),
-              if (wallpaper.core.resolution != null)
-                _buildInfoRow(context, JamIcons.set_square, wallpaper.core.resolution!),
-              if (wallpaper.core.sizeBytes != null)
-                _buildInfoRow(context, JamIcons.save, "${(wallpaper.core.sizeBytes! / 1000000).toStringAsFixed(2)} MB"),
-            ],
+                if (wallpaper.collections?.isNotEmpty == true) ...[
+                  _buildInfoRow(context, JamIcons.folder, wallpaper.collections!.take(2).join(', ')),
+                  const SizedBox(height: 4),
+                ],
+                if (wallpaper.core.category != null) ...[
+                  _buildInfoRow(context, JamIcons.unordered_list, wallpaper.core.category!),
+                  const SizedBox(height: 4),
+                ],
+                if (wallpaper.core.resolution != null) ...[
+                  _buildInfoRow(context, JamIcons.set_square, wallpaper.core.resolution!),
+                  const SizedBox(height: 4),
+                ],
+                if (wallpaper.core.sizeBytes != null)
+                  _buildInfoRow(
+                    context,
+                    JamIcons.save,
+                    "${(wallpaper.core.sizeBytes! / 1000000).toStringAsFixed(2)} MB",
+                  ),
+              ],
+            ),
           ),
+          const SizedBox(width: 12),
           Flexible(
+            flex: 4,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildPrismAuthorRow(context, wallpaper),
-                if (wallpaper.core.createdAt != null)
+                if (wallpaper.core.createdAt != null) ...[
+                  const SizedBox(height: 4),
                   _buildInfoRow(context, JamIcons.calendar, _formatDate(wallpaper.core.createdAt!), reversed: true),
+                ],
+                const SizedBox(height: 4),
                 _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
               ],
             ),
@@ -613,40 +639,49 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildWallhavenMetadata(BuildContext context, WallhavenWallpaper wallpaper, WallpaperDetailEntity entity) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoTitle(context, wallpaper.id.toUpperCase()),
-              const SizedBox(height: 5),
-              if (wallpaper.views != null) _buildInfoRow(context, JamIcons.eye, wallpaper.views.toString()),
-              const SizedBox(height: 5),
-              if (wallpaper.core.favourites != null)
-                _buildInfoRow(context, JamIcons.heart_f, wallpaper.core.favourites.toString()),
-              const SizedBox(height: 5),
-              if (wallpaper.sizeBytes != null || wallpaper.core.sizeBytes != null)
-                _buildInfoRow(
-                  context,
-                  JamIcons.save,
-                  "${((wallpaper.sizeBytes ?? wallpaper.core.sizeBytes ?? 0) / 1000000).toStringAsFixed(2)} MB",
-                ),
-            ],
-          ),
           Flexible(
+            flex: 5,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoTitle(context, wallpaper.id.toUpperCase()),
+                if (wallpaper.views != null) ...[
+                  const SizedBox(height: 4),
+                  _buildInfoRow(context, JamIcons.eye, wallpaper.views.toString()),
+                ],
+                if (wallpaper.core.favourites != null) ...[
+                  const SizedBox(height: 4),
+                  _buildInfoRow(context, JamIcons.heart_f, wallpaper.core.favourites.toString()),
+                ],
+                if (wallpaper.sizeBytes != null || wallpaper.core.sizeBytes != null) ...[
+                  const SizedBox(height: 4),
+                  _buildInfoRow(
+                    context,
+                    JamIcons.save,
+                    "${((wallpaper.sizeBytes ?? wallpaper.core.sizeBytes ?? 0) / 1000000).toStringAsFixed(2)} MB",
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 4,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (wallpaper.core.authorName != null && wallpaper.core.authorName!.isNotEmpty) ...[
                   _buildWallhavenAuthorLink(context, wallpaper.core.authorName!),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                 ],
-                if (wallpaper.core.category != null)
+                if (wallpaper.core.category != null) ...[
                   _buildInfoRow(
                     context,
                     JamIcons.unordered_list,
@@ -654,8 +689,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     reversed: true,
                     showIconLast: true,
                   ),
-                const SizedBox(height: 5),
-                if (wallpaper.core.resolution != null)
+                  const SizedBox(height: 4),
+                ],
+                if (wallpaper.core.resolution != null) ...[
                   _buildInfoRow(
                     context,
                     JamIcons.set_square,
@@ -663,7 +699,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     reversed: true,
                     showIconLast: true,
                   ),
-                const SizedBox(height: 5),
+                  const SizedBox(height: 4),
+                ],
                 _buildInfoRow(
                   context,
                   JamIcons.database,
@@ -681,30 +718,36 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildPexelsMetadata(BuildContext context, PexelsWallpaper wallpaper, WallpaperDetailEntity entity) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(35, 0, 35, 10),
+      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoTitle(context, wallpaper.id),
-              const SizedBox(height: 5),
-              _buildInfoRow(context, JamIcons.info, wallpaper.id),
-              const SizedBox(height: 5),
-              if (wallpaper.core.width != null && wallpaper.core.height != null)
-                _buildInfoRow(context, JamIcons.set_square, "${wallpaper.core.width}x${wallpaper.core.height}"),
-            ],
-          ),
           Flexible(
+            flex: 5,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoTitle(context, wallpaper.id),
+                if (wallpaper.core.width != null && wallpaper.core.height != null) ...[
+                  const SizedBox(height: 4),
+                  _buildInfoRow(context, JamIcons.set_square, "${wallpaper.core.width}x${wallpaper.core.height}"),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 4,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (wallpaper.photographer != null && wallpaper.photographer!.isNotEmpty)
+                if (wallpaper.photographer != null && wallpaper.photographer!.isNotEmpty) ...[
                   _buildPexelsPhotographerLink(context, wallpaper.photographer!, wallpaper.photographerUrl),
+                  const SizedBox(height: 4),
+                ],
                 _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true, showIconLast: true),
               ],
             ),
@@ -908,16 +951,25 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildActionButtons(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = state.screenshotTaken && state.imageFile != null ? state.imageFile!.path : entity.fullUrl;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
-        if (!hideSetWallpaperUi)
-          SetWallpaperButton(colorChanged: state.colorChanged, url: url, promptNotificationPermissionOnSuccess: true),
-        FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
-        ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
-        EditButton(url: entity.fullUrl),
-      ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
+            if (!hideSetWallpaperUi)
+              SetWallpaperButton(
+                colorChanged: state.colorChanged,
+                url: url,
+                promptNotificationPermissionOnSuccess: true,
+              ),
+            FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false),
+            ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
+            EditButton(url: entity.fullUrl),
+          ],
+        ),
+      ),
     );
   }
 
