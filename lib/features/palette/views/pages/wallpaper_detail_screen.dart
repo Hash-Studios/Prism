@@ -31,8 +31,10 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
@@ -333,6 +335,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         color: Colors.transparent,
         maxHeight: MediaQuery.of(context).size.height * 0.43,
         controller: panelController,
+        backdropOpacity: 0,
         panel: _buildInfoPanel(context, state),
         body: _buildImageBody(context, offsetAnimation, paletteLoading, state),
       ),
@@ -341,22 +344,25 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildInfoPanel(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
+    final size = Size(MediaQuery.of(context).size.width - 20, MediaQuery.of(context).size.height * 0.43);
+
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-      height: MediaQuery.of(context).size.height * 0.43,
-      width: MediaQuery.of(context).size.width,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 750),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              color: state.panelCollapsed
-                  ? Theme.of(context).primaryColor.withValues(alpha: 1)
-                  : Theme.of(context).primaryColor.withValues(alpha: 0.5),
-            ),
+      height: size.height,
+      width: size.width,
+      child: LiquidGlassLayer(
+        settings: LiquidGlassSettings(
+          thickness: 40,
+          ambientStrength: 0.2,
+          blur: 4,
+          glassColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+        ),
+        fake: defaultTargetPlatform != TargetPlatform.iOS,
+        child: LiquidGlass(
+          shape: const LiquidRoundedSuperellipse(borderRadius: 56),
+          child: SizedBox(
+            height: size.height,
+            width: size.width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
