@@ -3,14 +3,15 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
@@ -148,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: 'CONTENT FILTERS',
       children: [
         SwitchListTile(
-          activeColor: _accentColor,
+          activeThumbColor: _accentColor,
           secondary: const Icon(JamIcons.picture),
           value: _categories == 111,
           title: Text('Show Anime Wallpapers', style: _titleStyle),
@@ -163,7 +164,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         SwitchListTile(
-          activeColor: _accentColor,
+          activeThumbColor: _accentColor,
           secondary: const Icon(JamIcons.stop_sign),
           value: _purity == 110,
           title: Text('Show Sketchy Wallpapers', style: _titleStyle),
@@ -213,27 +214,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   RadioListTile<String>(
                     value: 'original',
+                    // ignore: deprecated_member_use
                     groupValue: _downloadQuality,
+                    // ignore: deprecated_member_use
                     activeColor: _accentColor,
                     title: Text('Original', style: _titleStyle),
                     subtitle: const Text('Full resolution, larger file size', style: TextStyle(fontSize: 12)),
+                    // ignore: deprecated_member_use
                     onChanged: (v) {
                       setSheetState(() {});
-                      setState(() => _downloadQuality = v!);
-                      _settingsLocal.set(PersistenceKeys.downloadQuality, v!);
+                      setState(() => _downloadQuality = v ?? _downloadQuality);
+                      _settingsLocal.set(PersistenceKeys.downloadQuality, v ?? _downloadQuality);
                       Navigator.pop(ctx);
                     },
                   ),
                   RadioListTile<String>(
                     value: 'compressed',
+                    // ignore: deprecated_member_use
                     groupValue: _downloadQuality,
+                    // ignore: deprecated_member_use
                     activeColor: _accentColor,
                     title: Text('Compressed', style: _titleStyle),
                     subtitle: const Text('Smaller file size, slightly reduced quality', style: TextStyle(fontSize: 12)),
+                    // ignore: deprecated_member_use
                     onChanged: (v) {
                       setSheetState(() {});
-                      setState(() => _downloadQuality = v!);
-                      _settingsLocal.set(PersistenceKeys.downloadQuality, v!);
+                      setState(() => _downloadQuality = v ?? _downloadQuality);
+                      _settingsLocal.set(PersistenceKeys.downloadQuality, v ?? _downloadQuality);
                       Navigator.pop(ctx);
                     },
                   ),
@@ -252,7 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: 'NOTIFICATIONS',
       children: [
         SwitchListTile(
-          activeColor: _accentColor,
+          activeThumbColor: _accentColor,
           secondary: const Icon(Icons.wb_sunny_outlined),
           value: _notifWotd,
           title: Text('Wall of the Day', style: _titleStyle),
@@ -263,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         SwitchListTile(
-          activeColor: _accentColor,
+          activeThumbColor: _accentColor,
           secondary: const Icon(Icons.campaign_outlined),
           value: _notifPromo,
           title: Text('Promotional Alerts', style: _titleStyle),
@@ -390,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final String signInResult = await app_state.gAuth.signInWithGoogle();
                 if (!mounted) return;
                 if (signInResult == GoogleAuth.signInCancelledResult) {
-                  Navigator.pop(this.context);
+                  Navigator.pop(context);
                   app_state.prismUser.loggedIn = false;
                   app_state.persistPrismUser();
                   _trackSettingsAuthResult(
@@ -405,12 +412,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _trackSettingsAuthResult(action: AnalyticsActionValue.signInTapped, result: EventResultValue.success);
                 app_state.prismUser.loggedIn = true;
                 app_state.persistPrismUser();
-                Navigator.pop(this.context);
-                main.RestartWidget.restartApp(this.context);
+                Navigator.pop(context);
+                main.RestartWidget.restartApp(context);
               } catch (e) {
                 if (!mounted) return;
                 logger.d(e);
-                Navigator.pop(this.context);
+                Navigator.pop(context);
                 _trackSettingsAuthResult(
                   action: AnalyticsActionValue.signInTapped,
                   result: EventResultValue.failure,
@@ -471,6 +478,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           },
         ),
         ListTile(
+          leading: const Icon(Icons.restore_rounded),
+          title: Text('Restore Purchases', style: _titleStyle),
+          subtitle: const Text('Restore a previously purchased subscription', style: TextStyle(fontSize: 12)),
+          onTap: () async {
+            _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
+            try {
+              await PurchasesService.instance.restore();
+              toasts.codeSend('Purchases restored!');
+            } catch (e) {
+              toasts.error('Could not restore purchases. Please try again.');
+            }
+          },
+        ),
+        ListTile(
           leading: Icon(Icons.delete_forever_rounded, color: Colors.red[400]),
           title: Text('Delete Account', style: _titleStyle.copyWith(color: Colors.red[400])),
           subtitle: const Text('Permanently delete your account and data', style: TextStyle(fontSize: 12)),
@@ -496,6 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await settingsLocal.set('onboarding_v2_interests', '');
                 await settingsLocal.set('onboarding_v2_followed_creators', '');
                 if (context.mounted) {
+                  // ignore: use_build_context_synchronously
                   main.RestartWidget.restartApp(context);
                 }
               }
@@ -703,7 +725,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           leading: const Icon(JamIcons.bug),
           title: Text('Report a Bug', style: _titleStyle),
           subtitle: const Text('Send a bug report via email', style: TextStyle(fontSize: 12)),
-          onTap: () async => _sendBugReport(),
+          onTap: () => _sendBugReport(),
         ),
         ListTile(
           leading: const Icon(JamIcons.refresh),
