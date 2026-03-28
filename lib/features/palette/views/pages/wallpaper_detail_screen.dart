@@ -458,10 +458,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      height: 96,
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      height: 88,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Row(children: swatches.map((s) => Expanded(child: s)).toList()),
       ),
     );
@@ -494,7 +494,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     fit: BoxFit.cover,
                     colorFilter: color != null ? ColorFilter.mode(color, BlendMode.hue) : null,
                   ),
-                  border: Border(bottom: BorderSide(color: color ?? Theme.of(ctx).colorScheme.secondary, width: 10)),
+                  border: Border(bottom: BorderSide(color: color ?? Theme.of(ctx).colorScheme.secondary, width: 8)),
                 ),
               ),
               placeholder: (_, _u) =>
