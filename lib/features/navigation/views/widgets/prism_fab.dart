@@ -59,8 +59,8 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
     return GestureDetector(
       onTap: _onPressed,
       child: SizedBox(
-        width: 48,
-        height: 48,
+        width: 56,
+        height: 56,
         child: Stack(
           fit: StackFit.expand,
           children: [
