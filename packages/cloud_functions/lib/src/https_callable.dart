@@ -35,18 +35,18 @@ class HttpsCallable {
 
     Object? updatedParameters;
     if (parameters is Map) {
-      Map update = {};
+      final Map<dynamic, dynamic> update = {};
       parameters.forEach((key, value) {
         update[key] = _updateRawDataToList(value);
       });
       updatedParameters = update;
     } else if (parameters is List) {
-      List update = parameters.map(_updateRawDataToList).toList();
+      final List<dynamic> update = parameters.map(_updateRawDataToList).toList();
       updatedParameters = update;
     } else {
       updatedParameters = _updateRawDataToList(parameters);
     }
-    return HttpsCallableResult<T>._(await delegate.call(updatedParameters));
+    return HttpsCallableResult<T>._(await delegate.call(updatedParameters) as T);
   }
 
   /// Streams data to the specified HTTPS endpoint.
@@ -83,6 +83,7 @@ dynamic _updateRawDataToList(dynamic value) {
       (!kIsWeb && value is Int64List) ||
       value is Float32List ||
       value is Float64List) {
+    // ignore: avoid_dynamic_calls
     return value.toList();
   } else {
     return value;

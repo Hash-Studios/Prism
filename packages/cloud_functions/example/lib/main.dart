@@ -6,10 +6,11 @@ import 'dart:core';
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:cloud_functions_example/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +23,11 @@ Future<void> main() async {
   // https://firebase.google.com/docs/functions/local-emulator
   FirebaseFunctions.instance.useFunctionsEmulator('localhost', 5001);
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -128,7 +129,7 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () async {
                     // See .github/workflows/scripts/functions/src/index.ts for the example function we
                     // are using for this example
-                    HttpsCallable callable =
+                    final HttpsCallable callable =
                         FirebaseFunctions.instance.httpsCallable(
                       'listFruit',
                       options: HttpsCallableOptions(
@@ -147,7 +148,7 @@ class _MyAppState extends State<MyApp> {
                   onPressed: () async {
                     // See .github/workflows/scripts/functions/src/index.ts for the example function we
                     // are using for this example
-                    HttpsCallable callable =
+                    final HttpsCallable callable =
                         FirebaseFunctions.instance.httpsCallableFromUrl(
                       'http://$localhostMapped:5001/flutterfire-e2e-tests/us-central1/listfruits2ndgen',
                       options: HttpsCallableOptions(
@@ -178,11 +179,13 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         fruit.clear();
         streamResult.clear();
+        // ignore: avoid_dynamic_calls
         result.data.forEach((f) {
           fruit.add(f);
         });
       });
     } catch (e) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('ERROR: $e'),

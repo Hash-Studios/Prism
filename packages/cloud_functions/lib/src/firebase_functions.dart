@@ -39,16 +39,17 @@ class FirebaseFunctions extends FirebasePluginPlatform {
   }
 
   /// Returns an instance using a specified [FirebaseApp] & region.
+  // ignore: prefer_constructors_over_static_methods
   static FirebaseFunctions instanceFor({FirebaseApp? app, String? region}) {
     app ??= Firebase.app();
     region ??= 'us-central1';
-    String cachedKey = '${app.name}_$region';
+    final String cachedKey = '${app.name}_$region';
 
     if (_cachedInstances.containsKey(cachedKey)) {
       return _cachedInstances[cachedKey]!;
     }
 
-    FirebaseFunctions newInstance =
+    final FirebaseFunctions newInstance =
         FirebaseFunctions._(app: app, region: region);
     _cachedInstances[cachedKey] = newInstance;
 

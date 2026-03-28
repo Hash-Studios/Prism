@@ -137,20 +137,20 @@ void main() {
       });
 
       test('parameter validation throws if any other type of data is passed',
-          () async {
+          () {
         expect(() {
-          return httpsCallable!.call(() => {});
+          return httpsCallable!.call(() => <String, dynamic>{});
         }, throwsA(isA<AssertionError>()));
 
         // Check nested values in Lists or Maps also throw if invalid:
         expect(() {
-          return httpsCallable!.call({
+          return httpsCallable!.call(<String, dynamic>{
             'valid': 'hello world',
-            'not_valid': () => {},
+            'not_valid': () => <String, dynamic>{},
           });
         }, throwsA(isA<AssertionError>()));
         expect(() {
-          return httpsCallable!.call(['valid', () => {}]);
+          return httpsCallable!.call(<dynamic>['valid', () => <String, dynamic>{}]);
         }, throwsA(isA<AssertionError>()));
       });
     });
