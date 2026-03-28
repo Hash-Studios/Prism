@@ -10,6 +10,7 @@ import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 
@@ -163,10 +164,32 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final currentState = state;
     if (currentState is! WallpaperDetailLoaded) return;
 
-    final limitedColors = event.colors.length > 5 ? event.colors.sublist(0, 5) : event.colors;
+    final deduped = _deduplicateColors(event.colors.whereType<Color>().toList());
+    final limitedColors = deduped.length > 5 ? deduped.sublist(0, 5) : deduped;
     final newAccent = limitedColors.isNotEmpty ? limitedColors[0] : currentState.accent;
 
     emit(currentState.copyWith(colors: limitedColors, accent: newAccent));
+  }
+
+  /// Removes perceptually similar colors, keeping the first occurrence.
+  /// Uses HSL space: achromatic colors are compared by lightness only;
+  /// chromatic colors are compared by hue distance and lightness.
+  List<Color> _deduplicateColors(List<Color> colors) {
+    final unique = <Color>[];
+    for (final color in colors) {
+      final hsl = HSLColor.fromColor(color);
+      final isDuplicate = unique.any((existing) {
+        final e = HSLColor.fromColor(existing);
+        if (hsl.saturation < 0.1 && e.saturation < 0.1) {
+          return (hsl.lightness - e.lightness).abs() < 0.15;
+        }
+        final hueDiff = (hsl.hue - e.hue).abs();
+        final hueDistance = hueDiff > 180 ? 360 - hueDiff : hueDiff;
+        return hueDistance < 30 && (hsl.lightness - e.lightness).abs() < 0.2;
+      });
+      if (!isDuplicate) unique.add(color);
+    }
+    return unique;
   }
 
   Future<WallpaperDetailEntity> _fetchWallpaper({required String wallId, required WallpaperSource source}) async {
