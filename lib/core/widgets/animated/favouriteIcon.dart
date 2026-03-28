@@ -9,6 +9,7 @@ class FavoriteIcon extends StatefulWidget {
     Color? iconColor,
     bool? isFavorite,
     required Function valueChanged,
+
     /// When set (e.g. toolbar circles), expands the tap target to this size so
     /// padding around the icon is still tappable. Should match the outer button size.
     this.tapTargetExtent,
