@@ -56,8 +56,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-base-900">
-      <body className={`${manrope.variable} bg-base-900 text-white antialiased`}>
+    <html lang="en" className="bg-neutral-100">
+      <body className={`${manrope.variable} bg-neutral-100 text-black antialiased min-h-screen overflow-x-hidden`}>
         {children}
       </body>
     </html>
