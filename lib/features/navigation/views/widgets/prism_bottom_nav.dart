@@ -60,7 +60,8 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     final activeIndex = _tabsRouter?.activeIndex ?? 0;
 
     return Container(
-      height: 48,
+      padding: const EdgeInsets.all(4),
+      height: 56,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
         boxShadow: [
@@ -101,19 +102,15 @@ class _TabButton extends StatelessWidget {
         ? Theme.of(context).colorScheme.secondary
         : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4);
 
-    return IconButton(
-      tooltip: tooltip,
-      padding: EdgeInsets.zero,
-      onPressed: onPressed,
-      icon: Container(
-        width: 36,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF252525) : Colors.transparent,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: iconColor, size: 16),
+    return Container(
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: isActive ? const Color(0xFF252525) : Colors.transparent, shape: BoxShape.circle),
+      child: IconButton(
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        iconSize: 19,
+        onPressed: onPressed,
+        icon: Icon(icon, color: iconColor, size: 19),
       ),
     );
   }
