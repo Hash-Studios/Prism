@@ -281,8 +281,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             CachedNetworkImage(
               imageUrl: thumbnailUrl,
               fit: BoxFit.cover,
-              placeholder: (_, __) => Container(color: Colors.grey[900]),
-              errorWidget: (_, __, ___) => Container(color: Colors.grey[900]),
+              placeholder: (ctx, __) => Container(color: Theme.of(ctx).primaryColor),
+              errorWidget: (ctx, __, ___) => Container(color: Theme.of(ctx).primaryColor),
             ),
             const Center(child: CircularProgressIndicator()),
           ],
@@ -486,7 +486,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                         wallpaper.id.toUpperCase(),
                         style: Theme.of(
                           context,
-                        ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                        ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                       ),
                       if (state.views != null) ...[
                         Padding(
@@ -497,7 +497,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                           "${state.views} views",
                           style: Theme.of(
                             context,
-                          ).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
                       ] else if (state.viewsLoading) ...[
                         Padding(
@@ -761,7 +761,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               textAlign: TextAlign.end,
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16),
+              ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
           ),
         ),
@@ -774,7 +774,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final bool hasUrl = urlForLaunch.isNotEmpty;
     final TextStyle style = Theme.of(
       context,
-    ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontSize: 16);
+    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary);
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
       child: SizedBox(
@@ -901,7 +901,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         if (!_wallpaperReadyForCapture)
           Positioned.fill(
             child: Center(
-              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error)),
+              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary)),
             ),
           ),
         Align(
@@ -989,7 +989,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
-            placeholder: (context, url) => Container(color: Colors.grey[900]),
+            placeholder: (context, url) => Container(color: Theme.of(context).primaryColor),
             errorWidget: (context, url, error) {
               onWallpaperDisplayReady?.call();
               return Center(
@@ -1012,7 +1012,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 ? (context, url, downloadProgress) => const SizedBox.shrink()
                 : (context, url, downloadProgress) => Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                      valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
                       value: downloadProgress.progress,
                     ),
                   ),
@@ -1048,7 +1048,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     const SizedBox.expand(child: Text('')),
                     Center(
                       child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.error),
+                        valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
                         value: downloadProgress.progress,
                       ),
                     ),
