@@ -25,7 +25,6 @@ class ReviewBatchRepository {
       orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
       limit: limit,
       startAfterDocId: startAfterDocId,
-      isStream: false,
     );
 
     final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
@@ -88,26 +87,18 @@ class ReviewBatchRepository {
 
   Future<void> categorizeWalls(List<FirestoreDocument> walls) async {
     final functions = FirebaseFunctions.instanceFor(region: 'asia-south1');
-    int count = 0;
 
     for (final wall in walls) {
       final category = wall.data()['category']?.toString() ?? '';
-      print('DEBUG: Wall ${wall.id} has category: "$category"');
 
       if (category.isEmpty || category == 'General') {
-        print('DEBUG: Calling categorizeWallpaper for ${wall.id}');
         try {
           await functions
               .httpsCallable('categorizeWallpaper', options: HttpsCallableOptions(timeout: const Duration(seconds: 30)))
               .call(<String, dynamic>{'wallId': wall.id});
-          count++;
-          print('DEBUG: Successfully categorized ${wall.id}');
-        } catch (e) {
-          print('DEBUG: Failed to categorize ${wall.id}: $e');
-        }
+        } catch (_) {}
       }
     }
-    print('DEBUG: Categorized $count wallpapers');
   }
 
   Future<int> getPendingWallsCount() async {
@@ -115,7 +106,6 @@ class ReviewBatchRepository {
       collection: FirebaseCollections.walls,
       sourceTag: 'review_batch.pending_count',
       filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
-      isStream: false,
     );
     final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
     return walls.length;

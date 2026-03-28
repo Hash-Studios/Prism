@@ -10,7 +10,7 @@ import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-typedef Callback = Function(MethodCall call);
+typedef Callback = void Function(MethodCall call);
 
 const String kTestString = 'Hello World';
 const String kBucket = 'gs://fake-storage-bucket-url.com';
@@ -29,9 +29,8 @@ void resetFirebaseCoreMocks() {
 }
 
 class MockHttpsCallablePlatform extends HttpsCallablePlatform {
-  MockHttpsCallablePlatform(FirebaseFunctionsPlatform functions, String? origin,
-      String? name, HttpsCallableOptions options, Uri? uri)
-      : super(functions, origin, name, options, uri);
+  MockHttpsCallablePlatform(super.functions, super.origin, super.name,
+      super.options, super.uri);
 
   @override
   Future<dynamic> call([dynamic parameters]) async {
@@ -47,7 +46,7 @@ class MockFirebaseFunctionsPlatform extends FirebaseFunctionsPlatform {
   @override
   HttpsCallablePlatform httpsCallable(
       String? origin, String name, HttpsCallableOptions options) {
-    HttpsCallablePlatform httpsCallablePlatform =
+    final HttpsCallablePlatform httpsCallablePlatform =
         MockHttpsCallablePlatform(this, origin, name, options, null);
     return httpsCallablePlatform;
   }
@@ -55,7 +54,7 @@ class MockFirebaseFunctionsPlatform extends FirebaseFunctionsPlatform {
   @override
   HttpsCallablePlatform httpsCallableWithUri(
       String? origin, Uri uri, HttpsCallableOptions options) {
-    HttpsCallablePlatform httpsCallablePlatform =
+    final HttpsCallablePlatform httpsCallablePlatform =
         MockHttpsCallablePlatform(this, origin, null, options, uri);
     return httpsCallablePlatform;
   }
@@ -63,7 +62,7 @@ class MockFirebaseFunctionsPlatform extends FirebaseFunctionsPlatform {
   @override
   FirebaseFunctionsPlatform delegateFor(
       {FirebaseApp? app, required String region}) {
-    MockFirebaseFunctionsPlatform functionsPlatform =
+    final MockFirebaseFunctionsPlatform functionsPlatform =
         MockFirebaseFunctionsPlatform(app: app, region: region);
     return functionsPlatform;
   }

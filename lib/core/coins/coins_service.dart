@@ -44,6 +44,7 @@ class CoinMutationResult {
   final int delta;
   final String reason;
 
+  // ignore: prefer_constructors_over_static_methods
   static CoinMutationResult noChange({required int balance, String reason = '', bool success = true}) {
     return CoinMutationResult(
       success: success,
@@ -1648,6 +1649,7 @@ class CoinsService {
     }
     final dynamic raw = value;
     try {
+      // ignore: avoid_dynamic_calls
       final dynamic maybeDate = raw.toDate();
       if (maybeDate is DateTime) {
         return maybeDate.toUtc();

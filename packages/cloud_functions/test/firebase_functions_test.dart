@@ -50,45 +50,45 @@ void main() {
         );
       });
 
-      test('accepts a secondary FirebaseApp instance', () async {
-        FirebaseFunctions functionsSecondary =
+      test('accepts a secondary FirebaseApp instance', () {
+        final FirebaseFunctions functionsSecondary =
             FirebaseFunctions.instanceFor(app: secondaryApp);
         expect(functionsSecondary.app, isA<FirebaseApp>());
         expect(functionsSecondary.app.name, secondaryApp!.name);
       });
 
       test('accepts a secondary FirebaseApp instance and custom region',
-          () async {
-        FirebaseFunctions functionsSecondary = FirebaseFunctions.instanceFor(
+          () {
+        final FirebaseFunctions functionsSecondary = FirebaseFunctions.instanceFor(
             app: secondaryApp, region: 'europe-west1');
         expect(functionsSecondary.app, isA<FirebaseApp>());
         expect(functionsSecondary.app.name, secondaryApp!.name);
         expect(functionsSecondary.delegate.region, equals('europe-west1'));
       });
 
-      test('accepts a custom region for the default app', () async {
-        FirebaseFunctions functions =
+      test('accepts a custom region for the default app', () {
+        final FirebaseFunctions functions =
             FirebaseFunctions.instanceFor(region: 'europe-west1');
         expect(functions.app, isA<FirebaseApp>());
         expect(functions.app.name, defaultFirebaseAppName);
         expect(functions.delegate.region, equals('europe-west1'));
       });
 
-      test('caches instances by FirebaseApp and region', () async {
+      test('caches instances by FirebaseApp and region', () {
         // Instances using the same region and FirebaseApp should be identical.
-        FirebaseFunctions functions1 =
+        final FirebaseFunctions functions1 =
             FirebaseFunctions.instanceFor(region: 'europe-west1');
-        FirebaseFunctions functions2 =
+        final FirebaseFunctions functions2 =
             FirebaseFunctions.instanceFor(region: 'europe-west1');
         expect(functions1, same(functions2));
 
         // Instances using the same region but a different FirebaseApp should not be identical.
-        FirebaseFunctions functions3 = FirebaseFunctions.instanceFor(
+        final FirebaseFunctions functions3 = FirebaseFunctions.instanceFor(
             app: secondaryApp, region: 'europe-west1');
         expect(functions1, isNot(same(functions3)));
 
         // Instances using the same FirebaseApp but a different region should not be identical.
-        FirebaseFunctions functions4 =
+        final FirebaseFunctions functions4 =
             FirebaseFunctions.instanceFor(region: 'europe-west2');
         expect(functions1, isNot(same(functions4)));
       });
@@ -165,7 +165,7 @@ void main() {
       });
 
       test('passes custom "options" through to the delegate', () {
-        HttpsCallablePlatform delegate = FirebaseFunctions.instance
+        final HttpsCallablePlatform delegate = FirebaseFunctions.instance
             .httpsCallable('foo',
                 options: HttpsCallableOptions(
                     timeout: const Duration(seconds: 1337)))
