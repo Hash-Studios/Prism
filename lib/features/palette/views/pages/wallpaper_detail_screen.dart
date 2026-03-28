@@ -781,24 +781,24 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
     final Color secondary = Theme.of(context).colorScheme.secondary;
     final Widget avatar = CircleAvatar(
-      radius: 18,
+      radius: 13,
       backgroundColor: secondary.withValues(alpha: 0.15),
       child: hasPhoto
           ? ClipOval(
               child: CachedNetworkImage(
                 imageUrl: photoTrimmed,
-                width: 36,
-                height: 36,
+                width: 26,
+                height: 26,
                 fit: BoxFit.cover,
                 errorWidget: (context, url, error) => Text(
                   initialChar,
-                  style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 14),
+                  style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 11),
                 ),
               ),
             )
           : Text(
               initialChar,
-              style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 14),
+              style: TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 11),
             ),
     );
 
