@@ -1,17 +1,28 @@
+import 'dart:math' show max;
+
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 class FavoriteIcon extends StatefulWidget {
-  const FavoriteIcon({double? iconSize, Color? iconColor, bool? isFavorite, required Function valueChanged, super.key})
-    : _iconSize = iconSize ?? 60.0,
-      _iconColor = iconColor ?? Colors.red,
-      _isFavorite = isFavorite ?? false,
-      _valueChanged = valueChanged;
+  const FavoriteIcon({
+    double? iconSize,
+    Color? iconColor,
+    bool? isFavorite,
+    required Function valueChanged,
+    /// When set (e.g. toolbar circles), expands the tap target to this size so
+    /// padding around the icon is still tappable. Should match the outer button size.
+    this.tapTargetExtent,
+    super.key,
+  }) : _iconSize = iconSize ?? 60.0,
+       _iconColor = iconColor ?? Colors.red,
+       _isFavorite = isFavorite ?? false,
+       _valueChanged = valueChanged;
 
   final double _iconSize;
   final Color _iconColor;
   final bool _isFavorite;
   final Function _valueChanged;
+  final double? tapTargetExtent;
 
   @override
   _FavoriteIconState createState() => _FavoriteIconState();
@@ -94,6 +105,7 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final layoutExtent = max(widget.tapTargetExtent ?? _maxIconSize, _maxIconSize);
     return AnimatedBuilder(
       animation: _controller,
       builder: (BuildContext context, _) {
@@ -107,10 +119,18 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
               }
             });
           },
-          child: Icon(
-            widget._isFavorite ? JamIcons.heart_f : JamIcons.heart,
-            color: _colorAnimation.value,
-            size: _sizeAnimation.value,
+          containedInkWell: true,
+          radius: layoutExtent / 2,
+          child: SizedBox(
+            width: layoutExtent,
+            height: layoutExtent,
+            child: Center(
+              child: Icon(
+                widget._isFavorite ? JamIcons.heart_f : JamIcons.heart,
+                color: _colorAnimation.value,
+                size: _sizeAnimation.value,
+              ),
+            ),
           ),
         );
       },

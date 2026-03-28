@@ -552,8 +552,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                               ],
                               borderRadius: BorderRadius.circular(500),
                             ),
-                            padding: const EdgeInsets.all(17),
                             child: FavoriteIcon(
+                              tapTargetExtent: 53,
                               valueChanged: () {
                                 if (app_state.prismUser.loggedIn == false) {
                                   googleSignInPopUp(context, () {
