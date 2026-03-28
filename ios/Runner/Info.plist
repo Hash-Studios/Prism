@@ -87,5 +87,7 @@
 	<string>Prism needs permission to save wallpapers to your photo library.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Prism needs camera access to let you take a photo for your profile picture.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We use this to show you relevant ads and to measure ad performance.</string>
 </dict>
 </plist>
