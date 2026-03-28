@@ -348,10 +348,9 @@ packages:
   cloud_functions:
     dependency: "direct main"
     description:
-      name: cloud_functions
-      sha256: "506ee80e68a7c67679150f79f00faa47da96698d8deb57a4f0844ae556c07b1e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/cloud_functions"
+      relative: true
+    source: path
     version: "6.1.0"
   cloud_functions_platform_interface:
     dependency: transitive

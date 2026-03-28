@@ -44,4 +44,44 @@ post_install do |installer|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
     end
   end
+
+  # Patch FunctionsContext.swift: replace `async let` with sequential `await` to fix
+  # swift_task_dealloc / asyncLet_finish_after_task_completion crash on iOS 26.
+  functions_context = File.join(
+    installer.sandbox.pod_dir('FirebaseFunctions'),
+    'FirebaseFunctions/Sources/Internal/FunctionsContext.swift'
+  )
+  if File.exist?(functions_context)
+    content = File.read(functions_context)
+    original = "    async let authToken = auth?.getToken(forcingRefresh: false)\n" \
+               "    async let appCheckToken = getAppCheckToken(options: options)\n" \
+               "    async let limitedUseAppCheckToken = getLimitedUseAppCheckToken(options: options)\n" \
+               "\n" \
+               "    // Only `authToken` is throwing, but the formatter script removes the `try`\n" \
+               "    // from `try authToken` and puts it in front of the initializer call.\n" \
+               "    return try await FunctionsContext(\n" \
+               "      authToken: authToken,\n" \
+               "      fcmToken: messaging?.fcmToken,\n" \
+               "      appCheckToken: appCheckToken,\n" \
+               "      limitedUseAppCheckToken: limitedUseAppCheckToken\n" \
+               "    )"
+    patched = "    // iOS 26 workaround: sequential await instead of async let to avoid\n" \
+              "    // swift_task_dealloc / asyncLet_finish_after_task_completion crash.\n" \
+              "    let authToken = try await auth?.getToken(forcingRefresh: false)\n" \
+              "    let appCheckToken = await getAppCheckToken(options: options)\n" \
+              "    let limitedUseAppCheckToken = await getLimitedUseAppCheckToken(options: options)\n" \
+              "    return FunctionsContext(\n" \
+              "      authToken: authToken,\n" \
+              "      fcmToken: messaging?.fcmToken,\n" \
+              "      appCheckToken: appCheckToken,\n" \
+              "      limitedUseAppCheckToken: limitedUseAppCheckToken\n" \
+              "    )"
+    if content.include?(original)
+      File.chmod(0644, functions_context)
+      File.write(functions_context, content.sub(original, patched))
+      puts 'Patched FunctionsContext.swift for iOS 26 async let crash'
+    else
+      puts 'WARNING: FunctionsContext.swift patch not applied - content mismatch'
+    end
+  end
 end

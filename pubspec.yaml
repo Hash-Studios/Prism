@@ -12,7 +12,7 @@ publish_to: none
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 3.0.6+327
+version: 3.0.6+329
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
@@ -181,3 +181,7 @@ flutter:
         - asset: assets/fonts/JamIcons.ttf
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+dependency_overrides:
+  cloud_functions:
+    path: packages/cloud_functions
