@@ -37,6 +37,7 @@ import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class WallpaperDetailScreen extends StatefulWidget {
@@ -1202,7 +1203,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         : Colors.white;
   }
 
-  String _formatDate(DateTime date) => "${date.day}/${date.month}/${date.year}";
+  String _formatDate(DateTime date) {
+    final local = date.toLocal();
+    final diff = DateTime.now().difference(local);
+    if (diff.inDays < 7) return timeago.format(local);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final month = months[local.month - 1];
+    if (local.year == DateTime.now().year) return '${local.day} $month';
+    return '${local.day} $month ${local.year}';
+  }
 
   String sourceDisplayName(WallpaperSource source) => switch (source) {
     WallpaperSource.prism => 'Prism',
