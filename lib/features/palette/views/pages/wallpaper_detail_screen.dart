@@ -14,7 +14,6 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -202,12 +201,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void initState() {
     super.initState();
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _offsetAnimation = Tween(begin: 0.0, end: 48.0)
-        .chain(CurveTween(curve: Curves.easeOutCubic))
-        .animate(shakeController)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) shakeController.reverse();
-      });
+    _offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) shakeController.reverse();
+          });
     _contentLoadTracker.start();
 
     final bloc = context.read<WallpaperDetailBloc>();
@@ -331,7 +329,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         backdropEnabled: true,
         borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
         boxShadow: const [],
-        collapsed: CollapsedPanel(panelCollapsed: state.panelCollapsed, panelController: panelController),
         minHeight: MediaQuery.of(context).size.height / 20,
         parallaxEnabled: true,
         parallaxOffset: 0.00,
@@ -402,15 +399,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: Opacity(
-          opacity: state.panelCollapsed ? 0.0 : 1.0,
-          child: GestureDetector(
-            onTap: () {
-              if (state.panelScrollInProgress) return;
-              _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
+        child: GestureDetector(
+          onTap: () {
+            if (state.panelScrollInProgress) return;
+            _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
+            if (panelController.isPanelOpen) {
               panelController.close();
-            },
-            child: Icon(JamIcons.chevron_down, color: Theme.of(context).colorScheme.secondary),
+            } else {
+              panelController.open();
+            }
+          },
+          child: Icon(
+            state.panelCollapsed ? JamIcons.chevron_up : JamIcons.chevron_down,
+            color: Theme.of(context).colorScheme.secondary,
           ),
         ),
       ),
