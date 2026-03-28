@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:math' show min;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -33,8 +33,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -117,8 +117,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     WallpaperDetailBloc bloc,
     int captureGeneration,
   ) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 15));
     while (mounted && captureGeneration == _wallpaperCaptureGeneration && !_wallpaperReadyForCapture) {
-      await Future<void>.delayed(const Duration(milliseconds: 16));
+      if (DateTime.now().isAfter(deadline)) return;
+      await WidgetsBinding.instance.endOfFrame;
     }
     if (!mounted || captureGeneration != _wallpaperCaptureGeneration) return;
 
@@ -184,7 +186,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteResetLongPressed);
     HapticFeedback.vibrate();
-    shakeController.forward(from: 0.0);
+    if (!MediaQuery.disableAnimationsOf(context)) {
+      shakeController.forward(from: 0.0);
+    }
   }
 
   void _handleColorSelected(BuildContext context, WallpaperDetailLoaded state, Color color) {
@@ -229,8 +233,36 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   @override
   void dispose() {
-    super.dispose();
     shakeController.dispose();
+    super.dispose();
+  }
+
+  void _retryWallpaperLoad(BuildContext context) {
+    final bloc = context.read<WallpaperDetailBloc>();
+    if (widget.entity != null) {
+      bloc.add(LoadFromEntity(entity: widget.entity!, analyticsSurface: widget.analyticsSurface));
+    } else {
+      bloc.add(
+        LoadFromId(
+          wallId: widget.wallId!,
+          source: widget.source!,
+          wallpaperUrl: widget.wallpaperUrl,
+          thumbnailUrl: widget.thumbnailUrl,
+          analyticsSurface: widget.analyticsSurface,
+        ),
+      );
+    }
+  }
+
+  double _topOverlayPadding(BuildContext context) {
+    final inset = app_state.notchSize ?? MediaQuery.paddingOf(context).top;
+    return inset + 8;
+  }
+
+  String _colorHexForClipboard(Color color) {
+    final argb = color.toARGB32();
+    final rgb = argb & 0xFFFFFF;
+    return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
   }
 
   FavouriteWallEntity _toFavouriteWall(WallpaperDetailEntity entity) {
@@ -284,8 +316,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             CachedNetworkImage(
               imageUrl: thumbnailUrl,
               fit: BoxFit.cover,
-              placeholder: (ctx, __) => Container(color: Theme.of(ctx).primaryColor),
-              errorWidget: (ctx, __, ___) => Container(color: Theme.of(ctx).primaryColor),
+              placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
+              errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
             ),
             const Center(child: CircularProgressIndicator()),
           ],
@@ -296,20 +328,37 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildErrorState(WallpaperDetailError state) {
+    final scheme = Theme.of(context).colorScheme;
+    final message = state.message.trim();
     return Scaffold(
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+              Semantics(
+                label: 'Error',
+                child: Icon(Icons.error_outline, size: 64, color: scheme.error),
+              ),
               const SizedBox(height: 16),
               Text('Something went wrong', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 8),
               Text('Please try again later', style: Theme.of(context).textTheme.bodyMedium),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
               const SizedBox(height: 24),
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go Back')),
+              FilledButton(onPressed: () => _retryWallpaperLoad(context), child: const Text('Try again')),
+              const SizedBox(height: 8),
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
             ],
           ),
         ),
@@ -380,7 +429,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                           context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
                         } else if (notification is ScrollEndNotification) {
                           Future.delayed(const Duration(milliseconds: 200), () {
-                            if (mounted) context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
+                            if (!context.mounted) return;
+                            context.read<WallpaperDetailBloc>().add(const OnPanelScrollEnd());
                           });
                         }
                         return false;
@@ -400,22 +450,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildCollapseHandle(BuildContext context, WallpaperDetailLoaded state) {
+    final isCollapsed = state.panelCollapsed;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: GestureDetector(
-          onTap: () {
-            if (state.panelScrollInProgress) return;
-            _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
-            if (panelController.isPanelOpen) {
-              panelController.close();
-            } else {
-              panelController.open();
-            }
-          },
-          child: Icon(
-            state.panelCollapsed ? JamIcons.chevron_up : JamIcons.chevron_down,
-            color: Theme.of(context).colorScheme.secondary,
+        child: Semantics(
+          button: true,
+          label: isCollapsed ? 'Expand wallpaper details' : 'Collapse wallpaper details',
+          child: GestureDetector(
+            onTap: () {
+              if (state.panelScrollInProgress) return;
+              _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
+              if (panelController.isPanelOpen) {
+                panelController.close();
+              } else {
+                panelController.open();
+              }
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Icon(
+              isCollapsed ? JamIcons.chevron_up : JamIcons.chevron_down,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
           ),
         ),
       ),
@@ -452,9 +508,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           onLongPress: color != null
               ? () {
                   HapticFeedback.vibrate();
-                  Clipboard.setData(
-                    ClipboardData(text: color.toString().replaceAll('Color(0xff', '').replaceAll(')', '')),
-                  ).then((_) => toasts.color(color));
+                  Clipboard.setData(ClipboardData(text: _colorHexForClipboard(color))).then((_) => toasts.color(color));
                 }
               : null,
         );
@@ -479,49 +533,58 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     required VoidCallback? onTap,
     required VoidCallback? onLongPress,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (thumbnailUrl.isNotEmpty)
-            CachedNetworkImage(
-              imageUrl: thumbnailUrl,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              imageBuilder: (ctx, imageProvider) => Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: imageProvider,
-                    fit: BoxFit.cover,
-                    colorFilter: color != null ? ColorFilter.mode(color, BlendMode.hue) : null,
+    final label = color == null ? 'Original wallpaper colors' : 'Accent color';
+    final hint = color == null ? null : 'Long press to copy hex color';
+    return Semantics(
+      button: onTap != null,
+      selected: isSelected,
+      label: label,
+      hint: hint,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (thumbnailUrl.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: thumbnailUrl,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                imageBuilder: (ctx, imageProvider) => Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: imageProvider,
+                      fit: BoxFit.cover,
+                      colorFilter: color != null ? ColorFilter.mode(color, BlendMode.hue) : null,
+                    ),
+                    border: Border(bottom: BorderSide(color: color ?? Theme.of(ctx).colorScheme.secondary, width: 8)),
                   ),
-                  border: Border(bottom: BorderSide(color: color ?? Theme.of(ctx).colorScheme.secondary, width: 8)),
+                ),
+                placeholder: (_, u) =>
+                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+                errorWidget: (_, u, e) =>
+                    Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+              )
+            else
+              Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
+            AnimatedOpacity(
+              duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 200),
+              opacity: isSelected ? 1.0 : 0.0,
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.25),
+                alignment: Alignment.center,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                  child: const Icon(JamIcons.check, size: 14, color: Colors.black),
                 ),
               ),
-              placeholder: (_, _u) =>
-                  Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
-              errorWidget: (_, _u, _e) =>
-                  Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
-            )
-          else
-            Container(color: color ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1)),
-          AnimatedOpacity(
-            duration: const Duration(milliseconds: 200),
-            opacity: isSelected ? 1.0 : 0.0,
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.25),
-              alignment: Alignment.center,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: const Icon(JamIcons.check, size: 14, color: Colors.black),
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -854,31 +917,36 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildWallhavenAuthorLink(BuildContext context, String username) {
-    return SizedBox(
-      width: 200,
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: InkWell(
-          onTap: () async {
-            final Uri uri = Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(username)}');
-            final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-            if (!ok && context.mounted) {
-              toasts.codeSend('Could not open profile');
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Text(
-              username,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW = constraints.maxWidth.isFinite ? min(constraints.maxWidth, 200.0) : 200.0;
+        return SizedBox(
+          width: maxW,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () async {
+                final Uri uri = Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(username)}');
+                final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                if (!ok && context.mounted) {
+                  toasts.codeSend('Could not open profile');
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  username,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -890,29 +958,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary);
     return Padding(
       padding: const EdgeInsets.only(bottom: 5),
-      child: SizedBox(
-        width: 200,
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: hasUrl
-              ? InkWell(
-                  onTap: () async {
-                    final Uri? uri = Uri.tryParse(urlForLaunch);
-                    if (uri == null) {
-                      return;
-                    }
-                    final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    if (!ok && context.mounted) {
-                      toasts.codeSend('Could not open profile');
-                    }
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(photographer, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style),
-                  ),
-                )
-              : Text(photographer, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxW = constraints.maxWidth.isFinite ? min(constraints.maxWidth, 200.0) : 200.0;
+          return SizedBox(
+            width: maxW,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: hasUrl
+                  ? InkWell(
+                      onTap: () async {
+                        final Uri? uri = Uri.tryParse(urlForLaunch);
+                        if (uri == null) {
+                          return;
+                        }
+                        final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        if (!ok && context.mounted) {
+                          toasts.codeSend('Could not open profile');
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          photographer,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: style,
+                        ),
+                      ),
+                    )
+                  : Text(photographer, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style),
+            ),
+          );
+        },
       ),
     );
   }
@@ -981,38 +1059,42 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     WallpaperDetailLoaded state,
   ) {
     final entity = state.entity;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final topPad = _topOverlayPadding(context);
     _syncWallpaperIdentity(entity);
     return Stack(
       children: [
         AnimatedBuilder(
           animation: offsetAnimation,
           builder: (context, child) {
-            return GestureDetector(
-              onPanUpdate: (details) {
-                if (details.delta.dy < -10) panelController.open();
-              },
-              onLongPress: () => _handleAccentLongPress(context, state),
-              onTap: () {
-                HapticFeedback.vibrate();
-                if (!paletteLoading) _handleAccentTap(context, state);
-                shakeController.forward(from: 0.0);
-              },
-              child: Screenshot(
-                controller: screenshotController,
-                child: Container(
-                  margin: EdgeInsets.symmetric(
-                    vertical: offsetAnimation.value * 1.25,
-                    horizontal: offsetAnimation.value / 2,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(offsetAnimation.value),
-                    child: _buildProgressiveWallpaperImage(
-                      context: context,
-                      entity: entity,
-                      state: state,
-                      paletteLoading: paletteLoading,
-                      progressOutsideScreenshot: true,
-                      onWallpaperDisplayReady: _scheduleWallpaperDisplayReady,
+            final t = reduceMotion ? 0.0 : offsetAnimation.value;
+            return Semantics(
+              label: 'Wallpaper',
+              hint: 'Tap to cycle accent color. Long press to reset. Swipe up for details.',
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  if (details.delta.dy < -10) panelController.open();
+                },
+                onLongPress: () => _handleAccentLongPress(context, state),
+                onTap: () {
+                  HapticFeedback.vibrate();
+                  if (!paletteLoading) _handleAccentTap(context, state);
+                  if (!reduceMotion) shakeController.forward(from: 0.0);
+                },
+                child: Screenshot(
+                  controller: screenshotController,
+                  child: Container(
+                    margin: EdgeInsets.symmetric(vertical: t * 1.25, horizontal: t / 2),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(t),
+                      child: _buildProgressiveWallpaperImage(
+                        context: context,
+                        entity: entity,
+                        state: state,
+                        paletteLoading: paletteLoading,
+                        progressOutsideScreenshot: true,
+                        onWallpaperDisplayReady: _scheduleWallpaperDisplayReady,
+                      ),
                     ),
                   ),
                 ),
@@ -1031,8 +1113,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         Align(
           alignment: Alignment.topLeft,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
+            padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
             child: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               onPressed: () {
                 _trackAction(state, AnalyticsActionValue.backTapped);
                 Navigator.pop(context);
@@ -1049,8 +1132,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         Align(
           alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
+            padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
             child: IconButton(
+              tooltip: 'Clock preview',
               onPressed: () {
                 _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
                 Navigator.push(
@@ -1168,8 +1252,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           progressIndicatorBuilder: progressOutsideScreenshot
               ? (context, url, downloadProgress) => const SizedBox.shrink()
               : (context, url, downloadProgress) => Stack(
+                  fit: StackFit.expand,
                   children: [
-                    const SizedBox.expand(child: Text('')),
+                    const SizedBox.expand(),
                     Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
