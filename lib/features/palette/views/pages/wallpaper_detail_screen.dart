@@ -68,6 +68,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
 
   static const double _sheetHPad = 24.0;
+  static const double _panelSideInset = 10.0;
+  static const double _panelTopRadius = 20.0;
+  static const double _chromePad = 8.0;
+  static const double _minInteractiveTarget = 48.0;
 
   late AnimationController shakeController;
   late Animation<double> _offsetAnimation;
@@ -177,7 +181,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (_toastFirstTime == 0) {
-      toasts.codeSend("Long press to reset.");
+      toasts.codeSend('Long press to reset');
       _toastFirstTime = 1;
     }
   }
@@ -256,7 +260,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   double _topOverlayPadding(BuildContext context) {
     final inset = app_state.notchSize ?? MediaQuery.paddingOf(context).top;
-    return inset + 8;
+    return inset + _chromePad;
   }
 
   String _colorHexForClipboard(Color color) {
@@ -319,12 +323,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
               errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
             ),
-            const Center(child: CircularProgressIndicator()),
+            Center(
+              child: Semantics(label: 'Loading wallpaper', child: const CircularProgressIndicator()),
+            ),
           ],
         ),
       );
     }
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      body: Center(
+        child: Semantics(label: 'Loading wallpaper', child: const CircularProgressIndicator()),
+      ),
+    );
   }
 
   Widget _buildErrorState(WallpaperDetailError state) {
@@ -342,9 +352,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 child: Icon(Icons.error_outline, size: 64, color: scheme.error),
               ),
               const SizedBox(height: 16),
-              Text('Something went wrong', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Something went wrong',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSurface),
+              ),
               const SizedBox(height: 8),
-              Text('Please try again later', style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                'Please try again later',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+              ),
               if (message.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -357,7 +375,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               ],
               const SizedBox(height: 24),
               FilledButton(onPressed: () => _retryWallpaperLoad(context), child: const Text('Try again')),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
             ],
           ),
@@ -379,11 +397,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         onPanelOpened: () => _handlePanelOpened(context, state),
         onPanelClosed: () => _handlePanelClosed(context, state),
         backdropEnabled: true,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(_panelTopRadius),
+          topRight: Radius.circular(_panelTopRadius),
+        ),
         boxShadow: const [],
         minHeight: MediaQuery.of(context).size.height / 20,
         parallaxEnabled: true,
-        parallaxOffset: 0.00,
+        parallaxOffset: 0,
         color: Colors.transparent,
         maxHeight: MediaQuery.of(context).size.height * 0.43,
         controller: panelController,
@@ -396,10 +417,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildInfoPanel(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
-    final size = Size(MediaQuery.of(context).size.width - 20, MediaQuery.of(context).size.height * 0.43);
+    final w = MediaQuery.sizeOf(context).width;
+    final h = MediaQuery.sizeOf(context).height;
+    final size = Size(w - _panelSideInset * 2, h * 0.43);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+      margin: const EdgeInsets.fromLTRB(_panelSideInset, 0, _panelSideInset, _panelSideInset),
       height: size.height,
       width: size.width,
       child: LiquidGlassLayer(
@@ -452,25 +475,27 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildCollapseHandle(BuildContext context, WallpaperDetailLoaded state) {
     final isCollapsed = state.panelCollapsed;
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Semantics(
-          button: true,
-          label: isCollapsed ? 'Expand wallpaper details' : 'Collapse wallpaper details',
-          child: GestureDetector(
-            onTap: () {
-              if (state.panelScrollInProgress) return;
-              _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
-              if (panelController.isPanelOpen) {
-                panelController.close();
-              } else {
-                panelController.open();
-              }
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Icon(
-              isCollapsed ? JamIcons.chevron_up : JamIcons.chevron_down,
-              color: Theme.of(context).colorScheme.secondary,
+      child: Semantics(
+        button: true,
+        label: isCollapsed ? 'Expand wallpaper details' : 'Collapse wallpaper details',
+        child: GestureDetector(
+          onTap: () {
+            if (state.panelScrollInProgress) return;
+            _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
+            if (panelController.isPanelOpen) {
+              panelController.close();
+            } else {
+              panelController.open();
+            }
+          },
+          behavior: HitTestBehavior.opaque,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: _minInteractiveTarget, minHeight: _minInteractiveTarget),
+            child: Center(
+              child: Icon(
+                isCollapsed ? JamIcons.chevron_up : JamIcons.chevron_down,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
           ),
         ),
@@ -925,6 +950,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           child: Align(
             alignment: Alignment.centerRight,
             child: InkWell(
+              borderRadius: BorderRadius.circular(8),
               onTap: () async {
                 final Uri uri = Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(username)}');
                 final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -957,7 +983,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       context,
     ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.only(bottom: 4),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final maxW = constraints.maxWidth.isFinite ? min(constraints.maxWidth, 200.0) : 200.0;
@@ -967,6 +993,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               alignment: Alignment.centerRight,
               child: hasUrl
                   ? InkWell(
+                      borderRadius: BorderRadius.circular(8),
                       onTap: () async {
                         final Uri? uri = Uri.tryParse(urlForLaunch);
                         if (uri == null) {
@@ -997,7 +1024,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildInfoTitle(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 5, 0, 10),
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
       child: Text(
         title,
         style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
@@ -1120,15 +1147,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         if (!_wallpaperReadyForCapture)
           Positioned.fill(
             child: Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
+              child: Semantics(
+                label: 'Loading wallpaper',
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
+                ),
               ),
             ),
           ),
         Align(
           alignment: Alignment.topLeft,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
+            padding: EdgeInsets.fromLTRB(_chromePad, topPad, _chromePad, _chromePad),
             child: IconButton(
               tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               onPressed: () {
@@ -1147,7 +1177,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         Align(
           alignment: Alignment.topRight,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
+            padding: EdgeInsets.fromLTRB(_chromePad, topPad, _chromePad, _chromePad),
             child: IconButton(
               tooltip: 'Clock preview',
               onPressed: () {
