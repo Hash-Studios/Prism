@@ -9,22 +9,14 @@ import 'dart:typed_data' show Float64List, Int32List, Int64List;
 import 'package:flutter/services.dart';
 import 'package:meta/meta.dart' show immutable, protected, visibleForTesting;
 
-Object? _extractReplyValueOrThrow(
-    List<Object?>? replyList,
-    String channelName, {
-    required bool isNullValid,
-}) {
+Object? _extractReplyValueOrThrow(List<Object?>? replyList, String channelName, {required bool isNullValid}) {
   if (replyList == null) {
     throw PlatformException(
       code: 'channel-error',
       message: 'Unable to establish connection on channel: "$channelName".',
     );
   } else if (replyList.length > 1) {
-    throw PlatformException(
-      code: replyList[0]! as String,
-      message: replyList[1] as String?,
-      details: replyList[2],
-    );
+    throw PlatformException(code: replyList[0]! as String, message: replyList[1] as String?, details: replyList[2]);
   } else if (!isNullValid && (replyList.isNotEmpty && replyList[0] == null)) {
     throw PlatformException(
       code: 'null-error',
@@ -45,9 +37,7 @@ bool _deepEquals(Object? a, Object? b) {
     return a == b;
   }
   if (a is List && b is List) {
-    return a.length == b.length &&
-        a.indexed
-            .every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
+    return a.length == b.length && a.indexed.every(((int, dynamic) item) => _deepEquals(item.$2, b[item.$1]));
   }
   if (a is Map && b is Map) {
     if (a.length != b.length) {
@@ -96,18 +86,10 @@ int _deepHash(Object? value) {
   return value.hashCode;
 }
 
-
-enum SaveMediaKind {
-  wallpaper,
-  setup,
-}
+enum SaveMediaKind { wallpaper, setup }
 
 class SaveMediaRequest {
-  SaveMediaRequest({
-    required this.link,
-    required this.isLocalFile,
-    required this.kind,
-  });
+  SaveMediaRequest({required this.link, required this.isLocalFile, required this.kind});
 
   String link;
 
@@ -116,15 +98,12 @@ class SaveMediaRequest {
   SaveMediaKind kind;
 
   List<Object?> _toList() {
-    return <Object?>[
-      link,
-      isLocalFile,
-      kind,
-    ];
+    return <Object?>[link, isLocalFile, kind];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static SaveMediaRequest decode(Object result) {
     result as List<Object?>;
@@ -144,7 +123,9 @@ class SaveMediaRequest {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(link, other.link) && _deepEquals(isLocalFile, other.isLocalFile) && _deepEquals(kind, other.kind);
+    return _deepEquals(link, other.link) &&
+        _deepEquals(isLocalFile, other.isLocalFile) &&
+        _deepEquals(kind, other.kind);
   }
 
   @override
@@ -153,31 +134,23 @@ class SaveMediaRequest {
 }
 
 class DownloadRequest {
-  DownloadRequest({
-    required this.link,
-    required this.filenameWithoutExtension,
-  });
+  DownloadRequest({required this.link, required this.filenameWithoutExtension});
 
   String link;
 
   String filenameWithoutExtension;
 
   List<Object?> _toList() {
-    return <Object?>[
-      link,
-      filenameWithoutExtension,
-    ];
+    return <Object?>[link, filenameWithoutExtension];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static DownloadRequest decode(Object result) {
     result as List<Object?>;
-    return DownloadRequest(
-      link: result[0]! as String,
-      filenameWithoutExtension: result[1]! as String,
-    );
+    return DownloadRequest(link: result[0]! as String, filenameWithoutExtension: result[1]! as String);
   }
 
   @override
@@ -198,11 +171,7 @@ class DownloadRequest {
 }
 
 class OperationResult {
-  OperationResult({
-    required this.success,
-    this.errorCode,
-    this.message,
-  });
+  OperationResult({required this.success, this.errorCode, this.message});
 
   bool success;
 
@@ -211,23 +180,16 @@ class OperationResult {
   String? message;
 
   List<Object?> _toList() {
-    return <Object?>[
-      success,
-      errorCode,
-      message,
-    ];
+    return <Object?>[success, errorCode, message];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static OperationResult decode(Object result) {
     result as List<Object?>;
-    return OperationResult(
-      success: result[0]! as bool,
-      errorCode: result[1] as String?,
-      message: result[2] as String?,
-    );
+    return OperationResult(success: result[0]! as bool, errorCode: result[1] as String?, message: result[2] as String?);
   }
 
   @override
@@ -239,7 +201,9 @@ class OperationResult {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(success, other.success) && _deepEquals(errorCode, other.errorCode) && _deepEquals(message, other.message);
+    return _deepEquals(success, other.success) &&
+        _deepEquals(errorCode, other.errorCode) &&
+        _deepEquals(message, other.message);
   }
 
   @override
@@ -248,12 +212,7 @@ class OperationResult {
 }
 
 class DownloadItemsResult {
-  DownloadItemsResult({
-    required this.success,
-    required this.items,
-    this.errorCode,
-    this.message,
-  });
+  DownloadItemsResult({required this.success, required this.items, this.errorCode, this.message});
 
   bool success;
 
@@ -264,16 +223,12 @@ class DownloadItemsResult {
   String? message;
 
   List<Object?> _toList() {
-    return <Object?>[
-      success,
-      items,
-      errorCode,
-      message,
-    ];
+    return <Object?>[success, items, errorCode, message];
   }
 
   Object encode() {
-    return _toList();  }
+    return _toList();
+  }
 
   static DownloadItemsResult decode(Object result) {
     result as List<Object?>;
@@ -294,14 +249,16 @@ class DownloadItemsResult {
     if (identical(this, other)) {
       return true;
     }
-    return _deepEquals(success, other.success) && _deepEquals(items, other.items) && _deepEquals(errorCode, other.errorCode) && _deepEquals(message, other.message);
+    return _deepEquals(success, other.success) &&
+        _deepEquals(items, other.items) &&
+        _deepEquals(errorCode, other.errorCode) &&
+        _deepEquals(message, other.message);
   }
 
   @override
   // ignore: avoid_equals_and_hash_code_on_mutable_classes
   int get hashCode => _deepHash(<Object?>[runtimeType, ..._toList()]);
 }
-
 
 class _PigeonCodec extends StandardMessageCodec {
   const _PigeonCodec();
@@ -310,19 +267,19 @@ class _PigeonCodec extends StandardMessageCodec {
     if (value is int) {
       buffer.putUint8(4);
       buffer.putInt64(value);
-    }    else if (value is SaveMediaKind) {
+    } else if (value is SaveMediaKind) {
       buffer.putUint8(129);
       writeValue(buffer, value.index);
-    }    else if (value is SaveMediaRequest) {
+    } else if (value is SaveMediaRequest) {
       buffer.putUint8(130);
       writeValue(buffer, value.encode());
-    }    else if (value is DownloadRequest) {
+    } else if (value is DownloadRequest) {
       buffer.putUint8(131);
       writeValue(buffer, value.encode());
-    }    else if (value is OperationResult) {
+    } else if (value is OperationResult) {
       buffer.putUint8(132);
       writeValue(buffer, value.encode());
-    }    else if (value is DownloadItemsResult) {
+    } else if (value is DownloadItemsResult) {
       buffer.putUint8(133);
       writeValue(buffer, value.encode());
     } else {
@@ -355,8 +312,8 @@ class PrismMediaHostApi {
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
   PrismMediaHostApi({BinaryMessenger? binaryMessenger, String messageChannelSuffix = ''})
-      : pigeonVar_binaryMessenger = binaryMessenger,
-        pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
+    : pigeonVar_binaryMessenger = binaryMessenger,
+      pigeonVar_messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
   final BinaryMessenger? pigeonVar_binaryMessenger;
 
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
@@ -374,16 +331,16 @@ class PrismMediaHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as OperationResult;
   }
 
   Future<OperationResult> enqueueDownload(DownloadRequest request) async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -393,16 +350,16 @@ class PrismMediaHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as OperationResult;
   }
 
   Future<DownloadItemsResult> listDownloads() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -412,16 +369,16 @@ class PrismMediaHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as DownloadItemsResult;
   }
 
   Future<OperationResult> clearDownloads() async {
-    final pigeonVar_channelName = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -431,11 +388,10 @@ class PrismMediaHostApi {
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
-        pigeonVar_replyList,
-        pigeonVar_channelName,
-        isNullValid: false,
-    )
-    ;
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
     return pigeonVar_replyValue! as OperationResult;
   }
 }
