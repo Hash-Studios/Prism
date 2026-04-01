@@ -7,11 +7,13 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
+import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -22,6 +24,7 @@ import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
@@ -32,14 +35,16 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class UserProfileSetupViewScreen extends StatefulWidget {
-  const UserProfileSetupViewScreen({super.key, required this.setupIndex});
+  const UserProfileSetupViewScreen({super.key, required this.setupIndex, required this.profileEmail});
 
   final int setupIndex;
+  final String profileEmail;
 
   @override
   _UserProfileSetupViewScreenState createState() => _UserProfileSetupViewScreenState();
@@ -55,6 +60,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
   late AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String>? _futureView;
+  late final PublicProfileBloc _bloc;
+  bool _viewsPrimed = false;
 
   PublicProfileSetupEntity get _setup => context.publicProfileAdapter(listen: false).userProfileSetups![index!];
 
@@ -89,10 +96,8 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.setupIndex;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      updateViewsSetup(_setup.id.toUpperCase());
-      _futureView = getViewsSetup(_setup.id.toUpperCase());
-    });
+    _bloc = getIt<PublicProfileBloc>();
+    _bloc.add(PublicProfileEvent.started(email: widget.profileEmail.trim()));
     isLoading = true;
     super.initState();
   }
@@ -100,6 +105,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
   @override
   void dispose() {
     shakeController.dispose();
+    _bloc.close();
     super.dispose();
   }
 
@@ -124,6 +130,70 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
               shakeController.reverse();
             }
           });
+    return BlocProvider<PublicProfileBloc>.value(
+      value: _bloc,
+      child: BlocListener<PublicProfileBloc, PublicProfileState>(
+        listenWhen: (previous, current) =>
+            !_viewsPrimed &&
+            current.status == LoadStatus.success &&
+            widget.setupIndex >= 0 &&
+            widget.setupIndex < current.setups.length,
+        listener: (context, state) {
+          _viewsPrimed = true;
+          final id = state.setups[widget.setupIndex].id.toUpperCase();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) {
+              return;
+            }
+            updateViewsSetup(id);
+            if (mounted) {
+              setState(() {
+                _futureView = getViewsSetup(id);
+              });
+            }
+          });
+        },
+        child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
+          buildWhen: (previous, current) =>
+              previous.status != current.status ||
+              previous.setups != current.setups ||
+              previous.email != current.email,
+          builder: (context, state) {
+            if (state.status == LoadStatus.loading || state.status == LoadStatus.initial) {
+              return Scaffold(
+                backgroundColor: Theme.of(context).primaryColor,
+                body: Center(child: Loader()),
+              );
+            }
+            if (state.status == LoadStatus.failure ||
+                widget.setupIndex < 0 ||
+                widget.setupIndex >= state.setups.length) {
+              return Scaffold(
+                backgroundColor: Theme.of(context).primaryColor,
+                appBar: AppBar(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ),
+                body: Center(
+                  child: Text(
+                    'Setup unavailable',
+                    style: TextStyle(color: Theme.of(context).colorScheme.secondary),
+                  ),
+                ),
+              );
+            }
+            return _buildMainScaffold(context, offsetAnimation);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainScaffold(BuildContext context, Animation<double> offsetAnimation) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,

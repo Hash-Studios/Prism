@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -11,15 +12,17 @@ import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
-import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
+// import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 @RoutePage()
@@ -93,11 +96,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       );
     }
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {}
-      },
-      child: _isOwnProfile
+    return BlocProvider<PublicProfileBloc>(
+      create: (_) => getIt<PublicProfileBloc>(),
+      child: PopScope(
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) {}
+        },
+        child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
               body: _ProfileChild(
@@ -210,6 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
             ),
+      ),
     );
   }
 }
@@ -319,9 +325,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool showProfileCompletenessCard =
         (widget.ownProfile ?? false) && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
 
-    return DefaultTabController(
-      length: 2,
-      child: Stack(
+    return Stack(
         children: [
           Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
@@ -772,59 +776,65 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ),
                     ),
                   ),
-                SliverAppBar(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  automaticallyImplyLeading: false,
-                  pinned: true,
-                  titleSpacing: 0,
-                  expandedHeight: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn ? 50 : 0,
-                  title: SizedBox(
-                    width: MediaQuery.of(context).size.width,
-                    height: 57,
-                    child: ColoredBox(
-                      color: Theme.of(context).primaryColor,
-                      child: SizedBox.expand(
-                        child: TabBar(
-                          indicatorColor: Theme.of(context).colorScheme.secondary,
-                          indicatorSize: TabBarIndicatorSize.label,
-                          unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
-                          labelColor: const Color(0xFFFFFFFF),
-                          tabs: [
-                            Text(
-                              "Wallpapers",
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                            ),
-                            Text(
-                              "Setups",
-                              style: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                // Wallpapers / Setups tab bar temporarily disabled — single wallpapers pane only.
+                // SliverAppBar(
+                //   backgroundColor: Theme.of(context).primaryColor,
+                //   automaticallyImplyLeading: false,
+                //   pinned: true,
+                //   titleSpacing: 0,
+                //   expandedHeight: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn ? 50 : 0,
+                //   title: SizedBox(
+                //     width: MediaQuery.of(context).size.width,
+                //     height: 57,
+                //     child: ColoredBox(
+                //       color: Theme.of(context).primaryColor,
+                //       child: SizedBox.expand(
+                //         child: TabBar(
+                //           indicatorColor: Theme.of(context).colorScheme.secondary,
+                //           indicatorSize: TabBarIndicatorSize.label,
+                //           unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
+                //           labelColor: const Color(0xFFFFFFFF),
+                //           tabs: [
+                //             Text(
+                //               "Wallpapers",
+                //               style: Theme.of(
+                //                 context,
+                //               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                //             ),
+                //             Text(
+                //               "Setups",
+                //               style: Theme.of(
+                //                 context,
+                //               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
               ],
-              body: TabBarView(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: UserProfileLoader(email: widget.email),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 5),
-                    child: UserProfileSetupLoader(email: widget.email),
-                  ),
-                ],
+              body: Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: UserProfileLoader(email: widget.email),
               ),
+              // When Setups tab returns, restore DefaultTabController(length: 2), the SliverAppBar+TabBar above,
+              // and TabBarView with UserProfileSetupLoader as second child (uncomment user_profile_setup_loader import).
+              // body: TabBarView(
+              //   children: [
+              //     Padding(
+              //       padding: const EdgeInsets.only(top: 5),
+              //       child: UserProfileLoader(email: widget.email),
+              //     ),
+              //     Padding(
+              //       padding: const EdgeInsets.only(top: 5),
+              //       child: UserProfileSetupLoader(email: widget.email),
+              //     ),
+              //   ],
+              // ),
             ),
           ),
         ],
-      ),
     );
   }
 }

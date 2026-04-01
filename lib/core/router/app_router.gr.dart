@@ -1270,10 +1270,15 @@ class UserProfileSetupViewRoute
   UserProfileSetupViewRoute({
     Key? key,
     required int setupIndex,
+    required String profileEmail,
     List<PageRouteInfo>? children,
   }) : super(
          UserProfileSetupViewRoute.name,
-         args: UserProfileSetupViewRouteArgs(key: key, setupIndex: setupIndex),
+         args: UserProfileSetupViewRouteArgs(
+           key: key,
+           setupIndex: setupIndex,
+           profileEmail: profileEmail,
+         ),
          initialChildren: children,
        );
 
@@ -1286,32 +1291,42 @@ class UserProfileSetupViewRoute
       return UserProfileSetupViewScreen(
         key: args.key,
         setupIndex: args.setupIndex,
+        profileEmail: args.profileEmail,
       );
     },
   );
 }
 
 class UserProfileSetupViewRouteArgs {
-  const UserProfileSetupViewRouteArgs({this.key, required this.setupIndex});
+  const UserProfileSetupViewRouteArgs({
+    this.key,
+    required this.setupIndex,
+    required this.profileEmail,
+  });
 
   final Key? key;
 
   final int setupIndex;
 
+  final String profileEmail;
+
   @override
   String toString() {
-    return 'UserProfileSetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
+    return 'UserProfileSetupViewRouteArgs{key: $key, setupIndex: $setupIndex, profileEmail: $profileEmail}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! UserProfileSetupViewRouteArgs) return false;
-    return key == other.key && setupIndex == other.setupIndex;
+    return key == other.key &&
+        setupIndex == other.setupIndex &&
+        profileEmail == other.profileEmail;
   }
 
   @override
-  int get hashCode => key.hashCode ^ setupIndex.hashCode;
+  int get hashCode =>
+      key.hashCode ^ setupIndex.hashCode ^ profileEmail.hashCode;
 }
 
 /// generated route for
