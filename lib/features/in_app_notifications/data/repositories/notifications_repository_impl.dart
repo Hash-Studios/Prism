@@ -60,6 +60,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<Result<List<InAppNotificationEntity>>> clearAll() async {
     try {
       await _notificationsLocal.clearAll();
+      await _notificationsLocal.clearLastFetchAtUtc();
       return Result.success(const <InAppNotificationEntity>[]);
     } catch (error) {
       return Result.error(CacheFailure('Unable to clear notifications: $error'));
