@@ -58,7 +58,24 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   final SearchUsersByUsernameUseCase _searchUsersByUsernameUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<PublicProfileState> emit) async {
-    emit(state.copyWith(email: event.email));
+    // Clear previous user's walls/setups immediately so UI never flashes stale grids.
+    emit(
+      state.copyWith(
+        email: event.email,
+        status: LoadStatus.loading,
+        actionStatus: ActionStatus.inProgress,
+        failure: null,
+        profile: PublicProfileEntity.empty,
+        walls: const <PublicProfileWallEntity>[],
+        setups: const <PublicProfileSetupEntity>[],
+        hasMoreWalls: true,
+        hasMoreSetups: true,
+        wallsCursor: null,
+        setupsCursor: null,
+        isFetchingMoreWalls: false,
+        isFetchingMoreSetups: false,
+      ),
+    );
     await _loadAll(emit: emit, refresh: true);
   }
 
