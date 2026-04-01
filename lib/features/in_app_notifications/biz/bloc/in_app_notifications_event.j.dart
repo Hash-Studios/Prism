@@ -7,5 +7,6 @@ abstract class InAppNotificationsEvent with _$InAppNotificationsEvent {
   const factory InAppNotificationsEvent.refreshRequested() = _RefreshRequested;
   const factory InAppNotificationsEvent.markReadRequested({required String id}) = _MarkReadRequested;
   const factory InAppNotificationsEvent.deleteRequested({required String id}) = _DeleteRequested;
+  const factory InAppNotificationsEvent.deleteManyRequested({required List<String> ids}) = _DeleteManyRequested;
   const factory InAppNotificationsEvent.clearRequested() = _ClearRequested;
 }

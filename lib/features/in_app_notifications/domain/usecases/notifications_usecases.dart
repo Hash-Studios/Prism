@@ -69,3 +69,22 @@ class ClearNotificationsUseCase implements UseCase<List<InAppNotificationEntity>
     return _repository.clearAll();
   }
 }
+
+class DeleteNotificationsByIdsParams {
+  const DeleteNotificationsByIdsParams({required this.ids});
+
+  final List<String> ids;
+}
+
+@lazySingleton
+class DeleteNotificationsByIdsUseCase
+    implements UseCase<List<InAppNotificationEntity>, DeleteNotificationsByIdsParams> {
+  DeleteNotificationsByIdsUseCase(this._repository);
+
+  final NotificationsRepository _repository;
+
+  @override
+  Future<Result<List<InAppNotificationEntity>>> call(DeleteNotificationsByIdsParams params) {
+    return _repository.deleteByIds(ids: params.ids);
+  }
+}
