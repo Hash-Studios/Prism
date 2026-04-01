@@ -8,7 +8,8 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "migrate:view-stats": "npm run build && node lib/scripts/migrateGithubViewStats.js"
   },
   "engines": {
     "node": "24"

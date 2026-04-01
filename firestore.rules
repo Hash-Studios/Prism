@@ -214,6 +214,17 @@ service cloud.firestore {
       allow read, write: if isConfiguredAdmin() || isOwner(userId);
     }
 
+    // Public view counters (writes via Cloud Functions Admin SDK only).
+    match /wallpaper_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /setup_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Deny everything else by default.
     match /{document=**} {
       allow read, write: if false;

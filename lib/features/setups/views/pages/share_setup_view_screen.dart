@@ -9,6 +9,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -19,7 +20,6 @@ import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
@@ -126,8 +126,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                 }
                 final SetupWallpaperValue wallpaperValue = setup.wallpaperValue;
                 if (viewCounted == false) {
-                  updateViewsSetup(setup.id.toUpperCase());
-                  _futureView = getViewsSetup(setup.id.toUpperCase());
+                  _futureView = getIt<ViewStatsRepository>().recordSetupView(setup.id.toUpperCase()).then(
+                    (r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'),
+                  );
                   viewCounted = true;
                 }
                 return SlidingUpPanel(

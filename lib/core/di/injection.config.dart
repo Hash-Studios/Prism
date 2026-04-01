@@ -20,6 +20,7 @@ import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
 
+import '../../data/view_stats/firebase_view_stats_repository.dart' as _i818;
 import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
 import '../../features/admin_review/data/review_batch_repository.dart' as _i122;
 import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
@@ -204,6 +205,7 @@ import '../persistence/data_sources/notifications_local_data_source.dart'
 import '../persistence/data_sources/session_local_data_source.dart' as _i704;
 import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
 import '../persistence/local_store.dart' as _i496;
+import '../view_stats/view_stats_repository.dart' as _i602;
 import 'injection_module.dart' as _i212;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -233,12 +235,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
     () => _i954.FeedCacheLocalDataSource(),
   );
-  gh.lazySingleton<_i231.FetchWallpaperViewsUsecase>(
-    () => const _i231.FetchWallpaperViewsUsecase(),
-  );
-  gh.lazySingleton<_i231.UpdateWallpaperViewsUsecase>(
-    () => const _i231.UpdateWallpaperViewsUsecase(),
-  );
   gh.lazySingleton<_i640.FavoritesLocalDataSource>(
     () => _i640.FavoritesLocalDataSource(gh<_i496.LocalStore>()),
   );
@@ -250,6 +246,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i1073.SettingsLocalDataSource>(
     () => _i1073.SettingsLocalDataSource(gh<_i496.LocalStore>()),
+  );
+  gh.lazySingleton<_i602.ViewStatsRepository>(
+    () => _i818.FirebaseViewStatsRepository(),
   );
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
   gh.lazySingleton<_i604.WallhavenWallpaperRepository>(
@@ -264,6 +263,10 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i39.SearchDiscoveryBloc>(
     () => _i39.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
+  );
+  gh.lazySingleton<_i231.RecordPrismWallpaperViewsUsecase>(
+    () =>
+        _i231.RecordPrismWallpaperViewsUsecase(gh<_i602.ViewStatsRepository>()),
   );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),
@@ -397,6 +400,15 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
+  gh.factory<_i358.WallpaperDetailBloc>(
+    () => _i358.WallpaperDetailBloc(
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i231.RecordPrismWallpaperViewsUsecase>(),
+      gh<_i806.PaletteBloc>(),
+    ),
+  );
   gh.lazySingleton<_i563.ProfileSetupsRepository>(
     () => _i983.ProfileSetupsRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
@@ -437,16 +449,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i340.ClearFavouriteSetupsUseCase>(
     () => _i340.ClearFavouriteSetupsUseCase(
       gh<_i841.FavouriteSetupsRepository>(),
-    ),
-  );
-  gh.factory<_i358.WallpaperDetailBloc>(
-    () => _i358.WallpaperDetailBloc(
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
-      gh<_i231.FetchWallpaperViewsUsecase>(),
-      gh<_i231.UpdateWallpaperViewsUsecase>(),
-      gh<_i806.PaletteBloc>(),
     ),
   );
   gh.factory<_i456.StreakShopBloc>(

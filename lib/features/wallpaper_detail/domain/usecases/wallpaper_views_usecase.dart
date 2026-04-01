@@ -1,32 +1,15 @@
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/data/informatics/dataManager.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:injectable/injectable.dart';
 
+/// Records a Prism wallpaper detail view and returns the updated count (Firestore via callable).
 @lazySingleton
-class FetchWallpaperViewsUsecase {
-  const FetchWallpaperViewsUsecase();
+class RecordPrismWallpaperViewsUsecase {
+  RecordPrismWallpaperViewsUsecase(this._viewStatsRepository);
 
-  Future<Result<String>> call(String wallId) async {
-    try {
-      final views = await getViews(wallId.toUpperCase());
-      return Result.success(views);
-    } catch (e) {
-      return Result.error(ServerFailure('Failed to fetch views: $e'));
-    }
-  }
-}
+  final ViewStatsRepository _viewStatsRepository;
 
-@lazySingleton
-class UpdateWallpaperViewsUsecase {
-  const UpdateWallpaperViewsUsecase();
-
-  Future<Result<void>> call(String wallId) async {
-    try {
-      await updateViews(wallId.toUpperCase());
-      return Result.success(null);
-    } catch (e) {
-      return Result.error(ServerFailure('Failed to update views: $e'));
-    }
+  Future<Result<String>> call(String wallId) {
+    return _viewStatsRepository.recordWallpaperView(wallId.toUpperCase());
   }
 }
