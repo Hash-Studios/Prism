@@ -289,9 +289,7 @@ Future<void> main() async {
                 BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
                 BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                 BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-                BlocProvider<CategoryFeedBloc>(
-                  create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                ),
+                BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
                 BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
                 BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
                 BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
