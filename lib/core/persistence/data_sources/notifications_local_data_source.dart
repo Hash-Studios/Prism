@@ -107,6 +107,15 @@ class NotificationsLocalDataSource {
     await writeAll(updated);
   }
 
+  Future<void> deleteByIds(List<String> ids) async {
+    if (ids.isEmpty) {
+      return;
+    }
+    final idSet = ids.toSet();
+    final updated = (await readAll()).where((item) => !idSet.contains(item.id)).toList(growable: false);
+    await writeAll(updated);
+  }
+
   Future<void> clearAll() {
     return _cache.delete(PersistenceKeys.notificationsItems);
   }

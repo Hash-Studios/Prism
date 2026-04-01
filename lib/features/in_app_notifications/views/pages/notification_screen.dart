@@ -10,6 +10,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -20,6 +21,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+
+/// Shorter expanded-row text: names for followers/wall-live; day label for uniform WOTD bodies.
+String? _compactLineForGroupedChild(InAppNotificationTitleGroup group, InAppNotificationEntity n) {
+  if (notificationGroupLooksLikeFollowers(group)) {
+    final String? name = followerDisplayNameFromBody(n.body);
+    if (name != null && name.isNotEmpty) {
+      return name;
+    }
+    final String body = n.body.trim();
+    if (body.isNotEmpty) {
+      return body;
+    }
+    final String title = n.title.trim();
+    return title.isEmpty ? null : title;
+  }
+  if (notificationGroupLooksLikeWallApprovedLive(group)) {
+    final String? creator = wallLiveCreatorNameFromBody(n.body);
+    if (creator != null && creator.isNotEmpty) {
+      return creator;
+    }
+    return null;
+  }
+  if (notificationGroupLooksLikeWallOfTheDay(group) && notificationGroupHasUniformBody(group)) {
+    return wallOfTheDayRowDayLabel(n.createdAt);
+  }
+  return null;
+}
 
 @RoutePage()
 class NotificationScreen extends StatelessWidget {
@@ -42,6 +70,9 @@ class _NotificationScreenBody extends StatefulWidget {
 }
 
 class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
+  /// [InAppNotificationTitleGroup.key] values for expanded summary rows.
+  final Set<String> _expandedNotificationGroups = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -160,89 +191,28 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                           ),
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: notifications.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final currentNotification = notifications[index];
-                          return Dismissible(
-                            key: ValueKey<String>(currentNotification.id),
-                            confirmDismiss: (DismissDirection direction) async {
-                              final bool? confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (BuildContext ctx) {
-                                  final t = Theme.of(ctx);
-                                  final cs = t.colorScheme;
-                                  return AlertDialog(
-                                    backgroundColor: t.primaryColor,
-                                    title: Text(
-                                      'Remove from inbox?',
-                                      style: t.textTheme.headlineSmall?.copyWith(
-                                        color: cs.secondary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    content: Text(
-                                      'This notification will be removed from your list on this device.',
-                                      style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9)),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.of(ctx).pop(false),
-                                        child: Text('Cancel', style: TextStyle(color: cs.secondary)),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.of(ctx).pop(true),
-                                        child: Text('Remove', style: TextStyle(color: cs.error, fontWeight: FontWeight.w600)),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                              return confirmed ?? false;
-                            },
-                            onDismissed: (_) {
-                              analytics.track(
-                                NotificationItemDismissedEvent(
-                                  type: _notificationTypeFor(currentNotification),
-                                  dismissMode: DismissModeValue.swipe,
-                                ),
-                              );
-                              context.read<InAppNotificationsBloc>().add(
-                                InAppNotificationsEvent.deleteRequested(id: currentNotification.id),
-                              );
-                            },
-                            dismissThresholds: const {
-                              DismissDirection.startToEnd: 0.5,
-                              DismissDirection.endToStart: 0.5,
-                            },
-                            secondaryBackground: ColoredBox(
-                              color: colorScheme.error,
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Icon(JamIcons.trash, color: colorScheme.onError),
-                                ),
-                              ),
-                            ),
-                            background: ColoredBox(
-                              color: colorScheme.error,
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Icon(JamIcons.trash, color: colorScheme.onError),
-                                ),
-                              ),
-                            ),
-                            child: NotificationCard(
-                              notification: currentNotification,
-                              onMarkRead: () {
-                                context.read<InAppNotificationsBloc>().add(
-                                  InAppNotificationsEvent.markReadRequested(id: currentNotification.id),
+                    : Builder(
+                        builder: (BuildContext listContext) {
+                          final groups = groupInAppNotificationsByTitle(notifications);
+                          return ListView.builder(
+                            itemCount: groups.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final InAppNotificationTitleGroup group = groups[index];
+                              if (group.isSingle) {
+                                return _buildDismissibleNotificationTile(
+                                  context,
+                                  theme: theme,
+                                  colorScheme: colorScheme,
+                                  notification: group.items.single,
                                 );
-                              },
-                            ),
+                              }
+                              return _buildDismissibleGroupTile(
+                                context,
+                                theme: theme,
+                                colorScheme: colorScheme,
+                                group: group,
+                              );
+                            },
                           );
                         },
                       ),
@@ -347,13 +317,255 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
       },
     );
   }
+
+  Future<bool> _confirmRemoveFromInbox(
+    BuildContext context, {
+    required String title,
+    required String content,
+  }) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) {
+        final ThemeData t = Theme.of(ctx);
+        final ColorScheme cs = t.colorScheme;
+        return AlertDialog(
+          backgroundColor: t.primaryColor,
+          title: Text(
+            title,
+            style: t.textTheme.headlineSmall?.copyWith(color: cs.secondary, fontWeight: FontWeight.w600),
+          ),
+          content: Text(
+            content,
+            style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text('Cancel', style: TextStyle(color: cs.secondary)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('Remove', style: TextStyle(color: cs.error, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
+  Widget _dismissBackground(ColorScheme colorScheme, Alignment alignment) {
+    return ColoredBox(
+      color: colorScheme.error,
+      child: Align(
+        alignment: alignment,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(JamIcons.trash, color: colorScheme.onError),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDismissibleNotificationTile(
+    BuildContext context, {
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required InAppNotificationEntity notification,
+    bool compactInGroup = false,
+    String? compactBodyOverride,
+  }) {
+    return Dismissible(
+      key: ValueKey<String>(notification.id),
+      confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
+        context,
+        title: 'Remove from inbox?',
+        content: 'This notification will be removed from your list on this device.',
+      ),
+      onDismissed: (_) {
+        analytics.track(
+          NotificationItemDismissedEvent(
+            type: _notificationTypeFor(notification),
+            dismissMode: DismissModeValue.swipe,
+          ),
+        );
+        context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
+      },
+      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+      secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
+      background: _dismissBackground(colorScheme, Alignment.centerLeft),
+      child: NotificationCard(
+        notification: notification,
+        compactInGroup: compactInGroup,
+        compactBodyOverride: compactBodyOverride,
+        onMarkRead: () {
+          context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.markReadRequested(id: notification.id));
+        },
+      ),
+    );
+  }
+
+  Widget _buildDismissibleGroupTile(
+    BuildContext context, {
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required InAppNotificationTitleGroup group,
+  }) {
+    final bool expanded = _expandedNotificationGroups.contains(group.key);
+    return Dismissible(
+      key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
+      confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
+        context,
+        title: 'Remove this summary?',
+        content:
+            'All ${group.items.length} notifications in this group will be removed from your list on this device.',
+      ),
+      onDismissed: (_) {
+        context.read<InAppNotificationsBloc>().add(
+          InAppNotificationsEvent.deleteManyRequested(ids: group.items.map((InAppNotificationEntity e) => e.id).toList()),
+        );
+      },
+      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+      secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
+      background: _dismissBackground(colorScheme, Alignment.centerLeft),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            button: true,
+            expanded: expanded,
+            label:
+                '${group.displayTitle}. ${groupedListCountActionLine(group, expanded: expanded)}. ${expanded ? 'Expanded' : 'Collapsed'}. ${group.unreadCount > 0 ? 'Has unread. ' : ''}Activate to ${expanded ? 'collapse' : 'expand'}.',
+            child: Material(
+              color: theme.primaryColor,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    if (expanded) {
+                      _expandedNotificationGroups.remove(group.key);
+                    } else {
+                      _expandedNotificationGroups.add(group.key);
+                    }
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ExcludeSemantics(
+                        child: CircleAvatar(
+                          backgroundImage: const AssetImage('assets/images/prism.webp'),
+                          backgroundColor: theme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    group.displayTitle,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.headlineMedium?.copyWith(color: colorScheme.secondary),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  NotificationCard.stringForDatetime(group.items.first.createdAt),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontSize: 12,
+                                    color: colorScheme.secondary.withValues(alpha: 0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              groupedListCountActionLine(group, expanded: expanded),
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontSize: 12,
+                                color: colorScheme.secondary.withValues(alpha: 0.85),
+                              ),
+                            ),
+                            if (!expanded) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                collapsedGroupSummaryLine(group),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontSize: 12,
+                                  height: 1.25,
+                                  color: colorScheme.secondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        expanded ? JamIcons.chevron_up : JamIcons.chevron_down,
+                        size: 20,
+                        color: colorScheme.secondary.withValues(alpha: 0.75),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: group.items
+                    .map(
+                      (InAppNotificationEntity n) => _buildDismissibleNotificationTile(
+                        context,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        notification: n,
+                        compactInGroup: true,
+                        compactBodyOverride: _compactLineForGroupedChild(group, n),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class NotificationCard extends StatelessWidget {
-  const NotificationCard({super.key, required this.notification, this.onMarkRead});
+  const NotificationCard({
+    super.key,
+    required this.notification,
+    this.onMarkRead,
+    this.compactInGroup = false,
+    this.compactBodyOverride,
+  });
 
   final InAppNotificationEntity notification;
   final VoidCallback? onMarkRead;
+
+  /// When true (child under an expanded title group): no avatar, title, or image—body + time only.
+  final bool compactInGroup;
+
+  /// When set with [compactInGroup], replaces the default body/title line (e.g. follower name only).
+  final String? compactBodyOverride;
   static const NotificationRouteMapper _routeMapper = NotificationRouteMapper();
 
   static bool _hasValidImageUrl(String? url) {
@@ -422,8 +634,59 @@ class NotificationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final bool showImage = _hasValidImageUrl(notification.imageUrl);
     final String timeStr = stringForDatetime(notification.createdAt);
+
+    if (compactInGroup) {
+      final String trimmedOverride = compactBodyOverride?.trim() ?? '';
+      final String displayBody = trimmedOverride.isNotEmpty
+          ? trimmedOverride
+          : (notification.body.trim().isEmpty ? notification.title.trim() : notification.body.trim());
+      final String semanticLine = notification.body.trim().isNotEmpty
+          ? notification.body.trim()
+          : (notification.title.trim().isNotEmpty ? notification.title.trim() : displayBody);
+      return Semantics(
+        button: true,
+        label:
+            '$semanticLine. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
+        child: Material(
+          color: theme.primaryColor,
+          child: InkWell(
+            onTap: () => _onTap(context),
+            onLongPress: () => HapticFeedback.lightImpact(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      displayBody,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontSize: 13,
+                        height: 1.25,
+                        color: colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    timeStr,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: 12,
+                      color: colorScheme.secondary.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bool showImage = _hasValidImageUrl(notification.imageUrl);
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     final int memCacheWidth = (MediaQuery.sizeOf(context).width * dpr).round().clamp(1, 4096);
 
