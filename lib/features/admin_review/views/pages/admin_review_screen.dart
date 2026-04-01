@@ -1,14 +1,15 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -183,6 +184,23 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               created = rawCreated;
             }
             final String timeStr = created != null ? timeago.format(created) : '';
+            if (ct == 'wall' && tid.isNotEmpty) {
+              return _WallContentReportCard(
+                report: r,
+                targetDocId: tid,
+                contentTypeLabel: ct,
+                reason: reason,
+                reporterUid: uid,
+                timeStr: timeStr,
+                repository: _repository,
+                onConfirmRemoveWithReason: ({required Future<void> Function(String reason) onSubmit}) => _confirmReject(
+                  context,
+                  dialogTitle: 'Remove wallpaper',
+                  confirmButtonLabel: 'Remove',
+                  onSubmit: onSubmit,
+                ),
+              );
+            }
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: ListTile(
@@ -209,7 +227,12 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     );
   }
 
-  Future<void> _confirmReject(BuildContext context, {required Future<void> Function(String reason) onSubmit}) async {
+  Future<void> _confirmReject(
+    BuildContext context, {
+    required Future<void> Function(String reason) onSubmit,
+    String dialogTitle = 'Reject Item',
+    String confirmButtonLabel = 'Reject',
+  }) async {
     final TextEditingController controller = TextEditingController(
       text: "Sorry! This item doesn't meet our expectations and failed the review.",
     );
@@ -217,7 +240,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Reject Item'),
+          title: Text(dialogTitle),
           content: TextField(
             controller: controller,
             minLines: 2,
@@ -241,11 +264,191 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
                   toasts.error('Action failed');
                 }
               },
-              child: const Text('Reject'),
+              child: Text(confirmButtonLabel),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _WallContentReportCard extends StatefulWidget {
+  const _WallContentReportCard({
+    required this.report,
+    required this.targetDocId,
+    required this.contentTypeLabel,
+    required this.reason,
+    required this.reporterUid,
+    required this.timeStr,
+    required this.repository,
+    required this.onConfirmRemoveWithReason,
+  });
+
+  final FirestoreDocument report;
+  final String targetDocId;
+  final String contentTypeLabel;
+  final String reason;
+  final String reporterUid;
+  final String timeStr;
+  final AdminReviewRepository repository;
+  final Future<void> Function({required Future<void> Function(String reason) onSubmit}) onConfirmRemoveWithReason;
+
+  @override
+  State<_WallContentReportCard> createState() => _WallContentReportCardState();
+}
+
+class _WallContentReportCardState extends State<_WallContentReportCard> {
+  late final Future<Map<String, dynamic>?> _wallFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _wallFuture = firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.walls,
+      widget.targetDocId,
+      (Map<String, dynamic> data, String _) => data,
+      sourceTag: 'admin_review.report_wall_preview',
+    );
+  }
+
+  Future<void> _openWallpaperDetail(BuildContext context) async {
+    final PageRouteInfo? route = await const NotificationRouteMapper().fromRoute(
+      route: 'wall',
+      wallId: widget.targetDocId,
+      profileIdentifier: '',
+      sourceTag: 'admin.content_report',
+    );
+    if (!context.mounted) {
+      return;
+    }
+    if (route != null) {
+      await context.router.push(route);
+    } else {
+      toasts.error('Wallpaper not found');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: _wallFuture,
+                  builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>?> snap) {
+                    final String thumb = snap.data?['wallpaper_thumb']?.toString() ?? '';
+                    final Widget preview = thumb.isEmpty
+                        ? Container(
+                            width: 88,
+                            height: 120,
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: const Icon(Icons.image_not_supported_outlined),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: thumb,
+                              width: 88,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              placeholder: (BuildContext context, String url) => const SizedBox(
+                                width: 88,
+                                height: 120,
+                                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              ),
+                              errorWidget: (BuildContext context, String url, Object error) =>
+                                  const SizedBox(width: 88, height: 120, child: Icon(Icons.broken_image_outlined)),
+                            ),
+                          );
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _openWallpaperDetail(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: preview,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        '${widget.contentTypeLabel} — ${widget.reason}',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Target: ${widget.targetDocId}\nReporter: ${widget.reporterUid}\n${widget.timeStr}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      TextButton(onPressed: () => _openWallpaperDetail(context), child: const Text('Open detail')),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      try {
+                        await widget.repository.markContentReportReviewed(widget.report.id, resolution: 'dismissed');
+                        if (context.mounted) {
+                          toasts.codeSend('Marked as valid');
+                        }
+                      } catch (e, st) {
+                        logger.e('mark report dismissed failed', tag: 'AdminReview', error: e, stackTrace: st);
+                        if (context.mounted) {
+                          toasts.error('Failed');
+                        }
+                      }
+                    },
+                    child: const Text('Mark as valid'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => widget.onConfirmRemoveWithReason(
+                      onSubmit: (String reason) async {
+                        final bool removed = await widget.repository.rejectWallByFirestoreDocumentId(
+                          widget.targetDocId,
+                          reason: reason,
+                        );
+                        await widget.repository.markContentReportReviewed(
+                          widget.report.id,
+                          resolution: 'content_removed',
+                        );
+                        if (context.mounted) {
+                          if (removed) {
+                            toasts.codeSend('Wallpaper removed');
+                          } else {
+                            toasts.error('Wallpaper was already gone; report closed');
+                          }
+                        }
+                      },
+                    ),
+                    child: const Text('Remove wallpaper'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

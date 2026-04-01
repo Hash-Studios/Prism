@@ -2,11 +2,13 @@ import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
-import {emailToTopic, sendNotification} from "./notificationHelper";
+import {emailToTopic, type NotificationData, sendNotification} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
 }
+
+const db = admin.firestore();
 
 interface ReportDoc {
   contentType?: string;
@@ -45,21 +47,48 @@ export const onContentReportCreated = onDocumentCreated(
     const title = "New content report";
     const body = `${contentType} · ${reason} · doc ${targetId.slice(0, 32)}${targetId.length > 32 ? "…" : ""}`;
 
+    let wallThumbUrl = "";
+    if (contentType === "wall" && targetId.length > 0) {
+      try {
+        const wallSnap = await db.collection("walls").doc(targetId).get();
+        const w = wallSnap.data();
+        wallThumbUrl = (w?.wallpaper_thumb ?? w?.wallpaper_url ?? "").toString().trim();
+      } catch (err) {
+        logger.warn("onContentReportCreated: could not load wall for thumbnail.", {err, targetId});
+      }
+    }
+
+    const isWallReport = contentType === "wall" && targetId.length > 0;
+    const notificationData: NotificationData = isWallReport ?
+      {
+        route: "wall",
+        pageName: "",
+        url: "",
+        wall_id: targetId,
+        report_id: reportId,
+        content_type: contentType,
+        target_doc_id: targetId,
+        reason,
+        reporter_uid: reporterUid,
+      } :
+      {
+        route: "content_report",
+        pageName: "",
+        url: "",
+        report_id: reportId,
+        content_type: contentType,
+        target_doc_id: targetId,
+        reason,
+        reporter_uid: reporterUid,
+      };
+
     for (const adminEmail of adminEmails) {
       const adminTopic = emailToTopic(adminEmail);
       await sendNotification({
         title,
         body,
-        data: {
-          route: "content_report",
-          pageName: "",
-          url: "",
-          report_id: reportId,
-          content_type: contentType,
-          target_doc_id: targetId,
-          reason,
-          reporter_uid: reporterUid,
-        },
+        data: notificationData,
+        ...(wallThumbUrl ? {imageUrl: wallThumbUrl} : {}),
         modifier: adminEmail,
         channelId: "moderation",
         fcmTarget: {topic: adminTopic},

@@ -1109,11 +1109,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: 
-            actions,
-        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: actions),
       ),
     );
   }

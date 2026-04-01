@@ -46,11 +46,27 @@ class AdminReviewRepository {
     );
   }
 
-  Future<void> markContentReportReviewed(String reportDocId) async {
+  Future<void> markContentReportReviewed(String reportDocId, {String? resolution}) async {
     await firestoreClient.updateDoc(FirebaseCollections.contentReports, reportDocId, <String, dynamic>{
       'status': 'reviewed',
       'reviewedAt': DateTime.now().toUtc(),
+      if (resolution != null && resolution.isNotEmpty) 'resolution': resolution,
     }, sourceTag: 'admin_review.mark_content_report_reviewed');
+  }
+
+  /// Returns true if the wall existed and was rejected; false if it was already missing.
+  Future<bool> rejectWallByFirestoreDocumentId(String wallDocId, {required String reason}) async {
+    final FirestoreDocument? wall = await firestoreClient.getById<FirestoreDocument>(
+      FirebaseCollections.walls,
+      wallDocId,
+      (Map<String, dynamic> data, String id) => FirestoreDocument(id, data),
+      sourceTag: 'admin_review.reject_wall_by_doc_id',
+    );
+    if (wall == null) {
+      return false;
+    }
+    await rejectWall(wall, reason: reason);
+    return true;
   }
 
   Future<void> approveWall(FirestoreDocument wall) async {
