@@ -4,7 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:auto_route/auto_route.dart';
@@ -55,8 +55,10 @@ class _WotdCardContent extends StatelessWidget {
     unawaited(analytics.track(WotdOpenedEvent(wallId: entity.wallId, source: 'card_tap')));
     context.router.push(
       WallpaperDetailRoute(
-        entity: WallpaperDetailEntityX.fromWotd(entity),
-        analyticsSurface: AnalyticsSurfaceValue.wallpaperScreen,
+        wallId: entity.wallId,
+        source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
+        wallpaperUrl: entity.url,
+        thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
       ),
     );
   }
