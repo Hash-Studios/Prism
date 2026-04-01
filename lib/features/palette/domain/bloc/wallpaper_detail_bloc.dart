@@ -20,8 +20,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     this._prismRepository,
     this._wallhavenRepository,
     this._pexelsRepository,
-    this._fetchViewsUsecase,
-    this._updateViewsUsecase,
+    this._recordPrismWallpaperViewsUsecase,
     this._paletteBloc,
   ) : super(const WallpaperDetailInitial()) {
     on<LoadFromEntity>(_onLoadFromEntity);
@@ -41,8 +40,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final PrismWallpaperRepository _prismRepository;
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
-  final FetchWallpaperViewsUsecase _fetchViewsUsecase;
-  final UpdateWallpaperViewsUsecase _updateViewsUsecase;
+  final RecordPrismWallpaperViewsUsecase _recordPrismWallpaperViewsUsecase;
   final PaletteBloc _paletteBloc;
 
   Future<void> _onLoadFromEntity(LoadFromEntity event, Emitter<WallpaperDetailState> emit) async {
@@ -77,8 +75,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(currentState.copyWith(viewsLoading: true));
 
     final entity = currentState.entity;
-    await _updateViewsUsecase(entity.id.toUpperCase());
-    final result = await _fetchViewsUsecase(entity.id.toUpperCase());
+    final result = await _recordPrismWallpaperViewsUsecase(entity.id.toUpperCase());
 
     result.fold(
       onFailure: (failure) {
