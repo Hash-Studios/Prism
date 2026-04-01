@@ -33,6 +33,26 @@ class AdminReviewRepository {
     );
   }
 
+  Stream<List<FirestoreDocument>> watchOpenContentReports() {
+    return firestoreClient.watchQuery<FirestoreDocument>(
+      const FirestoreQuerySpec(
+        collection: FirebaseCollections.contentReports,
+        sourceTag: 'admin_review.content_reports_open',
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'status', op: FirestoreFilterOp.isEqualTo, value: 'open')],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        isStream: true,
+      ),
+      (data, docId) => FirestoreDocument(docId, data),
+    );
+  }
+
+  Future<void> markContentReportReviewed(String reportDocId) async {
+    await firestoreClient.updateDoc(FirebaseCollections.contentReports, reportDocId, <String, dynamic>{
+      'status': 'reviewed',
+      'reviewedAt': DateTime.now().toUtc(),
+    }, sourceTag: 'admin_review.mark_content_report_reviewed');
+  }
+
   Future<void> approveWall(FirestoreDocument wall) async {
     final Map<String, dynamic> payload = Map<String, dynamic>.from(wall.data());
     final List<String> collections =

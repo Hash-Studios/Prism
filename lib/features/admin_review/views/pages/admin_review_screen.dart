@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
@@ -23,16 +24,17 @@ class AdminReviewScreen extends StatefulWidget {
 class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTickerProviderStateMixin {
   late TabController _controller;
   final AdminReviewRepository _repository = const AdminReviewRepository();
-  late final Stream<(int, int)> _pendingCountsStream;
+  late final Stream<(int, int, int)> _pendingCountsStream;
 
   @override
   void initState() {
     super.initState();
-    _controller = TabController(length: 3, vsync: this);
-    _pendingCountsStream = Rx.combineLatest2<int, int, (int, int)>(
+    _controller = TabController(length: 4, vsync: this);
+    _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
       _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
       _repository.watchPendingSetups().map((List<FirestoreDocument> list) => list.length),
-      (int a, int b) => (a, b),
+      _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
+      (int a, int b, int c) => (a, b, c),
     );
   }
 
@@ -51,12 +53,13 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
       );
     }
 
-    return StreamBuilder<(int, int)>(
+    return StreamBuilder<(int, int, int)>(
       stream: _pendingCountsStream,
-      initialData: (0, 0),
-      builder: (BuildContext context, AsyncSnapshot<(int, int)> countSnapshot) {
+      initialData: (0, 0, 0),
+      builder: (BuildContext context, AsyncSnapshot<(int, int, int)> countSnapshot) {
         final int wallsCount = countSnapshot.data!.$1;
         final int setupsCount = countSnapshot.data!.$2;
+        final int reportsCount = countSnapshot.data!.$3;
         return Scaffold(
           appBar: AppBar(
             title: const Text('Admin Moderation'),
@@ -74,13 +77,14 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               tabs: <Tab>[
                 Tab(text: 'Walls ($wallsCount)'),
                 Tab(text: 'Setups ($setupsCount)'),
+                Tab(text: 'Reports ($reportsCount)'),
                 const Tab(text: 'Notifications'),
               ],
             ),
           ),
           body: TabBarView(
             controller: _controller,
-            children: <Widget>[_buildWallTab(), _buildSetupTab(), const _NotificationSenderTab()],
+            children: <Widget>[_buildWallTab(), _buildSetupTab(), _buildReportsTab(), const _NotificationSenderTab()],
           ),
         );
       },
@@ -146,6 +150,60 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               },
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildReportsTab() {
+    return StreamBuilder<List<FirestoreDocument>>(
+      stream: _repository.watchOpenContentReports(),
+      builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final List<FirestoreDocument> reports = snapshot.data!;
+        if (reports.isEmpty) {
+          return const Center(child: Text('No open reports'));
+        }
+        return ListView.builder(
+          itemCount: reports.length,
+          itemBuilder: (BuildContext context, int index) {
+            final FirestoreDocument r = reports[index];
+            final Map<String, dynamic> m = r.data();
+            final String ct = m['contentType']?.toString() ?? '';
+            final String tid = m['targetFirestoreDocId']?.toString() ?? '';
+            final String reason = m['reason']?.toString() ?? '';
+            final String uid = m['reporterUid']?.toString() ?? '';
+            final Object? rawCreated = m['createdAt'];
+            DateTime? created;
+            if (rawCreated is Timestamp) {
+              created = rawCreated.toDate();
+            } else if (rawCreated is DateTime) {
+              created = rawCreated;
+            }
+            final String timeStr = created != null ? timeago.format(created) : '';
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: ListTile(
+                title: Text('$ct — $reason'),
+                subtitle: Text('Target: $tid\nReporter: $uid\n$timeStr'),
+                isThreeLine: true,
+                trailing: TextButton(
+                  onPressed: () async {
+                    try {
+                      await _repository.markContentReportReviewed(r.id);
+                      toasts.codeSend('Marked reviewed');
+                    } catch (e, st) {
+                      logger.e('mark report failed', tag: 'AdminReview', error: e, stackTrace: st);
+                      toasts.error('Failed');
+                    }
+                  },
+                  child: const Text('Done'),
+                ),
+              ),
+            );
+          },
         );
       },
     );

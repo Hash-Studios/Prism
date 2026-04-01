@@ -28,6 +28,7 @@ extension SetupEntityToFavouriteSetupX on SetupEntity {
       review: review,
       resolution: resolution,
       size: size,
+      firestoreDocumentId: firestoreDocumentId,
     );
   }
 }
@@ -57,6 +58,7 @@ extension ProfileSetupEntityToFavouriteSetupX on ProfileSetupEntity {
       review: review,
       resolution: resolution,
       size: size,
+      firestoreDocumentId: firestoreDocumentId,
     );
   }
 }
@@ -86,6 +88,7 @@ extension PublicProfileSetupEntityToFavouriteSetupX on PublicProfileSetupEntity 
       review: review,
       resolution: resolution,
       size: size,
+      firestoreDocumentId: firestoreDocumentId,
     );
   }
 }

@@ -20,6 +20,8 @@ import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
 import 'package:quick_actions/quick_actions.dart' as _i578;
 
+import '../../data/content_reports/firebase_content_report_repository.dart'
+    as _i1058;
 import '../../data/view_stats/firebase_view_stats_repository.dart' as _i818;
 import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
 import '../../features/admin_review/data/review_batch_repository.dart' as _i122;
@@ -193,6 +195,7 @@ import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_re
     as _i604;
 import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart'
     as _i231;
+import '../content_reports/content_report_repository.dart' as _i177;
 import '../firestore/firestore_client.dart' as _i349;
 import '../firestore/firestore_telemetry.dart' as _i393;
 import '../network/connectivity_service.dart' as _i491;
@@ -267,6 +270,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i231.RecordPrismWallpaperViewsUsecase>(
     () =>
         _i231.RecordPrismWallpaperViewsUsecase(gh<_i602.ViewStatsRepository>()),
+  );
+  gh.lazySingleton<_i177.ContentReportRepository>(
+    () => _i1058.FirebaseContentReportRepository(),
   );
   gh.lazySingleton<_i1019.PaletteRepository>(
     () => _i401.PaletteRepositoryImpl(),

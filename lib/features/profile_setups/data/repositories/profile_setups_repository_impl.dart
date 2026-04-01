@@ -73,6 +73,7 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
       review: dto.review,
       resolution: dto.resolution,
       size: dto.size,
+      firestoreDocumentId: docId,
     );
   }
 }

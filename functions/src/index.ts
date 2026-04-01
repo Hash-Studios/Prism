@@ -7,3 +7,5 @@ export {onWallCategorize} from "./onWallCategorize";
 export {categorizeWallpaper} from "./categorizeWallpaper";
 export {onCampaignNotificationRequested} from "./onCampaignNotificationRequested";
 export {recordWallpaperView, recordSetupView} from "./viewStats";
+export {submitContentReport} from "./submitContentReport";
+export {onContentReportCreated} from "./onContentReportCreated";

@@ -625,16 +625,19 @@ Map<String, Object?> _encodePrism(PrismWallpaper wall) {
     'review': wall.review,
     'tags': wall.tags,
     'aiMetadata': wall.aiMetadata,
+    if (wall.firestoreDocumentId != null) 'firestoreDocumentId': wall.firestoreDocumentId,
   };
 }
 
 PrismWallpaper _decodePrism(Map<String, dynamic> map) {
+  final String? fsId = map['firestoreDocumentId']?.toString();
   return PrismWallpaper(
     core: _decodeWallpaperCore(toJsonMap(map['core'])),
     collections: _toStringList(map['collections']),
     review: map['review'] == true,
     tags: _toStringList(map['tags']),
     aiMetadata: toJsonMap(map['aiMetadata']),
+    firestoreDocumentId: (fsId != null && fsId.isNotEmpty) ? fsId : null,
   );
 }
 

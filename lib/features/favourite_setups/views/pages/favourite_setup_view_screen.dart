@@ -17,7 +17,9 @@ import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
@@ -86,9 +88,9 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     index = widget.setupIndex;
-    _futureView = getIt<ViewStatsRepository>().recordSetupView(_setup.id.toUpperCase()).then(
-      (r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'),
-    );
+    _futureView = getIt<ViewStatsRepository>()
+        .recordSetupView(_setup.id.toUpperCase())
+        .then((r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'));
     isLoading = true;
     super.initState();
   }
@@ -314,12 +316,16 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                         ),
                                         GestureDetector(
                                           onTap: () async {
-                                            await createCopyrightLink(
-                                              true,
+                                            final String? docId = _setup.firestoreDocumentId;
+                                            if (docId == null || docId.isEmpty) {
+                                              toasts.error('Report unavailable for this setup.');
+                                              return;
+                                            }
+                                            showContentReportSheet(
                                               context,
-                                              index: index.toString(),
-                                              name: _setup.name.toString(),
-                                              thumbUrl: _setup.image,
+                                              contentType: 'setup',
+                                              targetFirestoreDocId: docId,
+                                              subtitle: _setup.name,
                                             );
                                           },
                                           child: Row(
