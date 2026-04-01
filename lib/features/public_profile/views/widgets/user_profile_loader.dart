@@ -12,8 +12,7 @@ class UserProfileLoader extends StatefulWidget {
   _UserProfileLoaderState createState() => _UserProfileLoaderState();
 }
 
-class _UserProfileLoaderState extends State<UserProfileLoader>
-    with AutomaticKeepAliveClientMixin<UserProfileLoader> {
+class _UserProfileLoaderState extends State<UserProfileLoader> with AutomaticKeepAliveClientMixin<UserProfileLoader> {
   String get _normalizedEmail => widget.email?.trim() ?? '';
 
   @override
@@ -52,15 +51,13 @@ class _UserProfileLoaderState extends State<UserProfileLoader>
     final email = _normalizedEmail;
     if (email.isEmpty) return false;
     if (state.email != email) return true;
-    if (state.status == LoadStatus.initial ||
-        state.status == LoadStatus.loading) {
+    if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
       return true;
     }
     // [PublicProfileBloc._onStarted] sets [PublicProfileState.email] before
     // [_loadAll] emits loading, so we can briefly see success with stale data.
     final loadedEmail = state.profile.email.trim();
-    if (loadedEmail.isNotEmpty &&
-        loadedEmail.toLowerCase() != email.toLowerCase()) {
+    if (loadedEmail.isNotEmpty && loadedEmail.toLowerCase() != email.toLowerCase()) {
       return true;
     }
     return false;
