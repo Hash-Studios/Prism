@@ -213,10 +213,7 @@ class _UserProfileSetupGridState extends State<UserProfileSetupGrid> with Single
                                         context.publicProfileAdapter(listen: false).userProfileSetups!.isEmpty) {
                                     } else {
                                       context.router.push(
-                                        UserProfileSetupViewRoute(
-                                          setupIndex: index,
-                                          profileEmail: widget.email!,
-                                        ),
+                                        UserProfileSetupViewRoute(setupIndex: index, profileEmail: widget.email!),
                                       );
                                     }
                                   },

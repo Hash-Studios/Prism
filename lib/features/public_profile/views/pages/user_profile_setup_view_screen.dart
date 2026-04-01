@@ -155,9 +155,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
         },
         child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
           buildWhen: (previous, current) =>
-              previous.status != current.status ||
-              previous.setups != current.setups ||
-              previous.email != current.email,
+              previous.status != current.status || previous.setups != current.setups || previous.email != current.email,
           builder: (context, state) {
             if (state.status == LoadStatus.loading || state.status == LoadStatus.initial) {
               return Scaffold(
@@ -179,10 +177,7 @@ class _UserProfileSetupViewScreenState extends State<UserProfileSetupViewScreen>
                   ),
                 ),
                 body: Center(
-                  child: Text(
-                    'Setup unavailable',
-                    style: TextStyle(color: Theme.of(context).colorScheme.secondary),
-                  ),
+                  child: Text('Setup unavailable', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
                 ),
               );
             }

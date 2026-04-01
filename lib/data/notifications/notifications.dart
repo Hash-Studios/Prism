@@ -98,9 +98,7 @@ Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
     return;
   }
   final DateTime now = DateTime.now();
-  if (!force &&
-      _lastSyncEndedAt != null &&
-      now.difference(_lastSyncEndedAt!) < _syncCooldown) {
+  if (!force && _lastSyncEndedAt != null && now.difference(_lastSyncEndedAt!) < _syncCooldown) {
     return;
   }
 
