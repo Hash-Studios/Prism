@@ -130,6 +130,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
       review: dto.review,
       resolution: dto.resolution,
       size: dto.size,
+      firestoreDocumentId: docId,
     );
   }
 }

@@ -303,6 +303,19 @@ enums:
 events:
   - id: report_setup
   - id: report_wall
+  - id: content_report_submit
+    fields:
+      - name: content_type
+        key: content_type
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: BinaryResultValue
+      - name: reason
+        key: reason
+        type: string
+        required: false
   - id: setup_fav_status_changed
     fields:
       - name: setup_id

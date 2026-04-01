@@ -400,6 +400,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       review: dto.review,
       resolution: dto.resolution,
       size: dto.size,
+      firestoreDocumentId: docId,
     );
   }
 

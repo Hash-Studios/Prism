@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.recordSetupView = exports.recordWallpaperView = exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
+exports.onContentReportCreated = exports.submitContentReport = exports.recordSetupView = exports.recordWallpaperView = exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
 var wallOfTheDay_1 = require("./wallOfTheDay");
 Object.defineProperty(exports, "wallOfTheDay", { enumerable: true, get: function () { return wallOfTheDay_1.wallOfTheDay; } });
 var streak_1 = require("./streak");
@@ -21,4 +21,8 @@ Object.defineProperty(exports, "onCampaignNotificationRequested", { enumerable: 
 var viewStats_1 = require("./viewStats");
 Object.defineProperty(exports, "recordWallpaperView", { enumerable: true, get: function () { return viewStats_1.recordWallpaperView; } });
 Object.defineProperty(exports, "recordSetupView", { enumerable: true, get: function () { return viewStats_1.recordSetupView; } });
+var submitContentReport_1 = require("./submitContentReport");
+Object.defineProperty(exports, "submitContentReport", { enumerable: true, get: function () { return submitContentReport_1.submitContentReport; } });
+var onContentReportCreated_1 = require("./onContentReportCreated");
+Object.defineProperty(exports, "onContentReportCreated", { enumerable: true, get: function () { return onContentReportCreated_1.onContentReportCreated; } });
 //# sourceMappingURL=index.js.map

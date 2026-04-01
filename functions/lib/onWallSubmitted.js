@@ -37,11 +37,11 @@ exports.onWallSubmitted = void 0;
 const admin = __importStar(require("firebase-admin"));
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
+const adminConfig_1 = require("./adminConfig");
 const notificationHelper_1 = require("./notificationHelper");
 if (!admin.apps.length) {
     admin.initializeApp();
 }
-const db = admin.firestore();
 /**
  * Fires when a new wall document is created in the `walls` collection.
  *
@@ -76,7 +76,7 @@ exports.onWallSubmitted = (0, firestore_1.onDocumentCreated)({
     const artistEmail = ((_c = data.email) !== null && _c !== void 0 ? _c : "").toString().trim();
     const wallTitle = ((_d = data.title) !== null && _d !== void 0 ? _d : "").toString().trim() || "Untitled";
     const wallThumb = ((_e = data.wallpaper_thumb) !== null && _e !== void 0 ? _e : "").toString().trim();
-    const adminEmails = await _getAdminEmails();
+    const adminEmails = await (0, adminConfig_1.getAdminEmails)();
     if (adminEmails.length === 0) {
         v2_1.logger.warn("onWallSubmitted: no admin emails configured in config/adminNotifications.");
         return;
@@ -105,22 +105,4 @@ exports.onWallSubmitted = (0, firestore_1.onDocumentCreated)({
         adminCount: adminEmails.length,
     });
 });
-async function _getAdminEmails() {
-    var _a;
-    try {
-        const snap = await db.collection("config").doc("adminNotifications").get();
-        if (!snap.exists) {
-            return [];
-        }
-        const emails = (_a = snap.data()) === null || _a === void 0 ? void 0 : _a.emails;
-        if (!Array.isArray(emails)) {
-            return [];
-        }
-        return emails.map((e) => e.toString().trim()).filter((e) => e.length > 0);
-    }
-    catch (err) {
-        v2_1.logger.error("onWallSubmitted: failed to fetch admin config.", { err });
-        return [];
-    }
-}
 //# sourceMappingURL=onWallSubmitted.js.map

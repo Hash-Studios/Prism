@@ -292,6 +292,7 @@ Map<String, Object?> _encodeFeedItem(FeedItemEntity item) {
         'review': data.wallpaper.review,
         'tags': data.wallpaper.tags,
         'aiMetadata': data.wallpaper.aiMetadata,
+        if (data.wallpaper.firestoreDocumentId != null) 'firestoreDocumentId': data.wallpaper.firestoreDocumentId,
       },
     },
     wallhaven: (data) => <String, Object?>{
@@ -344,6 +345,7 @@ FeedItemEntity? _decodeFeedItem(Map<String, dynamic> map) {
   switch (type) {
     case 'prism':
       final aiMetadata = _asMap(wallpaperMap['aiMetadata']);
+      final String? fsId = wallpaperMap['firestoreDocumentId']?.toString();
       return PrismFeedItem(
         id: id,
         wallpaper: PrismWallpaper(
@@ -352,6 +354,7 @@ FeedItemEntity? _decodeFeedItem(Map<String, dynamic> map) {
           review: wallpaperMap['review'] as bool?,
           tags: (wallpaperMap['tags'] as List?)?.map((e) => e.toString()).toList(growable: false),
           aiMetadata: aiMetadata.isEmpty ? null : aiMetadata.cast<String, Object?>(),
+          firestoreDocumentId: (fsId != null && fsId.isNotEmpty) ? fsId : null,
         ),
       );
     case 'wallhaven':

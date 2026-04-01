@@ -18,7 +18,7 @@ import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
-import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
@@ -31,7 +31,6 @@ import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -126,9 +125,9 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                 }
                 final SetupWallpaperValue wallpaperValue = setup.wallpaperValue;
                 if (viewCounted == false) {
-                  _futureView = getIt<ViewStatsRepository>().recordSetupView(setup.id.toUpperCase()).then(
-                    (r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'),
-                  );
+                  _futureView = getIt<ViewStatsRepository>()
+                      .recordSetupView(setup.id.toUpperCase())
+                      .then((r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'));
                   viewCounted = true;
                 }
                 return SlidingUpPanel(
@@ -344,12 +343,16 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                   ),
                                                   GestureDetector(
                                                     onTap: () {
-                                                      showModal(
-                                                        context: context,
-                                                        builder: (BuildContext context) => CopyrightPopUp(
-                                                          setup: true,
-                                                          shortlink: "Setup ID - ${setup.id}",
-                                                        ),
+                                                      final String? docId = setup.firestoreDocumentId;
+                                                      if (docId == null || docId.isEmpty) {
+                                                        toasts.error('Report unavailable for this setup.');
+                                                        return;
+                                                      }
+                                                      showContentReportSheet(
+                                                        context,
+                                                        contentType: 'setup',
+                                                        targetFirestoreDocId: docId,
+                                                        subtitle: setup.name?.toString(),
                                                       );
                                                     },
                                                     child: Row(
