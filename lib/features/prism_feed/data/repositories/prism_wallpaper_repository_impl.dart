@@ -133,6 +133,29 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     }
   }
 
+  @override
+  Future<Result<PrismWallpaper?>> fetchByDocumentId(String documentId) async {
+    if (documentId.isEmpty) {
+      return Result.success(null);
+    }
+    try {
+      final Map<String, dynamic>? data = await _firestoreClient.getById<Map<String, dynamic>>(
+        FirebaseCollections.walls,
+        documentId,
+        (d, _) => d,
+        sourceTag: 'PrismWallpaperRepository.fetchByDocumentId',
+      );
+      if (data == null) {
+        return Result.success(null);
+      }
+      final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+      return Result.success(wallpaper);
+    } catch (error, stackTrace) {
+      logger.e('[PrismWallpaperRepository] fetchByDocumentId failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure('Failed to fetch Prism wallpaper by document id: $error'));
+    }
+  }
+
   Future<void> _writeCache({required List<_PrismRow> rows, required bool hasMore, required String? lastDocId}) {
     return _feedCacheLocal.write(
       source: 'prism',

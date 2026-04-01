@@ -514,17 +514,8 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i474.ClearNotificationsUseCase>(
     () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
-  gh.lazySingleton<_i489.WallOfTheDayRepository>(
-    () => _i1070.WallOfTheDayRepositoryImpl(gh<_i349.FirestoreClient>()),
-  );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
-  );
-  gh.lazySingleton<_i502.FirstWallpaperService>(
-    () => _i502.FirstWallpaperService(
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i489.WallOfTheDayRepository>(),
-    ),
   );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
@@ -534,6 +525,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
     () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
+  );
+  gh.lazySingleton<_i489.WallOfTheDayRepository>(
+    () => _i1070.WallOfTheDayRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i727.PrismWallpaperRepository>(),
+    ),
   );
   gh.factory<_i739.DeepLinkBloc>(
     () => _i739.DeepLinkBloc(
@@ -702,6 +699,12 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i410.WatchConnectionUseCase>(
     () => _i410.WatchConnectionUseCase(gh<_i325.ConnectivityRepository>()),
+  );
+  gh.lazySingleton<_i502.FirstWallpaperService>(
+    () => _i502.FirstWallpaperService(
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+    ),
   );
   gh.factory<_i736.ThemeModeBloc>(
     () => _i736.ThemeModeBloc(
