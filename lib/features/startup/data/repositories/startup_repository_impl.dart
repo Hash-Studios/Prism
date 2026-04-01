@@ -153,7 +153,6 @@ class StartupRepositoryImpl implements StartupRepository {
       final onboardingStarterPack = _parseStarterPack(
         remoteConfig?.getString('onboarding_starter_pack_v1') ?? defaultOnboardingStarterPack.toString(),
       );
-      await syncInAppNotificationsFromRemote();
 
       final entity = StartupConfigEntity(
         topImageLink: topImageLink,
@@ -179,6 +178,8 @@ class StartupRepositoryImpl implements StartupRepository {
       if (!_configController.isClosed) {
         _configController.add(entity);
       }
+
+      unawaited(syncInAppNotificationsFromRemote());
 
       return Result.success(entity);
     } catch (error) {

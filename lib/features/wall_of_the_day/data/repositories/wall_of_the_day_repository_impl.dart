@@ -34,6 +34,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
         'current',
         (data, _) => WallOfTheDayFirestorePointer.fromMap(data),
         sourceTag: 'wotd.fetchToday.pointer',
+        preferCacheFirst: true,
       );
 
       if (pointer == null || pointer.wallDocumentId.isEmpty) {

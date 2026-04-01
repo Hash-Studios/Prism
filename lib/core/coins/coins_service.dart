@@ -220,6 +220,7 @@ class CoinsService {
       return;
     }
     final String userId = app_state.prismUser.id;
+    Map<String, dynamic>? userSnapshot;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
@@ -230,6 +231,7 @@ class CoinsService {
             reason: 'user_missing',
           );
         }
+        userSnapshot = Map<String, dynamic>.from(data);
         final int coins = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
         final bool stateChanged = _ensureCoinStateDefaults(
@@ -250,7 +252,12 @@ class CoinsService {
       docId: userId,
     );
     _applyLocalBalance(result.currentBalance, delta: 0);
-    await refreshStreakStatus();
+    final Map<String, dynamic>? snapshot = userSnapshot;
+    if (snapshot != null) {
+      _syncStreakFromUserData(snapshot);
+    } else {
+      await refreshStreakStatus();
+    }
   }
 
   Future<int> refreshBalance() async {

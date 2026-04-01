@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
@@ -10,6 +12,11 @@ import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notif
 import 'package:Prism/logger/logger.dart';
 
 const int _defaultNotifLimit = 50;
+
+const Duration _syncCooldown = Duration(seconds: 45);
+
+Future<void>? _syncInFlight;
+DateTime? _lastSyncEndedAt;
 
 Map<String, dynamic> _asMap(Object? raw) {
   if (raw is Map<String, dynamic>) {
@@ -81,11 +88,35 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
   );
 }
 
-Future<void> syncInAppNotificationsFromRemote() async {
+Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
   if (!app_state.prismUser.loggedIn) {
     logger.d('Skipping in-app notification sync — user not signed in');
     return;
   }
+  if (_syncInFlight != null) {
+    await _syncInFlight;
+    return;
+  }
+  final DateTime now = DateTime.now();
+  if (!force &&
+      _lastSyncEndedAt != null &&
+      now.difference(_lastSyncEndedAt!) < _syncCooldown) {
+    return;
+  }
+
+  final Future<void> run = _syncInAppNotificationsFromRemoteBody();
+  _syncInFlight = run;
+  try {
+    await run;
+  } finally {
+    if (identical(_syncInFlight, run)) {
+      _syncInFlight = null;
+    }
+    _lastSyncEndedAt = DateTime.now();
+  }
+}
+
+Future<void> _syncInAppNotificationsFromRemoteBody() async {
   logger.d('Fetching in-app notifications');
   try {
     final notificationsLocal = getIt<NotificationsLocalDataSource>();

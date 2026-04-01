@@ -22,7 +22,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<Result<List<InAppNotificationEntity>>> fetchNotifications({required bool syncRemote}) async {
     try {
       if (syncRemote) {
-        await syncInAppNotificationsFromRemote();
+        await syncInAppNotificationsFromRemote(force: true);
       }
       return Result.success(await _readAll());
     } catch (error) {
