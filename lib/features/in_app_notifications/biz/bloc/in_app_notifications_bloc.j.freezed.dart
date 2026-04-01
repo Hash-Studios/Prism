@@ -55,11 +55,12 @@ extension InAppNotificationsEventPatterns on InAppNotificationsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _MarkReadRequested value)?  markReadRequested,TResult Function( _DeleteRequested value)?  deleteRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _LocalReloadRequested value)?  localReloadRequested,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _MarkReadRequested value)?  markReadRequested,TResult Function( _DeleteRequested value)?  deleteRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
+return started(_that);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that);case _DeleteRequested() when deleteRequested != null:
 return deleteRequested(_that);case _ClearRequested() when clearRequested != null:
@@ -81,11 +82,12 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _MarkReadRequested value)  markReadRequested,required TResult Function( _DeleteRequested value)  deleteRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _LocalReloadRequested value)  localReloadRequested,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _MarkReadRequested value)  markReadRequested,required TResult Function( _DeleteRequested value)  deleteRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _RefreshRequested():
+return started(_that);case _LocalReloadRequested():
+return localReloadRequested(_that);case _RefreshRequested():
 return refreshRequested(_that);case _MarkReadRequested():
 return markReadRequested(_that);case _DeleteRequested():
 return deleteRequested(_that);case _ClearRequested():
@@ -106,11 +108,12 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _MarkReadRequested value)?  markReadRequested,TResult? Function( _DeleteRequested value)?  deleteRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _LocalReloadRequested value)?  localReloadRequested,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _MarkReadRequested value)?  markReadRequested,TResult? Function( _DeleteRequested value)?  deleteRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
+return started(_that);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that);case _DeleteRequested() when deleteRequested != null:
 return deleteRequested(_that);case _ClearRequested() when clearRequested != null:
@@ -131,10 +134,11 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool syncRemote)?  started,TResult Function()?  refreshRequested,TResult Function( String id)?  markReadRequested,TResult Function( String id)?  deleteRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool syncRemote)?  started,TResult Function()?  localReloadRequested,TResult Function()?  refreshRequested,TResult Function( String id)?  markReadRequested,TResult Function( String id)?  deleteRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.syncRemote);case _RefreshRequested() when refreshRequested != null:
+return started(_that.syncRemote);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that.id);case _DeleteRequested() when deleteRequested != null:
 return deleteRequested(_that.id);case _ClearRequested() when clearRequested != null:
@@ -156,10 +160,11 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool syncRemote)  started,required TResult Function()  refreshRequested,required TResult Function( String id)  markReadRequested,required TResult Function( String id)  deleteRequested,required TResult Function()  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool syncRemote)  started,required TResult Function()  localReloadRequested,required TResult Function()  refreshRequested,required TResult Function( String id)  markReadRequested,required TResult Function( String id)  deleteRequested,required TResult Function()  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.syncRemote);case _RefreshRequested():
+return started(_that.syncRemote);case _LocalReloadRequested():
+return localReloadRequested();case _RefreshRequested():
 return refreshRequested();case _MarkReadRequested():
 return markReadRequested(_that.id);case _DeleteRequested():
 return deleteRequested(_that.id);case _ClearRequested():
@@ -180,10 +185,11 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool syncRemote)?  started,TResult? Function()?  refreshRequested,TResult? Function( String id)?  markReadRequested,TResult? Function( String id)?  deleteRequested,TResult? Function()?  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool syncRemote)?  started,TResult? Function()?  localReloadRequested,TResult? Function()?  refreshRequested,TResult? Function( String id)?  markReadRequested,TResult? Function( String id)?  deleteRequested,TResult? Function()?  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.syncRemote);case _RefreshRequested() when refreshRequested != null:
+return started(_that.syncRemote);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that.id);case _DeleteRequested() when deleteRequested != null:
 return deleteRequested(_that.id);case _ClearRequested() when clearRequested != null:
@@ -260,6 +266,38 @@ as bool,
 
 
 }
+
+/// @nodoc
+
+
+class _LocalReloadRequested implements InAppNotificationsEvent {
+  const _LocalReloadRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LocalReloadRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'InAppNotificationsEvent.localReloadRequested()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 

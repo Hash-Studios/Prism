@@ -674,7 +674,7 @@ _i174.GetIt initGetIt(
       gh<_i96.UpdateThemeDarkAccentUseCase>(),
     ),
   );
-  gh.factory<_i584.InAppNotificationsBloc>(
+  gh.lazySingleton<_i584.InAppNotificationsBloc>(
     () => _i584.InAppNotificationsBloc(
       gh<_i474.FetchNotificationsUseCase>(),
       gh<_i474.MarkNotificationAsReadUseCase>(),

@@ -52,6 +52,7 @@ class NotificationsLocalDataSource {
             read: (map['read'] as bool?) ?? false,
             route: map['route']?.toString(),
             wallId: map['wallId']?.toString(),
+            followerEmail: map['followerEmail']?.toString(),
           );
         })
         .toList(growable: false);
@@ -72,6 +73,7 @@ class NotificationsLocalDataSource {
             'read': item.read,
             'route': item.route,
             'wallId': item.wallId,
+            'followerEmail': item.followerEmail,
           },
         )
         .toList(growable: false);

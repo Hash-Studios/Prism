@@ -81,4 +81,21 @@ void main() {
       expect(bloc.state.items.first.read, isTrue);
     },
   );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'localReloadRequested refreshes from cache without forcing loading state on success path',
+    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, clearUseCase),
+    seed: () => InAppNotificationsState(
+      status: LoadStatus.success,
+      actionStatus: ActionStatus.success,
+      items: const <InAppNotificationEntity>[],
+      unreadCount: 0,
+    ),
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.localReloadRequested()),
+    verify: (bloc) {
+      verify(() => fetchUseCase(const FetchNotificationsParams(syncRemote: false))).called(1);
+      expect(bloc.state.status, LoadStatus.success);
+      expect(bloc.state.items, isNotEmpty);
+    },
+  );
 }

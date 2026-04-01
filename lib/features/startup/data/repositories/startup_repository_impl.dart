@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -154,6 +156,9 @@ class StartupRepositoryImpl implements StartupRepository {
         remoteConfig?.getString('onboarding_starter_pack_v1') ?? defaultOnboardingStarterPack.toString(),
       );
       await syncInAppNotificationsFromRemote();
+      if (getIt.isRegistered<InAppNotificationsBloc>()) {
+        getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
+      }
 
       final entity = StartupConfigEntity(
         topImageLink: topImageLink,
