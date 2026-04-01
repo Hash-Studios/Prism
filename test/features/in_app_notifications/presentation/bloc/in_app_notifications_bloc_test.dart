@@ -78,13 +78,7 @@ void main() {
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
     'loads notifications and marks one as read',
-    build: () => InAppNotificationsBloc(
-      fetchUseCase,
-      markUseCase,
-      deleteUseCase,
-      deleteManyUseCase,
-      clearUseCase,
-    ),
+    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
     act: (bloc) => bloc
       ..add(const InAppNotificationsEvent.started(syncRemote: true))
       ..add(const InAppNotificationsEvent.markReadRequested(id: 'notif-1')),
@@ -97,13 +91,7 @@ void main() {
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
     'localReloadRequested refreshes from cache without forcing loading state on success path',
-    build: () => InAppNotificationsBloc(
-      fetchUseCase,
-      markUseCase,
-      deleteUseCase,
-      deleteManyUseCase,
-      clearUseCase,
-    ),
+    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
     seed: () => InAppNotificationsState(
       status: LoadStatus.success,
       actionStatus: ActionStatus.success,
@@ -120,13 +108,7 @@ void main() {
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
     'deleteManyRequested removes several ids in one pass',
-    build: () => InAppNotificationsBloc(
-      fetchUseCase,
-      markUseCase,
-      deleteUseCase,
-      deleteManyUseCase,
-      clearUseCase,
-    ),
+    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
     seed: () => const InAppNotificationsState(
       status: LoadStatus.success,
       actionStatus: ActionStatus.success,
