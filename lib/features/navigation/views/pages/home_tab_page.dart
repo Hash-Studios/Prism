@@ -181,7 +181,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       value: _notificationsBloc,
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
-        appBar: _HomeAppBar(onLogoTap: _openForYouMenu),
+        appBar: _HomeAppBar(onLogoTap: _openFeedSettingsSheet),
         body: Stack(
           children: <Widget>[
             PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
@@ -192,198 +192,34 @@ class _HomeTabPageState extends State<HomeTabPage> {
     );
   }
 
-  Future<void> _openForYouMenu() async {
-    final action = await showModalBottomSheet<_ForYouMenuAction>(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.tune_rounded),
-                title: const Text('Edit interests'),
-                onTap: () => Navigator.pop(context, _ForYouMenuAction.editInterests),
-              ),
-              ListTile(
-                leading: const Icon(JamIcons.filter),
-                title: const Text('Feed mix'),
-                onTap: () => Navigator.pop(context, _ForYouMenuAction.feedMix),
-              ),
-              ListTile(
-                leading: const Icon(JamIcons.backward),
-                title: const Text('Reset personalization'),
-                onTap: () => Navigator.pop(context, _ForYouMenuAction.reset),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    switch (action) {
-      case _ForYouMenuAction.editInterests:
-        await _openEditInterestsSheet();
-      case _ForYouMenuAction.feedMix:
-        await _openFeedMixSheet();
-      case _ForYouMenuAction.reset:
-        await _resetPersonalization();
-      case null:
-        return;
-    }
-  }
-
-  Future<void> _openEditInterestsSheet() async {
+  Future<void> _openFeedSettingsSheet() async {
     final catalog = await PersonalizedInterestsCatalog.load(
       remoteConfig: FirebaseRemoteConfig.instance,
       settingsLocal: _settingsLocal,
     );
-    if (catalog.isEmpty) {
-      return;
-    }
-    final selected = PersonalizedInterestsCatalog.selectedFromLocal(_settingsLocal).toSet();
-    if (selected.isEmpty) {
-      selected.addAll(PersonalizedInterestsCatalog.defaultSelection(catalog));
-    }
-    if (!mounted) {
-      return;
-    }
+    if (catalog.isEmpty || !mounted) return;
 
-    final result = await showModalBottomSheet<List<String>>(
+    final selected = PersonalizedInterestsCatalog.selectedFromLocal(_settingsLocal).toSet();
+    if (selected.isEmpty) selected.addAll(PersonalizedInterestsCatalog.defaultSelection(catalog));
+    final currentMix = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced');
+
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
-        final temp = {...selected};
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text('Your interests', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 10),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final entry in catalog)
-                              FilterChip(
-                                label: Text(entry.name),
-                                selected: temp.contains(entry.name),
-                                avatar: CircleAvatar(backgroundImage: NetworkImage(entry.imageUrl)),
-                                onSelected: (selected) {
-                                  setModalState(() {
-                                    if (selected) {
-                                      temp.add(entry.name);
-                                    } else {
-                                      temp.remove(entry.name);
-                                    }
-                                  });
-                                },
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: temp.length < OnboardingV2Config.minInterests
-                              ? null
-                              : () => Navigator.pop(context, temp.toList(growable: false)),
-                          child: const Text('Save interests'),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      useSafeArea: true,
+      builder: (_) => _FeedSettingsSheet(
+        catalog: catalog,
+        initialInterests: selected,
+        initialFeedMix: currentMix,
+        onSave: (interests, feedMix) async {
+          final persisted = await _persistInterests(interests);
+          if (!persisted) return;
+          await _settingsLocal.set(personalizedFeedMixLocalKey, feedMix);
+          if (mounted) setState(() => _personalizedFeedVersion += 1);
+        },
+      ),
     );
-
-    if (result == null || result.isEmpty || !mounted) {
-      return;
-    }
-
-    final persisted = await _persistInterests(result);
-    if (!persisted) {
-      return;
-    }
-    setState(() {
-      _personalizedFeedVersion += 1;
-    });
-  }
-
-  Future<void> _openFeedMixSheet() async {
-    final current = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced');
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                value: 'balanced',
-                groupValue: current,
-                title: const Text('Balanced'),
-                subtitle: const Text('Creators + discovery in equal balance'),
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-              RadioListTile<String>(
-                value: 'creators',
-                groupValue: current,
-                title: const Text('More creators'),
-                subtitle: const Text('Prefer people you follow and Prism walls'),
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-              RadioListTile<String>(
-                value: 'discovery',
-                groupValue: current,
-                title: const Text('More discovery'),
-                subtitle: const Text('Prefer Wallhaven and Pexels exploration'),
-                onChanged: (value) => Navigator.pop(context, value),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (selected == null || selected == current) {
-      return;
-    }
-    await _settingsLocal.set(personalizedFeedMixLocalKey, selected);
-    setState(() {
-      _personalizedFeedVersion += 1;
-    });
-  }
-
-  Future<void> _resetPersonalization() async {
-    final catalog = await PersonalizedInterestsCatalog.load(
-      remoteConfig: FirebaseRemoteConfig.instance,
-      settingsLocal: _settingsLocal,
-    );
-    final defaults = PersonalizedInterestsCatalog.defaultSelection(catalog);
-    final persisted = await _persistInterests(defaults);
-    if (!persisted) {
-      return;
-    }
-    await _settingsLocal.set(personalizedFeedMixLocalKey, 'balanced');
-    setState(() {
-      _personalizedFeedVersion += 1;
-    });
   }
 
   Future<bool> _persistInterests(List<String> interests) async {
@@ -396,8 +232,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
     return saveResult.isSuccess;
   }
 }
-
-enum _ForYouMenuAction { editInterests, feedMix, reset }
 
 class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   const _HomeAppBar({required this.onLogoTap});
@@ -444,6 +278,8 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                               fontVariations: [FontVariation('WONK', 1)],
                             ),
                           ),
+                          SizedBox(width: 2),
+                          Icon(Icons.expand_more_rounded, color: Colors.white, size: 16),
                         ],
                       ),
                     ),
@@ -525,6 +361,187 @@ class _ProfileAvatar extends StatelessWidget {
         child: ClipOval(
           child: CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover),
         ),
+      ),
+    );
+  }
+}
+
+class _FeedSettingsSheet extends StatefulWidget {
+  const _FeedSettingsSheet({
+    required this.catalog,
+    required this.initialInterests,
+    required this.initialFeedMix,
+    required this.onSave,
+  });
+
+  final List<PersonalizedInterest> catalog;
+  final Set<String> initialInterests;
+  final String initialFeedMix;
+  final Future<void> Function(List<String> interests, String feedMix) onSave;
+
+  @override
+  State<_FeedSettingsSheet> createState() => _FeedSettingsSheetState();
+}
+
+class _FeedSettingsSheetState extends State<_FeedSettingsSheet> {
+  late Set<String> _selectedInterests;
+  late String _feedMix;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedInterests = {...widget.initialInterests};
+    _feedMix = widget.initialFeedMix;
+  }
+
+  bool get _canSave => !_saving && _selectedInterests.length >= OnboardingV2Config.minInterests;
+
+  void _resetToDefaults() {
+    final defaults = PersonalizedInterestsCatalog.defaultSelection(widget.catalog);
+    setState(() {
+      _selectedInterests = defaults.toSet();
+      _feedMix = 'balanced';
+    });
+  }
+
+  Future<void> _save() async {
+    if (!_canSave) return;
+    setState(() => _saving = true);
+    await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final count = _selectedInterests.length;
+    final belowMin = count < OnboardingV2Config.minInterests;
+    final keyboardPadding = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        const _DragHandle(),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text('Your feed', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Text('$count selected', style: tt.bodySmall?.copyWith(color: belowMin ? cs.error : cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 4),
+          child: Text('Interests', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final entry in widget.catalog)
+                  FilterChip(
+                    label: Text(entry.name),
+                    selected: _selectedInterests.contains(entry.name),
+                    avatar: CircleAvatar(backgroundImage: CachedNetworkImageProvider(entry.imageUrl)),
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedInterests.add(entry.name);
+                        } else {
+                          _selectedInterests.remove(entry.name);
+                        }
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 4),
+          child: Text('Feed mix', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+          child: _FeedMixSelector(value: _feedMix, onChanged: (v) => setState(() => _feedMix = v)),
+        ),
+        const Divider(height: 1, indent: 20, endIndent: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              TextButton(onPressed: _saving ? null : _resetToDefaults, child: const Text('Reset to defaults')),
+              const Spacer(),
+              FilledButton(
+                onPressed: _canSave ? _save : null,
+                child: _saving
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Save'),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: keyboardPadding + 8),
+      ],
+    );
+  }
+}
+
+class _FeedMixSelector extends StatelessWidget {
+  const _FeedMixSelector({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return SegmentedButton<String>(
+      segments: const [
+        ButtonSegment(value: 'balanced', label: Text('Balanced')),
+        ButtonSegment(value: 'creators', label: Text('Creators')),
+        ButtonSegment(value: 'discovery', label: Text('Discovery')),
+      ],
+      selected: {value},
+      onSelectionChanged: (Set<String> s) {
+        if (s.isNotEmpty) onChanged(s.first);
+      },
+      expandedInsets: EdgeInsets.zero,
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? cs.primary : null,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _DragHandle extends StatelessWidget {
+  const _DragHandle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        height: 4,
+        width: 32,
+        decoration: BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(99)),
       ),
     );
   }
