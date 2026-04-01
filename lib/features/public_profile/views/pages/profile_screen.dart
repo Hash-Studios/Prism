@@ -298,7 +298,9 @@ class _ProfileChildState extends State<_ProfileChild> {
 
   Future<void> _openEditProfilePanel({required String sourceContext}) async {
     _trackAction(AnalyticsActionValue.editProfileTapped, sourceContext: sourceContext);
-    await context.router.push(const EditProfilePanelRoute());
+    // Push on root stack: ProfileScreen is often shown via root ProfileRoute
+    // (/user/:id); nested /dashboard/profile/edit is not in that subtree.
+    await context.router.root.push(const EditProfilePanelRoute());
     if (!mounted) {
       return;
     }
