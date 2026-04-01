@@ -196,10 +196,7 @@ void main() {
   });
 
   test('wallLiveCreatorNameFromBody parses quoted title pattern', () {
-    expect(
-      wallLiveCreatorNameFromBody('"Untitled" by Diogo López is now live.'),
-      'Diogo López',
-    );
+    expect(wallLiveCreatorNameFromBody('"Untitled" by Diogo López is now live.'), 'Diogo López');
     expect(wallLiveCreatorNameFromBody('by Someone is now live'), 'Someone');
   });
 
@@ -297,9 +294,6 @@ void main() {
         ),
       ],
     );
-    expect(
-      collapsedGroupSummaryLine(dup),
-      'Same message sent 2 times—compare timestamps to see when.',
-    );
+    expect(collapsedGroupSummaryLine(dup), 'Same message sent 2 times—compare timestamps to see when.');
   });
 }

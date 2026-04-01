@@ -59,10 +59,7 @@ String? wallLiveCreatorNameFromBody(String body) {
   if (trimmed.isEmpty) {
     return null;
   }
-  final RegExpMatch? match = RegExp(
-    r'\bby\s+(.+?)\s+is\s+now\s+live\.?',
-    caseSensitive: false,
-  ).firstMatch(trimmed);
+  final RegExpMatch? match = RegExp(r'\bby\s+(.+?)\s+is\s+now\s+live\.?', caseSensitive: false).firstMatch(trimmed);
   return match?.group(1)?.trim();
 }
 
@@ -190,9 +187,7 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group) {
 
 /// Expects [sortedNewestFirst] (e.g. from repository). Returns groups sorted by
 /// each group’s newest [createdAt] (same order as before for ungrouped items).
-List<InAppNotificationTitleGroup> groupInAppNotificationsByTitle(
-  List<InAppNotificationEntity> sortedNewestFirst,
-) {
+List<InAppNotificationTitleGroup> groupInAppNotificationsByTitle(List<InAppNotificationEntity> sortedNewestFirst) {
   if (sortedNewestFirst.isEmpty) {
     return const <InAppNotificationTitleGroup>[];
   }
@@ -205,8 +200,7 @@ List<InAppNotificationTitleGroup> groupInAppNotificationsByTitle(
   }
   final List<InAppNotificationTitleGroup> groups = map.entries
       .map(
-        (MapEntry<String, List<InAppNotificationEntity>> e) =>
-            InAppNotificationTitleGroup(key: e.key, items: e.value),
+        (MapEntry<String, List<InAppNotificationEntity>> e) => InAppNotificationTitleGroup(key: e.key, items: e.value),
       )
       .toList(growable: false);
   groups.sort(

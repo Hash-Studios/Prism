@@ -227,10 +227,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             automaticallyImplyLeading: false,
             elevation: 0,
             iconTheme: IconThemeData(color: colorScheme.secondary),
-            title: Text(
-              'Notifications',
-              style: theme.textTheme.displaySmall?.copyWith(color: colorScheme.secondary),
-            ),
+            title: Text('Notifications', style: theme.textTheme.displaySmall?.copyWith(color: colorScheme.secondary)),
             leading: IconButton(
               tooltip: 'Close',
               icon: const Icon(JamIcons.close),
@@ -254,9 +251,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: Theme.of(context).primaryColor,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                    ),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                     builder: (_) => const NotificationSettingsSheet(),
                   );
                 },
@@ -302,7 +297,10 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                                   const InAppNotificationsEvent.clearRequested(),
                                 );
                               },
-                              child: Text('Clear inbox', style: TextStyle(color: cs.error, fontWeight: FontWeight.w600)),
+                              child: Text(
+                                'Clear inbox',
+                                style: TextStyle(color: cs.error, fontWeight: FontWeight.w600),
+                              ),
                             ),
                           ],
                           actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
@@ -318,11 +316,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     );
   }
 
-  Future<bool> _confirmRemoveFromInbox(
-    BuildContext context, {
-    required String title,
-    required String content,
-  }) async {
+  Future<bool> _confirmRemoveFromInbox(BuildContext context, {required String title, required String content}) async {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext ctx) {
@@ -334,10 +328,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             title,
             style: t.textTheme.headlineSmall?.copyWith(color: cs.secondary, fontWeight: FontWeight.w600),
           ),
-          content: Text(
-            content,
-            style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9)),
-          ),
+          content: Text(content, style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9))),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
@@ -345,7 +336,10 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text('Remove', style: TextStyle(color: cs.error, fontWeight: FontWeight.w600)),
+              child: Text(
+                'Remove',
+                style: TextStyle(color: cs.error, fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         );
@@ -384,10 +378,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
       ),
       onDismissed: (_) {
         analytics.track(
-          NotificationItemDismissedEvent(
-            type: _notificationTypeFor(notification),
-            dismissMode: DismissModeValue.swipe,
-          ),
+          NotificationItemDismissedEvent(type: _notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
       },
@@ -417,12 +408,13 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
       confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
         context,
         title: 'Remove this summary?',
-        content:
-            'All ${group.items.length} notifications in this group will be removed from your list on this device.',
+        content: 'All ${group.items.length} notifications in this group will be removed from your list on this device.',
       ),
       onDismissed: (_) {
         context.read<InAppNotificationsBloc>().add(
-          InAppNotificationsEvent.deleteManyRequested(ids: group.items.map((InAppNotificationEntity e) => e.id).toList()),
+          InAppNotificationsEvent.deleteManyRequested(
+            ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
+          ),
         );
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
@@ -646,8 +638,7 @@ class NotificationCard extends StatelessWidget {
           : (notification.title.trim().isNotEmpty ? notification.title.trim() : displayBody);
       return Semantics(
         button: true,
-        label:
-            '$semanticLine. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
+        label: '$semanticLine. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
         child: Material(
           color: theme.primaryColor,
           child: InkWell(
@@ -747,10 +738,7 @@ class NotificationCard extends StatelessWidget {
                             notification.body,
                             maxLines: 6,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontSize: 12,
-                              color: colorScheme.secondary,
-                            ),
+                            style: theme.textTheme.titleLarge?.copyWith(fontSize: 12, color: colorScheme.secondary),
                           ),
                         ],
                       ),
@@ -768,12 +756,8 @@ class NotificationCard extends StatelessWidget {
                         imageUrl: notification.imageUrl,
                         fit: BoxFit.cover,
                         memCacheWidth: memCacheWidth,
-                        placeholder: (_, __) => Center(
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.error,
-                          ),
-                        ),
+                        placeholder: (_, __) =>
+                            Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.error)),
                         errorWidget: (_, _, _) => const SizedBox.shrink(),
                       ),
                     ),
@@ -831,9 +815,8 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
     fontFamily: 'Proxima Nova',
   );
 
-  TextStyle _listTileSubtitleStyle() => const TextStyle(fontSize: 12).copyWith(
-    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.78),
-  );
+  TextStyle _listTileSubtitleStyle() =>
+      const TextStyle(fontSize: 12).copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.78));
 
   @override
   void initState() {
@@ -863,10 +846,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 height: 4,
                 width: 36,
                 margin: const EdgeInsets.only(top: 8, bottom: 12),
-                decoration: BoxDecoration(
-                  color: theme.hintColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: BoxDecoration(color: theme.hintColor, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Padding(
