@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -47,56 +46,154 @@ final class _DiscoverTileData {
   final bool isPremium;
 }
 
-class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
-  AnimationController? _controller;
-  late Animation<Color?> animation;
-  GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
-  Random r = Random();
+String _discoverTileSemanticLabel(_DiscoverTileData tile) {
+  final String trimmed = tile.name.trim();
+  if (tile.kind == _DiscoverTileKind.category) {
+    if (trimmed.isEmpty) {
+      return 'Category';
+    }
+    return 'Category, $trimmed';
+  }
+  if (trimmed.isEmpty) {
+    return tile.isPremium ? 'Premium collection' : 'Collection';
+  }
+  if (tile.isPremium) {
+    return 'Premium collection, $trimmed';
+  }
+  return 'Collection, $trimmed';
+}
+
+/// Decodes network thumbs near on-screen size to reduce memory and GPU upload cost.
+ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logicalW, double logicalH) {
+  final String trimmed = url.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final double dpr = MediaQuery.devicePixelRatioOf(context);
+  final int w = (logicalW * dpr).round().clamp(1, 4096);
+  final int h = (logicalH * dpr).round().clamp(1, 4096);
+  return ResizeImage(CachedNetworkImageProvider(trimmed), width: w, height: h);
+}
+
+/// Elevation-style shadow for stacked collection cards; uses [ColorScheme.shadow].
+Color _collectionDiscoverTileShadowColor(
+  BuildContext context, {
+  required double lightAlpha,
+  required double darkAlpha,
+}) {
+  final ColorScheme scheme = Theme.of(context).colorScheme;
+  final bool lightChrome = context.prismModeStyleForContext() == "Light";
+  return scheme.shadow.withValues(alpha: lightChrome ? lightAlpha : darkAlpha);
+}
+
+const Offset _kCollectionDiscoverTileShadowOffset = Offset(5, 5);
+const double _kCollectionDiscoverTileShadowBlur = 20;
+
+/// Deeper card layer (rear stack).
+const double _kCollectionShadowAlphaLightDeep = 0.12;
+const double _kCollectionShadowAlphaDarkDeep = 0.45;
+
+/// Mid / front stack layers.
+const double _kCollectionShadowAlphaLightMid = 0.26;
+const double _kCollectionShadowAlphaDarkMid = 0.54;
+
+BoxShadow _collectionDiscoverTileBoxShadow(
+  BuildContext context, {
+  required double lightAlpha,
+  required double darkAlpha,
+}) {
+  return BoxShadow(
+    blurRadius: _kCollectionDiscoverTileShadowBlur,
+    offset: _kCollectionDiscoverTileShadowOffset,
+    color: _collectionDiscoverTileShadowColor(context, lightAlpha: lightAlpha, darkAlpha: darkAlpha),
+  );
+}
+
+class _StackedShimmerThumbs extends StatefulWidget {
+  const _StackedShimmerThumbs({required this.width, required this.height, required this.base, required this.highlight});
+
+  final double width;
+  final double height;
+  final Color base;
+  final Color highlight;
+
+  @override
+  State<_StackedShimmerThumbs> createState() => _StackedShimmerThumbsState();
+}
+
+class _StackedShimmerThumbsState extends State<_StackedShimmerThumbs> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late Animation<Color?> _shimmerColor;
+
+  void _attachColorAnimation() {
+    _shimmerColor = ColorTween(
+      begin: widget.base,
+      end: widget.highlight,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
-    _controller!.repeat();
+    _attachColorAnimation();
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _StackedShimmerThumbs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.base != oldWidget.base || widget.highlight != oldWidget.highlight) {
+      _attachColorAnimation();
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.width + 20,
+      height: widget.height + 20,
+      child: AnimatedBuilder(
+        animation: _shimmerColor,
+        builder: (BuildContext context, Widget? child) {
+          final Color? color = _shimmerColor.value;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: <Widget>[
+              Positioned(
+                top: 20,
+                left: 20,
+                child: Container(
+                  width: widget.width,
+                  height: widget.height,
+                  decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                child: Container(
+                  width: widget.width,
+                  height: widget.height,
+                  decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _CollectionsGridState extends State<CollectionsGrid> {
   Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {
@@ -359,7 +456,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> refreshList() async {
-    refreshKey.currentState?.show();
     await CData.getCollections();
   }
 
@@ -405,14 +501,26 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                 ),
           ];
     final int itemCount = isLoading ? 8 : discoverTiles.length;
+    const double gridChildAspectRatio = 0.6225;
+    const double gridSpacing = 8;
+    const EdgeInsets gridPadding = EdgeInsets.fromLTRB(5, 4, 5, 4);
 
-    Widget buildCollectionCard(_DiscoverTileData? tile) {
+    /// Horizontal inset from grid cell edge to stacked-thumb area (matches former 2-column layout).
+    const double thumbHorizontalInset = 50;
+
+    Widget buildCollectionCard(_DiscoverTileData? tile, {required double cellWidth, required double cellHeight}) {
       final bool loading = tile == null;
       final bool isPremium = tile?.isPremium ?? false;
-      final String name = loading ? "LOADING" : tile.name.toUpperCase();
+      final String title = tile?.name.toUpperCase() ?? '';
       final String thumb1 = loading ? '' : tile.thumb1;
       final String thumb2 = loading ? '' : tile.thumb2;
-      return GestureDetector(
+      final double thumbW = (cellWidth - thumbHorizontalInset).clamp(48, cellWidth);
+      final double thumbH = (cellWidth / gridChildAspectRatio - 108.5).clamp(48, cellHeight);
+      final ColorScheme scheme = Theme.of(context).colorScheme;
+      final ImageProvider? thumb2Image = loading ? null : _resizeCachedThumb(context, thumb2, thumbW, thumbH);
+      final ImageProvider? thumb1Image = loading ? null : _resizeCachedThumb(context, thumb1, thumbW, thumbH);
+      final Widget tileBody = GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: loading
             ? null
             : () {
@@ -425,6 +533,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
               },
         child: PremiumBanner(
           comparator: !isPremium,
+          cardWidth: cellWidth,
+          cardHeight: cellHeight,
           child: Stack(
             children: <Widget>[
               Positioned(
@@ -435,35 +545,34 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                     color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54,
+                      _collectionDiscoverTileBoxShadow(
+                        context,
+                        lightAlpha: _kCollectionShadowAlphaLightDeep,
+                        darkAlpha: _kCollectionShadowAlphaDarkDeep,
                       ),
                     ],
                   ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
+                  height: (cellWidth / gridChildAspectRatio - 63.5).clamp(32, cellHeight),
+                  width: thumbW,
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 25, left: 25),
-                  child: Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                      fontSize: 16,
-                      color: loading
-                          ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
-                          : Theme.of(context).colorScheme.secondary,
-                      fontWeight: FontWeight.bold,
+              if (!loading)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 25, left: 25),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      style: Theme.of(context).textTheme.displayMedium!.copyWith(
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.secondary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
               Positioned(
                 top: 20,
                 left: 20,
@@ -472,32 +581,31 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                     color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
+                      _collectionDiscoverTileBoxShadow(
+                        context,
+                        lightAlpha: _kCollectionShadowAlphaLightMid,
+                        darkAlpha: _kCollectionShadowAlphaDarkMid,
                       ),
                     ],
                   ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
+                  height: thumbH,
+                  width: thumbW,
                 ),
               ),
-              Positioned(
-                top: 20,
-                left: 20,
-                child: Container(
-                  decoration: loading
-                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(image: CachedNetworkImageProvider(thumb2), fit: BoxFit.cover),
-                        ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
+              if (!loading)
+                Positioned(
+                  top: 20,
+                  left: 20,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: thumb2Image == null ? Theme.of(context).primaryColor : null,
+                      borderRadius: BorderRadius.circular(20),
+                      image: thumb2Image != null ? DecorationImage(image: thumb2Image, fit: BoxFit.cover) : null,
+                    ),
+                    height: thumbH,
+                    width: thumbW,
+                  ),
                 ),
-              ),
               Positioned(
                 top: 0,
                 left: 0,
@@ -506,58 +614,79 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                     color: Theme.of(context).primaryColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
+                      _collectionDiscoverTileBoxShadow(
+                        context,
+                        lightAlpha: _kCollectionShadowAlphaLightMid,
+                        darkAlpha: _kCollectionShadowAlphaDarkMid,
                       ),
                     ],
                   ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
+                  height: thumbH,
+                  width: thumbW,
                 ),
               ),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  decoration: loading
-                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(image: CachedNetworkImageProvider(thumb1), fit: BoxFit.cover),
-                        ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
+              if (loading)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: _StackedShimmerThumbs(
+                    width: thumbW,
+                    height: thumbH,
+                    base: scheme.surfaceContainer,
+                    highlight: scheme.surfaceContainerHigh,
+                  ),
+                )
+              else
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: thumb1Image == null ? Theme.of(context).primaryColor : null,
+                      borderRadius: BorderRadius.circular(20),
+                      image: thumb1Image != null ? DecorationImage(image: thumb1Image, fit: BoxFit.cover) : null,
+                    ),
+                    height: thumbH,
+                    width: thumbW,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       );
+      if (loading) {
+        return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
+      }
+      return Semantics(button: true, label: _discoverTileSemanticLabel(tile), excludeSemantics: true, child: tileBody);
     }
 
+    final ThemeData theme = Theme.of(context);
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
-      key: refreshKey,
       onRefresh: refreshList,
+      color: theme.colorScheme.primary,
+      backgroundColor: theme.primaryColor,
+      edgeOffset: MediaQuery.paddingOf(context).top,
       child: GridView.builder(
-        physics: const ScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
+        padding: gridPadding,
         itemCount: itemCount,
-        shrinkWrap: true,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.6225,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
+        physics: AlwaysScrollableScrollPhysics(parent: ScrollConfiguration.of(context).getScrollPhysics(context)),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: MediaQuery.orientationOf(context) == Orientation.portrait ? 300 : 250,
+          childAspectRatio: gridChildAspectRatio,
+          mainAxisSpacing: gridSpacing,
+          crossAxisSpacing: gridSpacing,
         ),
-        itemBuilder: (context, index) {
-          if (isLoading) {
-            return buildCollectionCard(null);
-          }
-          return buildCollectionCard(discoverTiles[index]);
+        itemBuilder: (BuildContext context, int index) {
+          return LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final double cw = constraints.maxWidth;
+              final double ch = constraints.maxHeight;
+              if (isLoading) {
+                return buildCollectionCard(null, cellWidth: cw, cellHeight: ch);
+              }
+              return buildCollectionCard(discoverTiles[index], cellWidth: cw, cellHeight: ch);
+            },
+          );
         },
       ),
     );
