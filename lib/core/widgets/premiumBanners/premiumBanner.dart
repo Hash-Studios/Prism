@@ -4,17 +4,30 @@ import 'package:flutter/material.dart';
 class PremiumBanner extends StatelessWidget {
   final bool comparator;
   final Widget child;
-  const PremiumBanner({super.key, required this.comparator, required this.child});
+
+  /// Tile size in the parent grid (used to position the premium chip for any column count).
+  final double cardWidth;
+  final double cardHeight;
+
+  const PremiumBanner({
+    super.key,
+    required this.comparator,
+    required this.child,
+    required this.cardWidth,
+    required this.cardHeight,
+  });
+
   @override
   Widget build(BuildContext context) {
     return comparator
         ? child
         : Stack(
+            clipBehavior: Clip.none,
             children: <Widget>[
               child,
               Positioned(
-                top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 142,
-                left: MediaQuery.of(context).size.width / 2 - 102.5,
+                top: cardHeight - 142,
+                left: cardWidth - 102.5,
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Color(0xFFFFB800),
