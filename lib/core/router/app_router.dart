@@ -125,6 +125,10 @@ class AppRouter extends RootStackRouter {
     RedirectRoute(path: '/share', redirectTo: '/wallpaper-detail'), // Replaces ShareWallpaperViewRoute
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
+    // Standalone path so Edit Profile works when ProfileScreen was opened via
+    // root-level ProfileRoute (/user/:id), e.g. home header avatar — nested
+    // /dashboard/profile/edit is not reachable from that stack.
+    AutoRoute(path: '/edit-profile', page: EditProfilePanelRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/settings', page: SettingsRoute.page),
     AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/about', page: AboutRoute.page),

@@ -59,9 +59,24 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   }
 
   @override
+  Future<Result<List<InAppNotificationEntity>>> deleteByIds({required List<String> ids}) async {
+    try {
+      final unique = ids.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList(growable: false);
+      if (unique.isEmpty) {
+        return Result.error(const ValidationFailure('No valid notification ids'));
+      }
+      await _notificationsLocal.deleteByIds(unique);
+      return Result.success(await _readAll());
+    } catch (error) {
+      return Result.error(CacheFailure('Unable to delete notifications: $error'));
+    }
+  }
+
+  @override
   Future<Result<List<InAppNotificationEntity>>> clearAll() async {
     try {
       await _notificationsLocal.clearAll();
+      await _notificationsLocal.clearLastFetchAtUtc();
       return Result.success(const <InAppNotificationEntity>[]);
     } catch (error) {
       return Result.error(CacheFailure('Unable to clear notifications: $error'));

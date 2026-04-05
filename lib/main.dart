@@ -40,6 +40,7 @@ import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
+import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
@@ -627,6 +628,13 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   static const Duration _getNotifsResumeThrottle = Duration(minutes: 5);
   DateTime? _lastGetNotifsResume;
 
+  void _reloadInAppNotificationsFromCache() {
+    if (!getIt.isRegistered<InAppNotificationsBloc>()) {
+      return;
+    }
+    getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
+  }
+
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
     if (_coinSyncInFlight) {
       return;
@@ -970,7 +978,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     // Foreground: show a heads-up local notification + sync the inbox.
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       unawaited(localNotification.showPushNotification(message));
-      unawaited(syncInAppNotificationsFromRemote());
+      unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
     });
 
     // Background / terminated → foreground: user tapped the notification.
@@ -1010,7 +1018,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       }
       if (_lastGetNotifsResume == null || now.difference(_lastGetNotifsResume!) >= _getNotifsResumeThrottle) {
         _lastGetNotifsResume = now;
-        unawaited(syncInAppNotificationsFromRemote());
+        unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
       }
       return;
     }
@@ -1038,6 +1046,14 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
               previous.session.premium != current.session.premium,
           listener: (context, state) {
             unawaited(_syncAnalyticsIdentityFromSession(state.session, sourceTag: 'session_bloc'));
+          },
+        ),
+        BlocListener<SessionBloc, SessionState>(
+          listenWhen: (previous, current) => previous.session.loggedIn && !current.session.loggedIn,
+          listener: (context, state) {
+            if (getIt.isRegistered<InAppNotificationsBloc>()) {
+              getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
+            }
           },
         ),
         BlocListener<StartupBloc, StartupState>(
