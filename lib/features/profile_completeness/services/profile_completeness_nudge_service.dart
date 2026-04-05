@@ -130,6 +130,6 @@ class ProfileCompletenessNudgeService {
   }
 
   static Future<void> _defaultOpenEditProfile(BuildContext context) async {
-    await context.router.push(const EditProfilePanelRoute());
+    await context.router.root.push(const EditProfilePanelRoute());
   }
 }
