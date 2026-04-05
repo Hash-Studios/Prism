@@ -17,8 +17,17 @@ const int _defaultNotifLimit = 50;
 
 const Duration _syncCooldown = Duration(seconds: 45);
 
-Future<void>? _syncInFlight;
-DateTime? _lastSyncEndedAt;
+final Map<String, Future<void>> _syncInFlightByKey = <String, Future<void>>{};
+final Map<String, DateTime> _lastSyncEndedAtByKey = <String, DateTime>{};
+
+/// Clears in-flight sync futures and cooldown timestamps for every account key.
+///
+/// Call when the session becomes signed out so another account does not inherit
+/// cooldown or await another user's sync future.
+void clearInAppNotificationSyncGateAll() {
+  _syncInFlightByKey.clear();
+  _lastSyncEndedAtByKey.clear();
+}
 
 Map<String, dynamic> _asMap(Object? raw) {
   if (raw is Map<String, dynamic>) {
@@ -30,8 +39,20 @@ Map<String, dynamic> _asMap(Object? raw) {
   return <String, dynamic>{};
 }
 
+String _notificationAudienceTag() => app_state.prismUser.premium ? 'premium' : 'free';
+
+/// Stable key for sync gating: same identity + premium tier as [_notificationModifiers] audience.
+String _notificationSyncGateKey() {
+  final u = app_state.prismUser;
+  final String stableId = u.id.trim().isNotEmpty ? u.id.trim() : u.email.trim().toLowerCase();
+  if (stableId.isEmpty) {
+    return '';
+  }
+  return '$stableId|${_notificationAudienceTag()}';
+}
+
 List<String> _notificationModifiers() {
-  final String audience = app_state.prismUser.premium ? 'premium' : 'free';
+  final String audience = _notificationAudienceTag();
   return <String>[
     audience,
     'all',
@@ -115,24 +136,31 @@ Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
     logger.d('Skipping in-app notification sync — user not signed in');
     return;
   }
-  if (_syncInFlight != null) {
-    await _syncInFlight;
+  final String gateKey = _notificationSyncGateKey();
+  if (gateKey.isEmpty) {
+    logger.d('Skipping in-app notification sync — missing user id/email');
+    return;
+  }
+  final Future<void>? existing = _syncInFlightByKey[gateKey];
+  if (existing != null) {
+    await existing;
     return;
   }
   final DateTime now = DateTime.now();
-  if (!force && _lastSyncEndedAt != null && now.difference(_lastSyncEndedAt!) < _syncCooldown) {
+  final DateTime? lastEnd = _lastSyncEndedAtByKey[gateKey];
+  if (!force && lastEnd != null && now.difference(lastEnd) < _syncCooldown) {
     return;
   }
 
   final Future<void> run = _syncInAppNotificationsFromRemoteBody();
-  _syncInFlight = run;
+  _syncInFlightByKey[gateKey] = run;
   try {
     await run;
   } finally {
-    if (identical(_syncInFlight, run)) {
-      _syncInFlight = null;
+    if (identical(_syncInFlightByKey[gateKey], run)) {
+      _syncInFlightByKey.remove(gateKey);
+      _lastSyncEndedAtByKey[gateKey] = DateTime.now();
     }
-    _lastSyncEndedAt = DateTime.now();
   }
 }
 

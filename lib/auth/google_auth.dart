@@ -10,6 +10,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
@@ -202,6 +203,7 @@ class GoogleAuth {
   }
 
   Future<bool> signOutGoogle() async {
+    clearInAppNotificationSyncGateAll();
     final String existingUserId = app_state.prismUser.id;
     await _ensureGoogleSignInInitialized();
     try {

@@ -565,6 +565,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         ..followers = <String>[]
         ..following = <String>[]
         ..links = <String, String>{};
+      clearInAppNotificationSyncGateAll();
     }
     app_state.prismUser.loggedIn = value;
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
