@@ -514,6 +514,11 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i474.ClearNotificationsUseCase>(
     () => _i474.ClearNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
+  gh.lazySingleton<_i474.DeleteNotificationsByIdsUseCase>(
+    () => _i474.DeleteNotificationsByIdsUseCase(
+      gh<_i366.NotificationsRepository>(),
+    ),
+  );
   gh.lazySingleton<_i489.WallOfTheDayRepository>(
     () => _i1070.WallOfTheDayRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
@@ -555,6 +560,15 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i108.ObserveQuickActionsUseCase>(
     () => _i108.ObserveQuickActionsUseCase(gh<_i865.QuickActionsRepository>()),
+  );
+  gh.lazySingleton<_i584.InAppNotificationsBloc>(
+    () => _i584.InAppNotificationsBloc(
+      gh<_i474.FetchNotificationsUseCase>(),
+      gh<_i474.MarkNotificationAsReadUseCase>(),
+      gh<_i474.DeleteNotificationUseCase>(),
+      gh<_i474.DeleteNotificationsByIdsUseCase>(),
+      gh<_i474.ClearNotificationsUseCase>(),
+    ),
   );
   gh.lazySingleton<_i750.SearchUsersUseCase>(
     () => _i750.SearchUsersUseCase(gh<_i204.UserSearchRepository>()),
@@ -672,14 +686,6 @@ _i174.GetIt initGetIt(
       gh<_i96.LoadThemeDarkUseCase>(),
       gh<_i96.UpdateThemeDarkUseCase>(),
       gh<_i96.UpdateThemeDarkAccentUseCase>(),
-    ),
-  );
-  gh.factory<_i584.InAppNotificationsBloc>(
-    () => _i584.InAppNotificationsBloc(
-      gh<_i474.FetchNotificationsUseCase>(),
-      gh<_i474.MarkNotificationAsReadUseCase>(),
-      gh<_i474.DeleteNotificationUseCase>(),
-      gh<_i474.ClearNotificationsUseCase>(),
     ),
   );
   gh.factory<_i941.ProfileSetupsBloc>(

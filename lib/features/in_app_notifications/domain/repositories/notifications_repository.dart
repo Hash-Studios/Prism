@@ -9,5 +9,7 @@ abstract class NotificationsRepository {
 
   Future<Result<List<InAppNotificationEntity>>> deleteById({required String id});
 
+  Future<Result<List<InAppNotificationEntity>>> deleteByIds({required List<String> ids});
+
   Future<Result<List<InAppNotificationEntity>>> clearAll();
 }

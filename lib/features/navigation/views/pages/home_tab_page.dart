@@ -50,12 +50,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
   bool _isChangelogCheckPending = true;
   int _personalizedFeedVersion = 0;
 
-  @override
-  void dispose() {
-    _notificationsBloc.close();
-    super.dispose();
-  }
-
   Future<void> _ensureDefaultTopicSubscriptions() async {
     if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
       final messaging = FirebaseMessaging.instance;
@@ -481,31 +475,47 @@ class _NotificationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.router.push(const NotificationRoute()),
-      child: SizedBox(
-        width: 40,
-        height: 40,
-        child: Stack(
-          children: [
-            // Bell icon with inner shadow approximation
-            const Positioned(left: 12, top: 12, child: Icon(JamIcons.bell_f, color: Color(0xFFDEDEDE), size: 16)),
-            // Pink nudge dot
-            if (hasUnread)
-              Positioned(
-                top: 11,
-                left: 22,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFFF69A9),
-                    boxShadow: [BoxShadow(color: Color(0x80E57697), blurRadius: 4, spreadRadius: 1)],
+    return Semantics(
+      label: 'Open notifications',
+      button: true,
+      hint: hasUnread ? 'Has unread items' : null,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () => context.router.push(const NotificationRoute()),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  left: 14,
+                  top: 14,
+                  child: Icon(
+                    JamIcons.bell_f,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.75),
                   ),
                 ),
-              ),
-          ],
+                if (hasUnread)
+                  Positioned(
+                    top: 13,
+                    left: 24,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFFF69A9),
+                        boxShadow: [BoxShadow(color: Color(0x80E57697), blurRadius: 4, spreadRadius: 1)],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

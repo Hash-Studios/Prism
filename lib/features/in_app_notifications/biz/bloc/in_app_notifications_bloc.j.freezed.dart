@@ -55,14 +55,16 @@ extension InAppNotificationsEventPatterns on InAppNotificationsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _MarkReadRequested value)?  markReadRequested,TResult Function( _DeleteRequested value)?  deleteRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _LocalReloadRequested value)?  localReloadRequested,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _MarkReadRequested value)?  markReadRequested,TResult Function( _DeleteRequested value)?  deleteRequested,TResult Function( _DeleteManyRequested value)?  deleteManyRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
+return started(_that);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that);case _DeleteRequested() when deleteRequested != null:
-return deleteRequested(_that);case _ClearRequested() when clearRequested != null:
+return deleteRequested(_that);case _DeleteManyRequested() when deleteManyRequested != null:
+return deleteManyRequested(_that);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that);case _:
   return orElse();
 
@@ -81,14 +83,16 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _MarkReadRequested value)  markReadRequested,required TResult Function( _DeleteRequested value)  deleteRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _LocalReloadRequested value)  localReloadRequested,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _MarkReadRequested value)  markReadRequested,required TResult Function( _DeleteRequested value)  deleteRequested,required TResult Function( _DeleteManyRequested value)  deleteManyRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _RefreshRequested():
+return started(_that);case _LocalReloadRequested():
+return localReloadRequested(_that);case _RefreshRequested():
 return refreshRequested(_that);case _MarkReadRequested():
 return markReadRequested(_that);case _DeleteRequested():
-return deleteRequested(_that);case _ClearRequested():
+return deleteRequested(_that);case _DeleteManyRequested():
+return deleteManyRequested(_that);case _ClearRequested():
 return clearRequested(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -106,14 +110,16 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _MarkReadRequested value)?  markReadRequested,TResult? Function( _DeleteRequested value)?  deleteRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _LocalReloadRequested value)?  localReloadRequested,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _MarkReadRequested value)?  markReadRequested,TResult? Function( _DeleteRequested value)?  deleteRequested,TResult? Function( _DeleteManyRequested value)?  deleteManyRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
+return started(_that);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that);case _DeleteRequested() when deleteRequested != null:
-return deleteRequested(_that);case _ClearRequested() when clearRequested != null:
+return deleteRequested(_that);case _DeleteManyRequested() when deleteManyRequested != null:
+return deleteManyRequested(_that);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that);case _:
   return null;
 
@@ -131,13 +137,15 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool syncRemote)?  started,TResult Function()?  refreshRequested,TResult Function( String id)?  markReadRequested,TResult Function( String id)?  deleteRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool syncRemote)?  started,TResult Function()?  localReloadRequested,TResult Function()?  refreshRequested,TResult Function( String id)?  markReadRequested,TResult Function( String id)?  deleteRequested,TResult Function( List<String> ids)?  deleteManyRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.syncRemote);case _RefreshRequested() when refreshRequested != null:
+return started(_that.syncRemote);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that.id);case _DeleteRequested() when deleteRequested != null:
-return deleteRequested(_that.id);case _ClearRequested() when clearRequested != null:
+return deleteRequested(_that.id);case _DeleteManyRequested() when deleteManyRequested != null:
+return deleteManyRequested(_that.ids);case _ClearRequested() when clearRequested != null:
 return clearRequested();case _:
   return orElse();
 
@@ -156,13 +164,15 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool syncRemote)  started,required TResult Function()  refreshRequested,required TResult Function( String id)  markReadRequested,required TResult Function( String id)  deleteRequested,required TResult Function()  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool syncRemote)  started,required TResult Function()  localReloadRequested,required TResult Function()  refreshRequested,required TResult Function( String id)  markReadRequested,required TResult Function( String id)  deleteRequested,required TResult Function( List<String> ids)  deleteManyRequested,required TResult Function()  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.syncRemote);case _RefreshRequested():
+return started(_that.syncRemote);case _LocalReloadRequested():
+return localReloadRequested();case _RefreshRequested():
 return refreshRequested();case _MarkReadRequested():
 return markReadRequested(_that.id);case _DeleteRequested():
-return deleteRequested(_that.id);case _ClearRequested():
+return deleteRequested(_that.id);case _DeleteManyRequested():
+return deleteManyRequested(_that.ids);case _ClearRequested():
 return clearRequested();case _:
   throw StateError('Unexpected subclass');
 
@@ -180,13 +190,15 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool syncRemote)?  started,TResult? Function()?  refreshRequested,TResult? Function( String id)?  markReadRequested,TResult? Function( String id)?  deleteRequested,TResult? Function()?  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool syncRemote)?  started,TResult? Function()?  localReloadRequested,TResult? Function()?  refreshRequested,TResult? Function( String id)?  markReadRequested,TResult? Function( String id)?  deleteRequested,TResult? Function( List<String> ids)?  deleteManyRequested,TResult? Function()?  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.syncRemote);case _RefreshRequested() when refreshRequested != null:
+return started(_that.syncRemote);case _LocalReloadRequested() when localReloadRequested != null:
+return localReloadRequested();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _MarkReadRequested() when markReadRequested != null:
 return markReadRequested(_that.id);case _DeleteRequested() when deleteRequested != null:
-return deleteRequested(_that.id);case _ClearRequested() when clearRequested != null:
+return deleteRequested(_that.id);case _DeleteManyRequested() when deleteManyRequested != null:
+return deleteManyRequested(_that.ids);case _ClearRequested() when clearRequested != null:
 return clearRequested();case _:
   return null;
 
@@ -260,6 +272,38 @@ as bool,
 
 
 }
+
+/// @nodoc
+
+
+class _LocalReloadRequested implements InAppNotificationsEvent {
+  const _LocalReloadRequested();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LocalReloadRequested);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'InAppNotificationsEvent.localReloadRequested()';
+}
+
+
+}
+
+
+
 
 /// @nodoc
 
@@ -419,6 +463,78 @@ class __$DeleteRequestedCopyWithImpl<$Res>
   return _then(_DeleteRequested(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _DeleteManyRequested implements InAppNotificationsEvent {
+  const _DeleteManyRequested({required final  List<String> ids}): _ids = ids;
+  
+
+ final  List<String> _ids;
+ List<String> get ids {
+  if (_ids is EqualUnmodifiableListView) return _ids;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_ids);
+}
+
+
+/// Create a copy of InAppNotificationsEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$DeleteManyRequestedCopyWith<_DeleteManyRequested> get copyWith => __$DeleteManyRequestedCopyWithImpl<_DeleteManyRequested>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DeleteManyRequested&&const DeepCollectionEquality().equals(other._ids, _ids));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_ids));
+
+@override
+String toString() {
+  return 'InAppNotificationsEvent.deleteManyRequested(ids: $ids)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$DeleteManyRequestedCopyWith<$Res> implements $InAppNotificationsEventCopyWith<$Res> {
+  factory _$DeleteManyRequestedCopyWith(_DeleteManyRequested value, $Res Function(_DeleteManyRequested) _then) = __$DeleteManyRequestedCopyWithImpl;
+@useResult
+$Res call({
+ List<String> ids
+});
+
+
+
+
+}
+/// @nodoc
+class __$DeleteManyRequestedCopyWithImpl<$Res>
+    implements _$DeleteManyRequestedCopyWith<$Res> {
+  __$DeleteManyRequestedCopyWithImpl(this._self, this._then);
+
+  final _DeleteManyRequested _self;
+  final $Res Function(_DeleteManyRequested) _then;
+
+/// Create a copy of InAppNotificationsEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? ids = null,}) {
+  return _then(_DeleteManyRequested(
+ids: null == ids ? _self._ids : ids // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
