@@ -33,6 +33,42 @@ class AdminReviewRepository {
     );
   }
 
+  Stream<List<FirestoreDocument>> watchOpenContentReports() {
+    return firestoreClient.watchQuery<FirestoreDocument>(
+      const FirestoreQuerySpec(
+        collection: FirebaseCollections.contentReports,
+        sourceTag: 'admin_review.content_reports_open',
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'status', op: FirestoreFilterOp.isEqualTo, value: 'open')],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        isStream: true,
+      ),
+      (data, docId) => FirestoreDocument(docId, data),
+    );
+  }
+
+  Future<void> markContentReportReviewed(String reportDocId, {String? resolution}) async {
+    await firestoreClient.updateDoc(FirebaseCollections.contentReports, reportDocId, <String, dynamic>{
+      'status': 'reviewed',
+      'reviewedAt': DateTime.now().toUtc(),
+      if (resolution != null && resolution.isNotEmpty) 'resolution': resolution,
+    }, sourceTag: 'admin_review.mark_content_report_reviewed');
+  }
+
+  /// Returns true if the wall existed and was rejected; false if it was already missing.
+  Future<bool> rejectWallByFirestoreDocumentId(String wallDocId, {required String reason}) async {
+    final FirestoreDocument? wall = await firestoreClient.getById<FirestoreDocument>(
+      FirebaseCollections.walls,
+      wallDocId,
+      (Map<String, dynamic> data, String id) => FirestoreDocument(id, data),
+      sourceTag: 'admin_review.reject_wall_by_doc_id',
+    );
+    if (wall == null) {
+      return false;
+    }
+    await rejectWall(wall, reason: reason);
+    return true;
+  }
+
   Future<void> approveWall(FirestoreDocument wall) async {
     final Map<String, dynamic> payload = Map<String, dynamic>.from(wall.data());
     final List<String> collections =

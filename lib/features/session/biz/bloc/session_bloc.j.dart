@@ -35,11 +35,19 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
   final SignOutUseCase _signOutUseCase;
   final SessionRepository _sessionRepository;
   StreamSubscription<dynamic>? _currentUserSubscription;
+  Timer? _startedDebounce;
+
+  static const Duration _startedDebounceDelay = Duration(milliseconds: 400);
 
   void _bindCurrentUserStream() {
     _currentUserSubscription?.cancel();
     _currentUserSubscription = _sessionRepository.watchCurrentUser().skip(1).listen((_) {
-      add(const SessionEvent.started());
+      _startedDebounce?.cancel();
+      _startedDebounce = Timer(_startedDebounceDelay, () {
+        if (!isClosed) {
+          add(const SessionEvent.started());
+        }
+      });
     });
   }
 
@@ -82,6 +90,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
 
   @override
   Future<void> close() async {
+    _startedDebounce?.cancel();
     await _currentUserSubscription?.cancel();
     return super.close();
   }

@@ -1,13 +1,12 @@
 import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
+import {getAdminEmails} from "./adminConfig";
 import {sendNotification, emailToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
 }
-
-const db = admin.firestore();
 
 /**
  * Fires when a new wall document is created in the `walls` collection.
@@ -47,7 +46,7 @@ export const onWallSubmitted = onDocumentCreated(
     const wallTitle: string = (data.title ?? "").toString().trim() || "Untitled";
     const wallThumb: string = (data.wallpaper_thumb ?? "").toString().trim();
 
-    const adminEmails = await _getAdminEmails();
+    const adminEmails = await getAdminEmails();
     if (adminEmails.length === 0) {
       logger.warn("onWallSubmitted: no admin emails configured in config/adminNotifications.");
       return;
@@ -79,20 +78,3 @@ export const onWallSubmitted = onDocumentCreated(
     });
   },
 );
-
-async function _getAdminEmails(): Promise<string[]> {
-  try {
-    const snap = await db.collection("config").doc("adminNotifications").get();
-    if (!snap.exists) {
-      return [];
-    }
-    const emails = snap.data()?.emails;
-    if (!Array.isArray(emails)) {
-      return [];
-    }
-    return emails.map((e) => e.toString().trim()).filter((e) => e.length > 0);
-  } catch (err) {
-    logger.error("onWallSubmitted: failed to fetch admin config.", {err});
-    return [];
-  }
-}

@@ -28,5 +28,8 @@ abstract class FavouriteSetupEntity with _$FavouriteSetupEntity {
     @Default(false) bool review,
     String? resolution,
     String? size,
+
+    /// Firestore document id (favourite copy key; matches global setup id when favourited from feed).
+    String? firestoreDocumentId,
   }) = _FavouriteSetupEntity;
 }

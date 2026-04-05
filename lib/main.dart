@@ -44,7 +44,6 @@ import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notification
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
-import 'package:Prism/features/public_profile/public_profile.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/setups/setups.dart';
@@ -290,14 +289,11 @@ Future<void> main() async {
                 BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
                 BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                 BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-                BlocProvider<CategoryFeedBloc>(
-                  create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-                ),
+                BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
                 BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
                 BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
                 BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
                 BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-                BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
                 BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
                 BlocProvider<StartupBloc>(
                   create: (_) =>
@@ -570,6 +566,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         ..followers = <String>[]
         ..following = <String>[]
         ..links = <String, String>{};
+      clearInAppNotificationSyncGateAll();
     }
     app_state.prismUser.loggedIn = value;
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');

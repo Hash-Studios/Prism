@@ -316,10 +316,37 @@ class FirestoreTrackedClient implements FirestoreClient {
     String id,
     T Function(Map<String, dynamic> data, String docId) map, {
     required String sourceTag,
+    bool preferCacheFirst = false,
   }) async {
+    final DocumentReference<Map<String, dynamic>> ref = _firestore.collection(collection).doc(id);
+    if (preferCacheFirst) {
+      try {
+        final Stopwatch swCache = Stopwatch()..start();
+        final DocumentSnapshot<Map<String, dynamic>> cached = await ref.get(const GetOptions(source: Source.cache));
+        if (cached.exists && cached.data() != null) {
+          await _emitTelemetry(
+            FirestoreTelemetryEvent(
+              timestamp: DateTime.now(),
+              sourceTag: sourceTag,
+              operation: FirestoreOperation.docGet,
+              collection: collection,
+              filtersHash: '$collection:$id',
+              durationMs: swCache.elapsedMilliseconds,
+              resultCount: 1,
+              docId: id,
+              success: true,
+            ),
+          );
+          return map(cached.data()!, cached.id);
+        }
+      } catch (_) {
+        // Cache miss or persistence unavailable — fall through to default get.
+      }
+    }
+
     final Stopwatch sw = Stopwatch()..start();
     try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection(collection).doc(id).get();
+      final DocumentSnapshot<Map<String, dynamic>> doc = await ref.get();
       await _emitTelemetry(
         FirestoreTelemetryEvent(
           timestamp: DateTime.now(),

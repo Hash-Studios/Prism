@@ -48,7 +48,7 @@ const db = admin.firestore();
  *
  * What it does:
  *   1. Reads the current wall_of_the_day/current doc.
- *   2. Archives it to past_picks/{yyyy-MM-dd} so it's never repeated.
+ *   2. Archives { wallId, date } to past_picks/{yyyy-MM-dd} for dedup.
  *   3. Picks a new wall from the `walls` collection that hasn't appeared
  *      in past_picks within the last 30 days.
  *   4. Writes the new wall to wall_of_the_day/current.
@@ -59,13 +59,12 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
     timeZone: "UTC",
     region: "asia-south1", // Mumbai — lowest latency for India-first app
 }, async () => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g;
     const today = _todayDateString();
     // ------------------------------------------------------------------ //
     // 1. Archive yesterday's wall
     // ------------------------------------------------------------------ //
     let currentWallId = null;
-    let currentWallTitle = "Today's Wall";
     try {
         const currentSnap = await db
             .collection("wall_of_the_day")
@@ -74,10 +73,13 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
         if (currentSnap.exists) {
             const data = currentSnap.data();
             currentWallId = (_a = data.wallId) !== null && _a !== void 0 ? _a : null;
-            currentWallTitle = (_b = data.title) !== null && _b !== void 0 ? _b : currentWallTitle;
-            // Archive with the date stored in the doc, falling back to yesterday.
-            const archiveDate = (_c = _firestoreTimestampToDateString(data.date)) !== null && _c !== void 0 ? _c : _yesterdayDateString();
-            await db.collection("past_picks").doc(archiveDate).set(data);
+            // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
+            const archiveDate = (_b = _firestoreTimestampToDateString(data.date)) !== null && _b !== void 0 ? _b : _yesterdayDateString();
+            const archivePayload = {
+                wallId: (_c = data.wallId) !== null && _c !== void 0 ? _c : "",
+                date: (_d = data.date) !== null && _d !== void 0 ? _d : admin.firestore.Timestamp.now(),
+            };
+            await db.collection("past_picks").doc(archiveDate).set(archivePayload);
             v2_1.logger.info(`Archived wall_of_the_day → past_picks/${archiveDate}`, {
                 wallId: currentWallId,
             });
@@ -195,24 +197,16 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
         return;
     }
     // ------------------------------------------------------------------ //
-    // 4. Write wall_of_the_day/current
+    // 4. Write wall_of_the_day/current (pointer only — clients load `walls/{wallId}`)
     // ------------------------------------------------------------------ //
     const wotdDoc = {
         wallId: newWallId,
-        url: (_d = newWall.wallpaper_url) !== null && _d !== void 0 ? _d : "",
-        thumbnailUrl: (_e = newWall.wallpaper_thumb) !== null && _e !== void 0 ? _e : "",
-        title: (_f = newWall.title) !== null && _f !== void 0 ? _f : "",
-        photographer: (_g = newWall.by) !== null && _g !== void 0 ? _g : "", // `by` is the uploader name field
-        photographerId: (_h = newWall.email) !== null && _h !== void 0 ? _h : "", // `email` is the uploader identifier
         date: admin.firestore.Timestamp.now(),
-        palette: (_j = newWall.palette) !== null && _j !== void 0 ? _j : [],
-        isPremium: (_k = newWall.premium) !== null && _k !== void 0 ? _k : false,
     };
     try {
         await db.collection("wall_of_the_day").doc("current").set(wotdDoc);
         v2_1.logger.info(`wall_of_the_day/current updated for ${today}`, {
             wallId: newWallId,
-            title: wotdDoc.title,
         });
     }
     catch (err) {
@@ -222,11 +216,13 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
     // ------------------------------------------------------------------ //
     // 5. Send FCM topic push + write in-app notification doc
     // ------------------------------------------------------------------ //
-    const wallTitle = wotdDoc.title.trim() || "Check it out";
+    const wallTitle = ((_e = newWall.title) === null || _e === void 0 ? void 0 : _e.trim()) || "Check it out";
+    const wallpaperUrl = String((_f = newWall.wallpaper_url) !== null && _f !== void 0 ? _f : "");
+    const thumbnailUrl = String((_g = newWall.wallpaper_thumb) !== null && _g !== void 0 ? _g : "");
     const canonicalWallUrl = _wallShareUrl({
         wallId: newWallId,
-        wallpaperUrl: wotdDoc.url || "",
-        thumbnailUrl: wotdDoc.thumbnailUrl || "",
+        wallpaperUrl,
+        thumbnailUrl,
     });
     await (0, notificationHelper_1.sendNotification)({
         title: "Today's Wall of the Day is here",
@@ -236,7 +232,7 @@ exports.wallOfTheDay = (0, scheduler_1.onSchedule)({
             wall_id: newWallId,
             url: canonicalWallUrl,
         },
-        imageUrl: wotdDoc.thumbnailUrl || undefined,
+        imageUrl: thumbnailUrl || undefined,
         modifier: "all",
         channelId: "wall_of_the_day",
         fcmTarget: { topic: "wall_of_the_day" },

@@ -22,7 +22,9 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<Result<List<InAppNotificationEntity>>> fetchNotifications({required bool syncRemote}) async {
     try {
       if (syncRemote) {
-        await syncInAppNotificationsFromRemote();
+        await syncInAppNotificationsFromRemote(force: true);
+      } else {
+        await pruneBlockedNotificationsCache(waitForInitialLoad: true, notificationsLocal: _notificationsLocal);
       }
       return Result.success(await _readAll());
     } catch (error) {

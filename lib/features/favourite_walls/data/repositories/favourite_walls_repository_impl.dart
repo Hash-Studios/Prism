@@ -102,6 +102,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
               createdAt: dto.createdAt,
             ),
             collections: dto.collections.isEmpty ? null : dto.collections,
+            firestoreDocumentId: docId,
           ),
         );
       case WallpaperSource.wallhaven:

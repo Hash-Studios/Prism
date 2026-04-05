@@ -54,6 +54,7 @@ import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
 import 'package:Prism/features/streak/views/pages/streak_page.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
+import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
 import 'package:auto_route/auto_route.dart';
@@ -129,6 +130,7 @@ class AppRouter extends RootStackRouter {
     // /dashboard/profile/edit is not reachable from that stack.
     AutoRoute(path: '/edit-profile', page: EditProfilePanelRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/settings', page: SettingsRoute.page),
+    AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/about', page: AboutRoute.page),
     AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
     AutoRoute(path: '/fav-setups', page: FavouriteSetupRoute.page),

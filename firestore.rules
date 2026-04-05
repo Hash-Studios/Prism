@@ -151,6 +151,12 @@ service cloud.firestore {
       allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly() || canFollowUser();
       allow delete: if isConfiguredAdmin();
 
+      // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
+      match /blockedUsers/{blockedId} {
+        allow read: if isOwner(userId);
+        allow create, update, delete: if false;
+      }
+
       // Per-user favourites subcollections.
       match /images/{docId} {
         allow read, create, update, delete: if isConfiguredAdmin() || isOwner(userId);
@@ -212,6 +218,42 @@ service cloud.firestore {
     // Legacy token storage (if used, doc id should be UID).
     match /tokens/{userId} {
       allow read, write: if isConfiguredAdmin() || isOwner(userId);
+    }
+
+    // UGC reports (created via submitContentReport callable). Admin read/update for moderation UI.
+    match /contentReports/{docId} {
+      allow read: if isConfiguredAdmin();
+      allow create, delete: if false;
+      allow update: if isConfiguredAdmin();
+    }
+
+    // Rate-limit state for content reports (Cloud Functions only).
+    match /contentReportRateByTarget/{docId} {
+      allow read, write: if false;
+    }
+
+    match /contentReportRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    // User block rate limits (Cloud Functions only).
+    match /userBlockRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /userBlockRateByTarget/{docId} {
+      allow read, write: if false;
+    }
+
+    // Public view counters (writes via Cloud Functions Admin SDK only).
+    match /wallpaper_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /setup_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // Deny everything else by default.

@@ -1,6 +1,5 @@
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 
 final class PrismWallpaper {
   const PrismWallpaper({
@@ -12,6 +11,7 @@ final class PrismWallpaper {
     this.isStreakExclusive = false,
     this.requiredStreakDays,
     this.streakShopCoinCost,
+    this.firestoreDocumentId,
   });
 
   final WallpaperCore core;
@@ -23,25 +23,13 @@ final class PrismWallpaper {
   final int? requiredStreakDays;
   final int? streakShopCoinCost;
 
+  /// Firestore document id in [walls] when loaded from Prism; used for UGC reporting.
+  final String? firestoreDocumentId;
+
   String get id => core.id;
   WallpaperSource get source => core.source;
   String get fullUrl => core.fullUrl;
   String get thumbnailUrl => core.thumbnailUrl;
-
-  factory PrismWallpaper.fromWotd(WallOfTheDayEntity entity) {
-    return PrismWallpaper(
-      core: WallpaperCore(
-        id: entity.wallId,
-        source: WallpaperSource.prism,
-        fullUrl: entity.url,
-        thumbnailUrl: entity.thumbnailUrl,
-        authorName: entity.photographer,
-        authorId: entity.photographerId,
-        category: entity.title,
-        createdAt: entity.date,
-      ),
-    );
-  }
 }
 
 final class WallhavenWallpaper {
@@ -56,21 +44,6 @@ final class WallhavenWallpaper {
     this.tags,
     this.sizeBytes,
   });
-
-  factory WallhavenWallpaper.fromWotd(WallOfTheDayEntity entity) {
-    return WallhavenWallpaper(
-      core: WallpaperCore(
-        id: entity.wallId,
-        source: WallpaperSource.wallhaven,
-        fullUrl: entity.url,
-        thumbnailUrl: entity.thumbnailUrl,
-        authorName: entity.photographer,
-        authorId: entity.photographerId,
-        category: entity.title,
-        createdAt: entity.date,
-      ),
-    );
-  }
 
   final WallpaperCore core;
   final int? views;
@@ -112,22 +85,6 @@ final class PexelsSrc {
 
 final class PexelsWallpaper {
   const PexelsWallpaper({required this.core, this.photographer, this.photographerUrl, this.src});
-
-  factory PexelsWallpaper.fromWotd(WallOfTheDayEntity entity) {
-    return PexelsWallpaper(
-      core: WallpaperCore(
-        id: entity.wallId,
-        source: WallpaperSource.pexels,
-        fullUrl: entity.url,
-        thumbnailUrl: entity.thumbnailUrl,
-        authorName: entity.photographer,
-        authorId: entity.photographerId,
-        category: entity.title,
-        createdAt: entity.date,
-      ),
-      photographer: entity.photographer,
-    );
-  }
 
   final WallpaperCore core;
   final String? photographer;

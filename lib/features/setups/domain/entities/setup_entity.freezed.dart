@@ -14,7 +14,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SetupEntity {
 
- String get id; String? get by; String? get icon; String? get iconUrl; DateTime? get createdAt; String? get desc; String? get email; String get image; String? get name; String? get userPhoto; String? get wallId; WallpaperSource? get source; String? get wallpaperThumb; String? get wallpaperUrl; String? get widget; String? get widget2; String? get widgetUrl; String? get widgetUrl2; String? get link; bool get review; String? get resolution; String? get size;
+ String get id; String? get by; String? get icon; String? get iconUrl; DateTime? get createdAt; String? get desc; String? get email; String get image; String? get name; String? get userPhoto; String? get wallId; WallpaperSource? get source; String? get wallpaperThumb; String? get wallpaperUrl; String? get widget; String? get widget2; String? get widgetUrl; String? get widgetUrl2; String? get link; bool get review; String? get resolution; String? get size;/// Firestore document id in [setups] for UGC reporting.
+ String? get firestoreDocumentId;
 /// Create a copy of SetupEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +26,16 @@ $SetupEntityCopyWith<SetupEntity> get copyWith => _$SetupEntityCopyWithImpl<Setu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SetupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.email, email) || other.email == email)&&(identical(other.image, image) || other.image == image)&&(identical(other.name, name) || other.name == name)&&(identical(other.userPhoto, userPhoto) || other.userPhoto == userPhoto)&&(identical(other.wallId, wallId) || other.wallId == wallId)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.widget, widget) || other.widget == widget)&&(identical(other.widget2, widget2) || other.widget2 == widget2)&&(identical(other.widgetUrl, widgetUrl) || other.widgetUrl == widgetUrl)&&(identical(other.widgetUrl2, widgetUrl2) || other.widgetUrl2 == widgetUrl2)&&(identical(other.link, link) || other.link == link)&&(identical(other.review, review) || other.review == review)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.size, size) || other.size == size));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SetupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.email, email) || other.email == email)&&(identical(other.image, image) || other.image == image)&&(identical(other.name, name) || other.name == name)&&(identical(other.userPhoto, userPhoto) || other.userPhoto == userPhoto)&&(identical(other.wallId, wallId) || other.wallId == wallId)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.widget, widget) || other.widget == widget)&&(identical(other.widget2, widget2) || other.widget2 == widget2)&&(identical(other.widgetUrl, widgetUrl) || other.widgetUrl == widgetUrl)&&(identical(other.widgetUrl2, widgetUrl2) || other.widgetUrl2 == widgetUrl2)&&(identical(other.link, link) || other.link == link)&&(identical(other.review, review) || other.review == review)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.size, size) || other.size == size)&&(identical(other.firestoreDocumentId, firestoreDocumentId) || other.firestoreDocumentId == firestoreDocumentId));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,by,icon,iconUrl,createdAt,desc,email,image,name,userPhoto,wallId,source,wallpaperThumb,wallpaperUrl,widget,widget2,widgetUrl,widgetUrl2,link,review,resolution,size]);
+int get hashCode => Object.hashAll([runtimeType,id,by,icon,iconUrl,createdAt,desc,email,image,name,userPhoto,wallId,source,wallpaperThumb,wallpaperUrl,widget,widget2,widgetUrl,widgetUrl2,link,review,resolution,size,firestoreDocumentId]);
 
 @override
 String toString() {
-  return 'SetupEntity(id: $id, by: $by, icon: $icon, iconUrl: $iconUrl, createdAt: $createdAt, desc: $desc, email: $email, image: $image, name: $name, userPhoto: $userPhoto, wallId: $wallId, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, widget: $widget, widget2: $widget2, widgetUrl: $widgetUrl, widgetUrl2: $widgetUrl2, link: $link, review: $review, resolution: $resolution, size: $size)';
+  return 'SetupEntity(id: $id, by: $by, icon: $icon, iconUrl: $iconUrl, createdAt: $createdAt, desc: $desc, email: $email, image: $image, name: $name, userPhoto: $userPhoto, wallId: $wallId, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, widget: $widget, widget2: $widget2, widgetUrl: $widgetUrl, widgetUrl2: $widgetUrl2, link: $link, review: $review, resolution: $resolution, size: $size, firestoreDocumentId: $firestoreDocumentId)';
 }
 
 
@@ -45,7 +46,7 @@ abstract mixin class $SetupEntityCopyWith<$Res>  {
   factory $SetupEntityCopyWith(SetupEntity value, $Res Function(SetupEntity) _then) = _$SetupEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String? by, String? icon, String? iconUrl, DateTime? createdAt, String? desc, String? email, String image, String? name, String? userPhoto, String? wallId, WallpaperSource? source, String? wallpaperThumb, String? wallpaperUrl, String? widget, String? widget2, String? widgetUrl, String? widgetUrl2, String? link, bool review, String? resolution, String? size
+ String id, String? by, String? icon, String? iconUrl, DateTime? createdAt, String? desc, String? email, String image, String? name, String? userPhoto, String? wallId, WallpaperSource? source, String? wallpaperThumb, String? wallpaperUrl, String? widget, String? widget2, String? widgetUrl, String? widgetUrl2, String? link, bool review, String? resolution, String? size, String? firestoreDocumentId
 });
 
 
@@ -62,7 +63,7 @@ class _$SetupEntityCopyWithImpl<$Res>
 
 /// Create a copy of SetupEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? by = freezed,Object? icon = freezed,Object? iconUrl = freezed,Object? createdAt = freezed,Object? desc = freezed,Object? email = freezed,Object? image = null,Object? name = freezed,Object? userPhoto = freezed,Object? wallId = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = freezed,Object? widget = freezed,Object? widget2 = freezed,Object? widgetUrl = freezed,Object? widgetUrl2 = freezed,Object? link = freezed,Object? review = null,Object? resolution = freezed,Object? size = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? by = freezed,Object? icon = freezed,Object? iconUrl = freezed,Object? createdAt = freezed,Object? desc = freezed,Object? email = freezed,Object? image = null,Object? name = freezed,Object? userPhoto = freezed,Object? wallId = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = freezed,Object? widget = freezed,Object? widget2 = freezed,Object? widgetUrl = freezed,Object? widgetUrl2 = freezed,Object? link = freezed,Object? review = null,Object? resolution = freezed,Object? size = freezed,Object? firestoreDocumentId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,by: freezed == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
@@ -86,6 +87,7 @@ as String?,link: freezed == link ? _self.link : link // ignore: cast_nullable_to
 as String?,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
 as bool,resolution: freezed == resolution ? _self.resolution : resolution // ignore: cast_nullable_to_non_nullable
 as String?,size: freezed == size ? _self.size : size // ignore: cast_nullable_to_non_nullable
+as String?,firestoreDocumentId: freezed == firestoreDocumentId ? _self.firestoreDocumentId : firestoreDocumentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -171,10 +173,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? by,  String? icon,  String? iconUrl,  DateTime? createdAt,  String? desc,  String? email,  String image,  String? name,  String? userPhoto,  String? wallId,  WallpaperSource? source,  String? wallpaperThumb,  String? wallpaperUrl,  String? widget,  String? widget2,  String? widgetUrl,  String? widgetUrl2,  String? link,  bool review,  String? resolution,  String? size)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String? by,  String? icon,  String? iconUrl,  DateTime? createdAt,  String? desc,  String? email,  String image,  String? name,  String? userPhoto,  String? wallId,  WallpaperSource? source,  String? wallpaperThumb,  String? wallpaperUrl,  String? widget,  String? widget2,  String? widgetUrl,  String? widgetUrl2,  String? link,  bool review,  String? resolution,  String? size,  String? firestoreDocumentId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SetupEntity() when $default != null:
-return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that.desc,_that.email,_that.image,_that.name,_that.userPhoto,_that.wallId,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.widget,_that.widget2,_that.widgetUrl,_that.widgetUrl2,_that.link,_that.review,_that.resolution,_that.size);case _:
+return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that.desc,_that.email,_that.image,_that.name,_that.userPhoto,_that.wallId,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.widget,_that.widget2,_that.widgetUrl,_that.widgetUrl2,_that.link,_that.review,_that.resolution,_that.size,_that.firestoreDocumentId);case _:
   return orElse();
 
 }
@@ -192,10 +194,10 @@ return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? by,  String? icon,  String? iconUrl,  DateTime? createdAt,  String? desc,  String? email,  String image,  String? name,  String? userPhoto,  String? wallId,  WallpaperSource? source,  String? wallpaperThumb,  String? wallpaperUrl,  String? widget,  String? widget2,  String? widgetUrl,  String? widgetUrl2,  String? link,  bool review,  String? resolution,  String? size)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String? by,  String? icon,  String? iconUrl,  DateTime? createdAt,  String? desc,  String? email,  String image,  String? name,  String? userPhoto,  String? wallId,  WallpaperSource? source,  String? wallpaperThumb,  String? wallpaperUrl,  String? widget,  String? widget2,  String? widgetUrl,  String? widgetUrl2,  String? link,  bool review,  String? resolution,  String? size,  String? firestoreDocumentId)  $default,) {final _that = this;
 switch (_that) {
 case _SetupEntity():
-return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that.desc,_that.email,_that.image,_that.name,_that.userPhoto,_that.wallId,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.widget,_that.widget2,_that.widgetUrl,_that.widgetUrl2,_that.link,_that.review,_that.resolution,_that.size);case _:
+return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that.desc,_that.email,_that.image,_that.name,_that.userPhoto,_that.wallId,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.widget,_that.widget2,_that.widgetUrl,_that.widgetUrl2,_that.link,_that.review,_that.resolution,_that.size,_that.firestoreDocumentId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -212,10 +214,10 @@ return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? by,  String? icon,  String? iconUrl,  DateTime? createdAt,  String? desc,  String? email,  String image,  String? name,  String? userPhoto,  String? wallId,  WallpaperSource? source,  String? wallpaperThumb,  String? wallpaperUrl,  String? widget,  String? widget2,  String? widgetUrl,  String? widgetUrl2,  String? link,  bool review,  String? resolution,  String? size)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String? by,  String? icon,  String? iconUrl,  DateTime? createdAt,  String? desc,  String? email,  String image,  String? name,  String? userPhoto,  String? wallId,  WallpaperSource? source,  String? wallpaperThumb,  String? wallpaperUrl,  String? widget,  String? widget2,  String? widgetUrl,  String? widgetUrl2,  String? link,  bool review,  String? resolution,  String? size,  String? firestoreDocumentId)?  $default,) {final _that = this;
 switch (_that) {
 case _SetupEntity() when $default != null:
-return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that.desc,_that.email,_that.image,_that.name,_that.userPhoto,_that.wallId,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.widget,_that.widget2,_that.widgetUrl,_that.widgetUrl2,_that.link,_that.review,_that.resolution,_that.size);case _:
+return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that.desc,_that.email,_that.image,_that.name,_that.userPhoto,_that.wallId,_that.source,_that.wallpaperThumb,_that.wallpaperUrl,_that.widget,_that.widget2,_that.widgetUrl,_that.widgetUrl2,_that.link,_that.review,_that.resolution,_that.size,_that.firestoreDocumentId);case _:
   return null;
 
 }
@@ -227,7 +229,7 @@ return $default(_that.id,_that.by,_that.icon,_that.iconUrl,_that.createdAt,_that
 
 
 class _SetupEntity implements SetupEntity {
-  const _SetupEntity({required this.id, this.by, this.icon, this.iconUrl, this.createdAt, this.desc, this.email, required this.image, this.name, this.userPhoto, this.wallId, this.source, this.wallpaperThumb, this.wallpaperUrl, this.widget, this.widget2, this.widgetUrl, this.widgetUrl2, this.link, this.review = false, this.resolution, this.size});
+  const _SetupEntity({required this.id, this.by, this.icon, this.iconUrl, this.createdAt, this.desc, this.email, required this.image, this.name, this.userPhoto, this.wallId, this.source, this.wallpaperThumb, this.wallpaperUrl, this.widget, this.widget2, this.widgetUrl, this.widgetUrl2, this.link, this.review = false, this.resolution, this.size, this.firestoreDocumentId});
   
 
 @override final  String id;
@@ -252,6 +254,8 @@ class _SetupEntity implements SetupEntity {
 @override@JsonKey() final  bool review;
 @override final  String? resolution;
 @override final  String? size;
+/// Firestore document id in [setups] for UGC reporting.
+@override final  String? firestoreDocumentId;
 
 /// Create a copy of SetupEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -263,16 +267,16 @@ _$SetupEntityCopyWith<_SetupEntity> get copyWith => __$SetupEntityCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SetupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.email, email) || other.email == email)&&(identical(other.image, image) || other.image == image)&&(identical(other.name, name) || other.name == name)&&(identical(other.userPhoto, userPhoto) || other.userPhoto == userPhoto)&&(identical(other.wallId, wallId) || other.wallId == wallId)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.widget, widget) || other.widget == widget)&&(identical(other.widget2, widget2) || other.widget2 == widget2)&&(identical(other.widgetUrl, widgetUrl) || other.widgetUrl == widgetUrl)&&(identical(other.widgetUrl2, widgetUrl2) || other.widgetUrl2 == widgetUrl2)&&(identical(other.link, link) || other.link == link)&&(identical(other.review, review) || other.review == review)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.size, size) || other.size == size));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SetupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.by, by) || other.by == by)&&(identical(other.icon, icon) || other.icon == icon)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.desc, desc) || other.desc == desc)&&(identical(other.email, email) || other.email == email)&&(identical(other.image, image) || other.image == image)&&(identical(other.name, name) || other.name == name)&&(identical(other.userPhoto, userPhoto) || other.userPhoto == userPhoto)&&(identical(other.wallId, wallId) || other.wallId == wallId)&&(identical(other.source, source) || other.source == source)&&(identical(other.wallpaperThumb, wallpaperThumb) || other.wallpaperThumb == wallpaperThumb)&&(identical(other.wallpaperUrl, wallpaperUrl) || other.wallpaperUrl == wallpaperUrl)&&(identical(other.widget, widget) || other.widget == widget)&&(identical(other.widget2, widget2) || other.widget2 == widget2)&&(identical(other.widgetUrl, widgetUrl) || other.widgetUrl == widgetUrl)&&(identical(other.widgetUrl2, widgetUrl2) || other.widgetUrl2 == widgetUrl2)&&(identical(other.link, link) || other.link == link)&&(identical(other.review, review) || other.review == review)&&(identical(other.resolution, resolution) || other.resolution == resolution)&&(identical(other.size, size) || other.size == size)&&(identical(other.firestoreDocumentId, firestoreDocumentId) || other.firestoreDocumentId == firestoreDocumentId));
 }
 
 
 @override
-int get hashCode => Object.hashAll([runtimeType,id,by,icon,iconUrl,createdAt,desc,email,image,name,userPhoto,wallId,source,wallpaperThumb,wallpaperUrl,widget,widget2,widgetUrl,widgetUrl2,link,review,resolution,size]);
+int get hashCode => Object.hashAll([runtimeType,id,by,icon,iconUrl,createdAt,desc,email,image,name,userPhoto,wallId,source,wallpaperThumb,wallpaperUrl,widget,widget2,widgetUrl,widgetUrl2,link,review,resolution,size,firestoreDocumentId]);
 
 @override
 String toString() {
-  return 'SetupEntity(id: $id, by: $by, icon: $icon, iconUrl: $iconUrl, createdAt: $createdAt, desc: $desc, email: $email, image: $image, name: $name, userPhoto: $userPhoto, wallId: $wallId, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, widget: $widget, widget2: $widget2, widgetUrl: $widgetUrl, widgetUrl2: $widgetUrl2, link: $link, review: $review, resolution: $resolution, size: $size)';
+  return 'SetupEntity(id: $id, by: $by, icon: $icon, iconUrl: $iconUrl, createdAt: $createdAt, desc: $desc, email: $email, image: $image, name: $name, userPhoto: $userPhoto, wallId: $wallId, source: $source, wallpaperThumb: $wallpaperThumb, wallpaperUrl: $wallpaperUrl, widget: $widget, widget2: $widget2, widgetUrl: $widgetUrl, widgetUrl2: $widgetUrl2, link: $link, review: $review, resolution: $resolution, size: $size, firestoreDocumentId: $firestoreDocumentId)';
 }
 
 
@@ -283,7 +287,7 @@ abstract mixin class _$SetupEntityCopyWith<$Res> implements $SetupEntityCopyWith
   factory _$SetupEntityCopyWith(_SetupEntity value, $Res Function(_SetupEntity) _then) = __$SetupEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String? by, String? icon, String? iconUrl, DateTime? createdAt, String? desc, String? email, String image, String? name, String? userPhoto, String? wallId, WallpaperSource? source, String? wallpaperThumb, String? wallpaperUrl, String? widget, String? widget2, String? widgetUrl, String? widgetUrl2, String? link, bool review, String? resolution, String? size
+ String id, String? by, String? icon, String? iconUrl, DateTime? createdAt, String? desc, String? email, String image, String? name, String? userPhoto, String? wallId, WallpaperSource? source, String? wallpaperThumb, String? wallpaperUrl, String? widget, String? widget2, String? widgetUrl, String? widgetUrl2, String? link, bool review, String? resolution, String? size, String? firestoreDocumentId
 });
 
 
@@ -300,7 +304,7 @@ class __$SetupEntityCopyWithImpl<$Res>
 
 /// Create a copy of SetupEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? by = freezed,Object? icon = freezed,Object? iconUrl = freezed,Object? createdAt = freezed,Object? desc = freezed,Object? email = freezed,Object? image = null,Object? name = freezed,Object? userPhoto = freezed,Object? wallId = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = freezed,Object? widget = freezed,Object? widget2 = freezed,Object? widgetUrl = freezed,Object? widgetUrl2 = freezed,Object? link = freezed,Object? review = null,Object? resolution = freezed,Object? size = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? by = freezed,Object? icon = freezed,Object? iconUrl = freezed,Object? createdAt = freezed,Object? desc = freezed,Object? email = freezed,Object? image = null,Object? name = freezed,Object? userPhoto = freezed,Object? wallId = freezed,Object? source = freezed,Object? wallpaperThumb = freezed,Object? wallpaperUrl = freezed,Object? widget = freezed,Object? widget2 = freezed,Object? widgetUrl = freezed,Object? widgetUrl2 = freezed,Object? link = freezed,Object? review = null,Object? resolution = freezed,Object? size = freezed,Object? firestoreDocumentId = freezed,}) {
   return _then(_SetupEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,by: freezed == by ? _self.by : by // ignore: cast_nullable_to_non_nullable
@@ -324,6 +328,7 @@ as String?,link: freezed == link ? _self.link : link // ignore: cast_nullable_to
 as String?,review: null == review ? _self.review : review // ignore: cast_nullable_to_non_nullable
 as bool,resolution: freezed == resolution ? _self.resolution : resolution // ignore: cast_nullable_to_non_nullable
 as String?,size: freezed == size ? _self.size : size // ignore: cast_nullable_to_non_nullable
+as String?,firestoreDocumentId: freezed == firestoreDocumentId ? _self.firestoreDocumentId : firestoreDocumentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

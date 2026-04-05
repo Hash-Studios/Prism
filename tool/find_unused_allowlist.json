@@ -101,13 +101,6 @@
       "PublicProfileSetupEntityWallpaperX",
       "FavouriteSetupEntityWallpaperX"
     ],
-    "lib/data/informatics/dataManager.dart": [
-      "getMapFromGitHub",
-      "updateDownloads",
-      "updateFavorites",
-      "updateDownloadsSetup",
-      "updateFavsSetup"
-    ],
     "lib/core/widgets/popup/changelogPopUp.dart": [
       "ChangeType"
     ],

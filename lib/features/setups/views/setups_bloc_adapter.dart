@@ -50,19 +50,20 @@ SetupEntity? setup;
 
 Future<SetupEntity?> getSetupFromName(String? name) async {
   try {
-    final List<SetupDocDto> value = await firestoreClient.query<SetupDocDto>(
+    final List<(SetupDocDto, String)> value = await firestoreClient.query<(SetupDocDto, String)>(
       FirestoreQuerySpec(
         collection: FirebaseCollections.setups,
         sourceTag: 'setups.lookup.byName',
         filters: <FirestoreFilter>[FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name)],
         limit: 1,
       ),
-      (data, _) => SetupDocDto.fromJson(data),
+      (data, docId) => (SetupDocDto.fromJson(data), docId),
     );
     if (value.isEmpty) {
       return null;
     }
-    final SetupDocDto item = value.first;
+    final SetupDocDto item = value.first.$1;
+    final String docId = value.first.$2;
     setup = SetupEntity(
       id: item.id,
       by: item.by,
@@ -86,6 +87,7 @@ Future<SetupEntity?> getSetupFromName(String? name) async {
       review: item.review,
       resolution: item.resolution,
       size: item.size,
+      firestoreDocumentId: docId,
     );
     return setup;
   } catch (error) {

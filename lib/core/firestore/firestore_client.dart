@@ -25,6 +25,7 @@ abstract class FirestoreClient {
     String id,
     T Function(Map<String, dynamic> data, String docId) map, {
     required String sourceTag,
+    bool preferCacheFirst = false,
   });
 
   Future<void> setDoc(
