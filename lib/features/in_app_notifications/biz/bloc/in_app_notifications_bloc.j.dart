@@ -11,24 +11,28 @@ part 'in_app_notifications_event.j.dart';
 part 'in_app_notifications_state.j.dart';
 part 'in_app_notifications_bloc.j.freezed.dart';
 
-@injectable
+@lazySingleton
 class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotificationsState> {
   InAppNotificationsBloc(
     this._fetchNotificationsUseCase,
     this._markNotificationAsReadUseCase,
     this._deleteNotificationUseCase,
+    this._deleteNotificationsByIdsUseCase,
     this._clearNotificationsUseCase,
   ) : super(InAppNotificationsState.initial()) {
     on<_Started>(_onStarted);
+    on<_LocalReloadRequested>(_onLocalReloadRequested);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_MarkReadRequested>(_onMarkReadRequested);
     on<_DeleteRequested>(_onDeleteRequested);
+    on<_DeleteManyRequested>(_onDeleteManyRequested);
     on<_ClearRequested>(_onClearRequested);
   }
 
   final FetchNotificationsUseCase _fetchNotificationsUseCase;
   final MarkNotificationAsReadUseCase _markNotificationAsReadUseCase;
   final DeleteNotificationUseCase _deleteNotificationUseCase;
+  final DeleteNotificationsByIdsUseCase _deleteNotificationsByIdsUseCase;
   final ClearNotificationsUseCase _clearNotificationsUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<InAppNotificationsState> emit) {
@@ -37,6 +41,22 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
 
   Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<InAppNotificationsState> emit) {
     return _fetch(syncRemote: true, emit: emit);
+  }
+
+  Future<void> _onLocalReloadRequested(_LocalReloadRequested event, Emitter<InAppNotificationsState> emit) async {
+    final result = await _fetchNotificationsUseCase(const FetchNotificationsParams(syncRemote: false));
+    result.fold(
+      onSuccess: (items) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          unreadCount: items.where((item) => !item.read).length,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
+    );
   }
 
   Future<void> _fetch({required bool syncRemote, required Emitter<InAppNotificationsState> emit}) async {
@@ -82,6 +102,25 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
 
     final result = await _deleteNotificationUseCase(DeleteNotificationParams(id: event.id));
+
+    result.fold(
+      onSuccess: (items) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          actionStatus: ActionStatus.success,
+          items: items,
+          unreadCount: items.where((item) => !item.read).length,
+          failure: null,
+        ),
+      ),
+      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
+    );
+  }
+
+  Future<void> _onDeleteManyRequested(_DeleteManyRequested event, Emitter<InAppNotificationsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+
+    final result = await _deleteNotificationsByIdsUseCase(DeleteNotificationsByIdsParams(ids: event.ids));
 
     result.fold(
       onSuccess: (items) => emit(

@@ -6,13 +6,14 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -21,14 +22,41 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+/// Shorter expanded-row text: names for followers/wall-live; day label for uniform WOTD bodies.
+String? _compactLineForGroupedChild(InAppNotificationTitleGroup group, InAppNotificationEntity n) {
+  if (notificationGroupLooksLikeFollowers(group)) {
+    final String? name = followerDisplayNameFromBody(n.body);
+    if (name != null && name.isNotEmpty) {
+      return name;
+    }
+    final String body = n.body.trim();
+    if (body.isNotEmpty) {
+      return body;
+    }
+    final String title = n.title.trim();
+    return title.isEmpty ? null : title;
+  }
+  if (notificationGroupLooksLikeWallApprovedLive(group)) {
+    final String? creator = wallLiveCreatorNameFromBody(n.body);
+    if (creator != null && creator.isNotEmpty) {
+      return creator;
+    }
+    return null;
+  }
+  if (notificationGroupLooksLikeWallOfTheDay(group) && notificationGroupHasUniformBody(group)) {
+    return wallOfTheDayRowDayLabel(n.createdAt);
+  }
+  return null;
+}
+
 @RoutePage()
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<InAppNotificationsBloc>(
-      create: (_) => getIt<InAppNotificationsBloc>(),
+    return BlocProvider<InAppNotificationsBloc>.value(
+      value: getIt<InAppNotificationsBloc>(),
       child: const _NotificationScreenBody(),
     );
   }
@@ -42,6 +70,9 @@ class _NotificationScreenBody extends StatefulWidget {
 }
 
 class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
+  /// [InAppNotificationTitleGroup.key] values for expanded summary rows.
+  final Set<String> _expandedNotificationGroups = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -52,13 +83,153 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
   Widget build(BuildContext context) {
     return BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
       builder: (context, state) {
+        final theme = Theme.of(context);
+        final colorScheme = theme.colorScheme;
         final notifications = state.items;
+        final bool initialLoading =
+            (state.status == LoadStatus.initial || state.status == LoadStatus.loading) && notifications.isEmpty;
+
+        Widget body;
+        if (initialLoading) {
+          body = Center(
+            child: Semantics(
+              label: 'Loading notifications',
+              child: CircularProgressIndicator(color: colorScheme.error),
+            ),
+          );
+        } else if (state.status == LoadStatus.failure && notifications.isEmpty) {
+          body = Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "We couldn't load your notifications.",
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: colorScheme.secondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Check your connection and try again.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.secondary.withValues(alpha: 0.85)),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () {
+                      context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.refreshRequested());
+                    },
+                    style: TextButton.styleFrom(foregroundColor: colorScheme.error),
+                    child: const Text('Try again'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        } else {
+          body = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.status == LoadStatus.failure && state.failure != null)
+                Material(
+                  color: colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Couldn't load new notifications. What you see below is saved on this device.",
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onErrorContainer,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            context.read<InAppNotificationsBloc>().add(
+                              const InAppNotificationsEvent.refreshRequested(),
+                            );
+                          },
+                          style: TextButton.styleFrom(foregroundColor: colorScheme.onErrorContainer),
+                          child: const Text('Try again'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: notifications.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "You're all caught up",
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  color: colorScheme.secondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Giveaways, updates, and alerts from Prism will show up here.',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.secondary.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Builder(
+                        builder: (BuildContext listContext) {
+                          final groups = groupInAppNotificationsByTitle(notifications);
+                          return ListView.builder(
+                            itemCount: groups.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              final InAppNotificationTitleGroup group = groups[index];
+                              if (group.isSingle) {
+                                return _buildDismissibleNotificationTile(
+                                  context,
+                                  theme: theme,
+                                  colorScheme: colorScheme,
+                                  notification: group.items.single,
+                                );
+                              }
+                              return _buildDismissibleGroupTile(
+                                context,
+                                theme: theme,
+                                colorScheme: colorScheme,
+                                group: group,
+                              );
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        }
+
         return Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
+          backgroundColor: theme.primaryColor,
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            title: const Text('Notifications'),
+            elevation: 0,
+            iconTheme: IconThemeData(color: colorScheme.secondary),
+            title: Text('Notifications', style: theme.textTheme.displaySmall?.copyWith(color: colorScheme.secondary)),
             leading: IconButton(
+              tooltip: 'Close',
               icon: const Icon(JamIcons.close),
               onPressed: () {
                 context.router.maybePop();
@@ -66,7 +237,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             ),
             actions: <Widget>[
               IconButton(
-                tooltip: 'Notification Settings',
+                tooltip: 'Notification preferences',
                 icon: const Icon(JamIcons.settings_alt),
                 onPressed: () {
                   analytics.track(
@@ -76,117 +247,317 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                       sourceContext: 'notification_screen',
                     ),
                   );
-                  showModalBottomSheet(
-                    isScrollControlled: true,
+                  showModalBottomSheet<void>(
                     context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                     builder: (_) => const NotificationSettingsSheet(),
                   );
                 },
               ),
             ],
           ),
-          body: notifications.isNotEmpty
-              ? ListView.builder(
-                  itemCount: notifications.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    final currentNotification = notifications[index];
-                    return Dismissible(
-                      key: ValueKey<String>(currentNotification.id),
-                      onDismissed: (_) {
-                        analytics.track(
-                          NotificationItemDismissedEvent(
-                            type: _notificationTypeFor(currentNotification),
-                            dismissMode: DismissModeValue.swipe,
+          body: body,
+          floatingActionButton: !initialLoading && notifications.isNotEmpty
+              ? FloatingActionButton.small(
+                  tooltip: 'Clear inbox',
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
+                  onPressed: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (BuildContext ctx) {
+                        final t = Theme.of(ctx);
+                        final cs = t.colorScheme;
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          backgroundColor: t.primaryColor,
+                          title: Text(
+                            'Clear your inbox?',
+                            style: t.textTheme.headlineSmall?.copyWith(
+                              color: cs.secondary,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        );
-                        context.read<InAppNotificationsBloc>().add(
-                          InAppNotificationsEvent.deleteRequested(id: currentNotification.id),
+                          content: Text(
+                            "You'll remove every notification from this list on this device. This can't be undone.",
+                            style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9)),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              child: Text('Cancel', style: TextStyle(color: cs.secondary)),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(ctx).pop();
+                                analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
+                                context.read<InAppNotificationsBloc>().add(
+                                  const InAppNotificationsEvent.clearRequested(),
+                                );
+                              },
+                              child: Text(
+                                'Clear inbox',
+                                style: TextStyle(color: cs.error, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                         );
                       },
-                      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
-                      secondaryBackground: const ColoredBox(
-                        color: Colors.red,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(padding: EdgeInsets.all(8.0), child: Icon(JamIcons.trash)),
-                        ),
-                      ),
-                      background: const ColoredBox(
-                        color: Colors.red,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(padding: EdgeInsets.all(8.0), child: Icon(JamIcons.trash)),
-                        ),
-                      ),
-                      child: NotificationCard(
-                        notification: currentNotification,
-                        onMarkRead: () {
-                          context.read<InAppNotificationsBloc>().add(
-                            InAppNotificationsEvent.markReadRequested(id: currentNotification.id),
-                          );
-                        },
-                      ),
                     );
-                  },
-                )
-              : Center(
-                  child: Text('No new notifications', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-                ),
-          floatingActionButton: notifications.isNotEmpty
-              ? FloatingActionButton(
-                  mini: true,
-                  tooltip: 'Clear Notifications',
-                  onPressed: () {
-                    final AlertDialog deleteNotificationsPopUp = AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      title: Text(
-                        'Clear all notifications?',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                      ),
-                      actions: [
-                        MaterialButton(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          color: Theme.of(context).hintColor,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            analytics.track(NotificationClearAllConfirmedEvent(count: notifications.length));
-                            context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
-                          },
-                          child: const Text('YES', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-                        ),
-                        MaterialButton(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-                        ),
-                      ],
-                      backgroundColor: Theme.of(context).primaryColor,
-                      actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                    );
-
-                    showModal(context: context, builder: (BuildContext context) => deleteNotificationsPopUp);
                   },
                   child: const Icon(JamIcons.trash),
                 )
-              : Container(),
+              : null,
         );
       },
+    );
+  }
+
+  Future<bool> _confirmRemoveFromInbox(BuildContext context, {required String title, required String content}) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) {
+        final ThemeData t = Theme.of(ctx);
+        final ColorScheme cs = t.colorScheme;
+        return AlertDialog(
+          backgroundColor: t.primaryColor,
+          title: Text(
+            title,
+            style: t.textTheme.headlineSmall?.copyWith(color: cs.secondary, fontWeight: FontWeight.w600),
+          ),
+          content: Text(content, style: t.textTheme.bodyMedium?.copyWith(color: cs.secondary.withValues(alpha: 0.9))),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text('Cancel', style: TextStyle(color: cs.secondary)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(
+                'Remove',
+                style: TextStyle(color: cs.error, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
+  Widget _dismissBackground(ColorScheme colorScheme, Alignment alignment) {
+    return ColoredBox(
+      color: colorScheme.error,
+      child: Align(
+        alignment: alignment,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(JamIcons.trash, color: colorScheme.onError),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDismissibleNotificationTile(
+    BuildContext context, {
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required InAppNotificationEntity notification,
+    bool compactInGroup = false,
+    String? compactBodyOverride,
+  }) {
+    return Dismissible(
+      key: ValueKey<String>(notification.id),
+      confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
+        context,
+        title: 'Remove from inbox?',
+        content: 'This notification will be removed from your list on this device.',
+      ),
+      onDismissed: (_) {
+        analytics.track(
+          NotificationItemDismissedEvent(type: _notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
+        );
+        context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
+      },
+      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+      secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
+      background: _dismissBackground(colorScheme, Alignment.centerLeft),
+      child: NotificationCard(
+        notification: notification,
+        compactInGroup: compactInGroup,
+        compactBodyOverride: compactBodyOverride,
+        onMarkRead: () {
+          context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.markReadRequested(id: notification.id));
+        },
+      ),
+    );
+  }
+
+  Widget _buildDismissibleGroupTile(
+    BuildContext context, {
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required InAppNotificationTitleGroup group,
+  }) {
+    final bool expanded = _expandedNotificationGroups.contains(group.key);
+    return Dismissible(
+      key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
+      confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
+        context,
+        title: 'Remove this summary?',
+        content: 'All ${group.items.length} notifications in this group will be removed from your list on this device.',
+      ),
+      onDismissed: (_) {
+        context.read<InAppNotificationsBloc>().add(
+          InAppNotificationsEvent.deleteManyRequested(
+            ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
+          ),
+        );
+      },
+      dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
+      secondaryBackground: _dismissBackground(colorScheme, Alignment.centerRight),
+      background: _dismissBackground(colorScheme, Alignment.centerLeft),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            button: true,
+            expanded: expanded,
+            label:
+                '${group.displayTitle}. ${groupedListCountActionLine(group, expanded: expanded)}. ${expanded ? 'Expanded' : 'Collapsed'}. ${group.unreadCount > 0 ? 'Has unread. ' : ''}Activate to ${expanded ? 'collapse' : 'expand'}.',
+            child: Material(
+              color: theme.primaryColor,
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    if (expanded) {
+                      _expandedNotificationGroups.remove(group.key);
+                    } else {
+                      _expandedNotificationGroups.add(group.key);
+                    }
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ExcludeSemantics(
+                        child: CircleAvatar(
+                          backgroundImage: const AssetImage('assets/images/prism.webp'),
+                          backgroundColor: theme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    group.displayTitle,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.headlineMedium?.copyWith(color: colorScheme.secondary),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  NotificationCard.stringForDatetime(group.items.first.createdAt),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontSize: 12,
+                                    color: colorScheme.secondary.withValues(alpha: 0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              groupedListCountActionLine(group, expanded: expanded),
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontSize: 12,
+                                color: colorScheme.secondary.withValues(alpha: 0.85),
+                              ),
+                            ),
+                            if (!expanded) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                collapsedGroupSummaryLine(group),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontSize: 12,
+                                  height: 1.25,
+                                  color: colorScheme.secondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        expanded ? JamIcons.chevron_up : JamIcons.chevron_down,
+                        size: 20,
+                        color: colorScheme.secondary.withValues(alpha: 0.75),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: group.items
+                    .map(
+                      (InAppNotificationEntity n) => _buildDismissibleNotificationTile(
+                        context,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                        notification: n,
+                        compactInGroup: true,
+                        compactBodyOverride: _compactLineForGroupedChild(group, n),
+                      ),
+                    )
+                    .toList(growable: false),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
 
 class NotificationCard extends StatelessWidget {
-  const NotificationCard({super.key, required this.notification, this.onMarkRead});
+  const NotificationCard({
+    super.key,
+    required this.notification,
+    this.onMarkRead,
+    this.compactInGroup = false,
+    this.compactBodyOverride,
+  });
 
   final InAppNotificationEntity notification;
   final VoidCallback? onMarkRead;
+
+  /// When true (child under an expanded title group): no avatar, title, or image—body + time only.
+  final bool compactInGroup;
+
+  /// When set with [compactInGroup], replaces the default body/title line (e.g. follower name only).
+  final String? compactBodyOverride;
   static const NotificationRouteMapper _routeMapper = NotificationRouteMapper();
 
   static bool _hasValidImageUrl(String? url) {
@@ -253,80 +624,147 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool showImage = _hasValidImageUrl(notification.imageUrl);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final String timeStr = stringForDatetime(notification.createdAt);
 
-    return Material(
-      color: Theme.of(context).primaryColor,
-      child: InkWell(
-        onTap: () => _onTap(context),
-        onLongPress: () => HapticFeedback.lightImpact(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Row(
+    if (compactInGroup) {
+      final String trimmedOverride = compactBodyOverride?.trim() ?? '';
+      final String displayBody = trimmedOverride.isNotEmpty
+          ? trimmedOverride
+          : (notification.body.trim().isEmpty ? notification.title.trim() : notification.body.trim());
+      final String semanticLine = notification.body.trim().isNotEmpty
+          ? notification.body.trim()
+          : (notification.title.trim().isNotEmpty ? notification.title.trim() : displayBody);
+      return Semantics(
+        button: true,
+        label: '$semanticLine. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
+        child: Material(
+          color: theme.primaryColor,
+          child: InkWell(
+            onTap: () => _onTap(context),
+            onLongPress: () => HapticFeedback.lightImpact(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  CircleAvatar(
-                    backgroundImage: const AssetImage('assets/images/prism.webp'),
-                    backgroundColor: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(width: 12),
+                children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                notification.title,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.secondary,
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: 'Proxima Nova',
-                                ),
-                              ),
-                            ),
-                            Text(
-                              timeStr,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          notification.body,
-                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary),
-                        ),
-                      ],
+                    child: Text(
+                      displayBody,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontSize: 13,
+                        height: 1.25,
+                        color: colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    timeStr,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: 12,
+                      color: colorScheme.secondary.withValues(alpha: 0.75),
                     ),
                   ),
                 ],
               ),
-              if (showImage) ...<Widget>[
-                const SizedBox(height: 10),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.width * 9 / 16,
-                    child: CachedNetworkImage(
-                      imageUrl: notification.imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (_, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final bool showImage = _hasValidImageUrl(notification.imageUrl);
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final int memCacheWidth = (MediaQuery.sizeOf(context).width * dpr).round().clamp(1, 4096);
+
+    return Semantics(
+      button: true,
+      label:
+          '${notification.title}. ${notification.body}. $timeStr. ${notification.read ? 'Already read' : 'Not read yet'}',
+      child: Material(
+        color: theme.primaryColor,
+        child: InkWell(
+          onTap: () => _onTap(context),
+          onLongPress: () => HapticFeedback.lightImpact(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    ExcludeSemantics(
+                      child: CircleAvatar(
+                        backgroundImage: const AssetImage('assets/images/prism.webp'),
+                        backgroundColor: theme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  notification.title,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.headlineMedium?.copyWith(color: colorScheme.secondary),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                timeStr,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontSize: 12,
+                                  color: colorScheme.secondary.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            notification.body,
+                            maxLines: 6,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleLarge?.copyWith(fontSize: 12, color: colorScheme.secondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (showImage) ...<Widget>[
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: MediaQuery.sizeOf(context).width * 9 / 16,
+                      child: CachedNetworkImage(
+                        imageUrl: notification.imageUrl,
+                        fit: BoxFit.cover,
+                        memCacheWidth: memCacheWidth,
+                        placeholder: (_, __) =>
+                            Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.error)),
+                        errorWidget: (_, _, _) => const SizedBox.shrink(),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -370,6 +808,16 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   bool? recommendationsSubscriber;
   bool? streakReminderSubscriber;
 
+  /// Matches list tile title styling used in [SettingsScreen].
+  TextStyle get _listTileTitleStyle => TextStyle(
+    color: Theme.of(context).colorScheme.secondary,
+    fontWeight: FontWeight.w500,
+    fontFamily: 'Proxima Nova',
+  );
+
+  TextStyle _listTileSubtitleStyle() =>
+      const TextStyle(fontSize: 12).copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.78));
+
   @override
   void initState() {
     super.initState();
@@ -382,48 +830,28 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-      child: Container(
-        height: MediaQuery.of(context).size.height / 2.3 > 380 ? MediaQuery.of(context).size.height / 2.3 : 380,
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-        ),
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final sheetHeight = MediaQuery.sizeOf(context).height / 2.3 > 380 ? MediaQuery.sizeOf(context).height / 2.3 : 380.0;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SizedBox(
+        height: sheetHeight,
         child: ListView(
-          physics: const BouncingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Container(
-                    height: 5,
-                    width: 30,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).hintColor,
-                      borderRadius: BorderRadius.circular(500),
-                    ),
-                  ),
-                ),
-              ],
+            Center(
+              child: Container(
+                height: 4,
+                width: 36,
+                margin: const EdgeInsets.only(top: 8, bottom: 12),
+                decoration: BoxDecoration(color: theme.hintColor, borderRadius: BorderRadius.circular(2)),
+              ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Notification Settings',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.grey
-                        : Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text('Notification preferences', style: theme.textTheme.titleMedium),
             ),
             _buildFollowersToggle(context),
             _buildPostsToggle(context),
@@ -438,19 +866,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   }
 
   Widget _buildFollowersToggle(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SwitchListTile(
-      activeThumbColor: Theme.of(context).colorScheme.error,
-      secondary: const Icon(JamIcons.user_plus),
+      activeThumbColor: cs.error,
+      secondary: Icon(JamIcons.user_plus, color: cs.secondary),
       value: followersSubscriber ?? true,
-      title: Text(
-        'Followers',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'Proxima Nova',
-        ),
-      ),
-      subtitle: const Text('Get notifications for new followers.', style: TextStyle(fontSize: 12)),
+      title: Text('Followers', style: _listTileTitleStyle),
+      subtitle: Text('Alerts when someone new follows you.', style: _listTileSubtitleStyle()),
       onChanged: (bool value) async {
         if (app_state.prismUser.loggedIn) {
           await _settingsLocal.set('followersSubscriber', value);
@@ -488,26 +910,20 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               reason: AnalyticsReasonValue.notSignedIn,
             ),
           );
-          toasts.error('Please login to change this setting.');
+          toasts.error('Sign in to change this setting.');
         }
       },
     );
   }
 
   Widget _buildPostsToggle(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SwitchListTile(
-      activeThumbColor: Theme.of(context).colorScheme.error,
-      secondary: const Icon(JamIcons.pictures),
+      activeThumbColor: cs.error,
+      secondary: Icon(JamIcons.pictures, color: cs.secondary),
       value: postsSubscriber ?? true,
-      title: Text(
-        'Posts',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'Proxima Nova',
-        ),
-      ),
-      subtitle: const Text('Get notifications for posts from the artists you follow.', style: TextStyle(fontSize: 12)),
+      title: Text('Posts', style: _listTileTitleStyle),
+      subtitle: Text('Alerts when creators you follow share new work.', style: _listTileSubtitleStyle()),
       onChanged: (followersSubscriber ?? true)
           ? (bool value) async {
               if (app_state.prismUser.loggedIn) {
@@ -536,7 +952,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                     reason: AnalyticsReasonValue.notSignedIn,
                   ),
                 );
-                toasts.error('Please login to change this setting.');
+                toasts.error('Sign in to change this setting.');
               }
             }
           : null,
@@ -544,22 +960,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   }
 
   Widget _buildInAppToggle(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SwitchListTile(
-      activeThumbColor: Theme.of(context).colorScheme.error,
-      secondary: const Icon(JamIcons.picture),
+      activeThumbColor: cs.error,
+      secondary: Icon(JamIcons.picture, color: cs.secondary),
       value: inappSubscriber ?? true,
-      title: Text(
-        'In-App',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'Proxima Nova',
-        ),
-      ),
-      subtitle: const Text(
-        'Get in app notifications for giveaways, contests and reviews.',
-        style: TextStyle(fontSize: 12),
-      ),
+      title: Text('Prism updates', style: _listTileTitleStyle),
+      subtitle: Text('Giveaways, contests, and news inside the app.', style: _listTileSubtitleStyle()),
       onChanged: (bool value) async {
         await _settingsLocal.set('inappSubscriber', value);
         setState(() => inappSubscriber = value);
@@ -571,19 +978,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   }
 
   Widget _buildRecommendationsToggle(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SwitchListTile(
-      activeThumbColor: Theme.of(context).colorScheme.error,
-      secondary: const Icon(JamIcons.lightbulb),
+      activeThumbColor: cs.error,
+      secondary: Icon(JamIcons.lightbulb, color: cs.secondary),
       value: recommendationsSubscriber ?? true,
-      title: Text(
-        'Recommendations',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'Proxima Nova',
-        ),
-      ),
-      subtitle: const Text('Get recommendations from Prism.', style: TextStyle(fontSize: 12)),
+      title: Text('Recommendations', style: _listTileTitleStyle),
+      subtitle: Text('Tips and wallpaper picks from Prism.', style: _listTileSubtitleStyle()),
       onChanged: (bool value) async {
         await _settingsLocal.set('recommendationsSubscriber', value);
         setState(() => recommendationsSubscriber = value);
@@ -608,19 +1009,16 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   }
 
   Widget _buildStreakToggle(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return SwitchListTile(
-      activeThumbColor: Theme.of(context).colorScheme.error,
-      secondary: const Icon(Icons.local_fire_department_rounded),
+      activeThumbColor: cs.error,
+      secondary: Icon(Icons.local_fire_department_rounded, color: cs.secondary),
       value: streakReminderSubscriber ?? true,
-      title: Text(
-        'Streak reminders',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: 'Proxima Nova',
-        ),
+      title: Text('Streak reminders', style: _listTileTitleStyle),
+      subtitle: Text(
+        'Evening heads-up around 8 PM if your login streak is about to break.',
+        style: _listTileSubtitleStyle(),
       ),
-      subtitle: const Text('Get an 8 PM reminder if your login streak is at risk.', style: TextStyle(fontSize: 12)),
       onChanged: (bool value) async {
         if (app_state.prismUser.loggedIn) {
           await _settingsLocal.set('streakReminderSubscriber', value);
@@ -639,7 +1037,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               reason: AnalyticsReasonValue.notSignedIn,
             ),
           );
-          toasts.error('Please login to change this setting.');
+          toasts.error('Sign in to change this setting.');
         }
       },
     );
