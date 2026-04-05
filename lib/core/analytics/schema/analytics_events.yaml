@@ -316,6 +316,15 @@ events:
         key: reason
         type: string
         required: false
+  - id: user_block_action
+    fields:
+      - name: action
+        key: action
+        type: string
+      - name: result
+        key: result
+        type: string
+        required: false
   - id: setup_fav_status_changed
     fields:
       - name: setup_id

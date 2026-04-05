@@ -9,3 +9,4 @@ export {onCampaignNotificationRequested} from "./onCampaignNotificationRequested
 export {recordWallpaperView, recordSetupView} from "./viewStats";
 export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
+export {blockUser, unblockUser} from "./userBlockCallables";

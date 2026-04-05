@@ -456,6 +456,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () => context.router.push(const ReviewRoute()),
         ),
         ListTile(
+          leading: const Icon(JamIcons.user_remove),
+          title: Text('Blocked accounts', style: _titleStyle),
+          subtitle: const Text('Manage users you have blocked', style: TextStyle(fontSize: 12)),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () => context.router.push(const BlockedAccountsRoute()),
+        ),
+        ListTile(
           leading: const Icon(JamIcons.share_alt),
           title: Text('Share your Profile', style: _titleStyle),
           subtitle: const Text('Share a link to your Prism profile', style: TextStyle(fontSize: 12)),

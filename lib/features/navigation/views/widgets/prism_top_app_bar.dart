@@ -31,9 +31,8 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: Row(
               children: <Widget>[
                 BlocBuilder<InAppNotificationsBloc, InAppNotificationsState>(
-                  builder:
-                      (BuildContext context, InAppNotificationsState state) =>
-                          _NotificationButton(hasUnread: state.unreadCount > 0),
+                  builder: (BuildContext context, InAppNotificationsState state) =>
+                      _NotificationButton(hasUnread: state.unreadCount > 0),
                 ),
                 Expanded(
                   child: Center(
@@ -52,17 +51,11 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               color: Colors.white,
-                              fontVariations: <FontVariation>[
-                                FontVariation('WONK', 1),
-                              ],
+                              fontVariations: <FontVariation>[FontVariation('WONK', 1)],
                             ),
                           ),
                           SizedBox(width: 2),
-                          Icon(
-                            Icons.expand_more_rounded,
-                            color: Colors.white,
-                            size: 16,
-                          ),
+                          Icon(Icons.expand_more_rounded, color: Colors.white, size: 16),
                         ],
                       ),
                     ),
@@ -106,11 +99,7 @@ class _NotificationButton extends StatelessWidget {
         height: 40,
         child: Stack(
           children: <Widget>[
-            const Positioned(
-              left: 12,
-              top: 12,
-              child: Icon(JamIcons.bell_f, color: Color(0xFFDEDEDE), size: 16),
-            ),
+            const Positioned(left: 12, top: 12, child: Icon(JamIcons.bell_f, color: Color(0xFFDEDEDE), size: 16)),
             if (hasUnread)
               Positioned(
                 top: 11,
@@ -121,13 +110,7 @@ class _NotificationButton extends StatelessWidget {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     color: Color(0xFFFF69A9),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: Color(0x80E57697),
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                      ),
-                    ],
+                    boxShadow: <BoxShadow>[BoxShadow(color: Color(0x80E57697), blurRadius: 4, spreadRadius: 1)],
                   ),
                 ),
               ),
@@ -145,9 +128,7 @@ class _ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final String photoUrl = app_state.prismUser.profilePhoto;
     return GestureDetector(
-      onTap: () => context.router.push(
-        ProfileRoute(profileIdentifier: app_state.prismUser.email),
-      ),
+      onTap: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email)),
       child: Container(
         width: 40,
         height: 40,

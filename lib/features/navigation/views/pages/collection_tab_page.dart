@@ -14,10 +14,7 @@ class CollectionTabPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
-      appBar: PrismTopAppBar(
-        onLogoTap: () =>
-            unawaited(openPersonalizedFeedSettingsBottomSheet(context)),
-      ),
+      appBar: PrismTopAppBar(onLogoTap: () => unawaited(openPersonalizedFeedSettingsBottomSheet(context))),
       body: const CollectionScreen(),
     );
   }

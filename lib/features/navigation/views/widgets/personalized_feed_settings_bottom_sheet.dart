@@ -11,31 +11,21 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 
 /// Opens the same "Your feed" interests / mix sheet used from the home tab logo.
-Future<void> openPersonalizedFeedSettingsBottomSheet(
-  BuildContext context, {
-  VoidCallback? onPreferencesSaved,
-}) async {
-  final SettingsLocalDataSource settingsLocal =
-      getIt<SettingsLocalDataSource>();
-  final List<PersonalizedInterest> catalog =
-      await PersonalizedInterestsCatalog.load(
-        remoteConfig: FirebaseRemoteConfig.instance,
-        settingsLocal: settingsLocal,
-      );
+Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {VoidCallback? onPreferencesSaved}) async {
+  final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();
+  final List<PersonalizedInterest> catalog = await PersonalizedInterestsCatalog.load(
+    remoteConfig: FirebaseRemoteConfig.instance,
+    settingsLocal: settingsLocal,
+  );
   if (catalog.isEmpty || !context.mounted) {
     return;
   }
 
-  Set<String> selected = PersonalizedInterestsCatalog.selectedFromLocal(
-    settingsLocal,
-  ).toSet();
+  Set<String> selected = PersonalizedInterestsCatalog.selectedFromLocal(settingsLocal).toSet();
   if (selected.isEmpty) {
     selected = PersonalizedInterestsCatalog.defaultSelection(catalog).toSet();
   }
-  final String currentMix = settingsLocal.get<String>(
-    personalizedFeedMixLocalKey,
-    defaultValue: 'balanced',
-  );
+  final String currentMix = settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced');
 
   if (!context.mounted) {
     return;
@@ -49,10 +39,7 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(
       initialInterests: selected,
       initialFeedMix: currentMix,
       onSave: (List<String> interests, String feedMix) async {
-        final bool persisted = await _persistInterests(
-          settingsLocal,
-          interests,
-        );
+        final bool persisted = await _persistInterests(settingsLocal, interests);
         if (!persisted) {
           return;
         }
@@ -63,18 +50,13 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(
   );
 }
 
-Future<bool> _persistInterests(
-  SettingsLocalDataSource settingsLocal,
-  List<String> interests,
-) async {
+Future<bool> _persistInterests(SettingsLocalDataSource settingsLocal, List<String> interests) async {
   await settingsLocal.set('onboarding_v2_interests', interests.join(','));
   if (!app_state.prismUser.loggedIn) {
     return true;
   }
   final SaveInterestsUseCase saveInterests = getIt<SaveInterestsUseCase>();
-  final Result<void> saveResult = await saveInterests(
-    SaveInterestsParams(interests: interests),
-  );
+  final Result<void> saveResult = await saveInterests(SaveInterestsParams(interests: interests));
   return saveResult.isSuccess;
 }
 
@@ -93,12 +75,10 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
   final Future<void> Function(List<String> interests, String feedMix) onSave;
 
   @override
-  State<PersonalizedFeedSettingsSheet> createState() =>
-      _PersonalizedFeedSettingsSheetState();
+  State<PersonalizedFeedSettingsSheet> createState() => _PersonalizedFeedSettingsSheetState();
 }
 
-class _PersonalizedFeedSettingsSheetState
-    extends State<PersonalizedFeedSettingsSheet> {
+class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettingsSheet> {
   late Set<String> _selectedInterests;
   late String _feedMix;
   bool _saving = false;
@@ -110,13 +90,10 @@ class _PersonalizedFeedSettingsSheetState
     _feedMix = widget.initialFeedMix;
   }
 
-  bool get _canSave =>
-      !_saving && _selectedInterests.length >= OnboardingV2Config.minInterests;
+  bool get _canSave => !_saving && _selectedInterests.length >= OnboardingV2Config.minInterests;
 
   void _resetToDefaults() {
-    final List<String> defaults = PersonalizedInterestsCatalog.defaultSelection(
-      widget.catalog,
-    );
+    final List<String> defaults = PersonalizedInterestsCatalog.defaultSelection(widget.catalog);
     setState(() {
       _selectedInterests = defaults.toSet();
       _feedMix = 'balanced';
@@ -155,27 +132,16 @@ class _PersonalizedFeedSettingsSheetState
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
-              Text(
-                'Your feed',
-                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
+              Text('Your feed', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               const Spacer(),
-              Text(
-                '$count selected',
-                style: tt.bodySmall?.copyWith(
-                  color: belowMin ? cs.error : cs.onSurfaceVariant,
-                ),
-              ),
+              Text('$count selected', style: tt.bodySmall?.copyWith(color: belowMin ? cs.error : cs.onSurfaceVariant)),
             ],
           ),
         ),
         const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.only(left: 20, right: 20, bottom: 4),
-          child: Text(
-            'Interests',
-            style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant),
-          ),
+          child: Text('Interests', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
         ),
         Flexible(
           child: SingleChildScrollView(
@@ -188,11 +154,7 @@ class _PersonalizedFeedSettingsSheetState
                   FilterChip(
                     label: Text(entry.name),
                     selected: _selectedInterests.contains(entry.name),
-                    avatar: CircleAvatar(
-                      backgroundImage: CachedNetworkImageProvider(
-                        entry.imageUrl,
-                      ),
-                    ),
+                    avatar: CircleAvatar(backgroundImage: CachedNetworkImageProvider(entry.imageUrl)),
                     onSelected: (bool selected) {
                       setState(() {
                         if (selected) {
@@ -208,42 +170,24 @@ class _PersonalizedFeedSettingsSheetState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 16,
-            bottom: 4,
-          ),
-          child: Text(
-            'Feed mix',
-            style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant),
-          ),
+          padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 4),
+          child: Text('Feed mix', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
         ),
         Padding(
           padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
-          child: _FeedMixSelector(
-            value: _feedMix,
-            onChanged: (String v) => setState(() => _feedMix = v),
-          ),
+          child: _FeedMixSelector(value: _feedMix, onChanged: (String v) => setState(() => _feedMix = v)),
         ),
         const Divider(height: 1, indent: 20, endIndent: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: <Widget>[
-              TextButton(
-                onPressed: _saving ? null : _resetToDefaults,
-                child: const Text('Reset to defaults'),
-              ),
+              TextButton(onPressed: _saving ? null : _resetToDefaults, child: const Text('Reset to defaults')),
               const Spacer(),
               FilledButton(
                 onPressed: _canSave ? _save : null,
                 child: _saving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Text('Save'),
               ),
             ],
@@ -279,13 +223,10 @@ class _FeedMixSelector extends StatelessWidget {
       expandedInsets: EdgeInsets.zero,
       style: ButtonStyle(
         backgroundColor: WidgetStateProperty.resolveWith(
-          (Set<WidgetState> states) =>
-              states.contains(WidgetState.selected) ? cs.primary : null,
+          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? cs.primary : null,
         ),
         foregroundColor: WidgetStateProperty.resolveWith(
-          (Set<WidgetState> states) => states.contains(WidgetState.selected)
-              ? cs.onPrimary
-              : cs.onSurface,
+          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface,
         ),
       ),
     );
@@ -301,10 +242,7 @@ class _DragHandle extends StatelessWidget {
       child: Container(
         height: 4,
         width: 32,
-        decoration: BoxDecoration(
-          color: Theme.of(context).hintColor,
-          borderRadius: BorderRadius.circular(99),
-        ),
+        decoration: BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(99)),
       ),
     );
   }

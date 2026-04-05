@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onContentReportCreated = exports.submitContentReport = exports.recordSetupView = exports.recordWallpaperView = exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
+exports.unblockUser = exports.blockUser = exports.onContentReportCreated = exports.submitContentReport = exports.recordSetupView = exports.recordWallpaperView = exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
 var wallOfTheDay_1 = require("./wallOfTheDay");
 Object.defineProperty(exports, "wallOfTheDay", { enumerable: true, get: function () { return wallOfTheDay_1.wallOfTheDay; } });
 var streak_1 = require("./streak");
@@ -25,4 +25,7 @@ var submitContentReport_1 = require("./submitContentReport");
 Object.defineProperty(exports, "submitContentReport", { enumerable: true, get: function () { return submitContentReport_1.submitContentReport; } });
 var onContentReportCreated_1 = require("./onContentReportCreated");
 Object.defineProperty(exports, "onContentReportCreated", { enumerable: true, get: function () { return onContentReportCreated_1.onContentReportCreated; } });
+var userBlockCallables_1 = require("./userBlockCallables");
+Object.defineProperty(exports, "blockUser", { enumerable: true, get: function () { return userBlockCallables_1.blockUser; } });
+Object.defineProperty(exports, "unblockUser", { enumerable: true, get: function () { return userBlockCallables_1.unblockUser; } });
 //# sourceMappingURL=index.js.map

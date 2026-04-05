@@ -7,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
@@ -16,6 +17,9 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 // import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/user_blocks/user_block_actions.dart';
+import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -193,19 +197,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final bool premium = _mapBool(data, 'premium');
                       final List<Object?> followers = _mapList(data, 'followers');
                       final List<Object?> following = _mapList(data, 'following');
-                      return _ProfileChild(
-                        ownProfile: false,
-                        id: _mapString(data, '__docId'),
-                        bio: _mapString(data, 'bio'),
-                        coverPhoto: _mapString(data, 'coverPhoto'),
-                        email: _mapString(data, 'email'),
-                        links: links,
-                        name: _mapString(data, 'name'),
-                        premium: premium,
-                        userPhoto: _mapString(data, 'profilePhoto'),
-                        username: _mapString(data, 'username'),
-                        followers: followers,
-                        following: following,
+                      return StreamBuilder<Set<String>>(
+                        stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
+                        builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
+                          final String profileEmail = _mapString(data, 'email');
+                          final Set<String> blocked = blockSnap.data ?? <String>{};
+                          if (app_state.prismUser.loggedIn &&
+                              BlockedCreatorsFilter.hidesCreatorEmail(profileEmail, blocked)) {
+                            String display = _mapString(data, 'name').trim();
+                            if (display.isEmpty) {
+                              display = _mapString(data, 'username').trim();
+                            }
+                            if (display.isEmpty) {
+                              display = profileEmail;
+                            }
+                            return BlockedUserProfileShell(
+                              targetUserId: _mapString(data, '__docId'),
+                              targetEmail: profileEmail,
+                              displayName: display,
+                            );
+                          }
+                          return _ProfileChild(
+                            ownProfile: false,
+                            id: _mapString(data, '__docId'),
+                            bio: _mapString(data, 'bio'),
+                            coverPhoto: _mapString(data, 'coverPhoto'),
+                            email: _mapString(data, 'email'),
+                            links: links,
+                            name: _mapString(data, 'name'),
+                            premium: premium,
+                            userPhoto: _mapString(data, 'profilePhoto'),
+                            username: _mapString(data, 'username'),
+                            followers: followers,
+                            following: following,
+                          );
+                        },
                       );
                     }
                     return ColoredBox(
@@ -380,47 +406,81 @@ class _ProfileChildState extends State<_ProfileChild> {
                     if (app_state.prismUser.loggedIn)
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: ((widget.followers ?? []).contains(app_state.prismUser.email))
-                            ? IconButton(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.all(2),
-                                icon: Container(
-                                  padding: const EdgeInsets.all(6.0),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            ((widget.followers ?? []).contains(app_state.prismUser.email))
+                                ? IconButton(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.all(2),
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(6.0),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                      ),
+                                      child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                    onPressed: () {
+                                      _trackAction(
+                                        AnalyticsActionValue.unfollowTapped,
+                                        sourceContext: 'profile_screen_follow_action',
+                                      );
+                                      unfollow(widget.email!, widget.id!);
+                                      toasts.error("Unfollowed ${widget.name}!");
+                                    },
+                                  )
+                                : IconButton(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.all(2),
+                                    icon: Container(
+                                      padding: const EdgeInsets.all(6.0),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                      ),
+                                      child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                    onPressed: () {
+                                      _trackAction(
+                                        AnalyticsActionValue.followTapped,
+                                        sourceContext: 'profile_screen_follow_action',
+                                      );
+                                      follow(widget.email!, widget.id!);
+                                      toasts.codeSend("Followed ${widget.name}!");
+                                    },
                                   ),
-                                  child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
+                            PopupMenuButton<String>(
+                              icon: Container(
+                                padding: const EdgeInsets.all(6.0),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                 ),
-                                onPressed: () {
-                                  _trackAction(
-                                    AnalyticsActionValue.unfollowTapped,
-                                    sourceContext: 'profile_screen_follow_action',
-                                  );
-                                  unfollow(widget.email!, widget.id!);
-                                  toasts.error("Unfollowed ${widget.name}!");
-                                },
-                              )
-                            : IconButton(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.all(2),
-                                icon: Container(
-                                  padding: const EdgeInsets.all(6.0),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                  ),
-                                  child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
-                                ),
-                                onPressed: () {
-                                  _trackAction(
-                                    AnalyticsActionValue.followTapped,
-                                    sourceContext: 'profile_screen_follow_action',
-                                  );
-                                  follow(widget.email!, widget.id!);
-                                  toasts.codeSend("Followed ${widget.name}!");
-                                },
+                                child: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
                               ),
+                              onSelected: (String value) async {
+                                if (value != 'block') {
+                                  return;
+                                }
+                                final String uid = (widget.id ?? '').trim();
+                                final String em = (widget.email ?? '').trim();
+                                if (uid.isEmpty || em.isEmpty) {
+                                  return;
+                                }
+                                await confirmAndBlockUser(
+                                  context: context,
+                                  targetUserId: uid,
+                                  targetEmail: em,
+                                  displayName: widget.name,
+                                );
+                              },
+                              itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
+                                PopupMenuItem<String>(value: 'block', child: Text('Block user')),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                   if ((widget.ownProfile ?? false) && app_state.prismUser.loggedIn)
                     Padding(
