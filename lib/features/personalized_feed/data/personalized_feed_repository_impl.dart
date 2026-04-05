@@ -137,7 +137,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         discoveryFuture,
       ]);
 
-      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final List<FeedItemEntity> creatorItems = _filterBlockedPrism(results[0], blocked);
       final wallhavenItems = results[1];
       final pexelsItems = results[2];
@@ -500,7 +500,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         .whereType<FeedItemEntity>()
         .toList(growable: false);
 
-    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
     return _CacheState(seenKeys: seen, cachedItems: _filterBlockedPrism(items, blocked));
   }
 

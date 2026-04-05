@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/auth/userModel.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -13,7 +15,9 @@ import 'package:rxdart/rxdart.dart';
 @LazySingleton(as: UserBlockRepository)
 class FirebaseUserBlockRepository implements UserBlockRepository {
   FirebaseUserBlockRepository(this._session) {
-    _session.watchCurrentUser().switchMap((user) => _snapshotStreamForUser(user)).listen(_blockedEmailsSubject.add);
+    // Repository lifetime matches the app lifetime, so this subscription stays active.
+    // ignore: cancel_subscriptions
+    _session.watchCurrentUser().listen(_handleSessionUser);
   }
 
   static const String _region = 'asia-south1';
@@ -21,8 +25,12 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   static const String _subcollection = 'blockedUsers';
 
   final SessionRepository _session;
+  StreamSubscription<Set<String>>? _blockedEmailsSubscription;
 
   final BehaviorSubject<Set<String>> _blockedEmailsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
+  Completer<Set<String>> _initialLoadCompleter = Completer<Set<String>>();
+  bool _hasLoadedBlockedCreatorEmails = false;
+  String? _activeUserId;
 
   cf.FirebaseFunctions get _functions => cf.FirebaseFunctions.instanceFor(region: _region);
 
@@ -30,7 +38,52 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   Set<String> get cachedBlockedCreatorEmails => _blockedEmailsSubject.value;
 
   @override
+  bool get hasLoadedBlockedCreatorEmails => _hasLoadedBlockedCreatorEmails;
+
+  @override
+  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
+    if (!waitForInitialLoad || _hasLoadedBlockedCreatorEmails) {
+      return _blockedEmailsSubject.value;
+    }
+    return _initialLoadCompleter.future;
+  }
+
+  @override
   Stream<Set<String>> watchBlockedCreatorEmails() => _blockedEmailsSubject.stream;
+
+  void _handleSessionUser(PrismUsersV2 user) {
+    final String nextUserId = (user.loggedIn ? user.id : '').trim();
+    if (_activeUserId == nextUserId) {
+      return;
+    }
+    _activeUserId = nextUserId;
+    unawaited(_blockedEmailsSubscription?.cancel());
+    _blockedEmailsSubscription = null;
+
+    if (nextUserId.isEmpty) {
+      _publishSnapshot(<String>{});
+      return;
+    }
+
+    _beginPendingInitialLoad();
+    _blockedEmailsSubscription = _snapshotStreamForUser(user).listen(_publishSnapshot);
+  }
+
+  void _beginPendingInitialLoad() {
+    _hasLoadedBlockedCreatorEmails = false;
+    if (_initialLoadCompleter.isCompleted) {
+      _initialLoadCompleter = Completer<Set<String>>();
+    }
+  }
+
+  void _publishSnapshot(Set<String> blockedEmails) {
+    final Set<String> normalized = Set<String>.unmodifiable(blockedEmails);
+    _blockedEmailsSubject.add(normalized);
+    _hasLoadedBlockedCreatorEmails = true;
+    if (!_initialLoadCompleter.isCompleted) {
+      _initialLoadCompleter.complete(normalized);
+    }
+  }
 
   Stream<Set<String>> _snapshotStreamForUser(PrismUsersV2 user) {
     final bool loggedIn = user.loggedIn;

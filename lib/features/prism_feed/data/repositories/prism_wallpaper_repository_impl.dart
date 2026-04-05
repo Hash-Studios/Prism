@@ -39,34 +39,64 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     logger.d('[PrismWallpaperRepository] fetchFeed', fields: <String, Object?>{'refresh': refresh});
 
     try {
-      final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.walls,
-          sourceTag: 'PrismWallpaperRepository.fetchFeed',
-          filters: const <FirestoreFilter>[
-            FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-          startAfterDocId: refresh ? null : _lastDocId,
-          limit: _pageSize,
-          dedupeWindowMs: 1000,
-          cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
-        ),
-        (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
-      );
-      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
-      final List<PrismWallpaper> walls = rows
-          .map((row) => row.doc.toDomain(docId: row.docId))
-          .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
-          .toList(growable: false);
-      if (rows.isNotEmpty) {
-        _lastDocId = rows.last.docId;
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final List<_PrismRow> traversedRows = <_PrismRow>[];
+      final List<PrismWallpaper> visibleWalls = <PrismWallpaper>[];
+      String? nextCursor = refresh ? null : _lastDocId;
+      bool hasMoreSourceRows = false;
+
+      while (visibleWalls.length < _pageSize) {
+        final List<_PrismRow> batch = await _firestoreClient.query<_PrismRow>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.walls,
+            sourceTag: 'PrismWallpaperRepository.fetchFeed',
+            filters: const <FirestoreFilter>[
+              FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+            ],
+            orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+            startAfterDocId: nextCursor,
+            limit: _pageSize,
+            dedupeWindowMs: 1000,
+            cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
+          ),
+          (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
+        );
+        if (batch.isEmpty) {
+          hasMoreSourceRows = false;
+          break;
+        }
+
+        for (int i = 0; i < batch.length; i += 1) {
+          final _PrismRow row = batch[i];
+          traversedRows.add(row);
+          nextCursor = row.docId;
+
+          final PrismWallpaper wallpaper = row.doc.toDomain(docId: row.docId);
+          if (!BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
+            visibleWalls.add(wallpaper);
+          }
+
+          if (visibleWalls.length == _pageSize) {
+            hasMoreSourceRows = i < batch.length - 1 || batch.length == _pageSize;
+            break;
+          }
+        }
+
+        if (visibleWalls.length == _pageSize) {
+          break;
+        }
+        if (batch.length < _pageSize) {
+          hasMoreSourceRows = false;
+          break;
+        }
+        hasMoreSourceRows = true;
       }
 
-      _hasMore = rows.length == _pageSize;
-      await _writeCache(rows: rows, hasMore: _hasMore, lastDocId: _lastDocId);
-      logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': walls.length});
-      return Result.success(walls);
+      _lastDocId = traversedRows.isEmpty ? null : traversedRows.last.docId;
+      _hasMore = hasMoreSourceRows;
+      await _writeCache(rows: traversedRows, hasMore: _hasMore, lastDocId: _lastDocId);
+      logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': visibleWalls.length});
+      return Result.success(visibleWalls);
     } catch (error, stackTrace) {
       final cached = await _readCached();
       if (cached != null) {
@@ -98,7 +128,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         ),
         (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
       final List<PrismWallpaper> walls = rows
           .map((row) => row.doc.toDomain(docId: row.docId))
           .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
@@ -138,7 +168,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
-      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
       if (BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
         return Result.success(null);
       }
@@ -165,7 +195,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
       if (BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
         return Result.success(null);
       }
@@ -227,11 +257,15 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       _lastDocId = cachedLastDocId;
     }
 
-    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
     return mappedRows
         .map((row) => row.doc.toDomain(docId: row.docId))
         .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
         .toList(growable: false);
+  }
+
+  Future<Set<String>> _blockedCreatorEmails({required bool waitForInitialLoad}) {
+    return _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
   }
 }
 

@@ -81,7 +81,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String email,
     required bool refresh,
   }) async {
-    if (BlockedCreatorsFilter.hidesCreatorEmail(email, _userBlockRepository.cachedBlockedCreatorEmails)) {
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
       return Result.success(
         const PublicProfilePage<PublicProfileWallEntity>(items: <PublicProfileWallEntity>[], hasMore: false),
       );
@@ -126,7 +127,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String email,
     required bool refresh,
   }) async {
-    if (BlockedCreatorsFilter.hidesCreatorEmail(email, _userBlockRepository.cachedBlockedCreatorEmails)) {
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
       return Result.success(
         const PublicProfilePage<PublicProfileSetupEntity>(items: <PublicProfileSetupEntity>[], hasMore: false),
       );

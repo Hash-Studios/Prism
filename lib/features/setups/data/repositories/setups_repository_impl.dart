@@ -46,7 +46,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
         _cursorDocId = rows.last.docId;
       }
 
-      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final items = rows
           .map((row) => _mapSetup(row.doc, row.docId))
           .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
@@ -108,7 +108,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
       return null;
     }
 
-    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
     final items = mappedRows
         .map((row) => _mapSetup(row.doc, row.docId))
         .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
