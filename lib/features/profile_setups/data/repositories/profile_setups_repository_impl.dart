@@ -3,22 +3,29 @@ import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/profile_setups/domain/entities/profile_setup_entity.dart';
 import 'package:Prism/features/profile_setups/domain/entities/profile_setups_page.dart';
 import 'package:Prism/features/profile_setups/domain/repositories/profile_setups_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: ProfileSetupsRepository)
 class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
-  ProfileSetupsRepositoryImpl(this._firestoreClient);
+  ProfileSetupsRepositoryImpl(this._firestoreClient, this._userBlockRepository);
 
   final FirestoreClient _firestoreClient;
+  final UserBlockRepository _userBlockRepository;
   final Map<String, String> _cursorByEmail = {};
 
   @override
   Future<Result<ProfileSetupsPage>> fetchProfileSetups({required String email, required bool refresh}) async {
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
+      return Result.success(const ProfileSetupsPage(items: <ProfileSetupEntity>[], hasMore: false, nextCursor: null));
+    }
     try {
       final cursor = _cursorByEmail[email];
       final rows = await _firestoreClient.query<_SetupRow>(
@@ -73,6 +80,7 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
       review: dto.review,
       resolution: dto.resolution,
       size: dto.size,
+      firestoreDocumentId: docId,
     );
   }
 }

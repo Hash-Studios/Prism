@@ -3,20 +3,23 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PrismWallpaperRepository)
 class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
-  PrismWallpaperRepositoryImpl(this._firestoreClient, this._feedCacheLocal);
+  PrismWallpaperRepositoryImpl(this._firestoreClient, this._feedCacheLocal, this._userBlockRepository);
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
+  final UserBlockRepository _userBlockRepository;
 
   String? _lastDocId;
   bool _hasMore = true;
@@ -36,30 +39,64 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
     logger.d('[PrismWallpaperRepository] fetchFeed', fields: <String, Object?>{'refresh': refresh});
 
     try {
-      final List<_PrismRow> rows = await _firestoreClient.query<_PrismRow>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.walls,
-          sourceTag: 'PrismWallpaperRepository.fetchFeed',
-          filters: const <FirestoreFilter>[
-            FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-          startAfterDocId: refresh ? null : _lastDocId,
-          limit: _pageSize,
-          dedupeWindowMs: 1000,
-          cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
-        ),
-        (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
-      );
-      final List<PrismWallpaper> walls = rows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
-      if (rows.isNotEmpty) {
-        _lastDocId = rows.last.docId;
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final List<_PrismRow> traversedRows = <_PrismRow>[];
+      final List<PrismWallpaper> visibleWalls = <PrismWallpaper>[];
+      String? nextCursor = refresh ? null : _lastDocId;
+      bool hasMoreSourceRows = false;
+
+      while (visibleWalls.length < _pageSize) {
+        final List<_PrismRow> batch = await _firestoreClient.query<_PrismRow>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.walls,
+            sourceTag: 'PrismWallpaperRepository.fetchFeed',
+            filters: const <FirestoreFilter>[
+              FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+            ],
+            orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+            startAfterDocId: nextCursor,
+            limit: _pageSize,
+            dedupeWindowMs: 1000,
+            cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
+          ),
+          (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
+        );
+        if (batch.isEmpty) {
+          hasMoreSourceRows = false;
+          break;
+        }
+
+        for (int i = 0; i < batch.length; i += 1) {
+          final _PrismRow row = batch[i];
+          traversedRows.add(row);
+          nextCursor = row.docId;
+
+          final PrismWallpaper wallpaper = row.doc.toDomain(docId: row.docId);
+          if (!BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
+            visibleWalls.add(wallpaper);
+          }
+
+          if (visibleWalls.length == _pageSize) {
+            hasMoreSourceRows = i < batch.length - 1 || batch.length == _pageSize;
+            break;
+          }
+        }
+
+        if (visibleWalls.length == _pageSize) {
+          break;
+        }
+        if (batch.length < _pageSize) {
+          hasMoreSourceRows = false;
+          break;
+        }
+        hasMoreSourceRows = true;
       }
 
-      _hasMore = walls.length == _pageSize;
-      await _writeCache(rows: rows, hasMore: _hasMore, lastDocId: _lastDocId);
-      logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': walls.length});
-      return Result.success(walls);
+      _lastDocId = traversedRows.isEmpty ? null : traversedRows.last.docId;
+      _hasMore = hasMoreSourceRows;
+      await _writeCache(rows: traversedRows, hasMore: _hasMore, lastDocId: _lastDocId);
+      logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': visibleWalls.length});
+      return Result.success(visibleWalls);
     } catch (error, stackTrace) {
       final cached = await _readCached();
       if (cached != null) {
@@ -91,7 +128,11 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         ),
         (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final List<PrismWallpaper> walls = rows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final List<PrismWallpaper> walls = rows
+          .map((row) => row.doc.toDomain(docId: row.docId))
+          .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
+          .toList(growable: false);
       walls.sort((a, b) {
         final aDays = a.requiredStreakDays ?? 999;
         final bDays = b.requiredStreakDays ?? 999;
@@ -126,10 +167,42 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       if (results.isEmpty) {
         return Result.success(null);
       }
-      return Result.success(results.first.doc.toDomain(docId: results.first.docId));
+      final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      if (BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
+        return Result.success(null);
+      }
+      return Result.success(wall);
     } catch (error, stackTrace) {
       logger.e('[PrismWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
       return Result.error(ServerFailure('Failed to fetch Prism wallpaper by id: $error'));
+    }
+  }
+
+  @override
+  Future<Result<PrismWallpaper?>> fetchByDocumentId(String documentId) async {
+    if (documentId.isEmpty) {
+      return Result.success(null);
+    }
+    try {
+      final Map<String, dynamic>? data = await _firestoreClient.getById<Map<String, dynamic>>(
+        FirebaseCollections.walls,
+        documentId,
+        (d, _) => d,
+        sourceTag: 'PrismWallpaperRepository.fetchByDocumentId',
+      );
+      if (data == null) {
+        return Result.success(null);
+      }
+      final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      if (BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
+        return Result.success(null);
+      }
+      return Result.success(wallpaper);
+    } catch (error, stackTrace) {
+      logger.e('[PrismWallpaperRepository] fetchByDocumentId failed', error: error, stackTrace: stackTrace);
+      return Result.error(ServerFailure('Failed to fetch Prism wallpaper by document id: $error'));
     }
   }
 
@@ -184,7 +257,15 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       _lastDocId = cachedLastDocId;
     }
 
-    return mappedRows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
+    final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+    return mappedRows
+        .map((row) => row.doc.toDomain(docId: row.docId))
+        .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
+        .toList(growable: false);
+  }
+
+  Future<Set<String>> _blockedCreatorEmails({required bool waitForInitialLoad}) {
+    return _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
   }
 }
 

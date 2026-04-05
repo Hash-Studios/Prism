@@ -15,7 +15,7 @@ const db = admin.firestore();
  *
  * What it does:
  *   1. Reads the current wall_of_the_day/current doc.
- *   2. Archives it to past_picks/{yyyy-MM-dd} so it's never repeated.
+ *   2. Archives { wallId, date } to past_picks/{yyyy-MM-dd} for dedup.
  *   3. Picks a new wall from the `walls` collection that hasn't appeared
  *      in past_picks within the last 30 days.
  *   4. Writes the new wall to wall_of_the_day/current.
@@ -34,7 +34,6 @@ export const wallOfTheDay = onSchedule(
     // 1. Archive yesterday's wall
     // ------------------------------------------------------------------ //
     let currentWallId: string | null = null;
-    let currentWallTitle = "Today's Wall";
 
     try {
       const currentSnap = await db
@@ -45,11 +44,14 @@ export const wallOfTheDay = onSchedule(
       if (currentSnap.exists) {
         const data = currentSnap.data()!;
         currentWallId = data.wallId ?? null;
-        currentWallTitle = data.title ?? currentWallTitle;
 
-        // Archive with the date stored in the doc, falling back to yesterday.
+        // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
         const archiveDate = _firestoreTimestampToDateString(data.date) ?? _yesterdayDateString();
-        await db.collection("past_picks").doc(archiveDate).set(data);
+        const archivePayload: Record<string, unknown> = {
+          wallId: data.wallId ?? "",
+          date: data.date ?? admin.firestore.Timestamp.now(),
+        };
+        await db.collection("past_picks").doc(archiveDate).set(archivePayload);
         logger.info(`Archived wall_of_the_day → past_picks/${archiveDate}`, {
           wallId: currentWallId,
         });
@@ -180,25 +182,17 @@ export const wallOfTheDay = onSchedule(
     }
 
     // ------------------------------------------------------------------ //
-    // 4. Write wall_of_the_day/current
+    // 4. Write wall_of_the_day/current (pointer only — clients load `walls/{wallId}`)
     // ------------------------------------------------------------------ //
     const wotdDoc: Record<string, unknown> = {
       wallId: newWallId,
-      url: newWall.wallpaper_url ?? "",
-      thumbnailUrl: newWall.wallpaper_thumb ?? "",
-      title: newWall.title ?? "",
-      photographer: newWall.by ?? "", // `by` is the uploader name field
-      photographerId: newWall.email ?? "", // `email` is the uploader identifier
       date: admin.firestore.Timestamp.now(),
-      palette: newWall.palette ?? [],
-      isPremium: newWall.premium ?? false,
     };
 
     try {
       await db.collection("wall_of_the_day").doc("current").set(wotdDoc);
       logger.info(`wall_of_the_day/current updated for ${today}`, {
         wallId: newWallId,
-        title: wotdDoc.title,
       });
     } catch (err) {
       logger.error("Failed to write wall_of_the_day/current.", {err});
@@ -208,11 +202,13 @@ export const wallOfTheDay = onSchedule(
     // ------------------------------------------------------------------ //
     // 5. Send FCM topic push + write in-app notification doc
     // ------------------------------------------------------------------ //
-    const wallTitle = (wotdDoc.title as string).trim() || "Check it out";
+    const wallTitle = (newWall.title as string | undefined)?.trim() || "Check it out";
+    const wallpaperUrl = String(newWall.wallpaper_url ?? "");
+    const thumbnailUrl = String(newWall.wallpaper_thumb ?? "");
     const canonicalWallUrl = _wallShareUrl({
       wallId: newWallId,
-      wallpaperUrl: (wotdDoc.url as string) || "",
-      thumbnailUrl: (wotdDoc.thumbnailUrl as string) || "",
+      wallpaperUrl,
+      thumbnailUrl,
     });
     await sendNotification({
       title: "Today's Wall of the Day is here",
@@ -222,7 +218,7 @@ export const wallOfTheDay = onSchedule(
         wall_id: newWallId,
         url: canonicalWallUrl,
       },
-      imageUrl: (wotdDoc.thumbnailUrl as string) || undefined,
+      imageUrl: thumbnailUrl || undefined,
       modifier: "all",
       channelId: "wall_of_the_day",
       fcmTarget: {topic: "wall_of_the_day"},

@@ -28,5 +28,8 @@ abstract class SetupEntity with _$SetupEntity {
     @Default(false) bool review,
     String? resolution,
     String? size,
+
+    /// Firestore document id in [setups] for UGC reporting.
+    String? firestoreDocumentId,
   }) = _SetupEntity;
 }

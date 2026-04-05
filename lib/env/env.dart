@@ -17,7 +17,6 @@ class Env {
   static const String ghUserName = String.fromEnvironment('GH_USERNAME');
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
   static const String ghRepoSetups = String.fromEnvironment('GH_REPO_SETUPS');
-  static const String ghRepoData = String.fromEnvironment('GH_REPO_DATA');
 
   // RevenueCat
   static const String rcApiKey = String.fromEnvironment('RC_API_KEY');

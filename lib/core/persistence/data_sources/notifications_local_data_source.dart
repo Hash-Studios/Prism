@@ -107,6 +107,11 @@ class NotificationsLocalDataSource {
     await writeAll(updated);
   }
 
+  Future<void> removeWhere(bool Function(InAppNotificationEntity item) predicate) async {
+    final updated = (await readAll()).where((item) => !predicate(item)).toList(growable: false);
+    await writeAll(updated);
+  }
+
   Future<void> deleteByIds(List<String> ids) async {
     if (ids.isEmpty) {
       return;

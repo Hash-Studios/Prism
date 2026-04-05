@@ -29,6 +29,41 @@ class ReportWallEvent extends AnalyticsEvent {
   }
 }
 
+class ContentReportSubmitEvent extends AnalyticsEvent {
+  const ContentReportSubmitEvent({required this.contentType, required this.result, this.reason});
+
+  final String contentType;
+  final BinaryResultValue result;
+  final String? reason;
+
+  @override
+  String get eventName => 'content_report_submit';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'content_type': contentType,
+      'result': result.wireValue,
+      if (reason != null) 'reason': reason!,
+    };
+  }
+}
+
+class UserBlockActionEvent extends AnalyticsEvent {
+  const UserBlockActionEvent({required this.action, this.result});
+
+  final String action;
+  final String? result;
+
+  @override
+  String get eventName => 'user_block_action';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action, if (result != null) 'result': result!};
+  }
+}
+
 class SetupFavStatusChangedEvent extends AnalyticsEvent {
   const SetupFavStatusChangedEvent({required this.setupId});
 

@@ -17,6 +17,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menuButton/editButton.dart';
 import 'package:Prism/core/widgets/menuButton/favWallpaperButton.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/menuButton/shareButton.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -1057,39 +1058,58 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildActionButtons(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final url = state.screenshotTaken && state.imageFile != null ? state.imageFile!.path : entity.fullUrl;
+    final List<Widget> actions = <Widget>[
+      _SheetActionTapScale(
+        child: DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
+      ),
+      if (!hideSetWallpaperUi)
+        _SheetActionTapScale(
+          child: SetWallpaperButton(
+            colorChanged: state.colorChanged,
+            url: url,
+            promptNotificationPermissionOnSuccess: true,
+          ),
+        ),
+      _SheetActionTapScale(child: FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false)),
+      _SheetActionTapScale(
+        child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
+      ),
+      _SheetActionTapScale(child: EditButton(url: entity.fullUrl)),
+    ];
+    final String? reportWallDocId = switch (entity) {
+      PrismDetailEntity(:final wallpaper) => wallpaper.firestoreDocumentId,
+      _ => null,
+    };
+    if (reportWallDocId != null && reportWallDocId.isNotEmpty) {
+      actions.insert(
+        actions.length - 1,
+        _SheetActionTapScale(
+          child: GestureDetector(
+            onTap: () => showContentReportSheet(
+              context,
+              contentType: 'wall',
+              targetFirestoreDocId: reportWallDocId,
+              subtitle: entity.id,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
+                ],
+                borderRadius: BorderRadius.circular(500),
+              ),
+              padding: const EdgeInsets.all(17),
+              child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
+            ),
+          ),
+        ),
+      );
+    }
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: _sheetHPad),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _SheetActionTapScale(
-              child: DownloadButton(
-                colorChanged: state.colorChanged,
-                link: url,
-                sourceContext: _getSourceContext(state),
-              ),
-            ),
-            if (!hideSetWallpaperUi)
-              _SheetActionTapScale(
-                child: SetWallpaperButton(
-                  colorChanged: state.colorChanged,
-                  url: url,
-                  promptNotificationPermissionOnSuccess: true,
-                ),
-              ),
-            _SheetActionTapScale(child: FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false)),
-            _SheetActionTapScale(
-              child: ShareButton(
-                id: entity.id,
-                source: entity.source,
-                url: entity.fullUrl,
-                thumbUrl: entity.thumbnailUrl,
-              ),
-            ),
-            _SheetActionTapScale(child: EditButton(url: entity.fullUrl)),
-          ],
-        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: actions),
       ),
     );
   }

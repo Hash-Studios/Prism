@@ -4,6 +4,7 @@ class FirebaseCollections {
   static const String usersV2 = 'usersv2';
   static const String walls = 'walls';
   static const String setups = 'setups';
+  static const String contentReports = 'contentReports';
   static const String draftSetups = 'draftSetups';
   static const String rejectedWalls = 'rejectedWalls';
   static const String rejectedSetups = 'rejectedSetups';

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -15,7 +14,6 @@ import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -47,56 +45,117 @@ final class _DiscoverTileData {
   final bool isPremium;
 }
 
-class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
-  AnimationController? _controller;
-  late Animation<Color?> animation;
-  GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
-  Random r = Random();
+String _discoverTileSemanticLabel(_DiscoverTileData tile) {
+  final String trimmed = tile.name.trim();
+  if (tile.kind == _DiscoverTileKind.category) {
+    if (trimmed.isEmpty) {
+      return 'Category';
+    }
+    return 'Category, $trimmed';
+  }
+  if (trimmed.isEmpty) {
+    return tile.isPremium ? 'Premium collection' : 'Collection';
+  }
+  if (tile.isPremium) {
+    return 'Premium collection, $trimmed';
+  }
+  return 'Collection, $trimmed';
+}
+
+/// Decodes network thumbs near on-screen size to reduce memory and GPU upload cost.
+ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logicalW, double logicalH) {
+  final String trimmed = url.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final double dpr = MediaQuery.devicePixelRatioOf(context);
+  final int w = (logicalW * dpr).round().clamp(1, 4096);
+  final int h = (logicalH * dpr).round().clamp(1, 4096);
+  return ResizeImage(CachedNetworkImageProvider(trimmed), width: w, height: h);
+}
+
+const double _kCollectionsTitleBlockHeight = 40;
+const double _kCollectionsTitleImageGap = 6;
+const double _kCollectionsGridChildAspectRatio = 0.56;
+
+class _CollectionTileSkeleton extends StatefulWidget {
+  const _CollectionTileSkeleton({required this.cellWidth, required this.base, required this.highlight});
+
+  final double cellWidth;
+  final Color base;
+  final Color highlight;
+
+  @override
+  State<_CollectionTileSkeleton> createState() => _CollectionTileSkeletonState();
+}
+
+class _CollectionTileSkeletonState extends State<_CollectionTileSkeleton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late Animation<Color?> _shimmer;
+
+  void _attachColors() {
+    _shimmer = ColorTween(
+      begin: widget.base,
+      end: widget.highlight,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
-    _controller!.repeat();
+    _attachColors();
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CollectionTileSkeleton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.base != oldWidget.base || widget.highlight != oldWidget.highlight) {
+      _attachColors();
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final Color fallback = Theme.of(context).colorScheme.surfaceContainer;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(
+          height: _kCollectionsTitleBlockHeight,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AnimatedBuilder(
+              animation: _shimmer,
+              builder: (BuildContext context, Widget? child) {
+                return Container(width: widget.cellWidth * 0.65, height: 13, color: _shimmer.value ?? fallback);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: _kCollectionsTitleImageGap),
+        Expanded(
+          child: AnimatedBuilder(
+            animation: _shimmer,
+            builder: (BuildContext context, Widget? child) {
+              return ColoredBox(color: _shimmer.value ?? fallback);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CollectionsGridState extends State<CollectionsGrid> {
   Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {
@@ -359,7 +418,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> refreshList() async {
-    refreshKey.currentState?.show();
     await CData.getCollections();
   }
 
@@ -405,155 +463,116 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
                 ),
           ];
     final int itemCount = isLoading ? 8 : discoverTiles.length;
+    const double gridSpacing = 8;
+    const EdgeInsets gridPadding = EdgeInsets.fromLTRB(5, 4, 5, 4);
+
+    final ThemeData theme = Theme.of(context);
+    final double viewportW = MediaQuery.sizeOf(context).width;
+    final double cellWidth = (viewportW - gridPadding.horizontal - gridSpacing) / 2;
+    final double cellHeight = cellWidth / _kCollectionsGridChildAspectRatio;
+    final double imageDecodeHeight = (cellHeight - _kCollectionsTitleBlockHeight - _kCollectionsTitleImageGap).clamp(
+      48.0,
+      4000.0,
+    );
 
     Widget buildCollectionCard(_DiscoverTileData? tile) {
       final bool loading = tile == null;
       final bool isPremium = tile?.isPremium ?? false;
-      final String name = loading ? "LOADING" : tile.name.toUpperCase();
-      final String thumb1 = loading ? '' : tile.thumb1;
-      final String thumb2 = loading ? '' : tile.thumb2;
-      return GestureDetector(
-        onTap: loading
-            ? null
-            : () {
-                if (tile.kind == _DiscoverTileKind.collection) {
-                  unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: tile.name));
-                  return;
-                }
-                final encodedName = Uri.encodeComponent(tile.name);
-                context.router.push(CollectionViewRoute(collectionName: 'category:$encodedName'));
-              },
-        child: PremiumBanner(
-          comparator: !isPremium,
-          child: Stack(
-            children: <Widget>[
-              Positioned(
-                top: 40,
-                left: 40,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54,
-                      ),
-                    ],
-                  ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 25, left: 25),
-                  child: Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                      fontSize: 16,
-                      color: loading
-                          ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
-                          : Theme.of(context).colorScheme.secondary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 20,
-                left: 20,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
-                      ),
-                    ],
-                  ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Positioned(
-                top: 20,
-                left: 20,
-                child: Container(
-                  decoration: loading
-                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(image: CachedNetworkImageProvider(thumb2), fit: BoxFit.cover),
-                        ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
-                      ),
-                    ],
-                  ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  decoration: loading
-                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(image: CachedNetworkImageProvider(thumb1), fit: BoxFit.cover),
-                        ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-            ],
+      final ColorScheme scheme = Theme.of(context).colorScheme;
+
+      if (loading) {
+        final Widget tileBody = Material(
+          color: Colors.transparent,
+          child: _CollectionTileSkeleton(
+            cellWidth: cellWidth,
+            base: scheme.surfaceContainer,
+            highlight: scheme.surfaceContainerHigh,
           ),
+        );
+        return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
+      }
+
+      final _DiscoverTileData data = tile;
+      final String rawThumb1 = data.thumb1.trim();
+      final String rawThumb2 = data.thumb2.trim();
+      final String thumbUrl = rawThumb1.isNotEmpty ? rawThumb1 : rawThumb2;
+      final ImageProvider? thumbImage = _resizeCachedThumb(context, thumbUrl, cellWidth, imageDecodeHeight);
+      final String trimmedName = data.name.trim();
+      final String displayTitle = trimmedName.isNotEmpty
+          ? trimmedName
+          : (data.kind == _DiscoverTileKind.category ? 'Category' : 'Collection');
+
+      void onTapTile() {
+        if (data.kind == _DiscoverTileKind.collection) {
+          unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: data.name));
+          return;
+        }
+        final encodedName = Uri.encodeComponent(data.name);
+        context.router.push(CollectionViewRoute(collectionName: 'category:$encodedName'));
+      }
+
+      final Widget content = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SizedBox(
+            height: _kCollectionsTitleBlockHeight,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                displayTitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface) ??
+                    TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: scheme.onSurface),
+              ),
+            ),
+          ),
+          const SizedBox(height: _kCollectionsTitleImageGap),
+          Expanded(
+            child: PremiumBanner(
+              comparator: !isPremium,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  image: thumbImage != null ? DecorationImage(image: thumbImage, fit: BoxFit.cover) : null,
+                ),
+                child: thumbImage != null ? null : const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      final Widget tileBody = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          splashColor: scheme.secondary.withValues(alpha: 0.3),
+          highlightColor: scheme.secondary.withValues(alpha: 0.1),
+          onTap: onTapTile,
+          child: content,
         ),
       );
+
+      return Semantics(button: true, label: _discoverTileSemanticLabel(data), excludeSemantics: true, child: tileBody);
     }
 
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
-      key: refreshKey,
       onRefresh: refreshList,
+      color: theme.colorScheme.primary,
+      backgroundColor: theme.primaryColor,
+      edgeOffset: MediaQuery.paddingOf(context).top,
       child: GridView.builder(
-        physics: const ScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
+        padding: gridPadding,
         itemCount: itemCount,
-        shrinkWrap: true,
+        physics: AlwaysScrollableScrollPhysics(parent: ScrollConfiguration.of(context).getScrollPhysics(context)),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.6225,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
+          childAspectRatio: _kCollectionsGridChildAspectRatio,
+          mainAxisSpacing: gridSpacing,
+          crossAxisSpacing: gridSpacing,
         ),
-        itemBuilder: (context, index) {
+        itemBuilder: (BuildContext context, int index) {
           if (isLoading) {
             return buildCollectionCard(null);
           }
