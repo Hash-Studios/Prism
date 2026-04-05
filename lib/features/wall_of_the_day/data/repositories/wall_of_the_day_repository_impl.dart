@@ -1,7 +1,6 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -13,11 +12,10 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: WallOfTheDayRepository)
 class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
-  WallOfTheDayRepositoryImpl(this._firestoreClient, this._prismWallpaperRepository, this._userBlockRepository);
+  WallOfTheDayRepositoryImpl(this._firestoreClient, this._prismWallpaperRepository, UserBlockRepository _);
 
   final FirestoreClient _firestoreClient;
   final PrismWallpaperRepository _prismWallpaperRepository;
-  final UserBlockRepository _userBlockRepository;
 
   WallOfTheDayEntity? _cachedEntity;
   String? _cachedWallDocumentId;
@@ -56,10 +54,6 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       return wallResult.fold(
         onSuccess: (wallpaper) {
           if (wallpaper == null) {
-            return Result.success(null);
-          }
-          final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
-          if (BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
             return Result.success(null);
           }
           if (wallpaper.fullUrl.isEmpty) {

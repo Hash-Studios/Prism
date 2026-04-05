@@ -64,6 +64,18 @@ interface UnblockUserResponse {
   ok: true;
 }
 
+export function isSameTargetCooldownActive(params: {
+  action: "block" | "unblock";
+  lastAtMs?: number;
+  nowMs: number;
+}): boolean {
+  if (params.action !== "block" || params.lastAtMs == null) {
+    return false;
+  }
+  const elapsed = params.nowMs - params.lastAtMs;
+  return elapsed >= 0 && elapsed < MIN_MS_BETWEEN_SAME_TARGET;
+}
+
 export const blockUser = onCall(
   {
     region: REGION,
@@ -107,24 +119,27 @@ export const blockUser = onCall(
         throw new HttpsError("not-found", "User not found.");
       }
 
-      const blockedData = blockedSnap.data()!;
+      const blockedData = blockedSnap.data();
+      if (!blockedData) {
+        throw new HttpsError("not-found", "User not found.");
+      }
       const blockedEmailRaw = (blockedData.email ?? "").toString().trim();
       if (!blockedEmailRaw) {
         throw new HttpsError("failed-precondition", "Target user has no email.");
       }
       const blockedEmailNorm = normalizeEmailForMatch(blockedEmailRaw);
 
-      const callerData = callerSnap.data()!;
+      const callerData = callerSnap.data();
+      if (!callerData) {
+        throw new HttpsError("failed-precondition", "Your profile was not found.");
+      }
       const callerEmailRaw = (callerData.email ?? "").toString().trim();
       const callerEmailNorm = callerEmailRaw ? normalizeEmailForMatch(callerEmailRaw) : "";
 
       if (targetRateSnap.exists) {
         const last = targetRateSnap.data()?.lastAt as admin.firestore.Timestamp | undefined;
-        if (last) {
-          const elapsed = nowMs - last.toMillis();
-          if (elapsed >= 0 && elapsed < MIN_MS_BETWEEN_SAME_TARGET) {
-            throw new HttpsError("resource-exhausted", "Please wait a moment before changing this block.");
-          }
+        if (isSameTargetCooldownActive({action: "block", lastAtMs: last?.toMillis(), nowMs})) {
+          throw new HttpsError("resource-exhausted", "Please wait a moment before changing this block.");
         }
       }
 
@@ -154,9 +169,7 @@ export const blockUser = onCall(
       );
 
       const followingRemoves = matchingEmailsFromList(callerData.following, blockedEmailNorm);
-      const followersRemoves = callerEmailNorm
-        ? matchingEmailsFromList(blockedData.followers, callerEmailNorm)
-        : [];
+      const followersRemoves = callerEmailNorm ? matchingEmailsFromList(blockedData.followers, callerEmailNorm) : [];
 
       if (followingRemoves.length > 0) {
         tx.update(callerRef, {
@@ -225,24 +238,13 @@ export const unblockUser = onCall(
     const targetRateRef = db.collection(RATE_TARGET).doc(`${callerUid}_${blockedUid}`);
 
     await db.runTransaction(async (tx) => {
-      const [blockSnap, dailyRateSnap, targetRateSnap] = await Promise.all([
+      const [blockSnap, dailyRateSnap] = await Promise.all([
         tx.get(blockDocRef),
         tx.get(dailyRateRef),
-        tx.get(targetRateRef),
       ]);
 
       if (!blockSnap.exists) {
         throw new HttpsError("not-found", "This user is not blocked.");
-      }
-
-      if (targetRateSnap.exists) {
-        const last = targetRateSnap.data()?.lastAt as admin.firestore.Timestamp | undefined;
-        if (last) {
-          const elapsed = nowMs - last.toMillis();
-          if (elapsed >= 0 && elapsed < MIN_MS_BETWEEN_SAME_TARGET) {
-            throw new HttpsError("resource-exhausted", "Please wait a moment before changing this block.");
-          }
-        }
       }
 
       let dailyCount = 0;

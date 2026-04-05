@@ -22,7 +22,8 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
 
   @override
   Future<Result<ProfileSetupsPage>> fetchProfileSetups({required String email, required bool refresh}) async {
-    if (BlockedCreatorsFilter.hidesCreatorEmail(email, _userBlockRepository.cachedBlockedCreatorEmails)) {
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
       return Result.success(const ProfileSetupsPage(items: <ProfileSetupEntity>[], hasMore: false, nextCursor: null));
     }
     try {

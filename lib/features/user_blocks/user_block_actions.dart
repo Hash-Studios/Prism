@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -50,6 +51,7 @@ Future<void> confirmAndBlockUser({
   }
 
   unawaited(analytics.track(const UserBlockActionEvent(action: 'block', result: 'success')));
+  unawaited(syncInAppNotificationsFromRemote(force: true));
 
   try {
     final String? topicBase = followersTopicFromEmail(targetEmail);

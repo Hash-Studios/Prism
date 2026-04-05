@@ -23,6 +23,8 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
     try {
       if (syncRemote) {
         await syncInAppNotificationsFromRemote(force: true);
+      } else {
+        await pruneBlockedNotificationsCache(waitForInitialLoad: true, notificationsLocal: _notificationsLocal);
       }
       return Result.success(await _readAll());
     } catch (error) {

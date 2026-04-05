@@ -112,15 +112,16 @@ Future<Set<String>> _blockedCreatorEmails({required bool waitForInitialLoad}) {
   return getIt<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
 }
 
-Future<void> pruneBlockedNotificationsCache({bool waitForInitialLoad = false}) async {
+Future<void> pruneBlockedNotificationsCache({
+  bool waitForInitialLoad = false,
+  NotificationsLocalDataSource? notificationsLocal,
+}) async {
   final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
   if (blocked.isEmpty) {
     return;
   }
-  final NotificationsLocalDataSource notificationsLocal = getIt<NotificationsLocalDataSource>();
-  await notificationsLocal.removeWhere(
-    (InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked),
-  );
+  final NotificationsLocalDataSource local = notificationsLocal ?? getIt<NotificationsLocalDataSource>();
+  await local.removeWhere((InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked));
 }
 
 Future<void> _replaceAllPreservingReadState(
@@ -131,10 +132,9 @@ Future<void> _replaceAllPreservingReadState(
       .where((item) => item.read)
       .map((item) => item.id)
       .toSet();
-  final List<InAppNotificationEntity> merged = incoming
-      .map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item)
-      .toList(growable: false)
-    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  final List<InAppNotificationEntity> merged =
+      incoming.map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item).toList(growable: false)
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   await notificationsLocal.writeAll(merged);
 }
 
