@@ -108,6 +108,36 @@ List<InAppNotificationEntity> _filterBlockedActors(
       .toList(growable: false);
 }
 
+Future<Set<String>> _blockedCreatorEmails({required bool waitForInitialLoad}) {
+  return getIt<UserBlockRepository>().getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
+}
+
+Future<void> pruneBlockedNotificationsCache({bool waitForInitialLoad = false}) async {
+  final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
+  if (blocked.isEmpty) {
+    return;
+  }
+  final NotificationsLocalDataSource notificationsLocal = getIt<NotificationsLocalDataSource>();
+  await notificationsLocal.removeWhere(
+    (InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked),
+  );
+}
+
+Future<void> _replaceAllPreservingReadState(
+  NotificationsLocalDataSource notificationsLocal,
+  List<InAppNotificationEntity> incoming,
+) async {
+  final Set<String> readIds = (await notificationsLocal.readAll())
+      .where((item) => item.read)
+      .map((item) => item.id)
+      .toSet();
+  final List<InAppNotificationEntity> merged = incoming
+      .map((item) => readIds.contains(item.id) ? item.copyWith(read: true) : item)
+      .toList(growable: false)
+    ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  await notificationsLocal.writeAll(merged);
+}
+
 InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
   final InAppNotif notif = InAppNotif.fromSnapshot(raw);
   final DateTime createdAt = notif.createdAt?.toUtc() ?? DateTime.now().toUtc();
@@ -152,35 +182,48 @@ Future<void> syncInAppNotificationsFromRemote({bool force = false}) async {
     return;
   }
 
-  final Future<void> run = _syncInAppNotificationsFromRemoteBody();
+  Future<void> runOne() async {
+    final bool ok = await _syncInAppNotificationsFromRemoteBody(force: force);
+    if (ok) {
+      _lastSyncEndedAtByKey[gateKey] = DateTime.now();
+    }
+  }
+
+  final Future<void> run = runOne();
   _syncInFlightByKey[gateKey] = run;
   try {
     await run;
   } finally {
     if (identical(_syncInFlightByKey[gateKey], run)) {
       _syncInFlightByKey.remove(gateKey);
-      _lastSyncEndedAtByKey[gateKey] = DateTime.now();
     }
   }
 }
 
-Future<void> _syncInAppNotificationsFromRemoteBody() async {
+/// Returns `true` if local state was updated from remote without error.
+Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async {
   logger.d('Fetching in-app notifications');
   try {
-    final notificationsLocal = getIt<NotificationsLocalDataSource>();
+    final NotificationsLocalDataSource notificationsLocal = getIt<NotificationsLocalDataSource>();
     final DateTime nowUtc = DateTime.now().toUtc();
     final DateTime? lastFetchTime = notificationsLocal.lastFetchAtUtc();
+    final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
 
-    if (lastFetchTime == null) {
+    if (blocked.isNotEmpty) {
+      await notificationsLocal.removeWhere(
+        (InAppNotificationEntity item) => _isNotificationFromBlockedCreator(item, blocked),
+      );
+    }
+
+    if (force || lastFetchTime == null) {
       final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
         sinceUtc: nowUtc.subtract(const Duration(days: 30)),
-        sourceTag: 'notifications.last_month',
+        sourceTag: force ? 'notifications.force_backfill' : 'notifications.last_month',
       );
-      final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
       final entities = _filterBlockedActors(snap.map(_asMap).map(_toEntity).toList(growable: false), blocked);
-      await notificationsLocal.writeAll(entities);
+      await _replaceAllPreservingReadState(notificationsLocal, entities);
       await notificationsLocal.setLastFetchAtUtc(nowUtc);
-      return;
+      return true;
     }
 
     final List<Map<String, dynamic>> snap = await _fetchNotificationsSince(
@@ -188,15 +231,17 @@ Future<void> _syncInAppNotificationsFromRemoteBody() async {
       sourceTag: 'notifications.latest',
       cachePolicy: FirestoreCachePolicy.memoryFirst,
     );
-    final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
     final entities = _filterBlockedActors(snap.map(_asMap).map(_toEntity).toList(growable: false), blocked);
     if (entities.isNotEmpty) {
       await notificationsLocal.upsertAll(entities);
     }
     await notificationsLocal.setLastFetchAtUtc(nowUtc);
+    return true;
   } on FirestoreError catch (e) {
     logger.w('syncInAppNotificationsFromRemote failed (code=${e.code}): ${e.message}');
+    return false;
   } catch (e) {
     logger.w('syncInAppNotificationsFromRemote failed: $e');
+    return false;
   }
 }
