@@ -3,20 +3,23 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PrismWallpaperRepository)
 class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
-  PrismWallpaperRepositoryImpl(this._firestoreClient, this._feedCacheLocal);
+  PrismWallpaperRepositoryImpl(this._firestoreClient, this._feedCacheLocal, this._userBlockRepository);
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
+  final UserBlockRepository _userBlockRepository;
 
   String? _lastDocId;
   bool _hasMore = true;
@@ -51,12 +54,16 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         ),
         (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final List<PrismWallpaper> walls = rows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
+      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final List<PrismWallpaper> walls = rows
+          .map((row) => row.doc.toDomain(docId: row.docId))
+          .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
+          .toList(growable: false);
       if (rows.isNotEmpty) {
         _lastDocId = rows.last.docId;
       }
 
-      _hasMore = walls.length == _pageSize;
+      _hasMore = rows.length == _pageSize;
       await _writeCache(rows: rows, hasMore: _hasMore, lastDocId: _lastDocId);
       logger.i('[PrismWallpaperRepository] fetchFeed success', fields: <String, Object?>{'count': walls.length});
       return Result.success(walls);
@@ -91,7 +98,11 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         ),
         (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final List<PrismWallpaper> walls = rows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
+      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final List<PrismWallpaper> walls = rows
+          .map((row) => row.doc.toDomain(docId: row.docId))
+          .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
+          .toList(growable: false);
       walls.sort((a, b) {
         final aDays = a.requiredStreakDays ?? 999;
         final bDays = b.requiredStreakDays ?? 999;
@@ -126,7 +137,12 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       if (results.isEmpty) {
         return Result.success(null);
       }
-      return Result.success(results.first.doc.toDomain(docId: results.first.docId));
+      final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
+      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      if (BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
+        return Result.success(null);
+      }
+      return Result.success(wall);
     } catch (error, stackTrace) {
       logger.e('[PrismWallpaperRepository] fetchById failed', error: error, stackTrace: stackTrace);
       return Result.error(ServerFailure('Failed to fetch Prism wallpaper by id: $error'));
@@ -149,6 +165,10 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
+      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      if (BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
+        return Result.success(null);
+      }
       return Result.success(wallpaper);
     } catch (error, stackTrace) {
       logger.e('[PrismWallpaperRepository] fetchByDocumentId failed', error: error, stackTrace: stackTrace);
@@ -207,7 +227,11 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       _lastDocId = cachedLastDocId;
     }
 
-    return mappedRows.map((row) => row.doc.toDomain(docId: row.docId)).toList(growable: false);
+    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    return mappedRows
+        .map((row) => row.doc.toDomain(docId: row.docId))
+        .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
+        .toList(growable: false);
   }
 }
 

@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -15,13 +16,15 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_set
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PublicProfileRepository)
 class PublicProfileRepositoryImpl implements PublicProfileRepository {
-  PublicProfileRepositoryImpl(this._firestoreClient);
+  PublicProfileRepositoryImpl(this._firestoreClient, this._userBlockRepository);
 
   final FirestoreClient _firestoreClient;
+  final UserBlockRepository _userBlockRepository;
   final Map<String, String> _wallCursorByEmail = <String, String>{};
   final Map<String, String> _setupCursorByEmail = <String, String>{};
   static const int _profileReadDedupeMs = 30000;
@@ -78,6 +81,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String email,
     required bool refresh,
   }) async {
+    if (BlockedCreatorsFilter.hidesCreatorEmail(email, _userBlockRepository.cachedBlockedCreatorEmails)) {
+      return Result.success(
+        const PublicProfilePage<PublicProfileWallEntity>(items: <PublicProfileWallEntity>[], hasMore: false),
+      );
+    }
     try {
       final rows = await _firestoreClient.query<_WallRow>(
         FirestoreQuerySpec(
@@ -118,6 +126,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String email,
     required bool refresh,
   }) async {
+    if (BlockedCreatorsFilter.hidesCreatorEmail(email, _userBlockRepository.cachedBlockedCreatorEmails)) {
+      return Result.success(
+        const PublicProfilePage<PublicProfileSetupEntity>(items: <PublicProfileSetupEntity>[], hasMore: false),
+      );
+    }
     try {
       final rows = await _firestoreClient.query<_SetupRow>(
         FirestoreQuerySpec(

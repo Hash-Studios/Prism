@@ -33,10 +33,8 @@ class HomeTabPage extends StatefulWidget {
 }
 
 class _HomeTabPageState extends State<HomeTabPage> {
-  final FavoritesLocalDataSource _favoritesLocal =
-      getIt<FavoritesLocalDataSource>();
-  final SettingsLocalDataSource _settingsLocal =
-      getIt<SettingsLocalDataSource>();
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   int page = 0;
   bool result = true;
   String shortcut = "No Action Set";
@@ -45,21 +43,14 @@ class _HomeTabPageState extends State<HomeTabPage> {
   int _personalizedFeedVersion = 0;
 
   Future<void> _ensureDefaultTopicSubscriptions() async {
-    if (!_settingsLocal.get<bool>(
-      'subscribedToRecommendations',
-      defaultValue: false,
-    )) {
+    if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
       final messaging = FirebaseMessaging.instance;
       final bool recommendationsSubscribed = await subscribeToTopicSafely(
         messaging,
         'recommendations',
         sourceTag: 'home_tab.init.recommendations',
       );
-      final bool postsSubscribed = await subscribeToTopicSafely(
-        messaging,
-        'posts',
-        sourceTag: 'home_tab.init.posts',
-      );
+      final bool postsSubscribed = await subscribeToTopicSafely(messaging, 'posts', sourceTag: 'home_tab.init.posts');
       if (recommendationsSubscribed && postsSubscribed) {
         _settingsLocal.set('subscribedToRecommendations', true);
       }
@@ -67,8 +58,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   void _showChangelogCheck() {
-    final String? lastSeen =
-        _settingsLocal.get<Object?>('lastSeenVersion') as String?;
+    final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
     if (lastSeen != currentAppVersion) {
       showChangelog(context, () {
         if (mounted) {
@@ -102,9 +92,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
     analytics.track(
       QuickActionInvokedEvent(
         action: action,
-        launchState: _hasHandledQuickActionInvocation
-            ? LaunchStateValue.foreground
-            : LaunchStateValue.initialLaunch,
+        launchState: _hasHandledQuickActionInvocation ? LaunchStateValue.foreground : LaunchStateValue.initialLaunch,
       ),
     );
     _hasHandledQuickActionInvocation = true;
@@ -127,9 +115,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       if (_favoritesLocal.isSeeded(userId)) {
         return;
       }
-      final value = await context
-          .favouriteWallsAdapter(listen: false)
-          .getDataBase();
+      final value = await context.favouriteWallsAdapter(listen: false).getDataBase();
       if (value != null && value.isNotEmpty) {
         for (final element in value) {
           await _favoritesLocal.setWallFavourite(userId, element.id, true);
@@ -156,21 +142,9 @@ class _HomeTabPageState extends State<HomeTabPage> {
     });
 
     quickActions.setShortcutItems(<ShortcutItem>[
-      const ShortcutItem(
-        type: 'Personalized_Feed',
-        localizedTitle: 'For You',
-        icon: '@drawable/ic_feed',
-      ),
-      const ShortcutItem(
-        type: 'Collections',
-        localizedTitle: 'Collections',
-        icon: '@drawable/ic_collections',
-      ),
-      const ShortcutItem(
-        type: 'Downloads',
-        localizedTitle: 'Downloads',
-        icon: '@drawable/ic_downloads',
-      ),
+      const ShortcutItem(type: 'Personalized_Feed', localizedTitle: 'For You', icon: '@drawable/ic_feed'),
+      const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
+      const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
     saveFavToLocal();
     checkConnection();

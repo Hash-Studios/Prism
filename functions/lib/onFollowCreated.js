@@ -64,18 +64,40 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
     if (!before || !after) {
         return;
     }
-    const beforeFollowers = new Set(((_e = before.followers) !== null && _e !== void 0 ? _e : []).map((e) => e.toString().trim().toLowerCase()));
-    const afterFollowers = new Set(((_f = after.followers) !== null && _f !== void 0 ? _f : []).map((e) => e.toString().trim().toLowerCase()));
-    // Find emails that were added in this update.
-    const newFollowerEmails = [...afterFollowers].filter((e) => !beforeFollowers.has(e));
-    if (newFollowerEmails.length === 0) {
+    const beforeList = ((_e = before.followers) !== null && _e !== void 0 ? _e : [])
+        .map((e) => e.toString().trim())
+        .filter((e) => e.length > 0);
+    const afterList = ((_f = after.followers) !== null && _f !== void 0 ? _f : [])
+        .map((e) => e.toString().trim())
+        .filter((e) => e.length > 0);
+    const beforeNorm = new Set(beforeList.map((e) => e.toLowerCase()));
+    // Preserve original casing for Firestore email lookups; diff using normalized form.
+    const newFollowerEmailsRaw = afterList.filter((e) => !beforeNorm.has(e.toLowerCase()));
+    if (newFollowerEmailsRaw.length === 0) {
         return;
     }
     const followedUserEmail = ((_g = after.email) !== null && _g !== void 0 ? _g : "").toString().trim();
     if (!followedUserEmail) {
         return;
     }
-    for (const followerEmail of newFollowerEmails) {
+    const followedUid = event.params.userId;
+    for (const followerEmail of newFollowerEmailsRaw) {
+        const followerUid = await _resolveUserIdByEmail(followerEmail);
+        if (followerUid) {
+            const blockSnap = await db
+                .collection("usersv2")
+                .doc(followedUid)
+                .collection("blockedUsers")
+                .doc(followerUid)
+                .get();
+            if (blockSnap.exists) {
+                v2_1.logger.info("onFollowCreated: skipped — follower is blocked by followed user.", {
+                    followedUid,
+                    followerUid,
+                });
+                continue;
+            }
+        }
         // Look up the follower's display name for a personalised message.
         const followerUsername = await _resolveUsername(followerEmail);
         const followedTopic = (0, notificationHelper_1.emailToTopic)(followedUserEmail);
@@ -84,7 +106,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
             body: `${followerUsername} is now following you.`,
             data: {
                 route: "follower",
-                follower_email: followerEmail,
+                follower_email: followerEmail.trim(),
                 pageName: "",
                 url: _profileUrl(followerEmail),
             },
@@ -95,10 +117,34 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
         });
         v2_1.logger.info("onFollowCreated: follow notification sent.", {
             followedUserEmail,
-            followerEmail,
+            followerEmail: followerEmail.toLowerCase(),
         });
     }
 });
+/** Returns usersv2 document id (Firebase uid) for an email, or null. */
+async function _resolveUserIdByEmail(email) {
+    const trimmed = email.trim();
+    if (!trimmed) {
+        return null;
+    }
+    try {
+        const snap = await db.collection("usersv2").where("email", "==", trimmed).limit(1).get();
+        if (!snap.empty) {
+            return snap.docs[0].id;
+        }
+        const lower = trimmed.toLowerCase();
+        if (lower !== trimmed) {
+            const snapLo = await db.collection("usersv2").where("email", "==", lower).limit(1).get();
+            if (!snapLo.empty) {
+                return snapLo.docs[0].id;
+            }
+        }
+    }
+    catch (err) {
+        v2_1.logger.warn("onFollowCreated: could not resolve follower uid.", { email: trimmed, err });
+    }
+    return null;
+}
 /** Resolves a display username for a given email address.
  *  Falls back to the email prefix if the user doc cannot be found. */
 async function _resolveUsername(email) {

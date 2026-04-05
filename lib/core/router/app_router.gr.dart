@@ -75,6 +75,22 @@ class AiTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [BlockedAccountsScreen]
+class BlockedAccountsRoute extends PageRouteInfo<void> {
+  const BlockedAccountsRoute({List<PageRouteInfo>? children})
+    : super(BlockedAccountsRoute.name, initialChildren: children);
+
+  static const String name = 'BlockedAccountsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const BlockedAccountsScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [CoinTransactionsScreen]
 class CoinTransactionsRoute extends PageRouteInfo<void> {
   const CoinTransactionsRoute({List<PageRouteInfo>? children})

@@ -151,6 +151,12 @@ service cloud.firestore {
       allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly() || canFollowUser();
       allow delete: if isConfiguredAdmin();
 
+      // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
+      match /blockedUsers/{blockedId} {
+        allow read: if isOwner(userId);
+        allow create, update, delete: if false;
+      }
+
       // Per-user favourites subcollections.
       match /images/{docId} {
         allow read, create, update, delete: if isConfiguredAdmin() || isOwner(userId);
@@ -227,6 +233,15 @@ service cloud.firestore {
     }
 
     match /contentReportRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    // User block rate limits (Cloud Functions only).
+    match /userBlockRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /userBlockRateByTarget/{docId} {
       allow read, write: if false;
     }
 

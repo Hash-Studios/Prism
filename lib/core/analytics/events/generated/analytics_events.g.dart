@@ -49,6 +49,21 @@ class ContentReportSubmitEvent extends AnalyticsEvent {
   }
 }
 
+class UserBlockActionEvent extends AnalyticsEvent {
+  const UserBlockActionEvent({required this.action, this.result});
+
+  final String action;
+  final String? result;
+
+  @override
+  String get eventName => 'user_block_action';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action, if (result != null) 'result': result!};
+  }
+}
+
 class SetupFavStatusChangedEvent extends AnalyticsEvent {
   const SetupFavStatusChangedEvent({required this.setupId});
 

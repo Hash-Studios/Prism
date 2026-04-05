@@ -28,8 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    _notificationsBloc = getIt<InAppNotificationsBloc>()
-      ..add(const InAppNotificationsEvent.started());
+    _notificationsBloc = getIt<InAppNotificationsBloc>()..add(const InAppNotificationsEvent.started());
   }
 
   @override
@@ -58,12 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
       if (!mounted) {
         return;
       }
-      unawaited(
-        ProfileCompletenessNudgeService.instance.maybeShowNudge(
-          context,
-          sourceContext: 'dashboard_entry',
-        ),
-      );
+      unawaited(ProfileCompletenessNudgeService.instance.maybeShowNudge(context, sourceContext: 'dashboard_entry'));
     });
   }
 
@@ -71,21 +65,14 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final overlayStyle = edgeToEdgeOverlayStyle(
-      statusBarIconBrightness: brightness == Brightness.dark
-          ? Brightness.light
-          : Brightness.dark,
+      statusBarIconBrightness: brightness == Brightness.dark ? Brightness.light : Brightness.dark,
     );
     return BlocProvider<InAppNotificationsBloc>.value(
       value: _notificationsBloc,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: AutoTabsRouter(
-          routes: const [
-            HomeTabRoute(),
-            SearchTabRoute(),
-            StreakTabRoute(),
-            CollectionTabRoute(),
-          ],
+          routes: const [HomeTabRoute(), SearchTabRoute(), StreakTabRoute(), CollectionTabRoute()],
           builder: (context, child) {
             final tabsRouter = AutoTabsRouter.of(context);
             return PopScope(

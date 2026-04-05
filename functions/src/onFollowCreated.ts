@@ -34,16 +34,18 @@ export const onFollowCreated = onDocumentUpdated(
       return;
     }
 
-    const beforeFollowers = new Set<string>(
-      (before.followers as string[] | undefined ?? []).map((e) => e.toString().trim().toLowerCase()),
-    );
-    const afterFollowers = new Set<string>(
-      (after.followers as string[] | undefined ?? []).map((e) => e.toString().trim().toLowerCase()),
-    );
+    const beforeList = (before.followers as string[] | undefined ?? [])
+      .map((e) => e.toString().trim())
+      .filter((e) => e.length > 0);
+    const afterList = (after.followers as string[] | undefined ?? [])
+      .map((e) => e.toString().trim())
+      .filter((e) => e.length > 0);
 
-    // Find emails that were added in this update.
-    const newFollowerEmails = [...afterFollowers].filter((e) => !beforeFollowers.has(e));
-    if (newFollowerEmails.length === 0) {
+    const beforeNorm = new Set<string>(beforeList.map((e) => e.toLowerCase()));
+
+    // Preserve original casing for Firestore email lookups; diff using normalized form.
+    const newFollowerEmailsRaw = afterList.filter((e) => !beforeNorm.has(e.toLowerCase()));
+    if (newFollowerEmailsRaw.length === 0) {
       return;
     }
 
@@ -52,7 +54,26 @@ export const onFollowCreated = onDocumentUpdated(
       return;
     }
 
-    for (const followerEmail of newFollowerEmails) {
+    const followedUid = event.params.userId;
+
+    for (const followerEmail of newFollowerEmailsRaw) {
+      const followerUid = await _resolveUserIdByEmail(followerEmail);
+      if (followerUid) {
+        const blockSnap = await db
+          .collection("usersv2")
+          .doc(followedUid)
+          .collection("blockedUsers")
+          .doc(followerUid)
+          .get();
+        if (blockSnap.exists) {
+          logger.info("onFollowCreated: skipped — follower is blocked by followed user.", {
+            followedUid,
+            followerUid,
+          });
+          continue;
+        }
+      }
+
       // Look up the follower's display name for a personalised message.
       const followerUsername = await _resolveUsername(followerEmail);
 
@@ -63,7 +84,7 @@ export const onFollowCreated = onDocumentUpdated(
         body: `${followerUsername} is now following you.`,
         data: {
           route: "follower",
-          follower_email: followerEmail,
+          follower_email: followerEmail.trim(),
           pageName: "",
           url: _profileUrl(followerEmail),
         },
@@ -75,11 +96,35 @@ export const onFollowCreated = onDocumentUpdated(
 
       logger.info("onFollowCreated: follow notification sent.", {
         followedUserEmail,
-        followerEmail,
+        followerEmail: followerEmail.toLowerCase(),
       });
     }
   },
 );
+
+/** Returns usersv2 document id (Firebase uid) for an email, or null. */
+async function _resolveUserIdByEmail(email: string): Promise<string | null> {
+  const trimmed = email.trim();
+  if (!trimmed) {
+    return null;
+  }
+  try {
+    const snap = await db.collection("usersv2").where("email", "==", trimmed).limit(1).get();
+    if (!snap.empty) {
+      return snap.docs[0].id;
+    }
+    const lower = trimmed.toLowerCase();
+    if (lower !== trimmed) {
+      const snapLo = await db.collection("usersv2").where("email", "==", lower).limit(1).get();
+      if (!snapLo.empty) {
+        return snapLo.docs[0].id;
+      }
+    }
+  } catch (err) {
+    logger.warn("onFollowCreated: could not resolve follower uid.", {email: trimmed, err});
+  }
+  return null;
+}
 
 /** Resolves a display username for a given email address.
  *  Falls back to the email prefix if the user doc cannot be found. */

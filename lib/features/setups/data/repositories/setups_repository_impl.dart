@@ -4,19 +4,22 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/domain/entities/setups_page.dart';
 import 'package:Prism/features/setups/domain/repositories/setups_repository.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: SetupsRepository)
 class SetupsRepositoryImpl implements SetupsRepository {
-  SetupsRepositoryImpl(this._firestoreClient, this._feedCacheLocal);
+  SetupsRepositoryImpl(this._firestoreClient, this._feedCacheLocal, this._userBlockRepository);
 
   final FirestoreClient _firestoreClient;
   final FeedCacheLocalDataSource _feedCacheLocal;
+  final UserBlockRepository _userBlockRepository;
   String? _cursorDocId;
   static const int _setupsReadDedupeMs = 30000;
   static const int _setupsCacheTtlHours = 3;
@@ -43,7 +46,11 @@ class SetupsRepositoryImpl implements SetupsRepository {
         _cursorDocId = rows.last.docId;
       }
 
-      final items = rows.map((row) => _mapSetup(row.doc, row.docId)).toList(growable: false);
+      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final items = rows
+          .map((row) => _mapSetup(row.doc, row.docId))
+          .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
+          .toList(growable: false);
       final page = SetupsPage(items: items, hasMore: rows.length == 10, nextCursor: _cursorDocId);
       await _writeCache(rows: rows, page: page);
       return Result.success(page);
@@ -101,7 +108,11 @@ class SetupsRepositoryImpl implements SetupsRepository {
       return null;
     }
 
-    final items = mappedRows.map((row) => _mapSetup(row.doc, row.docId)).toList(growable: false);
+    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    final items = mappedRows
+        .map((row) => _mapSetup(row.doc, row.docId))
+        .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
+        .toList(growable: false);
     _cursorDocId = payload['nextCursor']?.toString();
     return SetupsPage(items: items, hasMore: payload['hasMore'] == true, nextCursor: _cursorDocId);
   }

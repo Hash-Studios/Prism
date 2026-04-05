@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -21,6 +22,7 @@ import 'package:Prism/features/personalized_feed/domain/repositories/personalize
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -34,6 +36,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     this._settingsLocal,
     this._wallhavenRepository,
     this._pexelsRepository,
+    this._userBlockRepository,
   );
 
   final FirestoreClient _firestoreClient;
@@ -41,6 +44,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final SettingsLocalDataSource _settingsLocal;
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
+  final UserBlockRepository _userBlockRepository;
   final PersonalizedRankingService _rankingService = const PersonalizedRankingService();
 
   static const int _pageSize = 24;
@@ -133,10 +137,11 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         discoveryFuture,
       ]);
 
-      final creatorItems = results[0];
+      final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+      final List<FeedItemEntity> creatorItems = _filterBlockedPrism(results[0], blocked);
       final wallhavenItems = results[1];
       final pexelsItems = results[2];
-      final discoveryItems = results[3];
+      final List<FeedItemEntity> discoveryItems = _filterBlockedPrism(results[3], blocked);
 
       final ranking = _rankingService.rankAndMix(
         creatorItems: creatorItems,
@@ -156,8 +161,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
       final hasMore = feedItems.length >= _pageSize;
       final nextSeen = _trimSeen([...request.seenKeys, ...ranking.usedKeys]);
-      final merged = _mergeCachedAndNew(request.refresh ? const <FeedItemEntity>[] : request.existingItems, feedItems);
-      await _writeCacheState(scope: cacheScope, seenKeys: nextSeen, cachedItems: merged);
+      final List<FeedItemEntity> merged = _mergeCachedAndNew(
+        request.refresh ? const <FeedItemEntity>[] : request.existingItems,
+        feedItems,
+      );
+      final List<FeedItemEntity> mergedFiltered = _filterBlockedPrism(merged, blocked);
+      await _writeCacheState(scope: cacheScope, seenKeys: nextSeen, cachedItems: mergedFiltered);
 
       logger.i(
         '[PersonalizedFeed] fetch success',
@@ -485,13 +494,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return _CacheState(seenKeys: seen, cachedItems: const <FeedItemEntity>[]);
     }
 
-    final items = rawItems
+    final List<FeedItemEntity> items = rawItems
         .whereType<Map>()
         .map((entry) => _decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
         .toList(growable: false);
 
-    return _CacheState(seenKeys: seen, cachedItems: items);
+    final Set<String> blocked = _userBlockRepository.cachedBlockedCreatorEmails;
+    return _CacheState(seenKeys: seen, cachedItems: _filterBlockedPrism(items, blocked));
   }
 
   Future<void> _writeCacheState({
@@ -517,6 +527,20 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       out.add(list.sublist(i, end));
     }
     return out;
+  }
+
+  List<FeedItemEntity> _filterBlockedPrism(List<FeedItemEntity> items, Set<String> blocked) {
+    if (blocked.isEmpty) {
+      return items;
+    }
+    return items
+        .where(
+          (FeedItemEntity e) => e.maybeWhen(
+            prism: (_, w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked),
+            orElse: () => true,
+          ),
+        )
+        .toList(growable: false);
   }
 }
 

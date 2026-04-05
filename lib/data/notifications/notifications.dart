@@ -7,8 +7,10 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
 const int _defaultNotifLimit = 50;
@@ -63,6 +65,26 @@ Future<List<Map<String, dynamic>>> _fetchNotificationsSince({
     ),
     (data, _) => data,
   );
+}
+
+bool _isNotificationFromBlockedCreator(InAppNotificationEntity e, Set<String> blockedLowercaseEmails) {
+  if (blockedLowercaseEmails.isEmpty) {
+    return false;
+  }
+  final String? fe = e.followerEmail;
+  return BlockedCreatorsFilter.hidesCreatorEmail(fe, blockedLowercaseEmails);
+}
+
+List<InAppNotificationEntity> _filterBlockedActors(
+  List<InAppNotificationEntity> entities,
+  Set<String> blockedLowercaseEmails,
+) {
+  if (blockedLowercaseEmails.isEmpty) {
+    return entities;
+  }
+  return entities
+      .where((InAppNotificationEntity e) => !_isNotificationFromBlockedCreator(e, blockedLowercaseEmails))
+      .toList(growable: false);
 }
 
 InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
@@ -126,7 +148,8 @@ Future<void> _syncInAppNotificationsFromRemoteBody() async {
         sinceUtc: nowUtc.subtract(const Duration(days: 30)),
         sourceTag: 'notifications.last_month',
       );
-      final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+      final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
+      final entities = _filterBlockedActors(snap.map(_asMap).map(_toEntity).toList(growable: false), blocked);
       await notificationsLocal.writeAll(entities);
       await notificationsLocal.setLastFetchAtUtc(nowUtc);
       return;
@@ -137,7 +160,8 @@ Future<void> _syncInAppNotificationsFromRemoteBody() async {
       sourceTag: 'notifications.latest',
       cachePolicy: FirestoreCachePolicy.memoryFirst,
     );
-    final entities = snap.map(_asMap).map(_toEntity).toList(growable: false);
+    final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
+    final entities = _filterBlockedActors(snap.map(_asMap).map(_toEntity).toList(growable: false), blocked);
     if (entities.isNotEmpty) {
       await notificationsLocal.upsertAll(entities);
     }
