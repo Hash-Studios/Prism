@@ -5,8 +5,8 @@ import 'package:Prism/auth/userModel.dart';
 const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 
-const String currentAppVersion = '3.0.7';
-const String currentAppVersionCode = '330';
+const String currentAppVersion = '3.0.8';
+const String currentAppVersionCode = '331';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 const String defaultBannerText = 'Join our Telegram';
