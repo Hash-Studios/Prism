@@ -295,7 +295,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final success = await _firstWallpaperService.performAction(wallpaperVm.fullUrl);
     final elapsedMs = DateTime.now().millisecondsSinceEpoch - startMs;
 
-    add(OnboardingV2Event.firstWallpaperActionCompleted(success: success, elapsedMs: elapsedMs));
+    if (!isClosed) {
+      add(OnboardingV2Event.firstWallpaperActionCompleted(success: success, elapsedMs: elapsedMs));
+    }
   }
 
   void _onFirstWallpaperActionCompleted(_FirstWallpaperActionCompleted event, Emitter<OnboardingV2State> emit) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
@@ -6,6 +7,10 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+const _transientFirestoreCodes = {'unavailable', 'deadline-exceeded', 'internal', 'resource-exhausted'};
+
+bool _isTransientFirestoreError(FirestoreError e) => e.code != null && _transientFirestoreCodes.contains(e.code);
 
 class _RawQueryDoc {
   const _RawQueryDoc(this.id, this.data);
@@ -539,48 +544,61 @@ class FirestoreTrackedClient implements FirestoreClient {
     required String sourceTag,
     required String collection,
     String? docId,
+    int maxRetries = 2,
   }) async {
     final Stopwatch sw = Stopwatch()..start();
-    try {
-      final T result = await _firestore.runTransaction<T>((Transaction transaction) {
-        final _FirestoreTransactionBridge bridge = _FirestoreTransactionBridge(_firestore, transaction);
-        return action(bridge);
-      });
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.transaction,
-          collection: collection,
-          filtersHash: docId == null ? collection : '$collection:$docId',
-          durationMs: sw.elapsedMilliseconds,
-          docId: docId,
-          success: true,
-        ),
-      );
-      return result;
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      if (mapped.code == 'permission-denied') {
-        logger.w(
-          '[Firestore] permission-denied on transaction — collection: $collection, sourceTag: $sourceTag',
-          error: mapped,
+    int attempt = 0;
+    while (true) {
+      try {
+        final T result = await _firestore.runTransaction<T>((Transaction transaction) {
+          final _FirestoreTransactionBridge bridge = _FirestoreTransactionBridge(_firestore, transaction);
+          return action(bridge);
+        });
+        await _emitTelemetry(
+          FirestoreTelemetryEvent(
+            timestamp: DateTime.now(),
+            sourceTag: sourceTag,
+            operation: FirestoreOperation.transaction,
+            collection: collection,
+            filtersHash: docId == null ? collection : '$collection:$docId',
+            durationMs: sw.elapsedMilliseconds,
+            docId: docId,
+            success: true,
+          ),
         );
+        return result;
+      } catch (error) {
+        final FirestoreError mapped = mapFirestoreError(error);
+        if (_isTransientFirestoreError(mapped) && attempt < maxRetries) {
+          attempt++;
+          final int delayMs = (500 * math.pow(2, attempt - 1)).round();
+          logger.w(
+            '[Firestore] transient error (${mapped.code}) on transaction — retrying ($attempt/$maxRetries) after ${delayMs}ms, sourceTag: $sourceTag',
+          );
+          await Future<void>.delayed(Duration(milliseconds: delayMs));
+          continue;
+        }
+        if (mapped.code == 'permission-denied') {
+          logger.w(
+            '[Firestore] permission-denied on transaction — collection: $collection, sourceTag: $sourceTag',
+            error: mapped,
+          );
+        }
+        await _emitTelemetry(
+          FirestoreTelemetryEvent(
+            timestamp: DateTime.now(),
+            sourceTag: sourceTag,
+            operation: FirestoreOperation.transaction,
+            collection: collection,
+            filtersHash: docId == null ? collection : '$collection:$docId',
+            durationMs: sw.elapsedMilliseconds,
+            docId: docId,
+            success: false,
+            errorCode: mapped.code,
+          ),
+        );
+        throw mapped;
       }
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.transaction,
-          collection: collection,
-          filtersHash: docId == null ? collection : '$collection:$docId',
-          durationMs: sw.elapsedMilliseconds,
-          docId: docId,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
     }
   }
 
