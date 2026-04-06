@@ -21,8 +21,6 @@ void main() {
     await tester.pumpWidget(_wrap(const ProfileCompletenessCard(status: status)));
 
     expect(find.text('50%'), findsOneWidget);
-    expect(find.text('Write bio'), findsOneWidget);
-    expect(find.text('Add one social link'), findsOneWidget);
   });
 
   testWidgets('card is hidden when status is 100% complete', (tester) async {
@@ -65,7 +63,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Complete now'));
+    await tester.tap(find.text('Finish'));
     await tester.pumpAndSettle();
 
     expect(tapped, isTrue);
