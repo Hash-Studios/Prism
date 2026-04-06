@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
@@ -57,9 +58,11 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
 
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
+    // Lerp from brand pink (start) toward primary as the profile fills up —
+    // keeps the ring on-brand at low completion and themed at 100%.
     final Color progressColor =
-        Color.lerp(colorScheme.error, colorScheme.primary, widget.status.progress.clamp(0.0, 1.0)) ??
-        colorScheme.primary;
+        Color.lerp(PrismColors.brandPink, colorScheme.primary, widget.status.progress.clamp(0.0, 1.0)) ??
+        PrismColors.brandPink;
     final int remainingSteps = (widget.status.totalSteps - widget.status.completedSteps).clamp(
       0,
       widget.status.totalSteps,
@@ -98,7 +101,12 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
                             remainingSteps == 1 ? '1 step · ' : '$remainingSteps steps · ',
                             style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                           ),
-                          Icon(Icons.monetization_on_rounded, size: 12, color: Colors.amber, semanticLabel: 'coin'),
+                          const Icon(
+                            Icons.monetization_on_rounded,
+                            size: 12,
+                            color: Colors.amber,
+                            semanticLabel: 'coin',
+                          ),
                           Text(
                             ' 25 coins',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -115,6 +123,8 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
                 FilledButton(
                   onPressed: widget.onCompleteNow == null ? null : _handleComplete,
                   style: FilledButton.styleFrom(
+                    backgroundColor: PrismColors.brandPink,
+                    foregroundColor: PrismColors.onPrimary,
                     minimumSize: const Size(0, 36),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
