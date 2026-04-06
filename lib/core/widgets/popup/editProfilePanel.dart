@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -74,13 +75,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   late String coverUrl;
   final picker2 = ImagePicker();
   List<_ProfileLinkOption> linkIcons = [
-    // {
-    //   'name': 'Edit links...',
-    //   'link': 'Select your link first',
-    //   'icon': JamIcons.link,
-    //   'value': '',
-    //   'validator': '',
-    // },
     _ProfileLinkOption(name: 'github', link: 'https://github.com/username', icon: JamIcons.github, validator: 'github'),
     _ProfileLinkOption(
       name: 'twitter',
@@ -186,6 +180,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     _ProfileLinkOption(name: 'custom link', link: '', icon: JamIcons.link, validator: ''),
   ];
   _ProfileLinkOption? _link;
+
   @override
   void initState() {
     linkIcons.sort((a, b) => a.name.compareTo(b.name));
@@ -293,56 +288,60 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> showRemoveAlertDialog(BuildContext context, Future<void> Function() remove, String removeWhat) async {
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     await showModal(
       context: context,
       builder: (BuildContext dialogContext) {
+        final cs = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismProfile.dialogBorderRadius)),
           title: Text(
-            'Delete the $removeWhat?',
+            'Remove $removeWhat?',
             style: TextStyle(
+              fontFamily: PrismFonts.proximaNova,
               fontWeight: FontWeight.w700,
-              fontSize: 16,
-              color: Theme.of(dialogContext).colorScheme.secondary,
+              fontSize: PrismProfile.dialogTitleFontSize,
+              color: cs.secondary,
             ),
           ),
           content: Text(
-            "This is permanent, and this action can't be undone!",
+            "This can't be undone.",
             style: TextStyle(
-              fontFamily: "Proxima Nova",
+              fontFamily: PrismFonts.proximaNova,
               fontWeight: FontWeight.normal,
-              fontSize: 14,
-              color: Theme.of(dialogContext).colorScheme.secondary,
+              fontSize: PrismProfile.dialogBodyFontSize,
+              color: cs.secondary.withValues(alpha: PrismProfile.dialogBodyOpacity),
             ),
           ),
           actions: [
-            MaterialButton(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-              color: Theme.of(dialogContext).hintColor,
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(fontFamily: PrismFonts.proximaNova, color: cs.secondary),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: PrismColors.brandPink,
+                foregroundColor: PrismColors.onPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PrismProfile.dialogButtonRadius)),
+              ),
               onPressed: () async {
                 Navigator.of(dialogContext, rootNavigator: true).pop();
-                if (!mounted) {
-                  return;
-                }
+                if (!mounted) return;
                 await remove();
               },
-              child: const Text('DELETE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-            ),
-            MaterialButton(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-              color: Theme.of(dialogContext).colorScheme.error,
-              onPressed: () {
-                Navigator.of(dialogContext, rootNavigator: true).pop();
-              },
-              child: const Text('CANCEL', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+              child: const Text(
+                'Remove',
+                style: TextStyle(fontFamily: PrismFonts.proximaNova, fontWeight: FontWeight.w600),
+              ),
             ),
           ],
           backgroundColor: Theme.of(dialogContext).primaryColor,
-          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         );
       },
     );
@@ -367,694 +366,581 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return users.isEmpty;
   }
 
+  bool get _hasChanges =>
+      (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) || (usernameEdit && enabled);
+
+  Future<void> _saveProfile() async {
+    setState(() => isLoading = true);
+
+    if (usernameEdit && usernameController.text.isNotEmpty && usernameController.text.length >= 8) {
+      app_state.prismUser.username = usernameController.text;
+      app_state.persistPrismUser();
+      await _updateCurrentUser(<String, dynamic>{"username": usernameController.text}, 'profile.edit.username');
+    }
+    if (_pfp != null && pfpEdit) {
+      await processImage();
+    }
+    if (_cover != null && coverEdit) {
+      await processImageCover();
+    }
+    if (bioEdit && bioController.text.isNotEmpty) {
+      app_state.prismUser.bio = bioController.text;
+      app_state.persistPrismUser();
+      await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
+    }
+    if (nameEdit && nameController.text.isNotEmpty) {
+      app_state.prismUser.name = nameController.text;
+      app_state.persistPrismUser();
+      await _updateCurrentUser(<String, dynamic>{"name": nameController.text}, 'profile.edit.name');
+    }
+    if (linkEdit) {
+      final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
+      for (final icon in linkIcons) {
+        if (icon.value.isNotEmpty) {
+          links[icon.name] = icon.value;
+        }
+      }
+      app_state.prismUser.links = links;
+      app_state.persistPrismUser();
+      await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
+    }
+
+    await CoinsService.instance.maybeAwardProfileCompletion();
+    setState(() => isLoading = false);
+    if (mounted) {
+      Navigator.pop(context);
+      toasts.codeSend("Profile updated!");
+    }
+  }
+
+  InputDecoration _fieldDecoration({required String label, Widget? prefixIcon, Widget? suffixIcon, String? hintText}) {
+    final secondary = Theme.of(context).colorScheme.secondary;
+    final borderColor = secondary.withValues(alpha: PrismFormField.restingBorderOpacity);
+    final borderSide = BorderSide(color: borderColor, width: PrismFormField.borderWidth);
+    final radius = BorderRadius.circular(PrismFormField.borderRadius);
+    return InputDecoration(
+      contentPadding: PrismFormField.contentPadding,
+      border: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
+      disabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
+      enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: borderSide),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: const BorderSide(color: PrismColors.brandPink, width: PrismFormField.borderWidth),
+      ),
+      labelText: label,
+      labelStyle: TextStyle(
+        fontFamily: PrismFonts.proximaNova,
+        fontSize: PrismFormField.labelFontSize,
+        color: secondary.withValues(alpha: PrismFormField.labelOpacity),
+      ),
+      hintText: hintText,
+      hintStyle: TextStyle(
+        fontFamily: PrismFonts.proximaNova,
+        fontSize: PrismFormField.hintFontSize,
+        color: secondary.withValues(alpha: PrismFormField.hintOpacity),
+      ),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width * 0.85;
+    final theme = Theme.of(context);
+    final secondary = theme.colorScheme.secondary;
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Percentage-based padding keeps avatar positioning consistent across screen widths.
+    final hPad = screenWidth * 0.06;
+
     return Scaffold(
+      backgroundColor: theme.primaryColor,
       appBar: AppBar(
+        backgroundColor: theme.primaryColor,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(JamIcons.close),
-          onPressed: () {
-            Navigator.pop(context);
+          icon: Icon(JamIcons.close, color: secondary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text('Edit Profile', style: PrismTextStyles.panelTitle(context)),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _buildCoverArea(theme, screenWidth),
+                Positioned(
+                  left: hPad,
+                  bottom: -PrismProfile.avatarOverlap,
+                  child: _buildAvatar(theme, PrismProfile.avatarSize),
+                ),
+              ],
+            ),
+            const SizedBox(height: PrismProfile.avatarOverlap + 16),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: hPad),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildNameField(secondary),
+                  const SizedBox(height: PrismProfile.fieldGap),
+                  _buildUsernameField(secondary),
+                  const SizedBox(height: PrismProfile.fieldGap),
+                  _buildBioField(secondary),
+                  const SizedBox(height: PrismProfile.fieldGap),
+                  _buildLinkRow(theme, secondary),
+                  const SizedBox(height: PrismProfile.preSaveGap),
+                  _buildSaveButton(secondary),
+                  const SizedBox(height: PrismProfile.postSaveGap),
+                  Center(child: _buildUsernameHint(screenWidth)),
+                  const SizedBox(height: PrismProfile.bottomPadding),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverArea(ThemeData theme, double screenWidth) {
+    final coverHeight = screenWidth * 508 / 1234;
+    return SizedBox(
+      height: coverHeight,
+      width: screenWidth,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          GestureDetector(
+            onTap: getCover,
+            child: (_cover == null)
+                ? (app_state.prismUser.coverPhoto != null &&
+                          Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
+                      ? CachedNetworkImage(
+                          imageUrl: app_state.prismUser.coverPhoto!,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => const SizedBox.shrink(),
+                        )
+                      : SvgPicture.string(
+                          defaultHeader
+                              .replaceAll("#181818", "#${theme.primaryColor.toARGB32().toRadixString(16).substring(2)}")
+                              .replaceAll(
+                                "#E77597",
+                                "#${theme.colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
+                              ),
+                          fit: BoxFit.cover,
+                        )
+                : Image.file(_cover!, fit: BoxFit.cover),
+          ),
+          // "Edit cover" scrim hint — always legible over any cover image.
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Container(
+                height: PrismProfile.coverScrimHeight,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.5)],
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      JamIcons.camera,
+                      color: PrismColors.onPrimary.withValues(alpha: 0.85),
+                      size: PrismProfile.coverEditIconSize,
+                    ),
+                    const SizedBox(width: PrismProfile.coverEditIconGap),
+                    Text(
+                      'Edit cover',
+                      style: PrismTextStyles.photoOverlayLabel.copyWith(
+                        color: PrismColors.onPrimary.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Remove cover photo button.
+          Positioned(
+            top: PrismProfile.removeChipPositionOffset,
+            right: PrismProfile.removeChipPositionOffset,
+            child: _iconChip(
+              icon: JamIcons.close,
+              onTap: () => showRemoveAlertDialog(context, () async {
+                setState(() => _cover = null);
+                app_state.prismUser.coverPhoto = null;
+                app_state.persistPrismUser();
+                await _updateCurrentUser(<String, dynamic>{"coverPhoto": null}, 'profile.edit.removeCoverPhoto');
+              }, "cover photo"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(ThemeData theme, double size) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        GestureDetector(
+          onTap: getPFP,
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: theme.primaryColor, width: PrismProfile.avatarBorderWidth),
+            ),
+            child: ClipOval(
+              child: (_pfp == null)
+                  ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
+                        ? CachedNetworkImage(
+                            imageUrl: app_state.prismUser.profilePhoto,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => ColoredBox(
+                              color: PrismColors.brandPink.withValues(alpha: 0.12),
+                              child: Icon(
+                                Icons.person,
+                                size: size * 0.5,
+                                color: PrismColors.brandPink.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          )
+                        : ColoredBox(
+                            color: PrismColors.brandPink.withValues(alpha: 0.12),
+                            child: Icon(
+                              Icons.person,
+                              size: size * 0.5,
+                              color: PrismColors.brandPink.withValues(alpha: 0.5),
+                            ),
+                          )
+                  : Image.file(_pfp!, fit: BoxFit.cover),
+            ),
+          ),
+        ),
+        // Pink camera badge — brand-locked so it never goes cyan/blue.
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: GestureDetector(
+            onTap: getPFP,
+            child: Container(
+              width: PrismProfile.cameraChipSize,
+              height: PrismProfile.cameraChipSize,
+              decoration: BoxDecoration(
+                color: PrismColors.brandPink,
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.primaryColor, width: PrismProfile.cameraChipBorderWidth),
+              ),
+              child: const Icon(JamIcons.camera, size: PrismProfile.cameraChipIconSize, color: PrismColors.onPrimary),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNameField(Color secondary) {
+    return TextField(
+      cursorColor: PrismColors.brandPink,
+      style: PrismTextStyles.fieldInput(context),
+      controller: nameController,
+      decoration: _fieldDecoration(label: 'Name'),
+      onChanged: (value) {
+        setState(() {
+          nameEdit = value.isNotEmpty && value != app_state.prismUser.name;
+        });
+      },
+    );
+  }
+
+  Widget _buildUsernameField(Color secondary) {
+    return TextField(
+      cursorColor: PrismColors.brandPink,
+      style: PrismTextStyles.fieldInput(context),
+      controller: usernameController,
+      decoration: _fieldDecoration(
+        label: 'Username',
+        prefixIcon: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          child: Text(
+            '@',
+            style: TextStyle(
+              fontFamily: PrismFonts.proximaNova,
+              fontSize: PrismFormField.inputFontSize,
+              fontWeight: FontWeight.w600,
+              color: secondary.withValues(alpha: 0.45),
+            ),
+          ),
+        ),
+        suffixIcon: SizedBox(
+          width: PrismFormField.availabilityIndicatorSize,
+          height: PrismFormField.availabilityIndicatorSize,
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) => ScaleTransition(scale: anim, child: child),
+              child: isCheckingUsername
+                  ? const SizedBox(
+                      key: ValueKey('loading'),
+                      width: PrismFormField.availabilitySpinnerSize,
+                      height: PrismFormField.availabilitySpinnerSize,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: PrismColors.brandPink),
+                    )
+                  : available == null
+                  ? const SizedBox.shrink(key: ValueKey('none'))
+                  : Icon(
+                      available! ? JamIcons.check : JamIcons.close,
+                      key: ValueKey(available),
+                      // Soft semantic green for available; theme error for taken.
+                      color: available! ? Colors.green.shade400 : Colors.red.shade400,
+                      size: PrismFormField.availabilityIconSize,
+                    ),
+            ),
+          ),
+        ),
+      ),
+      onChanged: (value) async {
+        final valid = value.isNotEmpty && value.length >= 8 && !value.contains(RegExp(r"(?: |[^\w\s])+"));
+        setState(() => enabled = valid);
+
+        if (valid) {
+          setState(() => isCheckingUsername = true);
+          final isAvailable = await _isUsernameAvailable(value);
+          if (mounted) {
+            setState(() {
+              available = isAvailable;
+              isCheckingUsername = false;
+            });
+          }
+        } else {
+          setState(() => available = null);
+        }
+
+        setState(() {
+          usernameEdit = value.isNotEmpty && value != app_state.prismUser.username;
+          if (!usernameEdit) available = null;
+        });
+      },
+    );
+  }
+
+  Widget _buildBioField(Color secondary) {
+    return Stack(
+      children: [
+        TextField(
+          cursorColor: PrismColors.brandPink,
+          style: PrismTextStyles.fieldInput(context),
+          controller: bioController,
+          maxLength: 150,
+          maxLines: 2,
+          decoration: _fieldDecoration(label: 'Bio', hintText: 'Tell people about yourself…').copyWith(
+            counterStyle: PrismTextStyles.fieldCaption(context).copyWith(fontSize: 10),
+            contentPadding: PrismFormField.contentPadding.add(const EdgeInsets.only(right: 36)),
+          ),
+          onChanged: (value) {
+            setState(() {
+              bioEdit = value.isNotEmpty && value != app_state.prismUser.bio;
+            });
           },
         ),
-        title: Text("Edit Profile", style: Theme.of(context).textTheme.displaySmall),
-      ),
-      backgroundColor: Theme.of(context).primaryColor,
-      body: SingleChildScrollView(
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
-          ),
-          child: Column(
-            children: <Widget>[
-              Stack(
-                children: [
-                  Container(
-                    height: MediaQuery.of(context).size.width * 508 / 1234,
-                    width: MediaQuery.of(context).size.width,
-                    decoration: const BoxDecoration(
-                      border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                    ),
-                    child: (_cover == null)
-                        ? (app_state.prismUser.coverPhoto != null &&
-                                  Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
-                              ? CachedNetworkImage(imageUrl: app_state.prismUser.coverPhoto!, fit: BoxFit.cover)
-                              : SvgPicture.string(
-                                  defaultHeader
-                                      .replaceAll(
-                                        "#181818",
-                                        "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
-                                      )
-                                      .replaceAll(
-                                        "#E77597",
-                                        "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
-                                      ),
-                                  fit: BoxFit.cover,
-                                )
-                        : Image.file(_cover!, fit: BoxFit.cover),
-                  ),
-                  Material(
-                    child: InkWell(
-                      onTap: () async {
-                        await getCover();
-                      },
-                      child: Container(
-                        height: MediaQuery.of(context).size.width * 508 / 1234,
-                        width: MediaQuery.of(context).size.width,
-                        decoration: BoxDecoration(
-                          border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                          color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
-                        ),
-                        child: const Icon(JamIcons.pencil, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 0,
-                    child: IconButton(
-                      onPressed: () async {
-                        showRemoveAlertDialog(context, () async {
-                          _cover = null;
-                          app_state.prismUser.coverPhoto = null;
-                          app_state.persistPrismUser();
-                          await _updateCurrentUser(<String, dynamic>{
-                            "coverPhoto": null,
-                          }, 'profile.edit.removeCoverPhoto');
-                        }, "Cover photo");
-                      },
-                      icon: const Icon(JamIcons.close),
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              ClipOval(
-                child: Material(
-                  child: InkWell(
-                    onTap: () async {
-                      await getPFP();
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          height: 100,
-                          width: 100,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                          ),
-                          child: (_pfp == null)
-                              ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
-                                    ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
-                                    : const Icon(Icons.person, size: 60)
-                              : Image.file(_pfp!, fit: BoxFit.cover),
-                        ),
-                        Container(
-                          height: 100,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 2)),
-                            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
-                          ),
-                          child: const Icon(JamIcons.pencil, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Center(
-                      child: TextField(
-                        cursorColor: const Color(0xFFE57697),
-                        style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
-                        controller: nameController,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          labelText: "Name",
-                          labelStyle: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              "Name",
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                        onChanged: (value) async {
-                          if (value == app_state.prismUser.name || value == "") {
-                            setState(() {
-                              nameEdit = false;
-                            });
-                          } else {
-                            setState(() {
-                              nameEdit = true;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Center(
-                      child: TextField(
-                        cursorColor: const Color(0xFFE57697),
-                        style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
-                        controller: usernameController,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          labelText: "username",
-                          labelStyle: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              "@",
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          suffixIcon: isCheckingUsername
-                              ? Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(color: Theme.of(context).colorScheme.error),
-                                  ),
-                                )
-                              : Padding(
-                                  padding: EdgeInsets.all(available == null ? 16.0 : 8),
-                                  child: available == null
-                                      ? const Text(
-                                          "",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        )
-                                      : Icon(
-                                          available! ? JamIcons.check : JamIcons.close,
-                                          color: available! ? Colors.green : Colors.red,
-                                          size: 24,
-                                        ),
-                                ),
-                        ),
-                        onChanged: (value) async {
-                          if (value != "" && value.length >= 8 && !value.contains(RegExp(r"(?: |[^\w\s])+"))) {
-                            setState(() {
-                              enabled = true;
-                            });
-                          } else {
-                            setState(() {
-                              enabled = false;
-                            });
-                          }
-                          if (enabled) {
-                            setState(() {
-                              isCheckingUsername = true;
-                            });
-                            final isAvailable = await _isUsernameAvailable(value);
-                            setState(() {
-                              available = isAvailable;
-                            });
-                            setState(() {
-                              isCheckingUsername = false;
-                            });
-                          } else {
-                            setState(() {
-                              available = null;
-                            });
-                          }
-                          if (value == app_state.prismUser.username || value == "") {
-                            setState(() {
-                              usernameEdit = false;
-                              available = null;
-                            });
-                          } else {
-                            setState(() {
-                              usernameEdit = true;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Center(
-                      child: TextField(
-                        cursorColor: const Color(0xFFE57697),
-                        style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
-                        controller: bioController,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(color: Colors.white, width: 2),
-                          ),
-                          labelText: "Bio",
-                          labelStyle: Theme.of(
-                            context,
-                          ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text(
-                              "bio",
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () async {
-                              showRemoveAlertDialog(context, () async {
-                                bioController.text = "";
-                                app_state.prismUser.bio = "";
-                                app_state.persistPrismUser();
-                                await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
-                              }, "bio");
-                            },
-                            icon: const Icon(JamIcons.close, color: Colors.red, size: 24),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          if (value == app_state.prismUser.bio || value == "") {
-                            setState(() {
-                              bioEdit = false;
-                            });
-                          } else {
-                            setState(() {
-                              bioEdit = true;
-                            });
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 80,
-                    width: width - 24,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Positioned(
-                          left: 0,
-                          child: SizedBox(
-                            height: 80,
-                            width: 130,
-                            child: Center(
-                              child: DropdownButton<_ProfileLinkOption>(
-                                isExpanded: true,
-                                items: linkIcons.map((link) {
-                                  return DropdownMenuItem(
-                                    value: link,
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Icon(link.icon),
-                                        const SizedBox(width: 16),
-                                        Text(
-                                          link.name.inCaps,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.headlineSmall!.copyWith(color: Colors.white, fontSize: 14),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                                underline: Container(),
-                                onChanged: (value) {
-                                  setState(() => _link = value);
-                                  linkController.text = _link?.value ?? '';
-                                },
-                                icon: Container(),
-                                value: _link,
-                                dropdownColor: Theme.of(context).primaryColor,
-                                selectedItemBuilder: (BuildContext context) {
-                                  return linkIcons.map<Widget>((link) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(left: 12.0),
-                                      child: Row(
-                                        children: [Icon(link.icon), const Icon(JamIcons.chevron_down, size: 14)],
-                                      ),
-                                    );
-                                  }).toList();
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          child: SizedBox(
-                            height: 80,
-                            width: width - 80,
-                            child: Center(
-                              child: TextField(
-                                cursorColor: const Color(0xFFE57697),
-                                style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: Colors.white),
-                                controller: linkController,
-                                decoration: InputDecoration(
-                                  enabled: _link?.name != "Edit links...",
-                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                                  ),
-                                  disabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: Colors.white, width: 2),
-                                  ),
-                                  labelText: _link?.name.inCaps ?? "",
-                                  labelStyle: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                                  hintText: _link?.link ?? "",
-                                  hintStyle: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall!.copyWith(fontSize: 14, color: Colors.white),
-                                  suffixIcon: IconButton(
-                                    onPressed: () async {
-                                      showRemoveAlertDialog(context, () async {
-                                        linkController.text = "";
-                                        final links = app_state.prismUser.links;
-                                        links.remove(_link?.name);
-                                        app_state.prismUser.links = links;
-                                        app_state.persistPrismUser();
-                                        await _updateCurrentUser(<String, dynamic>{
-                                          "links": app_state.prismUser.links,
-                                        }, 'profile.edit.removeLink');
-                                      }, "${_link?.name.inCaps}");
-                                    },
-                                    icon: const Icon(JamIcons.close, color: Colors.red, size: 24),
-                                  ),
-                                ),
-                                onChanged: (value) {
-                                  if (value.toLowerCase().contains('${_link?.validator.toLowerCase()}')) {
-                                    setState(() {
-                                      if (_link != null) {
-                                        _link!.value = value;
-                                      }
-                                    });
-                                    bool changed = false;
-                                    for (int i = 0; i < linkIcons.length; i++) {
-                                      if (linkIcons[i].value.isNotEmpty) {
-                                        changed = true;
-                                        break;
-                                      }
-                                    }
-                                    setState(() {
-                                      linkEdit = changed;
-                                    });
-                                  } else if (value == "") {
-                                    bool changed = false;
-                                    for (int i = 0; i < linkIcons.length; i++) {
-                                      if (linkIcons[i].value.isNotEmpty) {
-                                        changed = true;
-                                        break;
-                                      }
-                                    }
-                                    setState(() {
-                                      linkEdit = changed;
-                                    });
-                                  } else {
-                                    setState(() {
-                                      linkEdit = false;
-                                    });
-                                  }
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  onTap: (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit))
-                      ? () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-                          if (_pfp != null && pfpEdit) {
-                            await processImage();
-                          }
-                          if (_cover != null && coverEdit) {
-                            await processImageCover();
-                          }
-                          if (bioEdit && bioController.text != "") {
-                            app_state.prismUser.bio = bioController.text;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{"bio": bioController.text}, 'profile.edit.bio');
-                          }
-                          if (linkEdit) {
-                            final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
-                            for (int p = 0; p < linkIcons.length; p++) {
-                              if (linkIcons[p].value.isNotEmpty) {
-                                links[linkIcons[p].name] = linkIcons[p].value;
-                              }
-                            }
-                            app_state.prismUser.links = links;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
-                          }
-                          if (nameEdit && nameController.text != "") {
-                            app_state.prismUser.name = nameController.text;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{
-                              "name": nameController.text,
-                            }, 'profile.edit.name');
-                          }
-                          await CoinsService.instance.maybeAwardProfileCompletion();
-                          setState(() {
-                            isLoading = false;
-                          });
-                          Navigator.pop(context);
-                          toasts.codeSend("Details updated!");
-                        }
-                      : (usernameEdit && enabled)
-                      ? () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-                          if (usernameEdit && usernameController.text != "" && usernameController.text.length >= 8) {
-                            app_state.prismUser.username = usernameController.text;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{
-                              "username": usernameController.text,
-                            }, 'profile.edit.username');
-                          }
-                          if (_pfp != null && pfpEdit) {
-                            await processImage();
-                          }
-                          if (_cover != null && coverEdit) {
-                            await processImageCover();
-                          }
-                          if (bioEdit && bioController.text != "") {
-                            app_state.prismUser.bio = bioController.text;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{
-                              "bio": bioController.text,
-                            }, 'profile.edit.bio.withUsername');
-                          }
-                          if (nameEdit && nameController.text != "") {
-                            app_state.prismUser.name = nameController.text;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{
-                              "name": nameController.text,
-                            }, 'profile.edit.name.withUsername');
-                          }
-                          if (linkEdit) {
-                            final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
-                            for (int p = 0; p < linkIcons.length; p++) {
-                              if (linkIcons[p].value.isNotEmpty) {
-                                links[linkIcons[p].name] = linkIcons[p].value;
-                              }
-                              if (_pfp != null && pfpEdit) {
-                                await processImage();
-                              }
-                              if (_cover != null && coverEdit) {
-                                await processImageCover();
-                              }
-                              if (bioEdit && bioController.text != "") {
-                                app_state.prismUser.bio = bioController.text;
-                                app_state.persistPrismUser();
-                                await _updateCurrentUser(<String, dynamic>{
-                                  "bio": bioController.text,
-                                }, 'profile.edit.bio.withUsername');
-                              }
-                              if (nameEdit && nameController.text != "") {
-                                app_state.prismUser.name = nameController.text;
-                                app_state.persistPrismUser();
-                                await _updateCurrentUser(<String, dynamic>{
-                                  "name": nameController.text,
-                                }, 'profile.edit.name.withUsername');
-                              }
-                              if (linkEdit) {
-                                final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
-                                for (int p = 0; p < linkIcons.length; p++) {
-                                  if (linkIcons[p].value.isNotEmpty) {
-                                    links[linkIcons[p].name] = linkIcons[p].value;
-                                  }
-                                }
-                                app_state.prismUser.links = links;
-                                app_state.persistPrismUser();
-                                await _updateCurrentUser(<String, dynamic>{
-                                  "links": links,
-                                }, 'profile.edit.links.withUsername');
-                              }
-                              await CoinsService.instance.maybeAwardProfileCompletion();
-                              setState(() {
-                                isLoading = false;
-                              });
-                              Navigator.pop(context);
-                              toasts.codeSend("Details updated!");
-                            }
-                            app_state.prismUser.links = links;
-                            app_state.persistPrismUser();
-                            await _updateCurrentUser(<String, dynamic>{
-                              "links": links,
-                            }, 'profile.edit.links.withUsername');
-                          }
-                          setState(() {
-                            isLoading = false;
-                          });
-                          Navigator.pop(context);
-                          toasts.codeSend("Details updated!");
-                        }
-                      : null,
-                  child: SizedBox(
-                    width: width - 20,
-                    height: 60,
-                    child: Container(
-                      width: width - 14,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color:
-                            !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
-                                (usernameEdit && enabled))
-                            ? Theme.of(context).primaryColor
-                            : Theme.of(context).colorScheme.error.withValues(alpha: 0.2),
-                        border: Border.all(
-                          color:
-                              !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
-                                  (usernameEdit && enabled))
-                              ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                              : Theme.of(context).colorScheme.error,
-                          width: 3,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: isLoading
-                            ? CircularProgressIndicator(color: Theme.of(context).primaryColor)
-                            : Text(
-                                "Update",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color:
-                                      !((!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
-                                          (usernameEdit && enabled))
-                                      ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
-                                      : Theme.of(context).colorScheme.secondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const Spacer(flex: 2),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.8,
-                  child: Text(
-                    "Usernames are unique names through which fans can view your profile/search for you. They should be greater than 8 characters, and cannot contain any symbol except for underscore (_).",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
-                  ),
-                ),
-              ),
-              const Spacer(flex: 3),
-            ],
+        Positioned(
+          top: 0,
+          right: 0,
+          child: IconButton(
+            onPressed: () => showRemoveAlertDialog(context, () async {
+              bioController.text = '';
+              app_state.prismUser.bio = '';
+              app_state.persistPrismUser();
+              await _updateCurrentUser(<String, dynamic>{"bio": ""}, 'profile.edit.clearBio');
+            }, "bio"),
+            icon: Icon(JamIcons.close, color: secondary.withValues(alpha: PrismFormField.iconOpacity), size: 20),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildLinkRow(ThemeData theme, Color secondary) {
+    final borderColor = secondary.withValues(alpha: PrismFormField.restingBorderOpacity);
+    return Row(
+      children: [
+        Container(
+          height: PrismProfile.linkSelectorHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
+            border: Border.all(color: borderColor, width: PrismFormField.borderWidth),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: PrismProfile.linkSelectorHorizontalPadding),
+          child: DropdownButton<_ProfileLinkOption>(
+            menuWidth: 200,
+            items: linkIcons.map((link) {
+              return DropdownMenuItem(
+                value: link,
+                child: Row(
+                  children: [
+                    Icon(link.icon, size: PrismProfile.linkDropdownIconSize, color: secondary),
+                    const SizedBox(width: PrismProfile.linkDropdownTextGap),
+                    Text(
+                      link.name.inCaps,
+                      style: TextStyle(
+                        fontFamily: PrismFonts.proximaNova,
+                        fontSize: PrismProfile.linkDropdownFontSize,
+                        color: secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            underline: const SizedBox.shrink(),
+            onChanged: (value) {
+              setState(() => _link = value);
+              linkController.text = _link?.value ?? '';
+            },
+            icon: const SizedBox.shrink(),
+            value: _link,
+            dropdownColor: theme.primaryColor,
+            selectedItemBuilder: (BuildContext context) {
+              return linkIcons.map<Widget>((link) {
+                return Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(link.icon, size: PrismProfile.linkSelectorIconSize, color: secondary),
+                      const SizedBox(width: 4),
+                      Icon(
+                        JamIcons.chevron_down,
+                        size: PrismProfile.linkSelectorCaretSize,
+                        color: secondary.withValues(alpha: 0.5),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ),
+        const SizedBox(width: PrismProfile.linkSelectorGap),
+        Expanded(
+          child: TextField(
+            cursorColor: PrismColors.brandPink,
+            style: PrismTextStyles.fieldInputSmall(context),
+            controller: linkController,
+            decoration: _fieldDecoration(
+              label: _link?.name.inCaps ?? '',
+              hintText: _link?.link,
+              suffixIcon: IconButton(
+                onPressed: () => showRemoveAlertDialog(context, () async {
+                  linkController.text = '';
+                  final links = app_state.prismUser.links;
+                  links.remove(_link?.name);
+                  app_state.prismUser.links = links;
+                  app_state.persistPrismUser();
+                  await _updateCurrentUser(<String, dynamic>{
+                    "links": app_state.prismUser.links,
+                  }, 'profile.edit.removeLink');
+                }, "${_link?.name.inCaps} link"),
+                icon: Icon(JamIcons.close, color: secondary.withValues(alpha: PrismFormField.iconOpacity), size: 20),
+              ),
+            ),
+            onChanged: (value) {
+              if (value.toLowerCase().contains('${_link?.validator.toLowerCase()}')) {
+                if (_link != null) _link!.value = value;
+              } else if (value.isEmpty) {
+                if (_link != null) _link!.value = '';
+              }
+              final changed = linkIcons.any((icon) => icon.value.isNotEmpty);
+              setState(() => linkEdit = changed);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaveButton(Color secondary) {
+    final isActive = _hasChanges;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutQuart,
+      height: PrismProfile.saveButtonHeight,
+      decoration: BoxDecoration(
+        // Brand pink tint when active — consistent with all other primary actions.
+        color: isActive ? PrismColors.brandPink.withValues(alpha: 0.12) : Colors.transparent,
+        border: Border.all(
+          color: isActive ? PrismColors.brandPink : secondary.withValues(alpha: 0.18),
+          width: PrismFormField.borderWidth,
+        ),
+        borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
+          onTap: isActive && !isLoading ? _saveProfile : null,
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: isLoading
+                  ? const SizedBox(
+                      key: ValueKey('loading'),
+                      width: PrismProfile.savingIndicatorSize,
+                      height: PrismProfile.savingIndicatorSize,
+                      child: CircularProgressIndicator(
+                        strokeWidth: PrismProfile.savingIndicatorStrokeWidth,
+                        color: PrismColors.brandPink,
+                      ),
+                    )
+                  : Text(
+                      'Update',
+                      key: const ValueKey('text'),
+                      style: TextStyle(
+                        fontFamily: PrismFonts.proximaNova,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isActive ? secondary : secondary.withValues(alpha: 0.28),
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUsernameHint(double screenWidth) {
+    return SizedBox(
+      width: screenWidth * 0.75,
+      child: Text(
+        "Usernames must be 8+ characters with no symbols except underscore (_).",
+        textAlign: TextAlign.center,
+        style: PrismTextStyles.fieldCaption(context),
+      ),
+    );
+  }
+
+  Widget _iconChip({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: PrismProfile.removeChipSize,
+        height: PrismProfile.removeChipSize,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: PrismProfile.removeChipScrimAlpha),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: PrismColors.onPrimary, size: PrismProfile.removeChipIconSize),
       ),
     );
   }
