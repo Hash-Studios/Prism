@@ -19,8 +19,10 @@ void main() {
     );
 
     await tester.pumpWidget(_wrap(const ProfileCompletenessCard(status: status)));
+    await tester.pump(const Duration(milliseconds: 700));
 
     expect(find.text('50%'), findsOneWidget);
+    expect(find.text('2 steps · '), findsOneWidget);
   });
 
   testWidgets('card is hidden when status is 100% complete', (tester) async {
