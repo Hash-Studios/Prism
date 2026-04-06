@@ -83,7 +83,7 @@ Future<List<PexelsWallpaper>> getWallsPbyColor(String query) async {
   final result = await _repo.fetchFeed(categoryName: query, refresh: true);
   result.fold(
     onSuccess: (List<PexelsWallpaper> fetched) {
-      wallsC = fetched;
+      wallsC = List.of(fetched);
       pageColorsP = 2;
       logger.d("getWallsPbyColor done: ${wallsC.length}");
     },

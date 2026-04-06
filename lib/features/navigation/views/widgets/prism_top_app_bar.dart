@@ -149,7 +149,12 @@ class _ProfileAvatar extends StatelessWidget {
         height: PrismAppBarSizes.profileAvatarSize,
         padding: const EdgeInsets.all(PrismAppBarSizes.profileAvatarInnerPadding),
         child: ClipOval(
-          child: CachedNetworkImage(imageUrl: photoUrl, fit: BoxFit.cover),
+          child: CachedNetworkImage(
+            imageUrl: photoUrl,
+            fit: BoxFit.cover,
+            errorWidget: (context, url, error) =>
+                const ColoredBox(color: Colors.transparent, child: Icon(Icons.person, size: 24)),
+          ),
         ),
       ),
     );

@@ -155,7 +155,7 @@ class _CollectionTileSkeletonState extends State<_CollectionTileSkeleton> with S
   }
 }
 
-class _CollectionsGridState extends State<CollectionsGrid> {
+class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {

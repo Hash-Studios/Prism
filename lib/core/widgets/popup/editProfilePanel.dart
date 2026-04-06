@@ -518,7 +518,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             child: (_cover == null)
                 ? (app_state.prismUser.coverPhoto != null &&
                           Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
-                      ? CachedNetworkImage(imageUrl: app_state.prismUser.coverPhoto!, fit: BoxFit.cover)
+                      ? CachedNetworkImage(
+                          imageUrl: app_state.prismUser.coverPhoto!,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) => const SizedBox.shrink(),
+                        )
                       : SvgPicture.string(
                           defaultHeader
                               .replaceAll("#181818", "#${theme.primaryColor.toARGB32().toRadixString(16).substring(2)}")
@@ -600,7 +604,18 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             child: ClipOval(
               child: (_pfp == null)
                   ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
-                        ? CachedNetworkImage(imageUrl: app_state.prismUser.profilePhoto, fit: BoxFit.cover)
+                        ? CachedNetworkImage(
+                            imageUrl: app_state.prismUser.profilePhoto,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => ColoredBox(
+                              color: PrismColors.brandPink.withValues(alpha: 0.12),
+                              child: Icon(
+                                Icons.person,
+                                size: size * 0.5,
+                                color: PrismColors.brandPink.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          )
                         : ColoredBox(
                             color: PrismColors.brandPink.withValues(alpha: 0.12),
                             child: Icon(

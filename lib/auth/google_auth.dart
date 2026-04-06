@@ -196,10 +196,13 @@ class GoogleAuth {
 
   bool _isSignInCancelled(Object error) {
     if (error is GoogleSignInException) {
-      return error.code == GoogleSignInExceptionCode.canceled;
+      return error.code == GoogleSignInExceptionCode.canceled || error.code == GoogleSignInExceptionCode.unknownError;
     }
     final String message = error.toString().toLowerCase();
-    return message.contains('user canceled') || message.contains('cancelled');
+    return message.contains('user canceled') ||
+        message.contains('cancelled') ||
+        message.contains('no credential') ||
+        message.contains('no credentials available');
   }
 
   Future<bool> signOutGoogle() async {
