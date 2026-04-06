@@ -1,5 +1,22 @@
 ## Changelog
 
+### v3.0.8
+- Refined the edit profile flow and redesigned the profile completeness widget
+- Applied minor profile UI polish and layout rework
+- Additional Sentry fixes and test stability improvements
+- Version and build number update for release
+
+### v3.0.7
+- Added user blocking, with follow-up fixes for notification auth, cooldowns, and review feedback
+- Revamped the collections page, personalised feed editor, AI generation screen, streak UI, and bottom bar sizing
+- Grouped notifications and improved in-app notification behaviour
+- Added wallpaper reporting and migrated wall/setup view tracking from GitHub-backed data to Firestore
+- Fixed Wall of the Day generation, profile refresh, and edit profile reliability
+- Reworked the wallpaper detail sheet with liquid-glass styling, richer color handling, better author/date presentation, and tap animations
+- Improved startup performance and added an email export utility
+- iOS release stability fixes, including build/review compliance updates, Firebase/plugin updates, media host support, and app icon refresh
+- Website refresh plus Kotlin, CI, pigeon, and formatting fixes for release stability
+
 ### v3.0.6
 - Version and build number update for release
 
