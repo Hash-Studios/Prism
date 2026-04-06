@@ -1,3 +1,4 @@
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Medium-like editorial note: typographic hierarchy, thin accent rule, no heavy card chrome.
@@ -12,38 +13,33 @@ class PersonalizedFeedEditorialNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final accent = accentColor ?? scheme.outline;
-    final titleStyle = theme.textTheme.titleMedium?.copyWith(
-      color: scheme.onSurface,
-      fontWeight: FontWeight.w600,
-      height: 1.25,
-    );
-    final detailStyle = theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.45);
+    final accent = accentColor ?? Theme.of(context).colorScheme.outline;
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
+        constraints: const BoxConstraints(maxWidth: PrismEditorialNote.maxWidth),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: PrismEditorialNote.horizontalPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 3,
-                height: 52,
-                decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(2)),
+                width: PrismEditorialNote.accentBarWidth,
+                height: PrismEditorialNote.accentBarHeight,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(PrismEditorialNote.accentBarBorderRadius),
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: PrismEditorialNote.accentBarTextGap),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: titleStyle),
+                    Text(title, style: PrismTextStyles.editorialTitle(context)),
                     if (detail != null && detail!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(detail!, style: detailStyle),
+                      const SizedBox(height: PrismEditorialNote.titleDetailSpacing),
+                      Text(detail!, style: PrismTextStyles.editorialDetail(context)),
                     ],
                   ],
                 ),

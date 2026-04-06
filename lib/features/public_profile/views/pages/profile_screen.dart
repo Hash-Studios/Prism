@@ -21,6 +21,7 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
 import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -559,14 +560,15 @@ class _ProfileChildState extends State<_ProfileChild> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          fontFamily: "Proxima Nova",
+                                          fontFamily: PrismFonts.proximaNova,
                                           color: Theme.of(context).colorScheme.secondary,
                                           fontSize: 22,
-                                          fontWeight: FontWeight.w500,
+                                          // w600 gives the name more presence over the muted username below.
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
+                                    const SizedBox(height: 3),
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Text(
@@ -575,35 +577,41 @@ class _ProfileChildState extends State<_ProfileChild> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          fontFamily: "Proxima Nova",
-                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                                          fontSize: 16,
+                                          fontFamily: PrismFonts.proximaNova,
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.55),
+                                          fontSize: 14,
                                           fontWeight: FontWeight.normal,
+                                          letterSpacing: 0.2,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    SizedBox(
-                                      width: MediaQuery.of(context).size.width * 0.7,
-                                      child: Text(
-                                        widget.bio ?? "",
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: "Proxima Nova",
-                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.normal,
+                                    if ((widget.bio ?? "").isNotEmpty)
+                                      SizedBox(
+                                        width: MediaQuery.of(context).size.width * 0.72,
+                                        child: Text(
+                                          widget.bio!,
+                                          textAlign: TextAlign.center,
+                                          // 2 lines: bios up to 150 chars deserve more space.
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: PrismFonts.proximaNova,
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.65),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.normal,
+                                            height: 1.45,
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                    if ((widget.bio ?? "").isNotEmpty) const SizedBox(height: 2),
                                     const SizedBox(height: 8),
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
+                                          // Following count — tappable on own profile only
                                           // Following count — tappable on own profile only
                                           GestureDetector(
                                             onTap: (widget.ownProfile ?? false) && app_state.prismUser.loggedIn
@@ -615,33 +623,17 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                     ),
                                                   )
                                                 : null,
-                                            child: RichText(
-                                              text: TextSpan(
-                                                text: "${(widget.following ?? []).length}",
-                                                style: TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                children: [
-                                                  TextSpan(
-                                                    text: " Following",
-                                                    style: TextStyle(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).colorScheme.secondary.withValues(alpha: 0.6),
-                                                      fontWeight: FontWeight.normal,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                            child: _StatPill(
+                                              count: (widget.following ?? []).length,
+                                              label: 'Following',
                                             ),
                                           ),
-                                          const SizedBox(width: 24),
+                                          Container(
+                                            width: 1,
+                                            height: 16,
+                                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                                          ),
                                           // Followers count — tappable on both own and other profiles
                                           GestureDetector(
                                             onTap: () => context.router.push(
@@ -651,30 +643,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                 ),
                                               ),
                                             ),
-                                            child: RichText(
-                                              text: TextSpan(
-                                                text: "${(widget.followers ?? []).length}",
-                                                style: TextStyle(
-                                                  fontFamily: "Proxima Nova",
-                                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 1),
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                children: [
-                                                  TextSpan(
-                                                    text: " Followers",
-                                                    style: TextStyle(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).colorScheme.secondary.withValues(alpha: 0.6),
-                                                      fontWeight: FontWeight.normal,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              textAlign: TextAlign.center,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                            child: _StatPill(
+                                              count: (widget.followers ?? []).length,
+                                              label: 'Followers',
                                             ),
                                           ),
                                         ],
@@ -692,21 +663,26 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                 .toList()
                                                 .map(
                                                   (e) => IconButton(
-                                                    padding: const EdgeInsets.all(2),
+                                                    padding: const EdgeInsets.all(4),
                                                     icon: Container(
-                                                      padding: const EdgeInsets.all(6.0),
+                                                      padding: const EdgeInsets.all(7.0),
                                                       decoration: BoxDecoration(
                                                         shape: BoxShape.circle,
                                                         color: Theme.of(
                                                           context,
                                                         ).colorScheme.secondary.withValues(alpha: 0.1),
+                                                        border: Border.all(
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.secondary.withValues(alpha: 0.12),
+                                                        ),
                                                       ),
                                                       child: Icon(
                                                         linksIconData[e.toString()] ?? JamIcons.link,
-                                                        size: 20,
+                                                        size: 18,
                                                         color: Theme.of(
                                                           context,
-                                                        ).colorScheme.secondary.withValues(alpha: 0.8),
+                                                        ).colorScheme.secondary.withValues(alpha: 0.85),
                                                       ),
                                                     ),
                                                     onPressed: () async {
@@ -744,21 +720,26 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                 ),
                                             if ((widget.links ?? {}).keys.toList().length > 3)
                                               IconButton(
-                                                padding: const EdgeInsets.all(2),
+                                                padding: const EdgeInsets.all(4),
                                                 icon: Container(
-                                                  padding: const EdgeInsets.all(6.0),
+                                                  padding: const EdgeInsets.all(7.0),
                                                   decoration: BoxDecoration(
                                                     shape: BoxShape.circle,
                                                     color: Theme.of(
                                                       context,
                                                     ).colorScheme.secondary.withValues(alpha: 0.1),
+                                                    border: Border.all(
+                                                      color: Theme.of(
+                                                        context,
+                                                      ).colorScheme.secondary.withValues(alpha: 0.12),
+                                                    ),
                                                   ),
                                                   child: Icon(
                                                     JamIcons.more_horizontal,
-                                                    size: 20,
+                                                    size: 18,
                                                     color: Theme.of(
                                                       context,
-                                                    ).colorScheme.secondary.withValues(alpha: 0.8),
+                                                    ).colorScheme.secondary.withValues(alpha: 0.85),
                                                   ),
                                                 ),
                                                 onPressed: () {
@@ -785,7 +766,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 child: Container(
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Theme.of(context).colorScheme.error, width: 4),
+                                    // Brand-locked pink ring — consistent with the
+                                    // camera badge in the edit panel.
+                                    border: Border.all(color: PrismColors.brandPink, width: 4),
                                     color: Theme.of(context).colorScheme.secondary,
                                   ),
                                   child: ClipOval(
@@ -796,15 +779,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                                             height: 78,
                                             fit: BoxFit.cover,
                                           )
-                                        : Container(
+                                        : SizedBox(
                                             width: 78,
                                             height: 78,
-                                            color: Theme.of(context).primaryColor,
-                                            alignment: Alignment.center,
-                                            child: Icon(
-                                              JamIcons.user,
-                                              color: Theme.of(context).colorScheme.error,
-                                              size: 30,
+                                            child: ColoredBox(
+                                              color: Theme.of(context).primaryColor,
+                                              child: const Icon(JamIcons.user, color: PrismColors.brandPink, size: 30),
                                             ),
                                           ),
                                   ),
@@ -894,6 +874,48 @@ class _ProfileChildState extends State<_ProfileChild> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Compact stat display used in the profile header (e.g. "9182 Followers").
+///
+/// Separates the bold count from the muted label using clear weight and color
+/// contrast — no size difference needed since both are on one line.
+class _StatPill extends StatelessWidget {
+  const _StatPill({required this.count, required this.label});
+
+  final int count;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final secondary = Theme.of(context).colorScheme.secondary;
+    return RichText(
+      textAlign: TextAlign.center,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        // Bold count — larger optical weight draws the eye first.
+        text: count >= 1000 ? '${(count / 1000).toStringAsFixed(count >= 10000 ? 0 : 1)}k' : '$count',
+        style: TextStyle(
+          fontFamily: PrismFonts.proximaNova,
+          color: secondary,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
+        children: [
+          TextSpan(
+            text: ' $label',
+            style: TextStyle(
+              fontFamily: PrismFonts.proximaNova,
+              color: secondary.withValues(alpha: 0.55),
+              fontSize: 13,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
