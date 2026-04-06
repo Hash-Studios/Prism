@@ -15,6 +15,7 @@ import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.d
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -29,7 +30,7 @@ class PersonalizedFeedScreen extends StatefulWidget {
 }
 
 class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with AutomaticKeepAliveClientMixin {
-  static const int _carouselPreviewCount = 4;
+  static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
@@ -60,7 +61,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       return;
     }
 
-    if (metrics.pixels >= metrics.maxScrollExtent - 400) {
+    if (metrics.pixels >= metrics.maxScrollExtent - PrismFeedLayout.prefetchThreshold) {
       _bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
     }
   }
@@ -83,7 +84,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
               .whereType<PrismFeedItem>()
               .take(_carouselPreviewCount)
               .toList(growable: false);
-          final crossAxisCount = MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5;
+          final crossAxisCount = MediaQuery.of(context).orientation == Orientation.portrait
+              ? PrismFeedLayout.gridColumnCountPortrait
+              : PrismFeedLayout.gridColumnCountLandscape;
           final tileMemCacheHeight = ((MediaQuery.sizeOf(context).width / crossAxisCount) * 1.5 * 2).toInt();
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
@@ -95,7 +98,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
               onRefresh: () async => _bloc.add(const PersonalizedFeedEvent.refreshRequested()),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 120, 24, 32),
+                padding: PrismFeedLayout.errorStatePadding,
                 children: [
                   PersonalizedFeedEditorialNote(
                     title: "Couldn't load your feed",
@@ -125,7 +128,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                   SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
-                      childAspectRatio: 0.5,
+                      childAspectRatio: PrismFeedLayout.gridTileAspectRatio,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) => WallpaperTile(
@@ -150,7 +153,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   Widget _bottomState(BuildContext context, PersonalizedFeedState state) {
     if (state.items.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.fromLTRB(24, 12, 24, 28),
+        padding: PrismFeedLayout.contentStatePadding,
         child: PersonalizedEmptyCard(
           title: 'Shape this feed',
           detail: 'Follow creators or choose interests so we can surface more of what you like.',
@@ -160,17 +163,17 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
     if (state.isFetchingMore) {
       return const Padding(
-        padding: EdgeInsets.fromLTRB(0, 8, 0, 26),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2.4)),
+        padding: PrismFeedLayout.loadingStatePadding,
+        child: Center(child: CircularProgressIndicator(strokeWidth: PrismFeedLayout.loadingIndicatorStrokeWidth)),
       );
     }
 
     if (state.hasMore) {
-      return const SizedBox(height: 22);
+      return const SizedBox(height: PrismFeedLayout.endOfPageSpacerHeight);
     }
 
     return const Padding(
-      padding: EdgeInsets.fromLTRB(24, 12, 24, 28),
+      padding: PrismFeedLayout.contentStatePadding,
       child: PersonalizedEmptyCard(
         title: "You're caught up",
         detail: 'Pull down to refresh — new picks will land here.',
@@ -208,7 +211,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
   @override
   Widget build(BuildContext context) {
     final previewWalls = widget.previewWalls;
-    final height = MediaQuery.of(context).size.width * 2 / 3;
+    final height = MediaQuery.of(context).size.width * PrismFeedLayout.carouselHeightRatio;
     return SizedBox(
       height: height,
       child: Stack(
@@ -255,7 +258,9 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                     child: Center(
                       child: ColoredBox(
                         color: app_state.bannerTextOn
-                            ? Theme.of(context).colorScheme.scrim.withValues(alpha: 0.45)
+                            ? Theme.of(
+                                context,
+                              ).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha)
                             : Colors.transparent,
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -263,12 +268,8 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                             app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
                             textAlign: TextAlign.center,
                             maxLines: 1,
-                            style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                              fontSize: 20,
-                              // High-contrast on arbitrary photography under [ColorScheme.scrim].
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            // High-contrast on arbitrary photography under [ColorScheme.scrim].
+                            style: PrismTextStyles.carouselBannerHeadline(context),
                           ),
                         ),
                       ),
