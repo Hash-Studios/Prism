@@ -6,11 +6,13 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 
-/// Opens the same "Your feed" interests / mix sheet used from the home tab logo.
+const String _kDefaultFeedMix = 'balanced';
+
 Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {VoidCallback? onPreferencesSaved}) async {
   final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();
   final List<PersonalizedInterest> catalog = await PersonalizedInterestsCatalog.load(
@@ -25,7 +27,7 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {Void
   if (selected.isEmpty) {
     selected = PersonalizedInterestsCatalog.defaultSelection(catalog).toSet();
   }
-  final String currentMix = settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced');
+  final String currentMix = settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: _kDefaultFeedMix);
 
   if (!context.mounted) {
     return;
@@ -96,66 +98,80 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     final List<String> defaults = PersonalizedInterestsCatalog.defaultSelection(widget.catalog);
     setState(() {
       _selectedInterests = defaults.toSet();
-      _feedMix = 'balanced';
+      _feedMix = _kDefaultFeedMix;
     });
   }
 
   Future<void> _save() async {
-    if (!_canSave) {
-      return;
-    }
+    if (!_canSave) return;
     setState(() => _saving = true);
     await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final TextTheme tt = Theme.of(context).textTheme;
     final int count = _selectedInterests.length;
     final bool belowMin = count < OnboardingV2Config.minInterests;
     final double keyboardPadding = MediaQuery.viewInsetsOf(context).bottom;
+
+    // Count badge color: pink when something is selected, error when below min,
+    // muted when nothing is selected yet.
+    final Color countColor = belowMin
+        ? cs.error
+        : count > 0
+        ? PrismColors.brandPink
+        : cs.onSurfaceVariant;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        const SizedBox(height: 12),
+        const SizedBox(height: PrismBottomSheet.topGap),
         const _DragHandle(),
-        const SizedBox(height: 16),
+        const SizedBox(height: PrismBottomSheet.headerGap),
+
+        // -- Header -----------------------------------------------------------
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: PrismBottomSheet.horizontalPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: <Widget>[
-              Text('Your feed', style: tt.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Your feed', style: PrismTextStyles.sheetTitle(context)),
               const Spacer(),
-              Text('$count selected', style: tt.bodySmall?.copyWith(color: belowMin ? cs.error : cs.onSurfaceVariant)),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: PrismTextStyles.sheetSectionLabel(context).copyWith(color: countColor),
+                child: Text('$count selected'),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: PrismBottomSheet.headerGap),
+
+        // -- Interests --------------------------------------------------------
         Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 4),
-          child: Text('Interests', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+          padding: const EdgeInsets.only(
+            left: PrismBottomSheet.horizontalPadding,
+            right: PrismBottomSheet.horizontalPadding,
+            bottom: PrismBottomSheet.sectionLabelBottomGap,
+          ),
+          child: Text('Interests', style: PrismTextStyles.sheetSectionLabel(context)),
         ),
         Flexible(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: PrismBottomSheet.chipAreaPadding,
             child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: PrismBottomSheet.chipSpacing,
+              runSpacing: PrismBottomSheet.chipRunSpacing,
               children: <Widget>[
                 for (final PersonalizedInterest entry in widget.catalog)
-                  FilterChip(
-                    label: Text(entry.name),
+                  _InterestChip(
+                    entry: entry,
                     selected: _selectedInterests.contains(entry.name),
-                    avatar: CircleAvatar(backgroundImage: CachedNetworkImageProvider(entry.imageUrl)),
-                    onSelected: (bool selected) {
+                    onToggle: (bool selected) {
                       setState(() {
                         if (selected) {
                           _selectedInterests.add(entry.name);
@@ -169,36 +185,108 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
             ),
           ),
         ),
+
+        // -- Feed mix ---------------------------------------------------------
         Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, top: 16, bottom: 4),
-          child: Text('Feed mix', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+          padding: const EdgeInsets.only(
+            left: PrismBottomSheet.horizontalPadding,
+            right: PrismBottomSheet.horizontalPadding,
+            top: PrismBottomSheet.sectionTopGap,
+            bottom: PrismBottomSheet.sectionLabelBottomGap,
+          ),
+          child: Text('Feed mix', style: PrismTextStyles.sheetSectionLabel(context)),
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
+          padding: const EdgeInsets.only(
+            left: PrismBottomSheet.horizontalPadding,
+            right: PrismBottomSheet.horizontalPadding,
+            bottom: PrismBottomSheet.sectionTopGap,
+          ),
           child: _FeedMixSelector(value: _feedMix, onChanged: (String v) => setState(() => _feedMix = v)),
         ),
-        const Divider(height: 1, indent: 20, endIndent: 20),
+
+        // -- Action bar -------------------------------------------------------
+        const Divider(
+          height: 1,
+          indent: PrismBottomSheet.horizontalPadding,
+          endIndent: PrismBottomSheet.horizontalPadding,
+        ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: PrismBottomSheet.horizontalPadding,
+            vertical: PrismBottomSheet.actionsVerticalPadding,
+          ),
           child: Row(
             children: <Widget>[
-              TextButton(onPressed: _saving ? null : _resetToDefaults, child: const Text('Reset to defaults')),
+              TextButton(
+                onPressed: _saving ? null : _resetToDefaults,
+                style: TextButton.styleFrom(foregroundColor: PrismColors.brandPink),
+                child: const Text('Reset to defaults'),
+              ),
               const Spacer(),
               FilledButton(
                 onPressed: _canSave ? _save : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: PrismColors.brandPink,
+                  foregroundColor: PrismColors.onPrimary,
+                ),
                 child: _saving
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: PrismBottomSheet.savingIndicatorSize,
+                        height: PrismBottomSheet.savingIndicatorSize,
+                        child: CircularProgressIndicator(
+                          strokeWidth: PrismBottomSheet.savingIndicatorStrokeWidth,
+                          color: PrismColors.onPrimary,
+                        ),
+                      )
                     : const Text('Save'),
               ),
             ],
           ),
         ),
-        SizedBox(height: keyboardPadding + 8),
+        SizedBox(height: keyboardPadding + PrismBottomSheet.keyboardSafetyBuffer),
       ],
     );
   }
 }
 
+/// A single interest chip that always uses Prism brand pink for its selected
+/// state, regardless of which theme is active.
+class _InterestChip extends StatelessWidget {
+  const _InterestChip({required this.entry, required this.selected, required this.onToggle});
+
+  final PersonalizedInterest entry;
+  final bool selected;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+
+    return FilterChip(
+      label: Text(entry.name),
+      selected: selected,
+      // Lock selected colours to Prism brand pink so they never go cyan/blue.
+      selectedColor: PrismColors.brandPink.withValues(alpha: 0.15),
+      checkmarkColor: PrismColors.brandPink,
+      side: BorderSide(
+        color: selected ? PrismColors.brandPink : cs.outline.withValues(alpha: 0.5),
+        width: selected ? 1.5 : 1.0,
+      ),
+      labelStyle: TextStyle(
+        color: selected ? PrismColors.brandPink : cs.onSurface,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+      ),
+      avatar: CircleAvatar(
+        backgroundColor: cs.surfaceContainerHighest,
+        backgroundImage: CachedNetworkImageProvider(entry.imageUrl),
+      ),
+      onSelected: onToggle,
+    );
+  }
+}
+
+/// Feed-mix segmented button with explicit brand-pink selected state.
 class _FeedMixSelector extends StatelessWidget {
   const _FeedMixSelector({required this.value, required this.onChanged});
 
@@ -210,23 +298,36 @@ class _FeedMixSelector extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return SegmentedButton<String>(
       segments: const <ButtonSegment<String>>[
-        ButtonSegment<String>(value: 'balanced', label: Text('Balanced')),
-        ButtonSegment<String>(value: 'creators', label: Text('Creators')),
-        ButtonSegment<String>(value: 'discovery', label: Text('Discovery')),
+        ButtonSegment<String>(
+          value: 'balanced',
+          label: Text('Balanced', maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        ButtonSegment<String>(
+          value: 'creators',
+          label: Text('Creators', maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
+        ButtonSegment<String>(
+          value: 'discovery',
+          label: Text('Discovery', maxLines: 1, overflow: TextOverflow.ellipsis),
+        ),
       ],
       selected: <String>{value},
       onSelectionChanged: (Set<String> s) {
-        if (s.isNotEmpty) {
-          onChanged(s.first);
-        }
+        if (s.isNotEmpty) onChanged(s.first);
       },
       expandedInsets: EdgeInsets.zero,
       style: ButtonStyle(
+        // Compact horizontal padding so "Discovery" never wraps on narrow screens.
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 8)),
+        // Brand pink replaces whatever cs.primary happens to be in the active theme.
         backgroundColor: WidgetStateProperty.resolveWith(
-          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? cs.primary : null,
+          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? PrismColors.brandPink : null,
         ),
         foregroundColor: WidgetStateProperty.resolveWith(
-          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface,
+          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? PrismColors.onPrimary : cs.onSurface,
+        ),
+        iconColor: WidgetStateProperty.resolveWith(
+          (Set<WidgetState> states) => states.contains(WidgetState.selected) ? PrismColors.onPrimary : cs.onSurface,
         ),
       ),
     );
@@ -240,9 +341,12 @@ class _DragHandle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        height: 4,
-        width: 32,
-        decoration: BoxDecoration(color: Theme.of(context).hintColor, borderRadius: BorderRadius.circular(99)),
+        width: PrismBottomSheet.dragHandleWidth,
+        height: PrismBottomSheet.dragHandleHeight,
+        decoration: BoxDecoration(
+          color: Theme.of(context).hintColor,
+          borderRadius: BorderRadius.circular(PrismBottomSheet.dragHandleRadius),
+        ),
       ),
     );
   }
