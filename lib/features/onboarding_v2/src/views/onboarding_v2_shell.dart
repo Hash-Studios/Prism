@@ -495,10 +495,7 @@ class _CtaButton extends StatelessWidget {
         final selected = state.interestsData.selected.length;
         return selected < OnboardingV2Config.minInterests ? 'continue ($selected selected)' : 'continue';
       }(),
-      OnboardingV2Step.starterPack => () {
-        final selected = state.starterPackData.selectedEmails.length;
-        return selected < OnboardingV2Config.minFollows ? 'continue ($selected selected)' : 'continue';
-      }(),
+      OnboardingV2Step.starterPack => 'continue',
       OnboardingV2Step.firstWallpaper => 'set as wallpaper',
     };
 
@@ -534,8 +531,8 @@ class _BottomText extends StatelessWidget {
   final String? wallpaperCategory;
 
   String _helperText() => switch (step) {
-    OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
-    OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
+    OnboardingV2Step.interests => 'select at least 3 categories to personalize your feed',
+      OnboardingV2Step.starterPack => 'we are suggesting you follow these 3 creators',
     _ =>
       (wallpaperCategory != null && wallpaperCategory!.isNotEmpty)
           ? 'we picked this wallpaper based on your interest in $wallpaperCategory'

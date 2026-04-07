@@ -1,7 +1,7 @@
 class OnboardingV2Config {
   const OnboardingV2Config._();
 
-  static const int minInterests = 5;
+  static const int minInterests = 3;
   static const int minFollows = 3;
   static const int paywallSoftGateSeconds = 4;
   static const int targetCreatorsCount = 10;
