@@ -15,4 +15,8 @@ abstract class OnboardingV2Event with _$OnboardingV2Event {
   const factory OnboardingV2Event.firstWallpaperStepContinued() = _FirstWallpaperStepContinued;
   const factory OnboardingV2Event.paywallResultReceived({required bool didPurchase}) = _PaywallResultReceived;
   const factory OnboardingV2Event.stepBack() = _StepBack;
+  const factory OnboardingV2Event.aiGenerationRequested({required String targetSize}) = _AiGenerationRequested;
+  const factory OnboardingV2Event.aiGenerationCompleted({required String? imageUrl, required String? thumbnailUrl}) =
+      _AiGenerationCompleted;
+  const factory OnboardingV2Event.aiGenerationStepContinued() = _AiGenerationStepContinued;
 }
