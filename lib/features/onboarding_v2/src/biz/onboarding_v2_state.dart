@@ -1,10 +1,12 @@
 part of 'onboarding_v2_bloc.j.dart';
 
-enum OnboardingV2Step { auth, interests, starterPack, firstWallpaper }
+enum OnboardingV2Step { auth, interests, starterPack, aiGenerate, firstWallpaper }
 
 enum OnboardingV2NavRequest { openPaywall, completeOnboarding }
 
 enum FirstWallpaperStatus { idle, loading, success, failure }
+
+enum AiGenerateStatus { idle, loading, success, failure }
 
 @freezed
 abstract class OnboardingInterestsData with _$OnboardingInterestsData {
@@ -39,6 +41,23 @@ abstract class OnboardingStarterPackData with _$OnboardingStarterPackData {
 }
 
 @freezed
+abstract class OnboardingAiData with _$OnboardingAiData {
+  const factory OnboardingAiData({
+    required String prompt,
+    required AiStylePreset stylePreset,
+    required AiGenerateStatus status,
+    String? imageUrl,
+    String? thumbnailUrl,
+  }) = _OnboardingAiData;
+
+  factory OnboardingAiData.initial() => const OnboardingAiData(
+    prompt: '',
+    stylePreset: AiStylePreset.abstract,
+    status: AiGenerateStatus.idle,
+  );
+}
+
+@freezed
 abstract class OnboardingWallpaperData with _$OnboardingWallpaperData {
   const factory OnboardingWallpaperData({
     OnboardingWallpaperVm? wallpaper,
@@ -59,6 +78,7 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     required OnboardingInterestsData interestsData,
     required OnboardingStarterPackData starterPackData,
     required OnboardingWallpaperData wallpaperData,
+    required OnboardingAiData aiData,
     required bool skipInterests,
     required bool skipStarterPack,
     OnboardingV2NavRequest? navRequest,
@@ -73,6 +93,7 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     interestsData: OnboardingInterestsData.initial(),
     starterPackData: OnboardingStarterPackData.initial(),
     wallpaperData: OnboardingWallpaperData.initial(),
+    aiData: OnboardingAiData.initial(),
     skipInterests: false,
     skipStarterPack: false,
   );

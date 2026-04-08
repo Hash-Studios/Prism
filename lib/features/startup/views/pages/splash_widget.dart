@@ -3,6 +3,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:Prism/logger/logger.dart';
@@ -23,6 +24,10 @@ class _SplashWidgetState extends State<SplashWidget> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _navigated = false;
   bool _notchMeasured = false;
+
+  // Tracks whether the debug-forced onboarding redirect has already fired this
+  // app session. Resets on process restart (static lives for the process lifetime).
+  static bool _debugOnboardingShownThisSession = false;
 
   @override
   void initState() {
@@ -56,14 +61,20 @@ class _SplashWidgetState extends State<SplashWidget> {
       return;
     }
     _navigated = true;
-    final isOnboarded = _settingsLocal.get<bool>('onboarded_v2_new', defaultValue: false);
-    final v2Enabled = context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false;
+    final effectiveDebugForce =
+        OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession;
+    final isOnboarded = !effectiveDebugForce &&
+        _settingsLocal.get<bool>('onboarded_v2_new', defaultValue: false);
+    final v2Enabled =
+        effectiveDebugForce ||
+        (context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
       final isLoggedIn = app_state.prismUser.loggedIn;
       if (!isLoggedIn || (!isOnboarded && v2Enabled)) {
+        _debugOnboardingShownThisSession = true;
         context.router.replaceAll([const OnboardingV2ShellRoute()]);
       } else {
         context.router.replaceAll([const DashboardRoute()]);
