@@ -50,11 +50,8 @@ abstract class OnboardingAiData with _$OnboardingAiData {
     String? thumbnailUrl,
   }) = _OnboardingAiData;
 
-  factory OnboardingAiData.initial() => const OnboardingAiData(
-    prompt: '',
-    stylePreset: AiStylePreset.abstract,
-    status: AiGenerateStatus.idle,
-  );
+  factory OnboardingAiData.initial() =>
+      const OnboardingAiData(prompt: '', stylePreset: AiStylePreset.abstract, status: AiGenerateStatus.idle);
 }
 
 @freezed
