@@ -14,6 +14,7 @@ import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f1_interests_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f2_starter_pack_page.dart';
+import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f3_first_wallpaper_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_background.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.dart';
@@ -45,7 +46,13 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final TapGestureRecognizer _legalTap;
   bool _imagesPrecached = false;
 
-  static const List<Widget> _pages = [F0AuthPage(), F1InterestsPage(), F2StarterPackPage(), F3FirstWallpaperPage()];
+  static const List<Widget> _pages = [
+    F0AuthPage(),
+    F1InterestsPage(),
+    F2StarterPackPage(),
+    F3AiGeneratePage(),
+    F3FirstWallpaperPage(),
+  ];
 
   static final _systemUiStyle = edgeToEdgeOverlayStyle(
     statusBarIconBrightness: Brightness.dark,
@@ -135,6 +142,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         _bloc.add(const OnboardingV2Event.interestsConfirmed());
       case OnboardingV2Step.starterPack:
         _bloc.add(const OnboardingV2Event.starterPackConfirmed());
+      case OnboardingV2Step.aiGenerate:
+        // Success auto-advances via the shell listener; CTA always triggers or re-triggers generation.
+        _bloc.add(OnboardingV2Event.aiGenerationRequested(targetSize: _targetSizeForDevice()));
       case OnboardingV2Step.firstWallpaper:
         final wallpaper = _bloc.state.wallpaperData.wallpaper;
         if (wallpaper == null) {
@@ -143,6 +153,27 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
         }
     }
+  }
+
+  String _targetSizeForDevice() {
+    if (!mounted) return '1080x1920';
+    const int minShortEdge = 720;
+    const int maxLongEdge = 2048;
+    final media = MediaQuery.of(context);
+    final double dpr = media.devicePixelRatio.clamp(1.0, 3.0);
+    final int rawW = (media.size.width * dpr).round().clamp(360, 4096);
+    final int rawH = (media.size.height * dpr).round().clamp(640, 4096);
+    final bool portrait = rawH >= rawW;
+    final int longRaw = portrait ? rawH : rawW;
+    final int shortRaw = portrait ? rawW : rawH;
+    final double aspect = longRaw / shortRaw;
+    int shortTarget = shortRaw.clamp(minShortEdge, maxLongEdge);
+    int longTarget = (shortTarget * aspect).round();
+    if (longTarget > maxLongEdge) {
+      longTarget = maxLongEdge;
+      shortTarget = (longTarget / aspect).round().clamp(minShortEdge, maxLongEdge);
+    }
+    return portrait ? '${shortTarget}x$longTarget' : '${longTarget}x$shortTarget';
   }
 
   Widget _pageFor(OnboardingV2Step step) {
@@ -161,7 +192,11 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
               curr.step == OnboardingV2Step.firstWallpaper &&
               prev.wallpaperData.status != curr.wallpaperData.status &&
               curr.wallpaperData.status == FirstWallpaperStatus.success;
-          return navChanged || wallpaperSucceeded;
+          final aiGenerationSucceeded =
+              curr.step == OnboardingV2Step.aiGenerate &&
+              prev.aiData.status != AiGenerateStatus.success &&
+              curr.aiData.status == AiGenerateStatus.success;
+          return navChanged || wallpaperSucceeded || aiGenerationSucceeded;
         },
         listener: (context, state) {
           logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
@@ -169,6 +204,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
             toasts.success(defaultTargetPlatform == TargetPlatform.android ? 'Wallpaper set!' : 'Saved to Photos!');
             _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
+          }
+          if (state.step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.success) {
+            _bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
           }
         },
         buildWhen: (prev, curr) =>
@@ -178,7 +216,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             prev.interestsData.selected.length != curr.interestsData.selected.length ||
             prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
             prev.wallpaperData.status != curr.wallpaperData.status ||
-            prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl,
+            prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl ||
+            prev.aiData != curr.aiData,
         builder: (context, state) {
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: _systemUiStyle,
@@ -340,6 +379,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               visible: _bottomTextVisible,
               legalTap: widget.legalTap,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
+              aiGenerateStatus: widget.state.aiData.status,
             ),
           ],
         );
@@ -367,12 +407,14 @@ class _Progress extends StatelessWidget {
     final visible =
         step == OnboardingV2Step.interests ||
         step == OnboardingV2Step.starterPack ||
+        step == OnboardingV2Step.aiGenerate ||
         step == OnboardingV2Step.firstWallpaper;
 
     final progressStep = switch (step) {
       OnboardingV2Step.interests => 1,
       OnboardingV2Step.starterPack => 2,
-      _ => 3,
+      OnboardingV2Step.aiGenerate => 3,
+      _ => 4,
     };
 
     final color = step == OnboardingV2Step.firstWallpaper ? wallpaperColor : OnboardingColors.progressActive;
@@ -389,7 +431,7 @@ class _Progress extends StatelessWidget {
             scaleX: sx,
             scaleY: sy,
             alignment: Alignment.topCenter,
-            child: OnboardingProgressIndicator(step: progressStep, color: color),
+            child: OnboardingProgressIndicator(step: progressStep, totalSteps: 4, color: color),
           ),
         ),
       ),
@@ -423,14 +465,16 @@ class _Headline extends StatelessWidget {
     OnboardingV2Step.auth => 0,
     OnboardingV2Step.interests => OnboardingLayout.step2TitleX,
     OnboardingV2Step.starterPack => OnboardingLayout.step3TitleX,
-    _ => OnboardingLayout.step4TitleX,
+    OnboardingV2Step.aiGenerate => OnboardingLayout.step4TitleX,
+    OnboardingV2Step.firstWallpaper => OnboardingLayout.step4TitleX,
   };
 
   static String _headlineText(OnboardingV2Step step) => switch (step) {
     OnboardingV2Step.auth => 'Your screen,\nreimagined.',
     OnboardingV2Step.interests => 'Pick your vibe',
     OnboardingV2Step.starterPack => 'Find your people',
-    _ => 'Make it yours',
+    OnboardingV2Step.aiGenerate => 'Create your\nfirst wallpaper',
+    OnboardingV2Step.firstWallpaper => 'Make it yours',
   };
 
   @override
@@ -479,6 +523,7 @@ class _CtaButton extends StatelessWidget {
     final isLoading = switch (step) {
       OnboardingV2Step.auth => state.isAuthLoading,
       OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
+      OnboardingV2Step.aiGenerate => state.aiData.status == AiGenerateStatus.loading,
       OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
     };
 
@@ -486,6 +531,7 @@ class _CtaButton extends StatelessWidget {
       OnboardingV2Step.auth => true,
       OnboardingV2Step.interests => state.interestsData.canContinue,
       OnboardingV2Step.starterPack => state.starterPackData.canContinue,
+      OnboardingV2Step.aiGenerate => true,
       OnboardingV2Step.firstWallpaper => true,
     };
 
@@ -495,10 +541,8 @@ class _CtaButton extends StatelessWidget {
         final selected = state.interestsData.selected.length;
         return selected < OnboardingV2Config.minInterests ? 'continue ($selected selected)' : 'continue';
       }(),
-      OnboardingV2Step.starterPack => () {
-        final selected = state.starterPackData.selectedEmails.length;
-        return selected < OnboardingV2Config.minFollows ? 'continue ($selected selected)' : 'continue';
-      }(),
+      OnboardingV2Step.starterPack => 'continue',
+      OnboardingV2Step.aiGenerate => 'generate my wallpaper',
       OnboardingV2Step.firstWallpaper => 'set as wallpaper',
     };
 
@@ -524,6 +568,7 @@ class _BottomText extends StatelessWidget {
     required this.visible,
     required this.legalTap,
     this.wallpaperCategory,
+    this.aiGenerateStatus,
   });
 
   final OnboardingV2Step step;
@@ -532,10 +577,16 @@ class _BottomText extends StatelessWidget {
   final bool visible;
   final TapGestureRecognizer legalTap;
   final String? wallpaperCategory;
+  final AiGenerateStatus? aiGenerateStatus;
 
   String _helperText() => switch (step) {
-    OnboardingV2Step.interests => 'select at least 5 categories to personalize your feed',
-    OnboardingV2Step.starterPack => 'follow at least 3 creators to personalize your feed',
+    OnboardingV2Step.interests => 'select at least 3 categories to personalize your feed',
+    OnboardingV2Step.starterPack => 'we are suggesting you follow these 3 creators',
+    OnboardingV2Step.aiGenerate => switch (aiGenerateStatus) {
+      AiGenerateStatus.success => 'looking good! tap "use this wallpaper" to continue',
+      AiGenerateStatus.failure => 'something went wrong — tap generate to try again',
+      _ => 'your first wallpaper, generated by AI',
+    },
     _ =>
       (wallpaperCategory != null && wallpaperCategory!.isNotEmpty)
           ? 'we picked this wallpaper based on your interest in $wallpaperCategory'

@@ -72,6 +72,12 @@ class OnboardingLayout {
   static const double loadingIndicatorSize = 18;
   static const double loadingIndicatorStroke = 2.2;
 
+  // AI generation step content (below the two-line headline at stepTitleY=100)
+  static const double aiChipX = 27;
+  static const double aiChipY = 216;
+  static const double aiPreviewX = 27;
+  static const double aiPreviewY = 298;
+
   static const double softenedBlurSigma = 100;
   static const double bottomOverlayY = 646;
   static const double bottomOverlayHeight = 78;
