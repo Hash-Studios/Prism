@@ -53,10 +53,12 @@ class F3AiGeneratePage extends StatelessWidget {
                       right: (OnboardingLayout.designWidth - OnboardingLayout.skipX - 32) * sx,
                     ),
                     child: GestureDetector(
-                      onTap: () => context
-                          .read<OnboardingV2Bloc>()
-                          .add(const OnboardingV2Event.aiGenerationStepContinued()),
-                      child: Text('skip', style: OnboardingTypography.skip.copyWith(color: OnboardingColors.textPrimary)),
+                      onTap: () =>
+                          context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.aiGenerationStepContinued()),
+                      child: Text(
+                        'skip',
+                        style: OnboardingTypography.skip.copyWith(color: OnboardingColors.textPrimary),
+                      ),
                     ),
                   ),
                 ),
@@ -134,9 +136,9 @@ class _PreviewArea extends StatelessWidget {
         AiGenerateStatus.idle => const _IdlePlaceholder(key: ValueKey('idle')),
         AiGenerateStatus.loading => const _LoadingView(key: ValueKey('loading')),
         AiGenerateStatus.success => _ResultImage(
-            key: const ValueKey('success'),
-            imageUrl: aiData.thumbnailUrl ?? aiData.imageUrl ?? '',
-          ),
+          key: const ValueKey('success'),
+          imageUrl: aiData.thumbnailUrl ?? aiData.imageUrl ?? '',
+        ),
         AiGenerateStatus.failure => const _FailureView(key: ValueKey('failure')),
       },
     );

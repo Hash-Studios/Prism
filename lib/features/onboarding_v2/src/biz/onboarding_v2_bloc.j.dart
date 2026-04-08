@@ -118,10 +118,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       onFailure: (_) => <OnboardingCreatorVm>[],
     );
 
-    final autoSelectedEmails = creatorVms
-        .where((c) => c.isSelected)
-        .map((c) => c.email)
-        .toList(growable: false);
+    final autoSelectedEmails = creatorVms.where((c) => c.isSelected).map((c) => c.email).toList(growable: false);
 
     final wallpaperVm = await _firstWallpaperService.recommendForOnboarding(<String>[]);
 
@@ -369,8 +366,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final OnboardingV2Step? prevStep = switch (state.step) {
       OnboardingV2Step.interests => OnboardingV2Step.auth,
       OnboardingV2Step.starterPack => state.skipInterests ? OnboardingV2Step.auth : OnboardingV2Step.interests,
-      OnboardingV2Step.aiGenerate =>
-        state.skipStarterPack ? OnboardingV2Step.interests : OnboardingV2Step.starterPack,
+      OnboardingV2Step.aiGenerate => state.skipStarterPack ? OnboardingV2Step.interests : OnboardingV2Step.starterPack,
       OnboardingV2Step.firstWallpaper => OnboardingV2Step.aiGenerate,
       OnboardingV2Step.auth => null,
     };
@@ -384,10 +380,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   // AI generation step handlers
   // ---------------------------------------------------------------------------
 
-  Future<void> _onAiGenerationRequested(
-    _AiGenerationRequested event,
-    Emitter<OnboardingV2State> emit,
-  ) async {
+  Future<void> _onAiGenerationRequested(_AiGenerationRequested event, Emitter<OnboardingV2State> emit) async {
     emit(state.copyWith(aiData: state.aiData.copyWith(status: AiGenerateStatus.loading), navRequest: null));
 
     try {
@@ -400,10 +393,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         coinsSpent: 0,
       );
       if (!isClosed) {
-        add(OnboardingV2Event.aiGenerationCompleted(
-          imageUrl: record.imageUrl,
-          thumbnailUrl: record.watermarkedImageUrl,
-        ));
+        add(
+          OnboardingV2Event.aiGenerationCompleted(imageUrl: record.imageUrl, thumbnailUrl: record.watermarkedImageUrl),
+        );
       }
     } catch (e) {
       logger.e('AI onboarding generation failed: $e', tag: 'OnboardingV2Bloc');
@@ -441,10 +433,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
   }
 
-  Future<void> _onAiGenerationStepContinued(
-    _AiGenerationStepContinued event,
-    Emitter<OnboardingV2State> emit,
-  ) async {
+  Future<void> _onAiGenerationStepContinued(_AiGenerationStepContinued event, Emitter<OnboardingV2State> emit) async {
     _f3EnteredAt = DateTime.now();
     emit(state.copyWith(step: OnboardingV2Step.firstWallpaper, navRequest: null));
   }

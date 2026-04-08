@@ -61,13 +61,9 @@ class _SplashWidgetState extends State<SplashWidget> {
       return;
     }
     _navigated = true;
-    final effectiveDebugForce =
-        OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession;
-    final isOnboarded = !effectiveDebugForce &&
-        _settingsLocal.get<bool>('onboarded_v2_new', defaultValue: false);
-    final v2Enabled =
-        effectiveDebugForce ||
-        (context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false);
+    final effectiveDebugForce = OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession;
+    final isOnboarded = !effectiveDebugForce && _settingsLocal.get<bool>('onboarded_v2_new', defaultValue: false);
+    final v2Enabled = effectiveDebugForce || (context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
