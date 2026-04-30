@@ -53,6 +53,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   bool? review;
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
+  bool _submitted = false;
   @override
   void initState() {
     super.initState();
@@ -184,7 +185,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   void _onPop() {
-    deleteFile();
+    if (!_submitted) deleteFile();
   }
 
   @override
@@ -299,6 +300,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () async {
+                  _submitted = true;
                   Navigator.pop(context, [wallpaperUrl, id]);
                   analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
                   WallStore.createRecord(
