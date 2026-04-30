@@ -1,6 +1,6 @@
 # <div align="center"><img src="android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" alt="icon" width=30> Prism</div>
 
-<div align="center">Prism is a beautiful open-source wallpapers and home screen setups app for Android and iOS. It is built with Dart on top of Google's Flutter Framework.
+<div align="center">Prism is an open-source Flutter app for wallpapers, home screen setups, and AI-generated walls on Android and iOS.
 
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
@@ -17,7 +17,7 @@
 </div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
 
-<b>Prism</b> brings you exclusive wallpapers & setups straight to your Android device.
+<b>Prism</b> brings you exclusive wallpapers and setups to your Android and iOS devices.
 With unlimited downloads and favourites, you can be sure to never miss the best wallpapers & setups.
 
 Our main goal is to create an unimaginable self-sustainable experience where people can share their walls and setups with the world, and everyone can like, download, and apply them.

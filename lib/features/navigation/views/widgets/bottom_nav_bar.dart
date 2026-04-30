@@ -15,6 +15,7 @@ class BottomBar extends StatefulWidget {
 
 class _BottomBarState extends State<BottomBar> {
   late final floating.BottomBarController _bottomBarController;
+
   @override
   void initState() {
     super.initState();
@@ -24,23 +25,30 @@ class _BottomBarState extends State<BottomBar> {
   @override
   Widget build(BuildContext context) {
     return floating.BottomBar(
-      hideOnScroll: false,
       showIcon: false,
-      width: MediaQuery.of(context).size.width,
-      barColor: Colors.transparent,
-      borderRadius: BorderRadius.circular(500),
-      controller: _bottomBarController,
       iconTooltip: 'Scroll to top',
-      iconDecoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
-      icon: (width, height) => Icon(JamIcons.arrow_up, color: Colors.white, size: width),
-      iconWidth: 32,
-      iconHeight: 32,
-      barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
+      layout: floating.BottomBarLayout(
+        width: MediaQuery.of(context).size.width,
+        borderRadius: BorderRadius.circular(500),
+      ),
+      scrollBehavior: const floating.BottomBarScrollBehavior(
+        hideOnScroll: false,
+      ),
+      theme: floating.BottomBarThemeData(
+        barDecoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(500),
+        ),
+      ),
+      controller: _bottomBarController,
+      body: _BottomBarScrollVisibility(
+        controller: _bottomBarController,
+        child: widget.child ?? const SizedBox.shrink(),
+      ),
       child: const Align(
         heightFactor: 1.0,
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             IntrinsicWidth(child: PrismBottomNav()),
             SizedBox(width: 12),
@@ -48,60 +56,23 @@ class _BottomBarState extends State<BottomBar> {
           ],
         ),
       ),
-      body: (context, scrollController) => _BottomBarScrollVisibility(
-        controller: _bottomBarController,
-        scrollController: scrollController,
-        child: widget.child ?? const SizedBox.shrink(),
-      ),
     );
   }
 }
 
 class _BottomBarScrollVisibility extends StatefulWidget {
   final floating.BottomBarController controller;
-  final ScrollController scrollController;
   final Widget child;
 
-  const _BottomBarScrollVisibility({required this.controller, required this.scrollController, required this.child});
+  const _BottomBarScrollVisibility({required this.controller, required this.child});
 
   @override
   State<_BottomBarScrollVisibility> createState() => _BottomBarScrollVisibilityState();
 }
 
 class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> {
-  ScrollPosition? _activeScrollPosition;
-
-  void _resolveActiveScrollPosition() {
-    if (!mounted) {
-      return;
-    }
-
-    if (widget.scrollController.positions.length == 1) {
-      _activeScrollPosition = widget.scrollController.position;
-      return;
-    }
-
-    final ScrollController? primaryController = PrimaryScrollController.maybeOf(context);
-    if (primaryController != null && primaryController.positions.length == 1) {
-      _activeScrollPosition = primaryController.position;
-      return;
-    }
-
-    final ScrollableState? localScrollable = Scrollable.maybeOf(context);
-    if (localScrollable != null) {
-      _activeScrollPosition = localScrollable.position;
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _resolveActiveScrollPosition();
-  }
-
   bool _onUserScroll(UserScrollNotification notification) {
     if (!mounted || notification.metrics.axis != Axis.vertical) return false;
-    _resolveActiveScrollPosition();
     if (notification.direction == ScrollDirection.reverse) {
       widget.controller.hide();
     } else if (notification.direction == ScrollDirection.forward) {
@@ -111,17 +82,7 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
   }
 
   Future<void> _scrollToTop() async {
-    _resolveActiveScrollPosition();
-    final ScrollPosition? position = _activeScrollPosition;
-    if (position == null) {
-      return;
-    }
-
-    await position.animateTo(
-      position.minScrollExtent,
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOutCubic,
-    );
+    await widget.controller.scrollToStart();
     widget.controller.show();
   }
 
@@ -134,7 +95,6 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
           ignoring: !showButton,
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 120),
-            curve: Curves.linear,
             opacity: showButton ? 1 : 0,
             child: SafeArea(
               child: Padding(
