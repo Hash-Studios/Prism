@@ -45,7 +45,7 @@ dependencies:
   flutter_image_compress: ^2.4.0
   flutter_local_notifications: ^20.1.0
   flutter_mailer: ^3.0.1
-  flutter_floating_bottom_bar: ^1.4.0
+  flutter_floating_bottom_bar: ^2.0.0
   flutter_staggered_grid_view: ^0.7.0
   flutter_svg: ^2.2.3
   flutter_bloc: ^8.1.6
@@ -182,6 +182,8 @@ flutter:
         - asset: assets/fonts/JamIcons.ttf
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+  config:
+    enable-swift-package-manager: false
 
 dependency_overrides:
   cloud_functions:
