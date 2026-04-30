@@ -44,7 +44,7 @@ class ProfileDrawer extends StatelessWidget {
         margin: EdgeInsets.zero,
         padding: EdgeInsets.zero,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
