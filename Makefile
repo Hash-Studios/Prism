@@ -1,4 +1,5 @@
 .PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset
+
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
 DEVICE ?=
@@ -70,7 +71,6 @@ setup: ensure-fvm
 	@$(FLUTTER) --version
 	@$(FLUTTER) pub get
 	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
-	@$(MAKE) install-hooks
 	@echo "Setup complete. For full local setup with secrets, run: make setup-dev"
 
 setup-dev: ensure-fvm doppler-check
@@ -258,7 +258,7 @@ ci: get format-check env-guard secrets-guard version-guard analytics-check analy
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test $$(find test -name '*_test.dart' -not -path 'test/core/arsenal/*' | tr '\n' ' '); \
+		$(FLUTTER) test; \
 	else \
 		echo "No test files found, skipping."; \
 	fi
