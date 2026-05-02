@@ -4,13 +4,26 @@ import 'dart:io';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
-Future<void> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
+final RegExp _invalidFcmTopicCharacters = RegExp(r'[^A-Za-z0-9\-_.~%]');
+
+String? followersTopicFromEmail(String email) {
+  final String localPart = email.trim().split('@').first.trim();
+  if (localPart.isEmpty) {
+    return null;
+  }
+  final String sanitizedLocalPart = localPart.replaceAll(_invalidFcmTopicCharacters, '');
+  if (sanitizedLocalPart.isEmpty) {
+    return null;
+  }
+  return sanitizedLocalPart;
+}
+
+Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {
-    return;
+    return false;
   }
   try {
-    await messaging.requestPermission();
     final bool canProceed = await _canProceedWithTopicCall(messaging);
     if (!canProceed) {
       logger.w(
@@ -18,9 +31,10 @@ Future<void> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {
         tag: 'Push',
         fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
       );
-      return;
+      return false;
     }
     await messaging.subscribeToTopic(normalizedTopic);
+    return true;
   } catch (error, stackTrace) {
     if (_isApnsTokenMissing(error)) {
       logger.w(
@@ -30,7 +44,7 @@ Future<void> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {
         stackTrace: stackTrace,
         fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
       );
-      return;
+      return false;
     }
     logger.e(
       'Failed to subscribe to topic.',
@@ -39,6 +53,7 @@ Future<void> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {
       stackTrace: stackTrace,
       fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
     );
+    return false;
   }
 }
 

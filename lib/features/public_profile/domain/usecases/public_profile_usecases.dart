@@ -4,6 +4,7 @@ import 'package:Prism/features/public_profile/domain/entities/public_profile_ent
 import 'package:Prism/features/public_profile/domain/entities/public_profile_page.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:injectable/injectable.dart';
 
@@ -143,5 +144,87 @@ class UpdatePublicProfileLinksUseCase implements UseCase<PublicProfileEntity, Up
   @override
   Future<Result<PublicProfileEntity>> call(UpdatePublicProfileLinksParams params) {
     return _repository.updateLinks(userId: params.userId, links: params.links);
+  }
+}
+
+class FetchUserSummariesParams {
+  const FetchUserSummariesParams({required this.emails, required this.currentUserEmail});
+
+  final List<String> emails;
+  final String currentUserEmail;
+}
+
+@lazySingleton
+class FetchUserSummariesUseCase implements UseCase<List<UserSummaryEntity>, FetchUserSummariesParams> {
+  FetchUserSummariesUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<List<UserSummaryEntity>>> call(FetchUserSummariesParams params) {
+    return _repository.fetchUserSummaries(emails: params.emails, currentUserEmail: params.currentUserEmail);
+  }
+}
+
+class FetchUserSummariesPageParams {
+  const FetchUserSummariesPageParams({
+    required this.allEmails,
+    required this.currentUserEmail,
+    required this.page,
+    this.pageSize = 20,
+  });
+
+  final List<String> allEmails;
+  final String currentUserEmail;
+  final int page;
+  final int pageSize;
+}
+
+@lazySingleton
+class FetchUserSummariesPageUseCase
+    implements UseCase<({List<UserSummaryEntity> items, bool hasMore}), FetchUserSummariesPageParams> {
+  FetchUserSummariesPageUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> call(FetchUserSummariesPageParams params) {
+    return _repository.fetchUserSummariesPage(
+      allEmails: params.allEmails,
+      currentUserEmail: params.currentUserEmail,
+      page: params.page,
+      pageSize: params.pageSize,
+    );
+  }
+}
+
+class SearchUsersByUsernameParams {
+  const SearchUsersByUsernameParams({
+    required this.query,
+    required this.scopeEmails,
+    required this.currentUserEmail,
+    this.limit = 5,
+  });
+
+  final String query;
+  final List<String> scopeEmails;
+  final String currentUserEmail;
+  final int limit;
+}
+
+@lazySingleton
+class SearchUsersByUsernameUseCase implements UseCase<List<UserSummaryEntity>, SearchUsersByUsernameParams> {
+  SearchUsersByUsernameUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<List<UserSummaryEntity>>> call(SearchUsersByUsernameParams params) {
+    return _repository.searchUsersByUsername(
+      query: params.query,
+      scopeEmails: params.scopeEmails,
+      currentUserEmail: params.currentUserEmail,
+      limit: params.limit,
+    );
   }
 }

@@ -1,6 +1,4 @@
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
 
 class LoadingCards extends StatefulWidget {
@@ -60,48 +58,22 @@ class _LoadingCardsState extends State<LoadingCards> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    ScrollController? controller;
-    try {
-      if (InheritedDataProvider.of(context) != null) {
-        controller = InheritedDataProvider.of(context)!.scrollController;
-      }
-    } catch (e) {
-      logger.d(e.toString());
-    }
-
-    return controller != null
-        ? GridView.builder(
-            controller: controller,
-            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: 24,
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-              childAspectRatio: 0.6625,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-            ),
-            itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
-              );
-            },
-          )
-        : GridView.builder(
-            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: 24,
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-              childAspectRatio: 0.6625,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-            ),
-            itemBuilder: (context, index) {
-              return Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
-              );
-            },
-          );
+    return GridView.builder(
+      primary: false,
+      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+      itemCount: 24,
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+        childAspectRatio: 0.6625,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemBuilder: (context, index) {
+        return Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: animation.value),
+        );
+      },
+    );
   }
 }

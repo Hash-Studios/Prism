@@ -1,17 +1,9 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-class PublicProfileSnapshot {
-  const PublicProfileSnapshot(this._payload);
-
-  final Map<String, dynamic> _payload;
-
-  Map<String, dynamic> data() => _payload;
-
-  dynamic operator [](String key) => _payload[key];
-}
 
 class PublicProfileAdapter {
   PublicProfileAdapter(BuildContext context, {required bool listen})
@@ -19,20 +11,20 @@ class PublicProfileAdapter {
 
   final PublicProfileBloc _bloc;
 
-  List<PublicProfileSnapshot>? get userProfileWalls {
+  List<PublicProfileWallEntity>? get userProfileWalls {
     final state = _bloc.state;
     if (state.status == LoadStatus.initial) {
       return null;
     }
-    return state.walls.map((item) => PublicProfileSnapshot(item.payload)).toList(growable: false);
+    return state.walls;
   }
 
-  List<PublicProfileSnapshot>? get userProfileSetups {
+  List<PublicProfileSetupEntity>? get userProfileSetups {
     final state = _bloc.state;
     if (state.status == LoadStatus.initial) {
       return null;
     }
-    return state.setups.map((item) => PublicProfileSnapshot(item.payload)).toList(growable: false);
+    return state.setups;
   }
 
   bool get hasMoreWalls => _bloc.state.hasMoreWalls;

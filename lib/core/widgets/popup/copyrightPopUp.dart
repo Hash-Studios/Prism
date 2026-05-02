@@ -28,10 +28,12 @@ class CopyrightPopUp extends StatelessWidget {
           onPressed: () {
             Navigator.pop(context);
             setup == true
-                ? launch(
+                ? openPrismLink(
+                    context,
                     "mailto:hash.studios.inc@gmail.com?subject=%5BREPORT%20SETUP%5D&body=----x-x-x----%0D%0A$shortlink%0D%0A%0D%0AEnter%20the%20original%20source%20below%20---",
                   )
-                : launch(
+                : openPrismLink(
+                    context,
                     "mailto:hash.studios.inc@gmail.com?subject=%5BREPORT%20WALL%5D&body=----x-x-x----%0D%0A$shortlink%0D%0A%0D%0AEnter%20the%20original%20source%20below%20---",
                   );
           },

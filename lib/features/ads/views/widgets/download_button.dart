@@ -1,25 +1,26 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class DownloadButton extends StatefulWidget {
   const DownloadButton({
@@ -98,12 +99,12 @@ class _DownloadButtonState extends State<DownloadButton> {
       return;
     }
 
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       await _showGuestAdGatePopup();
       return;
     }
 
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       await _performDownload();
       return;
     }
@@ -161,8 +162,9 @@ class _DownloadButtonState extends State<DownloadButton> {
                         color: Theme.of(context).hintColor,
                       ),
                       child: const SafeRiveAsset(
-                        assetName: 'assets/animations/Update.flr',
+                        assetName: 'assets/animations/Update.riv',
                         animations: <String>['update'],
+                        fallback: Center(child: Icon(Icons.system_update_alt)),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -184,14 +186,22 @@ class _DownloadButtonState extends State<DownloadButton> {
                           shape: const StadiumBorder(),
                           color: Theme.of(context).colorScheme.error,
                           onPressed: () {
-                            if (globals.prismUser.loggedIn == false) {
+                            if (app_state.prismUser.loggedIn == false) {
                               googleSignInPopUp(context, () {
                                 Navigator.of(dialogContext).pop();
-                                this.context.router.push(const UpgradeRoute());
+                                PaywallOrchestrator.instance.present(
+                                  this.context,
+                                  placement: PaywallPlacement.mainUpsell,
+                                  source: 'download_guest_buy_premium',
+                                );
                               });
                             } else {
                               Navigator.of(dialogContext).pop();
-                              this.context.router.push(const UpgradeRoute());
+                              PaywallOrchestrator.instance.present(
+                                this.context,
+                                placement: PaywallPlacement.mainUpsell,
+                                source: 'download_guest_buy_premium',
+                              );
                             }
                           },
                           child: Text(
@@ -212,6 +222,9 @@ class _DownloadButtonState extends State<DownloadButton> {
                                   }
                                   if (!watched) {
                                     toasts.error('Ad was not completed.');
+                                    return;
+                                  }
+                                  if (!dialogContext.mounted) {
                                     return;
                                   }
                                   if (Navigator.of(dialogContext).canPop()) {
@@ -329,7 +342,11 @@ class _DownloadButtonState extends State<DownloadButton> {
         return true;
       case _LowBalanceAction.upgrade:
         if (mounted) {
-          context.router.push(const UpgradeRoute());
+          await PaywallOrchestrator.instance.present(
+            context,
+            placement: PaywallPlacement.lowBalance,
+            source: 'download_low_balance_upgrade',
+          );
         }
         return true;
       case _LowBalanceAction.none:
@@ -349,6 +366,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         CoinEarnAction.rewardedAd,
         sourceTag: 'coins.download.watch_and_download.rewarded_ad',
       );
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+          context,
+          source: 'download_watch_and_download_rewarded_ad',
+        );
+      }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(
         sourceTag: 'coins.download.watch_and_download.rewarded_ad',
@@ -458,25 +481,10 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
   }
 
-  Future<bool> _ensureStoragePermission() async {
-    final PermissionStatus status = await Permission.storage.status;
-    if (status.isGranted) {
-      return true;
-    }
-    final PermissionStatus requested = await Permission.storage.request();
-    return requested.isGranted;
-  }
-
   Future<bool> _performDownload() async {
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty) {
       toasts.error('No download link available.');
-      return false;
-    }
-
-    final bool storageGranted = await _ensureStoragePermission();
-    if (!storageGranted) {
-      toasts.error('Storage permission is required to download.');
       return false;
     }
 
@@ -488,7 +496,9 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.d(link);
       if (link.contains('com.hash.prism')) {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
-        final OperationResult result = await PrismMediaHostApi().saveMedia(request);
+        final OperationResult result = await PrismMediaHostApi()
+            .saveMedia(request)
+            .timeout(const Duration(seconds: 15));
         if (!result.success) {
           toasts.error("Couldn't download! Please retry.");
           return false;
@@ -498,21 +508,36 @@ class _DownloadButtonState extends State<DownloadButton> {
           link: link,
           filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
         );
-        await PrismMediaHostApi().enqueueDownload(request);
+        final OperationResult result = await PrismMediaHostApi()
+            .enqueueDownload(request)
+            .timeout(const Duration(seconds: 15));
+        if (!result.success) {
+          toasts.error(result.message ?? "Couldn't download! Please retry.");
+          return false;
+        }
       }
 
-      analytics.logEvent(
-        name: 'download_wallpaper',
-        parameters: <String, Object>{
-          'link': link,
-          'sourceContext': widget.sourceContext ?? '',
-          'premiumContent': widget.isPremiumContent,
-        },
+      analytics.track(
+        DownloadWallpaperEvent(
+          link: link,
+          sourceContext: (widget.sourceContext ?? '').trim().isEmpty ? null : widget.sourceContext,
+          premiumContent: widget.isPremiumContent,
+        ),
       );
-      toasts.codeSend('Wall downloaded in Pictures/Prism!');
+      if (mounted) {
+        await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+          context,
+          sourceTag: 'notifications.permission_after_download',
+        );
+      }
+      toasts.codeSend(hideSetWallpaperUi ? 'Saved to Photos.' : 'Wall downloaded in Pictures/Prism!');
       return true;
     } on PlatformException catch (e) {
-      logger.e('Download failed', error: e);
+      if (e.code == 'channel-error') {
+        logger.w('Download channel unavailable (native side not registered)', error: e);
+      } else {
+        logger.e('Download failed', error: e);
+      }
       toasts.error("Couldn't download! Please retry.");
       return false;
     } catch (e) {

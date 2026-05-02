@@ -70,6 +70,9 @@ class FirestoreFileTelemetrySink implements FirestoreTelemetrySink {
   final String fileName;
   File? _file;
 
+  /// Serializes appends so concurrent emit() calls cannot interleave and corrupt NDJSON.
+  Future<void> _writeTail = Future<void>.value();
+
   Future<File> _resolveFile() async {
     if (_file != null) {
       return _file!;
@@ -84,9 +87,17 @@ class FirestoreFileTelemetrySink implements FirestoreTelemetrySink {
   }
 
   @override
-  Future<void> emit(FirestoreTelemetryEvent event) async {
-    final File file = await _resolveFile();
-    await file.writeAsString('${jsonEncode(event.toJson())}\n', mode: FileMode.append, flush: true);
+  Future<void> emit(FirestoreTelemetryEvent event) {
+    final prev = _writeTail;
+    late Future<void> next;
+    next = prev.then((_) async {
+      // Only write valid event JSON from toJson(); never raw or partial data.
+      final String line = '${jsonEncode(event.toJson())}\n';
+      final File file = await _resolveFile();
+      await file.writeAsString(line, mode: FileMode.append, flush: true);
+    });
+    _writeTail = next;
+    return next;
   }
 }
 

@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/apps/app_icon.dart';
 import 'package:Prism/data/apps/appsData.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -16,14 +18,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as Path;
 
 @RoutePage()
 class EditSetupReviewScreen extends StatefulWidget {
-  final List? arguments;
-  const EditSetupReviewScreen({this.arguments});
+  const EditSetupReviewScreen({super.key, required this.setupDoc});
+
+  final FirestoreDocument setupDoc;
+
   @override
   _EditSetupReviewScreenState createState() => _EditSetupReviewScreenState();
 }
@@ -61,60 +64,50 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
   bool wallpaperUploaded = false;
   bool secondWidgetAdded = false;
 
-  Map<String, dynamic> _setupData(FirestoreDocument doc) => doc.data();
-
   @override
   void initState() {
     super.initState();
-    setupDoc = widget.arguments![0] as FirestoreDocument;
-    final Map<String, dynamic> setupData = _setupData(setupDoc);
-    final dynamic wallpaperUrlData = setupData["wallpaper_url"];
-    final String wallpaperUrlText = wallpaperUrlData?.toString() ?? "";
-    imageURL = setupData["image"]?.toString();
+    setupDoc = widget.setupDoc;
+    final wallpaperValue = setupDoc.setupWallpaperValue;
+    final String wallpaperUrlText = wallpaperValue.raw;
+    imageURL = setupDoc.image;
     groupWidgetValue = 0;
-    setupName = TextEditingController(text: setupData["name"]?.toString() ?? "");
-    id = setupData["id"]?.toString();
-    setupDesc = TextEditingController(text: setupData["desc"]?.toString() ?? "");
-    iconName = TextEditingController(text: setupData["icon"]?.toString() ?? "");
-    iconURL = TextEditingController(text: setupData["icon_url"]?.toString() ?? "");
-    widgetName1 = TextEditingController(text: setupData["widget"]?.toString() ?? "");
-    widgetURL1 = TextEditingController(text: setupData["widget_url"]?.toString() ?? "");
+    setupName = TextEditingController(text: setupDoc.name);
+    id = setupDoc.id;
+    setupDesc = TextEditingController(text: setupDoc.desc);
+    iconName = TextEditingController(text: setupDoc.icon);
+    iconURL = TextEditingController(text: setupDoc.iconUrl);
+    widgetName1 = TextEditingController(text: setupDoc.widget);
+    widgetURL1 = TextEditingController(text: setupDoc.widgetUrl);
     if (wallpaperUrlText.isNotEmpty) {
-      if (wallpaperUrlText[0] != "[") {
-        if ((setupData["wall_id"]?.toString() ?? "").isNotEmpty) {
+      if (!wallpaperValue.isEncoded) {
+        if (setupDoc.wallId.isNotEmpty) {
           wallpaperUploaded = true;
-          wallpaperUploadLink = wallpaperUrlText;
-          wallpaperId = setupData["wall_id"]?.toString() ?? "";
+          wallpaperUploadLink = wallpaperValue.primaryUrl;
+          wallpaperId = setupDoc.wallId;
           groupValue = 1;
         } else {
-          wallpaperUrl = TextEditingController(text: wallpaperUrlText);
+          wallpaperUrl = TextEditingController(text: wallpaperValue.primaryUrl);
           groupValue = 0;
         }
       } else {
-        final List<dynamic> wallpaperUrlList = wallpaperUrlData is List ? wallpaperUrlData : const <dynamic>[];
-        wallpaperAppName = TextEditingController(
-          text: wallpaperUrlList.isNotEmpty ? wallpaperUrlList[0].toString() : "",
-        );
-        wallpaperAppWallName = TextEditingController(
-          text: wallpaperUrlList.length > 2 ? wallpaperUrlList[2].toString() : "",
-        );
-        wallpaperAppLink = TextEditingController(
-          text: wallpaperUrlList.length > 1 ? wallpaperUrlList[1].toString() : "",
-        );
+        wallpaperAppName = TextEditingController(text: wallpaperValue.title ?? "");
+        wallpaperAppWallName = TextEditingController(text: wallpaperValue.subtitle ?? "");
+        wallpaperAppLink = TextEditingController(text: wallpaperValue.deepLinkUrl ?? "");
         groupValue = 2;
       }
     } else {
       wallpaperUrl = TextEditingController(text: wallpaperUrlText);
       groupValue = 0;
     }
-    widgetName2 = TextEditingController(text: setupData["widget2"]?.toString() ?? "");
-    widgetURL2 = TextEditingController(text: setupData["widget_url2"]?.toString() ?? "");
+    widgetName2 = TextEditingController(text: setupDoc.widget2);
+    widgetURL2 = TextEditingController(text: setupDoc.widgetUrl2);
     isUploading = false;
     isProcessing = false;
-    wallpaperProvider = setupData["wallpaper_provider"]?.toString();
-    wallpaperThumb = setupData["wallpaper_thumb"]?.toString();
-    review = setupData["review"] as bool?;
-    secondWidgetAdded = (setupData["widget2"]?.toString() ?? "").isNotEmpty;
+    wallpaperProvider = setupDoc.wallpaperProvider;
+    wallpaperThumb = setupDoc.wallpaperThumb;
+    review = setupDoc.review;
+    secondWidgetAdded = setupDoc.widget2.isNotEmpty;
   }
 
   final Map<int, Widget> logoWidgets = <int, Widget>{
@@ -181,10 +174,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
     });
     try {
       final String base64Image = base64Encode(imageBytes);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoSetups),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoSetups)),
             CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
           )
           .then(
@@ -223,7 +216,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                       toasts.error("Please fill all required fields!");
                     } else {
                       Navigator.pop(context);
-                      analytics.logEvent(name: 'edit_setup', parameters: {'id': id ?? '', 'link': imageURL ?? ''});
+                      analytics.track(EditSetupEvent(setupId: id ?? '', link: imageURL ?? ''));
                       WallStore.updateSetup(
                         setupDoc.id,
                         id,
@@ -272,7 +265,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                 child: CircleAvatar(
                   backgroundColor: Theme.of(context).colorScheme.error,
                   radius: 20,
-                  child: ClipOval(child: Image.network(globals.prismUser.profilePhoto)),
+                  child: ClipOval(child: Image.network(app_state.prismUser.profilePhoto)),
                 ),
               ),
               const Spacer(),
@@ -559,8 +552,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               onPressed: () {
                                 bool fetched = false;
                                 bool loading = true;
-                                List icons = [];
-                                List allIcons = [];
+                                List<AppIcon> icons = <AppIcon>[];
+                                List<AppIcon> allIcons = <AppIcon>[];
                                 showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
@@ -583,15 +576,8 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                           builder: (context, controller) => StatefulBuilder(
                                             builder: (BuildContext context, StateSetter setState) {
                                               if (!fetched) {
-                                                final Box box = Hive.box('appsCache');
                                                 setState(() {
                                                   fetched = true;
-                                                  icons = (box.get('icons', defaultValue: {}) as Map).values.toList();
-                                                  allIcons = (box.get('icons', defaultValue: {}) as Map).values
-                                                      .toList();
-                                                  if (icons.isNotEmpty) {
-                                                    loading = false;
-                                                  }
                                                 });
                                                 getIcons().then(
                                                   (value) => setState(() {
@@ -640,15 +626,12 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                             child: TextField(
                                                               onSubmitted: (query) {
                                                                 query = query.toLowerCase();
-                                                                icons = allIcons;
+                                                                icons = List<AppIcon>.from(allIcons);
                                                                 if (query != '') {
                                                                   icons = icons
                                                                       .where(
-                                                                        (e) => (e as Map)["name"]
-                                                                            .toString()
-                                                                            .trim()
-                                                                            .toLowerCase()
-                                                                            .contains(query),
+                                                                        (e) =>
+                                                                            e.name.trim().toLowerCase().contains(query),
                                                                       )
                                                                       .toList();
                                                                 }
@@ -656,15 +639,12 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                               },
                                                               onChanged: (query) {
                                                                 query = query.toLowerCase();
-                                                                icons = allIcons;
+                                                                icons = List<AppIcon>.from(allIcons);
                                                                 if (query != '') {
                                                                   icons = icons
                                                                       .where(
-                                                                        (e) => (e as Map)["name"]
-                                                                            .toString()
-                                                                            .trim()
-                                                                            .toLowerCase()
-                                                                            .contains(query),
+                                                                        (e) =>
+                                                                            e.name.trim().toLowerCase().contains(query),
                                                                       )
                                                                       .toList();
                                                                 }
@@ -700,26 +680,21 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                                   ? const ListTile(title: SizedBox(height: 60))
                                                                   : ListTile(
                                                                       onTap: () {
-                                                                        iconName.text = (icons[index] as Map)["name"]
-                                                                            .toString()
-                                                                            .trim();
-                                                                        iconURL.text = (icons[index] as Map)["link"]
-                                                                            .toString()
-                                                                            .trim();
+                                                                        iconName.text = icons[index].name.trim();
+                                                                        iconURL.text = icons[index].link.trim();
                                                                         Navigator.pop(context);
                                                                       },
                                                                       leading: ClipRRect(
                                                                         borderRadius: BorderRadius.circular(8),
                                                                         child: CachedNetworkImage(
-                                                                          imageUrl: (icons[index] as Map)["icon"]
-                                                                              .toString(),
+                                                                          imageUrl: icons[index].iconUrl,
                                                                           width: 38,
                                                                           height: 38,
                                                                           fit: BoxFit.cover,
                                                                         ),
                                                                       ),
                                                                       title: Text(
-                                                                        (icons[index] as Map)["name"].toString().trim(),
+                                                                        icons[index].name.trim(),
                                                                         style: TextStyle(
                                                                           color: Theme.of(
                                                                             context,
@@ -730,7 +705,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                                                                         ),
                                                                       ),
                                                                       subtitle: Text(
-                                                                        (icons[index] as Map)["id"].toString().trim(),
+                                                                        icons[index].id.trim(),
                                                                         style: TextStyle(
                                                                           color: Theme.of(context).colorScheme.secondary
                                                                               .withValues(alpha: 0.5),
@@ -868,7 +843,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                             if (pickedFile != null) {
                               Future.delayed(Duration.zero).then((value) async {
                                 final argumentsFromWall = await context.router.push(
-                                  UploadWallRoute(arguments: [File(pickedFile.path), true]),
+                                  UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
                                 );
                                 if (argumentsFromWall != null) {
                                   final List argsC = argumentsFromWall as List;
@@ -1003,7 +978,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
           const Divider(height: 1),
           ListTile(
             title: Text(
-              globals.prismUser.premium == true
+              app_state.prismUser.premium == true
                   ? "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. Your setup will be visible in the setups section."
                   : "Note - We have a strong review policy, and submitting irrelevant images & info will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your setup will be visible in the setups section.",
               style: TextStyle(

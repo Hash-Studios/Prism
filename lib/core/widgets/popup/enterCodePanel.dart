@@ -1,7 +1,7 @@
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -131,7 +131,7 @@ class _EnterCodePanelState extends State<EnterCodePanel> {
                                 if (doc.data["redeemed"] == false) {
                                   await firestoreClient.updateDoc(FirebaseCollections.codes, doc.id, <String, dynamic>{
                                     "redeemed": true,
-                                    "winner": globals.prismUser.toJson(),
+                                    "winner": app_state.prismUser.toJson(),
                                     "when": DateTime.now().toUtc(),
                                   }, sourceTag: 'codes.redeem.update');
                                   toasts.codeSend("Congratulations, we will contact you!");

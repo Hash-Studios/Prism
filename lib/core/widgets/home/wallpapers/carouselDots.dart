@@ -11,22 +11,16 @@ class CarouselDots extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [0, 1, 2, 3, 4].map((i) {
+        children: [0, 1, 2, 3, 4, 5].map((i) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
-            width: _current == i ? 12.0 : 7.0,
-            height: 7.0,
-            margin: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 2.0),
+            width: 6.0,
+            height: 6.0,
+            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(500),
-              color: _current == i
-                  ? Theme.of(context).colorScheme.error == Colors.black
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.error
-                  : Theme.of(context).colorScheme.error == Colors.black
-                  ? Colors.white38
-                  : Theme.of(context).colorScheme.error.withValues(alpha: 0.38),
+              color: _current == i ? Colors.white : Colors.white38,
             ),
           );
         }).toList(),

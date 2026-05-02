@@ -1,11 +1,12 @@
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/focussedMenu/focusedMenu.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
 import 'package:Prism/core/widgets/premiumBanners/walls.dart';
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -172,39 +173,29 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                   )
                 : GridView.builder(
                     shrinkWrap: true,
-                    padding: const EdgeInsets.fromLTRB(5, 0, 5, 4),
+                    padding: EdgeInsets.zero,
                     itemCount: context.publicProfileAdapter().userProfileWalls!.length,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                      childAspectRatio: 0.6625,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+                      childAspectRatio: 0.5,
+                      mainAxisSpacing: 0,
+                      crossAxisSpacing: 0,
                     ),
                     itemBuilder: (context, index) {
                       if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&
                           context.publicProfileAdapter(listen: false).hasMoreWalls) {
                         return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);
                       }
-                      return globals.prismUser.premium != true
+                      return app_state.prismUser.premium != true
                           ? PremiumBannerWalls(
-                              comparator: !globals.isPremiumWall(
-                                globals.premiumCollections,
-                                context.publicProfileAdapter().userProfileWalls![index].data()["collections"]
-                                        as List? ??
-                                    [],
+                              comparator: !app_state.isPremiumWall(
+                                app_state.premiumCollections,
+                                context.publicProfileAdapter().userProfileWalls![index].collections ?? const <String>[],
                               ),
-                              defaultChild: FocusedMenuHolder(
-                                provider: "UserProfileWall",
-                                index: index,
-                                child: PhotographerWallTile(animation: animation, index: index),
-                              ),
-                              trueChild: PhotographerWallTile(animation: animation, index: index),
+                              defaultChild: _PhotographerWallTile(animation: animation, index: index),
+                              trueChild: _PhotographerWallTile(animation: animation, index: index),
                             )
-                          : FocusedMenuHolder(
-                              provider: "UserProfileWall",
-                              index: index,
-                              child: PhotographerWallTile(animation: animation, index: index),
-                            );
+                          : _PhotographerWallTile(animation: animation, index: index);
                     },
                   )
           : const LoadingCards(),
@@ -212,50 +203,42 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
   }
 }
 
-class PhotographerWallTile extends StatelessWidget {
-  const PhotographerWallTile({super.key, required this.animation, required this.index});
+class _PhotographerWallTile extends StatelessWidget {
+  const _PhotographerWallTile({required this.animation, required this.index});
 
   final Animation<Color?>? animation;
   final int index;
 
   @override
   Widget build(BuildContext context) {
-    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"] == null
-        ? ""
-        : context.publicProfileAdapter().userProfileWalls![index].data()["wallpaper_thumb"].toString().trim();
+    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].wallpaperThumb?.trim() ?? '';
     final bool hasValidImageUrl = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
     return Stack(
       children: [
         Container(
           decoration: BoxDecoration(
             color: animation!.value,
-            borderRadius: BorderRadius.circular(20),
             image: hasValidImageUrl
                 ? DecorationImage(image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover)
                 : null,
           ),
         ),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-              onTap: () {
-                if (context.publicProfileAdapter(listen: false).userProfileWalls == []) {
-                } else {
-                  context.router.push(
-                    UserProfileWallViewRoute(
-                      arguments: [
-                        index,
-                        context.publicProfileAdapter(listen: false).userProfileWalls![index].data()["wallpaper_thumb"],
-                      ],
-                    ),
-                  );
-                }
-              },
-            ),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+            onTap: () {
+              if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
+                  context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
+              } else {
+                final walls = context.publicProfileAdapter(listen: false).userProfileWalls!;
+                final entity = WallpaperDetailEntityX.fromPublicProfileWall(walls[index]);
+                context.router.push(
+                  WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
+                );
+              }
+            },
           ),
         ),
       ],

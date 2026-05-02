@@ -1,45 +1,55 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
+import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/data/informatics/dataManager.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
+import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
+import 'package:Prism/features/profile_setups/domain/entities/profile_setup_entity.dart';
 import 'package:Prism/features/profile_setups/views/profile_setups_bloc_adapter.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:device_apps/device_apps.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive_io/hive_io.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class ProfileSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const ProfileSetupViewScreen({this.arguments});
+  const ProfileSetupViewScreen({super.key, required this.setupIndex});
+
+  final int setupIndex;
 
   @override
   _ProfileSetupViewScreenState createState() => _ProfileSetupViewScreenState();
 }
 
 class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with SingleTickerProviderStateMixin {
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int? index;
   String? thumb;
@@ -48,18 +58,44 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
   late AnimationController shakeController;
   bool panelCollapsed = true;
   Future<String>? _futureView;
-  late Box box;
+
+  ProfileSetupEntity get _setup => context.profileSetupsAdapter(listen: false).profileSetups![index!];
+
+  SetupWallpaperValue get _wallpaperValue => _setup.wallpaperValue;
+
+  bool get _hasWallId => (_setup.wallId ?? '').isNotEmpty;
+
+  Future<void> _openSetupWallpaper() async {
+    if (!_wallpaperValue.isEncoded) {
+      if (!_hasWallId) {
+        logger.d('Id Not Found!');
+        await openPrismLink(context, _wallpaperValue.primaryUrl);
+        return;
+      }
+      await context.router.push(
+        WallpaperDetailRoute(
+          wallId: _setup.wallId!,
+          source: _setup.source ?? WallpaperSource.unknown,
+          wallpaperUrl: _wallpaperValue.primaryUrl,
+          thumbnailUrl: _setup.wallpaperThumb?.isNotEmpty == true ? _setup.wallpaperThumb! : _wallpaperValue.primaryUrl,
+          analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+        ),
+      );
+      return;
+    }
+    if (_wallpaperValue.hasDeepLink) {
+      await openPrismLink(context, _wallpaperValue.deepLinkUrl!);
+    }
+  }
 
   @override
   void initState() {
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    index = widget.arguments![0] as int;
-    updateViewsSetup(context.profileSetupsAdapter(listen: false).profileSetups![index!]["id"].toString().toUpperCase());
-    _futureView = getViewsSetup(
-      context.profileSetupsAdapter(listen: false).profileSetups![index!]["id"].toString().toUpperCase(),
-    );
+    index = widget.setupIndex;
+    _futureView = getIt<ViewStatsRepository>()
+        .recordSetupView(_setup.id.toUpperCase())
+        .then((r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'));
     isLoading = true;
-    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -69,12 +105,12 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
     super.dispose();
   }
 
-  Future<void> onFavSetup(String id, Map setupMap) async {
+  Future<void> onFavSetup(FavouriteSetupEntity setup) async {
     setState(() {
       isLoading = true;
     });
-    context.favouriteSetupsAdapter(listen: false).favCheck(id, setupMap).then((value) {
-      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {'id': id});
+    context.favouriteSetupsAdapter(listen: false).favCheck(setup).then((value) {
+      analytics.track(SetupFavStatusChangedEvent(setupId: setup.id));
       setState(() {
         isLoading = false;
       });
@@ -163,11 +199,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                     forward: true,
                                     slideSide: SlideFromSlide.bottom,
                                     child: Text(
-                                      context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["name"]
-                                          .toString()
-                                          .toUpperCase(),
+                                      _setup.name.toString().toUpperCase(),
                                       maxLines: 1,
                                       overflow: TextOverflow.fade,
                                       style: Theme.of(context).textTheme.displayLarge!.copyWith(
@@ -186,10 +218,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                     slideSide: SlideFromSlide.bottom,
                                     delay: const Duration(milliseconds: 50),
                                     child: Text(
-                                      context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["desc"]
-                                          .toString(),
+                                      _setup.desc.toString(),
                                       maxLines: 2,
                                       overflow: TextOverflow.fade,
                                       style: Theme.of(
@@ -226,11 +255,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                             child: Row(
                                               children: [
                                                 Text(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["id"]
-                                                      .toString()
-                                                      .toUpperCase(),
+                                                  _setup.id.toUpperCase(),
                                                   overflow: TextOverflow.fade,
                                                   style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                     color: Theme.of(context).colorScheme.secondary,
@@ -293,19 +318,17 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                           ),
                                         ),
                                         GestureDetector(
-                                          onTap: () async {
-                                            await createCopyrightLink(
-                                              true,
+                                          onTap: () {
+                                            final String? docId = _setup.firestoreDocumentId;
+                                            if (docId == null || docId.isEmpty) {
+                                              toasts.error('Report unavailable for this setup.');
+                                              return;
+                                            }
+                                            showContentReportSheet(
                                               context,
-                                              index: index.toString(),
-                                              name: context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["name"]
-                                                  .toString(),
-                                              thumbUrl: context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["image"]
-                                                  .toString(),
+                                              contentType: 'setup',
+                                              targetFirestoreDocId: docId,
+                                              subtitle: _setup.name,
                                             );
                                           },
                                           child: Row(
@@ -343,10 +366,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                   alignment: Alignment.topRight,
                                                   child: ActionChip(
                                                     label: Text(
-                                                      context
-                                                          .profileSetupsAdapter(listen: false)
-                                                          .profileSetups![index!]["by"]
-                                                          .toString(),
+                                                      _setup.by.toString(),
                                                       overflow: TextOverflow.fade,
                                                       style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                         color: Theme.of(context).colorScheme.secondary,
@@ -355,32 +375,18 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                                     padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                                                     avatar: CircleAvatar(
                                                       backgroundImage: CachedNetworkImageProvider(
-                                                        context
-                                                            .profileSetupsAdapter(listen: false)
-                                                            .profileSetups![index!]["userPhoto"]
-                                                            .toString(),
+                                                        _setup.userPhoto.toString(),
                                                       ),
                                                     ),
                                                     labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                     onPressed: () {
                                                       context.router.push(
-                                                        ProfileRoute(
-                                                          arguments: [
-                                                            context
-                                                                .profileSetupsAdapter(listen: false)
-                                                                .profileSetups![index!]["email"],
-                                                          ],
-                                                        ),
+                                                        ProfileRoute(profileIdentifier: _setup.email.toString()),
                                                       );
                                                     },
                                                   ),
                                                 ),
-                                                if (globals.verifiedUsers.contains(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["email"]
-                                                      .toString(),
-                                                ))
+                                                if (app_state.verifiedUsers.contains(_setup.email.toString()))
                                                   Align(
                                                     alignment: Alignment.topRight,
                                                     child: SizedBox(
@@ -416,357 +422,60 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                       flex: 16,
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                        child:
-                            context.profileSetupsAdapter(listen: false).profileSetups![index!]["widget"] == "" ||
-                                context.profileSetupsAdapter(listen: false).profileSetups![index!]["widget"] == null
+                        child: _setup.widget == "" || _setup.widget == null
                             ? Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["wallpaper_url"]
-                                              .toString()[0] !=
-                                          "[") {
-                                        if (context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"] ==
-                                                null ||
-                                            context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"] ==
-                                                "") {
-                                          logger.d("Id Not Found!");
-                                          launch(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["wallpaper_url"]
-                                                .toString(),
-                                          );
-                                        } else {
-                                          context.router.push(
-                                            ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
-                                            ),
-                                          );
-                                        }
-                                      } else {
-                                        launch(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["wallpaper_url"][1]
-                                              .toString(),
-                                        );
-                                      }
-                                    },
-                                    tileText:
-                                        context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["wallpaper_url"]
-                                                .toString()[0] !=
-                                            "["
-                                        ? (context
-                                                          .profileSetupsAdapter(listen: false)
-                                                          .profileSetups![index!]["wall_id"] ==
-                                                      null ||
-                                                  context
-                                                          .profileSetupsAdapter(listen: false)
-                                                          .profileSetups![index!]["wall_id"] ==
-                                                      "")
-                                              ? "Wall Link"
-                                              : "Prism (${context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"]})"
-                                        : "${context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                    onTap: _openSetupWallpaper,
+                                    tileText: _wallpaperValue.tileText(wallId: _setup.wallId),
                                     tileType: "Wallpaper",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 150),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
-                                        context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
+                                    isInstalled: Future.value(false),
                                     onTap: () async {
-                                      if (context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["icon_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["icon_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["icon_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["icon_url"]
-                                              .toString(),
-                                        );
-                                      }
+                                      openPrismLink(context, _setup.iconUrl.toString());
                                     },
-                                    tileText: context
-                                        .profileSetupsAdapter(listen: false)
-                                        .profileSetups![index!]["icon"]
-                                        .toString(),
+                                    tileText: _setup.icon,
                                     tileType: "Icons",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 200),
                                   ),
                                 ],
                               )
-                            : context.profileSetupsAdapter(listen: false).profileSetups![index!]["widget2"] == "" ||
-                                  context.profileSetupsAdapter(listen: false).profileSetups![index!]["widget2"] == null
+                            : _setup.widget2 == "" || _setup.widget2 == null
                             ? Column(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
-                                      if (context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["wallpaper_url"]
-                                              .toString()[0] !=
-                                          "[") {
-                                        if (context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"] ==
-                                                null ||
-                                            context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"] ==
-                                                "") {
-                                          logger.d("Id Not Found!");
-                                          launch(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["wallpaper_url"]
-                                                .toString(),
-                                          );
-                                        } else {
-                                          context.router.push(
-                                            ShareWallpaperViewRoute(
-                                              arguments: [
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wall_id"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_provider"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["wallpaper_url"]
-                                                    .toString(),
-                                              ],
-                                            ),
-                                          );
-                                        }
-                                      } else {
-                                        launch(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["wallpaper_url"][1]
-                                              .toString(),
-                                        );
-                                      }
-                                    },
-                                    tileText:
-                                        context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["wallpaper_url"]
-                                                .toString()[0] !=
-                                            "["
-                                        ? (context
-                                                          .profileSetupsAdapter(listen: false)
-                                                          .profileSetups![index!]["wall_id"] ==
-                                                      null ||
-                                                  context
-                                                          .profileSetupsAdapter(listen: false)
-                                                          .profileSetups![index!]["wall_id"] ==
-                                                      "")
-                                              ? "Wall Link"
-                                              : "Prism (${context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"]})"
-                                        : "${context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                    onTap: _openSetupWallpaper,
+                                    tileText: _wallpaperValue.tileText(wallId: _setup.wallId),
                                     tileType: "Wallpaper",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 150),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
-                                        context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
+                                    isInstalled: Future.value(false),
                                     onTap: () async {
-                                      if (context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["icon_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["icon_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["icon_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["icon_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["icon_url"]
-                                              .toString(),
-                                        );
-                                      }
+                                      openPrismLink(context, _setup.iconUrl.toString());
                                     },
-                                    tileText: context
-                                        .profileSetupsAdapter(listen: false)
-                                        .profileSetups![index!]["icon"]
-                                        .toString(),
+                                    tileText: _setup.icon,
                                     tileType: "Icons",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 200),
                                   ),
                                   SetupDetailsTile(
-                                    isInstalled:
-                                        context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["widget_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')
-                                        ? DeviceApps.isAppInstalled(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["widget_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          )
-                                        : Future.value(false),
+                                    isInstalled: Future.value(false),
                                     onTap: () async {
-                                      if (context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["widget_url"]
-                                          .toString()
-                                          .contains('play.google.com/store/apps/details?id=')) {
-                                        final isInstalled = await DeviceApps.isAppInstalled(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["widget_url"]
-                                              .toString()
-                                              .split("details?id=")[1]
-                                              .split("&")[0],
-                                        );
-                                        isInstalled
-                                            ? DeviceApps.openApp(
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["widget_url"]
-                                                    .toString()
-                                                    .split("details?id=")[1]
-                                                    .split("&")[0],
-                                              )
-                                            : launch(
-                                                context
-                                                    .profileSetupsAdapter(listen: false)
-                                                    .profileSetups![index!]["widget_url"]
-                                                    .toString(),
-                                              );
-                                      } else {
-                                        launch(
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["widget_url"]
-                                              .toString(),
-                                        );
-                                      }
+                                      openPrismLink(context, _setup.widgetUrl.toString());
                                     },
-                                    tileText: context
-                                        .profileSetupsAdapter(listen: false)
-                                        .profileSetups![index!]["widget"]
-                                        .toString(),
+                                    tileText: _setup.widget.toString(),
                                     tileType: "Widget",
                                     panelCollapsed: panelCollapsed,
                                     delay: const Duration(milliseconds: 250),
@@ -780,263 +489,38 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                                   children: [
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
-                                        if (context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["wallpaper_url"]
-                                                .toString()[0] !=
-                                            "[") {
-                                          if (context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wall_id"] ==
-                                                  null ||
-                                              context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wall_id"] ==
-                                                  "") {
-                                            logger.d("Id Not Found!");
-                                            launch(
-                                              context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["wallpaper_url"]
-                                                  .toString(),
-                                            );
-                                          } else {
-                                            context.router.push(
-                                              ShareWallpaperViewRoute(
-                                                arguments: [
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wall_id"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_provider"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["wallpaper_url"]
-                                                      .toString(),
-                                                ],
-                                              ),
-                                            );
-                                          }
-                                        } else {
-                                          launch(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["wallpaper_url"][1]
-                                                .toString(),
-                                          );
-                                        }
-                                      },
-                                      tileText:
-                                          context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["wallpaper_url"]
-                                                  .toString()[0] !=
-                                              "["
-                                          ? (context
-                                                            .profileSetupsAdapter(listen: false)
-                                                            .profileSetups![index!]["wall_id"] ==
-                                                        null ||
-                                                    context
-                                                            .profileSetupsAdapter(listen: false)
-                                                            .profileSetups![index!]["wall_id"] ==
-                                                        "")
-                                                ? "Wall Link"
-                                                : "Prism (${context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"]})"
-                                          : "${context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][0]} - ${(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"] as List).length > 2 ? context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][2].toString() : ""}",
+                                      onTap: _openSetupWallpaper,
+                                      tileText: _wallpaperValue.tileText(wallId: _setup.wallId),
                                       tileType: "Wallpaper",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 150),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled:
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["icon_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["icon_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
+                                      isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["icon_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["icon_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["icon_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["icon_url"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["icon_url"]
-                                                .toString(),
-                                          );
-                                        }
+                                        openPrismLink(context, _setup.iconUrl.toString());
                                       },
-                                      tileText: context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["icon"]
-                                          .toString(),
+                                      tileText: _setup.icon,
                                       tileType: "Icons",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 200),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled:
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["widget_url"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["widget_url"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
+                                      isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["widget_url"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["widget_url"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["widget_url"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["widget_url"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["widget_url"]
-                                                .toString(),
-                                          );
-                                        }
+                                        openPrismLink(context, _setup.widgetUrl.toString());
                                       },
-                                      tileText: context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["widget"]
-                                          .toString(),
+                                      tileText: _setup.widget.toString(),
                                       tileType: "Widget",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 250),
                                     ),
                                     SetupDetailsTile(
-                                      isInstalled:
-                                          context
-                                              .profileSetupsAdapter(listen: false)
-                                              .profileSetups![index!]["widget_url2"]
-                                              .toString()
-                                              .contains('play.google.com/store/apps/details?id=')
-                                          ? DeviceApps.isAppInstalled(
-                                              context
-                                                  .profileSetupsAdapter(listen: false)
-                                                  .profileSetups![index!]["widget_url2"]
-                                                  .toString()
-                                                  .split("details?id=")[1]
-                                                  .split("&")[0],
-                                            )
-                                          : Future.value(false),
+                                      isInstalled: Future.value(false),
                                       onTap: () async {
-                                        if (context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["widget_url2"]
-                                            .toString()
-                                            .contains('play.google.com/store/apps/details?id=')) {
-                                          final isInstalled = await DeviceApps.isAppInstalled(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["widget_url2"]
-                                                .toString()
-                                                .split("details?id=")[1]
-                                                .split("&")[0],
-                                          );
-                                          isInstalled
-                                              ? DeviceApps.openApp(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["widget_url2"]
-                                                      .toString()
-                                                      .split("details?id=")[1]
-                                                      .split("&")[0],
-                                                )
-                                              : launch(
-                                                  context
-                                                      .profileSetupsAdapter(listen: false)
-                                                      .profileSetups![index!]["widget_url2"]
-                                                      .toString(),
-                                                );
-                                        } else {
-                                          launch(
-                                            context
-                                                .profileSetupsAdapter(listen: false)
-                                                .profileSetups![index!]["widget_url2"]
-                                                .toString(),
-                                          );
-                                        }
+                                        openPrismLink(context, _setup.widgetUrl2.toString());
                                       },
-                                      tileText: context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]["widget2"]
-                                          .toString(),
+                                      tileText: _setup.widget2.toString(),
                                       tileType: "Widget",
                                       panelCollapsed: panelCollapsed,
                                       delay: const Duration(milliseconds: 300),
@@ -1052,7 +536,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
                           ModifiedDownloadButton(index: index),
-                          ModifiedSetWallpaperButton(index: index),
+                          if (!hideSetWallpaperUi) ModifiedSetWallpaperButton(index: index),
                           Container(
                             decoration: BoxDecoration(
                               color: Theme.of(context).primaryColor,
@@ -1065,50 +549,29 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                               ],
                               borderRadius: BorderRadius.circular(500),
                             ),
-                            padding: const EdgeInsets.all(17),
                             child: FavoriteIcon(
+                              tapTargetExtent: 53,
                               valueChanged: () {
-                                if (globals.prismUser.loggedIn == false) {
+                                if (app_state.prismUser.loggedIn == false) {
                                   googleSignInPopUp(context, () {
-                                    onFavSetup(
-                                      context
-                                          .profileSetupsAdapter(listen: false)
-                                          .profileSetups![index!]
-                                          .data()["id"]
-                                          .toString(),
-                                      context.profileSetupsAdapter(listen: false).profileSetups![index!].data(),
-                                    );
+                                    onFavSetup(_setup.toFavouriteSetupEntity());
                                   });
                                 } else {
-                                  onFavSetup(
-                                    context
-                                        .profileSetupsAdapter(listen: false)
-                                        .profileSetups![index!]
-                                        .data()["id"]
-                                        .toString(),
-                                    context.profileSetupsAdapter(listen: false).profileSetups![index!].data(),
-                                  );
+                                  onFavSetup(_setup.toFavouriteSetupEntity());
                                 }
                               },
                               iconColor: Theme.of(context).colorScheme.secondary,
                               iconSize: 30,
-                              isFavorite:
-                                  box.get(
-                                        context
-                                            .profileSetupsAdapter(listen: false)
-                                            .profileSetups![index!]["id"]
-                                            .toString(),
-                                        defaultValue: false,
-                                      )
-                                      as bool,
+                              isFavorite: _favoritesLocal.isSetupFavourite(app_state.prismUser.id, _setup.id),
                             ),
                           ),
                           GestureDetector(
                             onTap: () {
                               createSetupDynamicLink(
                                 index.toString(),
-                                context.profileSetupsAdapter(listen: false).profileSetups![index!]["name"].toString(),
-                                context.profileSetupsAdapter(listen: false).profileSetups![index!]["image"].toString(),
+                                _setup.name.toString(),
+                                _setup.image,
+                                context: context,
                               );
                             },
                             child: Container(
@@ -1159,7 +622,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                     shakeController.forward(from: 0.0);
                   },
                   child: CachedNetworkImage(
-                    imageUrl: context.profileSetupsAdapter(listen: false).profileSetups![index!]["image"].toString(),
+                    imageUrl: _setup.image,
                     imageBuilder: (context, imageProvider) => Container(
                       margin: EdgeInsets.symmetric(
                         vertical: offsetAnimation.value * 1.25,
@@ -1190,7 +653,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
             Align(
               alignment: Alignment.topLeft,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -1203,14 +666,10 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
                   onPressed: () async {
-                    final status = await Permission.storage.status;
-                    if (!status.isGranted) {
-                      await Permission.storage.request();
-                    }
-                    final link = context.profileSetupsAdapter(listen: false).profileSetups![index!]["image"].toString();
+                    final link = _setup.image;
                     logger.d(link);
 
                     final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -1222,13 +681,17 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
                     try {
                       final result = await PrismMediaHostApi().saveMedia(request);
                       if (result.success) {
-                        analytics.logEvent(name: 'download_own_setup', parameters: {'link': link});
+                        analytics.track(DownloadOwnSetupEvent(link: link));
                         toasts.codeSend("Setup Downloaded in Pictures/Prism Setups!");
                       } else {
                         toasts.error("Couldn't download! Please Retry!");
                       }
                     } on PlatformException catch (e) {
-                      logger.e('saveMedia failed', error: e);
+                      if (e.code == 'channel-error') {
+                        logger.w('saveMedia channel unavailable (native side not registered)', error: e);
+                      } else {
+                        logger.e('saveMedia failed', error: e);
+                      }
                       toasts.error("Couldn't download! Please Retry!");
                     } catch (e) {
                       logger.e('Unexpected saveMedia failure', error: e);
@@ -1365,18 +828,15 @@ class ModifiedDownloadButton extends StatelessWidget {
   const ModifiedDownloadButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString()[0] != "["
-        ? context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"] != null &&
-                  context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"] != ""
-              ? DownloadButton(
-                  link: context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString(),
-                  colorChanged: false,
-                )
+    final setup = context.profileSetupsAdapter(listen: false).profileSetups![index!];
+    final wallpaper = setup.wallpaperValue;
+    final hasWallId = (setup.wallId ?? '').isNotEmpty;
+    return !wallpaper.isEncoded
+        ? hasWallId
+              ? DownloadButton(link: wallpaper.primaryUrl, colorChanged: false)
               : GestureDetector(
                   onTap: () async {
-                    launch(
-                      context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString(),
-                    );
+                    openPrismLink(context, wallpaper.primaryUrl);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1396,7 +856,7 @@ class ModifiedDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][1].toString());
+              openPrismLink(context, wallpaper.deepLinkUrl ?? wallpaper.primaryUrl);
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1418,18 +878,15 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
   const ModifiedSetWallpaperButton({required this.index});
   @override
   Widget build(BuildContext context) {
-    return context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString()[0] != "["
-        ? context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"] != null &&
-                  context.profileSetupsAdapter(listen: false).profileSetups![index!]["wall_id"] != ""
-              ? SetWallpaperButton(
-                  url: context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString(),
-                  colorChanged: false,
-                )
+    final setup = context.profileSetupsAdapter(listen: false).profileSetups![index!];
+    final wallpaper = setup.wallpaperValue;
+    final hasWallId = (setup.wallId ?? '').isNotEmpty;
+    return !wallpaper.isEncoded
+        ? hasWallId
+              ? SetWallpaperButton(url: wallpaper.primaryUrl, colorChanged: false)
               : GestureDetector(
                   onTap: () async {
-                    launch(
-                      context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"].toString(),
-                    );
+                    openPrismLink(context, wallpaper.primaryUrl);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1449,7 +906,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(context.profileSetupsAdapter(listen: false).profileSetups![index!]["wallpaper_url"][1].toString());
+              openPrismLink(context, wallpaper.deepLinkUrl ?? wallpaper.primaryUrl);
             },
             child: Container(
               decoration: BoxDecoration(

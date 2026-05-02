@@ -4,11 +4,12 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -22,8 +23,11 @@ import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
 class UploadWallScreen extends StatefulWidget {
-  final List? arguments;
-  const UploadWallScreen({this.arguments});
+  const UploadWallScreen({super.key, required this.image, required this.fromSetupRoute});
+
+  final File image;
+  final bool fromSetupRoute;
+
   @override
   _UploadWallScreenState createState() => _UploadWallScreenState();
 }
@@ -52,8 +56,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   @override
   void initState() {
     super.initState();
-    image = widget.arguments![0] as File;
-    fromSetupRoute = widget.arguments![1] as bool;
+    image = widget.image;
+    fromSetupRoute = widget.fromSetupRoute;
     isUploading = false;
     isProcessing = true;
     randomId();
@@ -113,16 +117,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+    final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
     await github.repositories.deleteFile(
-      RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+      RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
       wallpaperPath,
       wallpaperPath,
       wallpaperSha,
       "master",
     );
     await github.repositories.deleteFile(
-      RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+      RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
       thumbPath,
       thumbPath,
       thumbSha,
@@ -139,10 +143,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     try {
       final String base64Image = base64Encode(imageBytes);
       final String base64ImageThumb = base64Encode(imageBytesThumb);
-      final github = GitHub(auth: const Authentication.withToken(Env.ghToken));
+      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
           )
           .then(
@@ -154,7 +158,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           );
       await github.repositories
           .createFile(
-            RepositorySlug(Env.ghUserName, Env.ghRepoWalls),
+            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(
               message: "thumb_${Path.basename(image.path)}",
               content: base64ImageThumb,
@@ -212,8 +216,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
                 child: SafeRiveAsset(
-                  assetName: isUploading ? "assets/animations/Upload.flr" : "assets/animations/Process.flr",
+                  assetName: isUploading ? "assets/animations/Upload.riv" : "assets/animations/Process.riv",
                   animations: <String>[if (isUploading) "upload" else "process"],
+                  fallback: const Center(child: CircularProgressIndicator()),
                 ),
               )
             else
@@ -270,7 +275,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       padding: const EdgeInsets.all(8.0),
                       child: Center(
                         child: Text(
-                          globals.prismUser.premium == true
+                          app_state.prismUser.premium == true
                               ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
                               : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
                           textAlign: TextAlign.center,
@@ -295,10 +300,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           onPressed: !isProcessing && !isUploading
               ? () async {
                   Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.logEvent(
-                    name: 'upload_wallpaper',
-                    parameters: {'id': id ?? '', 'link': wallpaperUrl ?? ''},
-                  );
+                  analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
                   WallStore.createRecord(
                     id,
                     wallpaperProvider,
@@ -306,6 +308,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     wallpaperUrl,
                     wallpaperResolution,
                     wallpaperSize,
+                    null,
                     wallpaperCategory,
                     wallpaperDesc,
                     fromSetupRoute ? "setup" : review,

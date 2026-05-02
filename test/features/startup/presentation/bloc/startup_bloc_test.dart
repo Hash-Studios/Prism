@@ -20,7 +20,7 @@ void main() {
         const StartupConfigEntity(
           topImageLink: 'top',
           bannerText: 'banner',
-          bannerTextOn: 'true',
+          bannerTextOn: true,
           bannerUrl: 'url',
           obsoleteAppVersion: '2.6.9',
           verifiedUsers: <String>['a@b.com'],
@@ -28,6 +28,13 @@ void main() {
           topTitleText: <String>['TOP'],
           categories: <Map<String, dynamic>>[],
           followersTab: true,
+          aiEnabled: true,
+          aiRolloutPercent: 100,
+          aiSubmitEnabled: true,
+          aiVariationsEnabled: true,
+          useRcPaywalls: true,
+          onboardingV2Enabled: true,
+          onboardingStarterPack: <Map<String, dynamic>>[],
         ),
       ),
     );

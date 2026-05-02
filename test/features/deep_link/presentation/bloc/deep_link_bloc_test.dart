@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/deep_link/biz/bloc/deep_link_bloc.j.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/deep_link/domain/usecases/deep_link_usecases.dart';
@@ -19,18 +20,17 @@ void main() {
   late _MockObserveDeepLinkActionsUseCase observeUseCase;
   late StreamController<DeepLinkActionEntity> controller;
 
-  const initialAction = DeepLinkActionEntity(
-    type: DeepLinkActionType.share,
-    route: '/share',
-    arguments: <dynamic>['id', 'Prism', 'url', 'thumb'],
-    rawUri: 'https://prism/share',
+  const DeepLinkActionEntity initialAction = ShareLinkIntent(
+    wallId: 'id',
+    source: WallpaperSource.prism,
+    wallpaperUrl: 'https://cdn.example.com/wall.jpg',
+    thumbnailUrl: 'https://cdn.example.com/thumb.jpg',
+    rawUri: 'https://prismwalls.com/share?id=id&provider=Prism',
   );
 
-  const streamAction = DeepLinkActionEntity(
-    type: DeepLinkActionType.user,
-    route: '/fprofile',
-    arguments: <dynamic>['user@test.com'],
-    rawUri: 'https://prism/user',
+  const DeepLinkActionEntity streamAction = UserLinkIntent(
+    profileIdentifier: 'user@test.com',
+    rawUri: 'https://prismwalls.com/user/user@test.com',
   );
 
   setUp(() {

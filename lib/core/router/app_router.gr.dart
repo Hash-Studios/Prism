@@ -21,7 +21,7 @@ class AboutRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return AboutScreen();
+      return const AboutScreen();
     },
   );
 }
@@ -59,15 +59,82 @@ class AdsNotLoadingRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [AiTabPage]
+class AiTabRoute extends PageRouteInfo<void> {
+  const AiTabRoute({List<PageRouteInfo>? children})
+    : super(AiTabRoute.name, initialChildren: children);
+
+  static const String name = 'AiTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AiTabPage();
+    },
+  );
+}
+
+/// generated route for
+/// [BlockedAccountsScreen]
+class BlockedAccountsRoute extends PageRouteInfo<void> {
+  const BlockedAccountsRoute({List<PageRouteInfo>? children})
+    : super(BlockedAccountsRoute.name, initialChildren: children);
+
+  static const String name = 'BlockedAccountsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const BlockedAccountsScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [CoinTransactionsScreen]
+class CoinTransactionsRoute extends PageRouteInfo<void> {
+  const CoinTransactionsRoute({List<PageRouteInfo>? children})
+    : super(CoinTransactionsRoute.name, initialChildren: children);
+
+  static const String name = 'CoinTransactionsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const CoinTransactionsScreen();
+    },
+  );
+}
+
+/// generated route for
+/// [CollectionTabPage]
+class CollectionTabRoute extends PageRouteInfo<void> {
+  const CollectionTabRoute({List<PageRouteInfo>? children})
+    : super(CollectionTabRoute.name, initialChildren: children);
+
+  static const String name = 'CollectionTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const CollectionTabPage();
+    },
+  );
+}
+
+/// generated route for
 /// [CollectionViewScreen]
 class CollectionViewRoute extends PageRouteInfo<CollectionViewRouteArgs> {
   CollectionViewRoute({
     Key? key,
-    required List<dynamic>? arguments,
+    required String collectionName,
     List<PageRouteInfo>? children,
   }) : super(
          CollectionViewRoute.name,
-         args: CollectionViewRouteArgs(key: key, arguments: arguments),
+         args: CollectionViewRouteArgs(
+           key: key,
+           collectionName: collectionName,
+         ),
          initialChildren: children,
        );
 
@@ -77,34 +144,35 @@ class CollectionViewRoute extends PageRouteInfo<CollectionViewRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<CollectionViewRouteArgs>();
-      return CollectionViewScreen(key: args.key, arguments: args.arguments);
+      return CollectionViewScreen(
+        key: args.key,
+        collectionName: args.collectionName,
+      );
     },
   );
 }
 
 class CollectionViewRouteArgs {
-  const CollectionViewRouteArgs({this.key, required this.arguments});
+  const CollectionViewRouteArgs({this.key, required this.collectionName});
 
   final Key? key;
 
-  final List<dynamic>? arguments;
+  final String collectionName;
 
   @override
   String toString() {
-    return 'CollectionViewRouteArgs{key: $key, arguments: $arguments}';
+    return 'CollectionViewRouteArgs{key: $key, collectionName: $collectionName}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! CollectionViewRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && collectionName == other.collectionName;
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ collectionName.hashCode;
 }
 
 /// generated route for
@@ -112,11 +180,11 @@ class CollectionViewRouteArgs {
 class ColorRoute extends PageRouteInfo<ColorRouteArgs> {
   ColorRoute({
     Key? key,
-    required List<dynamic>? arguments,
+    required String hexColor,
     List<PageRouteInfo>? children,
   }) : super(
          ColorRoute.name,
-         args: ColorRouteArgs(key: key, arguments: arguments),
+         args: ColorRouteArgs(key: key, hexColor: hexColor),
          initialChildren: children,
        );
 
@@ -126,34 +194,32 @@ class ColorRoute extends PageRouteInfo<ColorRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<ColorRouteArgs>();
-      return ColorScreen(key: args.key, arguments: args.arguments);
+      return ColorScreen(key: args.key, hexColor: args.hexColor);
     },
   );
 }
 
 class ColorRouteArgs {
-  const ColorRouteArgs({this.key, required this.arguments});
+  const ColorRouteArgs({this.key, required this.hexColor});
 
   final Key? key;
 
-  final List<dynamic>? arguments;
+  final String hexColor;
 
   @override
   String toString() {
-    return 'ColorRouteArgs{key: $key, arguments: $arguments}';
+    return 'ColorRouteArgs{key: $key, hexColor: $hexColor}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ColorRouteArgs) return false;
-    return key == other.key &&
-        const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && hexColor == other.hexColor;
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ hexColor.hashCode;
 }
 
 /// generated route for
@@ -168,6 +234,22 @@ class DashboardRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const DashboardPage();
+    },
+  );
+}
+
+/// generated route for
+/// [DebugPanelPage]
+class DebugPanelRoute extends PageRouteInfo<void> {
+  const DebugPanelRoute({List<PageRouteInfo>? children})
+    : super(DebugPanelRoute.name, initialChildren: children);
+
+  static const String name = 'DebugPanelRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const DebugPanelPage();
     },
   );
 }
@@ -192,11 +274,13 @@ class DownloadRoute extends PageRouteInfo<void> {
 /// [DownloadWallpaperScreen]
 class DownloadWallpaperRoute extends PageRouteInfo<DownloadWallpaperRouteArgs> {
   DownloadWallpaperRoute({
-    required List<dynamic>? arguments,
+    Key? key,
+    required WallpaperSource source,
+    required File file,
     List<PageRouteInfo>? children,
   }) : super(
          DownloadWallpaperRoute.name,
-         args: DownloadWallpaperRouteArgs(arguments: arguments),
+         args: DownloadWallpaperRouteArgs(key: key, source: source, file: file),
          initialChildren: children,
        );
 
@@ -206,30 +290,42 @@ class DownloadWallpaperRoute extends PageRouteInfo<DownloadWallpaperRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<DownloadWallpaperRouteArgs>();
-      return DownloadWallpaperScreen(arguments: args.arguments);
+      return DownloadWallpaperScreen(
+        key: args.key,
+        source: args.source,
+        file: args.file,
+      );
     },
   );
 }
 
 class DownloadWallpaperRouteArgs {
-  const DownloadWallpaperRouteArgs({required this.arguments});
+  const DownloadWallpaperRouteArgs({
+    this.key,
+    required this.source,
+    required this.file,
+  });
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final WallpaperSource source;
+
+  final File file;
 
   @override
   String toString() {
-    return 'DownloadWallpaperRouteArgs{arguments: $arguments}';
+    return 'DownloadWallpaperRouteArgs{key: $key, source: $source, file: $file}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! DownloadWallpaperRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && source == other.source && file == other.file;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ source.hashCode ^ file.hashCode;
 }
 
 /// generated route for
@@ -268,11 +364,12 @@ class EditProfilePanelRoute extends PageRouteInfo<void> {
 /// [EditSetupReviewScreen]
 class EditSetupReviewRoute extends PageRouteInfo<EditSetupReviewRouteArgs> {
   EditSetupReviewRoute({
-    List<dynamic>? arguments,
+    Key? key,
+    required FirestoreDocument setupDoc,
     List<PageRouteInfo>? children,
   }) : super(
          EditSetupReviewRoute.name,
-         args: EditSetupReviewRouteArgs(arguments: arguments),
+         args: EditSetupReviewRouteArgs(key: key, setupDoc: setupDoc),
          initialChildren: children,
        );
 
@@ -281,42 +378,42 @@ class EditSetupReviewRoute extends PageRouteInfo<EditSetupReviewRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<EditSetupReviewRouteArgs>(
-        orElse: () => const EditSetupReviewRouteArgs(),
-      );
-      return EditSetupReviewScreen(arguments: args.arguments);
+      final args = data.argsAs<EditSetupReviewRouteArgs>();
+      return EditSetupReviewScreen(key: args.key, setupDoc: args.setupDoc);
     },
   );
 }
 
 class EditSetupReviewRouteArgs {
-  const EditSetupReviewRouteArgs({this.arguments});
+  const EditSetupReviewRouteArgs({this.key, required this.setupDoc});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final FirestoreDocument setupDoc;
 
   @override
   String toString() {
-    return 'EditSetupReviewRouteArgs{arguments: $arguments}';
+    return 'EditSetupReviewRouteArgs{key: $key, setupDoc: $setupDoc}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! EditSetupReviewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && setupDoc == other.setupDoc;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ setupDoc.hashCode;
 }
 
 /// generated route for
 /// [EditWallScreen]
 class EditWallRoute extends PageRouteInfo<EditWallRouteArgs> {
-  EditWallRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
+  EditWallRoute({Key? key, required File image, List<PageRouteInfo>? children})
     : super(
         EditWallRoute.name,
-        args: EditWallRouteArgs(arguments: arguments),
+        args: EditWallRouteArgs(key: key, image: image),
         initialChildren: children,
       );
 
@@ -325,123 +422,80 @@ class EditWallRoute extends PageRouteInfo<EditWallRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<EditWallRouteArgs>(
-        orElse: () => const EditWallRouteArgs(),
-      );
-      return EditWallScreen(arguments: args.arguments);
+      final args = data.argsAs<EditWallRouteArgs>();
+      return EditWallScreen(key: args.key, image: args.image);
     },
   );
 }
 
 class EditWallRouteArgs {
-  const EditWallRouteArgs({this.arguments});
+  const EditWallRouteArgs({this.key, required this.image});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final File image;
 
   @override
   String toString() {
-    return 'EditWallRouteArgs{arguments: $arguments}';
+    return 'EditWallRouteArgs{key: $key, image: $image}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! EditWallRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && image == other.image;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ image.hashCode;
 }
 
 /// generated route for
 /// [FavSetupViewScreen]
 class FavSetupViewRoute extends PageRouteInfo<FavSetupViewRouteArgs> {
-  FavSetupViewRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
-    : super(
-        FavSetupViewRoute.name,
-        args: FavSetupViewRouteArgs(arguments: arguments),
-        initialChildren: children,
-      );
+  FavSetupViewRoute({
+    Key? key,
+    required int setupIndex,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FavSetupViewRoute.name,
+         args: FavSetupViewRouteArgs(key: key, setupIndex: setupIndex),
+         initialChildren: children,
+       );
 
   static const String name = 'FavSetupViewRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<FavSetupViewRouteArgs>(
-        orElse: () => const FavSetupViewRouteArgs(),
-      );
-      return FavSetupViewScreen(arguments: args.arguments);
+      final args = data.argsAs<FavSetupViewRouteArgs>();
+      return FavSetupViewScreen(key: args.key, setupIndex: args.setupIndex);
     },
   );
 }
 
 class FavSetupViewRouteArgs {
-  const FavSetupViewRouteArgs({this.arguments});
+  const FavSetupViewRouteArgs({this.key, required this.setupIndex});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final int setupIndex;
 
   @override
   String toString() {
-    return 'FavSetupViewRouteArgs{arguments: $arguments}';
+    return 'FavSetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! FavSetupViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && setupIndex == other.setupIndex;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
-}
-
-/// generated route for
-/// [FavWallpaperViewScreen]
-class FavWallpaperViewRoute extends PageRouteInfo<FavWallpaperViewRouteArgs> {
-  FavWallpaperViewRoute({
-    List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
-         FavWallpaperViewRoute.name,
-         args: FavWallpaperViewRouteArgs(arguments: arguments),
-         initialChildren: children,
-       );
-
-  static const String name = 'FavWallpaperViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<FavWallpaperViewRouteArgs>(
-        orElse: () => const FavWallpaperViewRouteArgs(),
-      );
-      return FavWallpaperViewScreen(arguments: args.arguments);
-    },
-  );
-}
-
-class FavWallpaperViewRouteArgs {
-  const FavWallpaperViewRouteArgs({this.arguments});
-
-  final List<dynamic>? arguments;
-
-  @override
-  String toString() {
-    return 'FavWallpaperViewRouteArgs{arguments: $arguments}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! FavWallpaperViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
-  }
-
-  @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ setupIndex.hashCode;
 }
 
 /// generated route for
@@ -477,14 +531,31 @@ class FavouriteWallpaperRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [FirestoreTelemetryScreen]
+class FirestoreTelemetryRoute extends PageRouteInfo<void> {
+  const FirestoreTelemetryRoute({List<PageRouteInfo>? children})
+    : super(FirestoreTelemetryRoute.name, initialChildren: children);
+
+  static const String name = 'FirestoreTelemetryRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const FirestoreTelemetryScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [FollowersScreen]
 class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
   FollowersRoute({
-    required List<dynamic>? arguments,
+    Key? key,
+    required List<String> followers,
     List<PageRouteInfo>? children,
   }) : super(
          FollowersRoute.name,
-         args: FollowersRouteArgs(arguments: arguments),
+         args: FollowersRouteArgs(key: key, followers: followers),
          initialChildren: children,
        );
 
@@ -494,30 +565,83 @@ class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<FollowersRouteArgs>();
-      return FollowersScreen(arguments: args.arguments);
+      return FollowersScreen(key: args.key, followers: args.followers);
     },
   );
 }
 
 class FollowersRouteArgs {
-  const FollowersRouteArgs({required this.arguments});
+  const FollowersRouteArgs({this.key, required this.followers});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final List<String> followers;
 
   @override
   String toString() {
-    return 'FollowersRouteArgs{arguments: $arguments}';
+    return 'FollowersRouteArgs{key: $key, followers: $followers}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! FollowersRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key &&
+        const ListEquality<String>().equals(followers, other.followers);
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode =>
+      key.hashCode ^ const ListEquality<String>().hash(followers);
+}
+
+/// generated route for
+/// [FollowingListScreen]
+class FollowingListRoute extends PageRouteInfo<FollowingListRouteArgs> {
+  FollowingListRoute({
+    Key? key,
+    required List<String> following,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FollowingListRoute.name,
+         args: FollowingListRouteArgs(key: key, following: following),
+         initialChildren: children,
+       );
+
+  static const String name = 'FollowingListRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<FollowingListRouteArgs>();
+      return FollowingListScreen(key: args.key, following: args.following);
+    },
+  );
+}
+
+class FollowingListRouteArgs {
+  const FollowingListRouteArgs({this.key, required this.following});
+
+  final Key? key;
+
+  final List<String> following;
+
+  @override
+  String toString() {
+    return 'FollowingListRouteArgs{key: $key, following: $following}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FollowingListRouteArgs) return false;
+    return key == other.key &&
+        const ListEquality<String>().equals(following, other.following);
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^ const ListEquality<String>().hash(following);
 }
 
 /// generated route for
@@ -537,6 +661,22 @@ class HomeTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [NotFoundPage]
+class NotFoundRoute extends PageRouteInfo<void> {
+  const NotFoundRoute({List<PageRouteInfo>? children})
+    : super(NotFoundRoute.name, initialChildren: children);
+
+  static const String name = 'NotFoundRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const NotFoundPage();
+    },
+  );
+}
+
+/// generated route for
 /// [NotificationScreen]
 class NotificationRoute extends PageRouteInfo<void> {
   const NotificationRoute({List<PageRouteInfo>? children})
@@ -547,23 +687,23 @@ class NotificationRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return NotificationScreen();
+      return const NotificationScreen();
     },
   );
 }
 
 /// generated route for
-/// [OnboardingScreen]
-class OnboardingRoute extends PageRouteInfo<void> {
-  const OnboardingRoute({List<PageRouteInfo>? children})
-    : super(OnboardingRoute.name, initialChildren: children);
+/// [OnboardingV2Shell]
+class OnboardingV2ShellRoute extends PageRouteInfo<void> {
+  const OnboardingV2ShellRoute({List<PageRouteInfo>? children})
+    : super(OnboardingV2ShellRoute.name, initialChildren: children);
 
-  static const String name = 'OnboardingRoute';
+  static const String name = 'OnboardingV2ShellRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return OnboardingScreen();
+      return const OnboardingV2Shell();
     },
   );
 }
@@ -571,56 +711,69 @@ class OnboardingRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [ProfileScreen]
 class ProfileRoute extends PageRouteInfo<ProfileRouteArgs> {
-  ProfileRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
-    : super(
-        ProfileRoute.name,
-        args: ProfileRouteArgs(arguments: arguments),
-        initialChildren: children,
-      );
+  ProfileRoute({
+    Key? key,
+    String? profileIdentifier,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ProfileRoute.name,
+         args: ProfileRouteArgs(key: key, profileIdentifier: profileIdentifier),
+         rawPathParams: {'identifier': profileIdentifier},
+         initialChildren: children,
+       );
 
   static const String name = 'ProfileRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
+      final pathParams = data.inheritedPathParams;
       final args = data.argsAs<ProfileRouteArgs>(
-        orElse: () => const ProfileRouteArgs(),
+        orElse: () => ProfileRouteArgs(
+          profileIdentifier: pathParams.optString('identifier'),
+        ),
       );
-      return ProfileScreen(arguments: args.arguments);
+      return ProfileScreen(
+        key: args.key,
+        profileIdentifier: args.profileIdentifier,
+      );
     },
   );
 }
 
 class ProfileRouteArgs {
-  const ProfileRouteArgs({this.arguments});
+  const ProfileRouteArgs({this.key, this.profileIdentifier});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final String? profileIdentifier;
 
   @override
   String toString() {
-    return 'ProfileRouteArgs{arguments: $arguments}';
+    return 'ProfileRouteArgs{key: $key, profileIdentifier: $profileIdentifier}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ProfileRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && profileIdentifier == other.profileIdentifier;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ profileIdentifier.hashCode;
 }
 
 /// generated route for
 /// [ProfileSetupViewScreen]
 class ProfileSetupViewRoute extends PageRouteInfo<ProfileSetupViewRouteArgs> {
   ProfileSetupViewRoute({
-    List<dynamic>? arguments,
+    Key? key,
+    required int setupIndex,
     List<PageRouteInfo>? children,
   }) : super(
          ProfileSetupViewRoute.name,
-         args: ProfileSetupViewRouteArgs(arguments: arguments),
+         args: ProfileSetupViewRouteArgs(key: key, setupIndex: setupIndex),
          initialChildren: children,
        );
 
@@ -629,33 +782,33 @@ class ProfileSetupViewRoute extends PageRouteInfo<ProfileSetupViewRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<ProfileSetupViewRouteArgs>(
-        orElse: () => const ProfileSetupViewRouteArgs(),
-      );
-      return ProfileSetupViewScreen(arguments: args.arguments);
+      final args = data.argsAs<ProfileSetupViewRouteArgs>();
+      return ProfileSetupViewScreen(key: args.key, setupIndex: args.setupIndex);
     },
   );
 }
 
 class ProfileSetupViewRouteArgs {
-  const ProfileSetupViewRouteArgs({this.arguments});
+  const ProfileSetupViewRouteArgs({this.key, required this.setupIndex});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final int setupIndex;
 
   @override
   String toString() {
-    return 'ProfileSetupViewRouteArgs{arguments: $arguments}';
+    return 'ProfileSetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ProfileSetupViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && setupIndex == other.setupIndex;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ setupIndex.hashCode;
 }
 
 /// generated route for
@@ -675,49 +828,19 @@ class ProfileTabRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [ProfileWallViewScreen]
-class ProfileWallViewRoute extends PageRouteInfo<ProfileWallViewRouteArgs> {
-  ProfileWallViewRoute({
-    List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ProfileWallViewRoute.name,
-         args: ProfileWallViewRouteArgs(arguments: arguments),
-         initialChildren: children,
-       );
+/// [QuickTileSettingsScreen]
+class QuickTileSettingsRoute extends PageRouteInfo<void> {
+  const QuickTileSettingsRoute({List<PageRouteInfo>? children})
+    : super(QuickTileSettingsRoute.name, initialChildren: children);
 
-  static const String name = 'ProfileWallViewRoute';
+  static const String name = 'QuickTileSettingsRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<ProfileWallViewRouteArgs>(
-        orElse: () => const ProfileWallViewRouteArgs(),
-      );
-      return ProfileWallViewScreen(arguments: args.arguments);
+      return const QuickTileSettingsScreen();
     },
   );
-}
-
-class ProfileWallViewRouteArgs {
-  const ProfileWallViewRouteArgs({this.arguments});
-
-  final List<dynamic>? arguments;
-
-  @override
-  String toString() {
-    return 'ProfileWallViewRouteArgs{arguments: $arguments}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ProfileWallViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
-  }
-
-  @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
 }
 
 /// generated route for
@@ -766,50 +889,6 @@ class SearchTabRoute extends PageRouteInfo<void> {
       return const SearchTabPage();
     },
   );
-}
-
-/// generated route for
-/// [SearchWallpaperScreen]
-class SearchWallpaperRoute extends PageRouteInfo<SearchWallpaperRouteArgs> {
-  SearchWallpaperRoute({
-    required List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
-         SearchWallpaperRoute.name,
-         args: SearchWallpaperRouteArgs(arguments: arguments),
-         initialChildren: children,
-       );
-
-  static const String name = 'SearchWallpaperRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<SearchWallpaperRouteArgs>();
-      return SearchWallpaperScreen(arguments: args.arguments);
-    },
-  );
-}
-
-class SearchWallpaperRouteArgs {
-  const SearchWallpaperRouteArgs({required this.arguments});
-
-  final List<dynamic>? arguments;
-
-  @override
-  String toString() {
-    return 'SearchWallpaperRouteArgs{arguments: $arguments}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! SearchWallpaperRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
-  }
-
-  @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
 }
 
 /// generated route for
@@ -863,45 +942,48 @@ class SetupRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [SetupViewScreen]
 class SetupViewRoute extends PageRouteInfo<SetupViewRouteArgs> {
-  SetupViewRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
-    : super(
-        SetupViewRoute.name,
-        args: SetupViewRouteArgs(arguments: arguments),
-        initialChildren: children,
-      );
+  SetupViewRoute({
+    Key? key,
+    required int setupIndex,
+    List<PageRouteInfo>? children,
+  }) : super(
+         SetupViewRoute.name,
+         args: SetupViewRouteArgs(key: key, setupIndex: setupIndex),
+         initialChildren: children,
+       );
 
   static const String name = 'SetupViewRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<SetupViewRouteArgs>(
-        orElse: () => const SetupViewRouteArgs(),
-      );
-      return SetupViewScreen(arguments: args.arguments);
+      final args = data.argsAs<SetupViewRouteArgs>();
+      return SetupViewScreen(key: args.key, setupIndex: args.setupIndex);
     },
   );
 }
 
 class SetupViewRouteArgs {
-  const SetupViewRouteArgs({this.arguments});
+  const SetupViewRouteArgs({this.key, required this.setupIndex});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final int setupIndex;
 
   @override
   String toString() {
-    return 'SetupViewRouteArgs{arguments: $arguments}';
+    return 'SetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! SetupViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && setupIndex == other.setupIndex;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ setupIndex.hashCode;
 }
 
 /// generated route for
@@ -939,92 +1021,71 @@ class SharePrismRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [ShareSetupViewScreen]
 class ShareSetupViewRoute extends PageRouteInfo<ShareSetupViewRouteArgs> {
-  ShareSetupViewRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
-    : super(
-        ShareSetupViewRoute.name,
-        args: ShareSetupViewRouteArgs(arguments: arguments),
-        initialChildren: children,
-      );
+  ShareSetupViewRoute({
+    Key? key,
+    required String setupName,
+    String thumbnailUrl = '',
+    List<PageRouteInfo>? children,
+  }) : super(
+         ShareSetupViewRoute.name,
+         args: ShareSetupViewRouteArgs(
+           key: key,
+           setupName: setupName,
+           thumbnailUrl: thumbnailUrl,
+         ),
+         rawPathParams: {'setupName': setupName},
+         initialChildren: children,
+       );
 
   static const String name = 'ShareSetupViewRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
+      final pathParams = data.inheritedPathParams;
       final args = data.argsAs<ShareSetupViewRouteArgs>(
-        orElse: () => const ShareSetupViewRouteArgs(),
+        orElse: () => ShareSetupViewRouteArgs(
+          setupName: pathParams.getString('setupName'),
+        ),
       );
-      return ShareSetupViewScreen(arguments: args.arguments);
+      return ShareSetupViewScreen(
+        key: args.key,
+        setupName: args.setupName,
+        thumbnailUrl: args.thumbnailUrl,
+      );
     },
   );
 }
 
 class ShareSetupViewRouteArgs {
-  const ShareSetupViewRouteArgs({this.arguments});
+  const ShareSetupViewRouteArgs({
+    this.key,
+    required this.setupName,
+    this.thumbnailUrl = '',
+  });
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final String setupName;
+
+  final String thumbnailUrl;
 
   @override
   String toString() {
-    return 'ShareSetupViewRouteArgs{arguments: $arguments}';
+    return 'ShareSetupViewRouteArgs{key: $key, setupName: $setupName, thumbnailUrl: $thumbnailUrl}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ShareSetupViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key &&
+        setupName == other.setupName &&
+        thumbnailUrl == other.thumbnailUrl;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
-}
-
-/// generated route for
-/// [ShareWallpaperViewScreen]
-class ShareWallpaperViewRoute
-    extends PageRouteInfo<ShareWallpaperViewRouteArgs> {
-  ShareWallpaperViewRoute({
-    List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ShareWallpaperViewRoute.name,
-         args: ShareWallpaperViewRouteArgs(arguments: arguments),
-         initialChildren: children,
-       );
-
-  static const String name = 'ShareWallpaperViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<ShareWallpaperViewRouteArgs>(
-        orElse: () => const ShareWallpaperViewRouteArgs(),
-      );
-      return ShareWallpaperViewScreen(arguments: args.arguments);
-    },
-  );
-}
-
-class ShareWallpaperViewRouteArgs {
-  const ShareWallpaperViewRouteArgs({this.arguments});
-
-  final List<dynamic>? arguments;
-
-  @override
-  String toString() {
-    return 'ShareWallpaperViewRouteArgs{arguments: $arguments}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ShareWallpaperViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
-  }
-
-  @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ setupName.hashCode ^ thumbnailUrl.hashCode;
 }
 
 /// generated route for
@@ -1039,6 +1100,54 @@ class SplashWidgetRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const SplashWidget();
+    },
+  );
+}
+
+/// generated route for
+/// [StreakPage]
+class StreakRoute extends PageRouteInfo<void> {
+  const StreakRoute({List<PageRouteInfo>? children})
+    : super(StreakRoute.name, initialChildren: children);
+
+  static const String name = 'StreakRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const StreakPage();
+    },
+  );
+}
+
+/// generated route for
+/// [StreakTabPage]
+class StreakTabRoute extends PageRouteInfo<void> {
+  const StreakTabRoute({List<PageRouteInfo>? children})
+    : super(StreakTabRoute.name, initialChildren: children);
+
+  static const String name = 'StreakTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const StreakTabPage();
+    },
+  );
+}
+
+/// generated route for
+/// [SwipeReviewScreen]
+class SwipeReviewRoute extends PageRouteInfo<void> {
+  const SwipeReviewRoute({List<PageRouteInfo>? children})
+    : super(SwipeReviewRoute.name, initialChildren: children);
+
+  static const String name = 'SwipeReviewRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const SwipeReviewScreen();
     },
   );
 }
@@ -1060,107 +1169,114 @@ class ThemeViewRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [UpgradeScreen]
-class UpgradeRoute extends PageRouteInfo<void> {
-  const UpgradeRoute({List<PageRouteInfo>? children})
-    : super(UpgradeRoute.name, initialChildren: children);
-
-  static const String name = 'UpgradeRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const UpgradeScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [UploadSetupScreen]
 class UploadSetupRoute extends PageRouteInfo<UploadSetupRouteArgs> {
-  UploadSetupRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
-    : super(
-        UploadSetupRoute.name,
-        args: UploadSetupRouteArgs(arguments: arguments),
-        initialChildren: children,
-      );
+  UploadSetupRoute({
+    Key? key,
+    required File image,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UploadSetupRoute.name,
+         args: UploadSetupRouteArgs(key: key, image: image),
+         initialChildren: children,
+       );
 
   static const String name = 'UploadSetupRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<UploadSetupRouteArgs>(
-        orElse: () => const UploadSetupRouteArgs(),
-      );
-      return UploadSetupScreen(arguments: args.arguments);
+      final args = data.argsAs<UploadSetupRouteArgs>();
+      return UploadSetupScreen(key: args.key, image: args.image);
     },
   );
 }
 
 class UploadSetupRouteArgs {
-  const UploadSetupRouteArgs({this.arguments});
+  const UploadSetupRouteArgs({this.key, required this.image});
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final File image;
 
   @override
   String toString() {
-    return 'UploadSetupRouteArgs{arguments: $arguments}';
+    return 'UploadSetupRouteArgs{key: $key, image: $image}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! UploadSetupRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key && image == other.image;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ image.hashCode;
 }
 
 /// generated route for
 /// [UploadWallScreen]
 class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
-  UploadWallRoute({List<dynamic>? arguments, List<PageRouteInfo>? children})
-    : super(
-        UploadWallRoute.name,
-        args: UploadWallRouteArgs(arguments: arguments),
-        initialChildren: children,
-      );
+  UploadWallRoute({
+    Key? key,
+    required File image,
+    required bool fromSetupRoute,
+    List<PageRouteInfo>? children,
+  }) : super(
+         UploadWallRoute.name,
+         args: UploadWallRouteArgs(
+           key: key,
+           image: image,
+           fromSetupRoute: fromSetupRoute,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'UploadWallRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<UploadWallRouteArgs>(
-        orElse: () => const UploadWallRouteArgs(),
+      final args = data.argsAs<UploadWallRouteArgs>();
+      return UploadWallScreen(
+        key: args.key,
+        image: args.image,
+        fromSetupRoute: args.fromSetupRoute,
       );
-      return UploadWallScreen(arguments: args.arguments);
     },
   );
 }
 
 class UploadWallRouteArgs {
-  const UploadWallRouteArgs({this.arguments});
+  const UploadWallRouteArgs({
+    this.key,
+    required this.image,
+    required this.fromSetupRoute,
+  });
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final File image;
+
+  final bool fromSetupRoute;
 
   @override
   String toString() {
-    return 'UploadWallRouteArgs{arguments: $arguments}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, fromSetupRoute: $fromSetupRoute}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! UploadWallRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key &&
+        image == other.image &&
+        fromSetupRoute == other.fromSetupRoute;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode => key.hashCode ^ image.hashCode ^ fromSetupRoute.hashCode;
 }
 
 /// generated route for
@@ -1168,11 +1284,17 @@ class UploadWallRouteArgs {
 class UserProfileSetupViewRoute
     extends PageRouteInfo<UserProfileSetupViewRouteArgs> {
   UserProfileSetupViewRoute({
-    List<dynamic>? arguments,
+    Key? key,
+    required int setupIndex,
+    required String profileEmail,
     List<PageRouteInfo>? children,
   }) : super(
          UserProfileSetupViewRoute.name,
-         args: UserProfileSetupViewRouteArgs(arguments: arguments),
+         args: UserProfileSetupViewRouteArgs(
+           key: key,
+           setupIndex: setupIndex,
+           profileEmail: profileEmail,
+         ),
          initialChildren: children,
        );
 
@@ -1181,80 +1303,46 @@ class UserProfileSetupViewRoute
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<UserProfileSetupViewRouteArgs>(
-        orElse: () => const UserProfileSetupViewRouteArgs(),
+      final args = data.argsAs<UserProfileSetupViewRouteArgs>();
+      return UserProfileSetupViewScreen(
+        key: args.key,
+        setupIndex: args.setupIndex,
+        profileEmail: args.profileEmail,
       );
-      return UserProfileSetupViewScreen(arguments: args.arguments);
     },
   );
 }
 
 class UserProfileSetupViewRouteArgs {
-  const UserProfileSetupViewRouteArgs({this.arguments});
+  const UserProfileSetupViewRouteArgs({
+    this.key,
+    required this.setupIndex,
+    required this.profileEmail,
+  });
 
-  final List<dynamic>? arguments;
+  final Key? key;
+
+  final int setupIndex;
+
+  final String profileEmail;
 
   @override
   String toString() {
-    return 'UserProfileSetupViewRouteArgs{arguments: $arguments}';
+    return 'UserProfileSetupViewRouteArgs{key: $key, setupIndex: $setupIndex, profileEmail: $profileEmail}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! UserProfileSetupViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
+    return key == other.key &&
+        setupIndex == other.setupIndex &&
+        profileEmail == other.profileEmail;
   }
 
   @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
-}
-
-/// generated route for
-/// [UserProfileWallViewScreen]
-class UserProfileWallViewRoute
-    extends PageRouteInfo<UserProfileWallViewRouteArgs> {
-  UserProfileWallViewRoute({
-    List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
-         UserProfileWallViewRoute.name,
-         args: UserProfileWallViewRouteArgs(arguments: arguments),
-         initialChildren: children,
-       );
-
-  static const String name = 'UserProfileWallViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<UserProfileWallViewRouteArgs>(
-        orElse: () => const UserProfileWallViewRouteArgs(),
-      );
-      return UserProfileWallViewScreen(arguments: args.arguments);
-    },
-  );
-}
-
-class UserProfileWallViewRouteArgs {
-  const UserProfileWallViewRouteArgs({this.arguments});
-
-  final List<dynamic>? arguments;
-
-  @override
-  String toString() {
-    return 'UserProfileWallViewRouteArgs{arguments: $arguments}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! UserProfileWallViewRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
-  }
-
-  @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+  int get hashCode =>
+      key.hashCode ^ setupIndex.hashCode ^ profileEmail.hashCode;
 }
 
 /// generated route for
@@ -1274,15 +1362,126 @@ class UserSearchRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [WallpaperDetailScreen]
+class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
+  WallpaperDetailRoute({
+    Key? key,
+    WallpaperDetailEntity? entity,
+    String? wallId,
+    WallpaperSource? source,
+    String? wallpaperUrl,
+    String? thumbnailUrl,
+    AnalyticsSurfaceValue analyticsSurface =
+        AnalyticsSurfaceValue.wallpaperScreen,
+    List<PageRouteInfo>? children,
+  }) : super(
+         WallpaperDetailRoute.name,
+         args: WallpaperDetailRouteArgs(
+           key: key,
+           entity: entity,
+           wallId: wallId,
+           source: source,
+           wallpaperUrl: wallpaperUrl,
+           thumbnailUrl: thumbnailUrl,
+           analyticsSurface: analyticsSurface,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'WallpaperDetailRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<WallpaperDetailRouteArgs>(
+        orElse: () => const WallpaperDetailRouteArgs(),
+      );
+      return WallpaperDetailScreen(
+        key: args.key,
+        entity: args.entity,
+        wallId: args.wallId,
+        source: args.source,
+        wallpaperUrl: args.wallpaperUrl,
+        thumbnailUrl: args.thumbnailUrl,
+        analyticsSurface: args.analyticsSurface,
+      );
+    },
+  );
+}
+
+class WallpaperDetailRouteArgs {
+  const WallpaperDetailRouteArgs({
+    this.key,
+    this.entity,
+    this.wallId,
+    this.source,
+    this.wallpaperUrl,
+    this.thumbnailUrl,
+    this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
+  });
+
+  final Key? key;
+
+  final WallpaperDetailEntity? entity;
+
+  final String? wallId;
+
+  final WallpaperSource? source;
+
+  final String? wallpaperUrl;
+
+  final String? thumbnailUrl;
+
+  final AnalyticsSurfaceValue analyticsSurface;
+
+  @override
+  String toString() {
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! WallpaperDetailRouteArgs) return false;
+    return key == other.key &&
+        entity == other.entity &&
+        wallId == other.wallId &&
+        source == other.source &&
+        wallpaperUrl == other.wallpaperUrl &&
+        thumbnailUrl == other.thumbnailUrl &&
+        analyticsSurface == other.analyticsSurface;
+  }
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      entity.hashCode ^
+      wallId.hashCode ^
+      source.hashCode ^
+      wallpaperUrl.hashCode ^
+      thumbnailUrl.hashCode ^
+      analyticsSurface.hashCode;
+}
+
+/// generated route for
 /// [WallpaperFilterScreen]
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({
     Key? key,
-    List<dynamic>? arguments,
+    Image? image,
+    Image? finalImage,
+    String? filename,
+    String? finalFilename,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperFilterRoute.name,
-         args: WallpaperFilterRouteArgs(key: key, arguments: arguments),
+         args: WallpaperFilterRouteArgs(
+           key: key,
+           image: image,
+           finalImage: finalImage,
+           filename: filename,
+           finalFilename: finalFilename,
+         ),
          initialChildren: children,
        );
 
@@ -1294,21 +1493,39 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
       final args = data.argsAs<WallpaperFilterRouteArgs>(
         orElse: () => const WallpaperFilterRouteArgs(),
       );
-      return WallpaperFilterScreen(key: args.key, arguments: args.arguments);
+      return WallpaperFilterScreen(
+        key: args.key,
+        image: args.image,
+        finalImage: args.finalImage,
+        filename: args.filename,
+        finalFilename: args.finalFilename,
+      );
     },
   );
 }
 
 class WallpaperFilterRouteArgs {
-  const WallpaperFilterRouteArgs({this.key, this.arguments});
+  const WallpaperFilterRouteArgs({
+    this.key,
+    this.image,
+    this.finalImage,
+    this.filename,
+    this.finalFilename,
+  });
 
   final Key? key;
 
-  final List<dynamic>? arguments;
+  final Image? image;
+
+  final Image? finalImage;
+
+  final String? filename;
+
+  final String? finalFilename;
 
   @override
   String toString() {
-    return 'WallpaperFilterRouteArgs{key: $key, arguments: $arguments}';
+    return 'WallpaperFilterRouteArgs{key: $key, image: $image, finalImage: $finalImage, filename: $filename, finalFilename: $finalFilename}';
   }
 
   @override
@@ -1316,54 +1533,17 @@ class WallpaperFilterRouteArgs {
     if (identical(this, other)) return true;
     if (other is! WallpaperFilterRouteArgs) return false;
     return key == other.key &&
-        const ListEquality<dynamic>().equals(arguments, other.arguments);
+        image == other.image &&
+        finalImage == other.finalImage &&
+        filename == other.filename &&
+        finalFilename == other.finalFilename;
   }
 
   @override
   int get hashCode =>
-      key.hashCode ^ const ListEquality<dynamic>().hash(arguments);
-}
-
-/// generated route for
-/// [WallpaperScreen]
-class WallpaperRoute extends PageRouteInfo<WallpaperRouteArgs> {
-  WallpaperRoute({
-    required List<dynamic>? arguments,
-    List<PageRouteInfo>? children,
-  }) : super(
-         WallpaperRoute.name,
-         args: WallpaperRouteArgs(arguments: arguments),
-         initialChildren: children,
-       );
-
-  static const String name = 'WallpaperRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<WallpaperRouteArgs>();
-      return WallpaperScreen(arguments: args.arguments);
-    },
-  );
-}
-
-class WallpaperRouteArgs {
-  const WallpaperRouteArgs({required this.arguments});
-
-  final List<dynamic>? arguments;
-
-  @override
-  String toString() {
-    return 'WallpaperRouteArgs{arguments: $arguments}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! WallpaperRouteArgs) return false;
-    return const ListEquality<dynamic>().equals(arguments, other.arguments);
-  }
-
-  @override
-  int get hashCode => const ListEquality<dynamic>().hash(arguments);
+      key.hashCode ^
+      image.hashCode ^
+      finalImage.hashCode ^
+      filename.hashCode ^
+      finalFilename.hashCode;
 }

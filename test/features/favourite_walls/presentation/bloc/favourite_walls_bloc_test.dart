@@ -1,5 +1,6 @@
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
@@ -22,7 +23,7 @@ void main() {
       const ToggleFavouriteWallParams(
         userId: 'user_1',
         currentlyFavourited: false,
-        wall: FavouriteWallEntity(id: 'w1', provider: 'Prism', payload: <String, dynamic>{}),
+        wall: LegacyFavouriteWall(id: 'w1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
       ),
     );
     registerFallbackValue(const RemoveFavouriteWallParams(userId: 'user_1', wallId: 'w1'));
@@ -42,7 +43,7 @@ void main() {
 
     when(() => fetchUseCase(any())).thenAnswer(
       (_) async => Result.success(const <FavouriteWallEntity>[
-        FavouriteWallEntity(id: 'w1', provider: 'Prism', payload: <String, dynamic>{}),
+        LegacyFavouriteWall(id: 'w1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
       ]),
     );
 
@@ -60,7 +61,7 @@ void main() {
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'))
       ..add(
         const FavouriteWallsEvent.toggleRequested(
-          wall: FavouriteWallEntity(id: 'w2', provider: 'Pexels', payload: <String, dynamic>{}),
+          wall: LegacyFavouriteWall(id: 'w2', source: WallpaperSource.pexels, legacyPayload: <String, Object?>{}),
         ),
       ),
     verify: (bloc) {

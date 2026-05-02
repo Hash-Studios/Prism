@@ -23,9 +23,9 @@ class FetchNotificationsUseCase implements UseCase<List<InAppNotificationEntity>
 }
 
 class MarkNotificationAsReadParams {
-  const MarkNotificationAsReadParams({required this.index});
+  const MarkNotificationAsReadParams({required this.id});
 
-  final int index;
+  final String id;
 }
 
 @lazySingleton
@@ -36,14 +36,14 @@ class MarkNotificationAsReadUseCase implements UseCase<List<InAppNotificationEnt
 
   @override
   Future<Result<List<InAppNotificationEntity>>> call(MarkNotificationAsReadParams params) {
-    return _repository.markAsRead(index: params.index);
+    return _repository.markAsRead(id: params.id);
   }
 }
 
 class DeleteNotificationParams {
-  const DeleteNotificationParams({required this.index});
+  const DeleteNotificationParams({required this.id});
 
-  final int index;
+  final String id;
 }
 
 @lazySingleton
@@ -54,7 +54,7 @@ class DeleteNotificationUseCase implements UseCase<List<InAppNotificationEntity>
 
   @override
   Future<Result<List<InAppNotificationEntity>>> call(DeleteNotificationParams params) {
-    return _repository.deleteAt(index: params.index);
+    return _repository.deleteById(id: params.id);
   }
 }
 
@@ -67,5 +67,24 @@ class ClearNotificationsUseCase implements UseCase<List<InAppNotificationEntity>
   @override
   Future<Result<List<InAppNotificationEntity>>> call(NoParams params) {
     return _repository.clearAll();
+  }
+}
+
+class DeleteNotificationsByIdsParams {
+  const DeleteNotificationsByIdsParams({required this.ids});
+
+  final List<String> ids;
+}
+
+@lazySingleton
+class DeleteNotificationsByIdsUseCase
+    implements UseCase<List<InAppNotificationEntity>, DeleteNotificationsByIdsParams> {
+  DeleteNotificationsByIdsUseCase(this._repository);
+
+  final NotificationsRepository _repository;
+
+  @override
+  Future<Result<List<InAppNotificationEntity>>> call(DeleteNotificationsByIdsParams params) {
+    return _repository.deleteByIds(ids: params.ids);
   }
 }

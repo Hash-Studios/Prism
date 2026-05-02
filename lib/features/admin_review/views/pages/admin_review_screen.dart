@@ -1,11 +1,18 @@
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class AdminReviewScreen extends StatefulWidget {
@@ -18,11 +25,18 @@ class AdminReviewScreen extends StatefulWidget {
 class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTickerProviderStateMixin {
   late TabController _controller;
   final AdminReviewRepository _repository = const AdminReviewRepository();
+  late final Stream<(int, int, int)> _pendingCountsStream;
 
   @override
   void initState() {
     super.initState();
-    _controller = TabController(length: 2, vsync: this);
+    _controller = TabController(length: 4, vsync: this);
+    _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
+      _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
+      _repository.watchPendingSetups().map((List<FirestoreDocument> list) => list.length),
+      _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
+      (int a, int b, int c) => (a, b, c),
+    );
   }
 
   @override
@@ -33,25 +47,48 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    if (!globals.isAdminUser()) {
+    if (!app_state.isAdminUser()) {
       return Scaffold(
         appBar: AppBar(title: const Text('Admin Moderation')),
         body: const Center(child: Text('You are not authorized to access this page.')),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Moderation'),
-        bottom: TabBar(
-          controller: _controller,
-          tabs: const <Tab>[
-            Tab(text: 'Wallpapers'),
-            Tab(text: 'Setups'),
-          ],
-        ),
-      ),
-      body: TabBarView(controller: _controller, children: <Widget>[_buildWallTab(), _buildSetupTab()]),
+    return StreamBuilder<(int, int, int)>(
+      stream: _pendingCountsStream,
+      initialData: (0, 0, 0),
+      builder: (BuildContext context, AsyncSnapshot<(int, int, int)> countSnapshot) {
+        final int wallsCount = countSnapshot.data!.$1;
+        final int setupsCount = countSnapshot.data!.$2;
+        final int reportsCount = countSnapshot.data!.$3;
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Admin Moderation'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.swipe),
+                tooltip: 'Swipe Review Mode',
+                onPressed: () {
+                  context.router.push(const SwipeReviewRoute());
+                },
+              ),
+            ],
+            bottom: TabBar(
+              controller: _controller,
+              tabs: <Tab>[
+                Tab(text: 'Walls ($wallsCount)'),
+                Tab(text: 'Setups ($setupsCount)'),
+                Tab(text: 'Reports ($reportsCount)'),
+                const Tab(text: 'Notifications'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            controller: _controller,
+            children: <Widget>[_buildWallTab(), _buildSetupTab(), _buildReportsTab(), const _NotificationSenderTab()],
+          ),
+        );
+      },
     );
   }
 
@@ -119,7 +156,83 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     );
   }
 
-  Future<void> _confirmReject(BuildContext context, {required Future<void> Function(String reason) onSubmit}) async {
+  Widget _buildReportsTab() {
+    return StreamBuilder<List<FirestoreDocument>>(
+      stream: _repository.watchOpenContentReports(),
+      builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final List<FirestoreDocument> reports = snapshot.data!;
+        if (reports.isEmpty) {
+          return const Center(child: Text('No open reports'));
+        }
+        return ListView.builder(
+          itemCount: reports.length,
+          itemBuilder: (BuildContext context, int index) {
+            final FirestoreDocument r = reports[index];
+            final Map<String, dynamic> m = r.data();
+            final String ct = m['contentType']?.toString() ?? '';
+            final String tid = m['targetFirestoreDocId']?.toString() ?? '';
+            final String reason = m['reason']?.toString() ?? '';
+            final String uid = m['reporterUid']?.toString() ?? '';
+            final Object? rawCreated = m['createdAt'];
+            DateTime? created;
+            if (rawCreated is Timestamp) {
+              created = rawCreated.toDate();
+            } else if (rawCreated is DateTime) {
+              created = rawCreated;
+            }
+            final String timeStr = created != null ? timeago.format(created) : '';
+            if (ct == 'wall' && tid.isNotEmpty) {
+              return _WallContentReportCard(
+                report: r,
+                targetDocId: tid,
+                contentTypeLabel: ct,
+                reason: reason,
+                reporterUid: uid,
+                timeStr: timeStr,
+                repository: _repository,
+                onConfirmRemoveWithReason: ({required Future<void> Function(String reason) onSubmit}) => _confirmReject(
+                  context,
+                  dialogTitle: 'Remove wallpaper',
+                  confirmButtonLabel: 'Remove',
+                  onSubmit: onSubmit,
+                ),
+              );
+            }
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              child: ListTile(
+                title: Text('$ct — $reason'),
+                subtitle: Text('Target: $tid\nReporter: $uid\n$timeStr'),
+                isThreeLine: true,
+                trailing: TextButton(
+                  onPressed: () async {
+                    try {
+                      await _repository.markContentReportReviewed(r.id);
+                      toasts.codeSend('Marked reviewed');
+                    } catch (e, st) {
+                      logger.e('mark report failed', tag: 'AdminReview', error: e, stackTrace: st);
+                      toasts.error('Failed');
+                    }
+                  },
+                  child: const Text('Done'),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmReject(
+    BuildContext context, {
+    required Future<void> Function(String reason) onSubmit,
+    String dialogTitle = 'Reject Item',
+    String confirmButtonLabel = 'Reject',
+  }) async {
     final TextEditingController controller = TextEditingController(
       text: "Sorry! This item doesn't meet our expectations and failed the review.",
     );
@@ -127,7 +240,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Reject Item'),
+          title: Text(dialogTitle),
           content: TextField(
             controller: controller,
             minLines: 2,
@@ -151,11 +264,191 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
                   toasts.error('Action failed');
                 }
               },
-              child: const Text('Reject'),
+              child: Text(confirmButtonLabel),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _WallContentReportCard extends StatefulWidget {
+  const _WallContentReportCard({
+    required this.report,
+    required this.targetDocId,
+    required this.contentTypeLabel,
+    required this.reason,
+    required this.reporterUid,
+    required this.timeStr,
+    required this.repository,
+    required this.onConfirmRemoveWithReason,
+  });
+
+  final FirestoreDocument report;
+  final String targetDocId;
+  final String contentTypeLabel;
+  final String reason;
+  final String reporterUid;
+  final String timeStr;
+  final AdminReviewRepository repository;
+  final Future<void> Function({required Future<void> Function(String reason) onSubmit}) onConfirmRemoveWithReason;
+
+  @override
+  State<_WallContentReportCard> createState() => _WallContentReportCardState();
+}
+
+class _WallContentReportCardState extends State<_WallContentReportCard> {
+  late final Future<Map<String, dynamic>?> _wallFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _wallFuture = firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.walls,
+      widget.targetDocId,
+      (Map<String, dynamic> data, String _) => data,
+      sourceTag: 'admin_review.report_wall_preview',
+    );
+  }
+
+  Future<void> _openWallpaperDetail(BuildContext context) async {
+    final PageRouteInfo? route = await const NotificationRouteMapper().fromRoute(
+      route: 'wall',
+      wallId: widget.targetDocId,
+      profileIdentifier: '',
+      sourceTag: 'admin.content_report',
+    );
+    if (!context.mounted) {
+      return;
+    }
+    if (route != null) {
+      await context.router.push(route);
+    } else {
+      toasts.error('Wallpaper not found');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: _wallFuture,
+                  builder: (BuildContext context, AsyncSnapshot<Map<String, dynamic>?> snap) {
+                    final String thumb = snap.data?['wallpaper_thumb']?.toString() ?? '';
+                    final Widget preview = thumb.isEmpty
+                        ? Container(
+                            width: 88,
+                            height: 120,
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            child: const Icon(Icons.image_not_supported_outlined),
+                          )
+                        : ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: thumb,
+                              width: 88,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              placeholder: (BuildContext context, String url) => const SizedBox(
+                                width: 88,
+                                height: 120,
+                                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                              ),
+                              errorWidget: (BuildContext context, String url, Object error) =>
+                                  const SizedBox(width: 88, height: 120, child: Icon(Icons.broken_image_outlined)),
+                            ),
+                          );
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _openWallpaperDetail(context),
+                        borderRadius: BorderRadius.circular(8),
+                        child: preview,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        '${widget.contentTypeLabel} — ${widget.reason}',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Target: ${widget.targetDocId}\nReporter: ${widget.reporterUid}\n${widget.timeStr}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      TextButton(onPressed: () => _openWallpaperDetail(context), child: const Text('Open detail')),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      try {
+                        await widget.repository.markContentReportReviewed(widget.report.id, resolution: 'dismissed');
+                        if (context.mounted) {
+                          toasts.codeSend('Marked as valid');
+                        }
+                      } catch (e, st) {
+                        logger.e('mark report dismissed failed', tag: 'AdminReview', error: e, stackTrace: st);
+                        if (context.mounted) {
+                          toasts.error('Failed');
+                        }
+                      }
+                    },
+                    child: const Text('Mark as valid'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => widget.onConfirmRemoveWithReason(
+                      onSubmit: (String reason) async {
+                        final bool removed = await widget.repository.rejectWallByFirestoreDocumentId(
+                          widget.targetDocId,
+                          reason: reason,
+                        );
+                        await widget.repository.markContentReportReviewed(
+                          widget.report.id,
+                          resolution: 'content_removed',
+                        );
+                        if (context.mounted) {
+                          if (removed) {
+                            toasts.codeSend('Wallpaper removed');
+                          } else {
+                            toasts.error('Wallpaper was already gone; report closed');
+                          }
+                        }
+                      },
+                    ),
+                    child: const Text('Remove wallpaper'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -169,11 +462,8 @@ class _WallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = wall.data();
-    final String previewUrl = data['wallpaper_thumb']?.toString() ?? '';
-    final String fullUrl = (data['wallpaper_url']?.toString() ?? '').isNotEmpty
-        ? data['wallpaper_url'].toString()
-        : previewUrl;
+    final String previewUrl = wall.wallpaperThumb;
+    final String fullUrl = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -192,9 +482,15 @@ class _WallCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${data['id'] ?? wall.id}'),
-            Text('By: ${data['by'] ?? '-'}'),
-            Text('Email: ${data['email'] ?? '-'}'),
+            Text('ID: ${wall.id}'),
+            Text('By: ${wall.by.isNotEmpty ? wall.by : '-'}'),
+            Text('Email: ${wall.email.isNotEmpty ? wall.email : '-'}'),
+            Text(
+              wall.createdAt != null ? 'Uploaded ${timeago.format(wall.createdAt!.toLocal())}' : 'Uploaded —',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 8),
             Row(
               children: <Widget>[
@@ -237,8 +533,7 @@ class _SetupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> data = setup.data();
-    final String fullUrl = data['image']?.toString() ?? '';
+    final String fullUrl = setup.image;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -257,10 +552,16 @@ class _SetupCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${data['id'] ?? setup.id}'),
-            Text('By: ${data['by'] ?? '-'}'),
-            Text('Email: ${data['email'] ?? '-'}'),
-            Text('Name: ${data['name'] ?? '-'}'),
+            Text('ID: ${setup.id}'),
+            Text('By: ${setup.by.isNotEmpty ? setup.by : '-'}'),
+            Text('Email: ${setup.email.isNotEmpty ? setup.email : '-'}'),
+            Text('Name: ${setup.name.isNotEmpty ? setup.name : '-'}'),
+            Text(
+              setup.createdAt != null ? 'Uploaded ${timeago.format(setup.createdAt!.toLocal())}' : 'Uploaded —',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
             const SizedBox(height: 8),
             Row(
               children: <Widget>[
@@ -320,7 +621,7 @@ class _PortraitPreview extends StatelessWidget {
                 fit: BoxFit.cover,
                 placeholder: (BuildContext context, String _) =>
                     const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                errorWidget: (BuildContext context, String _, Object __) =>
+                errorWidget: (BuildContext context, String _, Object _) =>
                     const Center(child: Icon(Icons.broken_image)),
               ),
             ),
@@ -351,10 +652,352 @@ class _FullScreenImageView extends StatelessWidget {
             imageUrl: imageUrl,
             fit: BoxFit.contain,
             placeholder: (BuildContext context, String _) => const Center(child: CircularProgressIndicator()),
-            errorWidget: (BuildContext context, String _, Object __) =>
+            errorWidget: (BuildContext context, String _, Object _) =>
                 const Center(child: Icon(Icons.broken_image, color: Colors.white)),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification Sender
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _NotificationSenderTab extends StatefulWidget {
+  const _NotificationSenderTab();
+
+  @override
+  State<_NotificationSenderTab> createState() => _NotificationSenderTabState();
+}
+
+class _NotificationSenderTabState extends State<_NotificationSenderTab> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _bodyController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
+  final TextEditingController _targetEmailController = TextEditingController();
+
+  String _modifier = 'all';
+  String _route = 'announcement';
+  bool _isSending = false;
+
+  static const List<_AudienceOption> _audienceOptions = <_AudienceOption>[
+    _AudienceOption(value: 'all', label: 'All users', icon: Icons.people),
+    _AudienceOption(value: 'premium', label: 'Premium users', icon: Icons.star),
+    _AudienceOption(value: 'free', label: 'Free users', icon: Icons.person_outline),
+    _AudienceOption(value: 'custom', label: 'Specific user (email)', icon: Icons.email_outlined),
+  ];
+
+  static const List<_RouteOption> _routeOptions = <_RouteOption>[
+    _RouteOption(value: 'announcement', label: 'Announcement (inbox)'),
+    _RouteOption(value: 'wall_of_the_day', label: 'Wall of the Day'),
+    _RouteOption(value: 'follower', label: 'Followers screen'),
+    _RouteOption(value: 'wall', label: 'Wall / upload'),
+  ];
+
+  bool get _isCustomTarget => _modifier == 'custom';
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _bodyController.dispose();
+    _imageUrlController.dispose();
+    _targetEmailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const _SectionHeader(title: 'Compose notification', icon: Icons.notifications_outlined),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Title *',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.title),
+              ),
+              maxLength: 65,
+              validator: (String? v) => (v == null || v.trim().isEmpty) ? 'Title is required' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _bodyController,
+              decoration: const InputDecoration(
+                labelText: 'Body *',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.text_snippet_outlined),
+              ),
+              minLines: 2,
+              maxLines: 4,
+              maxLength: 200,
+              validator: (String? v) => (v == null || v.trim().isEmpty) ? 'Body is required' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _imageUrlController,
+              decoration: const InputDecoration(
+                labelText: 'Image URL (optional)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.image_outlined),
+                hintText: 'https://...',
+              ),
+              keyboardType: TextInputType.url,
+            ),
+            const SizedBox(height: 20),
+            const _SectionHeader(title: 'Audience', icon: Icons.group_outlined),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _audienceOptions.map((_AudienceOption opt) {
+                final bool selected = opt.value == _modifier || (opt.value == 'custom' && _isCustomTarget);
+                return ChoiceChip(
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[Icon(opt.icon, size: 16), const SizedBox(width: 4), Text(opt.label)],
+                  ),
+                  selected: selected,
+                  onSelected: (_) => setState(() => _modifier = opt.value),
+                );
+              }).toList(),
+            ),
+            if (_isCustomTarget) ...<Widget>[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _targetEmailController,
+                decoration: const InputDecoration(
+                  labelText: 'User email *',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.alternate_email),
+                  hintText: 'user@example.com',
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (String? v) {
+                  if (!_isCustomTarget) return null;
+                  if (v == null || v.trim().isEmpty) return 'Email is required';
+                  if (!v.contains('@')) return 'Enter a valid email';
+                  return null;
+                },
+              ),
+            ],
+            const SizedBox(height: 20),
+            const _SectionHeader(title: 'Deep-link destination', icon: Icons.link),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: _route,
+              decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.route)),
+              items: _routeOptions.map((_RouteOption opt) {
+                return DropdownMenuItem<String>(value: opt.value, child: Text(opt.label));
+              }).toList(),
+              onChanged: (String? v) {
+                if (v != null) setState(() => _route = v);
+              },
+            ),
+            const SizedBox(height: 28),
+            ListenableBuilder(
+              listenable: Listenable.merge(<TextEditingController>[
+                _titleController,
+                _bodyController,
+                _imageUrlController,
+              ]),
+              builder: (BuildContext context, _) => _NotificationPreviewCard(
+                title: _titleController.text,
+                body: _bodyController.text,
+                imageUrl: _imageUrlController.text,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: _isSending ? null : _send,
+              icon: _isSending
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(_isSending ? 'Sending…' : 'Send notification'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: colors.primary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _send() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final String title = _titleController.text.trim();
+    final String body = _bodyController.text.trim();
+    final String imageUrl = _imageUrlController.text.trim();
+    final String modifier = _isCustomTarget ? _targetEmailController.text.trim() : _modifier;
+
+    setState(() => _isSending = true);
+    try {
+      await firestoreClient.addDoc(FirebaseCollections.notificationRequests, <String, dynamic>{
+        'title': title,
+        'body': body,
+        'modifier': modifier,
+        'route': _route,
+        if (imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+        'requestedBy': app_state.prismUser.email,
+        'requestedAt': DateTime.now().millisecondsSinceEpoch,
+      }, sourceTag: 'admin.send_notification');
+      if (mounted) {
+        toasts.codeSend('Notification queued — Cloud Function will send it shortly');
+        _titleController.clear();
+        _bodyController.clear();
+        _imageUrlController.clear();
+        _targetEmailController.clear();
+        setState(() => _modifier = 'all');
+      }
+    } catch (e, st) {
+      logger.e('Admin notification send failed', tag: 'AdminNotif', error: e, stackTrace: st);
+      if (mounted) toasts.error('Failed to queue notification');
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+}
+
+class _AudienceOption {
+  const _AudienceOption({required this.value, required this.label, required this.icon});
+
+  final String value;
+  final String label;
+  final IconData icon;
+}
+
+class _RouteOption {
+  const _RouteOption({required this.value, required this.label});
+
+  final String value;
+  final String label;
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.icon});
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return Row(
+      children: <Widget>[
+        Icon(icon, size: 18, color: colors.primary),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: textTheme.titleSmall?.copyWith(color: colors.primary, fontWeight: FontWeight.w600),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotificationPreviewCard extends StatefulWidget {
+  const _NotificationPreviewCard({required this.title, required this.body, required this.imageUrl});
+
+  final String title;
+  final String body;
+  final String imageUrl;
+
+  @override
+  State<_NotificationPreviewCard> createState() => _NotificationPreviewCardState();
+}
+
+class _NotificationPreviewCardState extends State<_NotificationPreviewCard> {
+  @override
+  Widget build(BuildContext context) {
+    if (widget.title.isEmpty && widget.body.isEmpty) return const SizedBox.shrink();
+
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.outline.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(Icons.phone_iphone, size: 14, color: colors.onSurface.withOpacity(0.5)),
+              const SizedBox(width: 4),
+              Text(
+                'PREVIEW',
+                style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: colors.onSurface.withOpacity(0.5)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.notifications, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    if (widget.title.isNotEmpty)
+                      Text(
+                        widget.title,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    if (widget.body.isNotEmpty)
+                      Text(
+                        widget.body,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
+              ),
+              if (widget.imageUrl.isNotEmpty) ...<Widget>[
+                const SizedBox(width: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: CachedNetworkImage(
+                    imageUrl: widget.imageUrl,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    errorWidget: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }

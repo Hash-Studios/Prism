@@ -3,91 +3,6 @@
 part of 'userModel.dart';
 
 // **************************************************************************
-// TypeAdapterGenerator
-// **************************************************************************
-
-class PrismUsersV2Adapter extends TypeAdapter<PrismUsersV2> {
-  @override
-  final int typeId = 15;
-
-  @override
-  PrismUsersV2 read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read()};
-    return PrismUsersV2(
-      username: fields[0] as String,
-      email: fields[1] as String,
-      id: fields[2] as String,
-      createdAt: fields[3] as String,
-      premium: fields[4] as bool,
-      lastLoginAt: fields[5] as String,
-      links: (fields[6] as Map).cast<dynamic, dynamic>(),
-      followers: (fields[7] as List).cast<dynamic>(),
-      following: (fields[8] as List).cast<dynamic>(),
-      profilePhoto: fields[9] as String,
-      bio: fields[10] as String,
-      loggedIn: fields[11] as bool,
-      badges: (fields[12] as List).cast<Badge>(),
-      subPrisms: (fields[13] as List).cast<dynamic>(),
-      coins: (fields[14] as num).toInt(),
-      transactions: (fields[15] as List).cast<PrismTransaction>(),
-      name: fields[16] as String,
-      coverPhoto: fields[17] as String?,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, PrismUsersV2 obj) {
-    writer
-      ..writeByte(18)
-      ..writeByte(0)
-      ..write(obj.username)
-      ..writeByte(1)
-      ..write(obj.email)
-      ..writeByte(2)
-      ..write(obj.id)
-      ..writeByte(3)
-      ..write(obj.createdAt)
-      ..writeByte(4)
-      ..write(obj.premium)
-      ..writeByte(5)
-      ..write(obj.lastLoginAt)
-      ..writeByte(6)
-      ..write(obj.links)
-      ..writeByte(7)
-      ..write(obj.followers)
-      ..writeByte(8)
-      ..write(obj.following)
-      ..writeByte(9)
-      ..write(obj.profilePhoto)
-      ..writeByte(10)
-      ..write(obj.bio)
-      ..writeByte(11)
-      ..write(obj.loggedIn)
-      ..writeByte(12)
-      ..write(obj.badges)
-      ..writeByte(13)
-      ..write(obj.subPrisms)
-      ..writeByte(14)
-      ..write(obj.coins)
-      ..writeByte(15)
-      ..write(obj.transactions)
-      ..writeByte(16)
-      ..write(obj.name)
-      ..writeByte(17)
-      ..write(obj.coverPhoto);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is PrismUsersV2Adapter && runtimeType == other.runtimeType && typeId == other.typeId;
-}
-
-// **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
@@ -98,20 +13,23 @@ PrismUsersV2 _$PrismUsersV2FromJson(Map<String, dynamic> json) => PrismUsersV2(
   createdAt: json['createdAt'] as String,
   premium: json['premium'] as bool,
   lastLoginAt: json['lastLoginAt'] as String,
-  links: json['links'] as Map<String, dynamic>,
-  followers: json['followers'] as List<dynamic>,
-  following: json['following'] as List<dynamic>,
+  links: Map<String, String>.from(json['links'] as Map),
+  followers: (json['followers'] as List<dynamic>).map((e) => e as String).toList(),
+  following: (json['following'] as List<dynamic>).map((e) => e as String).toList(),
   profilePhoto: json['profilePhoto'] as String,
   bio: json['bio'] as String,
   loggedIn: json['loggedIn'] as bool,
   badges: (json['badges'] as List<dynamic>).map((e) => Badge.fromJson(e as Map<String, dynamic>)).toList(),
-  subPrisms: json['subPrisms'] as List<dynamic>,
+  subPrisms: (json['subPrisms'] as List<dynamic>).map((e) => e as String).toList(),
   coins: (json['coins'] as num).toInt(),
   transactions: (json['transactions'] as List<dynamic>)
       .map((e) => PrismTransaction.fromJson(e as Map<String, dynamic>))
       .toList(),
   name: json['name'] as String,
   coverPhoto: json['coverPhoto'] as String?,
+  subscriptionTier: json['subscriptionTier'] as String? ?? 'free',
+  uploadsWeekStart: json['uploadsWeekStart'] as String? ?? '',
+  uploadsThisWeek: (json['uploadsThisWeek'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dynamic>{
@@ -133,4 +51,7 @@ Map<String, dynamic> _$PrismUsersV2ToJson(PrismUsersV2 instance) => <String, dyn
   'transactions': instance.transactions.map((e) => e.toJson()).toList(),
   'name': instance.name,
   'coverPhoto': instance.coverPhoto,
+  'subscriptionTier': instance.subscriptionTier,
+  'uploadsWeekStart': instance.uploadsWeekStart,
+  'uploadsThisWeek': instance.uploadsThisWeek,
 };

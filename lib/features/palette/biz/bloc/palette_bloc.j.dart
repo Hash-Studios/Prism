@@ -10,7 +10,7 @@ part 'palette_event.j.dart';
 part 'palette_state.j.dart';
 part 'palette_bloc.j.freezed.dart';
 
-@injectable
+@lazySingleton
 class PaletteBloc extends Bloc<PaletteEvent, PaletteState> {
   PaletteBloc(this._generatePaletteUseCase) : super(PaletteState.initial()) {
     on<_PaletteRequested>(_onPaletteRequested);

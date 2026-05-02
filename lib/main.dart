@@ -2,56 +2,74 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
-import 'package:Prism/auth/userOldModel.dart';
+import 'package:Prism/core/analytics/analytics_identity_sync.dart';
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/app_analytics.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/providers/analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/debug/bloc_debug_observer.dart';
+import 'package:Prism/core/debug/debug_flags.dart';
+import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
+import 'package:Prism/core/persistence/prefs_compat.dart';
+import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_navigation.dart';
+import 'package:Prism/core/router/deep_link_parser.dart';
+import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
-import 'package:Prism/features/deep_link/deep_link.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
+import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/profile_setups/profile_setups.dart';
-import 'package:Prism/features/profile_walls/profile_walls.dart';
-import 'package:Prism/features/public_profile/public_profile.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/setups/setups.dart';
+import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_dark/theme_dark.dart';
 import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/user_search/user_search.dart';
+import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/localNotification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:firebase_analytics/observer.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-String userHiveKey = "prismUserV2-1";
-late Box prefs;
+late PrefsCompat localPrefs;
 String? currentThemeID;
 String? currentDarkThemeID;
 String? currentMode;
@@ -62,6 +80,23 @@ int? categories;
 int? purity;
 late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
+const double _sentryReplaySessionSampleRate = 0.1;
+const double _sentryReplayOnErrorSampleRate = 1.0;
+// final GlobalKey<NavigatorState> _sentryFeedbackNavigatorKey = GlobalKey<NavigatorState>();
+// bool _sentryFeedbackSheetOpen = false;
+
+/// Top-level FCM background message handler.
+/// Must be a top-level function annotated with @pragma('vm:entry-point').
+/// Avoid any UI work here — only lightweight processing.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Firebase.initializeApp() is already called before main() is reached, but
+  // in the background isolate we may need to re-initialise.  The guard inside
+  // Firebase.initializeApp makes this safe to call multiple times.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final String route = message.data['route']?.toString() ?? '';
+  logger.d('Background push received: $route', tag: 'Push');
+}
 
 int _to8BitChannel(double value) {
   final channel = (value * 255).round();
@@ -107,15 +142,26 @@ Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
-      final SentryConfig sentryConfig = _resolveSentryConfig();
-      await _initializeMonitoring(sentryConfig);
+      unawaited(
+        app_state.initializeRuntimeAppVersion().catchError((Object e, StackTrace s) {
+          logger.w(
+            'Unable to read runtime app version; falling back to static constants.',
+            tag: 'AppVersion',
+            error: e,
+            stackTrace: s,
+          );
+        }),
+      );
+      Bloc.observer = const BlocDebugObserver();
+      localNotification = LocalNotification();
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
+        try {
+          unawaited(analytics.track(const AppCrashFatalEvent()));
+        } catch (_) {}
         return true;
       };
-
-      await MobileAds.instance.initialize();
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.dumpErrorToConsole(details, forceReport: true);
         logger.e(
@@ -128,117 +174,170 @@ Future<void> main() async {
             if (details.context != null) 'context': details.context.toString(),
           },
         );
+        try {
+          unawaited(analytics.track(const AppCrashFatalEvent()));
+        } catch (_) {}
       };
 
-      localNotification = LocalNotification();
-
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+      final SentryConfig sentryConfig = _resolveSentryConfig();
+
+      // Kick off Firebase in background — does NOT block runApp.
+      // StartupRepositoryImpl.bootstrap() will await FirebaseInit.readyFuture
+      // before touching FirebaseRemoteConfig.
       if (!skipFirebaseInit) {
-        try {
-          await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-          FirebaseInAppMessaging.instance.setMessagesSuppressed(false);
-        } catch (error, stackTrace) {
-          logger.w(
-            'Firebase initialization failed; continuing without Firebase-backed startup features.',
-            error: error,
-            stackTrace: stackTrace,
-          );
-        }
+        FirebaseInit.setFuture(
+          _initFirebase().then((_) => true).catchError((Object e, StackTrace s) {
+            logger.w(
+              'Firebase initialization failed; continuing without Firebase-backed startup features.',
+              error: e,
+              stackTrace: s,
+            );
+            return false;
+          }),
+        );
+        // Register FCM as soon as Firebase is ready (no-op if init failed).
+        unawaited(
+          FirebaseInit.readyFuture.then((initialized) {
+            if (initialized) {
+              FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+            }
+            unawaited(
+              MonitoringRuntime.reporter.addBreadcrumb(
+                message: 'Startup stage reached',
+                category: 'app.startup.stage',
+                data: <String, Object?>{'stage': 'firebase_init_completed', 'firebase_initialized': initialized},
+              ),
+            );
+          }),
+        );
       } else {
+        FirebaseInit.setFuture(Future<bool>.value(false));
         logger.w('Skipping Firebase initialization for this run (SKIP_FIREBASE_INIT=true).');
       }
 
-      final dir = await getApplicationDocumentsDirectory();
-      Hive.init(dir.path);
-      Hive.registerAdapter(PrismUsersAdapter());
-      Hive.registerAdapter<InAppNotif>(InAppNotifAdapter());
-      Hive.registerAdapter<PrismUsersV2>(PrismUsersV2Adapter());
-      Hive.registerAdapter<PrismTransaction>(PrismTransactionAdapter());
-      Hive.registerAdapter<Badge>(BadgeAdapter());
-      await Hive.openBox<InAppNotif>('inAppNotifs');
-      await Hive.openBox('setups');
-      await Hive.openBox('localFav');
-      await Hive.openBox('appsCache');
-      prefs = await Hive.openBox('prefs');
-      logger.d("Box Opened");
-      final systemOverlayColorValue = _colorValueFromPrefs(prefs.get("systemOverlayColor"), fallback: 0xFFE57697);
-      prefs.put("systemOverlayColor", systemOverlayColorValue);
-      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      prefs.put("darkThemeID", currentDarkThemeID);
-      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-      prefs.put("themeMode", currentMode);
-      final lightAccentValue = _colorValueFromPrefs(prefs.get('lightAccent'), fallback: 0xFFE57697);
-      lightAccent = Color(lightAccentValue);
-      prefs.put("lightAccent", lightAccentValue);
+      // Only truly-blocking tasks remain on the critical path.
+      await Future.wait(<Future<Object?>>[PersistenceBootstrap.initialize(), _initializeMonitoring(sentryConfig)]);
 
-      final darkAccentValue = _colorValueFromPrefs(prefs.get('darkAccent'), fallback: 0xFFE57697);
+      // Defer MobileAds and Analytics to after first frame. Resolves firebaseInitialized
+      // lazily once Firebase background init completes.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(
+          FirebaseInit.readyFuture.then(
+            (firebaseInitialized) => _deferredStartup(firebaseInitialized: firebaseInitialized),
+          ),
+        );
+      });
+
+      await MonitoringRuntime.reporter.addBreadcrumb(
+        message: 'Startup stage reached',
+        category: 'app.startup.stage',
+        data: <String, Object?>{'stage': 'persistence_initialized'},
+      );
+      DebugFlags.instance.loadFromStore();
+      localPrefs = PrefsCompat.fromRuntime();
+      logger.d("Persistence initialized");
+
+      // Read all prefs first, then batch writes in parallel.
+      final systemOverlayColorValue = _colorValueFromPrefs(localPrefs.get("systemOverlayColor"), fallback: 0xFFE57697);
+      currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+      currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+      currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
+      final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
+      lightAccent = Color(lightAccentValue);
+      final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
       darkAccent = Color(darkAccentValue);
-      prefs.put("darkAccent", darkAccentValue);
-      optimisedWallpapers = prefs.get('optimisedWallpapers') == true;
-      prefs.put('optimisedWallpapers', false);
-      categories = prefs.get('WHcategories') as int? ?? 100;
-      if (categories == 100) {
-        prefs.put('WHcategories', 100);
-      } else {
-        prefs.put('WHcategories', 111);
-      }
-      purity = prefs.get('WHpurity') as int? ?? 100;
-      if (purity == 100) {
-        prefs.put('WHpurity', 100);
-      } else {
-        prefs.put('WHpurity', 110);
-      }
+      optimisedWallpapers = localPrefs.get('optimisedWallpapers') == true;
+      categories = localPrefs.get('WHcategories') as int? ?? 100;
+      purity = localPrefs.get('WHpurity') as int? ?? 100;
+
+      await Future.wait(<Future<void>>[
+        localPrefs.put("systemOverlayColor", systemOverlayColorValue),
+        localPrefs.put("lightThemeID", currentThemeID),
+        localPrefs.put("darkThemeID", currentDarkThemeID),
+        localPrefs.put("themeMode", currentMode),
+        localPrefs.put("lightAccent", lightAccentValue),
+        localPrefs.put("darkAccent", darkAccentValue),
+        localPrefs.put('optimisedWallpapers', false),
+        localPrefs.put('WHcategories', categories == 100 ? 100 : 111),
+        localPrefs.put('WHpurity', purity == 100 ? 100 : 110),
+      ]);
 
       configureDependencies();
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(systemNavigationBarColor: Color(systemOverlayColorValue)),
-      );
-      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
-      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      await Future.wait(<Future<void>>[
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
+      ]);
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
+
+      // Await Firebase init before building the widget tree.
+      // DI lazy singletons (Firestore, Auth, RemoteConfig) call .instance which
+      // requires Firebase to be ready. Firebase was kicked off at the top of
+      // main() so in practice it completes during or before Persistence init.
+      await FirebaseInit.readyFuture;
+
+      await PurchasesService.instance.configureEarly();
 
       runApp(
-        RestartWidget(
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-              BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
-              BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
-              BlocProvider<CategoryFeedBloc>(
-                create: (_) => getIt<CategoryFeedBloc>()..add(const CategoryFeedEvent.started()),
-              ),
-              BlocProvider<ProfileWallsBloc>(create: (_) => getIt<ProfileWallsBloc>()),
-              BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-              BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-              BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
-              BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-              BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-              BlocProvider<ThemeLightBloc>(
-                create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-              ),
-              BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
-              BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
-              BlocProvider<DeepLinkBloc>(create: (_) => getIt<DeepLinkBloc>()..add(const DeepLinkEvent.started())),
-            ],
-            child: MyApp(),
+        // SentryWidget(
+        //   child:
+        LogToastOverlay(
+          child: RestartWidget(
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
+                BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
+                BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
+                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+                BlocProvider<ProfileSetupsBloc>(create: (_) => getIt<ProfileSetupsBloc>()),
+                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                BlocProvider<StartupBloc>(
+                  create: (_) =>
+                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                ),
+                BlocProvider<ThemeLightBloc>(
+                  create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
+                ),
+                BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
+                BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
+                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+              ],
+              child: _MyApp(),
+            ),
           ),
         ),
+        // ),  // SentryWidget closing
       );
     },
     (obj, stacktrace) {
       logger.e('Uncaught zone error', tag: 'ZoneError', error: obj, stackTrace: stacktrace);
+      try {
+        unawaited(analytics.track(const AppCrashFatalEvent()));
+      } catch (_) {}
     },
   );
 }
 
+Future<void> _initFirebase() async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+
+Future<void> _deferredStartup({required bool firebaseInitialized}) async {
+  await MobileAds.instance.initialize();
+  await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
+}
+
 SentryConfig _resolveSentryConfig() {
   const String fallbackEnvironment = kReleaseMode ? 'production' : 'staging';
-  final String fallbackRelease = 'Prism@${globals.currentAppVersion}+${globals.currentAppVersionCode}';
+  final String fallbackRelease = 'Prism@${app_state.currentAppVersion}+${app_state.currentAppVersionCode}';
   return SentryConfig.fromEnvironment(
     fallbackEnvironment: fallbackEnvironment,
     fallbackRelease: fallbackRelease,
-    fallbackDist: globals.currentAppVersionCode,
+    fallbackDist: app_state.currentAppVersionCode,
   );
 }
 
@@ -262,8 +361,14 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.tracesSampleRate = 0.1;
       options.attachStacktrace = true;
       options.enableAutoNativeBreadcrumbs = true;
-      options.replay.sessionSampleRate = 0.1;
-      options.replay.onErrorSampleRate = 1.0;
+      options.replay.sessionSampleRate = _sentryReplaySessionSampleRate;
+      options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
+      options.privacy.maskAllText = true;
+      options.privacy.maskAllImages = true;
+      // options.beforeSend = (event, hint) {
+      //   unawaited(_showSentryFeedbackWidget(event.eventId));
+      //   return event;
+      // };
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
@@ -286,21 +391,152 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
   }
 }
 
-class MyApp extends StatefulWidget {
+// Future<void> _showSentryFeedbackWidget(SentryId eventId) async {
+//   if (_sentryFeedbackSheetOpen) {
+//     return;
+//   }
+//
+//   final BuildContext? context = _sentryFeedbackNavigatorKey.currentContext;
+//   if (context == null || !context.mounted) {
+//     return;
+//   }
+//
+//   _sentryFeedbackSheetOpen = true;
+//
+//   try {
+//     final screenshot = await SentryFlutter.captureScreenshot();
+//     if (!context.mounted) {
+//       return;
+//     }
+//
+//     await Navigator.of(context, rootNavigator: true).push<void>(
+//       MaterialPageRoute<void>(
+//         builder: (context) => SentryFeedbackWidget(
+//           associatedEventId: eventId,
+//           screenshot: screenshot,
+//         ),
+//         fullscreenDialog: true,
+//       ),
+//     );
+//   } catch (error, stackTrace) {
+//     logger.w(
+//       'Unable to display Sentry feedback widget.',
+//       tag: 'SentryFeedback',
+//       error: error,
+//       stackTrace: stackTrace,
+//     );
+//   } finally {
+//     _sentryFeedbackSheetOpen = false;
+//   }
+// }
+
+Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) async {
+  final bool mixpanelEnabled = _isMixpanelEnabled();
+  logger.i(
+    'Analytics startup configuration resolved.',
+    tag: 'Analytics',
+    fields: <String, Object?>{
+      'replay_backend': 'sentry',
+      'sentry_replay_session_sample_rate': _sentryReplaySessionSampleRate,
+      'sentry_replay_on_error_sample_rate': _sentryReplayOnErrorSampleRate,
+      'mixpanel_enabled': mixpanelEnabled,
+      'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+    },
+  );
+
+  final List<AnalyticsProvider> providers = <AnalyticsProvider>[];
+
+  final AnalyticsProvider? mixpanelProvider = await _buildMixpanelProvider(enabled: mixpanelEnabled);
+  if (mixpanelProvider != null) {
+    providers.add(mixpanelProvider);
+  }
+
+  if (firebaseInitialized) {
+    providers.add(FirebaseAnalyticsProvider());
+  }
+
+  if (providers.isEmpty) {
+    providers.add(const NoopAnalyticsProvider());
+  }
+
+  AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: CompositeAnalyticsProvider(providers));
+}
+
+Future<AnalyticsProvider?> _buildMixpanelProvider({required bool enabled}) async {
+  if (!enabled) {
+    logger.i(
+      'Mixpanel analytics disabled by configuration.',
+      tag: 'Analytics',
+      fields: <String, Object?>{
+        'mixpanel_enabled': _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase(),
+        'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+      },
+    );
+    return null;
+  }
+
+  final String token = _normalizeDefineValue(Env.mixpanelToken);
+  if (token.isEmpty) {
+    logger.w('MIXPANEL_ENABLED is on but MIXPANEL_TOKEN is empty. Skipping Mixpanel provider.', tag: 'Analytics');
+    return null;
+  }
+
+  try {
+    return await MixpanelAnalyticsProvider.create(token: token);
+  } catch (error, stackTrace) {
+    logger.w(
+      'Mixpanel initialization failed; continuing with available analytics providers.',
+      tag: 'Analytics',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    return null;
+  }
+}
+
+bool _isMixpanelEnabled() {
+  final String rawValue = _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase();
+  if (rawValue.isEmpty || rawValue == 'auto') {
+    return _normalizeDefineValue(Env.mixpanelToken).isNotEmpty;
+  }
+
+  if (rawValue == '1' || rawValue == 'true' || rawValue == 'yes' || rawValue == 'on') {
+    return true;
+  }
+
+  if (rawValue == '0' || rawValue == 'false' || rawValue == 'no' || rawValue == 'off') {
+    return false;
+  }
+
+  return false;
+}
+
+String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
+
+class _MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
+  late final AnalyticsIdentitySync _analyticsIdentitySync;
+  final DeepLinkParser _deepLinkParser = const DeepLinkParser();
+  final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
+  final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
+  final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
+  bool _bootstrapCompleted = false;
+  bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
+  static const Duration _coinSyncCooldown = Duration(seconds: 30);
+  DateTime? _lastCoinSyncAt;
 
   Future<bool> getLoginStatus() async {
-    bool value = await globals.gAuth.isSignedIn();
+    bool value = await app_state.gAuth.isSignedIn();
     if (value) {
-      if (prefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
+      if (localPrefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
         try {
-          await globals.gAuth.signOutGoogle();
+          await app_state.gAuth.signOutGoogle();
         } catch (e, st) {
           logger.w(
             'Forced sign-out migration failed; continuing with signed-out state.',
@@ -309,53 +545,112 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             stackTrace: st,
           );
         }
-        prefs.put("logouteveryoneaugust2021", true);
+        await localPrefs.put("logouteveryoneaugust2021", true);
         toasts.codeSend("Please login again, to enjoy the app!");
         value = false;
       }
     } else if (!value) {
-      prefs.put("logouteveryoneaugust2021", true);
+      await localPrefs.put("logouteveryoneaugust2021", true);
       // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
-      globals.prismUser
+      app_state.prismUser
         ..loggedIn = false
         ..premium = false
+        ..subscriptionTier = 'free'
         ..id = ''
         ..email = ''
         ..username = ''
         ..name = ''
         ..bio = ''
-        ..profilePhoto = globals.defaultProfilePhotoUrl
+        ..profilePhoto = app_state.defaultProfilePhotoUrl
         ..coverPhoto = ''
-        ..followers = <dynamic>[]
-        ..following = <dynamic>[]
-        ..links = <String, dynamic>{};
+        ..followers = <String>[]
+        ..following = <String>[]
+        ..links = <String, String>{};
+      clearInAppNotificationSyncGateAll();
     }
+    app_state.prismUser.loggedIn = value;
+    await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
     if (value) {
       await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
     }
-    globals.prismUser.loggedIn = value;
-    prefs.put(userHiveKey, globals.prismUser);
+    app_state.persistPrismUser();
     await syncSentryUserScope(
-      loggedIn: globals.prismUser.loggedIn,
-      id: globals.prismUser.id,
-      email: globals.prismUser.email,
-      username: globals.prismUser.username,
+      loggedIn: app_state.prismUser.loggedIn,
+      id: app_state.prismUser.id,
+      email: app_state.prismUser.email,
+      username: app_state.prismUser.username,
     );
     return value;
+  }
+
+  Future<void> _syncAnalyticsIdentity({
+    required bool loggedIn,
+    required String userId,
+    required String subscriptionTier,
+    required bool isPremium,
+    required String sourceTag,
+  }) {
+    return _analyticsIdentitySync.sync(
+      loggedIn: loggedIn,
+      userId: userId,
+      subscriptionTier: subscriptionTier,
+      isPremium: isPremium,
+      sourceTag: sourceTag,
+    );
+  }
+
+  Future<void> _syncAnalyticsIdentityFromAppState({required String sourceTag}) {
+    return _syncAnalyticsIdentity(
+      loggedIn: app_state.prismUser.loggedIn,
+      userId: app_state.prismUser.id,
+      subscriptionTier: app_state.prismUser.subscriptionTier,
+      isPremium: app_state.prismUser.premium,
+      sourceTag: sourceTag,
+    );
+  }
+
+  Future<void> _syncAnalyticsIdentityFromSession(SessionEntity session, {required String sourceTag}) {
+    return _syncAnalyticsIdentity(
+      loggedIn: session.loggedIn,
+      userId: session.userId,
+      subscriptionTier: session.subscriptionTier,
+      isPremium: session.premium,
+      sourceTag: sourceTag,
+    );
+  }
+
+  /// Minimum time between coin syncs triggered by app resume to reduce Firestore reads/writes.
+  static const Duration _coinSyncResumeThrottle = Duration(minutes: 10);
+  DateTime? _lastCoinSyncResume;
+
+  /// Throttle getNotifs on resume to avoid repeated queries with 0 results.
+  static const Duration _getNotifsResumeThrottle = Duration(minutes: 5);
+  DateTime? _lastGetNotifsResume;
+
+  void _reloadInAppNotificationsFromCache() {
+    if (!getIt.isRegistered<InAppNotificationsBloc>()) {
+      return;
+    }
+    getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
   }
 
   Future<void> _syncCoinEconomy({required String sourceTag}) async {
     if (_coinSyncInFlight) {
       return;
     }
-    if (!globals.prismUser.loggedIn || globals.prismUser.id.trim().isEmpty) {
+    if (!app_state.prismUser.loggedIn || app_state.prismUser.id.trim().isEmpty) {
+      return;
+    }
+    final now = DateTime.now();
+    if (_lastCoinSyncAt != null && now.difference(_lastCoinSyncAt!) < _coinSyncCooldown) {
       return;
     }
     _coinSyncInFlight = true;
+    _lastCoinSyncAt = now;
     try {
       await CoinsService.instance.bootstrapForCurrentUser();
-      await CoinsService.instance.refreshBalance();
+      // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
@@ -364,13 +659,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     } finally {
       _coinSyncInFlight = false;
     }
-  }
-
-  String _referralInviterFromAction(DeepLinkActionEntity action) {
-    if (action.arguments.isEmpty) {
-      return '';
-    }
-    return action.arguments.first?.toString().trim() ?? '';
   }
 
   Future<void> _configureDisplayMode() async {
@@ -412,89 +700,189 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         "Get notifications for download progress of wallpapers.",
         false,
       );
+      await localNotification.createNotificationChannel(
+        "wall_of_the_day",
+        "Wall of the Day",
+        "Daily featured wallpaper notification at 9 AM.",
+        true,
+      );
+      await localNotification.createNotificationChannel(
+        "streak_reminder",
+        "Streak reminders",
+        "8 PM reminder to keep your login streak alive.",
+        true,
+      );
     } catch (e, st) {
       logger.w('Failed to configure local notification channels.', error: e, stackTrace: st);
     }
   }
 
-  void _navigateForDeepLink(DeepLinkActionEntity action) {
-    if (action.type == DeepLinkActionType.share) {
-      _appRouter.push(ShareWallpaperViewRoute(arguments: action.arguments));
-    } else if (action.type == DeepLinkActionType.user) {
-      _appRouter.push(ProfileRoute(arguments: action.arguments));
-    } else if (action.type == DeepLinkActionType.setup) {
-      _appRouter.push(ShareSetupViewRoute(arguments: action.arguments));
-    } else if (action.type == DeepLinkActionType.refer) {
-      final String inviterUserId = _referralInviterFromAction(action);
-      if (inviterUserId.isEmpty) {
-        return;
+  TargetTypeValue _deepLinkTargetType(DeepLinkActionEntity action) {
+    return switch (action) {
+      ShareLinkIntent() => TargetTypeValue.share,
+      UserLinkIntent() => TargetTypeValue.user,
+      SetupLinkIntent() => TargetTypeValue.setup,
+      ReferLinkIntent() => TargetTypeValue.refer,
+      ShortCodeIntent() => TargetTypeValue.shortCode,
+      UnknownIntent() => TargetTypeValue.unknown,
+    };
+  }
+
+  void _queueDeepLinkIntent(DeepLinkActionEntity action) {
+    _pendingDeepLinks.add(action);
+  }
+
+  Future<void> _processPendingDeepLinks() async {
+    if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
+      return;
+    }
+    if (_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_processPendingDeepLinks());
+      });
+      return;
+    }
+    _processingPendingDeepLinks = true;
+    try {
+      final List<DeepLinkActionEntity> queued = List<DeepLinkActionEntity>.from(_pendingDeepLinks);
+      _pendingDeepLinks.clear();
+      for (final DeepLinkActionEntity action in queued) {
+        await _handleDeepLinkIntent(action);
       }
-      unawaited(CoinsService.instance.setPendingReferralInviterId(inviterUserId));
-      if (globals.prismUser.loggedIn) {
-        unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: inviterUserId));
-      } else {
-        toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
-      }
+    } finally {
+      _processingPendingDeepLinks = false;
     }
   }
 
-  DeepLinkActionEntity? _parseCanonicalUriToAction(Uri uri) {
-    if (uri.pathSegments.isEmpty) {
-      return null;
+  Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
+    switch (action) {
+      case ShareLinkIntent():
+        _appRouter.push(
+          WallpaperDetailRoute(
+            wallId: action.wallId,
+            source: action.source,
+            wallpaperUrl: action.wallpaperUrl,
+            thumbnailUrl: action.thumbnailUrl,
+            analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+          ),
+        );
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.share, result: EventResultValue.navigated),
+          ),
+        );
+      case UserLinkIntent():
+        _appRouter.push(ProfileRoute(profileIdentifier: action.profileIdentifier));
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.user, result: EventResultValue.navigated),
+          ),
+        );
+      case SetupLinkIntent():
+        _appRouter.push(ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl));
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
+          ),
+        );
+      case ReferLinkIntent():
+        if (action.inviterId.trim().isEmpty) {
+          unawaited(
+            analytics.track(
+              const DeepLinkNavigationResultEvent(
+                targetType: TargetTypeValue.refer,
+                result: EventResultValue.failure,
+                reason: AnalyticsReasonValue.missingData,
+              ),
+            ),
+          );
+          return;
+        }
+        unawaited(CoinsService.instance.setPendingReferralInviterId(action.inviterId));
+        if (app_state.prismUser.loggedIn) {
+          unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: action.inviterId));
+        } else {
+          toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
+        }
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.refer, result: EventResultValue.success),
+          ),
+        );
+      case ShortCodeIntent():
+        await _resolveAndNavigateShortCode(action.code);
+      case UnknownIntent():
+        _appRouter.push(const NotFoundRoute());
+        unawaited(
+          analytics.track(
+            const DeepLinkNavigationResultEvent(
+              targetType: TargetTypeValue.unknown,
+              result: EventResultValue.failure,
+              reason: AnalyticsReasonValue.unknown,
+            ),
+          ),
+        );
+    }
+  }
+
+  Future<Uri> _routerDeepLinkTransformer(Uri uri) async {
+    return _deepLinkParser.transform(uri);
+  }
+
+  Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
+    final DeepLinkActionEntity action = _deepLinkParser.parse(platformDeepLink.uri);
+    final TargetTypeValue targetType = _deepLinkTargetType(action);
+    final bool isKnown = action is! UnknownIntent;
+
+    unawaited(
+      analytics.track(
+        DeepLinkReceivedEvent(source: DeepLinkSourceValue.appLinks, targetType: targetType, hasPayload: isKnown),
+      ),
+    );
+    unawaited(
+      analytics.track(
+        DeepLinkResolvedEvent(
+          targetType: targetType,
+          result: isKnown ? EventResultValue.success : EventResultValue.failure,
+          reason: isKnown ? null : AnalyticsReasonValue.missingData,
+        ),
+      ),
+    );
+
+    if (isKnown) {
+      _queueDeepLinkIntent(action);
+      if (_bootstrapCompleted) {
+        unawaited(_processPendingDeepLinks());
+      }
+      return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
     }
 
-    final segment = uri.pathSegments.first;
-    if (segment == 'share') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.share,
-        route: '/share',
-        arguments: <dynamic>[
-          uri.queryParameters['id'],
-          uri.queryParameters['provider'],
-          uri.queryParameters['url'],
-          uri.queryParameters['thumb'],
-        ],
-        rawUri: uri.toString(),
-      );
-    }
-    if (segment == 'user') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.user,
-        route: '/follower-profile',
-        arguments: <dynamic>[uri.queryParameters['username'] ?? uri.queryParameters['email']],
-        rawUri: uri.toString(),
-      );
-    }
-    if (segment == 'setup') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.setup,
-        route: '/share-setup',
-        arguments: <dynamic>[uri.queryParameters['name'], uri.queryParameters['thumbUrl']],
-        rawUri: uri.toString(),
-      );
-    }
-    if (segment == 'refer') {
-      final String? inviterId =
-          uri.queryParameters['userID'] ??
-          uri.queryParameters['userId'] ??
-          uri.queryParameters['userid'] ??
-          uri.queryParameters['id'];
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.refer,
-        route: '',
-        arguments: <dynamic>[inviterId],
-        rawUri: uri.toString(),
-      );
+    if (platformDeepLink.isValid) {
+      return platformDeepLink;
     }
 
-    return null;
+    if (platformDeepLink.uri.path.isNotEmpty && platformDeepLink.uri.path != '/') {
+      _queueDeepLinkIntent(action);
+      if (_bootstrapCompleted) {
+        unawaited(_processPendingDeepLinks());
+      }
+    }
+    return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
   }
 
   Future<void> _resolveAndNavigateShortCode(String code) async {
     if (code.trim().isEmpty) {
+      analytics.track(
+        const DeepLinkResolvedEvent(
+          targetType: TargetTypeValue.shortCode,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.emptyInput,
+        ),
+      );
       return;
     }
 
+    AnalyticsReasonValue failureReason = AnalyticsReasonValue.unknown;
     final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
     try {
       final response = await http
@@ -508,21 +896,31 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           if (canonicalRaw is String && canonicalRaw.isNotEmpty) {
             final canonicalUri = Uri.tryParse(canonicalRaw);
             if (canonicalUri != null) {
-              final action = _parseCanonicalUriToAction(canonicalUri);
-              if (action != null) {
-                _navigateForDeepLink(action);
+              final DeepLinkActionEntity resolvedIntent = _deepLinkParser.parse(canonicalUri);
+              if (resolvedIntent is! UnknownIntent) {
+                analytics.track(
+                  const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
+                );
+                await _handleDeepLinkIntent(resolvedIntent);
                 return;
               }
+              failureReason = AnalyticsReasonValue.missingData;
+            } else {
+              failureReason = AnalyticsReasonValue.missingData;
             }
+          } else {
+            failureReason = AnalyticsReasonValue.missingData;
           }
         }
       } else {
+        failureReason = AnalyticsReasonValue.error;
         logger.w(
           'Short-link resolve returned non-success status.',
           fields: <String, Object?>{'status': response.statusCode, 'code': code, 'body': response.body},
         );
       }
     } catch (error, stackTrace) {
+      failureReason = AnalyticsReasonValue.error;
       logger.w(
         'Failed to resolve short code.',
         error: error,
@@ -531,60 +929,191 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       );
     }
 
+    analytics.track(
+      DeepLinkResolvedEvent(
+        targetType: TargetTypeValue.shortCode,
+        result: EventResultValue.failure,
+        reason: failureReason,
+      ),
+    );
     await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
+  }
+
+  /// Routes a tapped push notification to the correct screen based on
+  /// the `route` field in the notification's data payload.
+  Future<void> _handlePushTap(Map<String, dynamic> data) async {
+    final String route = data['route']?.toString() ?? '';
+    final String wallId = (data['wall_id']?.toString() ?? '').trim();
+    final String rawUrl = (data['url']?.toString() ?? '').trim();
+
+    logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId, 'url': rawUrl});
+    if (route == 'wall_of_the_day') {
+      unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
+    }
+
+    if (rawUrl.isNotEmpty) {
+      final Uri? parsed = Uri.tryParse(rawUrl);
+      if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
+        final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
+        if (deepLinkRoute != null) {
+          _appRouter.navigate(deepLinkRoute);
+          return;
+        }
+      }
+    }
+
+    final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
+    if (mappedRoute != null) {
+      _appRouter.navigate(mappedRoute);
+      return;
+    }
+    _appRouter.navigate(const NotFoundRoute());
+  }
+
+  Future<void> _listenForPushMessages() async {
+    // Wait for Firebase to be ready before touching any Firebase APIs.
+    final bool firebaseReady = await FirebaseInit.readyFuture;
+    if (!firebaseReady) return;
+
+    // Foreground: show a heads-up local notification + sync the inbox.
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      unawaited(localNotification.showPushNotification(message));
+      unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
+    });
+
+    // Background / terminated → foreground: user tapped the notification.
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      unawaited(_handlePushTap(message.data));
+    });
+
+    // Launched from terminated state by tapping a notification.
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_handlePushTap(message.data));
+      });
+    });
   }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _appRouter = AppRouter();
+    _appRouter = AppRouter(/* navigatorKey: _sentryFeedbackNavigatorKey */);
+    _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(getLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
+    unawaited(_listenForPushMessages());
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      final now = DateTime.now();
+      if (_lastCoinSyncResume == null || now.difference(_lastCoinSyncResume!) >= _coinSyncResumeThrottle) {
+        _lastCoinSyncResume = now;
+        unawaited(_syncCoinEconomy(sourceTag: 'app_resumed'));
+      }
+      if (_lastGetNotifsResume == null || now.difference(_lastGetNotifsResume!) >= _getNotifsResumeThrottle) {
+        _lastGetNotifsResume = now;
+        unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
+      }
+      return;
+    }
+    if (state == AppLifecycleState.paused) {
+      unawaited(analytics.flush());
     }
   }
 
   @override
   void dispose() {
+    unawaited(analytics.flush());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<DeepLinkBloc, DeepLinkState>(
-      listenWhen: (previous, current) => previous.latestAction?.rawUri != current.latestAction?.rawUri,
-      listener: (context, state) {
-        final action = state.latestAction;
-        if (action == null) {
-          return;
-        }
-        if (action.type == DeepLinkActionType.shortCode) {
-          final code = action.arguments.isNotEmpty ? action.arguments.first?.toString() ?? '' : '';
-          unawaited(_resolveAndNavigateShortCode(code));
-          return;
-        }
-        _navigateForDeepLink(action);
-      },
-      child: MaterialApp.router(
-        routerConfig: _appRouter.config(
-          navigatorObservers: () => [
-            FirebaseAnalyticsObserver(analytics: analytics),
-            if (MonitoringRuntime.reporter.isEnabled)
-              SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
-          ],
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<SessionBloc, SessionState>(
+          listenWhen: (previous, current) =>
+              previous.session.userId != current.session.userId ||
+              previous.session.loggedIn != current.session.loggedIn ||
+              previous.session.subscriptionTier != current.session.subscriptionTier ||
+              previous.session.premium != current.session.premium,
+          listener: (context, state) {
+            unawaited(_syncAnalyticsIdentityFromSession(state.session, sourceTag: 'session_bloc'));
+          },
         ),
-        theme: context.prismLightTheme(),
-        darkTheme: context.prismDarkTheme(),
-        themeMode: context.prismThemeMode(),
+        BlocListener<SessionBloc, SessionState>(
+          listenWhen: (previous, current) => previous.session.loggedIn && !current.session.loggedIn,
+          listener: (context, state) {
+            if (getIt.isRegistered<InAppNotificationsBloc>()) {
+              getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.clearRequested());
+            }
+          },
+        ),
+        BlocListener<StartupBloc, StartupState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status || previous.isObsoleteVersion != current.isObsoleteVersion,
+          listener: (context, state) {
+            if (state.status != LoadStatus.success || state.isObsoleteVersion) {
+              return;
+            }
+            if (!_bootstrapCompleted) {
+              _bootstrapCompleted = true;
+            }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              unawaited(_processPendingDeepLinks());
+            });
+          },
+        ),
+        // Cache WOTD URL for the Wall of the Day quick tile.
+        BlocListener<WotdBloc, WotdState>(
+          listenWhen: (previous, current) => previous.entity?.url != current.entity?.url && current.entity != null,
+          listener: (context, state) {
+            final url = state.entity?.url;
+            if (url != null && url.isNotEmpty) {
+              unawaited(QuickTileConfigService.pushWotdUrl(url));
+            }
+          },
+        ),
+        // Cache favourite wall URLs for the Random Favourite quick tile.
+        BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
+          listenWhen: (previous, current) => previous.status != current.status && current.status == LoadStatus.success,
+          listener: (context, state) {
+            final urls = state.items.map((item) => item.fullUrl).toList(growable: false);
+            unawaited(QuickTileConfigService.pushFavWallUrls(urls));
+          },
+        ),
+      ],
+      child: ListenableBuilder(
+        listenable: DebugFlags.instance,
+        builder: (context, _) => MaterialApp.router(
+          builder: (context, child) {
+            final double topInset = MediaQuery.paddingOf(context).top;
+            app_state.notchSize = topInset;
+            app_state.hasNotch = topInset > 24;
+            return child ?? const SizedBox.shrink();
+          },
+          routerConfig: _appRouter.config(
+            deepLinkTransformer: _routerDeepLinkTransformer,
+            deepLinkBuilder: _routerDeepLinkBuilder,
+            navigatorObservers: () => [
+              ...analytics.buildNavigatorObservers(),
+              if (MonitoringRuntime.reporter.isEnabled)
+                SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
+            ],
+          ),
+          showPerformanceOverlay: DebugFlags.instance.showPerformanceOverlay,
+          showSemanticsDebugger: DebugFlags.instance.showSemanticsDebugger,
+          theme: context.prismLightTheme(),
+          darkTheme: context.prismDarkTheme(),
+          themeMode: context.prismThemeMode(),
+        ),
       ),
     );
   }
@@ -595,12 +1124,6 @@ class RestartWidget extends StatefulWidget {
   final Widget? child;
   // ignore: unreachable_from_main
   static void restartApp(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        systemNavigationBarColor: Color(_colorValueFromPrefs(prefs.get('systemOverlayColor'), fallback: 0xFFE57697)),
-      ),
-    );
-    observer = FirebaseAnalyticsObserver(analytics: analytics);
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
   }
 
@@ -615,21 +1138,19 @@ class _RestartWidgetState extends State<RestartWidget> {
     setState(() {
       key = UniqueKey();
     });
-    Hive.openBox('prefs').then((prefs) {
-      currentThemeID = prefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      prefs.put("lightThemeID", currentThemeID);
-      currentDarkThemeID = prefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      prefs.put("darkThemeID", currentDarkThemeID);
-      currentMode = prefs.get('themeMode')?.toString() ?? "Dark";
-      prefs.put("themeMode", currentMode);
-      final lightAccentValue = _colorValueFromPrefs(prefs.get('lightAccent'), fallback: 0xFFE57697);
-      lightAccent = Color(lightAccentValue);
-      prefs.put("lightAccent", lightAccentValue);
+    currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
+    unawaited(localPrefs.put("lightThemeID", currentThemeID));
+    currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
+    unawaited(localPrefs.put("darkThemeID", currentDarkThemeID));
+    currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
+    unawaited(localPrefs.put("themeMode", currentMode));
+    final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
+    lightAccent = Color(lightAccentValue);
+    unawaited(localPrefs.put("lightAccent", lightAccentValue));
 
-      final darkAccentValue = _colorValueFromPrefs(prefs.get('darkAccent'), fallback: 0xFFE57697);
-      darkAccent = Color(darkAccentValue);
-      prefs.put("darkAccent", darkAccentValue);
-    });
+    final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
+    darkAccent = Color(darkAccentValue);
+    unawaited(localPrefs.put("darkAccent", darkAccentValue));
   }
 
   @override

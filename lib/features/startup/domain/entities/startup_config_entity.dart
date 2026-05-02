@@ -10,11 +10,18 @@ class StartupConfigEntity {
     required this.topTitleText,
     required this.categories,
     required this.followersTab,
+    required this.aiEnabled,
+    required this.aiRolloutPercent,
+    required this.aiSubmitEnabled,
+    required this.aiVariationsEnabled,
+    required this.useRcPaywalls,
+    required this.onboardingV2Enabled,
+    required this.onboardingStarterPack,
   });
 
   final String topImageLink;
   final String bannerText;
-  final String bannerTextOn;
+  final bool bannerTextOn;
   final String bannerUrl;
   final String obsoleteAppVersion;
   final List<String> verifiedUsers;
@@ -22,4 +29,11 @@ class StartupConfigEntity {
   final List<String> topTitleText;
   final List<Map<String, dynamic>> categories;
   final bool followersTab;
+  final bool aiEnabled;
+  final int aiRolloutPercent;
+  final bool aiSubmitEnabled;
+  final bool aiVariationsEnabled;
+  final bool useRcPaywalls;
+  final bool onboardingV2Enabled;
+  final List<Map<String, dynamic>> onboardingStarterPack;
 }

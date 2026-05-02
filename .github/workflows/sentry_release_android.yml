@@ -18,6 +18,9 @@ jobs:
     env:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
+      DOPPLER_PROJECT: prism
+      DOPPLER_CONFIG: production
 
     steps:
       - name: Checkout
@@ -37,11 +40,17 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Inject required app secrets
-        env:
-          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
-          GITKEY_DART: ${{ secrets.GITKEY_DART }}
+      - name: Version sync guard
+        run: python3 tool/verify_version_sync.py
+
+      - name: Install Doppler CLI
         run: |
+          (curl -Ls https://cli.doppler.com/install.sh || wget -qO- https://cli.doppler.com/install.sh) | sudo sh
+
+      - name: Inject required app secrets
+        run: |
+          FIREBASE_SECRET="$(doppler secrets get FIREBASE_SECRET --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          GITKEY_DART="$(doppler secrets get GITKEY_DART --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
           if [ -z "$FIREBASE_SECRET" ] || [ -z "$GITKEY_DART" ]; then
             echo "FIREBASE_SECRET and GITKEY_DART secrets are required."
             exit 1
@@ -52,11 +61,12 @@ jobs:
       - name: Resolve Sentry environment variables
         env:
           INPUT_ENV: ${{ github.event.inputs.environment }}
-          SENTRY_DSN_STAGING: ${{ secrets.SENTRY_DSN_STAGING }}
-          SENTRY_DSN_PRODUCTION: ${{ secrets.SENTRY_DSN_PRODUCTION }}
-          SENTRY_PROJECT_STAGING: ${{ secrets.SENTRY_PROJECT_STAGING }}
-          SENTRY_PROJECT_PRODUCTION: ${{ secrets.SENTRY_PROJECT_PRODUCTION }}
         run: |
+          SENTRY_DSN_STAGING="$(doppler secrets get SENTRY_DSN_STAGING --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          SENTRY_DSN_PRODUCTION="$(doppler secrets get SENTRY_DSN_PRODUCTION --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          SENTRY_PROJECT_STAGING="$(doppler secrets get SENTRY_PROJECT_STAGING --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+          SENTRY_PROJECT_PRODUCTION="$(doppler secrets get SENTRY_PROJECT_PRODUCTION --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
+
           if [ "$INPUT_ENV" = "production" ]; then
             echo "SENTRY_DSN=$SENTRY_DSN_PRODUCTION" >> $GITHUB_ENV
             echo "SENTRY_PROJECT=$SENTRY_PROJECT_PRODUCTION" >> $GITHUB_ENV
@@ -77,9 +87,11 @@ jobs:
             exit 1
           fi
 
-      - name: Build release APK with split debug info
+      - name: Build release AAB with split debug info
         run: |
-          flutter build apk --release --obfuscate --split-debug-info=build/symbols \
+          DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
+          flutter build appbundle --release --obfuscate --split-debug-info=build/symbols \
+            $DART_DEFINES \
             --dart-define=SENTRY_DSN="$SENTRY_DSN" \
             --dart-define=SENTRY_ENV="$SENTRY_ENV" \
             --dart-define=SENTRY_RELEASE="$SENTRY_RELEASE" \
@@ -89,8 +101,8 @@ jobs:
       - name: Upload debug symbols and mappings to Sentry
         run: dart run sentry_dart_plugin
 
-      - name: Upload APK artifact
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-${{ github.event.inputs.environment }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/bundle/release/app-release.aab

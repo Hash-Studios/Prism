@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Prism: Prepare Dart Defines",
+      "type": "shell",
+      "command": "bash ./tool/vscode_prepare_dart_defines.sh",
+      "problemMatcher": []
+    }
+  ]
+}

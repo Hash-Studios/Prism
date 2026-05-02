@@ -1,0 +1,264 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function isAdminEmail() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/admin_users/$(authEmail()));
+    }
+
+    function isConfiguredAdmin() {
+      return isAdmin() || isAdminEmail();
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function hasAuthEmail() {
+      return isSignedIn() && request.auth.token.email is string && request.auth.token.email != '';
+    }
+
+    function authEmail() {
+      return request.auth.token.email;
+    }
+
+    function isEmailOwner(email) {
+      return hasAuthEmail() && email is string && email == authEmail();
+    }
+
+    function canToggleFollowersOnly() {
+      return hasAuthEmail()
+          && resource.data.followers is list
+          && request.resource.data.followers is list
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
+          && (resource.data.followers.hasAny([authEmail()]) != request.resource.data.followers.hasAny([authEmail()]))
+          && request.resource.data.followers.size()
+              == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1);
+    }
+
+    // Allows a signed-in user to follow/unfollow via arrayUnion/arrayRemove.
+    // canToggleFollowersOnly() is incompatible with arrayUnion because the size
+    // check fails when the item already exists (arrayUnion is a no-op in that case).
+    function canFollowUser() {
+      return hasAuthEmail()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']);
+    }
+
+    function canCreateUserDoc(userId) {
+      return isOwner(userId)
+          && request.resource.data.id is string
+          && request.resource.data.id == userId;
+    }
+
+    // Wall of the Day — public read, admin-only write (set via Cloud Function)
+    match /wall_of_the_day/{docId} {
+      allow read: if true;
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Past Picks — public read, admin-only write (archived by Cloud Function)
+    match /past_picks/{docId} {
+      allow read: if true;
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Legacy/ops config
+    match /appConfig/{docId} {
+      allow read: if true;
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Public app metadata (icons, etc.)
+    match /apps/{docId} {
+      allow read: if true;
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Public feeds; unreviewed docs are owner/admin only.
+    match /walls/{docId} {
+      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      allow create: if isSignedIn()
+          && isEmailOwner(request.resource.data.email)
+          && request.resource.data.review != true;
+      // delete: request.resource is null — do not use request.resource.data here.
+      allow update: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email)
+              && request.resource.data.email == resource.data.email
+              && request.resource.data.review != true);
+      allow delete: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email) && resource.data.review != true);
+    }
+
+    match /setups/{docId} {
+      allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
+      allow create: if isSignedIn()
+          && isEmailOwner(request.resource.data.email)
+          && request.resource.data.review != true;
+      allow update: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email)
+              && request.resource.data.email == resource.data.email
+              && request.resource.data.review != true);
+      allow delete: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email) && resource.data.review != true);
+    }
+
+    // Drafts are private to their owner.
+    match /draftSetups/{docId} {
+      allow read: if isConfiguredAdmin() || isEmailOwner(resource.data.email);
+      allow create: if isConfiguredAdmin() || isEmailOwner(request.resource.data.email);
+      allow update: if isConfiguredAdmin()
+          || (isEmailOwner(resource.data.email) && request.resource.data.email == resource.data.email);
+      allow delete: if isConfiguredAdmin() || isEmailOwner(resource.data.email);
+    }
+
+    // Rejection archives are private to owner/admin.
+    match /rejectedWalls/{docId} {
+      allow read: if isConfiguredAdmin() || isEmailOwner(resource.data.email);
+      allow write: if isConfiguredAdmin();
+    }
+
+    match /rejectedSetups/{docId} {
+      allow read: if isConfiguredAdmin() || isEmailOwner(resource.data.email);
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Legacy public content bucket.
+    match /setupsv3/{docId} {
+      allow read: if true;
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Curated collections shown in feeds.
+    match /collections/{docId} {
+      allow read: if true;
+      allow write: if isConfiguredAdmin();
+    }
+
+    // User profiles + private user state.
+    // Profiles are public (shown on profile pages, creator cards, onboarding).
+    match /usersv2/{userId} {
+      allow read: if true;
+      allow create: if isConfiguredAdmin() || canCreateUserDoc(userId);
+      allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly() || canFollowUser();
+      allow delete: if isConfiguredAdmin();
+
+      // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
+      match /blockedUsers/{blockedId} {
+        allow read: if isOwner(userId);
+        allow create, update, delete: if false;
+      }
+
+      // Per-user favourites subcollections.
+      match /images/{docId} {
+        allow read, create, update, delete: if isConfiguredAdmin() || isOwner(userId);
+      }
+
+      match /setups/{docId} {
+        allow read, create, update, delete: if isConfiguredAdmin() || isOwner(userId);
+      }
+    }
+
+    // Legacy users collection.
+    match /users/{userId} {
+      allow read, write: if isConfiguredAdmin() || isOwner(userId);
+    }
+
+    // Notifications are readable by signed-in users; only admins/functions write.
+    match /notifications/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isConfiguredAdmin();
+    }
+
+    // Admin-triggered notification queue.
+    match /notificationRequests/{docId} {
+      allow read, write: if isConfiguredAdmin();
+    }
+
+    // Referral/redeem codes.
+    match /codes/{docId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isConfiguredAdmin();
+      allow update: if isSignedIn()
+          && resource.data.redeemed == false
+          && request.resource.data.redeemed == true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemed', 'winner', 'when'])
+          && request.resource.data.winner is map
+          && request.resource.data.winner.id == request.auth.uid;
+    }
+
+    // AI generation history is private per user.
+    match /aiGenerations/{docId} {
+      allow read: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isConfiguredAdmin() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
+      allow update: if isConfiguredAdmin() || (isSignedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid);
+      allow delete: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // Coin transaction ledger is private per user.
+    match /coinTransactions/{docId} {
+      allow read: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isConfiguredAdmin() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
+      allow update: if isConfiguredAdmin() || (isSignedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid);
+      allow delete: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    // Legacy token storage (if used, doc id should be UID).
+    match /tokens/{userId} {
+      allow read, write: if isConfiguredAdmin() || isOwner(userId);
+    }
+
+    // UGC reports (created via submitContentReport callable). Admin read/update for moderation UI.
+    match /contentReports/{docId} {
+      allow read: if isConfiguredAdmin();
+      allow create, delete: if false;
+      allow update: if isConfiguredAdmin();
+    }
+
+    // Rate-limit state for content reports (Cloud Functions only).
+    match /contentReportRateByTarget/{docId} {
+      allow read, write: if false;
+    }
+
+    match /contentReportRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    // User block rate limits (Cloud Functions only).
+    match /userBlockRateDaily/{docId} {
+      allow read, write: if false;
+    }
+
+    match /userBlockRateByTarget/{docId} {
+      allow read, write: if false;
+    }
+
+    // Public view counters (writes via Cloud Functions Admin SDK only).
+    match /wallpaper_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /setup_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Deny everything else by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

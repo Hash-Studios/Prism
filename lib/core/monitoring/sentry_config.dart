@@ -50,12 +50,24 @@ class SentryConfig {
     String fallbackRelease = '',
     String fallbackDist = '',
   }) {
-    final String normalizedDsn = dsn.trim();
-    final String normalizedEnvironment = environment.trim().isEmpty ? fallbackEnvironment.trim() : environment.trim();
-    final String normalizedRelease = release.trim().isEmpty ? fallbackRelease.trim() : release.trim();
-    final String normalizedDist = dist.trim().isEmpty ? fallbackDist.trim() : dist.trim();
+    final String normalizedDsn = _normalizeDefineValue(dsn);
 
-    final bool enabled = SentryConfig.resolveEnabled(enabledValue, normalizedDsn);
+    final String normalizedEnvironmentInput = _normalizeDefineValue(environment);
+    final String normalizedEnvironment = normalizedEnvironmentInput.isEmpty
+        ? _normalizeDefineValue(fallbackEnvironment)
+        : normalizedEnvironmentInput;
+
+    final String normalizedReleaseInput = _normalizeDefineValue(release);
+    final String normalizedRelease = normalizedReleaseInput.isEmpty
+        ? _normalizeDefineValue(fallbackRelease)
+        : normalizedReleaseInput;
+
+    final String normalizedDistInput = _normalizeDefineValue(dist);
+    final String normalizedDist = normalizedDistInput.isEmpty
+        ? _normalizeDefineValue(fallbackDist)
+        : normalizedDistInput;
+
+    final bool enabled = SentryConfig.resolveEnabled(_normalizeDefineValue(enabledValue), normalizedDsn);
 
     return SentryConfig(
       dsn: normalizedDsn,
@@ -67,7 +79,7 @@ class SentryConfig {
   }
 
   static bool resolveEnabled(String rawEnabled, String dsn) {
-    final String normalized = rawEnabled.trim().toLowerCase();
+    final String normalized = _normalizeDefineValue(rawEnabled).toLowerCase();
     if (normalized.isEmpty || normalized == _autoEnabledValue) {
       return dsn.isNotEmpty;
     }
@@ -79,4 +91,6 @@ class SentryConfig {
     }
     return dsn.isNotEmpty;
   }
+
+  static String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 }

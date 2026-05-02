@@ -1,5 +1,5 @@
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:flutter/material.dart';
 
 class OldVersion extends StatelessWidget {
@@ -24,7 +24,7 @@ class OldVersion extends StatelessWidget {
             child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.7,
               child: Text(
-                "The version ${globals.currentAppVersion}+${globals.currentAppVersionCode} is obsolete and no longer supported. Please update the app to the latest version, to use it.",
+                "The version ${app_state.currentAppVersion}+${app_state.currentAppVersionCode} is obsolete and no longer supported. Please update the app to the latest version, to use it.",
                 textAlign: TextAlign.center,
               ),
             ),
@@ -32,7 +32,7 @@ class OldVersion extends StatelessWidget {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () async {
-              launch("https://play.google.com/store/apps/details?id=com.hash.prism");
+              openPrismLink(context, "https://play.google.com/store/apps/details?id=com.hash.prism");
             },
             style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
             child: const SizedBox(

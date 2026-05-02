@@ -1,7 +1,9 @@
+import 'dart:io';
+
+import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
@@ -10,6 +12,7 @@ import 'package:flutter/material.dart';
 void googleSignInPopUp(BuildContext context, VoidCallback func) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: true);
   bool loaderVisible = false;
+  final AppleAuth appleAuth = AppleAuth();
 
   void closeLoaderIfVisible() {
     if (!loaderVisible || !navigator.mounted) {
@@ -201,7 +204,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
             context: navigator.context,
             builder: (BuildContext context) => loaderDialog,
           );
-          globals.gAuth
+          app_state.gAuth
               .signInWithGoogle()
               .then((value) {
                 if (!navigator.mounted) {
@@ -209,14 +212,14 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 }
                 closeLoaderIfVisible();
                 if (value == GoogleAuth.signInCancelledResult) {
-                  globals.prismUser.loggedIn = false;
-                  main.prefs.put(main.userHiveKey, globals.prismUser);
+                  app_state.prismUser.loggedIn = false;
+                  app_state.persistPrismUser();
                   toasts.codeSend("Sign in cancelled.");
                   return;
                 }
                 toasts.codeSend("Login Successful!");
-                globals.prismUser.loggedIn = true;
-                main.prefs.put(main.userHiveKey, globals.prismUser);
+                app_state.prismUser.loggedIn = true;
+                app_state.persistPrismUser();
                 func();
               })
               .catchError((e) {
@@ -225,13 +228,63 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 }
                 logger.d(e.toString());
                 closeLoaderIfVisible();
-                globals.prismUser.loggedIn = false;
-                main.prefs.put(main.userHiveKey, globals.prismUser);
+                app_state.prismUser.loggedIn = false;
+                app_state.persistPrismUser();
                 toasts.error("Something went wrong, please try again!");
               });
         },
-        child: const Text('SIGN IN', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+        child: const Text('GOOGLE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
       ),
+      if (Platform.isIOS || Platform.isMacOS)
+        MaterialButton(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+          color: Colors.black,
+          onPressed: () {
+            navigator.pop();
+            loaderVisible = true;
+            showDialog(
+              barrierDismissible: false,
+              context: navigator.context,
+              builder: (BuildContext context) => loaderDialog,
+            );
+            appleAuth
+                .signInWithApple()
+                .then((value) {
+                  if (!navigator.mounted) {
+                    return;
+                  }
+                  closeLoaderIfVisible();
+                  if (value == AppleAuth.signInCancelledResult) {
+                    app_state.prismUser.loggedIn = false;
+                    app_state.persistPrismUser();
+                    toasts.codeSend("Sign in cancelled.");
+                    return;
+                  }
+                  toasts.codeSend("Login Successful!");
+                  app_state.prismUser.loggedIn = true;
+                  app_state.persistPrismUser();
+                  func();
+                })
+                .catchError((e) {
+                  if (!navigator.mounted) {
+                    return;
+                  }
+                  logger.d(e.toString());
+                  closeLoaderIfVisible();
+                  app_state.prismUser.loggedIn = false;
+                  app_state.persistPrismUser();
+                  toasts.error("Something went wrong, please try again!");
+                });
+          },
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.apple, color: Colors.white, size: 18),
+              SizedBox(width: 4),
+              Text('APPLE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+            ],
+          ),
+        ),
     ],
     contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
     backgroundColor: Theme.of(context).primaryColor,
