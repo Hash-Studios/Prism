@@ -23,8 +23,6 @@ dependencies:
   bloc: ^8.1.4
   animations: ^2.0.0
   cached_network_image: ^3.0.0
-  arsenal:
-    path: ../arsenal
   carousel_slider: ^5.1.2
   collection: ^1.19.1
   cloud_firestore: ^6.2.0
@@ -182,7 +180,6 @@ flutter:
     - family: JamIcons
       fonts:
         - asset: assets/fonts/JamIcons.ttf
-
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 
