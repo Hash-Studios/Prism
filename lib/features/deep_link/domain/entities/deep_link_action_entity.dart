@@ -1,10 +1,51 @@
-enum DeepLinkActionType { share, user, setup, refer, shortCode, unknown }
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 
-class DeepLinkActionEntity {
-  const DeepLinkActionEntity({required this.type, required this.route, required this.arguments, required this.rawUri});
+sealed class DeepLinkActionEntity {
+  const DeepLinkActionEntity({required this.rawUri});
 
-  final DeepLinkActionType type;
-  final String route;
-  final List<dynamic> arguments;
   final String rawUri;
+}
+
+final class ShareLinkIntent extends DeepLinkActionEntity {
+  const ShareLinkIntent({
+    required this.wallId,
+    required this.source,
+    required this.wallpaperUrl,
+    required this.thumbnailUrl,
+    required super.rawUri,
+  });
+
+  final String wallId;
+  final WallpaperSource source;
+  final String wallpaperUrl;
+  final String thumbnailUrl;
+}
+
+final class UserLinkIntent extends DeepLinkActionEntity {
+  const UserLinkIntent({required this.profileIdentifier, required super.rawUri});
+
+  final String profileIdentifier;
+}
+
+final class SetupLinkIntent extends DeepLinkActionEntity {
+  const SetupLinkIntent({required this.setupName, required this.thumbnailUrl, required super.rawUri});
+
+  final String setupName;
+  final String thumbnailUrl;
+}
+
+final class ReferLinkIntent extends DeepLinkActionEntity {
+  const ReferLinkIntent({required this.inviterId, required super.rawUri});
+
+  final String inviterId;
+}
+
+final class ShortCodeIntent extends DeepLinkActionEntity {
+  const ShortCodeIntent({required this.code, required super.rawUri});
+
+  final String code;
+}
+
+final class UnknownIntent extends DeepLinkActionEntity {
+  const UnknownIntent({required super.rawUri});
 }

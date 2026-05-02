@@ -1,112 +1,145 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/enterCodePanel.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_mailer/flutter_mailer.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:hive_io/hive_io.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class ProfileDrawer extends StatelessWidget {
-  Widget createDrawerHeader(BuildContext context) {
+  const ProfileDrawer({super.key});
+
+  void _trackDrawerAction(AnalyticsActionValue action, {required String sourceContext}) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.profileDrawer,
+          action: action,
+          sourceContext: sourceContext,
+          itemType: ItemTypeValue.user,
+          itemId: app_state.prismUser.id,
+        ),
+      ),
+    );
+  }
+
+  // ── Builder helpers ──────────────────────────────────────────────────────
+
+  Widget _header(BuildContext context) {
     return SizedBox(
-      height: 150,
+      height: 130,
       child: DrawerHeader(
         margin: EdgeInsets.zero,
         padding: EdgeInsets.zero,
-        child: Stack(
-          children: <Widget>[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16.0),
-                child: SizedBox(
-                  height: 70,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          globals.prismUser.premium == true ? "Prism Pro" : "Prism",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                        ),
-                      ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.6,
-                        child: Text(
-                          globals.prismUser.premium == true
-                              ? "Exclusive premium walls & setups!"
-                              : "Exclusive wallpapers & setups!",
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                app_state.prismUser.premium == true ? 'Prism Pro' : 'Prism',
+                style: Theme.of(
+                  context,
+                ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget createDrawerBodyItem({
-    IconData? icon,
-    required String text,
-    GestureTapCallback? onTap,
-    required BuildContext context,
-  }) {
-    return ListTile(
-      dense: true,
-      trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-      leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
-      title: SizedBox(
-        width: MediaQuery.of(context).size.width / 2,
-        child: Text(
-          text,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall!.copyWith(fontFamily: "Proxima Nova", color: Theme.of(context).colorScheme.secondary),
-        ),
-      ),
-      onTap: onTap,
-    );
-  }
-
-  Widget createDrawerBodyHeader({required String text, required BuildContext context}) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width / 2,
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.displaySmall!.copyWith(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+              const SizedBox(height: 2),
+              Text(
+                app_state.prismUser.premium == true
+                    ? 'Exclusive premium walls & setups!'
+                    : 'Exclusive wallpapers & setups!',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _sectionHeader(String text, BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 0, 0),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.displaySmall!.copyWith(
+          fontSize: 11,
+          letterSpacing: 0.8,
+          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
+        ),
+      ),
+    );
+  }
+
+  Widget _item({
+    required IconData icon,
+    required String text,
+    required BuildContext context,
+    GestureTapCallback? onTap,
+  }) {
+    return ListTile(
+      dense: true,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+      leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
+      trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
+      title: Text(
+        text,
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall!.copyWith(fontFamily: 'Proxima Nova', color: Theme.of(context).colorScheme.secondary),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _footer(BuildContext context) {
+    final color = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 40),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          TextButton.icon(
+            icon: Icon(JamIcons.cog, color: color, size: 18),
+            label: Text('Settings', style: TextStyle(color: color, fontSize: 12)),
+            onPressed: () {
+              _trackDrawerAction(
+                AnalyticsActionValue.notificationSettingsOpened,
+                sourceContext: 'profile_drawer_settings',
+              );
+              Navigator.pop(context);
+              context.router.push(const SettingsRoute());
+            },
+          ),
+          TextButton.icon(
+            icon: Icon(JamIcons.info, color: color, size: 18),
+            label: Text('About', style: TextStyle(color: color, fontSize: 12)),
+            onPressed: () {
+              _trackDrawerAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_drawer_about');
+              Navigator.pop(context);
+              context.router.push(const AboutRoute());
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -116,298 +149,172 @@ class ProfileDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            createDrawerHeader(context),
-            if (globals.prismUser.premium == true)
-              Container()
-            else
-              createDrawerBodyHeader(text: "PREMIUM", context: context),
-            if (globals.prismUser.premium == true)
-              Container()
-            else
-              createDrawerBodyItem(
-                icon: JamIcons.coin,
-                text: 'Buy Premium',
-                onTap: () {
-                  Navigator.pop(context);
-                  context.router.push(const UpgradeRoute());
-                },
-                context: context,
-              ),
-            if (globals.prismUser.premium == true) Container() else const Divider(),
-            createDrawerBodyHeader(text: "FAVOURITES", context: context),
-            createDrawerBodyItem(
+            _header(context),
+
+            // ── YOUR CONTENT ───────────────────────────────────────────────
+            _sectionHeader('YOUR CONTENT', context),
+            _item(
               icon: JamIcons.picture,
-              text: 'Wallpapers',
+              text: 'Favourite Wallpapers',
+              context: context,
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerFavWallsTapped,
+                  sourceContext: 'profile_drawer_fav_walls',
+                );
                 Navigator.pop(context);
                 context.router.push(const FavouriteWallpaperRoute());
               },
-              context: context,
             ),
-            createDrawerBodyItem(
+            _item(
               icon: JamIcons.instant_picture,
-              text: 'Setups',
+              text: 'Favourite Setups',
+              context: context,
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerFavSetupsTapped,
+                  sourceContext: 'profile_drawer_fav_setups',
+                );
                 Navigator.pop(context);
                 context.router.push(const FavouriteSetupRoute());
               },
-              context: context,
             ),
-            const Divider(),
-            createDrawerBodyHeader(text: "DOWNLOADS", context: context),
-            createDrawerBodyItem(
+            _item(
               icon: JamIcons.download,
               text: 'Downloaded Walls',
+              context: context,
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerDownloadsTapped,
+                  sourceContext: 'profile_drawer_downloads',
+                );
                 Navigator.pop(context);
                 context.router.push(const DownloadRoute());
               },
-              context: context,
             ),
-            createDrawerBodyItem(
-              icon: JamIcons.trash_alt,
-              text: 'Clear all Downloads',
-              onTap: () async {
-                Navigator.pop(context);
-                showModal(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-                    content: SizedBox(
-                      height: 50,
-                      width: 250,
-                      child: Center(
-                        child: Text(
-                          "Do you want remove all your downloads?",
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                      ),
-                    ),
-                    actions: <Widget>[
-                      MaterialButton(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          final dir = Directory("storage/emulated/0/Prism/");
-                          final dir2 = Directory("storage/emulated/0/Pictures/Prism/");
-                          final status = await Permission.storage.status;
-                          if (!status.isGranted) {
-                            await Permission.storage.request();
-                          }
-                          bool deletedDir = false;
-                          bool deletedDir2 = false;
-                          try {
-                            dir.deleteSync(recursive: true);
-                            deletedDir = true;
-                          } catch (e) {
-                            logger.d(e.toString());
-                          }
-                          try {
-                            dir2.deleteSync(recursive: true);
-                            deletedDir2 = true;
-                          } catch (e) {
-                            logger.d(e.toString());
-                          }
-                          if (deletedDir || deletedDir2) {
-                            Fluttertoast.showToast(
-                              msg: "Deleted all downloads!",
-                              toastLength: Toast.LENGTH_LONG,
-                              textColor: Colors.white,
-                              backgroundColor: Colors.green[400],
-                            );
-                          } else {
-                            Fluttertoast.showToast(
-                              msg: "No downloads!",
-                              toastLength: Toast.LENGTH_LONG,
-                              textColor: Colors.white,
-                              backgroundColor: Colors.red[400],
-                            );
-                          }
-                        },
-                        child: Text(
-                          'YES',
-                          style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: MaterialButton(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-                        ),
-                      ),
-                    ],
-                    backgroundColor: Theme.of(context).primaryColor,
-                  ),
-                );
-              },
-              context: context,
-            ),
+
             const Divider(),
-            createDrawerBodyHeader(text: "REVIEWS", context: context),
-            createDrawerBodyItem(
-              icon: JamIcons.check,
-              text: 'Review Status',
-              onTap: () {
-                Navigator.pop(context);
-                context.router.push(const ReviewRoute());
-              },
-              context: context,
-            ),
-            if (globals.isAdminUser())
-              createDrawerBodyItem(
-                icon: JamIcons.shield_check,
-                text: 'Admin Moderation',
-                onTap: () {
-                  Navigator.pop(context);
-                  context.router.push(const AdminReviewRoute());
-                },
-                context: context,
-              ),
-            const Divider(),
-            createDrawerBodyHeader(text: "CUSTOMISATION", context: context),
-            createDrawerBodyItem(
-              icon: JamIcons.wrench,
-              text: 'Themes',
-              onTap: () {
-                Navigator.pop(context);
-                context.router.push(const ThemeViewRoute());
-              },
-              context: context,
-            ),
-            const Divider(),
-            createDrawerBodyHeader(text: "USER", context: context),
-            createDrawerBodyItem(
+
+            // ── ACCOUNT ────────────────────────────────────────────────────
+            _sectionHeader('ACCOUNT', context),
+            _item(
               icon: JamIcons.share_alt,
               text: 'Share your Profile',
               context: context,
               onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerSharePrismTapped,
+                  sourceContext: 'profile_drawer_share_profile',
+                );
                 createUserDynamicLink(
-                  globals.prismUser.name,
-                  globals.prismUser.username,
-                  globals.prismUser.email,
-                  globals.prismUser.bio,
-                  globals.prismUser.profilePhoto,
+                  app_state.prismUser.name,
+                  app_state.prismUser.username,
+                  app_state.prismUser.email,
+                  app_state.prismUser.bio,
+                  app_state.prismUser.profilePhoto,
+                  context: context,
                 );
               },
             ),
-            createDrawerBodyItem(
+            _item(
               icon: JamIcons.log_out,
               text: 'Log out',
-              onTap: () {
-                Navigator.pop(context);
-                globals.gAuth.signOutGoogle();
-                toasts.codeSend("Log out Successful!");
-                main.RestartWidget.restartApp(context);
-              },
-              context: context,
-            ),
-            const Divider(),
-            createDrawerBodyHeader(text: "SETTINGS", context: context),
-            createDrawerBodyItem(
-              icon: JamIcons.pie_chart_alt,
-              text: 'Clear cache',
-              onTap: () async {
-                Navigator.pop(context);
-                DefaultCacheManager().emptyCache();
-                PaintingBinding.instance.imageCache.clear();
-                await Hive.box<InAppNotif>('inAppNotifs').deleteFromDisk();
-                await Hive.openBox<InAppNotif>('inAppNotifs');
-                main.prefs.delete('lastFetchTime');
-                await Hive.box('setups').deleteFromDisk();
-                await Hive.openBox('setups');
-                toasts.codeSend("Cleared cache!");
-              },
-              context: context,
-            ),
-            createDrawerBodyItem(
-              icon: JamIcons.cog,
-              text: 'Settings',
-              onTap: () {
-                Navigator.pop(context);
-                context.router.push(const SettingsRoute());
-              },
-              context: context,
-            ),
-            createDrawerBodyItem(
-              icon: JamIcons.info,
-              text: 'About Prism',
-              onTap: () {
-                Navigator.pop(context);
-                context.router.push(const AboutRoute());
-              },
-              context: context,
-            ),
-            const Divider(),
-            createDrawerBodyHeader(text: "MORE", context: context),
-            createDrawerBodyItem(
-              icon: JamIcons.bug,
-              text: 'Report a bug',
               context: context,
               onTap: () async {
-                if (Platform.isAndroid) {
-                  final androidInfo = await DeviceInfoPlugin().androidInfo;
-                  final release = androidInfo.version.release;
-                  final sdkInt = androidInfo.version.sdkInt;
-                  final manufacturer = androidInfo.manufacturer;
-                  final model = androidInfo.model;
-                  logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
-                  final String zipPath = await zipLogs();
-                  if (zipPath.startsWith(logExportDisabledMarker)) {
-                    toasts.error('Log export is temporarily disabled.');
-                    return;
-                  }
-                  final String encryptedZipPath = zipPath.split("::::").last;
-                  final String encryptedZipKey = zipPath.split("::::").first;
-                  final MailOptions mailOptions = MailOptions(
-                    body:
-                        '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                    subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
-                    recipients: ['hash.studios.inc@gmail.com'],
-                    isHTML: true,
-                    attachments: [encryptedZipPath],
-                    appSchema: 'com.google.android.gm',
-                  );
-                  final MailerResponse response = await FlutterMailer.send(mailOptions);
-                  if (response != MailerResponse.android) {
-                    final MailOptions mailOptions = MailOptions(
-                      body:
-                          '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                      subject: '[BUG REPORT::PRISM]',
-                      recipients: ['hash.studios.inc@gmail.com'],
-                      isHTML: true,
-                      attachments: [zipPath],
-                    );
-                    await FlutterMailer.send(mailOptions);
-                  } else {
-                    toasts.codeSend("Bug report sent!");
-                  }
+                _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
+                Navigator.pop(context);
+                app_state.gAuth.signOutGoogle();
+                toasts.codeSend('Log out Successful!');
+                final settingsLocal = getIt<SettingsLocalDataSource>();
+                await settingsLocal.set('onboarded_v2_new', false);
+                await settingsLocal.set('onboarding_v2_interests', '');
+                await settingsLocal.set('onboarding_v2_followed_creators', '');
+                if (context.mounted) {
+                  main.RestartWidget.restartApp(context);
                 }
               },
             ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 100),
-              child: createDrawerBodyItem(
-                icon: JamIcons.coin,
-                text: 'Enter Code',
-                onTap: () {
-                  Navigator.pop(context);
-                  showModalBottomSheet(
-                    isScrollControlled: true,
-                    context: context,
-                    builder: (context) => const EnterCodePanel(),
-                  );
-                },
-                context: context,
-              ),
+
+            const Divider(),
+
+            // ── MORE ───────────────────────────────────────────────────────
+            _sectionHeader('MORE', context),
+            _item(
+              icon: JamIcons.coin,
+              text: 'Enter Code',
+              context: context,
+              onTap: () {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerEnterCodeTapped,
+                  sourceContext: 'profile_drawer_enter_code',
+                );
+                Navigator.pop(context);
+                showModalBottomSheet(
+                  isScrollControlled: true,
+                  context: context,
+                  builder: (_) => const EnterCodePanel(),
+                );
+              },
             ),
+            _item(
+              icon: JamIcons.bug,
+              text: 'Report a Bug',
+              context: context,
+              onTap: () async {
+                _trackDrawerAction(
+                  AnalyticsActionValue.drawerContactSupportTapped,
+                  sourceContext: 'profile_drawer_report_bug',
+                );
+                await _sendBugReport(context);
+              },
+            ),
+
+            const Divider(),
+
+            _footer(context),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _sendBugReport(BuildContext context) async {
+    if (!Platform.isAndroid) return;
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final release = androidInfo.version.release;
+    final sdkInt = androidInfo.version.sdkInt;
+    final manufacturer = androidInfo.manufacturer;
+    final model = androidInfo.model;
+    logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
+    final String zipPath = await zipLogs();
+    if (zipPath.startsWith(logExportDisabledMarker)) {
+      toasts.error('Log export is temporarily disabled.');
+      return;
+    }
+    final String encryptedZipKey = zipPath.split('::::').first;
+    final String encryptedZipPath = zipPath.split('::::').last;
+    final String deviceBody =
+        '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>';
+    final MailOptions mailOptions = MailOptions(
+      body: deviceBody,
+      subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
+      recipients: ['hash.studios.inc@gmail.com'],
+      isHTML: true,
+      attachments: [encryptedZipPath],
+      appSchema: 'com.google.android.gm',
+    );
+    final MailerResponse response = await FlutterMailer.send(mailOptions);
+    if (response != MailerResponse.android) {
+      final MailOptions fallback = MailOptions(
+        body: deviceBody,
+        subject: '[BUG REPORT::PRISM]',
+        recipients: ['hash.studios.inc@gmail.com'],
+        isHTML: true,
+        attachments: [zipPath],
+      );
+      await FlutterMailer.send(fallback);
+    } else {
+      toasts.codeSend('Bug report sent!');
+    }
   }
 }

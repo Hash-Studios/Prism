@@ -1,4 +1,5 @@
-import 'package:Prism/main.dart' as main;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:flutter/material.dart';
 
 class App {
@@ -38,10 +39,12 @@ class Colors {
   static const Color _mainColor = Color(0xFFFFFFFF);
   static const Color _secondColor = Color(0xFFEDEDED);
   static const Color _accentColor = Color(0xFF2F2F2F);
-  static const Color _mainDarkColor = Color(0xFF181818);
+  static const Color _mainDarkColor = Color(0xFF000000);
   static const Color _secondDarkColor = Color(0xFF2F2F2F);
   static const Color _accentDarkColor = Color(0xFFF0F0F0);
-  final Color _mainAccentColor = Color(main.prefs.get("systemOverlayColor") as int);
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
+
+  Color get _mainAccentColor => Color(_settingsLocal.get<int>("systemOverlayColor", defaultValue: 0xFFFFFFFF));
 
   Color mainColor(double opacity) {
     return _mainColor.withValues(alpha: opacity);

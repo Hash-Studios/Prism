@@ -1,17 +1,17 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/theme_dark/domain/entities/theme_dark.dart';
 import 'package:Prism/features/theme_light/domain/entities/theme_light.dart';
 import 'package:Prism/features/theme_light/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: ThemeRepository)
 class ThemeRepositoryImpl implements ThemeRepository {
-  ThemeRepositoryImpl(@Named('prefsBox') this._prefsBox);
+  ThemeRepositoryImpl(this._settingsLocal);
 
-  final Box<dynamic> _prefsBox;
+  final SettingsLocalDataSource _settingsLocal;
 
   static const String _defaultLightTheme = 'kLFrost White';
   static const String _defaultDarkTheme = 'kDMaterial Dark';
@@ -36,15 +36,15 @@ class ThemeRepositoryImpl implements ThemeRepository {
 
   ThemeLightEntity _readLightTheme() {
     return ThemeLightEntity(
-      themeId: (_prefsBox.get('lightThemeID', defaultValue: _defaultLightTheme) as String?) ?? _defaultLightTheme,
-      accentColorValue: (_prefsBox.get('lightAccent', defaultValue: _defaultAccent) as int?) ?? _defaultAccent,
+      themeId: _settingsLocal.get<String>('lightThemeID', defaultValue: _defaultLightTheme),
+      accentColorValue: _settingsLocal.get<int>('lightAccent', defaultValue: _defaultAccent),
     );
   }
 
   ThemeDarkEntity _readDarkTheme() {
     return ThemeDarkEntity(
-      themeId: (_prefsBox.get('darkThemeID', defaultValue: _defaultDarkTheme) as String?) ?? _defaultDarkTheme,
-      accentColorValue: (_prefsBox.get('darkAccent', defaultValue: _defaultAccent) as int?) ?? _defaultAccent,
+      themeId: _settingsLocal.get<String>('darkThemeID', defaultValue: _defaultDarkTheme),
+      accentColorValue: _settingsLocal.get<int>('darkAccent', defaultValue: _defaultAccent),
     );
   }
 
@@ -60,8 +60,8 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemeLightEntity>> setLightTheme(String themeId) async {
     try {
-      await _prefsBox.put('lightThemeID', themeId);
-      await _prefsBox.put('lightAccent', _lightThemeDefaultAccents[themeId] ?? _defaultAccent);
+      await _settingsLocal.set('lightThemeID', themeId);
+      await _settingsLocal.set('lightAccent', _lightThemeDefaultAccents[themeId] ?? _defaultAccent);
       return Result.success(_readLightTheme());
     } catch (error) {
       return Result.error(CacheFailure('Unable to set light theme: $error'));
@@ -71,7 +71,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemeLightEntity>> setLightAccent(int colorValue) async {
     try {
-      await _prefsBox.put('lightAccent', colorValue);
+      await _settingsLocal.set('lightAccent', colorValue);
       return Result.success(_readLightTheme());
     } catch (error) {
       return Result.error(CacheFailure('Unable to set light accent: $error'));
@@ -90,8 +90,8 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemeDarkEntity>> setDarkTheme(String themeId) async {
     try {
-      await _prefsBox.put('darkThemeID', themeId);
-      await _prefsBox.put('darkAccent', _darkThemeDefaultAccents[themeId] ?? _defaultAccent);
+      await _settingsLocal.set('darkThemeID', themeId);
+      await _settingsLocal.set('darkAccent', _darkThemeDefaultAccents[themeId] ?? _defaultAccent);
       return Result.success(_readDarkTheme());
     } catch (error) {
       return Result.error(CacheFailure('Unable to set dark theme: $error'));
@@ -101,7 +101,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemeDarkEntity>> setDarkAccent(int colorValue) async {
     try {
-      await _prefsBox.put('darkAccent', colorValue);
+      await _settingsLocal.set('darkAccent', colorValue);
       return Result.success(_readDarkTheme());
     } catch (error) {
       return Result.error(CacheFailure('Unable to set dark accent: $error'));
@@ -111,7 +111,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemeModeEntity>> getThemeMode() async {
     try {
-      final mode = (_prefsBox.get('themeMode', defaultValue: _defaultMode) as String?) ?? _defaultMode;
+      final mode = _settingsLocal.get<String>('themeMode', defaultValue: _defaultMode);
       return Result.success(ThemeModeEntity(mode: mode));
     } catch (error) {
       return Result.error(CacheFailure('Unable to read mode: $error'));
@@ -126,7 +126,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
     }
 
     try {
-      await _prefsBox.put('themeMode', mode);
+      await _settingsLocal.set('themeMode', mode);
       return Result.success(ThemeModeEntity(mode: mode));
     } catch (error) {
       return Result.error(CacheFailure('Unable to set mode: $error'));

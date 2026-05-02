@@ -19,9 +19,9 @@ class PublicProfileEntity {
   final String username;
   final String profilePhoto;
   final String bio;
-  final List<dynamic> followers;
-  final List<dynamic> following;
-  final Map<String, dynamic> links;
+  final List<String> followers;
+  final List<String> following;
+  final Map<String, String> links;
   final bool premium;
   final String coverPhoto;
 
@@ -32,9 +32,9 @@ class PublicProfileEntity {
     username: '',
     profilePhoto: '',
     bio: '',
-    followers: <dynamic>[],
-    following: <dynamic>[],
-    links: <String, dynamic>{},
+    followers: <String>[],
+    following: <String>[],
+    links: <String, String>{},
     premium: false,
     coverPhoto: '',
   );

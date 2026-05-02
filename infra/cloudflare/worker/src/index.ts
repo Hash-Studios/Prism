@@ -1,4 +1,7 @@
-export interface Env {
+import { AiQuotaCoordinator, type AiEnvBindings, handleAiApiRequest } from './ai';
+import { maybeHandleAssociationRequest } from './association_files';
+
+export interface Env extends AiEnvBindings {
   LINKS_KV: KVNamespace;
   OG_IMAGES?: R2Bucket;
   PLAY_STORE_URL: string;
@@ -53,12 +56,20 @@ interface LinkRecord {
   version: number;
 }
 
+interface CanonicalParseResult {
+  canonical: URL;
+  type: LinkType;
+  canonicalIdentifier: string;
+}
+
 const DOMAIN = 'prismwalls.com';
-const ALLOWED_PATHS = new Set(['/share', '/user', '/setup', '/refer']);
 const APP_LINK_PATHS = ['/share', '/user', '/setup', '/refer', '/l'];
 const SHORT_CODE_REGEX = /^[A-Za-z0-9]{7,10}$/;
 const DEFAULT_OG_VERSION = 1;
 const PRISM_APP_ICON_URL = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/assets/icon/ios.png';
+const USER_IDENTIFIER_QUERY_KEYS = ['identifier', 'username', 'user', 'email'];
+const SETUP_NAME_QUERY_KEYS = ['name', 'setupName', 'setup_name'];
+const REFER_IDENTIFIER_QUERY_KEYS = ['inviterId', 'userID', 'userId', 'userid', 'id'];
 const BOT_UA_FRAGMENTS = [
   'facebookexternalhit',
   'facebot',
@@ -75,6 +86,16 @@ const BOT_UA_FRAGMENTS = [
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    const associationResponse = maybeHandleAssociationRequest(request, url.pathname);
+    if (associationResponse != null) {
+      return associationResponse;
+    }
+
+    const aiResponse = await handleAiApiRequest(request, url, env);
+    if (aiResponse != null) {
+      return aiResponse;
+    }
 
     if (request.method === 'POST' && url.pathname === '/api/links') {
       return createLink(request, env, ctx);
@@ -100,6 +121,8 @@ export default {
   },
 };
 
+export { AiQuotaCoordinator };
+
 async function createLink(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = getClientIp(request);
   const withinRateLimit = await enforceCreateRateLimits(ip, env);
@@ -119,17 +142,18 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
   }
 
   const canonical = buildCanonicalUrl(body);
-  if (canonical == null) {
+  const parsedCanonical = canonical != null ? parseCanonicalFromUrl(canonical) : null;
+  if (canonical == null || parsedCanonical == null || parsedCanonical.type !== body.type) {
     return json({ error: 'invalid_canonical_url' }, 400);
   }
 
   const code = await generateUniqueCode(env);
-  const preview = normalizePreview(body.type, canonical, body.preview, env);
+  const preview = normalizePreview(body.type, parsedCanonical.canonical, body.preview, env);
 
   const record: LinkRecord = {
     code,
     type: body.type,
-    canonical_url: canonical.toString(),
+    canonical_url: parsedCanonical.canonical.toString(),
     created_at: new Date().toISOString(),
     campaign: body.campaign,
     preview,
@@ -161,7 +185,7 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
   return json(
     {
       short_url: `https://${DOMAIN}/l/${code}`,
-      canonical_url: canonical.toString(),
+      canonical_url: parsedCanonical.canonical.toString(),
       code,
       og_image_url: getOgImageUrl(record, env),
     },
@@ -180,7 +204,11 @@ async function getLinkDetails(pathname: string, env: Env): Promise<Response> {
     return json({ error: 'not_found' }, 404);
   }
 
-  const canonical = new URL(record.canonical_url);
+  const parsedCanonical = parseCanonicalUrl(record.canonical_url);
+  if (parsedCanonical == null) {
+    return json({ error: 'invalid_canonical_url' }, 500);
+  }
+  const canonical = parsedCanonical.canonical;
   const query: Record<string, string> = {};
   canonical.searchParams.forEach((value, key) => {
     query[key] = value;
@@ -193,6 +221,8 @@ async function getLinkDetails(pathname: string, env: Env): Promise<Response> {
     path: canonical.pathname,
     query,
     route: mapRouteFromType(record.type),
+    route_v2: mapRouteV2FromType(parsedCanonical.type),
+    canonical_identifier: parsedCanonical.canonicalIdentifier,
     og_image_url: getOgImageUrl(record, env),
     preview: record.preview,
   });
@@ -303,13 +333,27 @@ async function readLinkRecord(code: string, env: Env): Promise<LinkRecord | null
   }
 
   const obj = parsed as Record<string, unknown>;
-  const canonical = typeof obj.canonical_url === 'string' ? tryParseCanonical(obj.canonical_url) : null;
-  if (canonical == null) {
+  const parsedCanonical = typeof obj.canonical_url === 'string' ? parseCanonicalUrl(obj.canonical_url) : null;
+  if (parsedCanonical == null) {
     return null;
   }
 
-  const type = isValidType(obj.type) ? obj.type : inferTypeFromCanonical(canonical);
-  if (type == null) {
+  const canonical = parsedCanonical.canonical;
+  const inferredType = parsedCanonical.type;
+  let type: LinkType = inferredType;
+  if (isValidType(obj.type) && obj.type === inferredType) {
+    type = obj.type;
+  } else if (isValidType(obj.type) && obj.type !== inferredType) {
+    // Persisted records can drift over time; prefer canonical-derived type.
+    console.warn('Link record type mismatch with canonical URL', {
+      code,
+      recordType: obj.type,
+      canonicalType: inferredType,
+      canonical: canonical.toString(),
+    });
+  }
+
+  if (!isValidType(type)) {
     return null;
   }
 
@@ -346,36 +390,200 @@ async function persistLinkRecord(code: string, record: LinkRecord, env: Env): Pr
 
 function buildCanonicalUrl(body: CreateLinkRequest): URL | null {
   if (isNonEmptyString(body.canonical_url)) {
-    return tryParseCanonical(body.canonical_url);
+    return parseCanonicalUrl(body.canonical_url)?.canonical ?? null;
   }
 
   if (body.payload == null) {
     return null;
   }
 
-  const path = `/${body.type}`;
-  if (!ALLOWED_PATHS.has(path)) {
-    return null;
-  }
-
-  const canonical = new URL(`https://${DOMAIN}${path}`);
-  for (const [key, value] of Object.entries(body.payload)) {
-    if (isNonEmptyString(value)) {
-      canonical.searchParams.set(key, value);
-    }
-  }
-  return tryParseCanonical(canonical.toString());
+  return buildCanonicalFromPayload(body.type, body.payload);
 }
 
-function tryParseCanonical(value: string): URL | null {
-  try {
-    const parsed = new URL(value);
-    if (parsed.protocol !== 'https:' || parsed.hostname !== DOMAIN || !ALLOWED_PATHS.has(parsed.pathname)) {
+function buildCanonicalFromPayload(type: LinkType, payload: Record<string, unknown>): URL | null {
+  if (type === 'share') {
+    const canonical = new URL(`https://${DOMAIN}/share`);
+    appendPayloadQueryParams(payload, canonical);
+    return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+  }
+
+  if (type === 'user') {
+    const identifier = firstNonEmptyValue(payload, USER_IDENTIFIER_QUERY_KEYS);
+    if (identifier.length === 0) {
       return null;
     }
-    return parsed;
+    const canonical = new URL(`https://${DOMAIN}/user/${encodeURIComponent(identifier)}`);
+    appendPayloadQueryParams(payload, canonical, USER_IDENTIFIER_QUERY_KEYS);
+    return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+  }
+
+  if (type === 'setup') {
+    const setupName = firstNonEmptyValue(payload, SETUP_NAME_QUERY_KEYS);
+    if (setupName.length === 0) {
+      return null;
+    }
+    const canonical = new URL(`https://${DOMAIN}/setup/${encodeURIComponent(setupName)}`);
+    appendPayloadQueryParams(payload, canonical, SETUP_NAME_QUERY_KEYS);
+    return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+  }
+
+  const inviterId = firstNonEmptyValue(payload, REFER_IDENTIFIER_QUERY_KEYS);
+  if (inviterId.length === 0) {
+    return null;
+  }
+  const canonical = new URL(`https://${DOMAIN}/refer/${encodeURIComponent(inviterId)}`);
+  appendPayloadQueryParams(payload, canonical, REFER_IDENTIFIER_QUERY_KEYS);
+  return parseCanonicalFromUrl(canonical)?.canonical ?? null;
+}
+
+function parseCanonicalUrl(value: string): CanonicalParseResult | null {
+  try {
+    return parseCanonicalFromUrl(new URL(value));
   } catch {
     return null;
+  }
+}
+
+function parseCanonicalFromUrl(source: URL): CanonicalParseResult | null {
+  if (source.protocol !== 'https:' || source.hostname !== DOMAIN) {
+    return null;
+  }
+
+  const segments = source.pathname.split('/').filter((segment) => segment.length > 0);
+  if (segments.length === 0) {
+    return null;
+  }
+
+  const root = segments[0];
+
+  if (root === 'share') {
+    if (segments.length > 2) {
+      return null;
+    }
+    const canonical = new URL(`https://${DOMAIN}/share`);
+    source.searchParams.forEach((value, key) => canonical.searchParams.append(key, value));
+    if (segments.length === 2 && !canonical.searchParams.has('id')) {
+      const segmentId = decodeCanonicalSegment(segments[1]);
+      if (segmentId.length === 0) {
+        return null;
+      }
+      canonical.searchParams.set('id', segmentId);
+    }
+    return {
+      canonical,
+      type: 'share',
+      canonicalIdentifier: '',
+    };
+  }
+
+  if (root === 'user') {
+    if (segments.length > 2) {
+      return null;
+    }
+    const identifierFromSegment = segments.length === 2 ? decodeCanonicalSegment(segments[1]) : '';
+    const identifier = identifierFromSegment || firstNonEmptyQueryParam(source, USER_IDENTIFIER_QUERY_KEYS);
+    if (identifier.length === 0) {
+      return null;
+    }
+    const canonical = new URL(`https://${DOMAIN}/user/${encodeURIComponent(identifier)}`);
+    appendQueryParams(source, canonical, USER_IDENTIFIER_QUERY_KEYS);
+    return {
+      canonical,
+      type: 'user',
+      canonicalIdentifier: identifier,
+    };
+  }
+
+  if (root === 'setup') {
+    if (segments.length > 2) {
+      return null;
+    }
+    const setupNameFromSegment = segments.length === 2 ? decodeCanonicalSegment(segments[1]) : '';
+    const setupName = setupNameFromSegment || firstNonEmptyQueryParam(source, SETUP_NAME_QUERY_KEYS);
+    if (setupName.length === 0) {
+      return null;
+    }
+    const canonical = new URL(`https://${DOMAIN}/setup/${encodeURIComponent(setupName)}`);
+    appendQueryParams(source, canonical, SETUP_NAME_QUERY_KEYS);
+    return {
+      canonical,
+      type: 'setup',
+      canonicalIdentifier: setupName,
+    };
+  }
+
+  if (root === 'refer') {
+    if (segments.length > 2) {
+      return null;
+    }
+    const inviterIdFromSegment = segments.length === 2 ? decodeCanonicalSegment(segments[1]) : '';
+    const inviterId = inviterIdFromSegment || firstNonEmptyQueryParam(source, REFER_IDENTIFIER_QUERY_KEYS);
+    if (inviterId.length === 0) {
+      return null;
+    }
+    const canonical = new URL(`https://${DOMAIN}/refer/${encodeURIComponent(inviterId)}`);
+    appendQueryParams(source, canonical, REFER_IDENTIFIER_QUERY_KEYS);
+    return {
+      canonical,
+      type: 'refer',
+      canonicalIdentifier: inviterId,
+    };
+  }
+
+  return null;
+}
+
+function appendPayloadQueryParams(
+  payload: Record<string, unknown>,
+  target: URL,
+  excludeKeys: readonly string[] = [],
+): void {
+  const excludeSet = new Set(excludeKeys.map((key) => key.toLowerCase()));
+  for (const [key, value] of Object.entries(payload)) {
+    if (excludeSet.has(key.toLowerCase())) {
+      continue;
+    }
+    if (isNonEmptyString(value)) {
+      target.searchParams.set(key, value);
+    }
+  }
+}
+
+function appendQueryParams(source: URL, target: URL, excludeKeys: readonly string[] = []): void {
+  const excludeSet = new Set(excludeKeys.map((key) => key.toLowerCase()));
+  source.searchParams.forEach((value, key) => {
+    if (!excludeSet.has(key.toLowerCase())) {
+      target.searchParams.append(key, value);
+    }
+  });
+}
+
+function firstNonEmptyQueryParam(url: URL, keys: readonly string[]): string {
+  for (const key of keys) {
+    const value = url.searchParams.get(key);
+    if (isNonEmptyString(value)) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function firstNonEmptyValue(payload: Record<string, unknown>, keys: readonly string[]): string {
+  for (const key of keys) {
+    const value = payload[key];
+    if (isNonEmptyString(value)) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function decodeCanonicalSegment(value: string): string {
+  try {
+    const decoded = decodeURIComponent(value).trim();
+    return decoded;
+  } catch {
+    return '';
   }
 }
 
@@ -402,6 +610,8 @@ function normalizePreview(
 }
 
 function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewSnapshot {
+  const parsedCanonical = parseCanonicalFromUrl(canonical);
+
   if (type === 'share') {
     const wallId = canonical.searchParams.get('id') ?? 'Wallpaper';
     const provider = canonical.searchParams.get('provider') ?? 'Prism';
@@ -419,7 +629,9 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewS
   }
 
   if (type === 'setup') {
-    const setupName = canonical.searchParams.get('name') ?? 'Prism Setup';
+    const setupName = parsedCanonical?.type === 'setup'
+      ? parsedCanonical.canonicalIdentifier
+      : canonical.searchParams.get('name') ?? 'Prism Setup';
     return {
       title: `${setupName} - Prism`,
       description: 'Check out this setup shared from Prism.',
@@ -434,7 +646,9 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewS
   }
 
   if (type === 'user') {
-    const username = canonical.searchParams.get('username') ?? canonical.searchParams.get('email') ?? 'artist';
+    const username = parsedCanonical?.type === 'user'
+      ? parsedCanonical.canonicalIdentifier
+      : canonical.searchParams.get('username') ?? canonical.searchParams.get('email') ?? 'artist';
     return {
       title: `@${username} on Prism`,
       description: 'Check out this creator profile on Prism.',
@@ -811,21 +1025,17 @@ function mapRouteFromType(type: LinkType): string {
   return '';
 }
 
-function inferTypeFromCanonical(canonical: URL): LinkType | null {
-  const path = canonical.pathname;
-  if (path === '/share') {
-    return 'share';
+function mapRouteV2FromType(type: LinkType): string {
+  if (type === 'share') {
+    return '/share';
   }
-  if (path === '/setup') {
-    return 'setup';
+  if (type === 'setup') {
+    return '/setup/:setupName';
   }
-  if (path === '/user') {
-    return 'user';
+  if (type === 'user') {
+    return '/user/:identifier';
   }
-  if (path === '/refer') {
-    return 'refer';
-  }
-  return null;
+  return '/refer/:inviterId';
 }
 
 function ogObjectKey(code: string, version: number): string {

@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -18,18 +20,25 @@ class SetupGuidelinesScreen extends StatefulWidget {
 }
 
 class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
-  File? _setup;
-
   final picker2 = ImagePicker();
 
   Future getSetup() async {
+    if (!app_state.prismUser.premium) {
+      await PaywallOrchestrator.instance.present(
+        context,
+        placement: PaywallPlacement.blockedSetupCreate,
+        source: 'setup_guidelines_blocked_create',
+      );
+      return;
+    }
+    final StackRouter router = context.router;
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
+    if (!mounted) {
+      return;
+    }
     if (pickedFile != null) {
-      setState(() {
-        _setup = File(pickedFile.path);
-      });
       Navigator.pop(context);
-      Future.delayed(Duration.zero).then((value) => context.router.push(UploadSetupRoute(arguments: [_setup])));
+      Future<void>.delayed(Duration.zero).then((_) => router.push(UploadSetupRoute(image: File(pickedFile.path))));
     }
   }
 
@@ -58,7 +67,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
             Container()
           else
             TextButton(
-              onPressed: () async => getSetup(),
+              onPressed: () => getSetup(),
               child: Text(
                 "Continue",
                 style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.normal),
@@ -154,7 +163,7 @@ Guidelines for uploading setups -""",
               padding: const EdgeInsets.only(bottom: 50.0),
               child: FloatingActionButton.extended(
                 backgroundColor: Theme.of(context).colorScheme.error,
-                onPressed: () async => getSetup(),
+                onPressed: () => getSetup(),
                 label: Text(
                   "Continue",
                   style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.normal),

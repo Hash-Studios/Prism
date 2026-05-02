@@ -1,19 +1,16 @@
-import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
-import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
-import 'package:Prism/features/category_feed/views/popups/category_popup.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:in_app_update/in_app_update.dart';
 
 class CategoriesBar extends StatefulWidget {
@@ -24,13 +21,14 @@ class CategoriesBar extends StatefulWidget {
 }
 
 class _CategoriesBarState extends State<CategoriesBar> {
+  final NotificationsLocalDataSource _notificationsLocal = getIt<NotificationsLocalDataSource>();
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool noNotification = true;
-  final Box<InAppNotif> box = Hive.box('inAppNotifs');
-  List notifications = [];
+  List<InAppNotificationEntity> notifications = <InAppNotificationEntity>[];
   final key = GlobalKey();
   @override
   void initState() {
-    if (main.prefs.get("Subscriber", defaultValue: true) as bool) {
+    if (_settingsLocal.get<bool>("Subscriber", defaultValue: true)) {
       fetchNotifications();
     } else {
       noNotification = true;
@@ -43,16 +41,15 @@ class _CategoriesBarState extends State<CategoriesBar> {
   }
 
   Future<void> fetchNotifications() async {
+    final all = await _notificationsLocal.readAll();
     setState(() {
-      notifications = box.values.toList();
+      notifications = all;
     });
-    checkNewNotification();
+    await checkNewNotification();
   }
 
-  void checkNewNotification() {
-    final Box<InAppNotif> box = Hive.box('inAppNotifs');
-    notifications = box.values.toList();
-    notifications.removeWhere((element) => element.read == true);
+  Future<void> checkNewNotification() async {
+    notifications = (await _notificationsLocal.readAll()).where((element) => !element.read).toList(growable: false);
     if (notifications.isEmpty) {
       setState(() {
         noNotification = true;
@@ -88,13 +85,13 @@ class _CategoriesBarState extends State<CategoriesBar> {
 
   @override
   Widget build(BuildContext context) {
-    if (!globals.tooltipShown) {
+    if (!app_state.tooltipShown) {
       Future.delayed(const Duration(seconds: 2)).then((_) {
         try {
           final dynamic tooltip = key.currentState;
           if (!noNotification && notifications.isNotEmpty) {
             tooltip.ensureTooltipVisible();
-            globals.tooltipShown = true;
+            app_state.tooltipShown = true;
           }
           if (!noNotification && notifications.isNotEmpty) {
             Future.delayed(const Duration(seconds: 5)).then((_) {
@@ -147,48 +144,16 @@ class _CategoriesBarState extends State<CategoriesBar> {
       title: Align(
         child: SizedBox(
           height: 24,
-          width: context.categoryCurrentChoice() == "Community" ? 110 : 260,
-          child: context.categoryCurrentChoice() == "Community"
-              ? SvgPicture.string(
-                  prismTextLogo.replaceAll(
-                    "black",
-                    "#${Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2)}",
-                  ),
-                )
-              : GestureDetector(
-                  onTap: () {
-                    analytics.logEvent(name: 'categories_checked');
-                    showCategories(context, context.categorySelectedChoice(listen: false));
-                  },
-                  child: Text(
-                    context.categoryCurrentChoice()!.toUpperCase(),
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.clip,
-                    style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                      fontFamily: "Proxima Nova",
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                ),
+          width: 110,
+          child: SvgPicture.string(
+            prismTextLogo.replaceAll(
+              "black",
+              "#${Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2)}",
+            ),
+          ),
         ),
       ),
-      actions: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 10),
-          child: CoinBalanceChip(sourceTag: 'coins.chip.categories_bar'),
-        ),
-        IconButton(
-          icon: Icon(JamIcons.grid, color: Theme.of(context).colorScheme.secondary),
-          onPressed: () {
-            analytics.logEvent(name: 'categories_checked');
-            showCategories(context, context.categorySelectedChoice(listen: false));
-          },
-          tooltip: 'Categories',
-        ),
-      ],
+      actions: const [],
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
 import 'package:Prism/features/deep_link/domain/repositories/deep_link_repository.dart';
@@ -12,79 +15,45 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
   DeepLinkRepositoryImpl(this._appLinks);
 
   final AppLinks _appLinks;
+  final DeepLinkParser _parser = const DeepLinkParser();
   final StreamController<DeepLinkActionEntity> _controller = StreamController<DeepLinkActionEntity>.broadcast();
   StreamSubscription<Uri>? _appLinksSubscription;
   bool _isInitialized = false;
 
-  DeepLinkActionEntity _parseUri(Uri uri) {
-    if (uri.pathSegments.isEmpty) {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.unknown,
-        route: '',
-        arguments: const <dynamic>[],
-        rawUri: uri.toString(),
-      );
-    }
+  TargetTypeValue _targetType(DeepLinkActionEntity action) {
+    return switch (action) {
+      ShareLinkIntent() => TargetTypeValue.share,
+      UserLinkIntent() => TargetTypeValue.user,
+      SetupLinkIntent() => TargetTypeValue.setup,
+      ReferLinkIntent() => TargetTypeValue.refer,
+      ShortCodeIntent() => TargetTypeValue.shortCode,
+      UnknownIntent() => TargetTypeValue.unknown,
+    };
+  }
 
-    final path = uri.pathSegments.first;
-    if (path == 'share') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.share,
-        route: '/share',
-        arguments: <dynamic>[
-          uri.queryParameters['id'],
-          uri.queryParameters['provider'],
-          uri.queryParameters['url'],
-          uri.queryParameters['thumb'],
-        ],
-        rawUri: uri.toString(),
-      );
-    }
-    if (path == 'user') {
-      final usernameOrEmail = uri.queryParameters['username'] ?? uri.queryParameters['email'];
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.user,
-        route: '/follower-profile',
-        arguments: <dynamic>[usernameOrEmail],
-        rawUri: uri.toString(),
-      );
-    }
-    if (path == 'setup') {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.setup,
-        route: '/share-setup',
-        arguments: <dynamic>[uri.queryParameters['name'], uri.queryParameters['thumbUrl']],
-        rawUri: uri.toString(),
-      );
-    }
-    if (path == 'refer') {
-      final String? inviterId =
-          uri.queryParameters['userID'] ??
-          uri.queryParameters['userId'] ??
-          uri.queryParameters['userid'] ??
-          uri.queryParameters['id'];
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.refer,
-        route: '',
-        arguments: <dynamic>[inviterId],
-        rawUri: uri.toString(),
-      );
-    }
-    if (path == 'l' && uri.pathSegments.length >= 2) {
-      return DeepLinkActionEntity(
-        type: DeepLinkActionType.shortCode,
-        route: '/l',
-        arguments: <dynamic>[uri.pathSegments[1]],
-        rawUri: uri.toString(),
-      );
-    }
-
-    return DeepLinkActionEntity(
-      type: DeepLinkActionType.unknown,
-      route: '',
-      arguments: const <dynamic>[],
-      rawUri: uri.toString(),
+  void _trackParse(DeepLinkActionEntity action) {
+    final TargetTypeValue targetType = _targetType(action);
+    final bool success = action is! UnknownIntent;
+    unawaited(
+      analytics.track(
+        DeepLinkReceivedEvent(source: DeepLinkSourceValue.appLinks, targetType: targetType, hasPayload: success),
+      ),
     );
+    unawaited(
+      analytics.track(
+        DeepLinkResolvedEvent(
+          targetType: targetType,
+          result: success ? EventResultValue.success : EventResultValue.failure,
+          reason: success ? null : AnalyticsReasonValue.missingData,
+        ),
+      ),
+    );
+  }
+
+  DeepLinkActionEntity _parseUri(Uri uri) {
+    final DeepLinkActionEntity action = _parser.parse(uri);
+    _trackParse(action);
+    return action;
   }
 
   void _ensureWatcher() {
@@ -97,14 +66,16 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
         _controller.add(_parseUri(uri));
       },
       onError: (Object error) {
-        _controller.add(
-          DeepLinkActionEntity(
-            type: DeepLinkActionType.unknown,
-            route: '',
-            arguments: <dynamic>[error.toString()],
-            rawUri: '',
+        unawaited(
+          analytics.track(
+            const DeepLinkResolvedEvent(
+              targetType: TargetTypeValue.unknown,
+              result: EventResultValue.failure,
+              reason: AnalyticsReasonValue.error,
+            ),
           ),
         );
+        _controller.add(UnknownIntent(rawUri: error.toString()));
       },
     );
   }
@@ -113,12 +84,21 @@ class DeepLinkRepositoryImpl implements DeepLinkRepository {
   Future<Result<DeepLinkActionEntity?>> getInitialAction() async {
     try {
       _ensureWatcher();
-      final uri = await _appLinks.getInitialLink();
+      final Uri? uri = await _appLinks.getInitialLink();
       if (uri == null) {
         return Result.success(null);
       }
       return Result.success(_parseUri(uri));
     } catch (error) {
+      unawaited(
+        analytics.track(
+          const DeepLinkResolvedEvent(
+            targetType: TargetTypeValue.unknown,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.error,
+          ),
+        ),
+      );
       return Result.error(ServerFailure('Unable to get initial deep link: $error'));
     }
   }

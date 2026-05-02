@@ -20,8 +20,8 @@ class UserSearchUser {
   final String profilePhoto;
   final String? coverPhoto;
   final String bio;
-  final Map<String, dynamic> links;
-  final List<dynamic> followers;
-  final List<dynamic> following;
+  final Map<String, String> links;
+  final List<String> followers;
+  final List<String> following;
   final bool premium;
 }

@@ -336,7 +336,7 @@ $Res call({
 });
 
 
-
+$FavouriteSetupEntityCopyWith<$Res> get setup;
 
 }
 /// @nodoc
@@ -356,7 +356,16 @@ as FavouriteSetupEntity,
   ));
 }
 
-
+/// Create a copy of FavouriteSetupsEvent
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$FavouriteSetupEntityCopyWith<$Res> get setup {
+  
+  return $FavouriteSetupEntityCopyWith<$Res>(_self.setup, (value) {
+    return _then(_self.copyWith(setup: value));
+  });
+}
 }
 
 /// @nodoc

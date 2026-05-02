@@ -1,5 +1,6 @@
 plugins {
     id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
     id 'dev.flutter.flutter-gradle-plugin'
 }
 
@@ -38,6 +39,14 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
     lint {
         disable 'InvalidPackage'
     }
@@ -45,11 +54,30 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.hash.prism"
-        minSdkVersion flutter.minSdkVersion
+        minSdkVersion 24
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        multiDexEnabled true
+        // Expose the Pexels API key to native Kotlin (e.g. TileService) via BuildConfig.
+        // The value is passed in via --dart-define=PEXELS_API_KEY=... at build time and
+        // forwarded here through the project property set by the Flutter Gradle plugin.
+        def pexelsApiKey = ''
+        def dartDefinesRaw = project.findProperty('dart-defines')
+        if (dartDefinesRaw) {
+            dartDefinesRaw.toString().split(',').each { encoded ->
+                def decoded = new String(encoded.decodeBase64(), 'UTF-8')
+                if (decoded.startsWith('PEXELS_API_KEY=')) {
+                    // Strip any surrounding quotes that Doppler may inject (e.g. "value" → value)
+                    def raw = decoded.split('=', 2)[1]
+                    pexelsApiKey = raw.replaceAll(/^["']|["']$/, '')
+                }
+            }
+        }
+        buildConfigField "String", "PEXELS_API_KEY", "\"${pexelsApiKey}\""
+
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a"
+        }
     }
 
     signingConfigs {
@@ -66,6 +94,7 @@ android {
             // signingConfig signingConfigs.debug
             signingConfig signingConfigs.release
             minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt'),
                     'proguard-rules.pro'
@@ -75,8 +104,6 @@ android {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
-    implementation "com.squareup.picasso:picasso:2.71828"
-    implementation 'com.google.firebase:firebase-messaging:20.2.3'
 }
 
 flutter {

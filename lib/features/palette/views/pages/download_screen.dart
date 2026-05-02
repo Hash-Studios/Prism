@@ -1,7 +1,13 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
@@ -9,7 +15,6 @@ import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 @RoutePage()
 class DownloadScreen extends StatefulWidget {
@@ -19,8 +24,9 @@ class DownloadScreen extends StatefulWidget {
 
 class _DownloadScreenState extends State<DownloadScreen> {
   bool dataFetched = false;
-  Map<dynamic, dynamic> allImageInfo = HashMap();
+  Map<String, Object?> allImageInfo = HashMap<String, Object?>();
   List<FileSystemEntity> files = [];
+  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   ScrollController? controller;
   GlobalKey<RefreshIndicatorState> refreshDownloadKey = GlobalKey<RefreshIndicatorState>();
   @override
@@ -36,41 +42,56 @@ class _DownloadScreenState extends State<DownloadScreen> {
     super.dispose();
   }
 
-  Future<String> get localfile async {
-    const String path = 'storage/emulated/0/';
-    return '${path}Prism';
-  }
-
-  Future<String> get newLocalfile async {
-    const String path = 'storage/emulated/0/';
-    return '${path}Pictures/Prism';
-  }
-
   Future<void> readData() async {
-    final status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
-    final file = await localfile;
-    final fileNew = await newLocalfile;
+    _contentLoadTracker.start();
     try {
-      files = Directory(fileNew).listSync();
+      final result = await PrismMediaHostApi().listDownloads();
+      if (!result.success) {
+        logger.w(result.message ?? 'Unable to list downloads');
+        files = <FileSystemEntity>[];
+      } else {
+        files = result.items.map((path) => File(path)).where((file) => file.existsSync()).toList(growable: false);
+      }
     } catch (e) {
       logger.d(e.toString());
-    }
-    try {
-      files.addAll(Directory(file).listSync());
-    } catch (e) {
-      logger.d(e.toString());
+      files = <FileSystemEntity>[];
     }
     if (files.isEmpty) {
       setState(() {
         dataFetched = false;
       });
+      _contentLoadTracker.success(
+        itemCount: 0,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.downloadScreen,
+              result: EventResultValue.empty,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'download_screen_read_data',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
     } else {
       setState(() {
         dataFetched = true;
       });
+      _contentLoadTracker.success(
+        itemCount: files.length,
+        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+          await analytics.track(
+            SurfaceContentLoadedEvent(
+              surface: AnalyticsSurfaceValue.downloadScreen,
+              result: EventResultValue.success,
+              loadTimeMs: loadTimeMs,
+              sourceContext: 'download_screen_read_data',
+              itemCount: itemCount,
+            ),
+          );
+        },
+      );
     }
   }
 
@@ -133,7 +154,22 @@ class _DownloadScreenState extends State<DownloadScreen> {
                               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
                               onTap: () {
-                                context.router.push(DownloadWallpaperRoute(arguments: ["Downloads", files[index]]));
+                                unawaited(
+                                  analytics.track(
+                                    SurfaceActionTappedEvent(
+                                      surface: AnalyticsSurfaceValue.downloadScreen,
+                                      action: AnalyticsActionValue.openDownloadedWallpaperTapped,
+                                      sourceContext: 'download_screen_open_item',
+                                      itemId: files[index].path,
+                                    ),
+                                  ),
+                                );
+                                context.router.push(
+                                  DownloadWallpaperRoute(
+                                    source: WallpaperSource.downloaded,
+                                    file: File(files[index].path),
+                                  ),
+                                );
                               },
                             ),
                           ),

@@ -1,4 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
@@ -11,18 +12,22 @@ class CollectionScreen extends StatefulWidget {
   _CollectionScreenState createState() => _CollectionScreenState();
 }
 
-class _CollectionScreenState extends State<CollectionScreen> {
+class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepAliveClientMixin {
   late Future<List?> _collectionsFuture;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
-    analytics.logEvent(name: 'collections_checked');
-    _collectionsFuture = getCollections();
     super.initState();
+    analytics.track(const CollectionsCheckedEvent());
+    _collectionsFuture = getCollections();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return FutureBuilder<List?>(
       future: _collectionsFuture,
       builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {

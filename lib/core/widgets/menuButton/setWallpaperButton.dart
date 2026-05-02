@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -9,7 +13,16 @@ import 'package:flutter/services.dart';
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
   final bool colorChanged;
-  const SetWallpaperButton({super.key, required this.url, required this.colorChanged});
+
+  /// When true, may show the OS notification permission prompt once after a successful set (e.g. wallpaper detail).
+  final bool promptNotificationPermissionOnSuccess;
+
+  const SetWallpaperButton({
+    super.key,
+    required this.url,
+    required this.colorChanged,
+    this.promptNotificationPermissionOnSuccess = false,
+  });
 
   @override
   _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
@@ -18,31 +31,20 @@ class SetWallpaperButton extends StatefulWidget {
 class _SetWallpaperButtonState extends State<SetWallpaperButton> {
   bool isLoading = false;
 
-  Future<void> _setWallPaper() async {
-    bool? result;
+  String _errorMessage(Object e) {
+    if (e is TimeoutException) return "Timed out - check your connection and try again.";
+    return "Something went wrong!";
+  }
+
+  Future<void> _maybePromptNotificationPermission() async {
+    if (!widget.promptNotificationPermissionOnSuccess || !mounted) return;
     try {
-      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
-      if (result) {
-        logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
-      } else {
-        logger.d("Failed");
-        toasts.error("Something went wrong!");
-      }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
-      logger.d(e.toString());
-      toasts.error("Something went wrong!");
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'notifications.permission_after_set_wallpaper',
+      );
+    } catch (e, st) {
+      logger.w('_maybePromptNotificationPermission: maybePromptAfterValueAction failed', error: e, stackTrace: st);
     }
   }
 
@@ -52,8 +54,11 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
+        await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -64,9 +69,11 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         });
       }
     } catch (e) {
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
+      );
       logger.d(e.toString());
-      toasts.error("Something went wrong!");
+      toasts.error(_errorMessage(e));
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -81,8 +88,11 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.lock);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
+        await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -94,8 +104,10 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
-      toasts.error("Something went wrong!");
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
+      );
+      toasts.error(_errorMessage(e));
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -110,8 +122,11 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.home);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
+        await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
@@ -123,28 +138,15 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
-      toasts.error("Something went wrong!");
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
+      );
+      toasts.error(_errorMessage(e));
       if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> onPaint() async {
-    HapticFeedback.vibrate();
-    if (widget.colorChanged) {
-      setState(() {
-        isLoading = true;
-      });
-      Future.delayed(const Duration(seconds: 1)).then((value) => _setWallPaper());
-    } else {
-      setState(() {
-        isLoading = true;
-      });
-      Future.delayed(const Duration(seconds: 1)).then((value) => _setWallPaper());
     }
   }
 
@@ -164,7 +166,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1)).then((value) => _setHomeWallPaper());
+                    _setHomeWallPaper();
                   },
                   onTap2: () {
                     HapticFeedback.vibrate();
@@ -172,7 +174,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1)).then((value) => _setLockWallPaper());
+                    _setLockWallPaper();
                   },
                   onTap3: () {
                     HapticFeedback.vibrate();
@@ -180,7 +182,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                     setState(() {
                       isLoading = true;
                     });
-                    Future.delayed(const Duration(seconds: 1)).then((value) => _setBothWallPaper());
+                    _setBothWallPaper();
                   },
                 ),
               );

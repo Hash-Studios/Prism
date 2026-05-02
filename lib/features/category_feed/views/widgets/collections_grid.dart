@@ -1,19 +1,19 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/features/navigation/views/widgets/inherited_scroll_controller_provider.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -27,67 +27,146 @@ class CollectionsGrid extends StatefulWidget {
 
 enum _PremiumPreviewAction { none, unlockNow, watchAndUnlock, upgrade }
 
-class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
-  AnimationController? _controller;
-  late Animation<Color?> animation;
-  GlobalKey<RefreshIndicatorState> refreshKey = GlobalKey<RefreshIndicatorState>();
-  Random r = Random();
+enum _DiscoverTileKind { collection, category }
+
+final class _DiscoverTileData {
+  const _DiscoverTileData({
+    required this.kind,
+    required this.name,
+    required this.thumb1,
+    required this.thumb2,
+    required this.isPremium,
+  });
+
+  final _DiscoverTileKind kind;
+  final String name;
+  final String thumb1;
+  final String thumb2;
+  final bool isPremium;
+}
+
+String _discoverTileSemanticLabel(_DiscoverTileData tile) {
+  final String trimmed = tile.name.trim();
+  if (tile.kind == _DiscoverTileKind.category) {
+    if (trimmed.isEmpty) {
+      return 'Category';
+    }
+    return 'Category, $trimmed';
+  }
+  if (trimmed.isEmpty) {
+    return tile.isPremium ? 'Premium collection' : 'Collection';
+  }
+  if (tile.isPremium) {
+    return 'Premium collection, $trimmed';
+  }
+  return 'Collection, $trimmed';
+}
+
+/// Decodes network thumbs near on-screen size to reduce memory and GPU upload cost.
+ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logicalW, double logicalH) {
+  final String trimmed = url.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+  final double dpr = MediaQuery.devicePixelRatioOf(context);
+  final int w = (logicalW * dpr).round().clamp(1, 4096);
+  final int h = (logicalH * dpr).round().clamp(1, 4096);
+  return ResizeImage(CachedNetworkImageProvider(trimmed), width: w, height: h);
+}
+
+const double _kCollectionsTitleBlockHeight = 40;
+const double _kCollectionsTitleImageGap = 6;
+const double _kCollectionsGridChildAspectRatio = 0.56;
+
+class _CollectionTileSkeleton extends StatefulWidget {
+  const _CollectionTileSkeleton({required this.cellWidth, required this.base, required this.highlight});
+
+  final double cellWidth;
+  final Color base;
+  final Color highlight;
+
+  @override
+  State<_CollectionTileSkeleton> createState() => _CollectionTileSkeletonState();
+}
+
+class _CollectionTileSkeletonState extends State<_CollectionTileSkeleton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late Animation<Color?> _shimmer;
+
+  void _attachColors() {
+    _shimmer = ColorTween(
+      begin: widget.base,
+      end: widget.highlight,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
-    _controller!.repeat();
+    _attachColors();
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CollectionTileSkeleton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.base != oldWidget.base || widget.highlight != oldWidget.highlight) {
+      _attachColors();
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    final Color fallback = Theme.of(context).colorScheme.surfaceContainer;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        SizedBox(
+          height: _kCollectionsTitleBlockHeight,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: AnimatedBuilder(
+              animation: _shimmer,
+              builder: (BuildContext context, Widget? child) {
+                return Container(width: widget.cellWidth * 0.65, height: 13, color: _shimmer.value ?? fallback);
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: _kCollectionsTitleImageGap),
+        Expanded(
+          child: AnimatedBuilder(
+            animation: _shimmer,
+            builder: (BuildContext context, Widget? child) {
+              return ColoredBox(color: _shimmer.value ?? fallback);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
   Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {
       _openCollection(normalizedCollectionName);
       return;
     }
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       _openCollection(normalizedCollectionName);
       return;
     }
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       googleSignInPopUp(context, () {
         unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: normalizedCollectionName));
       });
@@ -116,7 +195,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   void _openCollection(String collectionName) {
-    context.router.push(CollectionViewRoute(arguments: [collectionName.trim().toLowerCase()]));
+    context.router.push(CollectionViewRoute(collectionName: collectionName.trim().toLowerCase()));
   }
 
   Future<void> _showPremiumPreviewSheet({required String collectionName, required String sourceTag}) async {
@@ -202,7 +281,11 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         return;
       case _PremiumPreviewAction.upgrade:
         if (mounted) {
-          context.router.push(const UpgradeRoute());
+          await PaywallOrchestrator.instance.present(
+            context,
+            placement: PaywallPlacement.lowBalance,
+            source: 'premium_preview_upgrade',
+          );
         }
         return;
       case _PremiumPreviewAction.none:
@@ -211,10 +294,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> _attemptPreviewUnlockAndOpen({required String collectionName, required String sourceTag}) async {
-    analytics.logEvent(
-      name: 'coin_preview_unlock_attempt',
-      parameters: <String, Object>{'collection': collectionName, 'sourceTag': sourceTag},
-    );
+    analytics.track(CoinPreviewUnlockAttemptEvent(collection: collectionName, sourceTag: sourceTag));
     CoinMutationResult result;
     try {
       result = await CoinsService.instance.unlockPremiumPreview24hForCollection(
@@ -245,13 +325,12 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
 
     if (result.changed) {
-      analytics.logEvent(
-        name: 'coin_preview_unlock_success',
-        parameters: <String, Object>{
-          'collection': collectionName,
-          'sourceTag': sourceTag,
-          'coinsSpent': CoinPolicy.premiumPreview24h,
-        },
+      analytics.track(
+        CoinPreviewUnlockSuccessEvent(
+          collection: collectionName,
+          sourceTag: sourceTag,
+          coinsSpent: CoinPolicy.premiumPreview24h,
+        ),
       );
       toasts.codeSend('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
     }
@@ -259,12 +338,11 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> _watchAdAndUnlockPreview({required String collectionName}) async {
-    analytics.logEvent(
-      name: 'coin_preview_watch_and_unlock_used',
-      parameters: <String, Object>{
-        'collection': collectionName,
-        'sourceTag': 'coins.preview.watch_and_unlock.collections_grid',
-      },
+    analytics.track(
+      CoinPreviewWatchAndUnlockUsedEvent(
+        collection: collectionName,
+        sourceTag: 'coins.preview.watch_and_unlock.collections_grid',
+      ),
     );
     final bool watched = await _watchRewardedAd();
     if (!watched) {
@@ -276,6 +354,12 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         CoinEarnAction.rewardedAd,
         sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
       );
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+          context,
+          source: 'premium_preview_watch_ad',
+        );
+      }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(
         sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
@@ -334,18 +418,16 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> refreshList() async {
-    refreshKey.currentState?.show();
     await CData.getCollections();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ScrollController? controller = InheritedDataProvider.of(context)!.scrollController;
-    final List<dynamic> rawCollections = CData.collections ?? <dynamic>[];
+    final List<Object?> rawCollections =
+        CData.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;
-    final int itemCount = isLoading ? 8 : rawCollections.length;
 
-    Map<String, dynamic> asMap(dynamic raw) {
+    Map<String, dynamic> asMap(Object? raw) {
       if (raw is Map<String, dynamic>) {
         return raw;
       }
@@ -355,154 +437,146 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       return <String, dynamic>{};
     }
 
-    Widget buildCollectionCard(Map<String, dynamic>? collection) {
-      final bool loading = collection == null;
-      final bool isPremium = !loading && (collection['premium'] == true);
-      final String name = loading ? "LOADING" : collection['name'].toString().toUpperCase();
-      final String thumb1 = loading ? '' : collection['thumb1'].toString();
-      final String thumb2 = loading ? '' : collection['thumb2'].toString();
-      return GestureDetector(
-        onTap: loading
-            ? null
-            : () =>
-                  unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: collection['name'].toString())),
-        child: PremiumBanner(
-          comparator: !isPremium,
-          child: Stack(
-            children: <Widget>[
-              Positioned(
-                top: 40,
-                left: 40,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black12 : Colors.black54,
-                      ),
-                    ],
-                  ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 63.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 25, left: 25),
-                  child: Text(
-                    name,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    style: Theme.of(context).textTheme.displayMedium!.copyWith(
-                      fontSize: 16,
-                      color: loading
-                          ? (context.prismModeStyleForContext() == "Light" ? Colors.black : Colors.white)
-                          : Theme.of(context).colorScheme.secondary,
-                      fontWeight: FontWeight.bold,
-                    ),
+    final List<_DiscoverTileData> discoverTiles = isLoading
+        ? const <_DiscoverTileData>[]
+        : <_DiscoverTileData>[
+            ...rawCollections.map((raw) {
+              final collection = asMap(raw);
+              return _DiscoverTileData(
+                kind: _DiscoverTileKind.collection,
+                name: collection['name']?.toString() ?? '',
+                thumb1: collection['thumb1']?.toString() ?? '',
+                thumb2: collection['thumb2']?.toString() ?? '',
+                isPremium: collection['premium'] == true,
+              );
+            }),
+            ...context
+                .categoryChoiceList(listen: false)
+                .map(
+                  (choice) => _DiscoverTileData(
+                    kind: _DiscoverTileKind.category,
+                    name: choice.name?.trim() ?? '',
+                    thumb1: choice.image?.trim() ?? '',
+                    thumb2: choice.image2?.trim() ?? choice.image?.trim() ?? '',
+                    isPremium: false,
                   ),
                 ),
-              ),
-              Positioned(
-                top: 20,
-                left: 20,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
-                      ),
-                    ],
-                  ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Positioned(
-                top: 20,
-                left: 20,
-                child: Container(
-                  decoration: loading
-                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(image: CachedNetworkImageProvider(thumb2), fit: BoxFit.cover),
-                        ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 20,
-                        offset: const Offset(5, 5),
-                        color: context.prismModeStyleForContext() == "Light" ? Colors.black26 : Colors.black54,
-                      ),
-                    ],
-                  ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  decoration: loading
-                      ? BoxDecoration(color: animation.value, borderRadius: BorderRadius.circular(20))
-                      : BoxDecoration(
-                          color: animation.value,
-                          borderRadius: BorderRadius.circular(20),
-                          image: DecorationImage(image: CachedNetworkImageProvider(thumb1), fit: BoxFit.cover),
-                        ),
-                  height: (MediaQuery.of(context).size.width / 2) / 0.6225 - 108.5,
-                  width: MediaQuery.of(context).size.width / 2 - 59,
-                ),
-              ),
-            ],
+          ];
+    final int itemCount = isLoading ? 8 : discoverTiles.length;
+    const double gridSpacing = 8;
+    const EdgeInsets gridPadding = EdgeInsets.fromLTRB(5, 4, 5, 4);
+
+    final ThemeData theme = Theme.of(context);
+    final double viewportW = MediaQuery.sizeOf(context).width;
+    final double cellWidth = (viewportW - gridPadding.horizontal - gridSpacing) / 2;
+    final double cellHeight = cellWidth / _kCollectionsGridChildAspectRatio;
+    final double imageDecodeHeight = (cellHeight - _kCollectionsTitleBlockHeight - _kCollectionsTitleImageGap).clamp(
+      48.0,
+      4000.0,
+    );
+
+    Widget buildCollectionCard(_DiscoverTileData? tile) {
+      final bool loading = tile == null;
+      final bool isPremium = tile?.isPremium ?? false;
+      final ColorScheme scheme = Theme.of(context).colorScheme;
+
+      if (loading) {
+        final Widget tileBody = Material(
+          color: Colors.transparent,
+          child: _CollectionTileSkeleton(
+            cellWidth: cellWidth,
+            base: scheme.surfaceContainer,
+            highlight: scheme.surfaceContainerHigh,
           ),
+        );
+        return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
+      }
+
+      final _DiscoverTileData data = tile;
+      final String rawThumb1 = data.thumb1.trim();
+      final String rawThumb2 = data.thumb2.trim();
+      final String thumbUrl = rawThumb1.isNotEmpty ? rawThumb1 : rawThumb2;
+      final ImageProvider? thumbImage = _resizeCachedThumb(context, thumbUrl, cellWidth, imageDecodeHeight);
+      final String trimmedName = data.name.trim();
+      final String displayTitle = trimmedName.isNotEmpty
+          ? trimmedName
+          : (data.kind == _DiscoverTileKind.category ? 'Category' : 'Collection');
+
+      void onTapTile() {
+        if (data.kind == _DiscoverTileKind.collection) {
+          unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: data.name));
+          return;
+        }
+        final encodedName = Uri.encodeComponent(data.name);
+        context.router.push(CollectionViewRoute(collectionName: 'category:$encodedName'));
+      }
+
+      final Widget content = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SizedBox(
+            height: _kCollectionsTitleBlockHeight,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                displayTitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface) ??
+                    TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: scheme.onSurface),
+              ),
+            ),
+          ),
+          const SizedBox(height: _kCollectionsTitleImageGap),
+          Expanded(
+            child: PremiumBanner(
+              comparator: !isPremium,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  image: thumbImage != null ? DecorationImage(image: thumbImage, fit: BoxFit.cover) : null,
+                ),
+                child: thumbImage != null ? null : const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      final Widget tileBody = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          splashColor: scheme.secondary.withValues(alpha: 0.3),
+          highlightColor: scheme.secondary.withValues(alpha: 0.1),
+          onTap: onTapTile,
+          child: content,
         ),
       );
+
+      return Semantics(button: true, label: _discoverTileSemanticLabel(data), excludeSemantics: true, child: tileBody);
     }
 
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
-      key: refreshKey,
       onRefresh: refreshList,
+      color: theme.colorScheme.primary,
+      backgroundColor: theme.primaryColor,
+      edgeOffset: MediaQuery.paddingOf(context).top,
       child: GridView.builder(
-        controller: controller,
-        physics: const ScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
+        padding: gridPadding,
         itemCount: itemCount,
-        shrinkWrap: true,
+        physics: AlwaysScrollableScrollPhysics(parent: ScrollConfiguration.of(context).getScrollPhysics(context)),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.6225,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
+          childAspectRatio: _kCollectionsGridChildAspectRatio,
+          mainAxisSpacing: gridSpacing,
+          crossAxisSpacing: gridSpacing,
         ),
-        itemBuilder: (context, index) {
+        itemBuilder: (BuildContext context, int index) {
           if (isLoading) {
             return buildCollectionCard(null);
           }
-          final Map<String, dynamic> collection = asMap(rawCollections[index]);
-          return buildCollectionCard(collection);
+          return buildCollectionCard(discoverTiles[index]);
         },
       ),
     );

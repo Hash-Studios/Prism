@@ -12,5 +12,9 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    PrismMediaHostApiSetup.setUp(
+      binaryMessenger: engineBridge.applicationRegistrar.messenger(),
+      api: PrismMediaHostApiImpl()
+    )
   }
 }

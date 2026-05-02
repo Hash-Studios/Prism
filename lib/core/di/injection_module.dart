@@ -1,12 +1,14 @@
+import 'package:Prism/core/debug/network_logging_client.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/core/firestore/firestore_tracked_client.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/core/persistence/local_store.dart';
+import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:app_links/app_links.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:hive_io/hive_io.dart';
+import 'package:http/http.dart' as http;
 import 'package:injectable/injectable.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
@@ -41,15 +43,9 @@ abstract class AppModule {
   @lazySingleton
   QuickActions get quickActions => const QuickActions();
 
-  @Named('prefsBox')
   @lazySingleton
-  Box<dynamic> get prefsBox => Hive.box('prefs');
+  LocalStore get localStore => PersistenceRuntime.store;
 
-  @Named('localFavBox')
   @lazySingleton
-  Box<dynamic> get localFavBox => Hive.box('localFav');
-
-  @Named('inAppNotificationsBox')
-  @lazySingleton
-  Box<InAppNotif> get inAppNotificationsBox => Hive.box<InAppNotif>('inAppNotifs');
+  http.Client get httpClient => NetworkLoggingClient();
 }

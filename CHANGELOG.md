@@ -1,5 +1,109 @@
 ## Changelog
 
+### v3.0.8
+- Refined the edit profile flow and redesigned the profile completeness widget
+- Applied minor profile UI polish and layout rework
+- Additional Sentry fixes and test stability improvements
+- Version and build number update for release
+
+### v3.0.7
+- Added user blocking, with follow-up fixes for notification auth, cooldowns, and review feedback
+- Revamped the collections page, personalised feed editor, AI generation screen, streak UI, and bottom bar sizing
+- Grouped notifications and improved in-app notification behaviour
+- Added wallpaper reporting and migrated wall/setup view tracking from GitHub-backed data to Firestore
+- Fixed Wall of the Day generation, profile refresh, and edit profile reliability
+- Reworked the wallpaper detail sheet with liquid-glass styling, richer color handling, better author/date presentation, and tap animations
+- Improved startup performance and added an email export utility
+- iOS release stability fixes, including build/review compliance updates, Firebase/plugin updates, media host support, and app icon refresh
+- Website refresh plus Kotlin, CI, pigeon, and formatting fixes for release stability
+
+### v3.0.6
+- Version and build number update for release
+
+### v3.0.5
+- Improved wallpaper screenshot handling and notification permission prompt
+- Admin panel shows submission time
+- Fixed swipe-to-review gesture in admin review
+- Fixed scroll issues in several screens
+- Open profile from wallpaper detail
+- Fixed watermark incorrectly appearing on submitted wallpapers
+- Fixed layout overflow in wallpaper detail bottom sheet
+- Restored persisted “seen” keys on cold start for better feed discovery
+- Fixed followers and following routes when opened from a public profile
+- Added creator search entry point with redesigned result cards
+- Fixed crash when editing with a null image URL
+- AI submissions use watermarked image for wallpaper thumbnails where appropriate
+- Trimmed author fields and fixed visibility for email-only authors on wallpaper detail
+- Firestore rules: allow deleting reviewed wallpapers during review cleanup
+- Additional Sentry crash fixes and minor stability improvements
+
+### v3.0.4
+- Home screen revamp
+- Search revamp
+- Search discovery sections: trending, categories, and colors
+- Fixed Wallhaven wallpaper quality
+- Fixed notification enable prompt
+- Admin review queue shows newest items first
+- New streak page
+- Refined onboarding flow
+- Fal.ai used as the default AI generation backend
+- Consolidated wallpaper source types (removed redundant Wall of the Day enum)
+- Major Sentry error fixes; fixed Sentry debug symbol upload in CI
+- RevenueCat initialised earlier on startup to avoid billing errors
+- Setups temporarily removed from the app
+- Updated app icon foreground sizing
+- Makefile fixes for development on Windows
+- Admin review documents include `createdAt` for ordering and tooling
+
+### v3.0.3
+- Refactored settings screen with modular sections and state management
+- Fixed personalised feed not fetching all interests + shuffled feed order
+- Fixed auth taking too long on startup
+- Fixed onboarding issue for already logged-in users
+- Fixed black background on splash screen
+- Fixed app getting stuck on splash screen
+- Optimised app size — reduced APK by ~10 MB
+- Optimised code before app launch for faster startup
+- Removed native splash screen
+- Improved AI generate UI
+- Fixed create with AI button
+- Fixed remove delay in wallpaper set
+- Minor bug fixes and improvements
+
+### v3.0.2
+- New AI wallpaper generation pipeline (Cloudflare Worker)
+- New coins economy — earn and spend Prism coins
+- RevenueCat subscriptions with redesigned paywall UI
+- Discovery feed for new creators
+- Wallpaper of the day
+- Daily streak reminders and rewards
+- Smart notifications system
+- Deep links support (replaced Firebase Dynamic Links)
+- Sentry error monitoring integration
+- Mixpanel analytics with type-safe, provider-agnostic event tracking
+- New onboarding flow
+- New navigation framework with AutoRoute
+- BLoC architecture refactor — replaced global state with blocs
+- Centralised analytics layer
+- Consolidated share service
+- Admin app for wallpaper review
+- Profile completeness feature
+- Improved Firestore performance and optimisations
+- Updated app icon and splash screen
+- CI improvements
+- Minor bug fixes and improvements
+
+### v3.0.0
+- Prism v3 — full app redesign and architecture overhaul
+- New user model with username, bio, cover photo, and social links
+- Revamped profiles with richer customisation options
+- 20+ new wallpaper filters
+- Option to pick icons from a curated list of apps
+- Save setups as drafts before publishing
+- Removed banner ads; informational sheet shown when ads don't load
+- Fixed wallpaper download reliability bug
+- Performance improvements and minor bug fixes
+
 ### v2.6.9
 - Laid support for Prism v3
 - New model for users

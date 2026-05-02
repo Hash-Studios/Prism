@@ -1,14 +1,27 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/coins/coin_transaction_entry.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/global/globals.dart' as globals;
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
+import 'package:Prism/core/purchases/subscription_tier.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 class CoinMutationResult {
   const CoinMutationResult({
@@ -31,6 +44,7 @@ class CoinMutationResult {
   final int delta;
   final String reason;
 
+  // ignore: prefer_constructors_over_static_methods
   static CoinMutationResult noChange({required int balance, String reason = '', bool success = true}) {
     return CoinMutationResult(
       success: success,
@@ -43,50 +57,188 @@ class CoinMutationResult {
   }
 }
 
+class _AiGenerationReservationResult {
+  const _AiGenerationReservationResult({required this.mode, required this.mutation, this.transactionId});
+
+  final AiChargeMode mode;
+  final CoinMutationResult mutation;
+  final String? transactionId;
+
+  bool get success => mode != AiChargeMode.insufficient && mutation.success;
+
+  int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
+}
+
+class StreakStatus {
+  const StreakStatus({
+    required this.streakDay,
+    required this.active,
+    required this.claimedToday,
+    required this.reminderEnabled,
+    required this.timezoneOffsetMinutes,
+    required this.lastClaimDate,
+    this.nextReminderAtUtc,
+  });
+
+  final int streakDay;
+  final bool active;
+  final bool claimedToday;
+  final bool reminderEnabled;
+  final int timezoneOffsetMinutes;
+  final String lastClaimDate;
+  final DateTime? nextReminderAtUtc;
+
+  static const StreakStatus empty = StreakStatus(
+    streakDay: 0,
+    active: false,
+    claimedToday: false,
+    reminderEnabled: true,
+    timezoneOffsetMinutes: 0,
+    lastClaimDate: '',
+  );
+
+  StreakStatus copyWith({
+    int? streakDay,
+    bool? active,
+    bool? claimedToday,
+    bool? reminderEnabled,
+    int? timezoneOffsetMinutes,
+    String? lastClaimDate,
+    DateTime? nextReminderAtUtc,
+  }) {
+    return StreakStatus(
+      streakDay: streakDay ?? this.streakDay,
+      active: active ?? this.active,
+      claimedToday: claimedToday ?? this.claimedToday,
+      reminderEnabled: reminderEnabled ?? this.reminderEnabled,
+      timezoneOffsetMinutes: timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+      lastClaimDate: lastClaimDate ?? this.lastClaimDate,
+      nextReminderAtUtc: nextReminderAtUtc ?? this.nextReminderAtUtc,
+    );
+  }
+}
+
 class CoinsService {
   CoinsService._();
 
   static final CoinsService instance = CoinsService._();
 
   static const String _coinStateField = 'coinState';
+  static const String _txCollection = FirebaseCollections.coinTransactions;
+  static const String _txStatusReserved = 'reserved';
+  static const String _txStatusCompleted = 'completed';
+  static const String _txStatusRolledBack = 'rolled_back';
+  static const String _shareDomain = 'prismwalls.com';
+  static const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
+  static const String _streakReminderPrefKey = 'streakReminderSubscriber';
+  static const String _streakReminderEnabledField = 'streakReminderEnabled';
+  static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
+  static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
+  static const String _streakReminderLastSentDateField = 'streakReminderLastSentDate';
+  static const String _streakLastClaimServerAtField = 'streakLastClaimServerAt';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
   static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
-
-  final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(globals.prismUser.coins);
+  static const Duration _shortLinkTimeout = Duration(seconds: 6);
+  final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
+
+  SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   int _deltaVersion = 0;
 
-  String? get pendingReferralInviterId =>
-      (main.prefs.get(_pendingReferralInviterPrefKey) as String?)?.trim().isNotEmpty == true
-      ? (main.prefs.get(_pendingReferralInviterPrefKey) as String).trim()
-      : null;
+  String? get pendingReferralInviterId {
+    final String inviter = _settings.get<String>(_pendingReferralInviterPrefKey, defaultValue: '').trim();
+    return inviter.isEmpty ? null : inviter;
+  }
 
   Future<void> setPendingReferralInviterId(String inviterUserId) async {
     final String inviter = inviterUserId.trim();
     if (inviter.isEmpty) {
       return;
     }
-    await main.prefs.put(_pendingReferralInviterPrefKey, inviter);
+    await _settings.set(_pendingReferralInviterPrefKey, inviter);
   }
 
-  Future<void> clearPendingReferralInviterId() => main.prefs.delete(_pendingReferralInviterPrefKey);
+  Future<void> clearPendingReferralInviterId() => _settings.delete(_pendingReferralInviterPrefKey);
+
+  bool get streakReminderPreferenceEnabled => _preferredStreakReminderEnabled();
+
+  Future<void> setStreakReminderPreference(
+    bool enabled, {
+    String sourceTag = 'coins.streak_reminder.preference',
+  }) async {
+    if (_settings.isOpen) {
+      await _settings.set(_streakReminderPrefKey, enabled);
+    }
+    if (!_canMutateCoins()) {
+      streakNotifier.value = streakNotifier.value.copyWith(reminderEnabled: enabled);
+      return;
+    }
+    final String userId = app_state.prismUser.id;
+    final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
+    await firestoreClient.runTransaction<void>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return;
+        }
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(coinState, reminderEnabled: enabled, timezoneOffsetMinutes: timezoneOffsetMinutes);
+        final DateTime nowUtc = DateTime.now().toUtc();
+        final String todayLocalKey = _offsetDayKey(nowUtc, timezoneOffsetMinutes);
+        final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
+        final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+        final bool active =
+            streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
+        coinState[_streakReminderEnabledField] = enabled;
+        coinState[_streakTimezoneOffsetMinutesField] = timezoneOffsetMinutes;
+        if (enabled && active) {
+          final DateTime nextReminderAtUtc = _computeNextReminderAtUtc(
+            nowUtc: nowUtc,
+            timezoneOffsetMinutes: timezoneOffsetMinutes,
+            lastClaimDate: lastClaimDate,
+            todayLocalKey: todayLocalKey,
+            activeStreak: true,
+          );
+          coinState[_streakReminderNextAtUtcField] = nextReminderAtUtc;
+        } else {
+          coinState.remove(_streakReminderNextAtUtcField);
+        }
+        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{_coinStateField: coinState});
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+    await refreshStreakStatus();
+  }
 
   Future<void> bootstrapForCurrentUser() async {
     if (!_canMutateCoins()) {
       return;
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
+    Map<String, dynamic>? userSnapshot;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
+        userSnapshot = Map<String, dynamic>.from(data);
         final int coins = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        final bool stateChanged = _ensureCoinStateDefaults(coinState);
+        final bool stateChanged = _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (stateChanged || data['coins'] == null) {
           tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
             'coins': coins,
@@ -100,13 +252,19 @@ class CoinsService {
       docId: userId,
     );
     _applyLocalBalance(result.currentBalance, delta: 0);
+    final Map<String, dynamic>? snapshot = userSnapshot;
+    if (snapshot != null) {
+      _syncStreakFromUserData(snapshot);
+    } else {
+      await refreshStreakStatus();
+    }
   }
 
   Future<int> refreshBalance() async {
     if (!_canMutateCoins()) {
-      return globals.prismUser.coins;
+      return app_state.prismUser.coins;
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
@@ -114,11 +272,70 @@ class CoinsService {
       sourceTag: 'coins.refresh_balance',
     );
     if (userData == null) {
-      return globals.prismUser.coins;
+      return app_state.prismUser.coins;
     }
     final int coins = _asInt(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
+    _syncStreakFromUserData(userData);
     return coins;
+  }
+
+  Future<StreakStatus> refreshStreakStatus() async {
+    if (!_canMutateCoins()) {
+      streakNotifier.value = StreakStatus.empty;
+      return StreakStatus.empty;
+    }
+    final String userId = app_state.prismUser.id;
+    final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.usersV2,
+      userId,
+      (data, _) => data,
+      sourceTag: 'coins.refresh_streak',
+    );
+    if (userData == null) {
+      return streakNotifier.value;
+    }
+    return _syncStreakFromUserData(userData);
+  }
+
+  Future<List<CoinTransactionEntry>> fetchTransactions({int limit = 100}) async {
+    if (!_canMutateCoins()) {
+      return const <CoinTransactionEntry>[];
+    }
+    final String userId = app_state.prismUser.id;
+    try {
+      final rows = await firestoreClient.query<CoinTransactionEntry>(
+        FirestoreQuerySpec(
+          collection: _txCollection,
+          sourceTag: 'coins.transactions.fetch',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+          orderBy: <FirestoreOrderBy>[const FirestoreOrderBy(field: 'createdAt', descending: true)],
+          limit: limit,
+          dedupeWindowMs: 1500,
+        ),
+        (data, docId) => CoinTransactionEntry.fromJson(data, fallbackId: docId),
+      );
+      return rows;
+    } on FirestoreError catch (error, stackTrace) {
+      if (error.code != 'failed-precondition') {
+        rethrow;
+      }
+      logCoinError(sourceTag: 'coins.transactions.fetch.missing_index_fallback', error: error, stackTrace: stackTrace);
+      final fallbackRows = await firestoreClient.query<CoinTransactionEntry>(
+        FirestoreQuerySpec(
+          collection: _txCollection,
+          sourceTag: 'coins.transactions.fetch.missing_index_fallback',
+          filters: <FirestoreFilter>[FirestoreFilter(field: 'userId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+          dedupeWindowMs: 1500,
+        ),
+        (data, docId) => CoinTransactionEntry.fromJson(data, fallbackId: docId),
+      );
+      fallbackRows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (limit <= 0 || fallbackRows.length <= limit) {
+        return fallbackRows;
+      }
+      return fallbackRows.sublist(0, limit);
+    }
   }
 
   Future<CoinMutationResult> award(
@@ -128,23 +345,31 @@ class CoinsService {
     String? reason,
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     final int amount = amountOverride ?? action.defaultAmount();
     if (amount <= 0) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'invalid_amount');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final int current = previous + amount;
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
           'coins': current,
           _coinStateField: coinState,
@@ -164,6 +389,20 @@ class CoinsService {
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     _logEarn(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+    if (result.changed) {
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(action.name),
+        delta: amount,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: action.name,
+        description: _earnDescription(action, amount, reason: reason),
+        sourceTag: sourceTag,
+        reason: reason,
+        status: _txStatusCompleted,
+      );
+    }
     return result;
   }
 
@@ -175,24 +414,32 @@ class CoinsService {
     String? reason,
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     final int amount = amountOverride ?? action.cost();
     if (amount <= 0) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'invalid_amount');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
 
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (isPremium && bypassForPremium) {
           return CoinMutationResult(
             success: true,
@@ -237,6 +484,18 @@ class CoinsService {
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
       _logSpend(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(action.name),
+        delta: -amount,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: action.name,
+        description: _spendDescription(action, amount, reason: reason),
+        sourceTag: sourceTag,
+        reason: reason,
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
@@ -253,6 +512,181 @@ class CoinsService {
       sourceTag: sourceTag,
       reason: reason ?? 'refund_${action.name}',
     );
+  }
+
+  Future<_AiGenerationReservationResult> reserveForAiGeneration({
+    required AiQualityTier qualityTier,
+    String sourceTag = 'coins.reserve.ai_generation',
+  }) async {
+    if (!_canMutateCoins()) {
+      return _AiGenerationReservationResult(
+        mode: AiChargeMode.insufficient,
+        mutation: CoinMutationResult.noChange(
+          balance: app_state.prismUser.coins,
+          success: false,
+          reason: 'not_logged_in',
+        ),
+      );
+    }
+    final String userId = app_state.prismUser.id;
+    final int cost = qualityTier.coinCost;
+    final _AiGenerationReservationResult result = await firestoreClient.runTransaction<_AiGenerationReservationResult>(
+      (tx) async {
+        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+        if (data == null) {
+          return _AiGenerationReservationResult(
+            mode: AiChargeMode.insufficient,
+            mutation: CoinMutationResult.noChange(
+              balance: app_state.prismUser.coins,
+              success: false,
+              reason: 'user_missing',
+            ),
+          );
+        }
+        final int previous = _asInt(data['coins']);
+        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
+
+        if (previous < cost) {
+          return _AiGenerationReservationResult(
+            mode: AiChargeMode.insufficient,
+            mutation: CoinMutationResult(
+              success: false,
+              changed: false,
+              previousBalance: previous,
+              currentBalance: previous,
+              delta: 0,
+              insufficientBalance: true,
+              reason: 'ai_generation_insufficient_balance',
+            ),
+          );
+        }
+
+        final int current = previous - cost;
+        final String txId = _newTransactionId('ai_generation');
+        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+          'coins': current,
+          _coinStateField: coinState,
+        });
+        tx.setDoc(_txCollection, txId, <String, dynamic>{
+          'id': txId,
+          'userId': userId,
+          'createdAt': DateTime.now().toUtc(),
+          'updatedAt': DateTime.now().toUtc(),
+          'delta': -cost,
+          'balanceBefore': previous,
+          'balanceAfter': current,
+          'action': CoinSpendAction.aiGeneration.name,
+          'description': 'AI wallpaper generation (-$cost)',
+          'sourceTag': sourceTag,
+          'reason': 'ai_generation_reserved',
+          'status': _txStatusReserved,
+          'type': 'debit',
+          'referenceType': 'ai_generation',
+        });
+        return _AiGenerationReservationResult(
+          mode: AiChargeMode.coinSpend,
+          mutation: CoinMutationResult(
+            success: true,
+            changed: true,
+            previousBalance: previous,
+            currentBalance: current,
+            delta: -cost,
+            reason: 'ai_coin_spend_reserved',
+          ),
+          transactionId: txId,
+        );
+      },
+      sourceTag: sourceTag,
+      collection: FirebaseCollections.usersV2,
+      docId: userId,
+    );
+
+    _applyLocalBalance(result.mutation.currentBalance, delta: result.mutation.delta);
+    if (result.mode == AiChargeMode.coinSpend && result.mutation.changed) {
+      _logSpend(action: CoinSpendAction.aiGeneration, amount: cost, sourceTag: sourceTag, reason: 'ai_generation');
+    }
+    analytics.track(
+      AiChargeReservedEvent(
+        mode: aiChargeModeValueFromDomain(result.mode),
+        coinsSpent: result.coinsSpent,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+      ),
+    );
+    return result;
+  }
+
+  Future<CoinMutationResult> rollbackAiGenerationReservation(
+    AiChargeMode mode, {
+    String sourceTag = 'coins.rollback.ai_generation',
+    String? reservationTransactionId,
+    int? coinsToRefund,
+  }) async {
+    if (mode == AiChargeMode.insufficient) {
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
+    }
+
+    if (mode == AiChargeMode.coinSpend) {
+      final int refundAmount = coinsToRefund ?? CoinPolicy.aiGenerationFast;
+      await _markTransactionRolledBack(reservationTransactionId, sourceTag: sourceTag, reason: 'ai_generation_failed');
+      final CoinMutationResult refund = await refundSpend(
+        CoinSpendAction.aiGeneration,
+        amountOverride: refundAmount,
+        sourceTag: sourceTag,
+        reason: 'ai_generation_failed_refund',
+      );
+      analytics.track(
+        AiChargeRolledBackEvent(
+          mode: aiChargeModeValueFromDomain(mode),
+          coinsRefunded: refundAmount,
+          balance: app_state.prismUser.coins,
+          sourceTag: sourceTag,
+        ),
+      );
+      return refund;
+    }
+
+    return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
+  }
+
+  void commitAiGenerationReservation({
+    required AiChargeMode mode,
+    required int coinsSpent,
+    String sourceTag = 'coins.commit.ai_generation',
+    String? reservationTransactionId,
+    String? generationId,
+    String? imageUrl,
+    String? thumbUrl,
+    String? prompt,
+    String? stylePreset,
+  }) {
+    analytics.track(
+      AiChargeCommittedEvent(
+        mode: aiChargeModeValueFromDomain(mode),
+        coinsSpent: coinsSpent,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+      ),
+    );
+    if (mode == AiChargeMode.coinSpend) {
+      unawaited(
+        _completeAiGenerationTransaction(
+          reservationTransactionId: reservationTransactionId,
+          generationId: generationId,
+          imageUrl: imageUrl,
+          thumbUrl: thumbUrl,
+          prompt: prompt,
+          stylePreset: stylePreset,
+          sourceTag: sourceTag,
+          coinsSpent: coinsSpent,
+        ),
+      );
+    }
   }
 
   Future<CoinMutationResult> spendForAIGeneration({String sourceTag = 'coins.spend.ai_generation', String? reason}) {
@@ -275,13 +709,13 @@ class CoinsService {
     if (normalizedKey.isEmpty) {
       return false;
     }
-    if (globals.prismUser.premium) {
+    if (app_state.prismUser.premium) {
       return true;
     }
     if (!_canMutateCoins()) {
       return false;
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
@@ -291,12 +725,16 @@ class CoinsService {
     if (userData == null) {
       return false;
     }
-    final bool isPremium = _asBool(userData['premium']) || globals.prismUser.premium;
+    final bool isPremium = _isPremiumUserData(userData);
     if (isPremium) {
       return true;
     }
     final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
-    _ensureCoinStateDefaults(coinState);
+    _ensureCoinStateDefaults(
+      coinState,
+      reminderEnabled: _preferredStreakReminderEnabled(),
+      timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+    );
     final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
     return (previewUnlocks[normalizedKey] ?? 0) > DateTime.now().millisecondsSinceEpoch;
   }
@@ -306,17 +744,17 @@ class CoinsService {
     String sourceTag = 'coins.preview.unlock',
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     final String normalizedKey = _normalizeCollectionKey(collectionKey);
     if (normalizedKey.isEmpty) {
       return CoinMutationResult.noChange(
-        balance: globals.prismUser.coins,
+        balance: app_state.prismUser.coins,
         success: false,
         reason: 'invalid_collection_key',
       );
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final int nowMillis = DateTime.now().millisecondsSinceEpoch;
     final int expiryMillis = nowMillis + _premiumPreviewAccessDuration.inMilliseconds;
     const int previewCost = CoinPolicy.premiumPreview24h;
@@ -324,12 +762,20 @@ class CoinsService {
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
+        final bool isPremium = _isPremiumUserData(data);
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
         final bool pruned = _pruneExpiredPreviewUnlocks(previewUnlocks, nowMillis: nowMillis);
         final int existingExpiry = previewUnlocks[normalizedKey] ?? 0;
@@ -407,126 +853,171 @@ class CoinsService {
         sourceTag: sourceTag,
         reason: 'collection_$normalizedKey',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinSpendAction.premiumPreview24h.name),
+        delta: -previewCost,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinSpendAction.premiumPreview24h.name,
+        description: 'Premium collection preview unlock (-$previewCost)',
+        sourceTag: sourceTag,
+        reason: 'collection_$normalizedKey',
+        status: _txStatusCompleted,
+        referenceType: 'collection',
+        referenceId: normalizedKey,
+      );
     }
     return result;
   }
 
   Future<CoinMutationResult> claimDailyLoginAndStreakIfEligible() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
-    final String today = _localDayKey(DateTime.now());
+    final int previousBalance = app_state.prismUser.coins;
+    final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
+    final bool reminderEnabled = _preferredStreakReminderEnabled();
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instanceFor(
+        region: 'asia-south1',
+      ).httpsCallable('claimDailyStreak', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)));
+      final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
+        'timezoneOffsetMinutes': timezoneOffsetMinutes,
+        'reminderEnabled': reminderEnabled,
+      });
+      final Map<String, dynamic> payload = _asStringDynamicMap(response.data);
 
-    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
-      (tx) async {
-        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
-        if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
-        }
-        final int previous = _asInt(data['coins']);
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+      final bool claimed = _asBool(payload['claimed']);
+      final bool alreadyClaimedToday = _asBool(payload['alreadyClaimedToday']);
+      final int streakDay = _clampStreakDay(_asInt(payload['streakDay']));
+      final int dailyReward = _asInt(payload['dailyReward']);
+      final int streakBonusReward = _asInt(payload['streakBonusReward']);
+      final int totalReward = _asInt(payload['totalReward']);
+      final int newBalance = _asInt(payload['newBalance']);
+      final String todayLocalKey = (payload['todayLocalKey']?.toString() ?? '').trim();
+      final int? nextReminderAtUtcMillis = payload['nextReminderAtUtcMillis'] == null
+          ? null
+          : _asInt(payload['nextReminderAtUtcMillis']);
+      final int delta = newBalance - previousBalance;
 
-        final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
-        if (lastClaimDate == today) {
-          return CoinMutationResult.noChange(balance: previous, reason: 'daily_already_claimed');
-        }
-
-        int streakDay = _asInt(coinState['streakDay']);
-        if (lastClaimDate.isNotEmpty && _isPreviousDay(lastClaimDate, today)) {
-          streakDay += 1;
-        } else {
-          streakDay = 1;
-        }
-
-        int reward = CoinPolicy.dailyLogin;
-        if (streakDay >= 7) {
-          reward += CoinPolicy.streak7Bonus;
-          streakDay = 0;
-        }
-
-        final int current = previous + reward;
-        coinState['lastDailyClaimDate'] = today;
-        coinState['streakDay'] = streakDay;
-        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-          'coins': current,
-          _coinStateField: coinState,
-        });
-        return CoinMutationResult(
-          success: true,
-          changed: true,
-          previousBalance: previous,
-          currentBalance: current,
-          delta: reward,
-          reason: 'daily_login',
-        );
-      },
-      sourceTag: 'coins.claim_daily_and_streak',
-      collection: FirebaseCollections.usersV2,
-      docId: userId,
-    );
-
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) {
-      _logEarn(
-        action: CoinEarnAction.dailyLogin,
-        amount: CoinPolicy.dailyLogin,
-        sourceTag: 'coins.claim_daily_and_streak',
+      _applyLocalBalance(newBalance, delta: delta);
+      streakNotifier.value = StreakStatus(
+        streakDay: streakDay,
+        active: streakDay > 0,
+        claimedToday: claimed || alreadyClaimedToday,
+        reminderEnabled: reminderEnabled,
+        timezoneOffsetMinutes: timezoneOffsetMinutes,
+        lastClaimDate: todayLocalKey,
+        nextReminderAtUtc: nextReminderAtUtcMillis == null
+            ? null
+            : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
       );
-      if (result.delta > CoinPolicy.dailyLogin) {
-        _logEarn(
-          action: CoinEarnAction.streakBonus,
-          amount: result.delta - CoinPolicy.dailyLogin,
-          sourceTag: 'coins.claim_daily_and_streak',
-        );
+
+      if (claimed) {
+        String dailyReason = 'daily_login';
+        if (streakDay >= 3 && streakDay <= 6) {
+          dailyReason = 'streak_mid_cycle_day_$streakDay';
+        } else if (streakDay == 7) {
+          dailyReason = 'streak_day_7_daily';
+        }
+        if (dailyReward > 0) {
+          _logEarn(
+            action: CoinEarnAction.dailyLogin,
+            amount: dailyReward,
+            sourceTag: 'coins.claim_daily_and_streak',
+            reason: dailyReason,
+          );
+        }
+        if (streakBonusReward > 0) {
+          _logEarn(
+            action: CoinEarnAction.streakBonus,
+            amount: streakBonusReward,
+            sourceTag: 'coins.claim_daily_and_streak',
+            reason: 'streak_day_7_bonus',
+          );
+        }
       }
+
+      return CoinMutationResult(
+        success: true,
+        changed: claimed,
+        previousBalance: previousBalance,
+        currentBalance: newBalance,
+        delta: totalReward > 0 ? totalReward : delta,
+        reason: claimed ? 'daily_login' : 'daily_already_claimed',
+      );
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.claim_daily_and_streak.callable', error: error, stackTrace: stackTrace);
+      await refreshStreakStatus();
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'callable_failed');
     }
-    return result;
   }
 
   Future<CoinMutationResult> maybeAwardProDailyBonus() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final String today = _localDayKey(DateTime.now());
-    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
-      (tx) async {
-        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
-        if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
-        }
-        final bool isPremium = _asBool(data['premium']) || globals.prismUser.premium;
-        final int previous = _asInt(data['coins']);
-        if (!isPremium) {
-          return CoinMutationResult.noChange(balance: previous, reason: 'not_premium');
-        }
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
-        final String lastBonusDate = (coinState['proDailyBonusDate'] as String? ?? '').trim();
-        if (lastBonusDate == today) {
-          return CoinMutationResult.noChange(balance: previous, reason: 'pro_bonus_already_claimed');
-        }
-        final int current = previous + CoinPolicy.proDailyBonus;
-        coinState['proDailyBonusDate'] = today;
-        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-          'coins': current,
-          _coinStateField: coinState,
-        });
-        return CoinMutationResult(
-          success: true,
-          changed: true,
-          previousBalance: previous,
-          currentBalance: current,
-          delta: CoinPolicy.proDailyBonus,
-          reason: 'pro_daily_bonus',
+    CoinMutationResult? result;
+    const int maxRetries = 3;
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        result = await firestoreClient.runTransaction<CoinMutationResult>(
+          (tx) async {
+            final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
+            if (data == null) {
+              return CoinMutationResult.noChange(
+                balance: app_state.prismUser.coins,
+                success: false,
+                reason: 'user_missing',
+              );
+            }
+            final bool isPremium = _isPremiumUserData(data);
+            final int previous = _asInt(data['coins']);
+            if (!isPremium) {
+              return CoinMutationResult.noChange(balance: previous, reason: 'not_premium');
+            }
+            final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
+            _ensureCoinStateDefaults(
+              coinState,
+              reminderEnabled: _preferredStreakReminderEnabled(),
+              timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+            );
+            final String lastBonusDate = (coinState['proDailyBonusDate'] as String? ?? '').trim();
+            if (lastBonusDate == today) {
+              return CoinMutationResult.noChange(balance: previous, reason: 'pro_bonus_already_claimed');
+            }
+            final int current = previous + CoinPolicy.proDailyBonus;
+            coinState['proDailyBonusDate'] = today;
+            tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
+              'coins': current,
+              _coinStateField: coinState,
+            });
+            return CoinMutationResult(
+              success: true,
+              changed: true,
+              previousBalance: previous,
+              currentBalance: current,
+              delta: CoinPolicy.proDailyBonus,
+              reason: 'pro_daily_bonus',
+            );
+          },
+          sourceTag: 'coins.claim_pro_daily_bonus',
+          collection: FirebaseCollections.usersV2,
+          docId: userId,
         );
-      },
-      sourceTag: 'coins.claim_pro_daily_bonus',
-      collection: FirebaseCollections.usersV2,
-      docId: userId,
-    );
+        break;
+      } on FirestoreError catch (e) {
+        if (e.code == 'unavailable' && attempt < maxRetries - 1) {
+          await Future<void>.delayed(Duration(seconds: (attempt + 1) * 2));
+          continue;
+        }
+        rethrow;
+      }
+    }
+    result ??= CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'unavailable');
 
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
@@ -535,27 +1026,47 @@ class CoinsService {
         amount: CoinPolicy.proDailyBonus,
         sourceTag: 'coins.claim_pro_daily_bonus',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.proDailyBonus.name),
+        delta: CoinPolicy.proDailyBonus,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.proDailyBonus.name,
+        description: 'Pro daily bonus (+${CoinPolicy.proDailyBonus})',
+        sourceTag: 'coins.claim_pro_daily_bonus',
+        reason: 'pro_daily_bonus',
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
 
   Future<CoinMutationResult> maybeAwardProfileCompletion() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
     if (!_isProfileComplete()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'profile_incomplete');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'profile_incomplete');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (_asBool(coinState['profileCompletionRewarded'])) {
           return CoinMutationResult.noChange(balance: previous, reason: 'profile_reward_already_claimed');
         }
@@ -585,24 +1096,44 @@ class CoinsService {
         amount: CoinPolicy.profileCompletion,
         sourceTag: 'coins.profile_completion',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.profileCompletion.name),
+        delta: CoinPolicy.profileCompletion,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.profileCompletion.name,
+        description: 'Profile completion reward (+${CoinPolicy.profileCompletion})',
+        sourceTag: 'coins.profile_completion',
+        reason: 'profile_completion',
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
 
   Future<CoinMutationResult> maybeAwardFirstWallpaperUpload() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String userId = globals.prismUser.id;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
         if (data == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int previous = _asInt(data['coins']);
         final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState);
+        _ensureCoinStateDefaults(
+          coinState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (_asBool(coinState['firstWallpaperUploadRewarded'])) {
           return CoinMutationResult.noChange(balance: previous, reason: 'first_upload_reward_already_claimed');
         }
@@ -632,6 +1163,18 @@ class CoinsService {
         amount: CoinPolicy.firstWallpaperUpload,
         sourceTag: 'coins.first_wallpaper_upload',
       );
+      await _recordCoinTransaction(
+        userId: userId,
+        id: _newTransactionId(CoinEarnAction.firstWallpaperUpload.name),
+        delta: CoinPolicy.firstWallpaperUpload,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.firstWallpaperUpload.name,
+        description: 'First wallpaper upload reward (+${CoinPolicy.firstWallpaperUpload})',
+        sourceTag: 'coins.first_wallpaper_upload',
+        reason: 'first_wallpaper_upload',
+        status: _txStatusCompleted,
+      );
     }
     return result;
   }
@@ -641,27 +1184,35 @@ class CoinsService {
       await setPendingReferralInviterId(inviterUserId);
     }
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'not_logged_in');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final String currentUserId = globals.prismUser.id;
+    final String currentUserId = app_state.prismUser.id;
     final String? pendingInviter = pendingReferralInviterId;
     if (pendingInviter == null || pendingInviter.isEmpty) {
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'no_pending_referral');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_pending_referral');
     }
     if (pendingInviter == currentUserId) {
       await clearPendingReferralInviterId();
-      return CoinMutationResult.noChange(balance: globals.prismUser.coins, reason: 'self_referral');
+      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'self_referral');
     }
 
     final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
       (tx) async {
         final Map<String, dynamic>? currentData = await tx.getDoc(FirebaseCollections.usersV2, currentUserId);
         if (currentData == null) {
-          return CoinMutationResult.noChange(balance: globals.prismUser.coins, success: false, reason: 'user_missing');
+          return CoinMutationResult.noChange(
+            balance: app_state.prismUser.coins,
+            success: false,
+            reason: 'user_missing',
+          );
         }
         final int currentPrevious = _asInt(currentData['coins']);
         final Map<String, dynamic> currentState = _coinStateFromRaw(currentData[_coinStateField]);
-        _ensureCoinStateDefaults(currentState);
+        _ensureCoinStateDefaults(
+          currentState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
         if (_asBool(currentState['referralRewarded'])) {
           return CoinMutationResult.noChange(balance: currentPrevious, reason: 'referral_already_processed');
         }
@@ -679,7 +1230,11 @@ class CoinsService {
 
         final int inviterPrevious = _asInt(inviterData['coins']);
         final Map<String, dynamic> inviterState = _coinStateFromRaw(inviterData[_coinStateField]);
-        _ensureCoinStateDefaults(inviterState);
+        _ensureCoinStateDefaults(
+          inviterState,
+          reminderEnabled: _preferredStreakReminderEnabled(),
+          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+        );
 
         final int currentAfter = currentPrevious + CoinPolicy.referral;
         final int inviterAfter = inviterPrevious + CoinPolicy.referral;
@@ -694,6 +1249,24 @@ class CoinsService {
         tx.updateDoc(FirebaseCollections.usersV2, effectiveInviter, <String, dynamic>{
           'coins': inviterAfter,
           _coinStateField: inviterState,
+        });
+        final String inviterTxId = _newTransactionId('referral');
+        tx.setDoc(_txCollection, inviterTxId, <String, dynamic>{
+          'id': inviterTxId,
+          'userId': effectiveInviter,
+          'createdAt': DateTime.now().toUtc(),
+          'updatedAt': DateTime.now().toUtc(),
+          'delta': CoinPolicy.referral,
+          'balanceBefore': inviterPrevious,
+          'balanceAfter': inviterAfter,
+          'action': CoinEarnAction.referral.name,
+          'description': 'Referral reward (+${CoinPolicy.referral})',
+          'sourceTag': 'coins.process_referral',
+          'reason': 'inviter_reward',
+          'status': _txStatusCompleted,
+          'type': 'credit',
+          'referenceType': 'referral',
+          'referenceId': currentUserId,
         });
 
         return CoinMutationResult(
@@ -722,20 +1295,245 @@ class CoinsService {
         sourceTag: 'coins.process_referral',
         reason: 'referee_reward',
       );
+      await _recordCoinTransaction(
+        userId: currentUserId,
+        id: _newTransactionId(CoinEarnAction.referral.name),
+        delta: CoinPolicy.referral,
+        balanceBefore: result.previousBalance,
+        balanceAfter: result.currentBalance,
+        action: CoinEarnAction.referral.name,
+        description: 'Referral reward (+${CoinPolicy.referral})',
+        sourceTag: 'coins.process_referral',
+        reason: 'referee_reward',
+        status: _txStatusCompleted,
+        referenceType: 'referral',
+      );
     }
     return result;
   }
 
+  Future<void> _recordCoinTransaction({
+    required String userId,
+    required String id,
+    required int delta,
+    required int balanceBefore,
+    required int balanceAfter,
+    required String action,
+    required String description,
+    required String sourceTag,
+    required String status,
+    String? reason,
+    String? referenceType,
+    String? referenceId,
+    String? deepLinkUrl,
+    String? shortLinkUrl,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      final now = DateTime.now().toUtc();
+      final entry = CoinTransactionEntry(
+        id: id,
+        userId: userId,
+        createdAt: now,
+        updatedAt: now,
+        delta: delta,
+        balanceBefore: balanceBefore,
+        balanceAfter: balanceAfter,
+        action: action,
+        description: description,
+        sourceTag: sourceTag,
+        status: status,
+        type: delta >= 0 ? 'credit' : 'debit',
+        reason: reason,
+        referenceType: referenceType,
+        referenceId: referenceId,
+        deepLinkUrl: deepLinkUrl,
+        shortLinkUrl: shortLinkUrl,
+        metadata: metadata,
+      );
+      await firestoreClient.setDoc(_txCollection, id, entry.toJson(), merge: true, sourceTag: '$sourceTag.tx_write');
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.tx_write', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  String _newTransactionId(String key) {
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    final int random = Random().nextInt(1 << 31);
+    return 'ctx_${key}_${now}_${random.toRadixString(16)}';
+  }
+
+  String _earnDescription(CoinEarnAction action, int amount, {String? reason}) {
+    switch (action) {
+      case CoinEarnAction.rewardedAd:
+        return 'Rewarded ad credit (+$amount)';
+      case CoinEarnAction.dailyLogin:
+        return 'Daily login reward (+$amount)';
+      case CoinEarnAction.streakBonus:
+        return 'Streak bonus (+$amount)';
+      case CoinEarnAction.firstWallpaperUpload:
+        return 'First wallpaper upload reward (+$amount)';
+      case CoinEarnAction.referral:
+        return 'Referral reward (+$amount)';
+      case CoinEarnAction.profileCompletion:
+        return 'Profile completion reward (+$amount)';
+      case CoinEarnAction.proDailyBonus:
+        return 'Pro daily bonus (+$amount)';
+      case CoinEarnAction.refund:
+        if ((reason ?? '').contains('ai_generation_failed_refund')) {
+          return 'AI generation refund (+$amount)';
+        }
+        return 'Coins refunded (+$amount)';
+    }
+  }
+
+  String _spendDescription(CoinSpendAction action, int amount, {String? reason}) {
+    switch (action) {
+      case CoinSpendAction.wallpaperDownload:
+        return 'Wallpaper download (-$amount)';
+      case CoinSpendAction.premiumWallpaperDownload:
+        return 'Premium wallpaper download (-$amount)';
+      case CoinSpendAction.aiGeneration:
+        return 'AI wallpaper generation (-$amount)';
+      case CoinSpendAction.premiumFilter:
+        return 'Premium filter use (-$amount)';
+      case CoinSpendAction.premiumPreview24h:
+        if ((reason ?? '').startsWith('collection_')) {
+          return 'Premium collection preview unlock (-$amount)';
+        }
+        return 'Premium preview unlock (-$amount)';
+      case CoinSpendAction.streakFreeze:
+        return 'Streak freeze (-$amount)';
+    }
+  }
+
+  Future<void> _markTransactionRolledBack(String? transactionId, {required String sourceTag, String? reason}) async {
+    if (transactionId == null || transactionId.trim().isEmpty) {
+      return;
+    }
+    try {
+      await firestoreClient.updateDoc(_txCollection, transactionId, <String, dynamic>{
+        'status': _txStatusRolledBack,
+        'reason': reason ?? 'rolled_back',
+        'updatedAt': DateTime.now().toUtc(),
+      }, sourceTag: '$sourceTag.tx_mark_rollback');
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.tx_mark_rollback', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _completeAiGenerationTransaction({
+    required String? reservationTransactionId,
+    required String? generationId,
+    required String? imageUrl,
+    required String? thumbUrl,
+    required String? prompt,
+    required String? stylePreset,
+    required String sourceTag,
+    int coinsSpent = 0,
+  }) async {
+    final String txId = reservationTransactionId?.trim() ?? '';
+    final String genId = generationId?.trim() ?? '';
+    if (txId.isEmpty || genId.isEmpty) {
+      return;
+    }
+
+    final Uri canonical = _buildAiCanonicalShareUri(generationId: genId, imageUrl: imageUrl, thumbUrl: thumbUrl);
+    final String shortUrl = await _createShortLinkForAiGeneration(
+      generationId: genId,
+      canonicalUri: canonical,
+      imageSourceUrl: thumbUrl,
+      prompt: prompt,
+      stylePreset: stylePreset,
+    );
+    try {
+      await firestoreClient.updateDoc(_txCollection, txId, <String, dynamic>{
+        'status': _txStatusCompleted,
+        'updatedAt': DateTime.now().toUtc(),
+        'referenceType': 'ai_generation',
+        'referenceId': genId,
+        'deepLinkUrl': canonical.toString(),
+        'shortLinkUrl': shortUrl,
+        'description': 'AI wallpaper generation (-$coinsSpent)',
+        'metadata': <String, dynamic>{
+          if (prompt != null && prompt.trim().isNotEmpty) 'prompt': prompt.trim(),
+          if (stylePreset != null && stylePreset.trim().isNotEmpty) 'stylePreset': stylePreset.trim(),
+        },
+      }, sourceTag: '$sourceTag.tx_complete');
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: '$sourceTag.tx_complete', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Uri _buildAiCanonicalShareUri({required String generationId, required String? imageUrl, required String? thumbUrl}) {
+    final String resolvedImage = (imageUrl ?? '').trim();
+    final String resolvedThumb = (thumbUrl ?? resolvedImage).trim();
+    return Uri.https(_shareDomain, '/share', <String, String>{
+      'id': generationId,
+      'provider': 'Prism',
+      if (resolvedImage.isNotEmpty) 'url': resolvedImage,
+      if (resolvedThumb.isNotEmpty) 'thumb': resolvedThumb,
+    });
+  }
+
+  Future<String> _createShortLinkForAiGeneration({
+    required String generationId,
+    required Uri canonicalUri,
+    required String? imageSourceUrl,
+    required String? prompt,
+    required String? stylePreset,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(_shortLinkApiUrl),
+            headers: const <String, String>{'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode(<String, dynamic>{
+              'type': 'share',
+              'payload': <String, dynamic>{
+                'id': generationId,
+                'provider': 'Prism',
+                'url': canonicalUri.queryParameters['url'],
+                'thumb': canonicalUri.queryParameters['thumb'],
+              },
+              'canonical_url': canonicalUri.toString(),
+              'preview': <String, dynamic>{
+                'title': 'AI $generationId - Prism',
+                'description': 'Generated with Prism AI${(stylePreset ?? '').trim().isEmpty ? '' : ' ($stylePreset)'}',
+                if ((imageSourceUrl ?? '').trim().isNotEmpty) 'image_source_url': imageSourceUrl!.trim(),
+                if ((prompt ?? '').trim().isNotEmpty) 'prompt': prompt!.trim(),
+                'provider': 'Prism',
+                'wall_id': generationId,
+              },
+            }),
+          )
+          .timeout(_shortLinkTimeout);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return canonicalUri.toString();
+      }
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final dynamic shortUrl = decoded['short_url'];
+        if (shortUrl is String && shortUrl.trim().isNotEmpty) {
+          return shortUrl.trim();
+        }
+      }
+    } catch (_) {
+      return canonicalUri.toString();
+    }
+    return canonicalUri.toString();
+  }
+
   bool _canMutateCoins() {
-    return globals.prismUser.loggedIn && globals.prismUser.id.trim().isNotEmpty;
+    return app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
   }
 
   bool _isProfileComplete() {
-    final bool hasName = globals.prismUser.name.trim().isNotEmpty;
-    final bool hasUsername = globals.prismUser.username.trim().isNotEmpty;
-    final bool hasBio = globals.prismUser.bio.trim().isNotEmpty;
-    final bool hasLink = globals.prismUser.links.values.any((value) => value.toString().trim().isNotEmpty);
-    return hasName && hasUsername && hasBio && hasLink;
+    final ProfileCompletenessStatus status = ProfileCompletenessEvaluator.evaluate(
+      app_state.prismUser,
+      defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
+    );
+    return status.isComplete;
   }
 
   int _asInt(Object? value) {
@@ -748,12 +1546,32 @@ class CoinsService {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
+  Map<String, dynamic> _asStringDynamicMap(Object? raw) {
+    if (raw is Map<String, dynamic>) {
+      return Map<String, dynamic>.from(raw);
+    }
+    if (raw is Map) {
+      return raw.map((key, value) => MapEntry(key.toString(), value));
+    }
+    return <String, dynamic>{};
+  }
+
   bool _asBool(Object? value) {
     if (value is bool) {
       return value;
     }
     final String normalized = (value?.toString() ?? '').toLowerCase().trim();
     return normalized == 'true' || normalized == '1';
+  }
+
+  bool _isPremiumUserData(Map<String, dynamic> data) {
+    final bool premiumFlag = _asBool(data['premium']) || app_state.prismUser.premium;
+    final SubscriptionTier tierFromGlobal = SubscriptionTier.fromValue(app_state.prismUser.subscriptionTier);
+    if (tierFromGlobal.isPaid) {
+      return true;
+    }
+    final SubscriptionTier tierFromDoc = SubscriptionTier.fromValue(data['subscriptionTier']?.toString());
+    return premiumFlag || tierFromDoc.isPaid;
   }
 
   Map<String, dynamic> _coinStateFromRaw(Object? raw) {
@@ -766,7 +1584,11 @@ class CoinsService {
     return <String, dynamic>{};
   }
 
-  bool _ensureCoinStateDefaults(Map<String, dynamic> coinState) {
+  bool _ensureCoinStateDefaults(
+    Map<String, dynamic> coinState, {
+    required bool reminderEnabled,
+    required int timezoneOffsetMinutes,
+  }) {
     bool changed = false;
     changed |= _putDefaultIfMissing(coinState, 'lastDailyClaimDate', '');
     changed |= _putDefaultIfMissing(coinState, 'streakDay', 0);
@@ -776,12 +1598,118 @@ class CoinsService {
     changed |= _putDefaultIfMissing(coinState, 'referredByUserId', '');
     changed |= _putDefaultIfMissing(coinState, 'referralRewarded', false);
     changed |= _putDefaultIfMissing(coinState, 'premiumPreviewUnlocks', <String, int>{});
+    changed |= _putDefaultIfMissing(coinState, _streakReminderEnabledField, reminderEnabled);
+    changed |= _putDefaultIfMissing(coinState, _streakTimezoneOffsetMinutesField, timezoneOffsetMinutes);
+    changed |= _putDefaultIfMissing(coinState, _streakReminderLastSentDateField, '');
+    changed |= _putDefaultIfMissing(coinState, _streakLastClaimServerAtField, '');
     final Map<String, int> normalizedPreviewUnlocks = _previewUnlocksFromState(coinState);
     if (!_previewUnlockStateEquals(coinState['premiumPreviewUnlocks'], normalizedPreviewUnlocks)) {
       coinState['premiumPreviewUnlocks'] = normalizedPreviewUnlocks;
       changed = true;
     }
+    final int normalizedStreakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+    if (normalizedStreakDay != _asInt(coinState['streakDay'])) {
+      coinState['streakDay'] = normalizedStreakDay;
+      changed = true;
+    }
     return changed;
+  }
+
+  int _deviceTimezoneOffsetMinutes() {
+    return DateTime.now().timeZoneOffset.inMinutes;
+  }
+
+  bool _preferredStreakReminderEnabled() {
+    if (!_settings.isOpen) {
+      return true;
+    }
+    return _settings.get<bool>(_streakReminderPrefKey, defaultValue: true);
+  }
+
+  int _clampStreakDay(int day) {
+    if (day < 0) {
+      return 0;
+    }
+    if (day > 7) {
+      return 7;
+    }
+    return day;
+  }
+
+  DateTime _offsetDateTime(DateTime utc, int timezoneOffsetMinutes) {
+    return utc.add(Duration(minutes: timezoneOffsetMinutes));
+  }
+
+  String _offsetDayKey(DateTime utc, int timezoneOffsetMinutes) {
+    final DateTime shifted = _offsetDateTime(utc.toUtc(), timezoneOffsetMinutes);
+    final String month = shifted.month.toString().padLeft(2, '0');
+    final String day = shifted.day.toString().padLeft(2, '0');
+    return '${shifted.year}-$month-$day';
+  }
+
+  DateTime? _parseUtcDateTime(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is DateTime) {
+      return value.toUtc();
+    }
+    final dynamic raw = value;
+    try {
+      // ignore: avoid_dynamic_calls
+      final dynamic maybeDate = raw.toDate();
+      if (maybeDate is DateTime) {
+        return maybeDate.toUtc();
+      }
+    } catch (_) {}
+    return DateTime.tryParse(value.toString())?.toUtc();
+  }
+
+  DateTime _computeNextReminderAtUtc({
+    required DateTime nowUtc,
+    required int timezoneOffsetMinutes,
+    required String lastClaimDate,
+    required String todayLocalKey,
+    required bool activeStreak,
+  }) {
+    DateTime reminderLocalBase(DateTime localBase, {required bool tomorrow}) {
+      final int dayOffset = tomorrow ? 1 : 0;
+      // Build this in UTC so scheduling doesn't depend on the device timezone.
+      return DateTime.utc(localBase.year, localBase.month, localBase.day + dayOffset, 20);
+    }
+
+    final DateTime localNow = _offsetDateTime(nowUtc, timezoneOffsetMinutes);
+    final bool claimedToday = lastClaimDate == todayLocalKey;
+    final bool sendTomorrow = !activeStreak || claimedToday || localNow.hour >= 20;
+    final DateTime localReminder = reminderLocalBase(localNow, tomorrow: sendTomorrow);
+    return localReminder.subtract(Duration(minutes: timezoneOffsetMinutes)).toUtc();
+  }
+
+  StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
+    final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
+    _ensureCoinStateDefaults(
+      coinState,
+      reminderEnabled: _preferredStreakReminderEnabled(),
+      timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
+    );
+    final int timezoneOffsetMinutes = _asInt(coinState[_streakTimezoneOffsetMinutesField]);
+    final String todayLocalKey = _offsetDayKey(DateTime.now().toUtc(), timezoneOffsetMinutes);
+    final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
+    final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+    final bool active =
+        streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
+    final bool claimedToday = lastClaimDate == todayLocalKey;
+    final StreakStatus status = StreakStatus(
+      streakDay: active ? streakDay : 0,
+      active: active,
+      claimedToday: claimedToday,
+      reminderEnabled: _asBool(coinState[_streakReminderEnabledField]),
+      timezoneOffsetMinutes: timezoneOffsetMinutes,
+      lastClaimDate: lastClaimDate,
+      nextReminderAtUtc: _parseUtcDateTime(coinState[_streakReminderNextAtUtcField]),
+    );
+    streakNotifier.value = status;
+    return status;
   }
 
   bool _putDefaultIfMissing(Map<String, dynamic> map, String key, Object value) {
@@ -865,14 +1793,14 @@ class CoinsService {
   }
 
   void _applyLocalBalance(int newBalance, {required int delta}) {
-    final int previous = globals.prismUser.coins;
-    globals.prismUser.coins = newBalance;
+    final int previous = app_state.prismUser.coins;
+    app_state.prismUser.coins = newBalance;
     balanceNotifier.value = newBalance;
     if (delta == 0 && previous == newBalance) {
       return;
     }
-    if (main.prefs.isOpen) {
-      unawaited(main.prefs.put(main.userHiveKey, globals.prismUser));
+    if (_settings.isOpen) {
+      app_state.persistPrismUser();
     }
     _deltaVersion += 1;
     final int currentVersion = _deltaVersion;
@@ -885,47 +1813,41 @@ class CoinsService {
   }
 
   void _logEarn({required CoinEarnAction action, required int amount, required String sourceTag, String? reason}) {
-    analytics.logEvent(
-      name: 'coin_earned',
-      parameters: <String, Object>{
-        'action': action.name,
-        'amount': amount,
-        'balance': globals.prismUser.coins,
-        'sourceTag': sourceTag,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-      },
+    analytics.track(
+      CoinEarnedEvent(
+        action: coinEarnActionValueFromDomain(action),
+        amount: amount,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+        reason: reason != null && reason.isNotEmpty ? reason : null,
+      ),
     );
   }
 
   void _logSpend({required CoinSpendAction action, required int amount, required String sourceTag, String? reason}) {
-    analytics.logEvent(
-      name: 'coin_spent',
-      parameters: <String, Object>{
-        'action': action.name,
-        'amount': amount,
-        'balance': globals.prismUser.coins,
-        'sourceTag': sourceTag,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-      },
+    analytics.track(
+      CoinSpentEvent(
+        action: coinSpendActionValueFromDomain(action),
+        amount: amount,
+        balance: app_state.prismUser.coins,
+        sourceTag: sourceTag,
+        reason: reason != null && reason.isNotEmpty ? reason : null,
+      ),
     );
   }
 
   void logLowBalanceNudge({required String sourceTag, required int requiredCoins}) {
-    analytics.logEvent(
-      name: 'coin_low_balance_nudge_shown',
-      parameters: <String, Object>{
-        'sourceTag': sourceTag,
-        'requiredCoins': requiredCoins,
-        'balance': globals.prismUser.coins,
-      },
+    analytics.track(
+      CoinLowBalanceNudgeShownEvent(
+        sourceTag: sourceTag,
+        requiredCoins: requiredCoins,
+        balance: app_state.prismUser.coins,
+      ),
     );
   }
 
   void logWatchAndDownloadUsed({required bool isPremiumContent, required String sourceTag}) {
-    analytics.logEvent(
-      name: 'coin_watch_and_download_used',
-      parameters: <String, Object>{'isPremiumContent': isPremiumContent, 'sourceTag': sourceTag},
-    );
+    analytics.track(CoinWatchAndDownloadUsedEvent(isPremiumContent: isPremiumContent, sourceTag: sourceTag));
   }
 
   void logCoinError({required String sourceTag, required Object error, StackTrace? stackTrace}) {

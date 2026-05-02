@@ -1,49 +1,60 @@
 import 'dart:ui';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
+import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
-import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/data/informatics/dataManager.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
+import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
+import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart' as sdata;
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:device_apps/device_apps.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive_io/hive_io.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 @RoutePage()
 class ShareSetupViewScreen extends StatefulWidget {
-  final List? arguments;
-  const ShareSetupViewScreen({this.arguments});
+  const ShareSetupViewScreen({super.key, @PathParam('setupName') required this.setupName, this.thumbnailUrl = ''});
+
+  final String setupName;
+  final String thumbnailUrl;
 
   @override
   _ShareSetupViewScreenState createState() => _ShareSetupViewScreenState();
 }
 
 class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with SingleTickerProviderStateMixin {
+  final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String? name;
   String? image;
-  Future<Map?>? _future;
+  Future<SetupEntity?>? _future;
   bool isLoading = true;
   List<Color>? colors;
   PanelController panelController = PanelController();
@@ -51,17 +62,15 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
   bool panelCollapsed = true;
   bool? viewCounted;
   Future<String>? _futureView;
-  late Box box;
 
   @override
   void initState() {
     viewCounted = false;
     shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    name = widget.arguments![0].toString();
-    image = widget.arguments![1].toString();
+    name = widget.setupName;
+    image = widget.thumbnailUrl;
     _future = sdata.getSetupFromName(name);
     isLoading = true;
-    box = Hive.box('localFav');
     super.initState();
   }
 
@@ -71,12 +80,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
     super.dispose();
   }
 
-  Future<void> onFavSetup(String id, Map? setupMap) async {
+  Future<void> onFavSetup(FavouriteSetupEntity setup) async {
     setState(() {
       isLoading = true;
     });
-    context.favouriteSetupsAdapter(listen: false).favCheck(id, setupMap).then((value) {
-      analytics.logEvent(name: 'setup_fav_status_changed', parameters: {'id': id});
+    context.favouriteSetupsAdapter(listen: false).favCheck(setup).then((value) {
+      analytics.track(SetupFavStatusChangedEvent(setupId: setup.id));
       setState(() {
         isLoading = false;
       });
@@ -97,7 +106,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
       backgroundColor: Theme.of(context).primaryColor,
       body: FutureBuilder(
         future: _future,
-        builder: (BuildContext context, AsyncSnapshot<Map?> snapshot) {
+        builder: (BuildContext context, AsyncSnapshot<SetupEntity?> snapshot) {
           logger.d(snapshot.connectionState.toString());
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
@@ -110,9 +119,15 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
               if (snapshot.hasError) {
                 return Center(child: Loader());
               } else {
+                final setup = snapshot.data ?? sdata.setup;
+                if (setup == null) {
+                  return Center(child: Loader());
+                }
+                final SetupWallpaperValue wallpaperValue = setup.wallpaperValue;
                 if (viewCounted == false) {
-                  updateViewsSetup(sdata.setup!["id"].toString().toUpperCase());
-                  _futureView = getViewsSetup(sdata.setup!["id"].toString().toUpperCase());
+                  _futureView = getIt<ViewStatsRepository>()
+                      .recordSetupView(setup.id.toUpperCase())
+                      .then((r) => r.fold(onSuccess: (s) => s, onFailure: (_) => '0'));
                   viewCounted = true;
                 }
                 return SlidingUpPanel(
@@ -124,7 +139,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                   parallaxEnabled: true,
                   parallaxOffset: 0.00,
                   color: Colors.transparent,
-                  maxHeight: globals.prismUser.premium == true
+                  maxHeight: app_state.prismUser.premium == true
                       ? MediaQuery.of(context).size.height * .70 > 600
                             ? MediaQuery.of(context).size.height * .70
                             : 600
@@ -142,7 +157,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                   },
                   panel: Container(
                     margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                    height: globals.prismUser.premium == true
+                    height: app_state.prismUser.premium == true
                         ? MediaQuery.of(context).size.height * .70 > 600
                               ? MediaQuery.of(context).size.height * .70
                               : 600
@@ -196,7 +211,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               forward: true,
                                               slideSide: SlideFromSlide.bottom,
                                               child: Text(
-                                                sdata.setup!["name"].toString().toUpperCase(),
+                                                setup.name.toString().toUpperCase(),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.fade,
                                                 style: Theme.of(context).textTheme.displayLarge!.copyWith(
@@ -215,7 +230,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               slideSide: SlideFromSlide.bottom,
                                               delay: const Duration(milliseconds: 50),
                                               child: Text(
-                                                sdata.setup!["desc"].toString(),
+                                                setup.desc.toString(),
                                                 maxLines: 2,
                                                 overflow: TextOverflow.fade,
                                                 style: Theme.of(context).textTheme.titleLarge!.copyWith(
@@ -252,7 +267,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                       child: Row(
                                                         children: [
                                                           Text(
-                                                            sdata.setup!["id"].toString().toUpperCase(),
+                                                            setup.id.toUpperCase(),
                                                             overflow: TextOverflow.fade,
                                                             style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                                                               color: Theme.of(context).colorScheme.secondary,
@@ -328,12 +343,16 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                   ),
                                                   GestureDetector(
                                                     onTap: () {
-                                                      showModal(
-                                                        context: context,
-                                                        builder: (BuildContext context) => CopyrightPopUp(
-                                                          setup: true,
-                                                          shortlink: "Setup ID - ${sdata.setup!["id"]}",
-                                                        ),
+                                                      final String? docId = setup.firestoreDocumentId;
+                                                      if (docId == null || docId.isEmpty) {
+                                                        toasts.error('Report unavailable for this setup.');
+                                                        return;
+                                                      }
+                                                      showContentReportSheet(
+                                                        context,
+                                                        contentType: 'setup',
+                                                        targetFirestoreDocId: docId,
+                                                        subtitle: setup.name?.toString(),
                                                       );
                                                     },
                                                     child: Row(
@@ -373,7 +392,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                             alignment: Alignment.topRight,
                                                             child: ActionChip(
                                                               label: Text(
-                                                                sdata.setup!["by"].toString(),
+                                                                setup.by.toString(),
                                                                 overflow: TextOverflow.fade,
                                                                 style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                                                   color: Theme.of(context).colorScheme.secondary,
@@ -385,20 +404,20 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                               ),
                                                               avatar: CircleAvatar(
                                                                 backgroundImage: CachedNetworkImageProvider(
-                                                                  sdata.setup!["userPhoto"].toString(),
+                                                                  setup.userPhoto.toString(),
                                                                 ),
                                                               ),
                                                               labelPadding: const EdgeInsets.fromLTRB(7, 3, 7, 3),
                                                               onPressed: () {
                                                                 context.router.push(
-                                                                  ProfileRoute(arguments: [sdata.setup!["email"]]),
+                                                                  ProfileRoute(
+                                                                    profileIdentifier: setup.email.toString(),
+                                                                  ),
                                                                 );
                                                               },
                                                             ),
                                                           ),
-                                                          if (globals.verifiedUsers.contains(
-                                                            sdata.setup!["email"].toString(),
-                                                          ))
+                                                          if (app_state.verifiedUsers.contains(setup.email.toString()))
                                                             Align(
                                                               alignment: Alignment.topRight,
                                                               child: SizedBox(
@@ -430,12 +449,12 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                         ),
                                 ),
                               ),
-                              if (globals.prismUser.premium == true)
+                              if (app_state.prismUser.premium == true)
                                 Expanded(
                                   flex: 16,
                                   child: Padding(
                                     padding: const EdgeInsets.fromLTRB(35, 0, 35, 0),
-                                    child: sdata.setup!["widget"] == "" || sdata.setup!["widget"] == null
+                                    child: setup.widget == "" || setup.widget == null
                                         ? Column(
                                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                             mainAxisSize: MainAxisSize.min,
@@ -443,78 +462,43 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
-                                                    if (sdata.setup!["wall_id"] == null ||
-                                                        sdata.setup!["wall_id"] == "") {
+                                                  if (!wallpaperValue.isEncoded) {
+                                                    if (setup.wallId == null || setup.wallId == "") {
                                                       logger.d("Id Not Found!");
-                                                      launch(sdata.setup!["wallpaper_url"].toString());
+                                                      openPrismLink(context, wallpaperValue.primaryUrl);
                                                     } else {
                                                       context.router.push(
-                                                        ShareWallpaperViewRoute(
-                                                          arguments: [
-                                                            sdata.setup!["wall_id"].toString(),
-                                                            sdata.setup!["wallpaper_provider"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                          ],
+                                                        WallpaperDetailRoute(
+                                                          wallId: setup.wallId.toString(),
+                                                          source: setup.source ?? WallpaperSource.prism,
+                                                          wallpaperUrl: wallpaperValue.primaryUrl,
+                                                          thumbnailUrl: wallpaperValue.primaryUrl,
+                                                          analyticsSurface: AnalyticsSurfaceValue.shareSetupViewScreen,
                                                         ),
                                                       );
                                                     }
                                                   } else {
-                                                    launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                    openPrismLink(context, wallpaperValue.primaryUrl);
                                                   }
                                                 },
-                                                tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
-                                                    ? (sdata.setup!["wall_id"] == null || sdata.setup!["wall_id"] == "")
-                                                          ? "Wall Link"
-                                                          : "Prism (${sdata.setup!["wall_id"]})"
-                                                    : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
+                                                tileText: wallpaperValue.tileText(wallId: setup.wallId),
                                                 tileType: "Wallpaper",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(milliseconds: 150),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
+                                                isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["icon_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
-                                                            sdata.setup!["icon_url"]
-                                                                .toString()
-                                                                .split("details?id=")[1]
-                                                                .split("&")[0],
-                                                          )
-                                                        : launch(sdata.setup!["icon_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["icon_url"].toString());
-                                                  }
+                                                  openPrismLink(context, setup.iconUrl.toString());
                                                 },
-                                                tileText: sdata.setup!["icon"].toString(),
+                                                tileText: setup.icon.toString(),
                                                 tileType: "Icons",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(milliseconds: 200),
                                               ),
                                             ],
                                           )
-                                        : sdata.setup!["widget2"] == "" || sdata.setup!["widget2"] == null
+                                        : setup.widget2 == "" || setup.widget2 == null
                                         ? Column(
                                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                             mainAxisSize: MainAxisSize.min,
@@ -522,110 +506,46 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
-                                                    if (sdata.setup!["wall_id"] == null ||
-                                                        sdata.setup!["wall_id"] == "") {
+                                                  if (!wallpaperValue.isEncoded) {
+                                                    if (setup.wallId == null || setup.wallId == "") {
                                                       logger.d("Id Not Found!");
-                                                      launch(sdata.setup!["wallpaper_url"].toString());
+                                                      openPrismLink(context, wallpaperValue.primaryUrl);
                                                     } else {
                                                       context.router.push(
-                                                        ShareWallpaperViewRoute(
-                                                          arguments: [
-                                                            sdata.setup!["wall_id"].toString(),
-                                                            sdata.setup!["wallpaper_provider"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                            sdata.setup!["wallpaper_url"].toString(),
-                                                          ],
+                                                        WallpaperDetailRoute(
+                                                          wallId: setup.wallId.toString(),
+                                                          source: setup.source ?? WallpaperSource.prism,
+                                                          wallpaperUrl: wallpaperValue.primaryUrl,
+                                                          thumbnailUrl: wallpaperValue.primaryUrl,
+                                                          analyticsSurface: AnalyticsSurfaceValue.shareSetupViewScreen,
                                                         ),
                                                       );
                                                     }
                                                   } else {
-                                                    launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                    openPrismLink(context, wallpaperValue.primaryUrl);
                                                   }
                                                 },
-                                                tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
-                                                    ? (sdata.setup!["wall_id"] == null || sdata.setup!["wall_id"] == "")
-                                                          ? "Wall Link"
-                                                          : "Prism (${sdata.setup!["wall_id"]})"
-                                                    : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
+                                                tileText: wallpaperValue.tileText(wallId: setup.wallId),
                                                 tileType: "Wallpaper",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(milliseconds: 150),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
+                                                isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["icon_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["icon_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
-                                                            sdata.setup!["icon_url"]
-                                                                .toString()
-                                                                .split("details?id=")[1]
-                                                                .split("&")[0],
-                                                          )
-                                                        : launch(sdata.setup!["icon_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["icon_url"].toString());
-                                                  }
+                                                  openPrismLink(context, setup.iconUrl.toString());
                                                 },
-                                                tileText: sdata.setup!["icon"].toString(),
+                                                tileText: setup.icon.toString(),
                                                 tileType: "Icons",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(milliseconds: 200),
                                               ),
                                               SetupDetailsTile(
-                                                isInstalled:
-                                                    sdata.setup!["widget_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )
-                                                    ? DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      )
-                                                    : Future.value(false),
+                                                isInstalled: Future.value(false),
                                                 onTap: () async {
-                                                  if (sdata.setup!["widget_url"].toString().contains(
-                                                    'play.google.com/store/apps/details?id=',
-                                                  )) {
-                                                    final isInstalled = await DeviceApps.isAppInstalled(
-                                                      sdata.setup!["widget_url"]
-                                                          .toString()
-                                                          .split("details?id=")[1]
-                                                          .split("&")[0],
-                                                    );
-                                                    isInstalled
-                                                        ? DeviceApps.openApp(
-                                                            sdata.setup!["widget_url"]
-                                                                .toString()
-                                                                .split("details?id=")[1]
-                                                                .split("&")[0],
-                                                          )
-                                                        : launch(sdata.setup!["widget_url"].toString());
-                                                  } else {
-                                                    launch(sdata.setup!["widget_url"].toString());
-                                                  }
+                                                  openPrismLink(context, setup.widgetUrl.toString());
                                                 },
-                                                tileText: sdata.setup!["widget"].toString(),
+                                                tileText: setup.widget.toString(),
                                                 tileType: "Widget",
                                                 panelCollapsed: panelCollapsed,
                                                 delay: const Duration(milliseconds: 250),
@@ -640,150 +560,57 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["wallpaper_url"].toString()[0] != "[") {
-                                                      if (sdata.setup!["wall_id"] == null ||
-                                                          sdata.setup!["wall_id"] == "") {
+                                                    if (!wallpaperValue.isEncoded) {
+                                                      if (setup.wallId == null || setup.wallId == "") {
                                                         logger.d("Id Not Found!");
-                                                        launch(sdata.setup!["wallpaper_url"].toString());
+                                                        openPrismLink(context, wallpaperValue.primaryUrl);
                                                       } else {
                                                         context.router.push(
-                                                          ShareWallpaperViewRoute(
-                                                            arguments: [
-                                                              sdata.setup!["wall_id"].toString(),
-                                                              sdata.setup!["wallpaper_provider"].toString(),
-                                                              sdata.setup!["wallpaper_url"].toString(),
-                                                              sdata.setup!["wallpaper_url"].toString(),
-                                                            ],
+                                                          WallpaperDetailRoute(
+                                                            wallId: setup.wallId.toString(),
+                                                            source: setup.source ?? WallpaperSource.prism,
+                                                            wallpaperUrl: wallpaperValue.primaryUrl,
+                                                            thumbnailUrl: wallpaperValue.primaryUrl,
+                                                            analyticsSurface:
+                                                                AnalyticsSurfaceValue.shareSetupViewScreen,
                                                           ),
                                                         );
                                                       }
                                                     } else {
-                                                      launch(sdata.setup!["wallpaper_url"][1].toString());
+                                                      openPrismLink(context, wallpaperValue.primaryUrl);
                                                     }
                                                   },
-                                                  tileText: sdata.setup!["wallpaper_url"].toString()[0] != "["
-                                                      ? (sdata.setup!["wall_id"] == null ||
-                                                                sdata.setup!["wall_id"] == "")
-                                                            ? "Wall Link"
-                                                            : "Prism (${sdata.setup!["wall_id"]})"
-                                                      : "${sdata.setup!["wallpaper_url"][0]} - ${(sdata.setup!["wallpaper_url"] as List).length > 2 ? sdata.setup!["wallpaper_url"][2].toString() : ""}",
+                                                  tileText: wallpaperValue.tileText(wallId: setup.wallId),
                                                   tileType: "Wallpaper",
                                                   panelCollapsed: panelCollapsed,
                                                   delay: const Duration(milliseconds: 150),
                                                 ),
                                                 SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["icon_url"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["icon_url"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
+                                                  isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["icon_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["icon_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
-                                                              sdata.setup!["icon_url"]
-                                                                  .toString()
-                                                                  .split("details?id=")[1]
-                                                                  .split("&")[0],
-                                                            )
-                                                          : launch(sdata.setup!["icon_url"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["icon_url"].toString());
-                                                    }
+                                                    openPrismLink(context, setup.iconUrl.toString());
                                                   },
-                                                  tileText: sdata.setup!["icon"].toString(),
+                                                  tileText: setup.icon.toString(),
                                                   tileType: "Icons",
                                                   panelCollapsed: panelCollapsed,
                                                   delay: const Duration(milliseconds: 200),
                                                 ),
                                                 SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["widget_url"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["widget_url"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
+                                                  isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["widget_url"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
-                                                              sdata.setup!["widget_url"]
-                                                                  .toString()
-                                                                  .split("details?id=")[1]
-                                                                  .split("&")[0],
-                                                            )
-                                                          : launch(sdata.setup!["widget_url"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["widget_url"].toString());
-                                                    }
+                                                    openPrismLink(context, setup.widgetUrl.toString());
                                                   },
-                                                  tileText: sdata.setup!["widget"].toString(),
+                                                  tileText: setup.widget.toString(),
                                                   tileType: "Widget",
                                                   panelCollapsed: panelCollapsed,
                                                   delay: const Duration(milliseconds: 250),
                                                 ),
                                                 SetupDetailsTile(
-                                                  isInstalled:
-                                                      sdata.setup!["widget_url2"].toString().contains(
-                                                        'play.google.com/store/apps/details?id=',
-                                                      )
-                                                      ? DeviceApps.isAppInstalled(
-                                                          sdata.setup!["widget_url2"]
-                                                              .toString()
-                                                              .split("details?id=")[1]
-                                                              .split("&")[0],
-                                                        )
-                                                      : Future.value(false),
+                                                  isInstalled: Future.value(false),
                                                   onTap: () async {
-                                                    if (sdata.setup!["widget_url2"].toString().contains(
-                                                      'play.google.com/store/apps/details?id=',
-                                                    )) {
-                                                      final isInstalled = await DeviceApps.isAppInstalled(
-                                                        sdata.setup!["widget_url2"]
-                                                            .toString()
-                                                            .split("details?id=")[1]
-                                                            .split("&")[0],
-                                                      );
-                                                      isInstalled
-                                                          ? DeviceApps.openApp(
-                                                              sdata.setup!["widget_url2"]
-                                                                  .toString()
-                                                                  .split("details?id=")[1]
-                                                                  .split("&")[0],
-                                                            )
-                                                          : launch(sdata.setup!["widget_url2"].toString());
-                                                    } else {
-                                                      launch(sdata.setup!["widget_url2"].toString());
-                                                    }
+                                                    openPrismLink(context, setup.widgetUrl2.toString());
                                                   },
-                                                  tileText: sdata.setup!["widget2"].toString(),
+                                                  tileText: setup.widget2.toString(),
                                                   tileType: "Widget",
                                                   panelCollapsed: panelCollapsed,
                                                   delay: const Duration(milliseconds: 300),
@@ -795,14 +622,14 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                 )
                               else
                                 Container(),
-                              if (globals.prismUser.premium == true)
+                              if (app_state.prismUser.premium == true)
                                 Expanded(
                                   flex: 5,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: <Widget>[
-                                      ModifiedShareDownloadButton(),
-                                      ModifiedShareSetWallpaperButton(),
+                                      _ModifiedShareDownloadButton(setup: setup),
+                                      if (!hideSetWallpaperUi) _ModifiedShareSetWallpaperButton(setup: setup),
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Theme.of(context).primaryColor,
@@ -815,21 +642,23 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                           ],
                                           borderRadius: BorderRadius.circular(500),
                                         ),
-                                        padding: const EdgeInsets.all(17),
                                         child: FavoriteIcon(
+                                          tapTargetExtent: 53,
                                           valueChanged: () {
-                                            if (globals.prismUser.loggedIn == false) {
+                                            if (app_state.prismUser.loggedIn == false) {
                                               googleSignInPopUp(context, () {
-                                                onFavSetup(sdata.setup!["id"].toString(), sdata.setup);
+                                                onFavSetup(setup.toFavouriteSetupEntity());
                                               });
                                             } else {
-                                              onFavSetup(sdata.setup!["id"].toString(), sdata.setup);
+                                              onFavSetup(setup.toFavouriteSetupEntity());
                                             }
                                           },
                                           iconColor: Theme.of(context).colorScheme.secondary,
                                           iconSize: 30,
-                                          isFavorite:
-                                              box.get(sdata.setup!["id"].toString(), defaultValue: false) as bool,
+                                          isFavorite: _favoritesLocal.isSetupFavourite(
+                                            app_state.prismUser.id,
+                                            setup.id,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -843,11 +672,19 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                     children: [
                                       GestureDetector(
                                         onTap: () async {
-                                          if (globals.prismUser.loggedIn == true) {
-                                            context.router.push(const UpgradeRoute());
+                                          if (app_state.prismUser.loggedIn == true) {
+                                            await PaywallOrchestrator.instance.present(
+                                              context,
+                                              placement: PaywallPlacement.mainUpsell,
+                                              source: 'share_setup_view',
+                                            );
                                           } else {
                                             googleSignInPopUp(context, () {
-                                              context.router.push(const UpgradeRoute());
+                                              PaywallOrchestrator.instance.present(
+                                                context,
+                                                placement: PaywallPlacement.mainUpsell,
+                                                source: 'share_setup_view',
+                                              );
                                             });
                                           }
                                           toasts.codeSend("This is a premium wallpaper.");
@@ -914,7 +751,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                               shakeController.forward(from: 0.0);
                             },
                             child: CachedNetworkImage(
-                              imageUrl: sdata.setup!["image"].toString(),
+                              imageUrl: setup.image,
                               imageBuilder: (context, imageProvider) => Container(
                                 margin: EdgeInsets.symmetric(
                                   vertical: offsetAnimation.value * 1.25,
@@ -946,7 +783,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                       Align(
                         alignment: Alignment.topLeft,
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                          padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                           child: IconButton(
                             onPressed: () {
                               Navigator.pop(context);
@@ -959,7 +796,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                       Align(
                         alignment: Alignment.topRight,
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(8.0, globals.notchSize! + 8, 8, 8),
+                          padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                           child: IconButton(
                             onPressed: () {
                               Navigator.push(
@@ -969,7 +806,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                     animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                                     return FadeTransition(
                                       opacity: animation,
-                                      child: SetupOverlay(link: sdata.setup!["image"].toString()),
+                                      child: SetupOverlay(link: setup.image),
                                     );
                                   },
                                   fullscreenDialog: true,
@@ -1100,15 +937,20 @@ class SetupDetailsTile extends StatelessWidget {
   }
 }
 
-class ModifiedShareDownloadButton extends StatelessWidget {
+class _ModifiedShareDownloadButton extends StatelessWidget {
+  const _ModifiedShareDownloadButton({required this.setup});
+
+  final SetupEntity setup;
+
   @override
   Widget build(BuildContext context) {
-    return sdata.setup!["wallpaper_url"].toString()[0] != "["
-        ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
-              ? DownloadButton(link: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
+    final SetupWallpaperValue wallpaperValue = setup.wallpaperValue;
+    return !wallpaperValue.isEncoded
+        ? setup.wallId != null && setup.wallId != ""
+              ? DownloadButton(link: wallpaperValue.primaryUrl, colorChanged: false)
               : GestureDetector(
                   onTap: () async {
-                    launch(sdata.setup!["wallpaper_url"].toString());
+                    openPrismLink(context, wallpaperValue.primaryUrl);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1128,7 +970,7 @@ class ModifiedShareDownloadButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(sdata.setup!["wallpaper_url"][1].toString());
+              openPrismLink(context, wallpaperValue.primaryUrl);
             },
             child: Container(
               decoration: BoxDecoration(
@@ -1145,15 +987,20 @@ class ModifiedShareDownloadButton extends StatelessWidget {
   }
 }
 
-class ModifiedShareSetWallpaperButton extends StatelessWidget {
+class _ModifiedShareSetWallpaperButton extends StatelessWidget {
+  const _ModifiedShareSetWallpaperButton({required this.setup});
+
+  final SetupEntity setup;
+
   @override
   Widget build(BuildContext context) {
-    return sdata.setup!["wallpaper_url"].toString()[0] != "["
-        ? sdata.setup!["wall_id"] != null && sdata.setup!["wall_id"] != ""
-              ? SetWallpaperButton(url: sdata.setup!["wallpaper_url"].toString(), colorChanged: false)
+    final SetupWallpaperValue wallpaperValue = setup.wallpaperValue;
+    return !wallpaperValue.isEncoded
+        ? setup.wallId != null && setup.wallId != ""
+              ? SetWallpaperButton(url: wallpaperValue.primaryUrl, colorChanged: false)
               : GestureDetector(
                   onTap: () async {
-                    launch(sdata.setup!["wallpaper_url"].toString());
+                    openPrismLink(context, wallpaperValue.primaryUrl);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -1173,7 +1020,7 @@ class ModifiedShareSetWallpaperButton extends StatelessWidget {
                 )
         : GestureDetector(
             onTap: () async {
-              launch(sdata.setup!["wallpaper_url"][1].toString());
+              openPrismLink(context, wallpaperValue.primaryUrl);
             },
             child: Container(
               decoration: BoxDecoration(

@@ -12,29 +12,31 @@ publish_to: none
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 2.6.9+77
+version: 3.0.8+332
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
+  sdk: ">=3.8.0 <4.0.0"
 
 dependencies:
-  async_wallpaper: ^2.1.0
+  async_wallpaper: ^3.0.0
+  audioplayers: ^6.5.1
   bloc: ^8.1.4
   animations: ^2.0.0
   cached_network_image: ^3.0.0
   carousel_slider: ^5.1.2
-  cloud_firestore: ^5.6.12
-  device_apps: ^2.1.1
+  collection: ^1.19.1
+  cloud_firestore: ^6.2.0
   device_info_plus: ^11.5.0
+  package_info_plus: ^8.3.0
   extended_image: ^10.0.1
   file_encrypter: ^2.0.2
-  firebase_analytics: ^11.5.0
-  firebase_auth: ^5.6.0
-  firebase_core: ^3.15.2
+  firebase_analytics: ^12.2.0
+  firebase_auth: ^6.3.0
+  cloud_functions: ^6.1.0
+  firebase_core: ^4.6.0
   app_links: ^6.4.1
-  firebase_in_app_messaging: ^0.8.0
-  firebase_messaging: ^15.0.0
-  firebase_remote_config: ^5.4.0
+  firebase_messaging: ^16.1.3
+  firebase_remote_config: ^6.3.0
   flutter:
     sdk: flutter
   flutter_archive: ^6.0.4
@@ -43,7 +45,7 @@ dependencies:
   flutter_image_compress: ^2.4.0
   flutter_local_notifications: ^20.1.0
   flutter_mailer: ^3.0.1
-  flutter_native_splash: ^2.2.16
+  flutter_floating_bottom_bar: ^1.4.0
   flutter_staggered_grid_view: ^0.7.0
   flutter_svg: ^2.2.3
   flutter_bloc: ^8.1.6
@@ -53,8 +55,6 @@ dependencies:
   github: ^9.25.0
   google_mobile_ads: ^7.0.0
   google_sign_in: ^7.2.0
-  hive_io: ^3.2.2
-  hive_flutter_io: ^3.2.2
   image: ^3.0.2
   image_editor: ^1.6.0
   image_picker: ^1.2.1
@@ -71,20 +71,25 @@ dependencies:
   path_provider: ^2.0.1
   photo_view: ^0.15.0
   photofilters: ^3.0.0
-  pixel_perfect: ^1.1.0
   provider: ^6.1.5+1
   injectable: ^2.5.1
   purchases_flutter: ^9.12.0
+  purchases_ui_flutter: ^9.12.0
   quick_actions: ^1.1.0
-  rive: ^0.13.20
+  rive: ^0.14.4
   rxdart: ^0.28.0
   screenshot: ^3.0.0
-  sentry_flutter: ^9.13.0
+  sentry_flutter: ^9.14.0
+  shared_preferences: ^2.3.2
   share_plus: ^11.1.0
+  liquid_glass_renderer: ^0.2.0-dev.4
   sliding_up_panel: ^2.0.0+1
   timeago: ^3.0.2
   url_launcher: ^6.0.3
   auto_route: ^11.1.0
+  mixpanel_flutter: ^2.5.0
+  sign_in_with_apple: ^7.0.0
+  crypto: ^3.0.6
 
 dev_dependencies:
   auto_route_generator: ^10.4.0
@@ -94,29 +99,17 @@ dev_dependencies:
     sdk: flutter
   freezed: ^3.2.3
   flutter_launcher_icons: ^0.11.0
-  hive_generator_io: ^3.2.2
   injectable_generator: ^2.9.0
   lint: ^2.8.0
   mocktail: ^1.0.4
   pigeon: ^26.1.7
   sentry_dart_plugin: ^3.2.1
+  yaml: ^3.1.3
 
 sentry:
   upload_debug_symbols: true
   upload_source_maps: false
   upload_sources: true
-
-flutter_native_splash:
-  color: "#fafafa"
-  image: assets/ic_launcher.png
-  color_dark: "#181818"
-  image_dark: assets/ic_launcher.png
-  android: true
-  ios: false
-  web: false
-  android_gravity: center
-  #fullscreen: false
-  android12: false
 
 flutter_icons:
   android: true
@@ -138,6 +131,7 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
+    - assets/sounds/
   # To add assets to your application, add an assets section, like this:
   # assets:
   #  - images/a_dot_burr.jpeg
@@ -168,6 +162,20 @@ flutter:
           weight: 800
         - asset: assets/fonts/Proxima Nova Black.otf
           weight: 900
+
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces-Variable.ttf
+          weight: 400
+
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/Satoshi-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Satoshi-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Satoshi-Bold.otf
+          weight: 700
 
     - family: JamIcons
       fonts:
@@ -251,3 +259,7 @@ flutter:
           style: italic
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+dependency_overrides:
+  cloud_functions:
+    path: packages/cloud_functions

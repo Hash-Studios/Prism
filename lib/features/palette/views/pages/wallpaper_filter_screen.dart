@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
@@ -15,7 +18,6 @@ import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/palette/views/pages/custom_filters.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/globals.dart' as globals;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -26,16 +28,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image/image.dart' as imagelib;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:photofilters/filters/preset_filters.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  final List<dynamic>? arguments;
+  const WallpaperFilterScreen({super.key, this.image, this.finalImage, this.filename, this.finalFilename});
 
-  const WallpaperFilterScreen({super.key, this.arguments});
+  final imagelib.Image? image;
+  final imagelib.Image? finalImage;
+  final String? filename;
+  final String? finalFilename;
 
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
@@ -114,11 +118,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     loading = false;
     isLoading = false;
     _filter = selectedFilters[0];
-    final args = widget.arguments;
-    image = args?[0] as imagelib.Image?;
-    finalImage = args?[1] as imagelib.Image?;
-    filename = args?[2] as String?;
-    finalFilename = args?[3] as String?;
+    image = widget.image;
+    finalImage = widget.finalImage;
+    filename = widget.filename;
+    finalFilename = widget.finalFilename;
   }
 
   @override
@@ -132,14 +135,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.both);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Both', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
+      );
       logger.d(e.toString());
     }
     if (!mounted) {
@@ -154,7 +161,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.lock);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -162,7 +171,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Lock', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
+      );
     }
     if (!mounted) {
       return;
@@ -176,7 +187,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.home);
       if (result) {
         logger.d("Success");
-        analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Success'});
+        analytics.track(
+          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
+        );
         toasts.codeSend("Wallpaper set successfully!");
       } else {
         logger.d("Failed");
@@ -184,7 +197,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       }
     } catch (e) {
       logger.d(e.toString());
-      analytics.logEvent(name: 'set_wall', parameters: {'type': 'Home', 'result': 'Failure'});
+      analytics.track(
+        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
+      );
     }
     if (!mounted) {
       return;
@@ -195,12 +210,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   bool get _selectedFilterNeedsPremiumSpend => _filter != null && _filter is! NoFilter;
 
   Future<void> _runWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
-    if (!_selectedFilterNeedsPremiumSpend || globals.prismUser.premium || _premiumFilterUnlockedForSession) {
+    if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
       return;
     }
 
-    if (!globals.prismUser.loggedIn) {
+    if (!app_state.prismUser.loggedIn) {
       toasts.codeSend('Sign in to use premium filters with coins.');
       googleSignInPopUp(context, () {
         unawaited(_runWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
@@ -208,10 +223,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
 
-    analytics.logEvent(
-      name: 'coin_premium_filter_spend_attempt',
-      parameters: <String, Object>{'sourceTag': sourceTag, 'filter': _filter?.name ?? ''},
-    );
+    analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: sourceTag, filter: _filter?.name ?? ''));
 
     CoinMutationResult spendResult;
     try {
@@ -239,13 +251,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
     _premiumFilterUnlockedForSession = true;
     if (spendResult.changed) {
-      analytics.logEvent(
-        name: 'coin_premium_filter_spend_success',
-        parameters: <String, Object>{
-          'sourceTag': sourceTag,
-          'coinsSpent': CoinPolicy.premiumFilter,
-          'filter': _filter?.name ?? '',
-        },
+      analytics.track(
+        CoinPremiumFilterSpendSuccessEvent(
+          sourceTag: sourceTag,
+          coinsSpent: CoinPolicy.premiumFilter,
+          filter: _filter?.name ?? '',
+        ),
       );
       toasts.codeSend('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
     }
@@ -318,7 +329,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         return;
       case _PremiumFilterLowBalanceAction.upgrade:
         if (mounted) {
-          context.router.push(const UpgradeRoute());
+          await PaywallOrchestrator.instance.present(
+            context,
+            placement: PaywallPlacement.lowBalance,
+            source: 'premium_filter_low_balance',
+          );
         }
         return;
       case _PremiumFilterLowBalanceAction.none:
@@ -327,10 +342,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
-    analytics.logEvent(
-      name: 'coin_filter_watch_and_retry_used',
-      parameters: <String, Object>{'sourceTag': sourceTag, 'filter': _filter?.name ?? ''},
-    );
+    analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _filter?.name ?? ''));
     final bool watched = await _watchRewardedAd();
     if (!watched) {
       toasts.error('Ad was not completed.');
@@ -338,6 +350,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
     try {
       await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: '$sourceTag.rewarded_ad');
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
+          context,
+          source: 'premium_filter_watch_ad',
+        );
+      }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: '$sourceTag.rewarded_ad', error: error, stackTrace: stackTrace);
       toasts.error('Unable to credit coins right now.');
@@ -394,10 +412,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
     toasts.codeSend("Processing Wallpaper");
     final imageFile = await saveFilteredImage();
-    final status = await Permission.storage.status;
-    if (!status.isGranted) {
-      await Permission.storage.request();
-    }
     if (!mounted) {
       return;
     }
@@ -408,13 +422,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     try {
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
-        analytics.logEvent(name: 'download_wallpaper', parameters: {'link': imageFile.path});
+        analytics.track(DownloadWallpaperEvent(link: imageFile.path));
         toasts.codeSend("Wall Saved in Pictures!");
       } else {
         toasts.error("Couldn't save wallpaper. Please retry!");
       }
     } on PlatformException catch (e) {
-      logger.e('saveMedia failed', error: e);
+      if (e.code == 'channel-error') {
+        logger.w('saveMedia channel unavailable (native side not registered)', error: e);
+      } else {
+        logger.e('saveMedia failed', error: e);
+      }
       toasts.error("Couldn't save wallpaper. Please retry!");
     } catch (e) {
       logger.e('Unexpected saveMedia failure', error: e);
@@ -489,13 +507,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               onPressed: () =>
                   unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
             ),
-          if (loading)
-            Container()
-          else
-            IconButton(
-              icon: const Icon(JamIcons.check),
-              onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
-            ),
+          if (!hideSetWallpaperUi)
+            if (loading)
+              Container()
+            else
+              IconButton(
+                icon: const Icon(JamIcons.check),
+                onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+              ),
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
@@ -574,7 +593,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     final String filterName = filter.name;
     if (cachedFilters[filterName] == null) {
       return FutureBuilder<List<int>>(
-        future: compute(applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
+        future: compute(_applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
         builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.none:
@@ -632,7 +651,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<File> saveFilteredImage() async {
     final imageFile = await _localFile;
-    final List<int> finalFilterImageBytes = await compute(applyFilter, <String, dynamic>{
+    final List<int> finalFilterImageBytes = await compute(_applyFilter, <String, dynamic>{
       "filter": _filter,
       "image": finalImage,
       "filename": finalFilename,
@@ -643,7 +662,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Widget _buildFilteredImage(Filter? filter, imagelib.Image? image, String? filename) {
     return FutureBuilder<List<int>>(
-      future: compute(applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
+      future: compute(_applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
       builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.none:
@@ -731,7 +750,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 }
 
 ///The global applyfilter function
-List<int> applyFilter(Map<String, dynamic> params) {
+List<int> _applyFilter(Map<String, dynamic> params) {
   final Filter? filter = params["filter"] as Filter?;
   final imagelib.Image image = params["image"] as imagelib.Image;
   final String filename = params["filename"] as String;
@@ -742,11 +761,4 @@ List<int> applyFilter(Map<String, dynamic> params) {
   final imagelib.Image image0 = imagelib.Image.fromBytes(image.width, image.height, bytes);
 
   return bytes = imagelib.encodeNamedImage(image0, filename)!;
-}
-
-///The global buildThumbnail function
-List<int> buildThumbnail(Map<String, dynamic> params) {
-  final int width = params["width"] as int;
-  params["image"] = imagelib.copyResize(params["image"] as imagelib.Image, width: width);
-  return applyFilter(params);
 }

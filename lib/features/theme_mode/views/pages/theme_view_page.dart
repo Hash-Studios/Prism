@@ -1,8 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +42,7 @@ class ThemeView extends StatefulWidget {
 }
 
 class _ThemeViewState extends State<ThemeView> {
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   ThemeData? currentTheme;
   ThemeData? currentDarkTheme;
   Color? selectedAccentColor;
@@ -68,20 +71,11 @@ class _ThemeViewState extends State<ThemeView> {
           IconButton(
             icon: Icon(JamIcons.check, size: 30, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
-              final accentColor = int.parse(
-                selectedAccentColor
-                    .toString()
-                    .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                    .replaceAll("Color(", "")
-                    .replaceAll(")", ""),
-              );
-              final hexString = selectedAccentColor
-                  .toString()
-                  .replaceAll("MaterialColor(primary value: Color(0xff", "")
-                  .replaceAll("Color(0xff", "")
-                  .replaceAll(")", "");
-              main.prefs.put("systemOverlayColor", accentColor);
-              analytics.logEvent(name: "accent_changed", parameters: {'color': hexString});
+              final Color resolvedAccentColor = selectedAccentColor ?? const Color(0xFFE57697);
+              final int accentColor = resolvedAccentColor.toARGB32();
+              final String hexString = accentColor.toRadixString(16).padLeft(8, '0').substring(2);
+              _settingsLocal.set("systemOverlayColor", accentColor);
+              analytics.track(AccentChangedEvent(color: hexString));
               Navigator.pop(context);
             },
           ),
@@ -116,7 +110,7 @@ class _ThemeViewState extends State<ThemeView> {
               showModalBottomSheet(
                 isScrollControlled: true,
                 context: context,
-                builder: (context) => PreferencePanel(
+                builder: (context) => _PreferencePanel(
                   selectedValue: context.prismThemeMode(listen: false) == ThemeMode.light
                       ? 1
                       : context.prismThemeMode(listen: false) == ThemeMode.dark
@@ -501,16 +495,16 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-class PreferencePanel extends StatefulWidget {
+class _PreferencePanel extends StatefulWidget {
   final int? selectedValue;
-  final Function(bool value)? func;
-  const PreferencePanel({super.key, this.selectedValue, this.func});
+  final void Function(bool value)? func;
+  const _PreferencePanel({this.selectedValue, this.func});
 
   @override
   _PreferencePanelState createState() => _PreferencePanelState();
 }
 
-class _PreferencePanelState extends State<PreferencePanel> {
+class _PreferencePanelState extends State<_PreferencePanel> {
   late int? _selectedValue;
 
   @override
