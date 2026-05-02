@@ -23,6 +23,8 @@ dependencies:
   bloc: ^8.1.4
   animations: ^2.0.0
   cached_network_image: ^3.0.0
+  arsenal:
+    path: ../arsenal
   carousel_slider: ^5.1.2
   collection: ^1.19.1
   cloud_firestore: ^6.2.0
@@ -181,82 +183,6 @@ flutter:
       fonts:
         - asset: assets/fonts/JamIcons.ttf
 
-    - family: BigShouldersDisplay
-      fonts:
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-Thin.ttf
-          weight: 100
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-ExtraLight.ttf
-          weight: 200
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-Light.ttf
-          weight: 300
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-Regular.ttf
-          weight: 400
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-Medium.ttf
-          weight: 500
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-SemiBold.ttf
-          weight: 600
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-Bold.ttf
-          weight: 700
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-ExtraBold.ttf
-          weight: 800
-        - asset: lib/core/arsenal/fonts/BigShouldersDisplay-Black.ttf
-          weight: 900
-
-    - family: Rajdhani
-      fonts:
-        - asset: lib/core/arsenal/fonts/Rajdhani-Light.ttf
-          weight: 300
-        - asset: lib/core/arsenal/fonts/Rajdhani-Regular.ttf
-          weight: 400
-        - asset: lib/core/arsenal/fonts/Rajdhani-Medium.ttf
-          weight: 500
-        - asset: lib/core/arsenal/fonts/Rajdhani-SemiBold.ttf
-          weight: 600
-        - asset: lib/core/arsenal/fonts/Rajdhani-Bold.ttf
-          weight: 700
-
-    - family: JetBrainsMono
-      fonts:
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-Thin.ttf
-          weight: 100
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-ExtraLight.ttf
-          weight: 200
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-Light.ttf
-          weight: 300
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-Regular.ttf
-          weight: 400
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-Medium.ttf
-          weight: 500
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-SemiBold.ttf
-          weight: 600
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-Bold.ttf
-          weight: 700
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-ExtraBold.ttf
-          weight: 800
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-ThinItalic.ttf
-          weight: 100
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-ExtraLightItalic.ttf
-          weight: 200
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-LightItalic.ttf
-          weight: 300
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-Italic.ttf
-          weight: 400
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-MediumItalic.ttf
-          weight: 500
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-SemiBoldItalic.ttf
-          weight: 600
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-BoldItalic.ttf
-          weight: 700
-          style: italic
-        - asset: lib/core/arsenal/fonts/JetBrainsMono-ExtraBoldItalic.ttf
-          weight: 800
-          style: italic
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
 
