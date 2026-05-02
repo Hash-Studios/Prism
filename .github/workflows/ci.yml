@@ -101,7 +101,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
       - name: Read Flutter version from .fvmrc
         if: steps.changes.outputs.app_size == 'true'
