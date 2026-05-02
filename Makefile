@@ -1,5 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset update-goldens verify-goldens install-hooks
-
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
 DEVICE ?=
@@ -263,17 +262,6 @@ test: ensure-fvm
 	else \
 		echo "No test files found, skipping."; \
 	fi
-
-update-goldens: ensure-fvm  ## Regenerate goldens only for changed Arsenal components
-	@./tool/update_goldens.sh
-
-verify-goldens: ensure-fvm  ## Fail if goldens don't match current renders
-	@$(FLUTTER) test test/core/arsenal/
-
-install-hooks:  ## Install git hooks (run once after cloning)
-	@cp tool/pre_commit_goldens.sh .git/hooks/pre-commit
-	@chmod +x .git/hooks/pre-commit
-	@echo "Git pre-commit hook installed."
 
 find-unused: ensure-fvm ## Find unreachable files and unused public symbols
 	@$(DART) run tool/find_unused_code.dart
