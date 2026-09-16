@@ -16,7 +16,6 @@ import 'package:Prism/features/profile_completeness/views/widgets/profile_comple
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
-// import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
@@ -281,14 +280,9 @@ class _ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<_ProfileChild> {
-  // int favCount = 0;
-  // int profileCount = 0;
   final ScrollController scrollController = ScrollController();
-  // int count = 0;
   @override
   void initState() {
-    // count = 0;
-    // checkFav();
     super.initState();
   }
 
@@ -815,62 +809,11 @@ class _ProfileChildState extends State<_ProfileChild> {
                     ),
                   ),
                 ),
-              // Wallpapers / Setups tab bar temporarily disabled — single wallpapers pane only.
-              // SliverAppBar(
-              //   backgroundColor: Theme.of(context).primaryColor,
-              //   automaticallyImplyLeading: false,
-              //   pinned: true,
-              //   titleSpacing: 0,
-              //   expandedHeight: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn ? 50 : 0,
-              //   title: SizedBox(
-              //     width: MediaQuery.of(context).size.width,
-              //     height: 57,
-              //     child: ColoredBox(
-              //       color: Theme.of(context).primaryColor,
-              //       child: SizedBox.expand(
-              //         child: TabBar(
-              //           indicatorColor: Theme.of(context).colorScheme.secondary,
-              //           indicatorSize: TabBarIndicatorSize.label,
-              //           unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
-              //           labelColor: const Color(0xFFFFFFFF),
-              //           tabs: [
-              //             Text(
-              //               "Wallpapers",
-              //               style: Theme.of(
-              //                 context,
-              //               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              //             ),
-              //             Text(
-              //               "Setups",
-              //               style: Theme.of(
-              //                 context,
-              //               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
             body: Padding(
               padding: const EdgeInsets.only(top: 5),
               child: UserProfileLoader(email: widget.email),
             ),
-            // When Setups tab returns, restore DefaultTabController(length: 2), the SliverAppBar+TabBar above,
-            // and TabBarView with UserProfileSetupLoader as second child (uncomment user_profile_setup_loader import).
-            // body: TabBarView(
-            //   children: [
-            //     Padding(
-            //       padding: const EdgeInsets.only(top: 5),
-            //       child: UserProfileLoader(email: widget.email),
-            //     ),
-            //     Padding(
-            //       padding: const EdgeInsets.only(top: 5),
-            //       child: UserProfileSetupLoader(email: widget.email),
-            //     ),
-            //   ],
-            // ),
           ),
         ),
       ],

@@ -37,7 +37,7 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
-import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';

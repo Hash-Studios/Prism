@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
-import 'package:Prism/features/deep_link/domain/entities/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:http/http.dart' as http;
 

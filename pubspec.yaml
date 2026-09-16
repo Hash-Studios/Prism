@@ -19,7 +19,6 @@ environment:
 
 dependencies:
   animations: ^2.0.0
-  app_links: ^6.4.1
   async_wallpaper: ^3.0.0
   audioplayers: ^6.5.1
   auto_route: ^11.1.0
