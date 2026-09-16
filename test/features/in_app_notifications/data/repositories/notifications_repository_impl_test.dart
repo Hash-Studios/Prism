@@ -1,13 +1,13 @@
-import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
-import 'package:Prism/core/persistence/local_store.dart';
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/in_app_notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../support/fake_user_block_repository.dart';
+import '../../../../support/in_memory_local_store.dart';
 
 void main() {
   group('NotificationsRepositoryImpl', () {
@@ -16,7 +16,7 @@ void main() {
     });
 
     test('waits for blocked creators and prunes cached blocked notifications before returning local data', () async {
-      final blocks = _FakeUserBlockRepository.pending();
+      final blocks = FakeUserBlockRepository.pending();
       final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
         _notification(id: 'blocked', followerEmail: 'blocked@example.com'),
         _notification(id: 'visible', followerEmail: 'visible@example.com'),
@@ -42,7 +42,7 @@ void main() {
 class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
   _FakeNotificationsLocalDataSource(List<InAppNotificationEntity> items)
     : _items = List<InAppNotificationEntity>.from(items),
-      super(_InMemoryStore());
+      super(InMemoryLocalStore());
 
   List<InAppNotificationEntity> _items;
   int readCount = 0;
@@ -91,88 +91,6 @@ class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
   @override
   Future<void> writeAll(List<InAppNotificationEntity> items) async {
     _items = List<InAppNotificationEntity>.from(items);
-  }
-}
-
-class _FakeUserBlockRepository implements UserBlockRepository {
-  _FakeUserBlockRepository.pending();
-
-  final StreamController<Set<String>> _controller = StreamController<Set<String>>.broadcast();
-  final Completer<Set<String>> _initialLoad = Completer<Set<String>>();
-
-  Set<String> _cached = <String>{};
-  bool _hasLoaded = false;
-
-  void completeInitial(Set<String> blocked) {
-    _cached = blocked;
-    _hasLoaded = true;
-    if (!_initialLoad.isCompleted) {
-      _initialLoad.complete(blocked);
-    }
-    _controller.add(blocked);
-  }
-
-  @override
-  Set<String> get cachedBlockedCreatorEmails => _cached;
-
-  @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
-    if (waitForInitialLoad && !_hasLoaded) {
-      return _initialLoad.future;
-    }
-    return _cached;
-  }
-
-  @override
-  bool get hasLoadedBlockedCreatorEmails => _hasLoaded;
-
-  @override
-  Stream<Set<String>> watchBlockedCreatorEmails() => _controller.stream;
-
-  @override
-  Future<Result<void>> blockUser({required String targetUserId}) async => Result.success(null);
-
-  @override
-  Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async =>
-      Result.success(const <BlockedUserListRow>[]);
-
-  @override
-  Future<Result<void>> unblockUser({required String targetUserId}) async => Result.success(null);
-}
-
-class _InMemoryStore implements LocalStore {
-  final Map<String, Object?> _data = <String, Object?>{};
-
-  @override
-  Future<void> clearAll() async {
-    _data.clear();
-  }
-
-  @override
-  Future<void> clearPrefix(String prefix) async {
-    _data.removeWhere((key, value) => key.startsWith(prefix));
-  }
-
-  @override
-  Future<void> delete(String key) async {
-    _data.remove(key);
-  }
-
-  @override
-  Object? get(String key) => _data[key];
-
-  @override
-  Future<void> init() async {}
-
-  @override
-  bool get isReady => true;
-
-  @override
-  Future<List<String>> keys() async => _data.keys.toList(growable: false);
-
-  @override
-  Future<void> set(String key, Object? value) async {
-    _data[key] = value;
   }
 }
 
