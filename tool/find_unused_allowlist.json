@@ -97,7 +97,7 @@
       "PublicProfileSetupEntityWallpaperX",
       "FavouriteSetupEntityWallpaperX"
     ],
-    "lib/core/widgets/popup/changelogPopUp.dart": [
+    "lib/core/widgets/popup/changelog_pop_up.dart": [
       "ChangeType"
     ],
     "lib/core/analytics/trackers/content_load_tracker.dart": [

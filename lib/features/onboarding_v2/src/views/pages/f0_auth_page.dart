@@ -2,7 +2,7 @@ import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_copy.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';

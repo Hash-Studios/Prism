@@ -1,6 +1,6 @@
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/badge_model.dart';
+import 'package:Prism/auth/transaction_model.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';

@@ -8,7 +8,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
+import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';

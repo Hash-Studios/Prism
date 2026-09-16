@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'badgeModel.g.dart';
+part 'badge_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class Badge {

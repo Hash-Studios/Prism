@@ -6,7 +6,7 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/popup/contriPopUp.dart';
+import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';

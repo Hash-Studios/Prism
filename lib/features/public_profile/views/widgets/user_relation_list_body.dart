@@ -4,7 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
+import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';

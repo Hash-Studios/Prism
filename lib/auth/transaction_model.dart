@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'transactionModel.g.dart';
+part 'transaction_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class PrismTransaction {

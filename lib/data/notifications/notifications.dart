@@ -8,7 +8,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
-import 'package:Prism/data/notifications/model/inAppNotifModel.dart';
+import 'package:Prism/data/notifications/model/in_app_notif_model.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';

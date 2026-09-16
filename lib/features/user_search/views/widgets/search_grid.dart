@@ -7,9 +7,9 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as p_data;
-import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/data/wallhaven/provider/wallhavenWithoutProvider.dart' as w_data;
+import 'package:Prism/data/pexels/provider/pexels_without_provider.dart' as p_data;
+import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/data/wallhaven/provider/wallhaven_without_provider.dart' as w_data;
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';

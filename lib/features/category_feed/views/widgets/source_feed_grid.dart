@@ -4,7 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
-import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
+import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';

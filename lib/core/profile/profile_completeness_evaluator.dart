@@ -1,4 +1,4 @@
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/user_model.dart';
 
 enum ProfileCompletenessStep { photo, username, bio, socialLink }
 

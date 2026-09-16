@@ -4,7 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
+import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';

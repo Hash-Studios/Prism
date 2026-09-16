@@ -55,7 +55,7 @@ import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/notifications/localNotification.dart';
+import 'package:Prism/notifications/local_notification.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_core/firebase_core.dart';

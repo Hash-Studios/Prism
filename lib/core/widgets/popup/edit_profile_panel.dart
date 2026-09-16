@@ -8,7 +8,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
