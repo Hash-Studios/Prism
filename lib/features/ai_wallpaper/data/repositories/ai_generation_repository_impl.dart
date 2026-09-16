@@ -8,7 +8,6 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
-import 'package:Prism/features/ai_wallpaper/domain/repositories/ai_generation_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
@@ -23,7 +22,7 @@ class AiGenerationApiException implements Exception {
   String toString() => 'AiGenerationApiException(code: $code, statusCode: $statusCode, message: $message)';
 }
 
-class AiGenerationRepositoryImpl implements AiGenerationRepository {
+class AiGenerationRepositoryImpl {
   AiGenerationRepositoryImpl({http.Client? client, FirebaseAuth? auth})
     : _client = client ?? http.Client(),
       _auth = auth ?? FirebaseAuth.instance;
@@ -33,7 +32,6 @@ class AiGenerationRepositoryImpl implements AiGenerationRepository {
   final http.Client _client;
   final FirebaseAuth _auth;
 
-  @override
   Future<AiGenerationRecord> generate({
     required String prompt,
     required AiStylePreset stylePreset,
@@ -77,7 +75,6 @@ class AiGenerationRepositoryImpl implements AiGenerationRepository {
     return record;
   }
 
-  @override
   Future<AiGenerationRecord> generateVariation({
     required String generationId,
     required AiChargeMode chargeMode,
@@ -115,13 +112,11 @@ class AiGenerationRepositoryImpl implements AiGenerationRepository {
     return record;
   }
 
-  @override
   Future<Map<String, dynamic>> prefillSubmissionMetadata({required String generationId}) async {
     final data = await _post('/metadata/prefill', <String, dynamic>{'generationId': generationId});
     return data;
   }
 
-  @override
   Future<void> saveHistoryRecord(AiGenerationRecord record) async {
     await firestoreClient.setDoc(
       FirebaseCollections.aiGenerations,
@@ -132,7 +127,6 @@ class AiGenerationRepositoryImpl implements AiGenerationRepository {
     );
   }
 
-  @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async {
     try {
       final rows = await firestoreClient.query<AiGenerationRecord>(
@@ -168,7 +162,7 @@ class AiGenerationRepositoryImpl implements AiGenerationRepository {
     }
   }
 
-  Future<AiGenerationRecord?> _fetchById(String generationId) async {
+  Future<AiGenerationRecord?> _fetchById(String generationId) {
     return firestoreClient.getById<AiGenerationRecord>(
       FirebaseCollections.aiGenerations,
       generationId,

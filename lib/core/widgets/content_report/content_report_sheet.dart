@@ -2,7 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -139,16 +139,21 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
             Text(widget.subtitle!, style: Theme.of(context).textTheme.bodySmall),
           ],
           const SizedBox(height: 16),
-          ...kContentReportReasons.map((pair) {
-            final bool sel = _selectedWire == pair.$1;
-            return RadioListTile<String>(
-              value: pair.$1,
-              groupValue: _selectedWire,
-              title: Text(pair.$2),
-              onChanged: _submitting ? null : (String? v) => setState(() => _selectedWire = v),
-              selected: sel,
-            );
-          }),
+          RadioGroup<String>(
+            groupValue: _selectedWire,
+            onChanged: (String? v) {
+              if (_submitting) {
+                return;
+              }
+              setState(() => _selectedWire = v);
+            },
+            child: Column(
+              children: kContentReportReasons.map((pair) {
+                final bool sel = _selectedWire == pair.$1;
+                return RadioListTile<String>(value: pair.$1, title: Text(pair.$2), selected: sel);
+              }).toList(),
+            ),
+          ),
           TextField(
             controller: _details,
             enabled: !_submitting,

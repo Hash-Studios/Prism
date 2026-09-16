@@ -55,12 +55,11 @@ extension SetupsEventPatterns on SetupsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
+return started(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
 return fetchMoreRequested(_that);case _:
   return orElse();
 
@@ -79,12 +78,11 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _RefreshRequested():
-return refreshRequested(_that);case _FetchMoreRequested():
+return started(_that);case _FetchMoreRequested():
 return fetchMoreRequested(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -102,12 +100,11 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _RefreshRequested() when refreshRequested != null:
-return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
+return started(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
 return fetchMoreRequested(_that);case _:
   return null;
 
@@ -125,11 +122,10 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  fetchMoreRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started();case _RefreshRequested() when refreshRequested != null:
-return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
+return started();case _FetchMoreRequested() when fetchMoreRequested != null:
 return fetchMoreRequested();case _:
   return orElse();
 
@@ -148,11 +144,10 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  fetchMoreRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started();case _RefreshRequested():
-return refreshRequested();case _FetchMoreRequested():
+return started();case _FetchMoreRequested():
 return fetchMoreRequested();case _:
   throw StateError('Unexpected subclass');
 
@@ -170,11 +165,10 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  fetchMoreRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started();case _RefreshRequested() when refreshRequested != null:
-return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
+return started();case _FetchMoreRequested() when fetchMoreRequested != null:
 return fetchMoreRequested();case _:
   return null;
 
@@ -207,38 +201,6 @@ int get hashCode => runtimeType.hashCode;
 @override
 String toString() {
   return 'SetupsEvent.started()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
-
-
-class _RefreshRequested implements SetupsEvent {
-  const _RefreshRequested();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RefreshRequested);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'SetupsEvent.refreshRequested()';
 }
 
 

@@ -40,7 +40,6 @@ class _BottomBarState extends State<BottomBar> {
         heightFactor: 1.0,
         child: Row(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             IntrinsicWidth(child: PrismBottomNav()),
             SizedBox(width: 12),
@@ -134,7 +133,6 @@ class _BottomBarScrollVisibilityState extends State<_BottomBarScrollVisibility> 
           ignoring: !showButton,
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 120),
-            curve: Curves.linear,
             opacity: showButton ? 1 : 0,
             child: SafeArea(
               child: Padding(

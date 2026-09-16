@@ -13,13 +13,13 @@ import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
+import 'package:Prism/core/widgets/animated/favourite_icon.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/animated/showUp.dart';
-import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
+import 'package:Prism/core/widgets/animated/show_up.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/home/core/collapsed_panel.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
@@ -27,7 +27,7 @@ import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adap
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart' as sdata;
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -119,7 +119,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
               if (snapshot.hasError) {
                 return Center(child: Loader());
               } else {
-                final setup = snapshot.data ?? sdata.setup;
+                final setup = snapshot.data;
                 if (setup == null) {
                   return Center(child: Loader());
                 }
@@ -461,7 +461,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                             children: [
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
-                                                onTap: () async {
+                                                onTap: () {
                                                   if (!wallpaperValue.isEncoded) {
                                                     if (setup.wallId == null || setup.wallId == "") {
                                                       logger.d("Id Not Found!");
@@ -488,7 +488,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               ),
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
-                                                onTap: () async {
+                                                onTap: () {
                                                   openPrismLink(context, setup.iconUrl.toString());
                                                 },
                                                 tileText: setup.icon.toString(),
@@ -505,7 +505,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                             children: [
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
-                                                onTap: () async {
+                                                onTap: () {
                                                   if (!wallpaperValue.isEncoded) {
                                                     if (setup.wallId == null || setup.wallId == "") {
                                                       logger.d("Id Not Found!");
@@ -532,7 +532,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               ),
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
-                                                onTap: () async {
+                                                onTap: () {
                                                   openPrismLink(context, setup.iconUrl.toString());
                                                 },
                                                 tileText: setup.icon.toString(),
@@ -542,7 +542,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               ),
                                               SetupDetailsTile(
                                                 isInstalled: Future.value(false),
-                                                onTap: () async {
+                                                onTap: () {
                                                   openPrismLink(context, setup.widgetUrl.toString());
                                                 },
                                                 tileText: setup.widget.toString(),
@@ -559,7 +559,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                               children: [
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
-                                                  onTap: () async {
+                                                  onTap: () {
                                                     if (!wallpaperValue.isEncoded) {
                                                       if (setup.wallId == null || setup.wallId == "") {
                                                         logger.d("Id Not Found!");
@@ -587,7 +587,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 ),
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
-                                                  onTap: () async {
+                                                  onTap: () {
                                                     openPrismLink(context, setup.iconUrl.toString());
                                                   },
                                                   tileText: setup.icon.toString(),
@@ -597,7 +597,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 ),
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
-                                                  onTap: () async {
+                                                  onTap: () {
                                                     openPrismLink(context, setup.widgetUrl.toString());
                                                   },
                                                   tileText: setup.widget.toString(),
@@ -607,7 +607,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                                 ),
                                                 SetupDetailsTile(
                                                   isInstalled: Future.value(false),
-                                                  onTap: () async {
+                                                  onTap: () {
                                                     openPrismLink(context, setup.widgetUrl2.toString());
                                                   },
                                                   tileText: setup.widget2.toString(),
@@ -835,7 +835,7 @@ class SetupDetailsTile extends StatelessWidget {
   final Duration delay;
   final String tileType;
   final String tileText;
-  final Function onTap;
+  final VoidCallback onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
     super.key,
@@ -949,7 +949,7 @@ class _ModifiedShareDownloadButton extends StatelessWidget {
         ? setup.wallId != null && setup.wallId != ""
               ? DownloadButton(link: wallpaperValue.primaryUrl, colorChanged: false)
               : GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     openPrismLink(context, wallpaperValue.primaryUrl);
                   },
                   child: Container(
@@ -969,7 +969,7 @@ class _ModifiedShareDownloadButton extends StatelessWidget {
                   ),
                 )
         : GestureDetector(
-            onTap: () async {
+            onTap: () {
               openPrismLink(context, wallpaperValue.primaryUrl);
             },
             child: Container(
@@ -999,7 +999,7 @@ class _ModifiedShareSetWallpaperButton extends StatelessWidget {
         ? setup.wallId != null && setup.wallId != ""
               ? SetWallpaperButton(url: wallpaperValue.primaryUrl, colorChanged: false)
               : GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     openPrismLink(context, wallpaperValue.primaryUrl);
                   },
                   child: Container(
@@ -1019,7 +1019,7 @@ class _ModifiedShareSetWallpaperButton extends StatelessWidget {
                   ),
                 )
         : GestureDetector(
-            onTap: () async {
+            onTap: () {
               openPrismLink(context, wallpaperValue.primaryUrl);
             },
             child: Container(

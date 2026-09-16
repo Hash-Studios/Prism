@@ -231,7 +231,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
 
   void _requestPalette(String imageUrl) {
     if (imageUrl.trim().isEmpty) return;
-    _paletteBloc.add(PaletteEvent.paletteCleared());
+    _paletteBloc.add(const PaletteEvent.paletteCleared());
     _paletteBloc.add(PaletteEvent.paletteRequested(imageUrl: imageUrl));
   }
 

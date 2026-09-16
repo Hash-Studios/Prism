@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/utils/result.dart';

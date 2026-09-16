@@ -1,7 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
+import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
 import 'package:flutter/material.dart';
 

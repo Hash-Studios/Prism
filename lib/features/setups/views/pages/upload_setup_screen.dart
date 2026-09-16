@@ -8,8 +8,8 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/apps/app_icon.dart';
-import 'package:Prism/data/apps/appsData.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
+import 'package:Prism/data/apps/apps_data.dart';
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -20,7 +20,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as Path;
+import 'package:path/path.dart' as path;
 import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
@@ -176,7 +176,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       await github.repositories
           .createFile(
             RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoSetups)),
-            CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
+            CreateFile(message: path.basename(image.path), content: base64Image, path: path.basename(image.path)),
           )
           .then(
             (value) => setState(() {
@@ -189,6 +189,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
       });
     } catch (e) {
       logger.d(e.toString());
+      if (!mounted) return;
       Navigator.pop(context);
       toasts.error("Some uploading issue, please try again.");
     }
@@ -206,11 +207,11 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
         actions: [
           TextButton(
             onPressed: !isProcessing && !isUploading
-                ? () async {
+                ? () {
                     setState(() {
                       isSaved = true;
                     });
-                    WallStore.createDraftSetup(
+                    wall_store.createDraftSetup(
                       id,
                       imageURL,
                       wallpaperProvider,
@@ -246,7 +247,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
           ),
           TextButton(
             onPressed: !isProcessing && !isUploading
-                ? () async {
+                ? () {
                     if (setupName.text == "" ||
                         setupDesc.text == "" ||
                         (wallpaperUploaded == false &&
@@ -258,7 +259,7 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                     } else {
                       Navigator.pop(context);
                       analytics.track(UploadSetupEvent(setupId: id ?? '', link: imageURL ?? ''));
-                      WallStore.createSetup(
+                      wall_store.createSetup(
                         id,
                         imageURL,
                         wallpaperProvider,
@@ -894,8 +895,10 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                               ? null
                               : () async {
                                   final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                                  if (!mounted) return;
                                   if (pickedFile != null) {
                                     Future.delayed(Duration.zero).then((value) async {
+                                      if (!context.mounted) return;
                                       final argumentsFromWall = await context.router.push(
                                         UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
                                       );

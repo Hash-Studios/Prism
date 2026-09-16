@@ -1,4 +1,4 @@
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/session/domain/entities/badge_entity.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';

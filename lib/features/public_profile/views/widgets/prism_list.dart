@@ -1,19 +1,14 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
-import 'package:Prism/logger/logger.dart';
+import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_mailer/flutter_mailer.dart';
 
 class PrismList extends StatelessWidget {
   void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
@@ -211,62 +206,6 @@ class PrismList extends StatelessWidget {
                 ),
               ),
             );
-          },
-        ),
-        ListTile(
-          leading: const Icon(JamIcons.bug),
-          title: Text(
-            "Report a bug",
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.secondary,
-              fontWeight: FontWeight.w500,
-              fontFamily: "Proxima Nova",
-            ),
-          ),
-          subtitle: const Text("Tell us if you found out a bug", style: TextStyle(fontSize: 12)),
-          onTap: () async {
-            _trackAction(
-              AnalyticsActionValue.drawerContactSupportTapped,
-              sourceContext: 'profile_prism_list_report_bug',
-            );
-            if (Platform.isAndroid) {
-              final androidInfo = await DeviceInfoPlugin().androidInfo;
-              final release = androidInfo.version.release;
-              final sdkInt = androidInfo.version.sdkInt;
-              final manufacturer = androidInfo.manufacturer;
-              final model = androidInfo.model;
-              logger.d('Android $release (SDK $sdkInt), $manufacturer $model');
-              final String zipPath = await zipLogs();
-              if (zipPath.startsWith(logExportDisabledMarker)) {
-                toasts.error('Log export is temporarily disabled.');
-                return;
-              }
-              final String encryptedZipPath = zipPath.split("::::").last;
-              final String encryptedZipKey = zipPath.split("::::").first;
-              final MailOptions mailOptions = MailOptions(
-                body:
-                    '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
-                recipients: ['hash.studios.inc@gmail.com'],
-                isHTML: true,
-                attachments: [encryptedZipPath],
-                appSchema: 'com.google.android.gm',
-              );
-              final MailerResponse response = await FlutterMailer.send(mailOptions);
-              if (response != MailerResponse.android) {
-                final MailOptions mailOptions = MailOptions(
-                  body:
-                      '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>',
-                  subject: '[BUG REPORT::PRISM]',
-                  recipients: ['hash.studios.inc@gmail.com'],
-                  isHTML: true,
-                  attachments: [zipPath],
-                );
-                await FlutterMailer.send(mailOptions);
-              } else {
-                toasts.codeSend("Bug report sent!");
-              }
-            }
           },
         ),
       ],

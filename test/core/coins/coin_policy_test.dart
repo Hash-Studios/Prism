@@ -13,13 +13,13 @@ void main() {
     expect(CoinPolicy.profileCompletion, 25);
     expect(CoinPolicy.proDailyBonus, 50);
 
-    expect(CoinEarnAction.rewardedAd.defaultAmount(), CoinPolicy.rewardedAd);
-    expect(CoinEarnAction.dailyLogin.defaultAmount(), CoinPolicy.dailyLogin);
-    expect(CoinEarnAction.streakBonus.defaultAmount(), CoinPolicy.streak7Bonus);
-    expect(CoinEarnAction.firstWallpaperUpload.defaultAmount(), CoinPolicy.firstWallpaperUpload);
-    expect(CoinEarnAction.referral.defaultAmount(), CoinPolicy.referral);
-    expect(CoinEarnAction.profileCompletion.defaultAmount(), CoinPolicy.profileCompletion);
-    expect(CoinEarnAction.proDailyBonus.defaultAmount(), CoinPolicy.proDailyBonus);
+    expect(CoinEarnAction.rewardedAd.defaultAmount(), 10);
+    expect(CoinEarnAction.dailyLogin.defaultAmount(), 5);
+    expect(CoinEarnAction.streakBonus.defaultAmount(), 40);
+    expect(CoinEarnAction.firstWallpaperUpload.defaultAmount(), 50);
+    expect(CoinEarnAction.referral.defaultAmount(), 100);
+    expect(CoinEarnAction.profileCompletion.defaultAmount(), 25);
+    expect(CoinEarnAction.proDailyBonus.defaultAmount(), 50);
   });
 
   test('coin spend values match revenue model', () {
@@ -32,11 +32,11 @@ void main() {
     expect(CoinPolicy.premiumPreview24h, 10);
     expect(CoinPolicy.lowBalanceNudgeThreshold, 10);
 
-    expect(CoinSpendAction.wallpaperDownload.cost(), CoinPolicy.wallpaperDownload);
-    expect(CoinSpendAction.premiumWallpaperDownload.cost(), CoinPolicy.premiumWallpaperDownload);
-    expect(CoinSpendAction.aiGeneration.cost(), CoinPolicy.aiGenerationFast);
-    expect(CoinSpendAction.premiumFilter.cost(), CoinPolicy.premiumFilter);
-    expect(CoinSpendAction.premiumPreview24h.cost(), CoinPolicy.premiumPreview24h);
+    expect(CoinSpendAction.wallpaperDownload.cost(), 5);
+    expect(CoinSpendAction.premiumWallpaperDownload.cost(), 15);
+    expect(CoinSpendAction.aiGeneration.cost(), 10);
+    expect(CoinSpendAction.premiumFilter.cost(), 5);
+    expect(CoinSpendAction.premiumPreview24h.cost(), 10);
     expect(CoinSpendAction.streakFreeze.cost(), StreakShopPolicy.streakFreezeCoins);
   });
 }

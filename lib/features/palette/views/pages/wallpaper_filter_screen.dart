@@ -13,8 +13,8 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/palette/views/pages/custom_filters.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -518,20 +518,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
+      body: SizedBox.expand(
         child: loading
             ? Center(child: Loader())
             : Column(
                 children: [
                   Expanded(
                     flex: 6,
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: _buildFilteredImage(_filter, finalImage, finalFilename),
-                    ),
+                    child: SizedBox.expand(child: _buildFilteredImage(_filter, finalImage, finalFilename)),
                   ),
                   const Divider(height: 1),
                   Expanded(

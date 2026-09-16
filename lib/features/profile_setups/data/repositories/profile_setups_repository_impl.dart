@@ -24,7 +24,7 @@ class ProfileSetupsRepositoryImpl implements ProfileSetupsRepository {
   Future<Result<ProfileSetupsPage>> fetchProfileSetups({required String email, required bool refresh}) async {
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
     if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
-      return Result.success(const ProfileSetupsPage(items: <ProfileSetupEntity>[], hasMore: false, nextCursor: null));
+      return Result.success(const ProfileSetupsPage(items: <ProfileSetupEntity>[], hasMore: false));
     }
     try {
       final cursor = _cursorByEmail[email];

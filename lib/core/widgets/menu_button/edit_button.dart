@@ -1,0 +1,113 @@
+import 'dart:io';
+
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/safe_image_decode.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as imagelib;
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+
+class EditButton extends StatefulWidget {
+  final String? url;
+  const EditButton({required this.url, super.key});
+
+  @override
+  _EditButtonState createState() => _EditButtonState();
+}
+
+class _EditButtonState extends State<EditButton> {
+  late bool isLoading;
+  late String imageData;
+  late String imageThumbData;
+
+  @override
+  void initState() {
+    isLoading = false;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CircularMenuButton(
+      onTap: () {
+        if (!isLoading) {
+          onEdit(widget.url);
+        }
+      },
+      isLoading: isLoading,
+      child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary, size: 20),
+    );
+  }
+
+  Future<void> onEdit(String? url) async {
+    if (url == null) {
+      toasts.error('No wallpaper URL available');
+      return;
+    }
+    setState(() {
+      isLoading = true;
+    });
+    toasts.codeSend("Loading Wallpaper");
+    try {
+      final response = await http.get(Uri.parse(url));
+      final documentDirectory = await getApplicationDocumentsDirectory();
+      final firstPath = "${documentDirectory.path}/images";
+      final filePathAndName = "${documentDirectory.path}/images/pic.jpg";
+      final filePathAndNameThumb = "${documentDirectory.path}/images/picThumb.jpg";
+      await Directory(firstPath).create(recursive: true);
+      final File file2 = File(filePathAndName);
+      file2.writeAsBytesSync(response.bodyBytes);
+      final File file3 = File(filePathAndNameThumb);
+      final List<int> imageBytesThumb = await compute<File, List<int>>(_resizeImage, file2);
+      file3.writeAsBytesSync(imageBytesThumb);
+      if (!mounted) return;
+      final thumbDecoded = decodeImageLenient(File(filePathAndNameThumb).readAsBytesSync());
+      final fullDecoded = decodeImageLenient(File(filePathAndName).readAsBytesSync());
+      if (thumbDecoded == null || fullDecoded == null) {
+        toasts.error('Could not open this image for editing');
+        setState(() {
+          isLoading = false;
+        });
+        return;
+      }
+      setState(() {
+        imageData = filePathAndName;
+        imageThumbData = filePathAndNameThumb;
+        isLoading = false;
+      });
+      context.router.push(
+        WallpaperFilterRoute(
+          image: thumbDecoded,
+          finalImage: fullDecoded,
+          filename: path.basename(File(filePathAndNameThumb).path),
+          finalFilename: path.basename(File(filePathAndName).path),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        toasts.error('Could not load wallpaper for editing');
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  static Future<List<int>> _resizeImage(File file) async {
+    final bytes = await file.readAsBytes();
+    final imagelib.Image? decoded = decodeImageLenient(bytes);
+    if (decoded == null) {
+      throw const FormatException('decodeImageLenient');
+    }
+    final imagelib.Image image = decoded;
+    final imagelib.Image resized = imagelib.copyResize(image, width: 300);
+    final List<int> resizedBytes = imagelib.encodeJpg(resized);
+    return resizedBytes;
+  }
+}

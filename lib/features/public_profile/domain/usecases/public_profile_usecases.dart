@@ -147,25 +147,6 @@ class UpdatePublicProfileLinksUseCase implements UseCase<PublicProfileEntity, Up
   }
 }
 
-class FetchUserSummariesParams {
-  const FetchUserSummariesParams({required this.emails, required this.currentUserEmail});
-
-  final List<String> emails;
-  final String currentUserEmail;
-}
-
-@lazySingleton
-class FetchUserSummariesUseCase implements UseCase<List<UserSummaryEntity>, FetchUserSummariesParams> {
-  FetchUserSummariesUseCase(this._repository);
-
-  final PublicProfileRepository _repository;
-
-  @override
-  Future<Result<List<UserSummaryEntity>>> call(FetchUserSummariesParams params) {
-    return _repository.fetchUserSummaries(emails: params.emails, currentUserEmail: params.currentUserEmail);
-  }
-}
-
 class FetchUserSummariesPageParams {
   const FetchUserSummariesPageParams({
     required this.allEmails,

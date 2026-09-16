@@ -5,7 +5,7 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
+import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
@@ -18,9 +18,9 @@ import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
+import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
-import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
@@ -35,7 +35,6 @@ import 'package:Prism/features/profile_setups/views/pages/profile_setup_view_scr
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
-import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
@@ -139,7 +138,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
     AutoRoute(path: '/setup/:setupName', page: ShareSetupViewRoute.page),
     AutoRoute(path: '/profile-setup-view', page: ProfileSetupViewRoute.page),
-    AutoRoute(path: '/user-profile-setup-view', page: UserProfileSetupViewRoute.page),
     AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/setup-guidelines', page: SetupGuidelinesRoute.page, guards: [_signedInGuard]),

@@ -361,9 +361,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
             FirestoreFilter(field: 'username', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: query),
             FirestoreFilter(field: 'username', op: FirestoreFilterOp.isLessThan, value: end),
           ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'username', descending: false)],
+          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'username')],
           limit: limit * 4, // over-fetch so we have enough after scope filtering
-          cachePolicy: FirestoreCachePolicy.networkOnly,
         ),
         (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
       );

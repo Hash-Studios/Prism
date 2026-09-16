@@ -4,6 +4,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/personalized_feed/domain/usecases/personalized_feed_usecases.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
@@ -21,22 +22,21 @@ int _elapsedLoadMs(Stopwatch sw) {
 
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
-  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase, this._getPersistedSeenKeysUseCase)
-    : super(PersonalizedFeedState.initial()) {
+  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase, this._repository) : super(PersonalizedFeedState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
-  final GetPersistedSeenKeysUseCase _getPersistedSeenKeysUseCase;
+  final PersonalizedFeedRepository _repository;
 
   Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
     // Restore persisted seen keys so the feed shows wallpapers the user hasn't
     // seen before, rather than re-serving the same top-ranked items each time.
     List<String> persistedSeenKeys = const <String>[];
     try {
-      persistedSeenKeys = await _getPersistedSeenKeysUseCase();
+      persistedSeenKeys = await _repository.readPersistedSeenKeys();
     } catch (e) {
       logger.w('[PersonalizedFeed] failed to load persisted seen keys: $e');
     }
@@ -59,7 +59,12 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     final nextPage = state.page + 1;
     final loadMoreStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
-      FetchPersonalizedFeedParams(page: nextPage, refresh: false, seenKeys: state.seenKeys, existingItems: state.items),
+      FetchPersonalizedFeedRequest(
+        page: nextPage,
+        refresh: false,
+        seenKeys: state.seenKeys,
+        existingItems: state.items,
+      ),
     );
     final loadMoreMs = _elapsedLoadMs(loadMoreStopwatch);
 
@@ -131,7 +136,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
     final initialStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
-      FetchPersonalizedFeedParams(
+      FetchPersonalizedFeedRequest(
         page: 1,
         refresh: true,
         seenKeys: initialSeenKeys,

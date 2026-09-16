@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
+import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart';
+import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';

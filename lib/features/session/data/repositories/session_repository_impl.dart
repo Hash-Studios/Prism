@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:Prism/auth/apple_auth.dart';
-import 'package:Prism/auth/badgeModel.dart';
+import 'package:Prism/auth/badge_model.dart';
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/transaction_model.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';

@@ -12,14 +12,13 @@ import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
-import 'package:Prism/core/widgets/animated/showUp.dart';
-import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
-import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/animated/favourite_icon.dart';
+import 'package:Prism/core/widgets/animated/show_up.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
-import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/core/widgets/home/core/collapsed_panel.dart';
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
@@ -27,9 +26,10 @@ import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adap
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +73,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
       }
       await context.router.push(
         WallpaperDetailRoute(
-          wallId: _setup.wallId!,
+          wallId: _setup.wallId,
           source: _setup.source ?? WallpaperSource.unknown,
           wallpaperUrl: _wallpaperValue.primaryUrl,
           thumbnailUrl: _setup.wallpaperThumb?.isNotEmpty == true ? _setup.wallpaperThumb! : _wallpaperValue.primaryUrl,
@@ -467,7 +467,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   ),
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
+                                    onTap: () {
                                       openPrismLink(context, _setup.iconUrl.toString());
                                     },
                                     tileText: _setup.icon.toString(),
@@ -492,7 +492,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   ),
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
+                                    onTap: () {
                                       openPrismLink(context, _setup.iconUrl.toString());
                                     },
                                     tileText: _setup.icon.toString(),
@@ -502,7 +502,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                   ),
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
+                                    onTap: () {
                                       openPrismLink(context, _setup.widgetUrl.toString());
                                     },
                                     tileText: _setup.widget.toString(),
@@ -527,7 +527,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
+                                      onTap: () {
                                         openPrismLink(context, _setup.iconUrl.toString());
                                       },
                                       tileText: _setup.icon.toString(),
@@ -537,7 +537,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
+                                      onTap: () {
                                         openPrismLink(context, _setup.widgetUrl.toString());
                                       },
                                       tileText: context.setupsAdapter(listen: false).setups![index!].widget.toString(),
@@ -547,7 +547,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
+                                      onTap: () {
                                         openPrismLink(
                                           context,
                                           context.setupsAdapter(listen: false).setups![index!].widgetUrl2.toString(),
@@ -734,7 +734,7 @@ class SetupDetailsTile extends StatelessWidget {
   final Duration delay;
   final String tileType;
   final String tileText;
-  final Function onTap;
+  final VoidCallback onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
     super.key,
@@ -848,7 +848,7 @@ class ModifiedDownloadButton extends StatelessWidget {
         ? hasWallId
               ? DownloadButton(link: wallpaper.primaryUrl, colorChanged: false)
               : GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     openPrismLink(context, wallpaper.primaryUrl);
                   },
                   child: Container(
@@ -868,7 +868,7 @@ class ModifiedDownloadButton extends StatelessWidget {
                   ),
                 )
         : GestureDetector(
-            onTap: () async {
+            onTap: () {
               openPrismLink(context, wallpaper.deepLinkUrl ?? wallpaper.primaryUrl);
             },
             child: Container(
@@ -898,7 +898,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
         ? hasWallId
               ? SetWallpaperButton(url: wallpaper.primaryUrl, colorChanged: false)
               : GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     openPrismLink(context, wallpaper.primaryUrl);
                   },
                   child: Container(
@@ -918,7 +918,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                   ),
                 )
         : GestureDetector(
-            onTap: () async {
+            onTap: () {
               openPrismLink(context, wallpaper.deepLinkUrl ?? wallpaper.primaryUrl);
             },
             child: Container(

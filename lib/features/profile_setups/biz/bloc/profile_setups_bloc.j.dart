@@ -14,7 +14,6 @@ part 'profile_setups_bloc.j.freezed.dart';
 class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
   ProfileSetupsBloc(this._fetchProfileSetupsUseCase) : super(ProfileSetupsState.initial()) {
     on<_Started>(_onStarted);
-    on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
   }
 
@@ -23,10 +22,6 @@ class ProfileSetupsBloc extends Bloc<ProfileSetupsEvent, ProfileSetupsState> {
   Future<void> _onStarted(_Started event, Emitter<ProfileSetupsState> emit) async {
     emit(state.copyWith(email: event.email));
     await _load(refresh: true, emit: emit);
-  }
-
-  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<ProfileSetupsState> emit) {
-    return _load(refresh: true, emit: emit);
   }
 
   Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<ProfileSetupsState> emit) async {
