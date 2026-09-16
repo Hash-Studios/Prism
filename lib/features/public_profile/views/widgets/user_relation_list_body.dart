@@ -254,7 +254,7 @@ class _UserList extends StatelessWidget {
     return ListView.separated(
       controller: scrollController,
       itemCount: itemCount,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           Divider(height: 1, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08), indent: 72),
       itemBuilder: (context, index) {
         if (index >= users.length) {
@@ -299,7 +299,7 @@ class _SearchBar extends StatelessWidget {
           ),
           suffixIcon: ValueListenableBuilder<TextEditingValue>(
             valueListenable: controller,
-            builder: (_, value, __) {
+            builder: (_, value, _) {
               if (value.text.isEmpty) return const SizedBox.shrink();
               return IconButton(
                 icon: Icon(

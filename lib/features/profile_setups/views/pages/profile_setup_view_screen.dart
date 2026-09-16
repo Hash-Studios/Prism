@@ -15,10 +15,10 @@ import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
@@ -74,7 +74,7 @@ class _ProfileSetupViewScreenState extends State<ProfileSetupViewScreen> with Si
       }
       await context.router.push(
         WallpaperDetailRoute(
-          wallId: _setup.wallId!,
+          wallId: _setup.wallId,
           source: _setup.source ?? WallpaperSource.unknown,
           wallpaperUrl: _wallpaperValue.primaryUrl,
           thumbnailUrl: _setup.wallpaperThumb?.isNotEmpty == true ? _setup.wallpaperThumb! : _wallpaperValue.primaryUrl,

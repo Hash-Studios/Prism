@@ -756,7 +756,7 @@ class NotificationCard extends StatelessWidget {
                         imageUrl: notification.imageUrl,
                         fit: BoxFit.cover,
                         memCacheWidth: memCacheWidth,
-                        placeholder: (_, __) =>
+                        placeholder: (_, _) =>
                             Center(child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.error)),
                         errorWidget: (_, _, _) => const SizedBox.shrink(),
                       ),

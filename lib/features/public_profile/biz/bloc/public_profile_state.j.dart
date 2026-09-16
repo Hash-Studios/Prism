@@ -76,8 +76,6 @@ abstract class PublicProfileState with _$PublicProfileState {
     followingPage: 0,
     hasMoreFollowers: false,
     hasMoreFollowing: false,
-    followerSearchResults: null,
-    followingSearchResults: null,
     isSearchingFollowers: false,
     isSearchingFollowing: false,
   );

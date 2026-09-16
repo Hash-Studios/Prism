@@ -1,7 +1,8 @@
 import 'dart:io';
+
+import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 
 sealed class WallpaperDetailState extends Equatable {
   const WallpaperDetailState();

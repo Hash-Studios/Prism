@@ -178,8 +178,6 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
                       childAspectRatio: 0.5,
-                      mainAxisSpacing: 0,
-                      crossAxisSpacing: 0,
                     ),
                     itemBuilder: (context, index) {
                       if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&

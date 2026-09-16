@@ -24,7 +24,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
       builder: (context, _) => ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          _SectionHeader('Rendering (Debug/Profile only)'),
+          const _SectionHeader('Rendering (Debug/Profile only)'),
           _ToggleTile(
             icon: Icons.grid_on,
             title: 'Paint Size Enabled',
@@ -60,9 +60,9 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             value: DebugFlags.instance.showSemanticsDebugger,
             onChanged: (v) => DebugFlags.instance.showSemanticsDebugger = v,
           ),
-          _SectionHeader('Animation Speed'),
-          _AnimationSpeedTile(),
-          _SectionHeader('Logging'),
+          const _SectionHeader('Animation Speed'),
+          const _AnimationSpeedTile(),
+          const _SectionHeader('Logging'),
           _ToggleTile(
             icon: Icons.notifications_active_outlined,
             title: 'Show Log Toasts',
@@ -70,7 +70,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             value: DebugFlags.instance.showLogToasts,
             onChanged: (v) => DebugFlags.instance.showLogToasts = v,
           ),
-          _SectionHeader('Network'),
+          const _SectionHeader('Network'),
           _ToggleTile(
             icon: Icons.wifi_off,
             title: 'Simulate No Internet',
@@ -78,7 +78,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             value: DebugFlags.instance.simulateNoInternet,
             onChanged: (v) => DebugFlags.instance.simulateNoInternet = v,
           ),
-          _SectionHeader('Maintenance'),
+          const _SectionHeader('Maintenance'),
           _ActionTile(
             icon: Icons.image_not_supported_outlined,
             title: 'Clear Image Cache',
@@ -121,7 +121,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
               ).showSnackBar(const SnackBar(content: Text('Debug flags reset'), duration: Duration(seconds: 2)));
             },
           ),
-          _SectionHeader('Admin Shortcuts'),
+          const _SectionHeader('Admin Shortcuts'),
           _ActionTile(
             icon: Icons.analytics_outlined,
             title: 'Firestore Telemetry',
@@ -134,7 +134,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             subtitle: 'Content moderation & push notification tool',
             onTap: () => context.router.pushPath('/admin-review'),
           ),
-          _SectionHeader('Danger Zone'),
+          const _SectionHeader('Danger Zone'),
           _ActionTile(
             icon: Icons.warning_amber,
             title: 'Force Crash',

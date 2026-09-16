@@ -171,7 +171,7 @@ class _TrendingList extends StatelessWidget {
         padding: const EdgeInsets.all(0),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox.shrink(),
+        separatorBuilder: (_, _) => const SizedBox.shrink(),
         itemBuilder: (context, index) {
           final wall = items[index];
           final thumbUrl = wall.thumbs?['original'] ?? wall.core.thumbnailUrl;
@@ -260,8 +260,8 @@ class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleT
         padding: EdgeInsets.zero,
         scrollDirection: Axis.horizontal,
         itemCount: 6,
-        separatorBuilder: (_, __) => const SizedBox.shrink(),
-        itemBuilder: (_, __) => Container(width: itemWidth, height: itemHeight, color: _animation.value),
+        separatorBuilder: (_, _) => const SizedBox.shrink(),
+        itemBuilder: (_, _) => Container(width: itemWidth, height: itemHeight, color: _animation.value),
       ),
     );
   }
@@ -312,7 +312,7 @@ class _CategorySection extends StatelessWidget {
             padding: EdgeInsets.zero,
             scrollDirection: Axis.horizontal,
             itemCount: categoryDefinitions.length,
-            separatorBuilder: (_, __) => const SizedBox.shrink(),
+            separatorBuilder: (_, _) => const SizedBox.shrink(),
             itemBuilder: (context, index) {
               final cat = categoryDefinitions[index];
               return GestureDetector(

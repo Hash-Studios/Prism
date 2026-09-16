@@ -43,7 +43,7 @@ class AppSoundManager {
     const holdMs = 2000;
     const fadeMs = 2000;
     const steps = 24;
-    final stepDelay = Duration(milliseconds: fadeMs ~/ steps);
+    const stepDelay = Duration(milliseconds: fadeMs ~/ steps);
 
     await Future<void>.delayed(const Duration(milliseconds: holdMs));
 
