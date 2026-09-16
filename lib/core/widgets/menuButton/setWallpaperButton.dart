@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/widgets/menuButton/circular_menu_button.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -187,36 +188,18 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
                 ),
               );
       },
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
-              ],
-              borderRadius: BorderRadius.circular(500),
-            ),
-            padding: const EdgeInsets.all(17),
-            child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            height: 53,
-            width: 53,
-            child: isLoading ? const CircularProgressIndicator() : Container(),
-          ),
-        ],
+      child: CircularMenuButton(
+        isLoading: isLoading,
+        child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
       ),
     );
   }
 }
 
 class SetOptionsPanel extends StatefulWidget {
-  final Function? onTap1;
-  final Function? onTap2;
-  final Function? onTap3;
+  final VoidCallback? onTap1;
+  final VoidCallback? onTap2;
+  final VoidCallback? onTap3;
   const SetOptionsPanel({super.key, this.onTap1, this.onTap2, this.onTap3});
 
   @override

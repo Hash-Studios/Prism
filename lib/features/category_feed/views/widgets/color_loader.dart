@@ -1,5 +1,5 @@
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as PData;
+import 'package:Prism/data/pexels/provider/pexelsWithoutProvider.dart' as pexels_data;
 import 'package:Prism/features/category_feed/views/widgets/color_grid.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +17,7 @@ class _ColorLoaderState extends State<ColorLoader> {
 
   @override
   void initState() {
-    PData.wallsC = [];
+    pexels_data.wallsC = [];
     _future = widget.future;
     super.initState();
   }

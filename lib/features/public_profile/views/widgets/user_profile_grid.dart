@@ -3,7 +3,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/seeMoreButton.dart';
-import 'package:Prism/core/widgets/premiumBanners/walls.dart';
+import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -187,13 +187,24 @@ class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProv
                         return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);
                       }
                       return app_state.prismUser.premium != true
-                          ? PremiumBannerWalls(
+                          ? PremiumBanner(
                               comparator: !app_state.isPremiumWall(
                                 app_state.premiumCollections,
                                 context.publicProfileAdapter().userProfileWalls![index].collections ?? const <String>[],
                               ),
-                              defaultChild: _PhotographerWallTile(animation: animation, index: index),
-                              trueChild: _PhotographerWallTile(animation: animation, index: index),
+                              top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 68,
+                              left: MediaQuery.of(context).size.width / 2 - 53.5,
+                              right: null,
+                              bottom: null,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                bottomRight: Radius.circular(20),
+                              ),
+                              iconSize: 24,
+                              iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                              fit: StackFit.loose,
+                              clipBehavior: Clip.hardEdge,
+                              child: _PhotographerWallTile(animation: animation, index: index),
                             )
                           : _PhotographerWallTile(animation: animation, index: index);
                     },
@@ -229,15 +240,14 @@ class _PhotographerWallTile extends StatelessWidget {
             splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
             highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
             onTap: () {
-              if (context.publicProfileAdapter(listen: false).userProfileWalls == null ||
-                  context.publicProfileAdapter(listen: false).userProfileWalls!.isEmpty) {
-              } else {
-                final walls = context.publicProfileAdapter(listen: false).userProfileWalls!;
-                final entity = WallpaperDetailEntityX.fromPublicProfileWall(walls[index]);
-                context.router.push(
-                  WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
-                );
+              final list = context.publicProfileAdapter(listen: false).userProfileWalls;
+              if (list == null || list.isEmpty) {
+                return;
               }
+              final entity = WallpaperDetailEntityX.fromPublicProfileWall(list[index]);
+              context.router.push(
+                WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
+              );
             },
           ),
         ),

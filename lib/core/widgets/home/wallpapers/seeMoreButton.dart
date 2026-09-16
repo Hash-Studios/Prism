@@ -6,7 +6,7 @@ class SeeMoreButton extends StatelessWidget {
   const SeeMoreButton({super.key, required this.seeMoreLoader, required this.func});
 
   final bool seeMoreLoader;
-  final Function func;
+  final VoidCallback func;
 
   @override
   Widget build(BuildContext context) {

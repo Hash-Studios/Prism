@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/safe_image_decode.dart';
+import 'package:Prism/core/widgets/menuButton/circular_menu_button.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -33,34 +34,14 @@ class _EditButtonState extends State<EditButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return CircularMenuButton(
       onTap: () {
         if (!isLoading) {
           onEdit(widget.url);
         }
       },
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
-              ],
-              borderRadius: BorderRadius.circular(500),
-            ),
-            padding: const EdgeInsets.all(17),
-            child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary, size: 20),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            height: 53,
-            width: 53,
-            child: isLoading ? const CircularProgressIndicator() : Container(),
-          ),
-        ],
-      ),
+      isLoading: isLoading,
+      child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary, size: 20),
     );
   }
 

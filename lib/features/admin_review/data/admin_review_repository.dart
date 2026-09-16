@@ -3,6 +3,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/features/admin_review/data/wall_moderation_ops.dart';
 
 class AdminReviewRepository {
   const AdminReviewRepository();
@@ -85,12 +86,12 @@ class AdminReviewRepository {
         'reviewedAt': DateTime.now().toUtc(),
         'createdAt': DateTime.now().toUtc(),
       });
-      _addUserNotificationToBatch(
+      addModerationNotificationToBatch(
         batch,
-        modifier: _safeString(payload['email']),
+        modifier: safeModerationString(payload['email']),
         title: 'Wallpaper Approved',
         body: 'Your wallpaper has been approved and is now live.',
-        imageUrl: _safeString(payload['wallpaper_thumb']),
+        imageUrl: safeModerationString(payload['wallpaper_thumb']),
         route: 'announcement',
       );
     }, sourceTag: 'admin_review.approve_wall');
@@ -104,12 +105,12 @@ class AdminReviewRepository {
     await firestoreClient.runBatch((FirestoreBatch batch) async {
       batch.addDoc(FirebaseCollections.rejectedWalls, payload);
       batch.deleteDoc(FirebaseCollections.walls, wall.id);
-      _addUserNotificationToBatch(
+      addModerationNotificationToBatch(
         batch,
-        modifier: _safeString(payload['email']),
+        modifier: safeModerationString(payload['email']),
         title: 'Wallpaper Rejected',
         body: reason,
-        imageUrl: _safeString(payload['wallpaper_thumb']),
+        imageUrl: safeModerationString(payload['wallpaper_thumb']),
         route: 'announcement',
       );
     }, sourceTag: 'admin_review.reject_wall');
@@ -123,12 +124,12 @@ class AdminReviewRepository {
         'reviewedAt': DateTime.now().toUtc(),
         'created_at': DateTime.now().toUtc(),
       });
-      _addUserNotificationToBatch(
+      addModerationNotificationToBatch(
         batch,
-        modifier: _safeString(payload['email']),
+        modifier: safeModerationString(payload['email']),
         title: 'Setup Approved',
         body: 'Your setup has been approved and is now live.',
-        imageUrl: _safeString(payload['image']),
+        imageUrl: safeModerationString(payload['image']),
         route: 'announcement',
       );
     }, sourceTag: 'admin_review.approve_setup');
@@ -142,43 +143,14 @@ class AdminReviewRepository {
     await firestoreClient.runBatch((FirestoreBatch batch) async {
       batch.addDoc(FirebaseCollections.rejectedSetups, payload);
       batch.deleteDoc(FirebaseCollections.setups, setup.id);
-      _addUserNotificationToBatch(
+      addModerationNotificationToBatch(
         batch,
-        modifier: _safeString(payload['email']),
+        modifier: safeModerationString(payload['email']),
         title: 'Setup Rejected',
         body: reason,
-        imageUrl: _safeString(payload['image']),
+        imageUrl: safeModerationString(payload['image']),
         route: 'announcement',
       );
     }, sourceTag: 'admin_review.reject_setup');
   }
-
-  void _addUserNotificationToBatch(
-    FirestoreBatch batch, {
-    required String modifier,
-    required String title,
-    required String body,
-    required String imageUrl,
-    String route = '',
-    String wallId = '',
-  }) {
-    if (modifier.isEmpty) {
-      return;
-    }
-    batch.addDoc(FirebaseCollections.notifications, <String, dynamic>{
-      'modifier': modifier,
-      'notification': <String, dynamic>{'title': title, 'body': body},
-      'data': <String, dynamic>{
-        'pageName': '',
-        'arguments': const <Object?>[],
-        'url': '',
-        'imageUrl': imageUrl,
-        'route': route,
-        if (wallId.isNotEmpty) 'wall_id': wallId,
-      },
-      'createdAt': DateTime.now().toUtc(),
-    });
-  }
-
-  String _safeString(Object? value) => value?.toString() ?? '';
 }
