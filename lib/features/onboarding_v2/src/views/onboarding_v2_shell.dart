@@ -231,8 +231,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Layer 0: animated background (blur + image cross-fade).
-                    // from page content and overlay layers. Verify background renders correctly.
+                    // Layer 0: animated background (blur + image cross-fade), isolated in a
+                    // RepaintBoundary from page content and overlay layers.
                     RepaintBoundary(
                       child: OnboardingStepBackground(
                         step: state.step,
@@ -251,8 +251,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                       child: _pageFor(state.step),
                     ),
 
-                    // Layer 2: shared animated overlay (headline, progress, button, helper).
-                    // repaints from the background and page layers. Verify overlay renders correctly.
+                    // Layer 2: shared animated overlay (headline, progress, button, helper),
+                    // isolated in a RepaintBoundary from the background and page layers.
                     RepaintBoundary(
                       child: _SharedOverlay(
                         state: state,

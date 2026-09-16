@@ -1,7 +1,6 @@
 import 'package:Prism/auth/badgeModel.dart';
 import 'package:Prism/auth/transactionModel.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -109,9 +108,7 @@ class PrismUsersV2 {
     this.subscriptionTier = 'free',
     this.uploadsWeekStart = '',
     this.uploadsThisWeek = 0,
-  }) {
-    logger.d("Default constructor !!!!");
-  }
+  });
 
   factory PrismUsersV2.fromJson(Map<String, dynamic> json) => _$PrismUsersV2FromJson(json);
   factory PrismUsersV2.fromMapWithUser(Map<String, dynamic> raw, User user) {

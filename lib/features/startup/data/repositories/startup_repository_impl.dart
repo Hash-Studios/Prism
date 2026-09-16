@@ -70,7 +70,9 @@ class StartupRepositoryImpl implements StartupRepository {
       try {
         final map = json.decode('$element}') as Map<String, dynamic>;
         parsed.add(map);
-      } catch (_) {}
+      } catch (e, st) {
+        logger.w('Failed to parse legacy notification entry', error: e, stackTrace: st);
+      }
     }
 
     if (parsed.isEmpty) {

@@ -1,4 +1,3 @@
-import 'package:Prism/logger/logger.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'badgeModel.g.dart';
@@ -21,9 +20,7 @@ class Badge {
     required this.imageUrl,
     required this.color,
     required this.url,
-  }) {
-    logger.d("Default constructor !!!!");
-  }
+  });
 
   factory Badge.fromJson(Map<String, dynamic> json) => _$BadgeFromJson(json);
   Map<String, dynamic> toJson() => _$BadgeToJson(this);

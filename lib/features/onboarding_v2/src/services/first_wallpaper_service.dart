@@ -6,6 +6,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -112,7 +113,9 @@ class FirstWallpaperService {
           sourceCategory: '',
         );
       }
-    } catch (_) {}
+    } catch (e, st) {
+      logger.w('Failed to fetch fallback wallpaper of the day', error: e, stackTrace: st);
+    }
     return null;
   }
 

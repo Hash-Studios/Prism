@@ -622,10 +622,6 @@ class _FullScreenImageView extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Notification Sender
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _NotificationSenderTab extends StatefulWidget {
   const _NotificationSenderTab();
 

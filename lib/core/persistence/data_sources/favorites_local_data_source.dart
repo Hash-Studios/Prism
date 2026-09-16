@@ -12,10 +12,6 @@ class FavoritesLocalDataSource {
 
   String _scope(String userId) => userId.trim().isEmpty ? defaultUserScope : userId.trim();
 
-  // ---------------------------------------------------------------------------
-  // Internal helpers — set-based storage
-  // ---------------------------------------------------------------------------
-
   Set<String> _wallSet(String scope) {
     final raw = _store.get(PersistenceKeys.favoritesWallSet(scope));
     if (raw is! List) return <String>{};
@@ -35,10 +31,6 @@ class FavoritesLocalDataSource {
   Future<void> _saveSetupSet(String scope, Set<String> ids) {
     return _store.set(PersistenceKeys.favoritesSetupSet(scope), ids.toList(growable: false));
   }
-
-  // ---------------------------------------------------------------------------
-  // Public API
-  // ---------------------------------------------------------------------------
 
   bool isWallFavourite(String userId, String itemId) {
     return _wallSet(_scope(userId)).contains(itemId);

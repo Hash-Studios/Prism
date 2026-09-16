@@ -245,28 +245,18 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onStarterPackConfirmed(_StarterPackConfirmed event, Emitter<OnboardingV2State> emit) async {
-    logger.d(
-      'starterPackConfirmed — canContinue=${state.starterPackData.canContinue} isClosed=$isClosed',
-      tag: 'OnboardingV2Bloc',
-    );
     if (!state.starterPackData.canContinue) {
       logger.d('canContinue=false, aborting', tag: 'OnboardingV2Bloc');
       return;
     }
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null, navRequest: null));
-    logger.d('emitted inProgress', tag: 'OnboardingV2Bloc');
 
     final selectedCreators = state.starterPackData.creators
         .where((c) => c.isSelected)
         .map((c) => OnboardingCreatorFollowParams.creator(userId: c.userId, email: c.email, name: c.name))
         .toList();
-    logger.d('selectedCreators count=${selectedCreators.length}', tag: 'OnboardingV2Bloc');
 
     final result = await _followStarterPackUseCase(FollowStarterPackParams(creators: selectedCreators));
-    logger.d(
-      'followStarterPackUseCase result isSuccess=${result.isSuccess} isClosed=$isClosed',
-      tag: 'OnboardingV2Bloc',
-    );
 
     if (result.isFailure) {
       logger.d('followStarterPackUseCase failure — ${result.failure}', tag: 'OnboardingV2Bloc');
@@ -375,10 +365,6 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       emit(state.copyWith(step: prevStep, navRequest: null));
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // AI generation step handlers
-  // ---------------------------------------------------------------------------
 
   Future<void> _onAiGenerationRequested(_AiGenerationRequested event, Emitter<OnboardingV2State> emit) async {
     emit(state.copyWith(aiData: state.aiData.copyWith(status: AiGenerateStatus.loading), navRequest: null));

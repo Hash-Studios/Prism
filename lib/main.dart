@@ -82,8 +82,6 @@ late LocalNotification localNotification;
 const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
-// final GlobalKey<NavigatorState> _sentryFeedbackNavigatorKey = GlobalKey<NavigatorState>();
-// bool _sentryFeedbackSheetOpen = false;
 
 /// Top-level FCM background message handler.
 /// Must be a top-level function annotated with @pragma('vm:entry-point').
@@ -279,8 +277,6 @@ Future<void> main() async {
       await PurchasesService.instance.configureEarly();
 
       runApp(
-        // SentryWidget(
-        //   child:
         LogToastOverlay(
           child: RestartWidget(
             child: MultiBlocProvider(
@@ -310,7 +306,6 @@ Future<void> main() async {
             ),
           ),
         ),
-        // ),  // SentryWidget closing
       );
     },
     (obj, stacktrace) {
@@ -365,10 +360,6 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
       options.privacy.maskAllText = true;
       options.privacy.maskAllImages = true;
-      // options.beforeSend = (event, hint) {
-      //   unawaited(_showSentryFeedbackWidget(event.eventId));
-      //   return event;
-      // };
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
@@ -390,45 +381,6 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
     );
   }
 }
-
-// Future<void> _showSentryFeedbackWidget(SentryId eventId) async {
-//   if (_sentryFeedbackSheetOpen) {
-//     return;
-//   }
-//
-//   final BuildContext? context = _sentryFeedbackNavigatorKey.currentContext;
-//   if (context == null || !context.mounted) {
-//     return;
-//   }
-//
-//   _sentryFeedbackSheetOpen = true;
-//
-//   try {
-//     final screenshot = await SentryFlutter.captureScreenshot();
-//     if (!context.mounted) {
-//       return;
-//     }
-//
-//     await Navigator.of(context, rootNavigator: true).push<void>(
-//       MaterialPageRoute<void>(
-//         builder: (context) => SentryFeedbackWidget(
-//           associatedEventId: eventId,
-//           screenshot: screenshot,
-//         ),
-//         fullscreenDialog: true,
-//       ),
-//     );
-//   } catch (error, stackTrace) {
-//     logger.w(
-//       'Unable to display Sentry feedback widget.',
-//       tag: 'SentryFeedback',
-//       error: error,
-//       stackTrace: stackTrace,
-//     );
-//   } finally {
-//     _sentryFeedbackSheetOpen = false;
-//   }
-// }
 
 Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) async {
   final bool mixpanelEnabled = _isMixpanelEnabled();
@@ -999,7 +951,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _appRouter = AppRouter(/* navigatorKey: _sentryFeedbackNavigatorKey */);
+    _appRouter = AppRouter();
     _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());

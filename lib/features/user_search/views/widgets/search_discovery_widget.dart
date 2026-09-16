@@ -82,8 +82,6 @@ class _TagsRow extends StatelessWidget {
   }
 }
 
-// ─── Find Creators Row ───────────────────────────────────────────────────────
-
 class _FindCreatorsRow extends StatelessWidget {
   const _FindCreatorsRow();
 
@@ -129,8 +127,6 @@ class _FindCreatorsRow extends StatelessWidget {
   }
 }
 
-// ─── Trending Section ───────────────────────────────────────────────────────
-
 class _TrendingSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -168,7 +164,7 @@ class _TrendingList extends StatelessWidget {
     return SizedBox(
       height: 185,
       child: ListView.separated(
-        padding: const EdgeInsets.all(0),
+        padding: EdgeInsets.zero,
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
         separatorBuilder: (_, _) => const SizedBox.shrink(),
@@ -294,8 +290,6 @@ class _TrendingError extends StatelessWidget {
   }
 }
 
-// ─── Category Section ────────────────────────────────────────────────────────
-
 class _CategorySection extends StatelessWidget {
   const _CategorySection();
 
@@ -364,8 +358,6 @@ class _CategorySection extends StatelessWidget {
   }
 }
 
-// ─── Color Section ───────────────────────────────────────────────────────────
-
 class _ColorSwatch {
   const _ColorSwatch({required this.name, required this.hex});
   final String name;
@@ -398,7 +390,7 @@ class _ColorSection extends StatelessWidget {
         const _SectionHeader(label: 'Search by Color', icon: JamIcons.brush_f),
         const SizedBox(height: 12),
         GridView.builder(
-          padding: const EdgeInsets.all(0),
+          padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
@@ -416,8 +408,6 @@ class _ColorSection extends StatelessWidget {
     );
   }
 }
-
-// ─── Shared Section Header ───────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.label, this.icon});

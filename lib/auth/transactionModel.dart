@@ -1,4 +1,3 @@
-import 'package:Prism/logger/logger.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'transactionModel.g.dart';
@@ -21,9 +20,7 @@ class PrismTransaction {
     required this.credit,
     required this.by,
     required this.processedAt,
-  }) {
-    logger.d("Default constructor !!!!");
-  }
+  });
 
   factory PrismTransaction.fromJson(Map<String, dynamic> json) => _$PrismTransactionFromJson(json);
   Map<String, dynamic> toJson() => _$PrismTransactionToJson(this);

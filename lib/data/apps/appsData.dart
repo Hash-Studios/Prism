@@ -29,7 +29,7 @@ Future<List<AppIcon>> getIcons() async {
     return _decodeIcons(cached);
   }
 
-  logger.i("Fethcing icons");
+  logger.i("Fetching icons");
   try {
     final value = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.apps,

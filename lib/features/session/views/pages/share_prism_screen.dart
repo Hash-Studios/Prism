@@ -55,7 +55,6 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                 ),
               ),
             ),
-            //TODO Replace the animation with Share animation
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
               child: Center(
