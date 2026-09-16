@@ -1,4 +1,4 @@
-import 'package:Prism/core/widgets/home/core/headingChipBar.dart';
+import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/favourite_setups/views/widgets/fav_setup_loader.dart';
 import 'package:auto_route/auto_route.dart';

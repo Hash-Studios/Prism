@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';

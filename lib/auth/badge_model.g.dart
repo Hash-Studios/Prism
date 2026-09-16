@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'badgeModel.dart';
+part of 'badge_model.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator

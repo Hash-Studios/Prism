@@ -2,7 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

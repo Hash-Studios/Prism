@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/safe_image_decode.dart';
-import 'package:Prism/core/widgets/menuButton/circular_menu_button.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';

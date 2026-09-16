@@ -1,7 +1,7 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
+import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';

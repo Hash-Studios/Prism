@@ -1,6 +1,6 @@
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';

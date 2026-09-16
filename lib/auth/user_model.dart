@@ -1,10 +1,10 @@
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
+import 'package:Prism/auth/badge_model.dart';
+import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-part 'userModel.g.dart';
+part 'user_model.g.dart';
 
 Map<String, dynamic> _mapData(Object? data) {
   if (data is Map<String, dynamic>) {

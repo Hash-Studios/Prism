@@ -8,7 +8,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/apps/app_icon.dart';
-import 'package:Prism/data/apps/appsData.dart';
+import 'package:Prism/data/apps/apps_data.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';

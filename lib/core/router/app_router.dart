@@ -5,7 +5,7 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/popup/editProfilePanel.dart';
+import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';

@@ -1,6 +1,6 @@
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/badge_model.dart';
+import 'package:Prism/auth/transaction_model.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 

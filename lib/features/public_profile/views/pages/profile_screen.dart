@@ -10,7 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
+import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -19,7 +19,7 @@ import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;

@@ -28,7 +28,7 @@ const String prismAmoledDarkThemeId = 'kDAMOLED';
 const String _fallbackLightThemeId = 'kLFrost White';
 const String _fallbackDarkThemeId = 'kDMaterial Dark';
 
-ThemeData prismResolveLightTheme({required String themeId, required int accentColorValue}) {
+ThemeData _resolveLightTheme({required String themeId, required int accentColorValue}) {
   final ThemeData baseTheme = prismLightThemes[themeId] ?? prismLightThemes[_fallbackLightThemeId]!;
   final Color accentColor = Color(accentColorValue);
   return baseTheme.copyWith(
@@ -36,7 +36,7 @@ ThemeData prismResolveLightTheme({required String themeId, required int accentCo
   );
 }
 
-ThemeData prismResolveDarkTheme({required String themeId, required int accentColorValue}) {
+ThemeData _resolveDarkTheme({required String themeId, required int accentColorValue}) {
   final ThemeData baseTheme = prismDarkThemes[themeId] ?? prismDarkThemes[_fallbackDarkThemeId]!;
   final Color accentColor = Color(accentColorValue);
   return baseTheme.copyWith(
@@ -44,7 +44,7 @@ ThemeData prismResolveDarkTheme({required String themeId, required int accentCol
   );
 }
 
-ThemeMode prismResolveMode(String mode) {
+ThemeMode _resolveMode(String mode) {
   switch (mode) {
     case 'Light':
       return ThemeMode.light;
@@ -57,7 +57,7 @@ ThemeMode prismResolveMode(String mode) {
   }
 }
 
-String prismModeStyleLabel({required String mode, required Brightness brightness}) {
+String _modeStyleLabel({required String mode, required Brightness brightness}) {
   if (mode == 'Light') {
     return 'Light';
   }
@@ -70,7 +70,7 @@ String prismModeStyleLabel({required String mode, required Brightness brightness
   return 'Dark';
 }
 
-String prismModeAbsoluteLabel(String mode) {
+String _modeAbsoluteLabel(String mode) {
   if (mode == 'Light') {
     return 'Light';
   }
@@ -102,12 +102,12 @@ extension PrismThemeContextX on BuildContext {
 
   ThemeData prismLightTheme({bool listen = true}) {
     final state = _themeLightBloc(listen).state;
-    return prismResolveLightTheme(themeId: state.theme.themeId, accentColorValue: state.theme.accentColorValue);
+    return _resolveLightTheme(themeId: state.theme.themeId, accentColorValue: state.theme.accentColorValue);
   }
 
   ThemeData prismDarkTheme({bool listen = true}) {
     final state = _themeDarkBloc(listen).state;
-    return prismResolveDarkTheme(themeId: state.theme.themeId, accentColorValue: state.theme.accentColorValue);
+    return _resolveDarkTheme(themeId: state.theme.themeId, accentColorValue: state.theme.accentColorValue);
   }
 
   String prismLightThemeId({bool listen = true}) => _themeLightBloc(listen).state.theme.themeId;
@@ -118,10 +118,10 @@ extension PrismThemeContextX on BuildContext {
 
   int prismDarkAccentValue({bool listen = true}) => _themeDarkBloc(listen).state.theme.accentColorValue;
 
-  ThemeMode prismThemeMode({bool listen = true}) => prismResolveMode(_themeModeBloc(listen).state.mode.mode);
+  ThemeMode prismThemeMode({bool listen = true}) => _resolveMode(_themeModeBloc(listen).state.mode.mode);
 
   String prismModeStyle(Brightness brightness, {bool listen = true}) =>
-      prismModeStyleLabel(mode: _themeModeBloc(listen).state.mode.mode, brightness: brightness);
+      _modeStyleLabel(mode: _themeModeBloc(listen).state.mode.mode, brightness: brightness);
 
   String prismModeStyleForContext({bool listen = true}) =>
       prismModeStyle(MediaQuery.of(this).platformBrightness, listen: listen);
@@ -129,7 +129,7 @@ extension PrismThemeContextX on BuildContext {
   String prismModeStyleForWindow({bool listen = true}) =>
       prismModeStyle(WidgetsBinding.instance.platformDispatcher.platformBrightness, listen: listen);
 
-  String prismModeAbs({bool listen = true}) => prismModeAbsoluteLabel(_themeModeBloc(listen).state.mode.mode);
+  String prismModeAbs({bool listen = true}) => _modeAbsoluteLabel(_themeModeBloc(listen).state.mode.mode);
 
   bool prismIsAmoledDark({bool listen = true}) => prismDarkThemeId(listen: listen) == prismAmoledDarkThemeId;
 
