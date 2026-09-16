@@ -71,31 +71,14 @@ class AppleAuth {
       final String email = appleCredential.email ?? user.email ?? '';
       final String photoURL = user.photoURL ?? app_state.defaultProfilePhotoUrl;
 
-      final List<Map<String, dynamic>?> usersData = await _getUsersData(user);
+      final Map<String, dynamic>? userDoc = await _getUserNEW(user);
 
-      if (usersData[0] != null && usersData[1] != null) {
-        final doc = usersData[1]!;
-        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
+      if (userDoc != null) {
+        app_state.prismUser = PrismUsersV2.fromMapWithUser(userDoc, user);
         firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         }, sourceTag: 'apple_auth.signin.update_last_login');
-      } else if (usersData[0] != null && usersData[1] == null) {
-        final doc = usersData[0]!;
-        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.setDoc(
-          FirebaseCollections.usersV2,
-          app_state.prismUser.id,
-          app_state.prismUser.toJson(),
-          sourceTag: 'apple_auth.signin.copy_legacy_user',
-        );
-      } else if (usersData[0] == null && usersData[1] != null) {
-        final doc = usersData[1]!;
-        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
-          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-          'loggedIn': true,
-        }, sourceTag: 'apple_auth.signin.update_last_login_existing');
       } else {
         app_state.prismUser = PrismUsersV2(
           name: displayName,
@@ -218,9 +201,5 @@ class AppleAuth {
     final docId = rows.first['__docId']?.toString() ?? '';
     if (docId.isEmpty) return null;
     return rows.first;
-  }
-
-  Future<List<Map<String, dynamic>?>> _getUsersData(User user) {
-    return Future.wait([_getUserNEW(user)]);
   }
 }

@@ -634,24 +634,19 @@ _i174.GetIt initGetIt(
       gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
   );
-  gh.lazySingleton<_i212.GetPersistedSeenKeysUseCase>(
-    () => _i212.GetPersistedSeenKeysUseCase(
-      gh<_i567.PersonalizedFeedRepository>(),
-    ),
-  );
   gh.lazySingleton<_i212.FetchPersonalizedFeedUseCase>(
     () => _i212.FetchPersonalizedFeedUseCase(
       gh<_i567.PersonalizedFeedRepository>(),
     ),
   );
+  gh.factory<_i318.SetupsBloc>(
+    () => _i318.SetupsBloc(gh<_i247.FetchSetupsUseCase>()),
+  );
   gh.factory<_i872.PersonalizedFeedBloc>(
     () => _i872.PersonalizedFeedBloc(
       gh<_i212.FetchPersonalizedFeedUseCase>(),
-      gh<_i212.GetPersistedSeenKeysUseCase>(),
+      gh<_i567.PersonalizedFeedRepository>(),
     ),
-  );
-  gh.factory<_i318.SetupsBloc>(
-    () => _i318.SetupsBloc(gh<_i247.FetchSetupsUseCase>()),
   );
   gh.factory<_i941.ProfileSetupsBloc>(
     () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),

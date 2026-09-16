@@ -1,4 +1,4 @@
-import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
@@ -12,7 +12,7 @@ Stream<List<Map<String, dynamic>>> getUserProfile(String identifier) {
   return firestoreClient
       .watchQuery<Map<String, dynamic>>(
         FirestoreQuerySpec(
-          collection: USER_NEW_COLLECTION,
+          collection: FirebaseCollections.usersV2,
           sourceTag: 'profile.stream.v2',
           filters: <FirestoreFilter>[FirestoreFilter(field: v2Field, op: FirestoreFilterOp.isEqualTo, value: value)],
           limit: 1,
@@ -27,7 +27,7 @@ Stream<List<Map<String, dynamic>>> getUserProfile(String identifier) {
         if (!isEmail) {
           final byEmailFallback = await firestoreClient.query<Map<String, dynamic>>(
             FirestoreQuerySpec(
-              collection: USER_NEW_COLLECTION,
+              collection: FirebaseCollections.usersV2,
               sourceTag: 'profile.stream.v2_email_fallback',
               filters: <FirestoreFilter>[
                 FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: value),
@@ -45,19 +45,19 @@ Stream<List<Map<String, dynamic>>> getUserProfile(String identifier) {
 }
 
 Future<void> follow(String email, String id) async {
-  await firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, {
+  await firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
     'following': FirestoreSentinels.arrayUnion(<Object?>[email]),
   }, sourceTag: 'profile.follow.current_user');
-  await firestoreClient.updateDoc(USER_NEW_COLLECTION, id, {
+  await firestoreClient.updateDoc(FirebaseCollections.usersV2, id, {
     'followers': FirestoreSentinels.arrayUnion(<Object?>[app_state.prismUser.email]),
   }, sourceTag: 'profile.follow.target_user');
 }
 
 Future<void> unfollow(String email, String id) async {
-  await firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, {
+  await firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
     'following': FirestoreSentinels.arrayRemove(<Object?>[email]),
   }, sourceTag: 'profile.unfollow.current_user');
-  await firestoreClient.updateDoc(USER_NEW_COLLECTION, id, {
+  await firestoreClient.updateDoc(FirebaseCollections.usersV2, id, {
     'followers': FirestoreSentinels.arrayRemove(<Object?>[app_state.prismUser.email]),
   }, sourceTag: 'profile.unfollow.target_user');
 }

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -348,13 +348,13 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   }
 
   Future<void> _updateCurrentUser(Map<String, dynamic> data, String sourceTag) {
-    return firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, data, sourceTag: sourceTag);
+    return firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, data, sourceTag: sourceTag);
   }
 
   Future<bool> _isUsernameAvailable(String username) async {
     final users = await firestoreClient.query<Map<String, dynamic>>(
       FirestoreQuerySpec(
-        collection: USER_NEW_COLLECTION,
+        collection: FirebaseCollections.usersV2,
         sourceTag: 'profile.edit.usernameAvailability',
         filters: <FirestoreFilter>[
           FirestoreFilter(field: "username", op: FirestoreFilterOp.isEqualTo, value: username),

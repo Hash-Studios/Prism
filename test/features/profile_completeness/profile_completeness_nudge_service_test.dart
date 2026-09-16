@@ -67,7 +67,7 @@ void main() {
 
     final service = ProfileCompletenessNudgeService(
       isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue}) => prefs[key] ?? defaultValue,
+      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
       sheetLauncher: (context, {required status}) async {
         launchCount += 1;
@@ -96,7 +96,7 @@ void main() {
 
     final service = ProfileCompletenessNudgeService(
       isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue}) => prefs[key] ?? defaultValue,
+      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
       sheetLauncher: (context, {required status}) async {
         launchCount += 1;
@@ -118,7 +118,7 @@ void main() {
 
     final service = ProfileCompletenessNudgeService(
       isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue}) => prefs[key] ?? defaultValue,
+      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
       sheetLauncher: (context, {required status}) async {
         launchCount += 1;
@@ -142,7 +142,7 @@ void main() {
 
     final service = ProfileCompletenessNudgeService(
       isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue}) => prefs[key] ?? defaultValue,
+      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
       trackEvent: (event) async => trackedEvents.add(event),
       sheetLauncher: (context, {required status}) async {
@@ -174,7 +174,7 @@ void main() {
 
     final service = ProfileCompletenessNudgeService(
       isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue}) => prefs[key] ?? defaultValue,
+      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
       sheetLauncher: (context, {required status}) async => ProfileCompletenessNudgeAction.completeNow,
       openEditProfile: (context) async {
