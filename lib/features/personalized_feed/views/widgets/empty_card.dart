@@ -51,16 +51,3 @@ class PersonalizedFeedEditorialNote extends StatelessWidget {
     );
   }
 }
-
-/// Empty / footer message for the personalized feed (editorial shell).
-class PersonalizedEmptyCard extends StatelessWidget {
-  const PersonalizedEmptyCard({super.key, required this.title, this.detail});
-
-  final String title;
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    return PersonalizedFeedEditorialNote(title: title, detail: detail);
-  }
-}

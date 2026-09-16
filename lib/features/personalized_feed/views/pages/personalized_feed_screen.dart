@@ -8,7 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carouselDots.dart';
-import 'package:Prism/core/widgets/premiumBanners/wallsCarousel.dart';
+import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
@@ -154,7 +154,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
     if (state.items.isEmpty) {
       return const Padding(
         padding: PrismFeedLayout.contentStatePadding,
-        child: PersonalizedEmptyCard(
+        child: PersonalizedFeedEditorialNote(
           title: 'Shape this feed',
           detail: 'Follow creators or choose interests so we can surface more of what you like.',
         ),
@@ -174,7 +174,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
     return const Padding(
       padding: PrismFeedLayout.contentStatePadding,
-      child: PersonalizedEmptyCard(
+      child: PersonalizedFeedEditorialNote(
         title: "You're caught up",
         detail: 'Pull down to refresh — new picks will land here.',
       ),
@@ -300,11 +300,23 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                 },
                 child: wall == null
                     ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest)
-                    : PremiumBannerWallsCarousel(
+                    : PremiumBanner(
                         comparator: !app_state.isPremiumWall(
                           app_state.premiumCollections,
                           wall.wallpaper.collections ?? const <String>[],
                         ),
+                        top: 160,
+                        left: MediaQuery.of(context).size.width * 0.8 - 50,
+                        right: null,
+                        bottom: null,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                        iconSize: 24,
+                        iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                        fit: StackFit.loose,
+                        clipBehavior: Clip.hardEdge,
                         child: Container(
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.surfaceContainerHighest,

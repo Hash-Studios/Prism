@@ -4,27 +4,51 @@ import 'package:flutter/material.dart';
 class PremiumBanner extends StatelessWidget {
   final bool comparator;
   final Widget child;
+  final double? top;
+  final double? left;
+  final double? right;
+  final double? bottom;
+  final BorderRadius borderRadius;
+  final double? iconSize;
+  final EdgeInsets iconPadding;
+  final StackFit fit;
+  final Clip clipBehavior;
 
-  const PremiumBanner({super.key, required this.comparator, required this.child});
+  const PremiumBanner({
+    super.key,
+    required this.comparator,
+    required this.child,
+    this.top,
+    this.left,
+    this.right = 0,
+    this.bottom = 0,
+    this.borderRadius = BorderRadius.zero,
+    this.iconSize = 18,
+    this.iconPadding = const EdgeInsets.fromLTRB(8, 6, 8, 6),
+    this.fit = StackFit.expand,
+    this.clipBehavior = Clip.none,
+  });
 
   @override
   Widget build(BuildContext context) {
     return comparator
         ? child
         : Stack(
-            fit: StackFit.expand,
-            clipBehavior: Clip.none,
+            fit: fit,
+            clipBehavior: clipBehavior,
             children: <Widget>[
               child,
               Positioned(
-                right: 0,
-                bottom: 0,
+                top: top,
+                left: left,
+                right: right,
+                bottom: bottom,
                 child: Container(
-                  decoration: const BoxDecoration(color: Color(0xFFFFB800), borderRadius: BorderRadius.zero),
+                  decoration: BoxDecoration(color: const Color(0xFFFFB800), borderRadius: borderRadius),
                   padding: EdgeInsets.zero,
-                  child: const Padding(
-                    padding: EdgeInsets.fromLTRB(8, 6, 8, 6),
-                    child: Icon(JamIcons.star_f, color: Colors.white, size: 18),
+                  child: Padding(
+                    padding: iconPadding,
+                    child: Icon(JamIcons.star_f, color: Colors.white, size: iconSize),
                   ),
                 ),
               ),

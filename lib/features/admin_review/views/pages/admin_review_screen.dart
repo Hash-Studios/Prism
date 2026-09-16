@@ -105,20 +105,37 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         }
         return ListView.builder(
           itemCount: walls.length,
-          itemBuilder: (BuildContext context, int index) => _WallCard(
-            wall: walls[index],
-            onApprove: () async {
-              await _repository.approveWall(walls[index]);
-              toasts.codeSend('Wallpaper approved');
-            },
-            onReject: () => _confirmReject(
-              context,
-              onSubmit: (String reason) async {
-                await _repository.rejectWall(walls[index], reason: reason);
-                toasts.error('Wallpaper rejected');
+          itemBuilder: (BuildContext context, int index) {
+            final FirestoreDocument wall = walls[index];
+            final String previewUrl = wall.wallpaperThumb;
+            final String fullUrl = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl;
+            return _ModerationCard(
+              previewUrl: previewUrl,
+              fullUrl: fullUrl,
+              metadataLines: <Widget>[
+                Text('ID: ${wall.id}'),
+                Text('By: ${wall.by.isNotEmpty ? wall.by : '-'}'),
+                Text('Email: ${wall.email.isNotEmpty ? wall.email : '-'}'),
+                Text(
+                  wall.createdAt != null ? 'Uploaded ${timeago.format(wall.createdAt!.toLocal())}' : 'Uploaded —',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ],
+              onApprove: () async {
+                await _repository.approveWall(wall);
+                toasts.codeSend('Wallpaper approved');
               },
-            ),
-          ),
+              onReject: () => _confirmReject(
+                context,
+                onSubmit: (String reason) async {
+                  await _repository.rejectWall(wall, reason: reason);
+                  toasts.error('Wallpaper rejected');
+                },
+              ),
+            );
+          },
         );
       },
     );
@@ -137,20 +154,37 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         }
         return ListView.builder(
           itemCount: setups.length,
-          itemBuilder: (BuildContext context, int index) => _SetupCard(
-            setup: setups[index],
-            onApprove: () async {
-              await _repository.approveSetup(setups[index]);
-              toasts.codeSend('Setup approved');
-            },
-            onReject: () => _confirmReject(
-              context,
-              onSubmit: (String reason) async {
-                await _repository.rejectSetup(setups[index], reason: reason);
-                toasts.error('Setup rejected');
+          itemBuilder: (BuildContext context, int index) {
+            final FirestoreDocument setup = setups[index];
+            final String fullUrl = setup.image;
+            return _ModerationCard(
+              previewUrl: fullUrl,
+              fullUrl: fullUrl,
+              metadataLines: <Widget>[
+                Text('ID: ${setup.id}'),
+                Text('By: ${setup.by.isNotEmpty ? setup.by : '-'}'),
+                Text('Email: ${setup.email.isNotEmpty ? setup.email : '-'}'),
+                Text('Name: ${setup.name.isNotEmpty ? setup.name : '-'}'),
+                Text(
+                  setup.createdAt != null ? 'Uploaded ${timeago.format(setup.createdAt!.toLocal())}' : 'Uploaded —',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ],
+              onApprove: () async {
+                await _repository.approveSetup(setup);
+                toasts.codeSend('Setup approved');
               },
-            ),
-          ),
+              onReject: () => _confirmReject(
+                context,
+                onSubmit: (String reason) async {
+                  await _repository.rejectSetup(setup, reason: reason);
+                  toasts.error('Setup rejected');
+                },
+              ),
+            );
+          },
         );
       },
     );
@@ -453,17 +487,23 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
   }
 }
 
-class _WallCard extends StatelessWidget {
-  const _WallCard({required this.wall, required this.onApprove, required this.onReject});
+class _ModerationCard extends StatelessWidget {
+  const _ModerationCard({
+    required this.previewUrl,
+    required this.fullUrl,
+    required this.metadataLines,
+    required this.onApprove,
+    required this.onReject,
+  });
 
-  final FirestoreDocument wall;
+  final String previewUrl;
+  final String fullUrl;
+  final List<Widget> metadataLines;
   final Future<void> Function() onApprove;
   final Future<void> Function() onReject;
 
   @override
   Widget build(BuildContext context) {
-    final String previewUrl = wall.wallpaperThumb;
-    final String fullUrl = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -482,86 +522,7 @@ class _WallCard extends StatelessWidget {
                     },
             ),
             const SizedBox(height: 8),
-            Text('ID: ${wall.id}'),
-            Text('By: ${wall.by.isNotEmpty ? wall.by : '-'}'),
-            Text('Email: ${wall.email.isNotEmpty ? wall.email : '-'}'),
-            Text(
-              wall.createdAt != null ? 'Uploaded ${timeago.format(wall.createdAt!.toLocal())}' : 'Uploaded —',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: fullUrl.isEmpty
-                        ? null
-                        : () {
-                            Navigator.of(
-                              context,
-                            ).push(MaterialPageRoute<void>(builder: (_) => _FullScreenImageView(imageUrl: fullUrl)));
-                          },
-                    icon: const Icon(Icons.open_in_full),
-                    label: const Text('View Full'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: FilledButton(onPressed: onApprove, child: const Text('Approve')),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(onPressed: onReject, child: const Text('Reject')),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SetupCard extends StatelessWidget {
-  const _SetupCard({required this.setup, required this.onApprove, required this.onReject});
-
-  final FirestoreDocument setup;
-  final Future<void> Function() onApprove;
-  final Future<void> Function() onReject;
-
-  @override
-  Widget build(BuildContext context) {
-    final String fullUrl = setup.image;
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            _PortraitPreview(
-              imageUrl: fullUrl,
-              onTap: fullUrl.isEmpty
-                  ? null
-                  : () {
-                      Navigator.of(
-                        context,
-                      ).push(MaterialPageRoute<void>(builder: (_) => _FullScreenImageView(imageUrl: fullUrl)));
-                    },
-            ),
-            const SizedBox(height: 8),
-            Text('ID: ${setup.id}'),
-            Text('By: ${setup.by.isNotEmpty ? setup.by : '-'}'),
-            Text('Email: ${setup.email.isNotEmpty ? setup.email : '-'}'),
-            Text('Name: ${setup.name.isNotEmpty ? setup.name : '-'}'),
-            Text(
-              setup.createdAt != null ? 'Uploaded ${timeago.format(setup.createdAt!.toLocal())}' : 'Uploaded —',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
+            ...metadataLines,
             const SizedBox(height: 8),
             Row(
               children: <Widget>[
@@ -935,18 +896,18 @@ class _NotificationPreviewCardState extends State<_NotificationPreviewCard> {
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.outline.withOpacity(0.3)),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(Icons.phone_iphone, size: 14, color: colors.onSurface.withOpacity(0.5)),
+              Icon(Icons.phone_iphone, size: 14, color: colors.onSurface.withValues(alpha: 0.5)),
               const SizedBox(width: 4),
               Text(
                 'PREVIEW',
-                style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: colors.onSurface.withOpacity(0.5)),
+                style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: colors.onSurface.withValues(alpha: 0.5)),
               ),
             ],
           ),

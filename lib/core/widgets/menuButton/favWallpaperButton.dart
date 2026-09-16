@@ -5,6 +5,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
+import 'package:Prism/core/widgets/menuButton/circular_menu_button.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
@@ -31,43 +32,27 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
-            ],
-            borderRadius: BorderRadius.circular(500),
-          ),
-          child: FavoriteIcon(
-            tapTargetExtent: 53,
-            valueChanged: () {
-              if (app_state.prismUser.loggedIn == false) {
-                googleSignInPopUp(context, () {
-                  onFav(widget.wall);
-                });
-              } else {
-                onFav(widget.wall);
-              }
-              if (widget.trash) {
-                Navigator.pop(context);
-              }
-            },
-            iconColor: Theme.of(context).colorScheme.secondary,
-            iconSize: 30,
-            isFavorite: _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.id ?? ''),
-          ),
-        ),
-        Positioned(
-          top: 0,
-          left: 0,
-          height: 53,
-          width: 53,
-          child: isLoading ? const CircularProgressIndicator() : Container(),
-        ),
-      ],
+    return CircularMenuButton(
+      isLoading: isLoading,
+      padding: EdgeInsets.zero,
+      child: FavoriteIcon(
+        tapTargetExtent: 53,
+        valueChanged: () {
+          if (app_state.prismUser.loggedIn == false) {
+            googleSignInPopUp(context, () {
+              onFav(widget.wall);
+            });
+          } else {
+            onFav(widget.wall);
+          }
+          if (widget.trash) {
+            Navigator.pop(context);
+          }
+        },
+        iconColor: Theme.of(context).colorScheme.secondary,
+        iconSize: 30,
+        isFavorite: _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.id ?? ''),
+      ),
     );
   }
 

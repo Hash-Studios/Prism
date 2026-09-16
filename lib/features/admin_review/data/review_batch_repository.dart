@@ -2,6 +2,8 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/features/admin_review/data/wall_moderation_ops.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:injectable/injectable.dart';
 
@@ -49,12 +51,12 @@ class ReviewBatchRepository {
         'reviewedAt': DateTime.now().toUtc(),
         'createdAt': DateTime.now().toUtc(),
       });
-      _addNotificationToBatch(
+      addModerationNotificationToBatch(
         batch,
-        modifier: _safeString(payload['email']),
+        modifier: safeModerationString(payload['email']),
         title: 'Wallpaper Approved',
-        body: 'Your wallpaper "${_safeString(payload['title'])}" is now live!',
-        imageUrl: _safeString(payload['wallpaper_thumb']),
+        body: 'Your wallpaper "${safeModerationString(payload['title'])}" is now live!',
+        imageUrl: safeModerationString(payload['wallpaper_thumb']),
         route: 'announcement',
       );
     }, sourceTag: 'review_batch.approve_wall');
@@ -68,12 +70,12 @@ class ReviewBatchRepository {
     await _firestoreClient.runBatch((FirestoreBatch batch) async {
       batch.addDoc(FirebaseCollections.rejectedWalls, payload);
       batch.deleteDoc(FirebaseCollections.walls, wall.id);
-      _addNotificationToBatch(
+      addModerationNotificationToBatch(
         batch,
-        modifier: _safeString(payload['email']),
+        modifier: safeModerationString(payload['email']),
         title: 'Wallpaper Rejected',
         body: reason,
-        imageUrl: _safeString(payload['wallpaper_thumb']),
+        imageUrl: safeModerationString(payload['wallpaper_thumb']),
         route: 'announcement',
       );
     }, sourceTag: 'review_batch.reject_wall');
@@ -96,7 +98,9 @@ class ReviewBatchRepository {
           await functions
               .httpsCallable('categorizeWallpaper', options: HttpsCallableOptions(timeout: const Duration(seconds: 30)))
               .call(<String, dynamic>{'wallId': wall.id});
-        } catch (_) {}
+        } catch (e, st) {
+          logger.w('categorizeWallpaper failed', tag: 'ReviewBatch', error: e, stackTrace: st);
+        }
       }
     }
   }
@@ -110,29 +114,4 @@ class ReviewBatchRepository {
     final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
     return walls.length;
   }
-
-  void _addNotificationToBatch(
-    FirestoreBatch batch, {
-    required String modifier,
-    required String title,
-    required String body,
-    required String imageUrl,
-    String route = '',
-  }) {
-    if (modifier.isEmpty) return;
-    batch.addDoc(FirebaseCollections.notifications, <String, dynamic>{
-      'modifier': modifier,
-      'notification': <String, dynamic>{'title': title, 'body': body},
-      'data': <String, dynamic>{
-        'pageName': '',
-        'arguments': const <Object?>[],
-        'url': '',
-        'imageUrl': imageUrl,
-        'route': route,
-      },
-      'createdAt': DateTime.now().toUtc(),
-    });
-  }
-
-  String _safeString(Object? value) => value?.toString() ?? '';
 }

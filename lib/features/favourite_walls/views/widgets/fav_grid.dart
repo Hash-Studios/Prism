@@ -204,8 +204,6 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
                         childAspectRatio: 0.5,
-                        mainAxisSpacing: 0,
-                        crossAxisSpacing: 0,
                       ),
                       itemBuilder: (context, index) {
                         final likedWall = context.favouriteWallsAdapter().liked![index];
