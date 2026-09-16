@@ -86,7 +86,7 @@ class GoogleAuth {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         }, sourceTag: 'auth.signin.update_last_login_existing');
-        logger.d("USERDATA CASE3");
+        logger.d('Existing user found, updating last login');
       }
       // User exists in none. Create new data in new db and sign him in.
       else {
@@ -116,7 +116,7 @@ class GoogleAuth {
           app_state.prismUser.toJson(),
           sourceTag: 'auth.signin.create_user',
         );
-        logger.d("USERDATA CASE4");
+        logger.d('Creating new user record');
       }
 
       await app_state.persistPrismUser();
@@ -293,13 +293,11 @@ class GoogleAuth {
           (currentUser.email ?? '').trim().isNotEmpty &&
           currentUser.providerData.any((provider) => provider.providerId == GoogleAuthProvider.PROVIDER_ID);
       if (signedInWithFirebase) {
-        logger.d('true');
         return true;
       }
 
       // Avoid triggering credential-manager lightweight auth flow on startup;
       // that flow can interrupt debug sessions and spawn transient activities.
-      logger.d('false');
       return false;
     } catch (e, st) {
       logger.e('Failed to check sign-in status', error: e, stackTrace: st);

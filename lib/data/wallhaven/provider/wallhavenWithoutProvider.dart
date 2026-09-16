@@ -3,14 +3,13 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
-// SHIM: delete in Phase 8
+// Legacy data helpers still used by the Wallhaven feed screens; wraps the repository.
 WallhavenWallpaperRepository get _repo => getIt<WallhavenWallpaperRepository>();
 
 List<WallhavenWallpaper> walls = [];
 List<WallhavenWallpaper> wallsS = [];
 int pageGetQuery = 1;
 
-// SHIM: delete in Phase 8
 Future<List<WallhavenWallpaper>> getWallsbyQuery(String query, int? categories, int? purity) async {
   logger.d("getWallsbyQuery: $query");
   wallsS = [];

@@ -3,7 +3,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
-// SHIM: delete in Phase 8
+// Legacy data helpers still used by the Pexels feed screens; wraps the repository.
 PexelsWallpaperRepository get _repo => getIt<PexelsWallpaperRepository>();
 
 List<PexelsWallpaper> wallsPS = [];
@@ -13,7 +13,6 @@ int pageGetQueryP = 1;
 
 int pageColorsP = 1;
 
-// SHIM: delete in Phase 8
 Future<List<PexelsWallpaper>> getWallsPbyQuery(String query) async {
   wallsPS = [];
   final result = await _repo.fetchFeed(categoryName: query, refresh: true);

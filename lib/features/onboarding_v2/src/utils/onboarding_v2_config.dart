@@ -15,10 +15,6 @@ class OnboardingV2Config {
   static const String remoteConfigStarterPackKey = 'onboarding_starter_pack_v1';
   static const String excludedCategory = 'Community';
 
-  // ---------------------------------------------------------------------------
-  // AI generation step — onboarding free generation
-  // ---------------------------------------------------------------------------
-
   static const List<AiStylePreset> aiOnboardingStyles = [
     AiStylePreset.nature,
     AiStylePreset.abstract,
