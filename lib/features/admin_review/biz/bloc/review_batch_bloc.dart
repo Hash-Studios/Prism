@@ -32,7 +32,6 @@ class UndoableAction {
 class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
   final ReviewBatchRepository _repository;
 
-  static const int _batchSize = 20;
   static const int _maxUndoStack = 5;
 
   ReviewBatchBloc(this._repository) : super(const ReviewBatchState()) {
@@ -48,11 +47,11 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     emit(state.copyWith(status: ReviewBatchStatus.loading));
 
     try {
-      final walls = await _repository.fetchPendingWallsBatch(limit: _batchSize);
+      final walls = await _repository.fetchPendingWallsBatch();
 
       if (walls.isNotEmpty) {
         await _repository.categorizeWalls(walls);
-        final categorizedWalls = await _repository.fetchPendingWallsBatch(limit: _batchSize);
+        final categorizedWalls = await _repository.fetchPendingWallsBatch();
 
         emit(
           state.copyWith(
@@ -165,7 +164,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     emit(state.copyWith(status: ReviewBatchStatus.loading));
 
     try {
-      final walls = await _repository.fetchPendingWallsBatch(limit: _batchSize, startAfterDocId: lastWallId);
+      final walls = await _repository.fetchPendingWallsBatch(startAfterDocId: lastWallId);
 
       emit(
         state.copyWith(

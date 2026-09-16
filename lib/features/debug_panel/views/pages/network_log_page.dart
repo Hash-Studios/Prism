@@ -272,7 +272,7 @@ class _NetworkDetailSheet extends StatelessWidget {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _SectionHeader('Request'),
+                  const _SectionHeader('Request'),
                   _KVRow('Method', entry.method),
                   _KVRow('URL', entry.url),
                   _KVRow('Time', entry.timestamp.toIso8601String()),

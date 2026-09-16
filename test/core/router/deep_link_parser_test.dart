@@ -1,6 +1,6 @@
+import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

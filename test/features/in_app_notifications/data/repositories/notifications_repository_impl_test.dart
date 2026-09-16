@@ -185,7 +185,7 @@ InAppNotificationEntity _notification({required String id, required String follo
     imageUrl: '',
     arguments: const <Object>[],
     url: '',
-    createdAt: DateTime.utc(2026, 1, 1),
+    createdAt: DateTime.utc(2026),
     read: false,
     followerEmail: followerEmail,
   );

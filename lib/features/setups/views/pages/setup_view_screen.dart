@@ -14,12 +14,11 @@ import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favouriteIcon.dart';
 import 'package:Prism/core/widgets/animated/showUp.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/home/core/collapsedPanel.dart';
 import 'package:Prism/core/widgets/menuButton/setWallpaperButton.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
-import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/data/share/createDynamicLink.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
 import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_mappers.dart';
@@ -30,6 +29,7 @@ import 'package:Prism/features/setups/views/widgets/clock_setup_overlay.dart';
 import 'package:Prism/global/svgAssets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +73,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
       }
       await context.router.push(
         WallpaperDetailRoute(
-          wallId: _setup.wallId!,
+          wallId: _setup.wallId,
           source: _setup.source ?? WallpaperSource.unknown,
           wallpaperUrl: _wallpaperValue.primaryUrl,
           thumbnailUrl: _setup.wallpaperThumb?.isNotEmpty == true ? _setup.wallpaperThumb! : _wallpaperValue.primaryUrl,

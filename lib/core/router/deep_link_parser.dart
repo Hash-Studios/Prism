@@ -1,5 +1,5 @@
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 
 class DeepLinkParser {
   const DeepLinkParser();

@@ -18,9 +18,9 @@ import 'package:Prism/features/favourite_setups/views/pages/favourite_setup_view
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
+import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
-import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';

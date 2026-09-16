@@ -214,8 +214,6 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
             childAspectRatio: 0.5,
-            mainAxisSpacing: 0,
-            crossAxisSpacing: 0,
           ),
           itemBuilder: (context, index) {
             if (widget.selectedProvider == "WallHaven") {

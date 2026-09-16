@@ -125,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   following: app_state.prismUser.following,
                 ),
                 endDrawer: app_state.prismUser.loggedIn
-                    ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: ProfileDrawer())
+                    ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: const ProfileDrawer())
                     : null,
               )
             : Scaffold(
@@ -406,47 +406,48 @@ class _ProfileChildState extends State<_ProfileChild> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            ((widget.followers ?? []).contains(app_state.prismUser.email))
-                                ? IconButton(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.all(2),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(6.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                      ),
-                                      child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                    onPressed: () {
-                                      _trackAction(
-                                        AnalyticsActionValue.unfollowTapped,
-                                        sourceContext: 'profile_screen_follow_action',
-                                      );
-                                      unfollow(widget.email!, widget.id!);
-                                      toasts.error("Unfollowed ${widget.name}!");
-                                    },
-                                  )
-                                : IconButton(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.all(2),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(6.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                      ),
-                                      child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                    onPressed: () {
-                                      _trackAction(
-                                        AnalyticsActionValue.followTapped,
-                                        sourceContext: 'profile_screen_follow_action',
-                                      );
-                                      follow(widget.email!, widget.id!);
-                                      toasts.codeSend("Followed ${widget.name}!");
-                                    },
+                            if ((widget.followers ?? []).contains(app_state.prismUser.email))
+                              IconButton(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.all(2),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                   ),
+                                  child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                                onPressed: () {
+                                  _trackAction(
+                                    AnalyticsActionValue.unfollowTapped,
+                                    sourceContext: 'profile_screen_follow_action',
+                                  );
+                                  unfollow(widget.email!, widget.id!);
+                                  toasts.error("Unfollowed ${widget.name}!");
+                                },
+                              )
+                            else
+                              IconButton(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.all(2),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                  ),
+                                  child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                                onPressed: () {
+                                  _trackAction(
+                                    AnalyticsActionValue.followTapped,
+                                    sourceContext: 'profile_screen_follow_action',
+                                  );
+                                  follow(widget.email!, widget.id!);
+                                  toasts.codeSend("Followed ${widget.name}!");
+                                },
+                              ),
                             PopupMenuButton<String>(
                               icon: Container(
                                 padding: const EdgeInsets.all(6.0),

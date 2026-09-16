@@ -45,11 +45,11 @@ class SwipeWallpaperCard extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
+                placeholder: (context, url) => ColoredBox(
                   color: colorScheme.surfaceContainerHighest,
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
-                errorWidget: (context, url, error) => Container(
+                errorWidget: (context, url, error) => ColoredBox(
                   color: colorScheme.errorContainer,
                   child: Icon(Icons.broken_image, color: colorScheme.onErrorContainer, size: 48),
                 ),

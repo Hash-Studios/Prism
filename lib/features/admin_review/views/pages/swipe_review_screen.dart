@@ -303,8 +303,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 
   Widget _buildSwipeHints() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 40),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -431,9 +431,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
               child: CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.contain,
-                placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
-                errorWidget: (_, __, ___) =>
-                    const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)),
+                placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
+                errorWidget: (_, _, _) => const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)),
               ),
             ),
           ),

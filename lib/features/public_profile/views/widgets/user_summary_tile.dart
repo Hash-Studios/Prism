@@ -90,7 +90,7 @@ class _UserAvatar extends StatelessWidget {
             width: 48,
             height: 48,
             fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => _FallbackAvatar(name: name),
+            errorWidget: (_, _, _) => _FallbackAvatar(name: name),
           ),
         ),
       );
