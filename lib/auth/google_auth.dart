@@ -18,8 +18,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-const String USER_NEW_COLLECTION = FirebaseCollections.usersV2;
-
 /// Thrown when the user selects a different Google account during re-authentication.
 class WrongAccountException implements Exception {
   final String selectedEmail;
@@ -84,7 +82,7 @@ class GoogleAuth {
       if (usersData != null) {
         final doc = usersData;
         app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(USER_NEW_COLLECTION, app_state.prismUser.id, {
+        firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
           'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
           'loggedIn': true,
         }, sourceTag: 'auth.signin.update_last_login_existing');
@@ -113,7 +111,7 @@ class GoogleAuth {
           coverPhoto: "",
         );
         firestoreClient.setDoc(
-          USER_NEW_COLLECTION,
+          FirebaseCollections.usersV2,
           app_state.prismUser.id,
           app_state.prismUser.toJson(),
           sourceTag: 'auth.signin.create_user',
@@ -253,7 +251,7 @@ class GoogleAuth {
     }
     try {
       if (existingUserId.isNotEmpty) {
-        await firestoreClient.updateDoc(USER_NEW_COLLECTION, existingUserId, {
+        await firestoreClient.updateDoc(FirebaseCollections.usersV2, existingUserId, {
           'loggedIn': false,
         }, sourceTag: 'auth.signout.mark_logged_out');
       }
@@ -315,7 +313,7 @@ class GoogleAuth {
     }
     final rows = await firestoreClient.query<Map<String, dynamic>>(
       FirestoreQuerySpec(
-        collection: USER_NEW_COLLECTION,
+        collection: FirebaseCollections.usersV2,
         sourceTag: 'auth.get_user_new',
         filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user.uid)],
         limit: 1,

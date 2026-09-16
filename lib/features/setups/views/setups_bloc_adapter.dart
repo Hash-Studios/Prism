@@ -46,8 +46,6 @@ extension SetupsBlocAdapterX on BuildContext {
   }
 }
 
-SetupEntity? setup;
-
 Future<SetupEntity?> getSetupFromName(String? name) async {
   try {
     final List<(SetupDocDto, String)> value = await firestoreClient.query<(SetupDocDto, String)>(
@@ -64,7 +62,7 @@ Future<SetupEntity?> getSetupFromName(String? name) async {
     }
     final SetupDocDto item = value.first.$1;
     final String docId = value.first.$2;
-    setup = SetupEntity(
+    return SetupEntity(
       id: item.id,
       by: item.by,
       icon: item.icon,
@@ -89,11 +87,8 @@ Future<SetupEntity?> getSetupFromName(String? name) async {
       size: item.size,
       firestoreDocumentId: docId,
     );
-    return setup;
   } catch (error) {
-    logger.d('data done with error');
-    logger.d(error.toString());
-    setup = null;
+    logger.e('getSetupFromName failed', error: error);
     return null;
   }
 }

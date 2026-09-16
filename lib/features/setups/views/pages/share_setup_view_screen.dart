@@ -119,7 +119,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
               if (snapshot.hasError) {
                 return Center(child: Loader());
               } else {
-                final setup = snapshot.data ?? sdata.setup;
+                final setup = snapshot.data;
                 if (setup == null) {
                   return Center(child: Loader());
                 }
