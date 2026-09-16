@@ -31,7 +31,7 @@ class OldVersion extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: () {
               openPrismLink(context, "https://play.google.com/store/apps/details?id=com.hash.prism");
             },
             style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),

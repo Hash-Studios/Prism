@@ -21,7 +21,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as Path;
+import 'package:path/path.dart' as path;
 
 @RoutePage(name: 'EditProfilePanelRoute')
 class EditProfilePanel extends StatefulWidget {
@@ -242,7 +242,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await github.repositories
           .createFile(
             RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(message: Path.basename(_pfp!.path), content: base64Image, path: Path.basename(_pfp!.path)),
+            CreateFile(message: path.basename(_pfp!.path), content: base64Image, path: path.basename(_pfp!.path)),
           )
           .then(
             (value) => setState(() {
@@ -268,7 +268,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await github.repositories
           .createFile(
             RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(message: Path.basename(_cover!.path), content: base64Image, path: Path.basename(_cover!.path)),
+            CreateFile(message: path.basename(_cover!.path), content: base64Image, path: path.basename(_cover!.path)),
           )
           .then(
             (value) => setState(() {

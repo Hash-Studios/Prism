@@ -518,20 +518,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
-      body: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
+      body: SizedBox.expand(
         child: loading
             ? Center(child: Loader())
             : Column(
                 children: [
                   Expanded(
                     flex: 6,
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: double.infinity,
-                      child: _buildFilteredImage(_filter, finalImage, finalFilename),
-                    ),
+                    child: SizedBox.expand(child: _buildFilteredImage(_filter, finalImage, finalFilename)),
                   ),
                   const Divider(height: 1),
                   Expanded(

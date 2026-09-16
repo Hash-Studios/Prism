@@ -162,7 +162,7 @@ class AiGenerationRepositoryImpl {
     }
   }
 
-  Future<AiGenerationRecord?> _fetchById(String generationId) async {
+  Future<AiGenerationRecord?> _fetchById(String generationId) {
     return firestoreClient.getById<AiGenerationRecord>(
       FirebaseCollections.aiGenerations,
       generationId,

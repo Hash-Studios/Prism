@@ -139,16 +139,21 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
             Text(widget.subtitle!, style: Theme.of(context).textTheme.bodySmall),
           ],
           const SizedBox(height: 16),
-          ...kContentReportReasons.map((pair) {
-            final bool sel = _selectedWire == pair.$1;
-            return RadioListTile<String>(
-              value: pair.$1,
-              groupValue: _selectedWire,
-              title: Text(pair.$2),
-              onChanged: _submitting ? null : (String? v) => setState(() => _selectedWire = v),
-              selected: sel,
-            );
-          }),
+          RadioGroup<String>(
+            groupValue: _selectedWire,
+            onChanged: (String? v) {
+              if (_submitting) {
+                return;
+              }
+              setState(() => _selectedWire = v);
+            },
+            child: Column(
+              children: kContentReportReasons.map((pair) {
+                final bool sel = _selectedWire == pair.$1;
+                return RadioListTile<String>(value: pair.$1, title: Text(pair.$2), selected: sel);
+              }).toList(),
+            ),
+          ),
           TextField(
             controller: _details,
             enabled: !_submitting,

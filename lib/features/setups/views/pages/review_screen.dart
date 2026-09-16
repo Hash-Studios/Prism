@@ -353,7 +353,7 @@ class _WallTile extends StatelessWidget {
                                   decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                   child: IconButton(
                                     icon: const Icon(JamIcons.trash, color: Colors.white),
-                                    onPressed: () async {
+                                    onPressed: () {
                                       final AlertDialog deleteWallPopUp = AlertDialog(
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                         title: Text(
@@ -999,15 +999,8 @@ class SetupTile extends StatelessWidget {
   }
 }
 
-DateTime _toDateTime(dynamic value) {
-  if (value is DateTime) {
-    return value;
-  }
-  final dynamic withToDate = value;
-  if (withToDate != null && withToDate.toDate is Function) {
-    return withToDate.toDate() as DateTime;
-  }
-  return DateTime.now().toUtc();
+DateTime _toDateTime(DateTime? value) {
+  return value ?? DateTime.now().toUtc();
 }
 
 Future<void> _reviewDeleteDoc({

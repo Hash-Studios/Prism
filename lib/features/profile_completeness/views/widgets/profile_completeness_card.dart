@@ -42,7 +42,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
   Future<void> _handleComplete() async {
     if (_isLoading || widget.onCompleteNow == null) return;
     setState(() => _isLoading = true);
-    SemanticsService.announce('Opening profile editor', TextDirection.ltr);
+    SemanticsService.sendAnnouncement(View.of(context), 'Opening profile editor', TextDirection.ltr);
     try {
       await widget.onCompleteNow!();
     } finally {

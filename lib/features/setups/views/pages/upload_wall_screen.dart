@@ -8,7 +8,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -18,7 +18,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:github/github.dart';
-import 'package:path/path.dart' as Path;
+import 'package:path/path.dart' as path;
 import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
@@ -147,7 +147,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       await github.repositories
           .createFile(
             RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
+            CreateFile(message: path.basename(image.path), content: base64Image, path: path.basename(image.path)),
           )
           .then(
             (value) => setState(() {
@@ -160,9 +160,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           .createFile(
             RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
             CreateFile(
-              message: "thumb_${Path.basename(image.path)}",
+              message: "thumb_${path.basename(image.path)}",
               content: base64ImageThumb,
-              path: 'thumb_${Path.basename(image.path)}',
+              path: 'thumb_${path.basename(image.path)}',
             ),
           )
           .then(
@@ -178,6 +178,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       });
     } catch (e) {
       logger.d(e.toString());
+      if (!mounted) return;
       Navigator.pop(context);
       toasts.error("Some uploading issue, please try again.");
     }
@@ -298,10 +299,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               : Theme.of(context).hintColor,
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
-              ? () async {
+              ? () {
                   Navigator.pop(context, [wallpaperUrl, id]);
                   analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
-                  WallStore.createRecord(
+                  wall_store.createRecord(
                     id,
                     wallpaperProvider,
                     wallpaperThumb,

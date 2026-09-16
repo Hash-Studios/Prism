@@ -53,9 +53,9 @@ class _ThemeViewState extends State<ThemeView> {
   @override
   void initState() {
     currentTheme = context.prismLightTheme(listen: false);
-    selectedTheme = PrismThemeMapper.lightThemeIndex(context.prismLightThemeId(listen: false));
+    selectedTheme = prismLightThemeIndex(context.prismLightThemeId(listen: false));
     currentDarkTheme = context.prismDarkTheme(listen: false);
-    selectedDarkTheme = PrismThemeMapper.darkThemeIndex(context.prismDarkThemeId(listen: false));
+    selectedDarkTheme = prismDarkThemeIndex(context.prismDarkThemeId(listen: false));
     selectedAccentColor = Color(context.prismLightAccentValue(listen: false));
     selectedDarkAccentColor = Color(context.prismDarkAccentValue(listen: false));
     changingLight = context.prismModeStyleForWindow(listen: false) == "Light";

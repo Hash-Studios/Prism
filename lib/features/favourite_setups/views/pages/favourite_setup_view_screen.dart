@@ -315,7 +315,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                           ),
                                         ),
                                         GestureDetector(
-                                          onTap: () async {
+                                          onTap: () {
                                             final String? docId = _setup.firestoreDocumentId;
                                             if (docId == null || docId.isEmpty) {
                                               toasts.error('Report unavailable for this setup.');
@@ -434,7 +434,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   ),
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
+                                    onTap: () {
                                       openPrismLink(context, _setup.iconUrl.toString());
                                     },
                                     tileText: _setup.icon.toString(),
@@ -459,7 +459,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   ),
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
+                                    onTap: () {
                                       openPrismLink(context, _setup.iconUrl.toString());
                                     },
                                     tileText: _setup.icon.toString(),
@@ -469,7 +469,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                   ),
                                   SetupDetailsTile(
                                     isInstalled: Future.value(false),
-                                    onTap: () async {
+                                    onTap: () {
                                       openPrismLink(context, _setup.widgetUrl.toString());
                                     },
                                     tileText: _setup.widget.toString(),
@@ -494,7 +494,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
+                                      onTap: () {
                                         openPrismLink(context, _setup.iconUrl.toString());
                                       },
                                       tileText: _setup.icon.toString(),
@@ -504,7 +504,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
+                                      onTap: () {
                                         openPrismLink(context, _setup.widgetUrl.toString());
                                       },
                                       tileText: _setup.widget.toString(),
@@ -514,7 +514,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
                                     ),
                                     SetupDetailsTile(
                                       isInstalled: Future.value(false),
-                                      onTap: () async {
+                                      onTap: () {
                                         openPrismLink(context, _setup.widgetUrl2.toString());
                                       },
                                       tileText: _setup.widget2.toString(),
@@ -699,7 +699,7 @@ class SetupDetailsTile extends StatelessWidget {
   final Duration delay;
   final String tileType;
   final String tileText;
-  final Function onTap;
+  final VoidCallback onTap;
   final Future<bool> isInstalled;
   const SetupDetailsTile({
     super.key,
@@ -813,7 +813,7 @@ class ModifiedDownloadButton extends StatelessWidget {
         ? hasWallId
               ? DownloadButton(link: wallpaper.primaryUrl, colorChanged: false)
               : GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     openPrismLink(context, wallpaper.primaryUrl);
                   },
                   child: Container(
@@ -833,7 +833,7 @@ class ModifiedDownloadButton extends StatelessWidget {
                   ),
                 )
         : GestureDetector(
-            onTap: () async {
+            onTap: () {
               openPrismLink(context, wallpaper.deepLinkUrl ?? wallpaper.primaryUrl);
             },
             child: Container(
@@ -863,7 +863,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
         ? hasWallId
               ? SetWallpaperButton(url: wallpaper.primaryUrl, colorChanged: false)
               : GestureDetector(
-                  onTap: () async {
+                  onTap: () {
                     openPrismLink(context, wallpaper.primaryUrl);
                   },
                   child: Container(
@@ -883,7 +883,7 @@ class ModifiedSetWallpaperButton extends StatelessWidget {
                   ),
                 )
         : GestureDetector(
-            onTap: () async {
+            onTap: () {
               openPrismLink(context, wallpaper.deepLinkUrl ?? wallpaper.primaryUrl);
             },
             child: Container(

@@ -371,7 +371,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
   }) {
     return Dismissible(
       key: ValueKey<String>(notification.id),
-      confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
+      confirmDismiss: (DismissDirection direction) => _confirmRemoveFromInbox(
         context,
         title: 'Remove from inbox?',
         content: 'This notification will be removed from your list on this device.',
@@ -405,7 +405,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     final bool expanded = _expandedNotificationGroups.contains(group.key);
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
-      confirmDismiss: (DismissDirection direction) async => _confirmRemoveFromInbox(
+      confirmDismiss: (DismissDirection direction) => _confirmRemoveFromInbox(
         context,
         title: 'Remove this summary?',
         content: 'All ${group.items.length} notifications in this group will be removed from your list on this device.',

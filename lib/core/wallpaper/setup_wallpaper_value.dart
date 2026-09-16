@@ -22,7 +22,7 @@ final class SetupWallpaperValue {
 
   bool get hasDeepLink => (deepLinkUrl ?? '').isNotEmpty;
 
-  static SetupWallpaperValue parse(String? rawValue) {
+  factory SetupWallpaperValue.parse(String? rawValue) {
     final String raw = rawValue?.trim() ?? '';
     if (raw.isEmpty) {
       return const SetupWallpaperValue._(
