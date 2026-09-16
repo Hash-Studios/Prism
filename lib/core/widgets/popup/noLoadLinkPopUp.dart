@@ -1,4 +1,3 @@
-// import 'package:Prism/data/links/model/linksModel.dart';
 import 'package:Prism/core/state/app_state.dart';
 import 'package:Prism/features/public_profile/public_profile.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
@@ -7,12 +6,6 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
 void showNoLoadLinksPopUp(BuildContext context, Map link) {
-  // List<LinksModel> links = [];
-  // void getLinks(Map link) {
-  //   links = linksToModel(link);
-  // }
-
-  // getLinks(link);
   final AlertDialog linkPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     title: Text(

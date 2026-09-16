@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ArrowBounceAnimation extends StatefulWidget {
-  final Function? onTap;
+  final VoidCallback? onTap;
   final Widget? child;
 
   const ArrowBounceAnimation({this.child, this.onTap});
@@ -27,7 +27,6 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation> with Single
 
   @override
   void dispose() {
-    _controller.removeListener(() {});
     _controller.dispose();
     super.dispose();
   }
@@ -45,6 +44,6 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation> with Single
   }
 
   void _onTap() {
-    if (widget.onTap != null) widget.onTap!();
+    widget.onTap?.call();
   }
 }

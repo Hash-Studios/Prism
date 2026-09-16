@@ -117,10 +117,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
           return Result.error(const ValidationFailure('Unsupported category source'));
       }
 
-      await _writeCache(
-        category,
-        CategoryFeedPage(items: items, hasMore: hasMore, nextCursor: items.isEmpty ? null : items.length.toString()),
-      );
+      await _writeCache(category, CategoryFeedPage(items: items, hasMore: hasMore));
 
       logger.i(
         '[CategoryFeedRepository] fetchCategoryFeed success',
@@ -133,9 +130,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
         },
       );
 
-      return Result.success(
-        CategoryFeedPage(items: items, hasMore: hasMore, nextCursor: items.isEmpty ? null : items.length.toString()),
-      );
+      return Result.success(CategoryFeedPage(items: items, hasMore: hasMore));
     } catch (error, stackTrace) {
       final cached = await _readCached(category);
       if (cached != null) {
@@ -170,7 +165,6 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       payload: <String, Object?>{
         'items': page.items.map(_encodeFeedItem).toList(growable: false),
         'hasMore': page.hasMore,
-        'nextCursor': page.nextCursor,
       },
     );
   }
@@ -218,11 +212,7 @@ class CategoryFeedRepositoryImpl implements CategoryFeedRepository {
       return null;
     }
 
-    return CategoryFeedPage(
-      items: items,
-      hasMore: payload['hasMore'] == true,
-      nextCursor: payload['nextCursor']?.toString(),
-    );
+    return CategoryFeedPage(items: items, hasMore: payload['hasMore'] == true);
   }
 
   String _scopeFor(CategoryEntity category) {

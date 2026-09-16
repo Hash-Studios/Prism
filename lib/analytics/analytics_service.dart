@@ -11,16 +11,6 @@ class _AnalyticsFacade {
     return AnalyticsRuntime.instance.track(event);
   }
 
-  @Deprecated('Use analytics.track(...) with generated AnalyticsEvent types.')
-  Future<void> logShare({required String contentType, required String itemId, required String method}) {
-    return AnalyticsRuntime.instance.logShare(contentType: contentType, itemId: itemId, method: method);
-  }
-
-  @Deprecated('Use analytics.track(...) with generated AnalyticsEvent types.')
-  Future<void> logLogin({String? loginMethod}) {
-    return AnalyticsRuntime.instance.logLogin(loginMethod: loginMethod);
-  }
-
   Future<void> setUserId(String? userId) {
     return AnalyticsRuntime.instance.setUserId(userId);
   }
@@ -31,15 +21,6 @@ class _AnalyticsFacade {
 
   Future<void> flush() {
     return AnalyticsRuntime.instance.flush();
-  }
-
-  @Deprecated('Use analytics.track(...) with generated AnalyticsEvent types.')
-  Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters}) {
-    return AnalyticsRuntime.instance.logScreenView(
-      screenName: screenName,
-      screenClass: screenClass,
-      parameters: parameters,
-    );
   }
 
   List<NavigatorObserver> buildNavigatorObservers() {

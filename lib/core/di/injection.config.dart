@@ -489,13 +489,6 @@ _i174.GetIt initGetIt(
       gh<_i518.UpdateThemeLightAccentUseCase>(),
     ),
   );
-  gh.lazySingleton<_i489.WallOfTheDayRepository>(
-    () => _i1070.WallOfTheDayRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i112.UserBlockRepository>(),
-    ),
-  );
   gh.factory<_i704.FavouriteSetupsBloc>(
     () => _i704.FavouriteSetupsBloc(
       gh<_i340.FetchFavouriteSetupsUseCase>(),
@@ -569,9 +562,6 @@ _i174.GetIt initGetIt(
   gh.factory<_i456.StreakShopBloc>(
     () => _i456.StreakShopBloc(gh<_i727.PrismWallpaperRepository>()),
   );
-  gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
-    () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
-  );
   gh.factory<_i711.ReviewBatchBloc>(
     () => _i711.ReviewBatchBloc(gh<_i122.ReviewBatchRepository>()),
   );
@@ -599,9 +589,6 @@ _i174.GetIt initGetIt(
       gh<_i817.PublicProfileRepository>(),
     ),
   );
-  gh.lazySingleton<_i446.FetchUserSummariesUseCase>(
-    () => _i446.FetchUserSummariesUseCase(gh<_i817.PublicProfileRepository>()),
-  );
   gh.lazySingleton<_i446.FetchUserSummariesPageUseCase>(
     () => _i446.FetchUserSummariesPageUseCase(
       gh<_i817.PublicProfileRepository>(),
@@ -614,12 +601,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
   );
-  gh.lazySingleton<_i502.FirstWallpaperService>(
-    () => _i502.FirstWallpaperService(
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i489.WallOfTheDayRepository>(),
-    ),
-  );
   gh.factory<_i195.CategoryFeedBloc>(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
@@ -629,21 +610,16 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
     () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
   );
+  gh.lazySingleton<_i489.WallOfTheDayRepository>(
+    () => _i1070.WallOfTheDayRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i727.PrismWallpaperRepository>(),
+    ),
+  );
   gh.factory<_i736.ThemeModeBloc>(
     () => _i736.ThemeModeBloc(
       gh<_i836.LoadThemeModeUseCase>(),
       gh<_i836.UpdateThemeModeUseCase>(),
-    ),
-  );
-  gh.factory<_i224.OnboardingV2Bloc>(
-    () => _i224.OnboardingV2Bloc(
-      gh<_i132.FetchStarterPackUseCase>(),
-      gh<_i95.SaveInterestsUseCase>(),
-      gh<_i74.FollowStarterPackUseCase>(),
-      gh<_i975.CompleteOnboardingV2UseCase>(),
-      gh<_i502.FirstWallpaperService>(),
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i897.OnboardingV2Repository>(),
     ),
   );
   gh.factory<_i717.PublicProfileBloc>(
@@ -668,9 +644,6 @@ _i174.GetIt initGetIt(
       gh<_i567.PersonalizedFeedRepository>(),
     ),
   );
-  gh.factory<_i183.WotdBloc>(
-    () => _i183.WotdBloc(gh<_i398.FetchWallOfTheDayUseCase>()),
-  );
   gh.factory<_i872.PersonalizedFeedBloc>(
     () => _i872.PersonalizedFeedBloc(
       gh<_i212.FetchPersonalizedFeedUseCase>(),
@@ -682,6 +655,29 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i941.ProfileSetupsBloc>(
     () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
+  );
+  gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
+    () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
+  );
+  gh.lazySingleton<_i502.FirstWallpaperService>(
+    () => _i502.FirstWallpaperService(
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+    ),
+  );
+  gh.factory<_i224.OnboardingV2Bloc>(
+    () => _i224.OnboardingV2Bloc(
+      gh<_i132.FetchStarterPackUseCase>(),
+      gh<_i95.SaveInterestsUseCase>(),
+      gh<_i74.FollowStarterPackUseCase>(),
+      gh<_i975.CompleteOnboardingV2UseCase>(),
+      gh<_i502.FirstWallpaperService>(),
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i897.OnboardingV2Repository>(),
+    ),
+  );
+  gh.factory<_i183.WotdBloc>(
+    () => _i183.WotdBloc(gh<_i398.FetchWallOfTheDayUseCase>()),
   );
   return getIt;
 }

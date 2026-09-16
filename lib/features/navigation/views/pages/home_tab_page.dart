@@ -35,9 +35,7 @@ class HomeTabPage extends StatefulWidget {
 class _HomeTabPageState extends State<HomeTabPage> {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
-  int page = 0;
   bool result = true;
-  String shortcut = "No Action Set";
   bool _hasHandledQuickActionInvocation = false;
   bool _isChangelogCheckPending = true;
   int _personalizedFeedVersion = 0;
@@ -132,9 +130,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       _trackQuickActionInvocation(shortcutType);
-      setState(() {
-        shortcut = shortcutType;
-      });
       if (shortcutType == 'Downloads') {
         logger.d('Downloads');
         context.router.push(const DownloadRoute());
@@ -179,7 +174,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       body: Stack(
         children: <Widget>[
           PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
-          if (!result) ConnectivityWidget() else Container(),
+          if (!result) const ConnectivityWidget() else Container(),
         ],
       ),
     );

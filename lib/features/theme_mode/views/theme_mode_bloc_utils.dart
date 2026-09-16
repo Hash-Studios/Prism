@@ -26,10 +26,6 @@ final Map<String, ThemeData> prismDarkThemes = <String, ThemeData>{
 const String prismAmoledDarkThemeId = 'kDAMOLED';
 
 final class PrismThemeMapper {
-  const PrismThemeMapper();
-
-  String identity() => 'PrismThemeMapper';
-
   static const String _fallbackLightThemeId = 'kLFrost White';
   static const String _fallbackDarkThemeId = 'kDMaterial Dark';
 

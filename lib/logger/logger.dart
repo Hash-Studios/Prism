@@ -8,10 +8,3 @@ final AppLogger logger = AppLogger(
   minimumLevel: kReleaseMode ? AppLogLevel.warn : AppLogLevel.trace,
   sink: CompositeLogSink(<LogSink>[PrintLogSink(), SentryLogSink(), InMemoryLogSink.instance]),
 );
-
-const String logExportDisabledMarker = 'DISABLED::::';
-
-Future<String> zipLogs() async {
-  logger.w('Log export is temporarily disabled during the phase-1 logger migration.', tag: 'Logger');
-  return logExportDisabledMarker;
-}

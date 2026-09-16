@@ -11,10 +11,6 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-// ---------------------------------------------------------------------------
-// Data model
-// ---------------------------------------------------------------------------
-
 enum ChangeType { feature, fix, improvement }
 
 class _ChangeItem {
@@ -104,10 +100,6 @@ const List<_ChangelogVersion> _fallbackChangelog = [
     ],
   ),
 ];
-
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 
 void showChangelog(BuildContext context, VoidCallback func) {
   final controller = ScrollController();
@@ -336,10 +328,6 @@ class _ChangelogListState extends State<_ChangelogList> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Version header widget
-// ---------------------------------------------------------------------------
-
 class _ChangeVersion extends StatelessWidget {
   final String number;
   final bool showDivider;
@@ -378,10 +366,6 @@ class _ChangeVersion extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Change row widget
-// ---------------------------------------------------------------------------
 
 class _ChangeRow extends StatelessWidget {
   final IconData icon;
@@ -428,22 +412,5 @@ class _ChangeRow extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Public re-export for callers that use `Change` directly (backward compat)
-// ---------------------------------------------------------------------------
-
-/// Retained for backward compatibility. Prefer using the [showChangelog] data
-/// model instead of constructing [Change] widgets manually.
-class Change extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  const Change({required this.icon, required this.text, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _ChangeRow(icon: icon, text: text, type: ChangeType.feature);
   }
 }
