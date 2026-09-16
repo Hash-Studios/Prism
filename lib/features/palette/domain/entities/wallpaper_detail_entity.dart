@@ -135,7 +135,6 @@ extension WallpaperDetailEntityX on WallpaperDetailEntity {
       ),
       collections: publicWall.collections,
       review: publicWall.review,
-      firestoreDocumentId: null,
     );
     return PrismDetailEntity(wallpaper: wallpaper);
   }

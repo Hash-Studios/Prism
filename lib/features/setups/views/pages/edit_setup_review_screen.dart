@@ -7,8 +7,8 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/apps/app_icon.dart';
-import 'package:Prism/data/apps/appsData.dart';
-import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as WallStore;
+import 'package:Prism/data/apps/apps_data.dart';
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -19,7 +19,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path/path.dart' as Path;
+import 'package:path/path.dart' as path;
 
 @RoutePage()
 class EditSetupReviewScreen extends StatefulWidget {
@@ -178,7 +178,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
       await github.repositories
           .createFile(
             RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoSetups)),
-            CreateFile(message: Path.basename(image.path), content: base64Image, path: Path.basename(image.path)),
+            CreateFile(message: path.basename(image.path), content: base64Image, path: path.basename(image.path)),
           )
           .then(
             (value) => setState(() {
@@ -191,6 +191,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
       });
     } catch (e) {
       logger.d(e.toString());
+      if (!mounted) return;
       Navigator.pop(context);
       toasts.error("Some uploading issue, please try again.");
     }
@@ -205,7 +206,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
         actions: [
           TextButton(
             onPressed: !isProcessing && !isUploading
-                ? () async {
+                ? () {
                     if (setupName.text == "" ||
                         setupDesc.text == "" ||
                         (wallpaperUploaded == false &&
@@ -217,7 +218,7 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                     } else {
                       Navigator.pop(context);
                       analytics.track(EditSetupEvent(setupId: id ?? '', link: imageURL ?? ''));
-                      WallStore.updateSetup(
+                      wall_store.updateSetup(
                         setupDoc.id,
                         id,
                         imageURL,
@@ -840,8 +841,10 @@ class _EditSetupReviewScreenState extends State<EditSetupReviewScreen> {
                               : Theme.of(context).colorScheme.error,
                           onPressed: () async {
                             final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                            if (!mounted) return;
                             if (pickedFile != null) {
                               Future.delayed(Duration.zero).then((value) async {
+                                if (!context.mounted) return;
                                 final argumentsFromWall = await context.router.push(
                                   UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
                                 );

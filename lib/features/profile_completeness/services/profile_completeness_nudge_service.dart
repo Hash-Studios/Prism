@@ -15,8 +15,8 @@ typedef _ProfileCompletenessSheetLauncher =
 typedef _ProfileCompletenessEventTracker = Future<void> Function(AnalyticsEvent event);
 typedef _ProfileCompletenessOpenEditProfile = Future<void> Function(BuildContext context);
 
-typedef _ReadPrefValue = dynamic Function(String key, {dynamic defaultValue});
-typedef _WritePrefValue = Future<void> Function(String key, dynamic value);
+typedef _ReadPrefValue = bool? Function(String key, {bool defaultValue});
+typedef _WritePrefValue = Future<void> Function(String key, bool value);
 typedef _IsPrefsOpen = bool Function();
 
 class ProfileCompletenessNudgeService {
@@ -71,7 +71,7 @@ class ProfileCompletenessNudgeService {
     }
 
     final String prefKey = shownPrefKeyForUser(userId);
-    final bool hasShown = (_readPrefValue(prefKey, defaultValue: false) as bool?) ?? false;
+    final bool hasShown = _readPrefValue(prefKey, defaultValue: false) ?? false;
     if (hasShown) {
       return;
     }
@@ -121,11 +121,11 @@ class ProfileCompletenessNudgeService {
 
   static bool _defaultIsPrefsOpen() => true;
 
-  static dynamic _defaultReadPrefValue(String key, {dynamic defaultValue}) {
-    return getIt<SettingsLocalDataSource>().get<dynamic>(key, defaultValue: defaultValue);
+  static bool? _defaultReadPrefValue(String key, {bool defaultValue = false}) {
+    return getIt<SettingsLocalDataSource>().get<bool>(key, defaultValue: defaultValue);
   }
 
-  static Future<void> _defaultWritePrefValue(String key, dynamic value) async {
+  static Future<void> _defaultWritePrefValue(String key, bool value) async {
     await getIt<SettingsLocalDataSource>().set(key, value);
   }
 

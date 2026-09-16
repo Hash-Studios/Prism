@@ -356,7 +356,7 @@ String toString() {
 /// @nodoc
 mixin _$CategoryFeedState {
 
- LoadStatus get status; ActionStatus get actionStatus; List<CategoryEntity> get categories; CategoryEntity? get selectedCategory; List<FeedItemEntity> get items; bool get hasMore; String? get nextCursor; bool get isFetchingMore; Failure? get failure;
+ LoadStatus get status; ActionStatus get actionStatus; List<CategoryEntity> get categories; CategoryEntity? get selectedCategory; List<FeedItemEntity> get items; bool get hasMore; bool get isFetchingMore; Failure? get failure;
 /// Create a copy of CategoryFeedState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -367,16 +367,16 @@ $CategoryFeedStateCopyWith<CategoryFeedState> get copyWith => _$CategoryFeedStat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CategoryFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.categories, categories)&&(identical(other.selectedCategory, selectedCategory) || other.selectedCategory == selectedCategory)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CategoryFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.categories, categories)&&(identical(other.selectedCategory, selectedCategory) || other.selectedCategory == selectedCategory)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(categories),selectedCategory,const DeepCollectionEquality().hash(items),hasMore,nextCursor,isFetchingMore,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(categories),selectedCategory,const DeepCollectionEquality().hash(items),hasMore,isFetchingMore,failure);
 
 @override
 String toString() {
-  return 'CategoryFeedState(status: $status, actionStatus: $actionStatus, categories: $categories, selectedCategory: $selectedCategory, items: $items, hasMore: $hasMore, nextCursor: $nextCursor, isFetchingMore: $isFetchingMore, failure: $failure)';
+  return 'CategoryFeedState(status: $status, actionStatus: $actionStatus, categories: $categories, selectedCategory: $selectedCategory, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, failure: $failure)';
 }
 
 
@@ -387,7 +387,7 @@ abstract mixin class $CategoryFeedStateCopyWith<$Res>  {
   factory $CategoryFeedStateCopyWith(CategoryFeedState value, $Res Function(CategoryFeedState) _then) = _$CategoryFeedStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<CategoryEntity> categories, CategoryEntity? selectedCategory, List<FeedItemEntity> items, bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, List<CategoryEntity> categories, CategoryEntity? selectedCategory, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, Failure? failure
 });
 
 
@@ -404,7 +404,7 @@ class _$CategoryFeedStateCopyWithImpl<$Res>
 
 /// Create a copy of CategoryFeedState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? categories = null,Object? selectedCategory = freezed,Object? items = null,Object? hasMore = null,Object? nextCursor = freezed,Object? isFetchingMore = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? categories = null,Object? selectedCategory = freezed,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? failure = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -412,8 +412,7 @@ as ActionStatus,categories: null == categories ? _self.categories : categories /
 as List<CategoryEntity>,selectedCategory: freezed == selectedCategory ? _self.selectedCategory : selectedCategory // ignore: cast_nullable_to_non_nullable
 as CategoryEntity?,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
 as List<FeedItemEntity>,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
-as bool,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
-as String?,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
+as bool,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
 as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
@@ -500,10 +499,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<CategoryEntity> categories,  CategoryEntity? selectedCategory,  List<FeedItemEntity> items,  bool hasMore,  String? nextCursor,  bool isFetchingMore,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<CategoryEntity> categories,  CategoryEntity? selectedCategory,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CategoryFeedState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedCategory,_that.items,_that.hasMore,_that.nextCursor,_that.isFetchingMore,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedCategory,_that.items,_that.hasMore,_that.isFetchingMore,_that.failure);case _:
   return orElse();
 
 }
@@ -521,10 +520,10 @@ return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedC
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<CategoryEntity> categories,  CategoryEntity? selectedCategory,  List<FeedItemEntity> items,  bool hasMore,  String? nextCursor,  bool isFetchingMore,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<CategoryEntity> categories,  CategoryEntity? selectedCategory,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  Failure? failure)  $default,) {final _that = this;
 switch (_that) {
 case _CategoryFeedState():
-return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedCategory,_that.items,_that.hasMore,_that.nextCursor,_that.isFetchingMore,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedCategory,_that.items,_that.hasMore,_that.isFetchingMore,_that.failure);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -541,10 +540,10 @@ return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedC
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<CategoryEntity> categories,  CategoryEntity? selectedCategory,  List<FeedItemEntity> items,  bool hasMore,  String? nextCursor,  bool isFetchingMore,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<CategoryEntity> categories,  CategoryEntity? selectedCategory,  List<FeedItemEntity> items,  bool hasMore,  bool isFetchingMore,  Failure? failure)?  $default,) {final _that = this;
 switch (_that) {
 case _CategoryFeedState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedCategory,_that.items,_that.hasMore,_that.nextCursor,_that.isFetchingMore,_that.failure);case _:
+return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedCategory,_that.items,_that.hasMore,_that.isFetchingMore,_that.failure);case _:
   return null;
 
 }
@@ -556,7 +555,7 @@ return $default(_that.status,_that.actionStatus,_that.categories,_that.selectedC
 
 
 class _CategoryFeedState implements CategoryFeedState {
-  const _CategoryFeedState({required this.status, required this.actionStatus, required final  List<CategoryEntity> categories, required this.selectedCategory, required final  List<FeedItemEntity> items, required this.hasMore, required this.nextCursor, required this.isFetchingMore, this.failure}): _categories = categories,_items = items;
+  const _CategoryFeedState({required this.status, required this.actionStatus, required final  List<CategoryEntity> categories, required this.selectedCategory, required final  List<FeedItemEntity> items, required this.hasMore, required this.isFetchingMore, this.failure}): _categories = categories,_items = items;
   
 
 @override final  LoadStatus status;
@@ -577,7 +576,6 @@ class _CategoryFeedState implements CategoryFeedState {
 }
 
 @override final  bool hasMore;
-@override final  String? nextCursor;
 @override final  bool isFetchingMore;
 @override final  Failure? failure;
 
@@ -591,16 +589,16 @@ _$CategoryFeedStateCopyWith<_CategoryFeedState> get copyWith => __$CategoryFeedS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CategoryFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._categories, _categories)&&(identical(other.selectedCategory, selectedCategory) || other.selectedCategory == selectedCategory)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CategoryFeedState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._categories, _categories)&&(identical(other.selectedCategory, selectedCategory) || other.selectedCategory == selectedCategory)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.failure, failure) || other.failure == failure));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_categories),selectedCategory,const DeepCollectionEquality().hash(_items),hasMore,nextCursor,isFetchingMore,failure);
+int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_categories),selectedCategory,const DeepCollectionEquality().hash(_items),hasMore,isFetchingMore,failure);
 
 @override
 String toString() {
-  return 'CategoryFeedState(status: $status, actionStatus: $actionStatus, categories: $categories, selectedCategory: $selectedCategory, items: $items, hasMore: $hasMore, nextCursor: $nextCursor, isFetchingMore: $isFetchingMore, failure: $failure)';
+  return 'CategoryFeedState(status: $status, actionStatus: $actionStatus, categories: $categories, selectedCategory: $selectedCategory, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore, failure: $failure)';
 }
 
 
@@ -611,7 +609,7 @@ abstract mixin class _$CategoryFeedStateCopyWith<$Res> implements $CategoryFeedS
   factory _$CategoryFeedStateCopyWith(_CategoryFeedState value, $Res Function(_CategoryFeedState) _then) = __$CategoryFeedStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<CategoryEntity> categories, CategoryEntity? selectedCategory, List<FeedItemEntity> items, bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, List<CategoryEntity> categories, CategoryEntity? selectedCategory, List<FeedItemEntity> items, bool hasMore, bool isFetchingMore, Failure? failure
 });
 
 
@@ -628,7 +626,7 @@ class __$CategoryFeedStateCopyWithImpl<$Res>
 
 /// Create a copy of CategoryFeedState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? categories = null,Object? selectedCategory = freezed,Object? items = null,Object? hasMore = null,Object? nextCursor = freezed,Object? isFetchingMore = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? categories = null,Object? selectedCategory = freezed,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,Object? failure = freezed,}) {
   return _then(_CategoryFeedState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
@@ -636,8 +634,7 @@ as ActionStatus,categories: null == categories ? _self._categories : categories 
 as List<CategoryEntity>,selectedCategory: freezed == selectedCategory ? _self.selectedCategory : selectedCategory // ignore: cast_nullable_to_non_nullable
 as CategoryEntity?,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
 as List<FeedItemEntity>,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
-as bool,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
-as String?,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
+as bool,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
 as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));

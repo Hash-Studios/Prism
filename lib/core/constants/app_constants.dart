@@ -1,6 +1,6 @@
-import 'package:Prism/auth/badgeModel.dart';
-import 'package:Prism/auth/transactionModel.dart';
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/badge_model.dart';
+import 'package:Prism/auth/transaction_model.dart';
+import 'package:Prism/auth/user_model.dart';
 
 const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';

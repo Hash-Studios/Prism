@@ -38,7 +38,6 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
               items: const <FeedItemEntity>[],
               selectedCategory: null,
               hasMore: false,
-              nextCursor: null,
             ),
           );
           return;
@@ -75,7 +74,6 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
           actionStatus: ActionStatus.success,
           items: page.items,
           hasMore: page.hasMore,
-          nextCursor: page.nextCursor,
           isFetchingMore: false,
           failure: null,
         ),
@@ -115,7 +113,6 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
             actionStatus: ActionStatus.success,
             items: uniqueById,
             hasMore: page.hasMore,
-            nextCursor: page.nextCursor,
             isFetchingMore: false,
             failure: null,
           ),

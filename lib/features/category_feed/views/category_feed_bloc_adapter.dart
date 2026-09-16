@@ -3,7 +3,7 @@ import 'package:Prism/data/categories/categories.dart' as category_data;
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
-import 'package:Prism/global/categoryMenu.dart';
+import 'package:Prism/global/category_menu.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

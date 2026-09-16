@@ -6,15 +6,16 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/repositories/prism_wallpaper_repository_impl.dart';
-import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../../support/fake_user_block_repository.dart';
 
 void main() {
   group('PrismWallpaperRepositoryImpl', () {
     test('waits for blocked creators and refills filtered pages without skipping visible rows', () async {
       final firestore = _FakeFirestoreClient(_buildWallDocs(count: 30));
       final cache = _FakeFeedCacheLocalDataSource();
-      final blocks = _FakeUserBlockRepository.pending();
+      final blocks = FakeUserBlockRepository.pending();
       final repo = PrismWallpaperRepositoryImpl(firestore, cache, blocks);
 
       final Future<Result<List<PrismWallpaper>>> pending = repo.fetchFeed(refresh: true);
@@ -142,52 +143,6 @@ class _FakeFeedCacheLocalDataSource extends FeedCacheLocalDataSource {
   }
 }
 
-class _FakeUserBlockRepository implements UserBlockRepository {
-  _FakeUserBlockRepository.pending();
-
-  final StreamController<Set<String>> _controller = StreamController<Set<String>>.broadcast();
-  final Completer<Set<String>> _initialLoad = Completer<Set<String>>();
-
-  Set<String> _cached = <String>{};
-  bool _hasLoaded = false;
-
-  void completeInitial(Set<String> blocked) {
-    _cached = blocked;
-    _hasLoaded = true;
-    if (!_initialLoad.isCompleted) {
-      _initialLoad.complete(blocked);
-    }
-    _controller.add(blocked);
-  }
-
-  @override
-  Set<String> get cachedBlockedCreatorEmails => _cached;
-
-  @override
-  Future<Result<void>> blockUser({required String targetUserId}) async => Result.success(null);
-
-  @override
-  Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async =>
-      Result.success(const <BlockedUserListRow>[]);
-
-  @override
-  Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
-    if (waitForInitialLoad && !_hasLoaded) {
-      return _initialLoad.future;
-    }
-    return _cached;
-  }
-
-  @override
-  bool get hasLoadedBlockedCreatorEmails => _hasLoaded;
-
-  @override
-  Future<Result<void>> unblockUser({required String targetUserId}) async => Result.success(null);
-
-  @override
-  Stream<Set<String>> watchBlockedCreatorEmails() => _controller.stream;
-}
-
 List<({String docId, Map<String, dynamic> data})> _buildWallDocs({required int count}) {
   return List<({String docId, Map<String, dynamic> data})>.generate(count, (index) {
     final int n = index + 1;
@@ -199,7 +154,7 @@ List<({String docId, Map<String, dynamic> data})> _buildWallDocs({required int c
         'wallpaper_thumb': 'https://example.com/thumb/$n.jpg',
         'wallpaper_provider': 'prism',
         'resolution': '1440x3200',
-        'createdAt': DateTime.utc(2026, 1, 1).subtract(Duration(minutes: index)).toIso8601String(),
+        'createdAt': DateTime.utc(2026).subtract(Duration(minutes: index)).toIso8601String(),
         'by': 'Creator $n',
         'email': 'creator$n@example.com',
         'review': true,

@@ -10,17 +10,16 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
-import 'package:Prism/core/widgets/popup/noLoadLinkPopUp.dart';
+import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
-// import 'package:Prism/features/public_profile/views/widgets/user_profile_setup_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -126,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   following: app_state.prismUser.following,
                 ),
                 endDrawer: app_state.prismUser.loggedIn
-                    ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: ProfileDrawer())
+                    ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: const ProfileDrawer())
                     : null,
               )
             : Scaffold(
@@ -281,14 +280,9 @@ class _ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<_ProfileChild> {
-  // int favCount = 0;
-  // int profileCount = 0;
   final ScrollController scrollController = ScrollController();
-  // int count = 0;
   @override
   void initState() {
-    // count = 0;
-    // checkFav();
     super.initState();
   }
 
@@ -412,47 +406,48 @@ class _ProfileChildState extends State<_ProfileChild> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            ((widget.followers ?? []).contains(app_state.prismUser.email))
-                                ? IconButton(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.all(2),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(6.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                      ),
-                                      child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                    onPressed: () {
-                                      _trackAction(
-                                        AnalyticsActionValue.unfollowTapped,
-                                        sourceContext: 'profile_screen_follow_action',
-                                      );
-                                      unfollow(widget.email!, widget.id!);
-                                      toasts.error("Unfollowed ${widget.name}!");
-                                    },
-                                  )
-                                : IconButton(
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.all(2),
-                                    icon: Container(
-                                      padding: const EdgeInsets.all(6.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                      ),
-                                      child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                    onPressed: () {
-                                      _trackAction(
-                                        AnalyticsActionValue.followTapped,
-                                        sourceContext: 'profile_screen_follow_action',
-                                      );
-                                      follow(widget.email!, widget.id!);
-                                      toasts.codeSend("Followed ${widget.name}!");
-                                    },
+                            if ((widget.followers ?? []).contains(app_state.prismUser.email))
+                              IconButton(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.all(2),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
                                   ),
+                                  child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                                onPressed: () {
+                                  _trackAction(
+                                    AnalyticsActionValue.unfollowTapped,
+                                    sourceContext: 'profile_screen_follow_action',
+                                  );
+                                  unfollow(widget.email!, widget.id!);
+                                  toasts.error("Unfollowed ${widget.name}!");
+                                },
+                              )
+                            else
+                              IconButton(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.all(2),
+                                icon: Container(
+                                  padding: const EdgeInsets.all(6.0),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                                  ),
+                                  child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
+                                ),
+                                onPressed: () {
+                                  _trackAction(
+                                    AnalyticsActionValue.followTapped,
+                                    sourceContext: 'profile_screen_follow_action',
+                                  );
+                                  follow(widget.email!, widget.id!);
+                                  toasts.codeSend("Followed ${widget.name}!");
+                                },
+                              ),
                             PopupMenuButton<String>(
                               icon: Container(
                                 padding: const EdgeInsets.all(6.0),
@@ -815,62 +810,11 @@ class _ProfileChildState extends State<_ProfileChild> {
                     ),
                   ),
                 ),
-              // Wallpapers / Setups tab bar temporarily disabled — single wallpapers pane only.
-              // SliverAppBar(
-              //   backgroundColor: Theme.of(context).primaryColor,
-              //   automaticallyImplyLeading: false,
-              //   pinned: true,
-              //   titleSpacing: 0,
-              //   expandedHeight: !(widget.ownProfile ?? false) || app_state.prismUser.loggedIn ? 50 : 0,
-              //   title: SizedBox(
-              //     width: MediaQuery.of(context).size.width,
-              //     height: 57,
-              //     child: ColoredBox(
-              //       color: Theme.of(context).primaryColor,
-              //       child: SizedBox.expand(
-              //         child: TabBar(
-              //           indicatorColor: Theme.of(context).colorScheme.secondary,
-              //           indicatorSize: TabBarIndicatorSize.label,
-              //           unselectedLabelColor: const Color(0xFFFFFFFF).withValues(alpha: 0.5),
-              //           labelColor: const Color(0xFFFFFFFF),
-              //           tabs: [
-              //             Text(
-              //               "Wallpapers",
-              //               style: Theme.of(
-              //                 context,
-              //               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              //             ),
-              //             Text(
-              //               "Setups",
-              //               style: Theme.of(
-              //                 context,
-              //               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
             ],
             body: Padding(
               padding: const EdgeInsets.only(top: 5),
               child: UserProfileLoader(email: widget.email),
             ),
-            // When Setups tab returns, restore DefaultTabController(length: 2), the SliverAppBar+TabBar above,
-            // and TabBarView with UserProfileSetupLoader as second child (uncomment user_profile_setup_loader import).
-            // body: TabBarView(
-            //   children: [
-            //     Padding(
-            //       padding: const EdgeInsets.only(top: 5),
-            //       child: UserProfileLoader(email: widget.email),
-            //     ),
-            //     Padding(
-            //       padding: const EdgeInsets.only(top: 5),
-            //       child: UserProfileSetupLoader(email: widget.email),
-            //     ),
-            //   ],
-            // ),
           ),
         ),
       ],

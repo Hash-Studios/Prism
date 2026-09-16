@@ -5,9 +5,6 @@
       "MixpanelClient",
       "MixpanelFlutterClient"
     ],
-    "lib/core/utils/url_launcher_compat.dart": [
-      "launch"
-    ],
     "lib/core/analytics/events/analytics_user_properties.dart": [
       "AnalyticsUserPropertyX"
     ],
@@ -81,8 +78,7 @@
       "ProfileSetupsAdapter",
       "ProfileSetupsBlocAdapterX"
     ],
-"lib/features/public_profile/views/public_profile_bloc_adapter.dart": [
-      "PublicProfileAdapter",
+    "lib/features/public_profile/views/public_profile_bloc_adapter.dart": [
       "PublicProfileBlocAdapterX"
     ],
     "lib/features/setups/views/setups_bloc_adapter.dart": [
@@ -101,15 +97,12 @@
       "PublicProfileSetupEntityWallpaperX",
       "FavouriteSetupEntityWallpaperX"
     ],
-    "lib/core/widgets/popup/changelogPopUp.dart": [
+    "lib/core/widgets/popup/changelog_pop_up.dart": [
       "ChangeType"
     ],
     "lib/core/analytics/trackers/content_load_tracker.dart": [
       "ContentLoadSuccessCallback",
       "ContentLoadFailureCallback"
-    ],
-    "lib/features/favourite_walls/domain/entities/favourite_wall_view.dart": [
-      "FavouriteWallViewX"
     ],
     "lib/features/favourite_setups/domain/entities/favourite_setup_mappers.dart": [
       "SetupEntityToFavouriteSetupX",
@@ -131,24 +124,11 @@
     "lib/features/admin_review/biz/bloc/review_batch_bloc.dart": [
       "ReviewAction"
     ],
-    "lib/features/public_profile/domain/usecases/public_profile_usecases.dart": [
-      "FetchUserSummariesParams"
-    ],
     "lib/core/persistence/data_sources/feed_cache_local_data_source.dart": [
       "FeedSnapshot"
     ],
-    "lib/data/pexels/provider/pexelsWithoutProvider.dart": [
-      "getWallbyIDP"
-    ],
-    "lib/data/wallhaven/provider/wallhavenWithoutProvider.dart": [
-      "getWallbyID"
-    ],
     "lib/features/personalized_feed/data/personalized_ranking_service.dart": [
       "PersonalizedRankingResult"
-    ],
-    "lib/core/widgets/focussedMenu/focused_menu_data.dart": [
-      "FocusedMenuTapAction",
-      "FocusedMenuStat"
     ],
     "lib/features/pexels_feed/data/mappers/pexels_dto_mapper.dart": [
       "PexelsPhotoDtoMapper"
@@ -161,6 +141,12 @@
     ],
     "lib/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart": [
       "ProfileCompletenessNudgeSheet"
+    ],
+    "lib/features/in_app_notifications/domain/notification_grouping.dart": [
+      "inAppNotificationGroupKey"
+    ],
+    "lib/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart": [
+      "PersonalizedFeedSettingsSheet"
     ]
   }
 }

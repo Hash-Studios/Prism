@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/auth/userModel.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';

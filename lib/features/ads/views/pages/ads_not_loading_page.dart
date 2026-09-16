@@ -1,6 +1,6 @@
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/signInPopUp.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -149,20 +149,6 @@ class AdsNotLoading extends StatelessWidget {
           ],
         ),
       ),
-      // bottomNavigationBar: SizedBox(
-      //   width: MediaQuery.of(context).size.width,
-      //   child: Padding(
-      //     padding: const EdgeInsets.all(8.0),
-      //     child: Text(
-      //       "Your download is complete.",
-      //       textAlign: TextAlign.center,
-      //       style: Theme.of(context)
-      //           .textTheme
-      //           .bodyText2!
-      //           .copyWith(color: Theme.of(context).accentColor),
-      //     ),
-      //   ),
-      // ),
     );
   }
 }

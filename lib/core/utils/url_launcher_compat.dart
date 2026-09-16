@@ -8,10 +8,6 @@ typedef LaunchMode = launcher.LaunchMode;
 
 const DeepLinkNavigation _deepLinkNavigation = DeepLinkNavigation();
 
-Future<bool> launch(String url) {
-  return launcher.launchUrl(Uri.parse(url));
-}
-
 Future<bool> openPrismLink(BuildContext context, String url, {LaunchMode mode = LaunchMode.platformDefault}) async {
   final Uri? parsed = Uri.tryParse(url.trim());
   if (parsed == null) {

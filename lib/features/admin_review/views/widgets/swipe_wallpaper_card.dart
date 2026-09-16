@@ -9,7 +9,6 @@ class SwipeWallpaperCard extends StatelessWidget {
   final String? authorPhoto;
   final String? uploadedAgo;
   final VoidCallback? onTap;
-  final double swipeProgress;
   final bool isTopCard;
 
   const SwipeWallpaperCard({
@@ -21,7 +20,6 @@ class SwipeWallpaperCard extends StatelessWidget {
     this.authorPhoto,
     this.uploadedAgo,
     this.onTap,
-    this.swipeProgress = 0,
     this.isTopCard = true,
   });
 
@@ -35,7 +33,9 @@ class SwipeWallpaperCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10)),
+          ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
@@ -45,11 +45,11 @@ class SwipeWallpaperCard extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
+                placeholder: (context, url) => ColoredBox(
                   color: colorScheme.surfaceContainerHighest,
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
-                errorWidget: (context, url, error) => Container(
+                errorWidget: (context, url, error) => ColoredBox(
                   color: colorScheme.errorContainer,
                   child: Icon(Icons.broken_image, color: colorScheme.onErrorContainer, size: 48),
                 ),
@@ -59,7 +59,11 @@ class SwipeWallpaperCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withOpacity(0.3), Colors.black.withOpacity(0.8)],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.8),
+                    ],
                     stops: const [0.5, 0.7, 1.0],
                   ),
                 ),
@@ -78,7 +82,7 @@ class SwipeWallpaperCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: colorScheme.primary.withOpacity(0.9),
+                            color: colorScheme.primary.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
@@ -109,7 +113,7 @@ class SwipeWallpaperCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               authorName.isNotEmpty ? authorName : 'Anonymous',
-                              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14),
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -117,7 +121,7 @@ class SwipeWallpaperCard extends StatelessWidget {
                       ),
                       if (uploadedAgo != null && uploadedAgo!.isNotEmpty) ...<Widget>[
                         const SizedBox(height: 6),
-                        Text(uploadedAgo!, style: TextStyle(color: Colors.white.withOpacity(0.72), fontSize: 12)),
+                        Text(uploadedAgo!, style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 12)),
                       ],
                     ],
                   ),
@@ -127,7 +131,7 @@ class SwipeWallpaperCard extends StatelessWidget {
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),

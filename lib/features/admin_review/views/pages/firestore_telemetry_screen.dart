@@ -305,16 +305,14 @@ class _TelemetryEvent {
     }
   }
 
-  static Object? _readValue(Map<String, dynamic> data, String key) => data[key];
-
   static String _readString(Map<String, dynamic> data, String key, {required String fallback}) {
-    final Object? value = _readValue(data, key);
+    final Object? value = data[key];
     final String output = value?.toString().trim() ?? '';
     return output.isEmpty ? fallback : output;
   }
 
   static int? _readInt(Map<String, dynamic> data, String key) {
-    final Object? value = _readValue(data, key);
+    final Object? value = data[key];
     if (value is int) {
       return value;
     }

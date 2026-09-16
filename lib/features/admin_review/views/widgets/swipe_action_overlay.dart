@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 class SwipeActionOverlay extends StatelessWidget {
   final double swipeProgress;
-  final bool isApprove;
 
-  const SwipeActionOverlay({super.key, required this.swipeProgress, required this.isApprove});
+  const SwipeActionOverlay({super.key, required this.swipeProgress});
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +19,11 @@ class SwipeActionOverlay extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          color: (isApproveDirection ? Colors.green : Colors.red).withOpacity(opacity * 0.3),
-          border: Border.all(color: (isApproveDirection ? Colors.green : Colors.red).withOpacity(opacity), width: 4),
+          color: (isApproveDirection ? Colors.green : Colors.red).withValues(alpha: opacity * 0.3),
+          border: Border.all(
+            color: (isApproveDirection ? Colors.green : Colors.red).withValues(alpha: opacity),
+            width: 4,
+          ),
         ),
         child: Center(
           child: Opacity(
@@ -76,7 +78,7 @@ class SwipeHintIndicator extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 2),
             ),

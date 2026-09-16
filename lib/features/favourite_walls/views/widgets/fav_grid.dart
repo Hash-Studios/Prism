@@ -6,11 +6,10 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/global/svgAssets.dart';
+import 'package:Prism/global/svg_assets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -205,8 +204,6 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
                         childAspectRatio: 0.5,
-                        mainAxisSpacing: 0,
-                        crossAxisSpacing: 0,
                       ),
                       itemBuilder: (context, index) {
                         final likedWall = context.favouriteWallsAdapter().liked![index];
@@ -216,7 +213,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                               decoration: BoxDecoration(
                                 color: animation.value,
                                 image: DecorationImage(
-                                  image: CachedNetworkImageProvider(likedWall.thumb),
+                                  image: CachedNetworkImageProvider(likedWall.thumbnailUrl),
                                   fit: BoxFit.cover,
                                 ),
                               ),

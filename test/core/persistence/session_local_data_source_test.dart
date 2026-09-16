@@ -1,50 +1,14 @@
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
-import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _InMemoryStore implements LocalStore {
-  final Map<String, Object?> _data = <String, Object?>{};
-  bool ready = true;
-
-  @override
-  Future<void> clearAll() async {
-    _data.clear();
-  }
-
-  @override
-  Future<void> clearPrefix(String prefix) async {
-    _data.removeWhere((key, value) => key.startsWith(prefix));
-  }
-
-  @override
-  Future<void> delete(String key) async {
-    _data.remove(key);
-  }
-
-  @override
-  Object? get(String key) => _data[key];
-
-  @override
-  Future<void> init() async {}
-
-  @override
-  bool get isReady => ready;
-
-  @override
-  Future<List<String>> keys() async => _data.keys.toList(growable: false);
-
-  @override
-  Future<void> set(String key, Object? value) async {
-    _data[key] = value;
-  }
-}
+import '../../support/in_memory_local_store.dart';
 
 void main() {
   group('SessionLocalDataSource', () {
     test('returns guest user and archives payload when stored map is malformed', () async {
-      final store = _InMemoryStore();
-      store._data[PersistenceKeys.sessionCurrentUser] = <String, Object?>{
+      final store = InMemoryLocalStore();
+      store.data[PersistenceKeys.sessionCurrentUser] = <String, Object?>{
         'username': null,
         'email': null,
         'id': null,
@@ -62,8 +26,8 @@ void main() {
     });
 
     test('keeps valid payload and rewrites normalized session record', () async {
-      final store = _InMemoryStore();
-      store._data[PersistenceKeys.sessionCurrentUser] = <String, Object?>{
+      final store = InMemoryLocalStore();
+      store.data[PersistenceKeys.sessionCurrentUser] = <String, Object?>{
         'username': 'alice',
         'email': 'alice@example.com',
         'id': 'user-1',

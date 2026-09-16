@@ -92,10 +92,10 @@ void main() {
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
     'localReloadRequested refreshes from cache without forcing loading state on success path',
     build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
-    seed: () => InAppNotificationsState(
+    seed: () => const InAppNotificationsState(
       status: LoadStatus.success,
       actionStatus: ActionStatus.success,
-      items: const <InAppNotificationEntity>[],
+      items: <InAppNotificationEntity>[],
       unreadCount: 0,
     ),
     act: (bloc) => bloc.add(const InAppNotificationsEvent.localReloadRequested()),

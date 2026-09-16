@@ -7,10 +7,6 @@ class WallOfTheDayEntity {
     required this.thumbnailUrl,
     required this.title,
     required this.photographer,
-    required this.photographerId,
-    required this.date,
-    required this.palette,
-    required this.isPremium,
     this.source = WallpaperSource.prism,
   });
 
@@ -20,10 +16,5 @@ class WallOfTheDayEntity {
   final String thumbnailUrl;
   final String title;
   final String photographer;
-  final String photographerId;
-  final DateTime date;
-  final List<String> palette;
-  final bool isPremium;
-
   final WallpaperSource source;
 }

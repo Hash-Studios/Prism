@@ -8,7 +8,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/changelogPopUp.dart';
+import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
@@ -35,9 +35,7 @@ class HomeTabPage extends StatefulWidget {
 class _HomeTabPageState extends State<HomeTabPage> {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
-  int page = 0;
   bool result = true;
-  String shortcut = "No Action Set";
   bool _hasHandledQuickActionInvocation = false;
   bool _isChangelogCheckPending = true;
   int _personalizedFeedVersion = 0;
@@ -132,9 +130,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
     const QuickActions quickActions = QuickActions();
     quickActions.initialize((String shortcutType) {
       _trackQuickActionInvocation(shortcutType);
-      setState(() {
-        shortcut = shortcutType;
-      });
       if (shortcutType == 'Downloads') {
         logger.d('Downloads');
         context.router.push(const DownloadRoute());
@@ -179,7 +174,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       body: Stack(
         children: <Widget>[
           PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
-          if (!result) ConnectivityWidget() else Container(),
+          if (!result) const ConnectivityWidget() else Container(),
         ],
       ),
     );

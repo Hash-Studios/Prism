@@ -37,14 +37,3 @@ int? parseInt(Object? v) {
   if (v is String) return int.tryParse(v);
   return null;
 }
-
-T? parseEnum<T extends Enum>(Object? v, List<T> values) {
-  if (v == null) return null;
-  final String s = v.toString().toLowerCase().trim();
-  for (final T entry in values) {
-    if (entry.name.toLowerCase() == s) {
-      return entry;
-    }
-  }
-  return null;
-}

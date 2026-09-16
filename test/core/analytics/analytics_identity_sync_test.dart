@@ -1,50 +1,12 @@
 import 'package:Prism/core/analytics/analytics_identity_sync.dart';
-import 'package:Prism/core/analytics/app_analytics.dart';
-import 'package:Prism/core/analytics/events/analytics_event.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _FakeAppAnalytics implements AppAnalytics {
-  final List<String?> userIds = <String?>[];
-  final List<MapEntry<String, String?>> userProperties = <MapEntry<String, String?>>[];
-
-  @override
-  List<NavigatorObserver> buildNavigatorObservers() => const <NavigatorObserver>[];
-
-  @override
-  Future<void> flush() async {}
-
-  @override
-  Future<void> logLogin({String? loginMethod}) async {}
-
-  @override
-  Future<void> logScreenView({
-    required String screenName,
-    String? screenClass,
-    Map<String, Object?>? parameters,
-  }) async {}
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
-
-  @override
-  Future<void> setUserId(String? userId) async {
-    userIds.add(userId);
-  }
-
-  @override
-  Future<void> setUserProperty({required String name, String? value}) async {
-    userProperties.add(MapEntry<String, String?>(name, value));
-  }
-
-  @override
-  Future<void> track(AnalyticsEvent event) async {}
-}
+import '../../support/fake_app_analytics.dart';
 
 void main() {
   group('AnalyticsIdentitySync', () {
     test('identifies logged in users and sets canonical traits', () async {
-      final _FakeAppAnalytics analytics = _FakeAppAnalytics();
+      final FakeAppAnalytics analytics = FakeAppAnalytics();
       final AnalyticsIdentitySync sync = AnalyticsIdentitySync(analytics: analytics);
 
       await sync.sync(
@@ -64,7 +26,7 @@ void main() {
     });
 
     test('resets to anonymous defaults for logged-out state', () async {
-      final _FakeAppAnalytics analytics = _FakeAppAnalytics();
+      final FakeAppAnalytics analytics = FakeAppAnalytics();
       final AnalyticsIdentitySync sync = AnalyticsIdentitySync(analytics: analytics);
 
       await sync.sync(
@@ -84,7 +46,7 @@ void main() {
     });
 
     test('treats logged-in users without user id as anonymous', () async {
-      final _FakeAppAnalytics analytics = _FakeAppAnalytics();
+      final FakeAppAnalytics analytics = FakeAppAnalytics();
       final AnalyticsIdentitySync sync = AnalyticsIdentitySync(analytics: analytics);
 
       await sync.sync(
@@ -104,7 +66,7 @@ void main() {
     });
 
     test('is idempotent for unchanged identity state', () async {
-      final _FakeAppAnalytics analytics = _FakeAppAnalytics();
+      final FakeAppAnalytics analytics = FakeAppAnalytics();
       final AnalyticsIdentitySync sync = AnalyticsIdentitySync(analytics: analytics);
 
       await sync.sync(

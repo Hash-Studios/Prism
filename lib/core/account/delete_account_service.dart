@@ -93,11 +93,7 @@ class DeleteAccountService {
 
   Future<void> _deleteSubcollection(String collectionPath) async {
     final docIds = await _firestore.query<String>(
-      FirestoreQuerySpec(
-        collection: collectionPath,
-        sourceTag: 'delete_account.list.$collectionPath',
-        cachePolicy: FirestoreCachePolicy.networkOnly,
-      ),
+      FirestoreQuerySpec(collection: collectionPath, sourceTag: 'delete_account.list.$collectionPath'),
       (_, docId) => docId,
     );
     logger.d(
@@ -113,12 +109,7 @@ class DeleteAccountService {
 
   Future<void> _deleteBatch(String collection, List<FirestoreFilter> filters, String tag) async {
     final docIds = await _firestore.query<String>(
-      FirestoreQuerySpec(
-        collection: collection,
-        sourceTag: tag,
-        filters: filters,
-        cachePolicy: FirestoreCachePolicy.networkOnly,
-      ),
+      FirestoreQuerySpec(collection: collection, sourceTag: tag, filters: filters),
       (_, docId) => docId,
     );
     logger.d('[DeleteAccount] _deleteBatch: $collection — found ${docIds.length} docs', tag: 'DeleteAccount');
@@ -136,7 +127,7 @@ class DeleteAccountService {
       // Log and continue — these are non-critical audit records; the important
       // steps (anonymize usersv2 doc + delete Firebase Auth user) still run.
       logger.w(
-        '[DeleteAccount] _deleteBatch: $collection — skipped (${e.toString()}). TODO: update Firestore rules to allow user self-delete.',
+        '[DeleteAccount] _deleteBatch: $collection — skipped ($e). TODO: update Firestore rules to allow user self-delete.',
         tag: 'DeleteAccount',
       );
     }

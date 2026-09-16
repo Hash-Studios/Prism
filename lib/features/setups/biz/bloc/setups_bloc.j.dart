@@ -14,17 +14,12 @@ part 'setups_bloc.j.freezed.dart';
 class SetupsBloc extends Bloc<SetupsEvent, SetupsState> {
   SetupsBloc(this._fetchSetupsUseCase) : super(SetupsState.initial()) {
     on<_Started>(_onStarted);
-    on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
   }
 
   final FetchSetupsUseCase _fetchSetupsUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<SetupsState> emit) {
-    return _load(refresh: true, emit: emit);
-  }
-
-  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<SetupsState> emit) {
     return _load(refresh: true, emit: emit);
   }
 
