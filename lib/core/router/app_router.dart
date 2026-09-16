@@ -35,7 +35,6 @@ import 'package:Prism/features/profile_setups/views/pages/profile_setup_view_scr
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
-import 'package:Prism/features/public_profile/views/pages/user_profile_setup_view_screen.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
@@ -139,7 +138,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/setup-view', page: SetupViewRoute.page),
     AutoRoute(path: '/setup/:setupName', page: ShareSetupViewRoute.page),
     AutoRoute(path: '/profile-setup-view', page: ProfileSetupViewRoute.page),
-    AutoRoute(path: '/user-profile-setup-view', page: UserProfileSetupViewRoute.page),
     AutoRoute(path: '/upload-setup', page: UploadSetupRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-setup-details', page: EditSetupReviewRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/setup-guidelines', page: SetupGuidelinesRoute.page, guards: [_signedInGuard]),
