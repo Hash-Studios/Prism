@@ -11,7 +11,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/signInPopUp.dart';
 import 'package:Prism/core/widgets/premiumBanners/premiumBanner.dart';
-import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as CData;
+import 'package:Prism/data/collections/provider/collectionsWithoutProvider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -418,13 +418,13 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> refreshList() async {
-    await CData.getCollections();
+    await c_data.getCollections();
   }
 
   @override
   Widget build(BuildContext context) {
     final List<Object?> rawCollections =
-        CData.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
+        c_data.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
     final bool isLoading = rawCollections.isEmpty;
 
     Map<String, dynamic> asMap(Object? raw) {

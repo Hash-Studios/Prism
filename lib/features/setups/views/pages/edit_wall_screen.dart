@@ -325,6 +325,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     final DateTime start = DateTime.now();
     final Uint8List? result = await ImageEditor.editImage(image: img, imageEditorOption: option);
+    if (!mounted) return;
     if (result == null) {
       return;
     }
@@ -334,9 +335,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
     final Duration diff = DateTime.now().difference(start);
     image!.writeAsBytesSync(result);
     logger.d('image_editor time : $diff');
-    Future.delayed(
-      Duration.zero,
-    ).then((value) => context.router.replace(UploadWallRoute(image: image!, fromSetupRoute: false)));
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    await context.router.replace(UploadWallRoute(image: image!, fromSetupRoute: false));
   }
 
   void flip() {
