@@ -9,7 +9,6 @@ abstract class CategoryFeedState with _$CategoryFeedState {
     required CategoryEntity? selectedCategory,
     required List<FeedItemEntity> items,
     required bool hasMore,
-    required String? nextCursor,
     required bool isFetchingMore,
     Failure? failure,
   }) = _CategoryFeedState;
@@ -21,7 +20,6 @@ abstract class CategoryFeedState with _$CategoryFeedState {
     selectedCategory: null,
     items: <FeedItemEntity>[],
     hasMore: true,
-    nextCursor: null,
     isFetchingMore: false,
   );
 }

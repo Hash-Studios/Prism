@@ -6,7 +6,6 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_view.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -216,7 +215,7 @@ class _FavouriteGridState extends State<FavouriteGrid> with SingleTickerProvider
                               decoration: BoxDecoration(
                                 color: animation.value,
                                 image: DecorationImage(
-                                  image: CachedNetworkImageProvider(likedWall.thumb),
+                                  image: CachedNetworkImageProvider(likedWall.thumbnailUrl),
                                   fit: BoxFit.cover,
                                 ),
                               ),

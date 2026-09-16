@@ -31,10 +31,6 @@ class PublicProfileAdapter {
 
   bool get hasMoreSetups => _bloc.state.hasMoreSetups;
 
-  Future<void> getuserProfileWalls(String? email) {
-    return _ensureLoadedEmail(_normalizeEmail(email));
-  }
-
   Future<void> seeMoreUserProfileWalls(String? email) async {
     final normalizedEmail = _normalizeEmail(email);
     if (normalizedEmail.isEmpty) {

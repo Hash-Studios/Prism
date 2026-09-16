@@ -8,7 +8,7 @@ class FavoriteIcon extends StatefulWidget {
     double? iconSize,
     Color? iconColor,
     bool? isFavorite,
-    required Function valueChanged,
+    required VoidCallback valueChanged,
 
     /// When set (e.g. toolbar circles), expands the tap target to this size so
     /// padding around the icon is still tappable. Should match the outer button size.
@@ -22,7 +22,7 @@ class FavoriteIcon extends StatefulWidget {
   final double _iconSize;
   final Color _iconColor;
   final bool _isFavorite;
-  final Function _valueChanged;
+  final VoidCallback _valueChanged;
   final double? tapTargetExtent;
 
   @override
@@ -63,17 +63,7 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
     );
 
     _curve = CurvedAnimation(curve: Curves.slowMiddle, parent: _controller);
-    final Animation<Color?> selectedColorAnimation = ColorTween(
-      begin: widget._iconColor,
-      end: widget._iconColor,
-    ).animate(_curve);
-
-    final Animation<Color?> deSelectedColorAnimation = ColorTween(
-      begin: widget._iconColor,
-      end: widget._iconColor,
-    ).animate(_curve);
-
-    _colorAnimation = (_isFavorite == true) ? selectedColorAnimation : deSelectedColorAnimation;
+    _colorAnimation = ColorTween(begin: widget._iconColor, end: widget._iconColor).animate(_curve);
     _sizeAnimation = TweenSequence(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
         tween: Tween<double>(begin: _minIconSize, end: _maxIconSize),

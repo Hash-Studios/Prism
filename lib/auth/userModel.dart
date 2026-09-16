@@ -143,37 +143,5 @@ class PrismUsersV2 {
       uploadsThisWeek: data['uploadsThisWeek'] as int? ?? 0,
     );
   }
-
-  factory PrismUsersV2.fromMapWithoutUser(Map<String, dynamic> raw) {
-    final data = _mapData(raw);
-    final bool rawPremium = data["premium"] as bool? ?? false;
-    final String tierValue = _resolveTierValue(premium: rawPremium, raw: data['subscriptionTier']);
-    final bool premium = SubscriptionTier.fromValue(tierValue).isPaid || rawPremium;
-    return PrismUsersV2(
-      name: (data["name"] ?? "").toString(),
-      username: (data["username"] ?? "").toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
-      email: (data["email"] ?? "").toString(),
-      id: data["id"].toString(),
-      createdAt: DateTime.parse(
-        (data["createdAt"] ?? DateTime.now().toUtc().toIso8601String()).toString(),
-      ).toUtc().toIso8601String(),
-      premium: premium,
-      lastLoginAt: data["lastLoginAt"]?.toString() ?? DateTime.now().toUtc().toIso8601String(),
-      links: _toStringMap(data["links"]),
-      followers: _toStringList(data["followers"]),
-      following: _toStringList(data["following"]),
-      profilePhoto: (data["profilePhoto"] ?? "").toString(),
-      bio: (data["bio"] ?? "").toString(),
-      loggedIn: true,
-      badges: _toBadgeList(data['badges']),
-      subPrisms: _toStringList(data['subPrisms']),
-      coins: data['coins'] as int? ?? 0,
-      transactions: _toTransactionList(data['transactions']),
-      coverPhoto: data["coverPhoto"]?.toString(),
-      subscriptionTier: tierValue,
-      uploadsWeekStart: data['uploadsWeekStart']?.toString() ?? '',
-      uploadsThisWeek: data['uploadsThisWeek'] as int? ?? 0,
-    );
-  }
   Map<String, dynamic> toJson() => _$PrismUsersV2ToJson(this);
 }

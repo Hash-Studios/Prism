@@ -3,7 +3,6 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
-import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_of_the_day/data/wotd_entity_mapper.dart';
 import 'package:Prism/features/wall_of_the_day/data/wotd_firestore_pointer.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -12,7 +11,7 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: WallOfTheDayRepository)
 class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
-  WallOfTheDayRepositoryImpl(this._firestoreClient, this._prismWallpaperRepository, UserBlockRepository _);
+  WallOfTheDayRepositoryImpl(this._firestoreClient, this._prismWallpaperRepository);
 
   final FirestoreClient _firestoreClient;
   final PrismWallpaperRepository _prismWallpaperRepository;
@@ -59,7 +58,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
           if (wallpaper.fullUrl.isEmpty) {
             return Result.success(null);
           }
-          final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(wallpaper, pointer.featuredAt);
+          final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(wallpaper);
           _cachedEntity = entity;
           _cachedWallDocumentId = pointer.wallDocumentId;
           _cachedFeaturedDayUtc = featuredUtc;

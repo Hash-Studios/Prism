@@ -1,8 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/data/categories/categories.dart';
-import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/logger/logger.dart';
 
@@ -11,35 +8,7 @@ WallhavenWallpaperRepository get _repo => getIt<WallhavenWallpaperRepository>();
 
 List<WallhavenWallpaper> walls = [];
 List<WallhavenWallpaper> wallsS = [];
-int pageGetData = 1;
 int pageGetQuery = 1;
-List<Map<String, int>> pageNumbers = categoryDefinitions
-    .where(
-      (CategoryDefinition cat) =>
-          cat.source == WallpaperSource.wallhaven && cat.searchType == CategorySearchType.search,
-    )
-    .map((CategoryDefinition cat) => <String, int>{cat.name: 1})
-    .toList();
-
-// SHIM: delete in Phase 8
-Future<WallhavenWallpaper?> getWallbyID(String idU) async {
-  final String id = idU.toLowerCase();
-  logger.d("getWallbyID: $id");
-  WallhavenWallpaper? wall;
-  final result = await _repo.fetchById(id);
-  result.fold(
-    onSuccess: (WallhavenWallpaper? w) {
-      if (w != null) {
-        wall = w;
-      }
-      logger.d("getWallbyID done");
-    },
-    onFailure: (failure) {
-      logger.e("getWallbyID failed: ${failure.message}");
-    },
-  );
-  return wall;
-}
 
 // SHIM: delete in Phase 8
 Future<List<WallhavenWallpaper>> getWallsbyQuery(String query, int? categories, int? purity) async {

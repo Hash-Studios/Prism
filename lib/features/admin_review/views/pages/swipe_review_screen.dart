@@ -275,12 +275,11 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                               authorName: currentWall.by,
                               authorPhoto: currentWall.userPhoto,
                               uploadedAgo: _uploadedAgo(currentWall),
-                              swipeProgress: swipeProgress,
                             ),
                           ),
                         ),
                       ),
-                      SwipeActionOverlay(swipeProgress: swipeProgress, isApprove: true),
+                      SwipeActionOverlay(swipeProgress: swipeProgress),
                     ],
                   );
                 },

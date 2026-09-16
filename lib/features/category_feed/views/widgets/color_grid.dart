@@ -260,10 +260,6 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               },
             );
 
-            if (PData.wallsC.isEmpty || index >= PData.wallsC.length) {
-              return tile;
-            }
-
             return tile;
           },
         ),

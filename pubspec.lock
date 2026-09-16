@@ -781,14 +781,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
-  flutter_mailer:
-    dependency: "direct main"
-    description:
-      name: flutter_mailer
-      sha256: "149e51d4e3ba12f8b61e1923ff4304f308acb856b92e9d09326bec6a1ad943d6"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:

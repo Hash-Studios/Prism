@@ -45,7 +45,6 @@ dependencies:
   flutter_floating_bottom_bar: ^1.4.0
   flutter_image_compress: ^2.4.0
   flutter_local_notifications: ^20.1.0
-  flutter_mailer: ^3.0.1
   flutter_svg: ^2.2.3
   fluttertoast: ^8.2.14
   freezed_annotation: ^3.1.0

@@ -64,7 +64,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     super.initState();
     _bloc = getIt<OnboardingV2Bloc>();
     _bloc.add(const OnboardingV2Event.started());
-    AppSoundManager.instance.playEffect(AppSoundEffect.onboardingOpenSwoosh);
+    AppSoundManager.instance.playOnboardingSwoosh();
     _legalTap = TapGestureRecognizer()
       ..onTap = () => launchUrl(Uri.parse('https://prism-app-terms.web.app'), mode: LaunchMode.externalApplication);
     WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 class SwipeActionOverlay extends StatelessWidget {
   final double swipeProgress;
-  final bool isApprove;
 
-  const SwipeActionOverlay({super.key, required this.swipeProgress, required this.isApprove});
+  const SwipeActionOverlay({super.key, required this.swipeProgress});
 
   @override
   Widget build(BuildContext context) {

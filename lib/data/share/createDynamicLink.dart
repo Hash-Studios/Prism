@@ -4,10 +4,8 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/popup/copyrightPopUp.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -263,81 +261,4 @@ Future<String> createSharingPrismLink(String userID) async {
     );
     rethrow;
   }
-}
-
-Future<String> createCopyrightLink(
-  bool setup,
-  BuildContext context, {
-  String? id,
-  WallpaperSource? source,
-  String? url,
-  String? thumbUrl,
-  String? name,
-  String? index,
-}) async {
-  late final Uri canonical;
-  late final String type;
-  late final Map<String, dynamic> payload;
-  late final Map<String, dynamic> preview;
-
-  if (setup) {
-    type = 'setup';
-    canonical = _canonicalLinkBuilder.setup(index: index!, name: name!, thumbUrl: thumbUrl!);
-    payload = <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl};
-    preview = <String, dynamic>{
-      'title': '$name - Prism',
-      'description': 'Check out this setup shared from Prism.',
-      'image_source_url': thumbUrl,
-      'setup_name': name,
-    };
-    analytics.track(const ReportSetupEvent());
-  } else {
-    final WallpaperSource resolvedSource = source ?? WallpaperSource.prism;
-    type = 'share';
-    canonical = _canonicalLinkBuilder.wallpaper(id: id!, source: resolvedSource, url: url, thumbUrl: thumbUrl!);
-    payload = <String, dynamic>{
-      'id': id,
-      'source': resolvedSource.wireValue,
-      'provider': resolvedSource.legacyProviderString,
-      if (url != null) 'url': url,
-      'thumb': thumbUrl,
-    };
-    preview = <String, dynamic>{
-      'title': '$id - Prism',
-      'description': 'Check out this amazing wallpaper from Prism.',
-      'image_source_url': thumbUrl,
-      'provider': resolvedSource.legacyProviderString,
-      'wall_id': id,
-    };
-    analytics.track(const ReportWallEvent());
-  }
-
-  try {
-    final String link = await _buildShareableLink(
-      type: type,
-      canonicalUri: canonical,
-      payload: payload,
-      preview: preview,
-    );
-    _trackDynamicLinkCreateResult(
-      shareType: setup ? ShareTypeValue.setup : ShareTypeValue.wallpaper,
-      result: EventResultValue.success,
-    );
-    if (!context.mounted) {
-      return '';
-    }
-    showModal(
-      context: context,
-      builder: (BuildContext context) => CopyrightPopUp(setup: setup, shortlink: link),
-    );
-  } catch (error, stackTrace) {
-    logger.e('Failed to create copyright link.', error: error, stackTrace: stackTrace);
-    _trackDynamicLinkCreateResult(
-      shareType: setup ? ShareTypeValue.setup : ShareTypeValue.wallpaper,
-      result: EventResultValue.failure,
-      reason: AnalyticsReasonValue.error,
-    );
-    rethrow;
-  }
-  return '';
 }

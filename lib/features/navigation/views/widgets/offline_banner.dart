@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class ConnectivityWidget extends StatefulWidget {
+  const ConnectivityWidget({super.key});
+
   @override
   _ConnectivityWidgetState createState() => _ConnectivityWidgetState();
 }
 
 class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTickerProviderStateMixin {
-  bool? dontAnimate;
-
   late AnimationController animationController;
 
   @override
@@ -29,13 +29,15 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
         position: animationController.drive(
           Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero).chain(CurveTween(curve: Curves.fastOutSlowIn)),
         ),
-        child: _OfflineBanner(),
+        child: const _OfflineBanner(),
       ),
     );
   }
 }
 
 class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+
   @override
   Widget build(BuildContext context) {
     return Container(

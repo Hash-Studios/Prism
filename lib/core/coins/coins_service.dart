@@ -689,19 +689,8 @@ class CoinsService {
     }
   }
 
-  Future<CoinMutationResult> spendForAIGeneration({String sourceTag = 'coins.spend.ai_generation', String? reason}) {
-    return spend(CoinSpendAction.aiGeneration, sourceTag: sourceTag, reason: reason ?? 'ai_generation');
-  }
-
   Future<CoinMutationResult> spendForPremiumFilter({String sourceTag = 'coins.spend.premium_filter', String? reason}) {
     return spend(CoinSpendAction.premiumFilter, sourceTag: sourceTag, reason: reason ?? 'premium_filter');
-  }
-
-  Future<CoinMutationResult> spendForPremiumPreview24h({
-    String sourceTag = 'coins.spend.premium_preview_24h',
-    String? reason,
-  }) {
-    return spend(CoinSpendAction.premiumPreview24h, sourceTag: sourceTag, reason: reason ?? 'premium_preview_24h');
   }
 
   Future<bool> hasPremiumPreviewAccessForCollection(String collectionKey) async {

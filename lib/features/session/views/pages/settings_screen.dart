@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart';
@@ -24,9 +23,7 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_mailer/flutter_mailer.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 @RoutePage()
@@ -729,12 +726,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () => context.router.push(const AboutRoute()),
         ),
         ListTile(
-          leading: const Icon(JamIcons.bug),
-          title: Text('Report a Bug', style: _titleStyle),
-          subtitle: const Text('Send a bug report via email', style: TextStyle(fontSize: 12)),
-          onTap: () => _sendBugReport(),
-        ),
-        ListTile(
           leading: const Icon(JamIcons.refresh),
           title: Text('Restart App', style: _titleStyle),
           subtitle: const Text('Force the application to restart', style: TextStyle(fontSize: 12)),
@@ -745,45 +736,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
-  }
-
-  Future<void> _sendBugReport() async {
-    if (!Platform.isAndroid) return;
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    final release = androidInfo.version.release;
-    final sdkInt = androidInfo.version.sdkInt;
-    final manufacturer = androidInfo.manufacturer;
-    final model = androidInfo.model;
-    final String zipPath = await zipLogs();
-    if (zipPath.startsWith(logExportDisabledMarker)) {
-      toasts.error('Log export is temporarily disabled.');
-      return;
-    }
-    final String encryptedZipKey = zipPath.split('::::').first;
-    final String encryptedZipPath = zipPath.split('::::').last;
-    final deviceBody =
-        '----x-x-x----<br>Device info -<br><br>Android version: Android $release<br>SDK Number: SDK $sdkInt<br>Device Manufacturer: $manufacturer<br>Device Model: $model<br>----x-x-x----<br><br>Enter the bug/issue below -<br><br>';
-    final MailOptions mailOptions = MailOptions(
-      body: deviceBody,
-      subject: '[BUG REPORT::PRISM] - $encryptedZipKey',
-      recipients: ['hash.studios.inc@gmail.com'],
-      isHTML: true,
-      attachments: [encryptedZipPath],
-      appSchema: 'com.google.android.gm',
-    );
-    final MailerResponse response = await FlutterMailer.send(mailOptions);
-    if (response != MailerResponse.android) {
-      final MailOptions fallback = MailOptions(
-        body: deviceBody,
-        subject: '[BUG REPORT::PRISM]',
-        recipients: ['hash.studios.inc@gmail.com'],
-        isHTML: true,
-        attachments: [zipPath],
-      );
-      await FlutterMailer.send(fallback);
-    } else {
-      toasts.codeSend('Bug report sent!');
-    }
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
