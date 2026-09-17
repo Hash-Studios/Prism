@@ -227,7 +227,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                 _bloc.add(const OnboardingV2Event.stepBack());
               },
               child: Material(
-                type: MaterialType.transparency,
+                color: OnboardingColors.fallbackFill,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [

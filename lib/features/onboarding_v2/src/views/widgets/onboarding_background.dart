@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
@@ -6,74 +5,59 @@ import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-// ---------------------------------------------------------------------------
-// OnboardingBackground — pure stateless render widget.
-// No animation logic here; all animation is owned by OnboardingStepBackground.
-// ---------------------------------------------------------------------------
 class OnboardingBackground extends StatelessWidget {
   const OnboardingBackground({
     super.key,
     required this.assetPath,
-    required this.sx,
-    required this.sy,
     this.networkUrl,
-    this.imageLeft = -87,
-    this.imageTop = 0,
-    this.imageWidth = 567,
-    this.imageHeight = 852,
     this.blurSigma = 0,
     this.imageScale = 1.0,
-    this.bottomOverlayOpacity = 0.0,
   });
 
   final String assetPath;
 
   /// If provided and non-empty, renders a network image instead of the asset.
   final String? networkUrl;
-  final double sx;
-  final double sy;
-  final double imageLeft;
-  final double imageTop;
-  final double imageWidth;
-  final double imageHeight;
 
   /// 0 = no blur.
   final double blurSigma;
 
-  /// Multiplied on top of the cover-fit scale.
+  /// Extra scale on top of BoxFit.cover, used by the reveal animation.
   final double imageScale;
-
-  /// 0 = hidden, 1 = fully visible bottom gradient overlay.
-  final double bottomOverlayOpacity;
 
   @override
   Widget build(BuildContext context) {
-    final viewportWidth = OnboardingLayout.designWidth * sx;
-    final viewportHeight = OnboardingLayout.designHeight * sy;
-    final renderedW = imageWidth * sx;
-    final renderedH = imageHeight * sy;
-    final coverScale = math.max(viewportWidth / renderedW, viewportHeight / renderedH);
-
-    final dpr = MediaQuery.devicePixelRatioOf(context);
     final resolvedNetworkUrl = networkUrl;
-    Widget imageChild = (resolvedNetworkUrl != null && resolvedNetworkUrl.isNotEmpty)
+    Widget imageChild =
+        (resolvedNetworkUrl != null && resolvedNetworkUrl.isNotEmpty)
         ? CachedNetworkImage(
             imageUrl: resolvedNetworkUrl,
             fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
             fadeInDuration: Duration.zero,
-            placeholder: (_, _) => Image.asset(assetPath, fit: BoxFit.cover),
+            placeholder: (_, _) => Image.asset(
+              assetPath,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+            ),
+            errorWidget: (_, _, _) => const SizedBox.expand(),
           )
         : Image.asset(
             assetPath,
             fit: BoxFit.cover,
-            cacheWidth: (imageWidth * sx * dpr).toInt(),
-            cacheHeight: (imageHeight * sy * dpr).toInt(),
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (_, _, _) => const SizedBox.expand(),
           );
     if (blurSigma > 0) {
-      // ImageFiltered blurs its own subtree, unlike BackdropFilter which blurs
-      // whatever is behind it. This is safe inside Opacity layers.
       imageChild = ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma, tileMode: TileMode.clamp),
+        imageFilter: ImageFilter.blur(
+          sigmaX: blurSigma,
+          sigmaY: blurSigma,
+          tileMode: TileMode.clamp,
+        ),
         child: imageChild,
       );
     }
@@ -81,12 +65,9 @@ class OnboardingBackground extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Positioned(
-          left: imageLeft * sx,
-          top: imageTop * sy,
-          width: imageWidth * sx,
-          height: imageHeight * sy,
-          child: Transform.scale(scale: coverScale * imageScale, child: imageChild),
+        const ColoredBox(color: OnboardingColors.fallbackFill),
+        Positioned.fill(
+          child: Transform.scale(scale: imageScale, child: imageChild),
         ),
       ],
     );
@@ -104,16 +85,22 @@ class OnboardingBackground extends StatelessWidget {
 //     firstWallpaper step.
 // ---------------------------------------------------------------------------
 class OnboardingStepBackground extends StatefulWidget {
-  const OnboardingStepBackground({super.key, required this.step, this.wallpaperUrl});
+  const OnboardingStepBackground({
+    super.key,
+    required this.step,
+    this.wallpaperUrl,
+  });
 
   final OnboardingV2Step step;
   final String? wallpaperUrl;
 
   @override
-  State<OnboardingStepBackground> createState() => _OnboardingStepBackgroundState();
+  State<OnboardingStepBackground> createState() =>
+      _OnboardingStepBackgroundState();
 }
 
-class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> with TickerProviderStateMixin {
+class _OnboardingStepBackgroundState extends State<OnboardingStepBackground>
+    with TickerProviderStateMixin {
   // Scale-reveal — fires once on initial mount.
   late final AnimationController _revealCtrl;
   late final Animation<double> _revealAnim;
@@ -129,13 +116,18 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
   void initState() {
     super.initState();
 
-    _revealCtrl = AnimationController(duration: OnboardingMotion.backgroundReveal, vsync: this);
-    _revealAnim = Tween<double>(
-      begin: 1.18,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _revealCtrl, curve: OnboardingMotion.reveal));
+    _revealCtrl = AnimationController(
+      duration: OnboardingMotion.backgroundReveal,
+      vsync: this,
+    );
+    _revealAnim = Tween<double>(begin: 1.18, end: 1.0).animate(
+      CurvedAnimation(parent: _revealCtrl, curve: OnboardingMotion.reveal),
+    );
 
-    _blurCtrl = AnimationController(duration: OnboardingMotion.long, vsync: this);
+    _blurCtrl = AnimationController(
+      duration: OnboardingMotion.long,
+      vsync: this,
+    );
     _blurAnim = Tween<double>(begin: 0, end: 0).animate(_blurCtrl);
 
     _applyStep(widget.step, animate: false);
@@ -160,10 +152,9 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
     if (target != _blurTarget) {
       final from = animate ? _blurAnim.value : target;
       _blurTarget = target;
-      _blurAnim = Tween<double>(
-        begin: from,
-        end: target,
-      ).animate(CurvedAnimation(parent: _blurCtrl, curve: OnboardingMotion.emphasized));
+      _blurAnim = Tween<double>(begin: from, end: target).animate(
+        CurvedAnimation(parent: _blurCtrl, curve: OnboardingMotion.emphasized),
+      );
       if (animate) {
         _blurCtrl.forward(from: 0);
       } else {
@@ -189,53 +180,33 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final sx = constraints.maxWidth / OnboardingLayout.designWidth;
-        final sy = constraints.maxHeight / OnboardingLayout.designHeight;
-
-        return AnimatedBuilder(
-          animation: Listenable.merge([_revealAnim, _blurAnim]),
-          // wallpaperFinal has no animated params — extracted so it isn't
-          // rebuilt on every animation tick of _revealAnim / _blurAnim.
-          child: OnboardingBackground(
-            assetPath: OnboardingAssets.wallpaperFinal,
-            networkUrl: widget.wallpaperUrl,
-            sx: sx,
-            sy: sy,
-            imageLeft: -88,
-            imageTop: -1,
-            imageWidth: 569,
-            imageHeight: 854,
-          ),
-          builder: (context, child) {
-            final revealScale = _revealAnim.value;
-            final sigma = _blurAnim.value;
-            // Bottom overlay fades in with blur, reaching full opacity at sigma=70.
-            final overlayOpacity = (sigma / 70).clamp(0.0, 1.0);
-
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                // Primary image — shown on auth / interests / starterPack.
-                AnimatedOpacity(
-                  duration: OnboardingMotion.normal,
-                  opacity: _showFinal ? 0.0 : 1.0,
-                  child: OnboardingBackground(
-                    assetPath: OnboardingAssets.wallpaperPrimary,
-                    sx: sx,
-                    sy: sy,
-                    blurSigma: sigma,
-                    // Slight scale-up when blurred, matching the original softened style.
-                    imageScale: revealScale * (sigma > 0 ? 1.04 : 1.0),
-                    bottomOverlayOpacity: overlayOpacity,
-                  ),
-                ),
-                // Final image — shown on firstWallpaper step.
-                AnimatedOpacity(duration: OnboardingMotion.normal, opacity: _showFinal ? 1.0 : 0.0, child: child),
-              ],
-            );
-          },
+    return AnimatedBuilder(
+      animation: Listenable.merge([_revealAnim, _blurAnim]),
+      child: OnboardingBackground(
+        assetPath: OnboardingAssets.wallpaperFinal,
+        networkUrl: widget.wallpaperUrl,
+      ),
+      builder: (context, child) {
+        final revealScale = _revealAnim.value;
+        final sigma = _blurAnim.value;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            AnimatedOpacity(
+              duration: OnboardingMotion.normal,
+              opacity: _showFinal ? 0.0 : 1.0,
+              child: OnboardingBackground(
+                assetPath: OnboardingAssets.wallpaperPrimary,
+                blurSigma: sigma,
+                imageScale: revealScale * (sigma > 0 ? 1.04 : 1.0),
+              ),
+            ),
+            AnimatedOpacity(
+              duration: OnboardingMotion.normal,
+              opacity: _showFinal ? 1.0 : 0.0,
+              child: child,
+            ),
+          ],
         );
       },
     );
