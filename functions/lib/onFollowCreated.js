@@ -100,7 +100,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
         }
         // Look up the follower's display name for a personalised message.
         const followerUsername = await _resolveUsername(followerEmail);
-        const followedTopic = (0, notificationHelper_1.emailToTopic)(followedUserEmail);
+        const followedTopic = (0, notificationHelper_1.userIdToTopic)(followedUid);
         await (0, notificationHelper_1.sendNotification)({
             title: "You have a new follower! 🎉",
             body: `${followerUsername} is now following you.`,
@@ -114,6 +114,20 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
             channelId: "followers",
             // Send push to the followed user's own topic (they subscribe on login).
             fcmTarget: { topic: followedTopic },
+        });
+        await (0, notificationHelper_1.sendNotification)({
+            title: "You have a new follower! 🎉",
+            body: `${followerUsername} is now following you.`,
+            data: {
+                route: "follower",
+                follower_email: followerEmail.trim(),
+                pageName: "",
+                url: _profileUrl(followerEmail),
+            },
+            modifier: followedUserEmail,
+            channelId: "followers",
+            fcmTarget: { topic: (0, notificationHelper_1.emailToTopic)(followedUserEmail) },
+            pushOnly: true,
         });
         v2_1.logger.info("onFollowCreated: follow notification sent.", {
             followedUserEmail,

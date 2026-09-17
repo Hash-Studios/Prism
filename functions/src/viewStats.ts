@@ -11,6 +11,7 @@ const REGION = "asia-south1";
 const WALLPAPER_STATS = "wallpaper_stats";
 const SETUP_STATS = "setup_stats";
 const MAX_ID_LEN = 128;
+const VIEW_COOLDOWN_MS = 60 * 60 * 1000;
 
 interface RecordViewResponse {
   views: number;
@@ -30,16 +31,28 @@ function normalizeId(raw: unknown): string {
   return trimmed;
 }
 
-async function incrementAndReadViews(collection: string, docId: string): Promise<number> {
-  const ref = db.collection(collection).doc(docId);
-  await ref.set({views: admin.firestore.FieldValue.increment(1)}, {merge: true});
-  const snap = await ref.get();
-  const v = snap.data()?.views;
-  if (typeof v === "number" && Number.isFinite(v)) {
-    return v;
-  }
-  const parsed = parseInt(String(v ?? "0"), 10);
-  return Number.isFinite(parsed) ? parsed : 0;
+export function isViewCooldownActive(lastAtMs: number | undefined, nowMs = Date.now()): boolean {
+  return lastAtMs != null && Number.isFinite(lastAtMs) && nowMs - lastAtMs < VIEW_COOLDOWN_MS;
+}
+
+async function incrementAndReadViews(uid: string, collection: string, docId: string): Promise<number> {
+  const statsRef = db.collection(collection).doc(docId);
+  const rateRef = db.collection("viewRate").doc(`${uid}_${collection}_${docId}`);
+  let views = 0;
+  await db.runTransaction(async (tx) => {
+    const [rateSnap, statsSnap] = await Promise.all([tx.get(rateRef), tx.get(statsRef)]);
+    const current = statsSnap.data()?.views;
+    views = typeof current === "number" && Number.isFinite(current) ? current :
+      Number.parseInt(String(current ?? "0"), 10) || 0;
+    const lastAt = rateSnap.data()?.lastAt as admin.firestore.Timestamp | undefined;
+    if (isViewCooldownActive(lastAt?.toMillis())) {
+      return;
+    }
+    views += 1;
+    tx.set(statsRef, {views}, {merge: true});
+    tx.set(rateRef, {lastAt: admin.firestore.Timestamp.now()}, {merge: true});
+  });
+  return views;
 }
 
 export const recordWallpaperView = onCall(
@@ -48,8 +61,10 @@ export const recordWallpaperView = onCall(
     cors: true,
   },
   async (request: CallableRequest<{wallId?: string}>): Promise<RecordViewResponse> => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Sign in to record a view.");
     const wallId = normalizeId(request.data?.wallId ?? "");
-    const views = await incrementAndReadViews(WALLPAPER_STATS, wallId);
+    const views = await incrementAndReadViews(uid, WALLPAPER_STATS, wallId);
     return {views};
   },
 );
@@ -60,8 +75,10 @@ export const recordSetupView = onCall(
     cors: true,
   },
   async (request: CallableRequest<{setupId?: string}>): Promise<RecordViewResponse> => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Sign in to record a view.");
     const setupId = normalizeId(request.data?.setupId ?? "");
-    const views = await incrementAndReadViews(SETUP_STATS, setupId);
+    const views = await incrementAndReadViews(uid, SETUP_STATS, setupId);
     return {views};
   },
 );

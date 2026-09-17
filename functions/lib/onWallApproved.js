@@ -82,7 +82,8 @@ exports.onWallApproved = (0, firestore_1.onDocumentUpdated)({
     // 1. Notify the artist that their wall was approved
     //    - In-app doc (modifier = artistEmail)  +  FCM push to their own topic
     // ------------------------------------------------------------------ //
-    const artistTopic = (0, notificationHelper_1.emailToTopic)(artistEmail);
+    const artistUid = await _resolveUserIdByEmail(artistEmail);
+    const artistTopic = artistUid ? (0, notificationHelper_1.userIdToTopic)(artistUid) : (0, notificationHelper_1.emailToTopic)(artistEmail);
     await (0, notificationHelper_1.sendNotification)({
         title: "Your wallpaper is live! 🎉",
         body: `"${wallTitle}" has been approved and is now visible to everyone.`,
@@ -97,6 +98,23 @@ exports.onWallApproved = (0, firestore_1.onDocumentUpdated)({
         channelId: "posts",
         fcmTarget: { topic: artistTopic },
     });
+    if (artistUid) {
+        await (0, notificationHelper_1.sendNotification)({
+            title: "Your wallpaper is live! 🎉",
+            body: `"${wallTitle}" has been approved and is now visible to everyone.`,
+            data: {
+                route: "wall",
+                wall_id: wallId,
+                pageName: "",
+                url: "",
+            },
+            imageUrl: wallThumb || undefined,
+            modifier: artistEmail,
+            channelId: "posts",
+            fcmTarget: { topic: (0, notificationHelper_1.emailToTopic)(artistEmail) },
+            pushOnly: true,
+        });
+    }
     v2_1.logger.info("onWallApproved: artist notification sent.", { wallId, artistEmail });
     // ------------------------------------------------------------------ //
     // 2. Notify the artist's followers that a new wall is available
@@ -166,6 +184,20 @@ async function _notifyAdmins(params) {
     }
     catch (err) {
         v2_1.logger.warn("onWallApproved: admin notification failed (non-fatal).", { err });
+    }
+}
+async function _resolveUserIdByEmail(email) {
+    try {
+        const snap = await db.collection("usersv2").where("email", "==", email).limit(1).get();
+        if (!snap.empty)
+            return snap.docs[0].id;
+        const lower = email.toLowerCase();
+        const lowerSnap = await db.collection("usersv2").where("email", "==", lower).limit(1).get();
+        return lowerSnap.empty ? null : lowerSnap.docs[0].id;
+    }
+    catch (err) {
+        v2_1.logger.warn("onWallApproved: could not resolve artist uid.", { email, err });
+        return null;
     }
 }
 //# sourceMappingURL=onWallApproved.js.map
