@@ -256,7 +256,7 @@ Future<void> main() async {
         localPrefs.put("themeMode", currentMode),
         localPrefs.put("lightAccent", lightAccentValue),
         localPrefs.put("darkAccent", darkAccentValue),
-        localPrefs.put('optimisedWallpapers', false),
+        localPrefs.put('optimisedWallpapers', optimisedWallpapers),
         localPrefs.put('WHcategories', categories == 100 ? 100 : 111),
         localPrefs.put('WHpurity', purity == 100 ? 100 : 110),
       ]);
@@ -952,6 +952,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
+    localNotification.router = _appRouter;
     _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
