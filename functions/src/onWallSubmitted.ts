@@ -8,6 +8,8 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
+const db = admin.firestore();
+
 /**
  * Fires when a new wall document is created in the `walls` collection.
  *
@@ -34,17 +36,25 @@ export const onWallSubmitted = onDocumentCreated(
       return;
     }
 
-    // Only notify for premium users' walls (matching old client behaviour).
-    const isPremium = data.premium === true;
-    if (!isPremium) {
-      return;
-    }
-
     const wallId = event.params.wallId;
     const artistName: string = (data.by ?? "").toString().trim() || "A user";
     const artistEmail: string = (data.email ?? "").toString().trim();
     const wallTitle: string = (data.title ?? "").toString().trim() || "Untitled";
     const wallThumb: string = (data.wallpaper_thumb ?? "").toString().trim();
+
+    let isPremium = true;
+    if (artistEmail) {
+      try {
+        const snap = await db.collection("usersv2").where("email", "==", artistEmail).limit(1).get();
+        const userSnap = snap.empty ? await db.collection("usersv2").where("email", "==", artistEmail.toLowerCase()).limit(1).get() : snap;
+        if (!userSnap.empty) {
+          isPremium = userSnap.docs[0].data().premium === true;
+        }
+      } catch (err) {
+        logger.warn("onWallSubmitted: premium lookup failed; notifying for review.", {wallId, artistEmail, err});
+      }
+    }
+    if (!isPremium) return;
 
     const adminEmails = await getAdminEmails();
     if (adminEmails.length === 0) {

@@ -45,14 +45,6 @@ service cloud.firestore {
               == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1);
     }
 
-    // Allows a signed-in user to follow/unfollow via arrayUnion/arrayRemove.
-    // canToggleFollowersOnly() is incompatible with arrayUnion because the size
-    // check fails when the item already exists (arrayUnion is a no-op in that case).
-    function canFollowUser() {
-      return hasAuthEmail()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers']);
-    }
-
     function canCreateUserDoc(userId) {
       return isOwner(userId)
           && request.resource.data.id is string
@@ -144,12 +136,24 @@ service cloud.firestore {
     }
 
     // User profiles + private user state.
-    // Profiles are public (shown on profile pages, creator cards, onboarding).
+    // Signed-in users can read social profiles. ponytail: field-level private
+    // coins/email needs a profiles collection plus a migration.
     match /usersv2/{userId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow create: if isConfiguredAdmin() || canCreateUserDoc(userId);
-      allow update: if isConfiguredAdmin() || isOwner(userId) || canToggleFollowersOnly() || canFollowUser();
+      allow update: if isConfiguredAdmin()
+          || canToggleFollowersOnly()
+          || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'name', 'username', 'profilePhoto', 'bio', 'lastLoginAt', 'loggedIn',
+            'following', 'interestCategories', 'onboardingV2', 'uploadsWeekStart',
+            'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'premium',
+            'subscriptionTier', 'coinState'
+          ]));
       allow delete: if isConfiguredAdmin();
+
+      match /private/session {
+        allow read, write: if isConfiguredAdmin() || isOwner(userId);
+      }
 
       // Block list: owner can read; writes only via Cloud Functions (Admin SDK).
       match /blockedUsers/{blockedId} {
@@ -174,7 +178,11 @@ service cloud.firestore {
 
     // Notifications are readable by signed-in users; only admins/functions write.
     match /notifications/{docId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn()
+          && (hasAuthEmail() && resource.data.modifier == authEmail()
+              || resource.data.modifier in ['all', 'premium', 'free']
+              || resource.data.modifier == request.auth.uid
+              || resource.data.modifier.matches('^[0-9].*'));
       allow write: if isConfiguredAdmin();
     }
 
@@ -208,11 +216,7 @@ service cloud.firestore {
     // Coin transaction ledger is private per user.
     match /coinTransactions/{docId} {
       allow read: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow create: if isConfiguredAdmin() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
-      allow update: if isConfiguredAdmin() || (isSignedIn()
-          && resource.data.userId == request.auth.uid
-          && request.resource.data.userId == request.auth.uid);
-      allow delete: if isConfiguredAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if false;
     }
 
     // Legacy token storage (if used, doc id should be UID).

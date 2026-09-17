@@ -9,6 +9,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/apps/app_icon.dart';
 import 'package:Prism/data/apps/apps_data.dart';
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
@@ -18,7 +19,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:photo_view/photo_view.dart';
@@ -172,17 +172,15 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
     });
     try {
       final String base64Image = base64Encode(imageBytes);
-      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
-      await github.repositories
-          .createFile(
-            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoSetups)),
-            CreateFile(message: path.basename(image.path), content: base64Image, path: path.basename(image.path)),
-          )
-          .then(
-            (value) => setState(() {
-              imageURL = value.content!.downloadUrl;
-            }),
-          );
+      final value = await GitHubContentApi().putFile(
+        repo: Env.normalize(Env.ghRepoSetups),
+        message: path.basename(image.path),
+        contentBase64: base64Image,
+        path: path.basename(image.path),
+      );
+      setState(() {
+        imageURL = value.downloadUrl;
+      });
       logger.d('File Uploaded');
       setState(() {
         isUploading = false;

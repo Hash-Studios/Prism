@@ -124,11 +124,21 @@ jobs:
             --issuer-id "$ASC_ISSUER_ID" \
             --private-key /tmp/AuthKey.p8
 
-          PUBLISH_ARGS="--app 6670200846 --ipa build/ios/ipa/Prism.ipa --group \"Prism Alpha\" --wait"
           if [ -n "${{ github.event.inputs.test_notes }}" ]; then
-            PUBLISH_ARGS="$PUBLISH_ARGS --test-notes \"${{ github.event.inputs.test_notes }}\" --locale en-US"
+            asc publish testflight \
+              --app 6670200846 \
+              --ipa build/ios/ipa/Prism.ipa \
+              --group "Prism Alpha" \
+              --wait \
+              --test-notes "${{ github.event.inputs.test_notes }}" \
+              --locale en-US
+          else
+            asc publish testflight \
+              --app 6670200846 \
+              --ipa build/ios/ipa/Prism.ipa \
+              --group "Prism Alpha" \
+              --wait
           fi
-          eval asc publish testflight $PUBLISH_ARGS
 
       - name: Cleanup keychain & keys
         if: always()

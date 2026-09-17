@@ -576,7 +576,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         communityId,
         'Prism',
         record.watermarkedImageUrl,
-        record.imageUrl,
+        record.watermarkedImageUrl,
         '${record.width}x${record.height}',
         'AI',
         edited['title']?.toString(),

@@ -50,6 +50,7 @@ class PersistenceKeys {
   static const String quickTileCategoryName = 'quick_tile.category.name';
   static const String quickTileCategorySource = 'quick_tile.category.source';
   static const String quickTileCategoryTarget = 'quick_tile.category.target';
+  static const String quickTilePexelsApiKey = 'quick_tile.pexels.api_key';
 
   static const String quickTileWotdTarget = 'quick_tile.wotd.target';
   // Pre-cached WOTD wallpaper URL written by Flutter when WOTD loads.

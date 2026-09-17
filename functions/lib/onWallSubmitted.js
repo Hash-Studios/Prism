@@ -42,6 +42,7 @@ const notificationHelper_1 = require("./notificationHelper");
 if (!admin.apps.length) {
     admin.initializeApp();
 }
+const db = admin.firestore();
 /**
  * Fires when a new wall document is created in the `walls` collection.
  *
@@ -66,16 +67,26 @@ exports.onWallSubmitted = (0, firestore_1.onDocumentCreated)({
     if (!data) {
         return;
     }
-    // Only notify for premium users' walls (matching old client behaviour).
-    const isPremium = data.premium === true;
-    if (!isPremium) {
-        return;
-    }
     const wallId = event.params.wallId;
     const artistName = ((_b = data.by) !== null && _b !== void 0 ? _b : "").toString().trim() || "A user";
     const artistEmail = ((_c = data.email) !== null && _c !== void 0 ? _c : "").toString().trim();
     const wallTitle = ((_d = data.title) !== null && _d !== void 0 ? _d : "").toString().trim() || "Untitled";
     const wallThumb = ((_e = data.wallpaper_thumb) !== null && _e !== void 0 ? _e : "").toString().trim();
+    let isPremium = true;
+    if (artistEmail) {
+        try {
+            const snap = await db.collection("usersv2").where("email", "==", artistEmail).limit(1).get();
+            const userSnap = snap.empty ? await db.collection("usersv2").where("email", "==", artistEmail.toLowerCase()).limit(1).get() : snap;
+            if (!userSnap.empty) {
+                isPremium = userSnap.docs[0].data().premium === true;
+            }
+        }
+        catch (err) {
+            v2_1.logger.warn("onWallSubmitted: premium lookup failed; notifying for review.", { wallId, artistEmail, err });
+        }
+    }
+    if (!isPremium)
+        return;
     const adminEmails = await (0, adminConfig_1.getAdminEmails)();
     if (adminEmails.length === 0) {
         v2_1.logger.warn("onWallSubmitted: no admin emails configured in config/adminNotifications.");

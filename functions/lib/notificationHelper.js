@@ -35,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendNotification = sendNotification;
 exports.emailToTopic = emailToTopic;
+exports.userIdToTopic = userIdToTopic;
 const admin = __importStar(require("firebase-admin"));
 const v2_1 = require("firebase-functions/v2");
 /**
@@ -112,5 +113,8 @@ async function sendNotification(payload) {
  */
 function emailToTopic(email) {
     return email.split("@")[0].replace(/[^a-zA-Z0-9\-_.~%]/g, "_");
+}
+function userIdToTopic(uid) {
+    return `u_${uid.replace(/[^a-zA-Z0-9\-_.~%]/g, "_")}`;
 }
 //# sourceMappingURL=notificationHelper.js.map
