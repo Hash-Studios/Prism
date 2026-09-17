@@ -169,7 +169,7 @@ build: ensure-fvm doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	$(RIVE_SETUP_ENV) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(RIVE_SETUP_ENV) $(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 build-aab: ensure-fvm doppler-check
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
