@@ -141,8 +141,16 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         app_state.persistPrismUser();
         _bloc.add(const OnboardingV2Event.authCompleted());
       }
-    } catch (_) {
-      if (mounted) toasts.error('Something went wrong, please try again!');
+    } catch (error) {
+      if (mounted) {
+        final String message = error.toString();
+        toasts.error(
+          message.contains('providerConfigurationError') ||
+                  message.contains('no provider dependencies')
+              ? 'Google Play services on this device cannot sign in.'
+              : 'Something went wrong, please try again!',
+        );
+      }
       _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
   }
