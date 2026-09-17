@@ -38,6 +38,7 @@ class MyTileService : TileService() {
         private const val KEY_CATEGORY_NAME = "flutter.quick_tile.category.name"
         private const val KEY_CATEGORY_SOURCE = "flutter.quick_tile.category.source"
         private const val KEY_CATEGORY_TARGET = "flutter.quick_tile.category.target"
+        private const val KEY_PEXELS_API_KEY = "flutter.quick_tile.pexels.api_key"
 
         // Wallpaper sources
         private const val SOURCE_PEXELS = "pexels"
@@ -117,9 +118,13 @@ class MyTileService : TileService() {
     // ── Pexels ────────────────────────────────────────────────────────────────
 
     private fun fetchRandomPexelsUrl(query: String): String? {
-        val apiKey = BuildConfig.PEXELS_API_KEY
+        val apiKey = applicationContext
+            .getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+            .getString(KEY_PEXELS_API_KEY, null)
+            ?.trim()
+            .orEmpty()
         if (apiKey.isBlank()) {
-            Log.w(TAG, "PEXELS_API_KEY is not set in BuildConfig")
+            Log.w(TAG, "Pexels API key is not in SharedPreferences; open Prism once")
             return null
         }
 
