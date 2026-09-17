@@ -21,4 +21,11 @@ void main() {
       expect(followersTopicFromEmail('Az-_.~%09@example.com'), 'Az-_.~%09');
     });
   });
+
+  group('userTopicFromId', () {
+    test('prefixes and sanitizes the uid', () {
+      expect(userTopicFromId(' uid+with space '), 'u_uidwithspace');
+      expect(userTopicFromId('   '), isNull);
+    });
+  });
 }
