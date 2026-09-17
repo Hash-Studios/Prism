@@ -103,13 +103,11 @@ export const claimDailyStreak = onCall(
 
       const userData = userSnap.data() as Record<string, unknown>;
       const previousBalance = _asInt(userData.coins, 0);
-      const coinState = _normalizeCoinState(userData.coinState);
+      const rawCoinState = userData.coinState;
+      const coinState = _normalizeCoinState(rawCoinState);
 
-      const effectiveOffset = _clampTimezoneOffset(
-        request.data?.timezoneOffsetMinutes == null ?
-          _asInt(coinState.streakTimezoneOffsetMinutes, requestOffset) :
-          requestOffset,
-      );
+      const storedOffset = _storedTimezoneOffset(rawCoinState);
+      const effectiveOffset = _resolveTimezoneOffset(storedOffset, requestOffset);
       coinState.streakTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakReminderEnabled = reminderEnabledRequest;
 
@@ -122,9 +120,8 @@ export const claimDailyStreak = onCall(
         const nextStreakDay = _computeNextStreakDay(lastClaimDate, todayLocalKey, previousStreakDay);
         const rewardParts = _rewardForStreakDay(nextStreakDay);
         const isPro = _asBool(userData.premium, false);
-        const proBonus = isPro
-          ? (nextStreakDay === 7 ? PRO_STREAK_7_BONUS : PRO_STREAK_DAILY_BONUS)
-          : 0;
+        const proBonus = isPro && nextStreakDay === 7 ? PRO_STREAK_7_BONUS :
+          isPro ? PRO_STREAK_DAILY_BONUS : 0;
 
         streakDay = nextStreakDay;
         dailyReward = rewardParts.dailyReward;
@@ -381,6 +378,25 @@ function _clampTimezoneOffset(offsetMinutes: number): number {
     return DEFAULT_TZ_OFFSET_MINUTES;
   }
   return Math.max(-12 * 60, Math.min(14 * 60, Math.trunc(offsetMinutes)));
+}
+
+export function _resolveTimezoneOffset(stored: number | undefined, requested: number): number {
+  const requestedOffset = _clampTimezoneOffset(requested);
+  if (stored == null || !Number.isFinite(stored)) {
+    return requestedOffset;
+  }
+  const storedOffset = _clampTimezoneOffset(stored);
+  return Math.abs(storedOffset - requestedOffset) === 0 ? requestedOffset : storedOffset;
+}
+
+function _storedTimezoneOffset(raw: unknown): number | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return undefined;
+  }
+  const value = (raw as Record<string, unknown>).streakTimezoneOffsetMinutes;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) return Number(value);
+  return undefined;
 }
 
 function _clampStreakDay(day: number): number {

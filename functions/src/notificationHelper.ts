@@ -125,3 +125,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
 export function emailToTopic(email: string): string {
   return email.split("@")[0].replace(/[^a-zA-Z0-9\-_.~%]/g, "_");
 }
+
+export function userIdToTopic(uid: string): string {
+  return `u_${uid.replace(/[^a-zA-Z0-9\-_.~%]/g, "_")}`;
+}

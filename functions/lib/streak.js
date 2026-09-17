@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendStreakReminders = exports.claimDailyStreak = void 0;
+exports._resolveTimezoneOffset = _resolveTimezoneOffset;
 const admin = __importStar(require("firebase-admin"));
 const v2_1 = require("firebase-functions/v2");
 const https_1 = require("firebase-functions/v2/https");
@@ -81,17 +82,16 @@ exports.claimDailyStreak = (0, https_1.onCall)({
     let todayLocalKey = "";
     let nextReminderAtUtcMillis;
     await db.runTransaction(async (tx) => {
-        var _a;
         const userSnap = await tx.get(userRef);
         if (!userSnap.exists) {
             throw new https_1.HttpsError("not-found", "User profile was not found.");
         }
         const userData = userSnap.data();
         const previousBalance = _asInt(userData.coins, 0);
-        const coinState = _normalizeCoinState(userData.coinState);
-        const effectiveOffset = _clampTimezoneOffset(((_a = request.data) === null || _a === void 0 ? void 0 : _a.timezoneOffsetMinutes) == null ?
-            _asInt(coinState.streakTimezoneOffsetMinutes, requestOffset) :
-            requestOffset);
+        const rawCoinState = userData.coinState;
+        const coinState = _normalizeCoinState(rawCoinState);
+        const storedOffset = _storedTimezoneOffset(rawCoinState);
+        const effectiveOffset = _resolveTimezoneOffset(storedOffset, requestOffset);
         coinState.streakTimezoneOffsetMinutes = effectiveOffset;
         coinState.streakReminderEnabled = reminderEnabledRequest;
         todayLocalKey = _localDateKeyFromUtc(now, effectiveOffset);
@@ -102,9 +102,8 @@ exports.claimDailyStreak = (0, https_1.onCall)({
             const nextStreakDay = _computeNextStreakDay(lastClaimDate, todayLocalKey, previousStreakDay);
             const rewardParts = _rewardForStreakDay(nextStreakDay);
             const isPro = _asBool(userData.premium, false);
-            const proBonus = isPro
-                ? (nextStreakDay === 7 ? PRO_STREAK_7_BONUS : PRO_STREAK_DAILY_BONUS)
-                : 0;
+            const proBonus = isPro && nextStreakDay === 7 ? PRO_STREAK_7_BONUS :
+                isPro ? PRO_STREAK_DAILY_BONUS : 0;
             streakDay = nextStreakDay;
             dailyReward = rewardParts.dailyReward;
             streakBonusReward = rewardParts.streakBonusReward;
@@ -323,6 +322,25 @@ function _clampTimezoneOffset(offsetMinutes) {
         return DEFAULT_TZ_OFFSET_MINUTES;
     }
     return Math.max(-12 * 60, Math.min(14 * 60, Math.trunc(offsetMinutes)));
+}
+function _resolveTimezoneOffset(stored, requested) {
+    const requestedOffset = _clampTimezoneOffset(requested);
+    if (stored == null || !Number.isFinite(stored)) {
+        return requestedOffset;
+    }
+    const storedOffset = _clampTimezoneOffset(stored);
+    return Math.abs(storedOffset - requestedOffset) === 0 ? requestedOffset : storedOffset;
+}
+function _storedTimezoneOffset(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        return undefined;
+    }
+    const value = raw.streakTimezoneOffsetMinutes;
+    if (typeof value === "number" && Number.isFinite(value))
+        return value;
+    if (typeof value === "string" && value.trim())
+        return Number(value);
+    return undefined;
 }
 function _clampStreakDay(day) {
     if (!Number.isFinite(day)) {
