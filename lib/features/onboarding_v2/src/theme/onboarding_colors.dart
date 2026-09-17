@@ -22,4 +22,8 @@ class OnboardingColors {
   static const Color blurTint = Color(0x03FFFFFF);
   static const Color bottomOverlayLeft = Color(0xFF825756);
   static const Color bottomOverlayRight = Color(0xFFBD7F91);
+
+  /// Warm fill behind the welcome wallpaper so a failed decode cannot leave
+  /// a white screen with a white CTA.
+  static const Color fallbackFill = Color(0xFFF3C4B0);
 }

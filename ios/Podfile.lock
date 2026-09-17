@@ -1,6 +1,4 @@
 PODS:
-  - app_links (6.4.1):
-    - Flutter
   - AppAuth (2.0.0):
     - AppAuth/Core (= 2.0.0)
     - AppAuth/ExternalUserAgent (= 2.0.0)
@@ -26,9 +24,6 @@ PODS:
     - Flutter
   - device_info_plus (0.0.1):
     - Flutter
-  - file_encrypter (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - Firebase/Auth (12.9.0):
     - Firebase/CoreOnly
     - FirebaseAuth (~> 12.9.0)
@@ -159,17 +154,12 @@ PODS:
   - FirebaseRemoteConfigInterop (12.9.0)
   - FirebaseSharedSwift (12.9.0)
   - Flutter (1.0.0)
-  - flutter_archive (0.0.1):
-    - Flutter
-    - ZIPFoundation (= 0.9.19)
   - flutter_image_compress_common (1.0.0):
     - Flutter
     - Mantle
     - SDWebImage
     - SDWebImageWebPCoder
   - flutter_local_notifications (0.0.1):
-    - Flutter
-  - flutter_mailer (0.0.1):
     - Flutter
   - fluttertoast (0.0.2):
     - Flutter
@@ -288,8 +278,6 @@ PODS:
   - nanopb/encode (3.30910.0)
   - package_info_plus (0.4.5):
     - Flutter
-  - permission_handler_apple (9.3.0):
-    - Flutter
   - PromisesObjC (2.4.0)
   - purchases_flutter (9.15.1):
     - Flutter
@@ -336,16 +324,13 @@ PODS:
   - webview_flutter_wkwebview (0.0.1):
     - Flutter
     - FlutterMacOS
-  - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
-  - app_links (from `.symlinks/plugins/app_links/ios`)
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
   - cloud_functions (from `.symlinks/plugins/cloud_functions/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
-  - file_encrypter (from `.symlinks/plugins/file_encrypter/darwin`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
@@ -353,10 +338,8 @@ DEPENDENCIES:
   - firebase_remote_config (from `.symlinks/plugins/firebase_remote_config/ios`)
   - FirebaseFirestore (from `https://github.com/invertase/firestore-ios-sdk-frameworks.git`, tag `12.9.0`)
   - Flutter (from `Flutter`)
-  - flutter_archive (from `.symlinks/plugins/flutter_archive/ios`)
   - flutter_image_compress_common (from `.symlinks/plugins/flutter_image_compress_common/ios`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
-  - flutter_mailer (from `.symlinks/plugins/flutter_mailer/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
   - google_mobile_ads (from `.symlinks/plugins/google_mobile_ads/ios`)
   - google_sign_in_ios (from `.symlinks/plugins/google_sign_in_ios/darwin`)
@@ -364,7 +347,6 @@ DEPENDENCIES:
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - mixpanel_flutter (from `.symlinks/plugins/mixpanel_flutter/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
-  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
   - purchases_ui_flutter (from `.symlinks/plugins/purchases_ui_flutter/ios`)
   - quick_actions_ios (from `.symlinks/plugins/quick_actions_ios/ios`)
@@ -426,11 +408,8 @@ SPEC REPOS:
     - SDWebImage
     - SDWebImageWebPCoder
     - Sentry
-    - ZIPFoundation
 
 EXTERNAL SOURCES:
-  app_links:
-    :path: ".symlinks/plugins/app_links/ios"
   audioplayers_darwin:
     :path: ".symlinks/plugins/audioplayers_darwin/darwin"
   cloud_firestore:
@@ -441,8 +420,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
-  file_encrypter:
-    :path: ".symlinks/plugins/file_encrypter/darwin"
   firebase_analytics:
     :path: ".symlinks/plugins/firebase_analytics/ios"
   firebase_auth:
@@ -458,14 +435,10 @@ EXTERNAL SOURCES:
     :tag: 12.9.0
   Flutter:
     :path: Flutter
-  flutter_archive:
-    :path: ".symlinks/plugins/flutter_archive/ios"
   flutter_image_compress_common:
     :path: ".symlinks/plugins/flutter_image_compress_common/ios"
   flutter_local_notifications:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
-  flutter_mailer:
-    :path: ".symlinks/plugins/flutter_mailer/ios"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
   google_mobile_ads:
@@ -480,8 +453,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/mixpanel_flutter/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
-  permission_handler_apple:
-    :path: ".symlinks/plugins/permission_handler_apple/ios"
   purchases_flutter:
     :path: ".symlinks/plugins/purchases_flutter/ios"
   purchases_ui_flutter:
@@ -511,7 +482,6 @@ CHECKOUT OPTIONS:
     :tag: 12.9.0
 
 SPEC CHECKSUMS:
-  app_links: 585674be3c6661708e6cd794ab4f39fb9d8356f9
   AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
   audioplayers_darwin: f15e209a3e856d1a7edcf98dc029f484fead2242
@@ -519,7 +489,6 @@ SPEC CHECKSUMS:
   cloud_functions: a0f62dde76c707396d7f25bbdb869589cf16ff06
   connectivity_plus: 2a701ffec2c0ae28a48cf7540e279787e77c447d
   device_info_plus: bf2e3232933866d73fe290f2942f2156cdd10342
-  file_encrypter: 06a0713d6384aa517d2e51de489656658a7b4140
   Firebase: 065f2bb395062046623036d8e6dc857bc2521d56
   firebase_analytics: 42693ebf35c4d330b74abcb46ca80351703644e0
   firebase_auth: e136983e095c69e84f3091f50d75cb0ffd95af3c
@@ -549,10 +518,8 @@ SPEC CHECKSUMS:
   FirebaseRemoteConfigInterop: 765ee19cd2bfa8e54937c8dae901eb634ad6787d
   FirebaseSharedSwift: 9d2fa84a46676302b89dbd5e6e62bce2fe376909
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_archive: cb3e0219e555897ba4b36f166baa1eca394890b9
   flutter_image_compress_common: ec1d45c362c9d30a3f6a0426c297f47c52007e3e
   flutter_local_notifications: ff50f8405aaa0ccdc7dcfb9022ca192e8ad9688f
-  flutter_mailer: 2ef5a67087bc8c6c4cefd04a178bf1ae2c94cd83
   fluttertoast: 21eecd6935e7064cc1fcb733a4c5a428f3f24f0f
   Google-Mobile-Ads-SDK: 4534fd2dfcd3f705c5485a6633c5188d03d4eed2
   google_mobile_ads: 2ba32ffef4a026aa94f526774a40a14ca9662adf
@@ -574,7 +541,6 @@ SPEC CHECKSUMS:
   mixpanel_flutter: e3eaff6839e585ca520da89d6f4c268af17bc10c
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
-  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   purchases_flutter: 76edf3aa4fa3c1f65250898c28ad206c31216cda
   purchases_ui_flutter: 7bd7b98663d3725a4ef7e68d6cbbadb260740106
@@ -595,8 +561,7 @@ SPEC CHECKSUMS:
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
   webview_flutter_wkwebview: 29eb20d43355b48fe7d07113835b9128f84e3af4
-  ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
-PODFILE CHECKSUM: 4fb7027b9debb82c4bac49f60daed459f2e9e9c9
+PODFILE CHECKSUM: e82a5b858e9c5b67cd87ba6e4202a72e0fa09117
 
 COCOAPODS: 1.16.2

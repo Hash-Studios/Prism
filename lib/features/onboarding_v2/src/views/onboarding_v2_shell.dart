@@ -1,11 +1,13 @@
 import 'dart:ui';
 
+import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
@@ -66,7 +68,10 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _bloc.add(const OnboardingV2Event.started());
     AppSoundManager.instance.playOnboardingSwoosh();
     _legalTap = TapGestureRecognizer()
-      ..onTap = () => launchUrl(Uri.parse('https://prism-app-terms.web.app'), mode: LaunchMode.externalApplication);
+      ..onTap = () => launchUrl(
+        Uri.parse('https://prism-app-terms.web.app'),
+        mode: LaunchMode.externalApplication,
+      );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -83,7 +88,10 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     if (!_imagesPrecached) {
       _imagesPrecached = true;
       // wallpaperFinal reuses the same path as wallpaperPrimary, so one call covers both.
-      precacheImage(const AssetImage(OnboardingAssets.wallpaperPrimary), context);
+      precacheImage(
+        const AssetImage(OnboardingAssets.wallpaperPrimary),
+        context,
+      );
     }
   }
 
@@ -94,7 +102,10 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     super.dispose();
   }
 
-  Future<void> _handleNavRequest(BuildContext context, OnboardingV2NavRequest request) async {
+  Future<void> _handleNavRequest(
+    BuildContext context,
+    OnboardingV2NavRequest request,
+  ) async {
     switch (request) {
       case OnboardingV2NavRequest.openPaywall:
         if (!context.mounted) return;
@@ -105,7 +116,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         );
         if (!context.mounted) return;
         final isPremium = app_state.prismUser.premium;
-        _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: isPremium));
+        _bloc.add(
+          OnboardingV2Event.paywallResultReceived(didPurchase: isPremium),
+        );
 
       case OnboardingV2NavRequest.completeOnboarding:
         if (!context.mounted) return;
@@ -119,6 +132,35 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       final result = await app_state.gAuth.signInWithGoogle();
       if (!mounted) return;
       if (result == GoogleAuth.signInCancelledResult) {
+        app_state.prismUser.loggedIn = false;
+        app_state.persistPrismUser();
+        toasts.error('Sign in cancelled.');
+        _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
+      } else {
+        app_state.prismUser.loggedIn = true;
+        app_state.persistPrismUser();
+        _bloc.add(const OnboardingV2Event.authCompleted());
+      }
+    } catch (error) {
+      if (mounted) {
+        final String message = error.toString();
+        toasts.error(
+          message.contains('providerConfigurationError') ||
+                  message.contains('no provider dependencies')
+              ? 'Google Play services on this device cannot sign in.'
+              : 'Something went wrong, please try again!',
+        );
+      }
+      _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
+    try {
+      final result = await globalAppleAuth.signInWithApple();
+      if (!mounted) return;
+      if (result == AppleAuth.signInCancelledResult) {
         app_state.prismUser.loggedIn = false;
         app_state.persistPrismUser();
         toasts.error('Sign in cancelled.');
@@ -144,7 +186,11 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         _bloc.add(const OnboardingV2Event.starterPackConfirmed());
       case OnboardingV2Step.aiGenerate:
         // Success auto-advances via the shell listener; CTA always triggers or re-triggers generation.
-        _bloc.add(OnboardingV2Event.aiGenerationRequested(targetSize: _targetSizeForDevice()));
+        _bloc.add(
+          OnboardingV2Event.aiGenerationRequested(
+            targetSize: _targetSizeForDevice(),
+          ),
+        );
       case OnboardingV2Step.firstWallpaper:
         final wallpaper = _bloc.state.wallpaperData.wallpaper;
         if (wallpaper == null) {
@@ -171,13 +217,20 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     int longTarget = (shortTarget * aspect).round();
     if (longTarget > maxLongEdge) {
       longTarget = maxLongEdge;
-      shortTarget = (longTarget / aspect).round().clamp(minShortEdge, maxLongEdge);
+      shortTarget = (longTarget / aspect).round().clamp(
+        minShortEdge,
+        maxLongEdge,
+      );
     }
-    return portrait ? '${shortTarget}x$longTarget' : '${longTarget}x$shortTarget';
+    return portrait
+        ? '${shortTarget}x$longTarget'
+        : '${longTarget}x$shortTarget';
   }
 
   Widget _pageFor(OnboardingV2Step step) {
-    final idx = OnboardingV2Step.values.indexOf(step).clamp(0, _pages.length - 1);
+    final idx = OnboardingV2Step.values
+        .indexOf(step)
+        .clamp(0, _pages.length - 1);
     return KeyedSubtree(key: ValueKey(step), child: _pages[idx]);
   }
 
@@ -187,7 +240,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       value: _bloc,
       child: BlocConsumer<OnboardingV2Bloc, OnboardingV2State>(
         listenWhen: (prev, curr) {
-          final navChanged = curr.navRequest != null && prev.navRequest != curr.navRequest;
+          final navChanged =
+              curr.navRequest != null && prev.navRequest != curr.navRequest;
           final wallpaperSucceeded =
               curr.step == OnboardingV2Step.firstWallpaper &&
               prev.wallpaperData.status != curr.wallpaperData.status &&
@@ -199,13 +253,23 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
           return navChanged || wallpaperSucceeded || aiGenerationSucceeded;
         },
         listener: (context, state) {
-          logger.d('listener fired step=${state.step} navRequest=${state.navRequest}', tag: 'OnboardingV2Shell');
-          if (state.navRequest != null) _handleNavRequest(context, state.navRequest!);
-          if (state.navRequest == null && state.wallpaperData.status == FirstWallpaperStatus.success) {
-            toasts.success(defaultTargetPlatform == TargetPlatform.android ? 'Wallpaper set!' : 'Saved to Photos!');
+          logger.d(
+            'listener fired step=${state.step} navRequest=${state.navRequest}',
+            tag: 'OnboardingV2Shell',
+          );
+          if (state.navRequest != null)
+            _handleNavRequest(context, state.navRequest!);
+          if (state.navRequest == null &&
+              state.wallpaperData.status == FirstWallpaperStatus.success) {
+            toasts.success(
+              defaultTargetPlatform == TargetPlatform.android
+                  ? 'Wallpaper set!'
+                  : 'Saved to Photos!',
+            );
             _bloc.add(const OnboardingV2Event.firstWallpaperStepContinued());
           }
-          if (state.step == OnboardingV2Step.aiGenerate && state.aiData.status == AiGenerateStatus.success) {
+          if (state.step == OnboardingV2Step.aiGenerate &&
+              state.aiData.status == AiGenerateStatus.success) {
             _bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
           }
         },
@@ -213,10 +277,13 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
             prev.step != curr.step ||
             prev.isAuthLoading != curr.isAuthLoading ||
             prev.actionStatus != curr.actionStatus ||
-            prev.interestsData.selected.length != curr.interestsData.selected.length ||
-            prev.starterPackData.selectedEmails.length != curr.starterPackData.selectedEmails.length ||
+            prev.interestsData.selected.length !=
+                curr.interestsData.selected.length ||
+            prev.starterPackData.selectedEmails.length !=
+                curr.starterPackData.selectedEmails.length ||
             prev.wallpaperData.status != curr.wallpaperData.status ||
-            prev.wallpaperData.wallpaper?.thumbnailUrl != curr.wallpaperData.wallpaper?.thumbnailUrl ||
+            prev.wallpaperData.wallpaper?.thumbnailUrl !=
+                curr.wallpaperData.wallpaper?.thumbnailUrl ||
             prev.aiData != curr.aiData,
         builder: (context, state) {
           return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -227,7 +294,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                 _bloc.add(const OnboardingV2Event.stepBack());
               },
               child: Material(
-                type: MaterialType.transparency,
+                color: OnboardingColors.fallbackFill,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -243,10 +310,14 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                     // Layer 1: unique page content — fades between steps.
                     AnimatedSwitcher(
                       duration: OnboardingMotion.normal,
-                      transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
                       layoutBuilder: (currentChild, previousChildren) => Stack(
                         fit: StackFit.expand,
-                        children: [...previousChildren, if (currentChild != null) currentChild],
+                        children: [
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
+                        ],
                       ),
                       child: _pageFor(state.step),
                     ),
@@ -258,6 +329,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                         state: state,
                         legalTap: _legalTap,
                         onCtaTap: () => _handleCtaTap(state.step),
+                        onAppleTap: _handleAppleSignIn,
                       ),
                     ),
                   ],
@@ -276,11 +348,17 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
 // Staggered fade-in fires once on initial mount (F0 open).
 // ---------------------------------------------------------------------------
 class _SharedOverlay extends StatefulWidget {
-  const _SharedOverlay({required this.state, required this.legalTap, required this.onCtaTap});
+  const _SharedOverlay({
+    required this.state,
+    required this.legalTap,
+    required this.onCtaTap,
+    required this.onAppleTap,
+  });
 
   final OnboardingV2State state;
   final TapGestureRecognizer legalTap;
   final VoidCallback onCtaTap;
+  final VoidCallback onAppleTap;
 
   @override
   State<_SharedOverlay> createState() => _SharedOverlayState();
@@ -339,7 +417,9 @@ class _SharedOverlayState extends State<_SharedOverlay> {
           _wallpaperHeadlineColor = brightness == Brightness.light
               ? OnboardingColors.textPrimary
               : OnboardingColors.textOnDark;
-          _statusBarIconBrightness = brightness == Brightness.light ? Brightness.dark : Brightness.light;
+          _statusBarIconBrightness = brightness == Brightness.light
+              ? Brightness.dark
+              : Brightness.light;
         });
       }
     } catch (_) {
@@ -361,9 +441,26 @@ class _SharedOverlayState extends State<_SharedOverlay> {
         return Stack(
           fit: StackFit.expand,
           children: [
-            _Progress(step: step, sx: sx, sy: sy, wallpaperColor: _wallpaperHeadlineColor),
-            _Headline(step: step, sx: sx, sy: sy, visible: _headlineVisible, wallpaperColor: _wallpaperHeadlineColor),
-            _ProBadge(step: step, sx: sx, sy: sy, visible: _headlineVisible, color: _wallpaperHeadlineColor),
+            _Progress(
+              step: step,
+              sx: sx,
+              sy: sy,
+              wallpaperColor: _wallpaperHeadlineColor,
+            ),
+            _Headline(
+              step: step,
+              sx: sx,
+              sy: sy,
+              visible: _headlineVisible,
+              wallpaperColor: _wallpaperHeadlineColor,
+            ),
+            _ProBadge(
+              step: step,
+              sx: sx,
+              sy: sy,
+              visible: _headlineVisible,
+              color: _wallpaperHeadlineColor,
+            ),
             _CtaButton(
               step: step,
               sx: sx,
@@ -371,6 +468,7 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               visible: _buttonVisible,
               state: widget.state,
               onCtaTap: widget.onCtaTap,
+              onAppleTap: widget.onAppleTap,
             ),
             _BottomText(
               step: step,
@@ -378,14 +476,20 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               sy: sy,
               visible: _bottomTextVisible,
               legalTap: widget.legalTap,
-              wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
+              wallpaperCategory:
+                  widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
             ),
           ],
         );
       },
     );
-    return overlayStyle != null ? AnnotatedRegion<SystemUiOverlayStyle>(value: overlayStyle, child: content) : content;
+    return overlayStyle != null
+        ? AnnotatedRegion<SystemUiOverlayStyle>(
+            value: overlayStyle,
+            child: content,
+          )
+        : content;
   }
 }
 
@@ -395,7 +499,12 @@ class _SharedOverlayState extends State<_SharedOverlay> {
 // ---------------------------------------------------------------------------
 
 class _Progress extends StatelessWidget {
-  const _Progress({required this.step, required this.sx, required this.sy, required this.wallpaperColor});
+  const _Progress({
+    required this.step,
+    required this.sx,
+    required this.sy,
+    required this.wallpaperColor,
+  });
 
   final OnboardingV2Step step;
   final double sx;
@@ -417,7 +526,9 @@ class _Progress extends StatelessWidget {
       _ => 4,
     };
 
-    final color = step == OnboardingV2Step.firstWallpaper ? wallpaperColor : OnboardingColors.progressActive;
+    final color = step == OnboardingV2Step.firstWallpaper
+        ? wallpaperColor
+        : OnboardingColors.progressActive;
 
     return Positioned(
       top: OnboardingLayout.progressY * sy,
@@ -431,7 +542,11 @@ class _Progress extends StatelessWidget {
             scaleX: sx,
             scaleY: sy,
             alignment: Alignment.topCenter,
-            child: OnboardingProgressIndicator(step: progressStep, totalSteps: 4, color: color),
+            child: OnboardingProgressIndicator(
+              step: progressStep,
+              totalSteps: 4,
+              color: color,
+            ),
           ),
         ),
       ),
@@ -457,7 +572,9 @@ class _Headline extends StatelessWidget {
   final Color wallpaperColor;
 
   static double _headlineY(OnboardingV2Step step) =>
-      step == OnboardingV2Step.auth ? OnboardingLayout.welcomeHeadlineY : OnboardingLayout.stepTitleY;
+      step == OnboardingV2Step.auth
+      ? OnboardingLayout.welcomeHeadlineY
+      : OnboardingLayout.stepTitleY;
 
   static double _headlineX(OnboardingV2Step step) => switch (step) {
     // Auth: no horizontal constraint — the explicit \n is the only line break.
@@ -494,7 +611,12 @@ class _Headline extends StatelessWidget {
         duration: const Duration(milliseconds: 1000),
         child: AnimatedSwitcher(
           duration: OnboardingMotion.short,
-          child: Text(key: ValueKey(text), text, style: style, textAlign: TextAlign.center),
+          child: Text(
+            key: ValueKey(text),
+            text,
+            style: style,
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );
@@ -509,6 +631,7 @@ class _CtaButton extends StatelessWidget {
     required this.visible,
     required this.state,
     required this.onCtaTap,
+    required this.onAppleTap,
   });
 
   final OnboardingV2Step step;
@@ -517,14 +640,18 @@ class _CtaButton extends StatelessWidget {
   final bool visible;
   final OnboardingV2State state;
   final VoidCallback onCtaTap;
+  final VoidCallback onAppleTap;
 
   @override
   Widget build(BuildContext context) {
     final isLoading = switch (step) {
       OnboardingV2Step.auth => state.isAuthLoading,
-      OnboardingV2Step.interests || OnboardingV2Step.starterPack => state.actionStatus == ActionStatus.inProgress,
-      OnboardingV2Step.aiGenerate => state.aiData.status == AiGenerateStatus.loading,
-      OnboardingV2Step.firstWallpaper => state.wallpaperData.status == FirstWallpaperStatus.loading,
+      OnboardingV2Step.interests || OnboardingV2Step.starterPack =>
+        state.actionStatus == ActionStatus.inProgress,
+      OnboardingV2Step.aiGenerate =>
+        state.aiData.status == AiGenerateStatus.loading,
+      OnboardingV2Step.firstWallpaper =>
+        state.wallpaperData.status == FirstWallpaperStatus.loading,
     };
 
     final isEnabled = switch (step) {
@@ -539,22 +666,52 @@ class _CtaButton extends StatelessWidget {
       OnboardingV2Step.auth => 'continue with Google',
       OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
-        return selected < OnboardingV2Config.minInterests ? 'continue ($selected selected)' : 'continue';
+        return selected < OnboardingV2Config.minInterests
+            ? 'continue ($selected selected)'
+            : 'continue';
       }(),
       OnboardingV2Step.starterPack => 'continue',
       OnboardingV2Step.aiGenerate => 'generate my wallpaper',
       OnboardingV2Step.firstWallpaper => 'set as wallpaper',
     };
 
+    final showApple =
+        step == OnboardingV2Step.auth &&
+        defaultTargetPlatform == TargetPlatform.iOS;
+    final extraHeight = showApple
+        ? (OnboardingLayout.ctaHeight + 12) * sy
+        : 0.0;
     return Positioned(
-      top: OnboardingLayout.ctaY * sy,
+      top: OnboardingLayout.ctaY * sy - extraHeight,
       left: OnboardingLayout.ctaX * sx,
       right: OnboardingLayout.ctaX * sx,
-      height: OnboardingLayout.ctaHeight * sy,
+      height: OnboardingLayout.ctaHeight * sy + extraHeight,
       child: AnimatedOpacity(
         opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
-        child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
+        child: Column(
+          children: [
+            if (showApple) ...[
+              Expanded(
+                child: OnboardingPrimaryButton(
+                  label: 'continue with Apple',
+                  onPressed: onAppleTap,
+                  enabled: isEnabled,
+                  loading: isLoading,
+                ),
+              ),
+              SizedBox(height: 12 * sy),
+            ],
+            Expanded(
+              child: OnboardingPrimaryButton(
+                label: label,
+                onPressed: onCtaTap,
+                enabled: isEnabled,
+                loading: isLoading,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -580,11 +737,15 @@ class _BottomText extends StatelessWidget {
   final AiGenerateStatus? aiGenerateStatus;
 
   String _helperText() => switch (step) {
-    OnboardingV2Step.interests => 'select at least 3 categories to personalize your feed',
-    OnboardingV2Step.starterPack => 'we are suggesting you follow these 3 creators',
+    OnboardingV2Step.interests =>
+      'select at least 3 categories to personalize your feed',
+    OnboardingV2Step.starterPack =>
+      'we are suggesting you follow these 3 creators',
     OnboardingV2Step.aiGenerate => switch (aiGenerateStatus) {
-      AiGenerateStatus.success => 'looking good! tap "use this wallpaper" to continue',
-      AiGenerateStatus.failure => 'something went wrong — tap generate to try again',
+      AiGenerateStatus.success =>
+        'looking good! tap "use this wallpaper" to continue',
+      AiGenerateStatus.failure =>
+        'something went wrong — tap generate to try again',
       _ => 'your first wallpaper, generated by AI',
     },
     _ =>
@@ -606,7 +767,9 @@ class _BottomText extends StatelessWidget {
             const TextSpan(text: 'by continuing you agree to our '),
             TextSpan(
               text: 'Terms & Conditions',
-              style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
+              style: OnboardingTypography.helper.copyWith(
+                decoration: TextDecoration.underline,
+              ),
               recognizer: legalTap,
             ),
           ],
@@ -626,14 +789,23 @@ class _BottomText extends StatelessWidget {
       child: AnimatedOpacity(
         opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
-        child: AnimatedSwitcher(duration: OnboardingMotion.short, child: content),
+        child: AnimatedSwitcher(
+          duration: OnboardingMotion.short,
+          child: content,
+        ),
       ),
     );
   }
 }
 
 class _ProBadge extends StatelessWidget {
-  const _ProBadge({required this.step, required this.sx, required this.sy, required this.visible, required this.color});
+  const _ProBadge({
+    required this.step,
+    required this.sx,
+    required this.sy,
+    required this.visible,
+    required this.color,
+  });
 
   final OnboardingV2Step step;
   final double sx;
@@ -648,7 +820,9 @@ class _ProBadge extends StatelessWidget {
       left: 0,
       right: 0,
       child: AnimatedOpacity(
-        opacity: (visible && step == OnboardingV2Step.firstWallpaper) ? 1.0 : 0.0,
+        opacity: (visible && step == OnboardingV2Step.firstWallpaper)
+            ? 1.0
+            : 0.0,
         duration: const Duration(milliseconds: 1000),
         child: Center(
           child: ClipRRect(
@@ -659,7 +833,10 @@ class _ProBadge extends StatelessWidget {
                 sigmaY: OnboardingLayout.softenedBlurSigma,
               ),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   border: Border.all(color: color.withValues(alpha: 0.5)),
                   borderRadius: BorderRadius.circular(20),
@@ -676,7 +853,10 @@ class _ProBadge extends StatelessWidget {
                     children: const [
                       TextSpan(
                         text: 'PRO',
-                        style: TextStyle(decoration: TextDecoration.lineThrough, decorationThickness: 2.5),
+                        style: TextStyle(
+                          decoration: TextDecoration.lineThrough,
+                          decorationThickness: 2.5,
+                        ),
                       ),
                       TextSpan(text: '  →  free for you'),
                     ],

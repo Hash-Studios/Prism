@@ -218,6 +218,7 @@ ios-setup: ensure-fvm
 		exit 1; \
 	}
 	@$(FLUTTER) precache --ios
+	@if [ ! -f ios/Runner/GoogleService-Info.plist ]; then 		cp ios/Runner/GoogleService-Info.plist.stub ios/Runner/GoogleService-Info.plist; 		echo "Installed stub ios/Runner/GoogleService-Info.plist for local builds."; 	fi
 	@cd ios && export LANG=en_US.UTF-8 && export LC_ALL=en_US.UTF-8 && pod deintegrate && pod install --repo-update
 	@echo "iOS pods setup complete."
 
