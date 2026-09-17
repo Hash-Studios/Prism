@@ -130,6 +130,10 @@ class GoogleAuth {
         value: app_state.prismUser.premium ? '1' : '0',
       );
       final String? followersTopic = followersTopicFromEmail(resolvedEmail);
+      final String? userTopic = userTopicFromId(user.uid);
+      if (userTopic != null) {
+        await subscribeToTopicSafely(FirebaseMessaging.instance, userTopic, sourceTag: 'auth.signin.user_topic');
+      }
       if (followersTopic != null) {
         await subscribeToTopicSafely(
           FirebaseMessaging.instance,
@@ -205,6 +209,7 @@ class GoogleAuth {
 
   Future<bool> signOutGoogle() async {
     clearInAppNotificationSyncGateAll();
+    FcmTokenService.instance.cancel();
     final String existingUserId = app_state.prismUser.id;
     await _ensureGoogleSignInInitialized();
     try {
@@ -288,10 +293,7 @@ class GoogleAuth {
     try {
       final User? currentUser = _auth.currentUser;
       final bool signedInWithFirebase =
-          currentUser != null &&
-          !currentUser.isAnonymous &&
-          (currentUser.email ?? '').trim().isNotEmpty &&
-          currentUser.providerData.any((provider) => provider.providerId == GoogleAuthProvider.PROVIDER_ID);
+          currentUser != null && !currentUser.isAnonymous && currentUser.uid.trim().isNotEmpty;
       if (signedInWithFirebase) {
         return true;
       }
