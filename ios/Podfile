@@ -84,4 +84,31 @@ post_install do |installer|
       puts 'WARNING: FunctionsContext.swift patch not applied - content mismatch'
     end
   end
+
+  paywall_color = File.join(
+    installer.sandbox.pod_dir('RevenueCat'),
+    'Sources/Paywalls/PaywallColor.swift'
+  )
+  if File.exist?(paywall_color)
+    content = File.read(paywall_color)
+    struct_old = "    // Only available from iOS 13\n    fileprivate var _underlyingColor: (any Sendable)?\n\n}"
+    struct_new = "    // Only available from iOS 13\n    fileprivate var _underlyingColor: (any Sendable)?\n\n    private init(stringRepresentation: String, underlyingColor: (any Sendable)?) {\n        self.stringRepresentation = stringRepresentation\n        self._underlyingColor = underlyingColor\n    }\n\n}"
+    ext_old = "    /// \"Designated\" initializer\n    private init(stringRepresentation: String, underlyingColor: (any Sendable)?) {\n        self.stringRepresentation = stringRepresentation\n        self._underlyingColor = underlyingColor\n    }\n\n}\n"
+    changed = false
+    File.chmod(0644, paywall_color)
+    if content.include?(struct_old)
+      content = content.sub(struct_old, struct_new)
+      changed = true
+    end
+    if content.include?(ext_old)
+      content = content.sub(ext_old, "}\n")
+      changed = true
+    end
+    if changed
+      File.write(paywall_color, content)
+      puts 'Patched PaywallColor.swift for Xcode 26 memberwise init'
+    else
+      puts 'WARNING: PaywallColor.swift patch not applied - content mismatch'
+    end
+  end
 end
