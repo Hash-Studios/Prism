@@ -222,3 +222,42 @@ jobs:
             ## Android App Size Report
 
             Skipped: no app-size relevant files changed in this PR.
+
+  functions-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - name: Install, build, and test
+        run: |
+          npm ci
+          npm run build
+          node --test lib/__tests__/*.test.js
+
+  web-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install and typecheck
+        run: |
+          npm ci
+          npx tsc --noEmit
