@@ -8,6 +8,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
@@ -17,7 +18,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:github/github.dart';
 import 'package:path/path.dart' as path;
 import 'package:photo_view/photo_view.dart';
 
@@ -53,6 +53,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   bool? review;
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
+  bool _submitted = false;
   @override
   void initState() {
     super.initState();
@@ -117,21 +118,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future deleteFile() async {
-    final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
-    await github.repositories.deleteFile(
-      RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-      wallpaperPath,
-      wallpaperPath,
-      wallpaperSha,
-      "master",
+    final github = GitHubContentApi();
+    await github.deleteFile(
+      repo: Env.normalize(Env.ghRepoWalls),
+      path: wallpaperPath,
+      sha: wallpaperSha,
+      message: wallpaperPath,
     );
-    await github.repositories.deleteFile(
-      RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-      thumbPath,
-      thumbPath,
-      thumbSha,
-      "master",
-    );
+    await github.deleteFile(repo: Env.normalize(Env.ghRepoWalls), path: thumbPath, sha: thumbSha, message: thumbPath);
     logger.d("Files deleted");
   }
 
@@ -143,35 +137,29 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     try {
       final String base64Image = base64Encode(imageBytes);
       final String base64ImageThumb = base64Encode(imageBytesThumb);
-      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
-      await github.repositories
-          .createFile(
-            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(message: path.basename(image.path), content: base64Image, path: path.basename(image.path)),
-          )
-          .then(
-            (value) => setState(() {
-              wallpaperUrl = value.content!.downloadUrl;
-              wallpaperPath = value.content!.path!;
-              wallpaperSha = value.content!.sha!;
-            }),
-          );
-      await github.repositories
-          .createFile(
-            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(
-              message: "thumb_${path.basename(image.path)}",
-              content: base64ImageThumb,
-              path: 'thumb_${path.basename(image.path)}',
-            ),
-          )
-          .then(
-            (value) => setState(() {
-              wallpaperThumb = value.content!.downloadUrl;
-              thumbPath = value.content!.path!;
-              thumbSha = value.content!.sha!;
-            }),
-          );
+      final github = GitHubContentApi();
+      final value = await github.putFile(
+        repo: Env.normalize(Env.ghRepoWalls),
+        message: path.basename(image.path),
+        contentBase64: base64Image,
+        path: path.basename(image.path),
+      );
+      setState(() {
+        wallpaperUrl = value.downloadUrl;
+        wallpaperPath = value.path!;
+        wallpaperSha = value.sha!;
+      });
+      final thumbValue = await github.putFile(
+        repo: Env.normalize(Env.ghRepoWalls),
+        message: "thumb_${path.basename(image.path)}",
+        contentBase64: base64ImageThumb,
+        path: 'thumb_${path.basename(image.path)}',
+      );
+      setState(() {
+        wallpaperThumb = thumbValue.downloadUrl;
+        thumbPath = thumbValue.path!;
+        thumbSha = thumbValue.sha!;
+      });
       logger.d('File Uploaded');
       setState(() {
         isUploading = false;
@@ -185,7 +173,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   void _onPop() {
-    deleteFile();
+    if (!_submitted) deleteFile();
   }
 
   @override
@@ -300,6 +288,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           disabledElevation: 0,
           onPressed: !isProcessing && !isUploading
               ? () {
+                  _submitted = true;
                   Navigator.pop(context, [wallpaperUrl, id]);
                   analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
                   wall_store.createRecord(
