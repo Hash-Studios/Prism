@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -72,8 +73,15 @@ class DeleteAccountService {
     }, sourceTag: 'delete_account.anonymize_user');
 
     // 6. Re-authenticate then delete Firebase Auth user
-    logger.i('[DeleteAccount] Step 6: Re-authenticating with Google', tag: 'DeleteAccount');
-    await app_state.gAuth.reauthenticateCurrentUser();
+    final providerIds =
+        FirebaseAuth.instance.currentUser?.providerData.map((provider) => provider.providerId).toSet() ?? {};
+    if (providerIds.contains('apple.com')) {
+      logger.i('[DeleteAccount] Step 6: Re-authenticating with Apple', tag: 'DeleteAccount');
+      await globalAppleAuth.reauthenticateCurrentUser();
+    } else {
+      logger.i('[DeleteAccount] Step 6: Re-authenticating with Google', tag: 'DeleteAccount');
+      await app_state.gAuth.reauthenticateCurrentUser();
+    }
     logger.i('[DeleteAccount] Step 6: Deleting Firebase Auth user', tag: 'DeleteAccount');
     await FirebaseAuth.instance.currentUser?.delete();
 
@@ -123,9 +131,7 @@ class DeleteAccountService {
       }, sourceTag: '$tag.batch_delete');
       logger.d('[DeleteAccount] _deleteBatch: $collection — batch committed', tag: 'DeleteAccount');
     } catch (e) {
-      // Firestore rules may not allow client-side deletes on this collection.
-      // Log and continue — these are non-critical audit records; the important
-      // steps (anonymize usersv2 doc + delete Firebase Auth user) still run.
+      if (collection != FirebaseCollections.coinTransactions) rethrow;
       logger.w(
         '[DeleteAccount] _deleteBatch: $collection — skipped ($e). TODO: update Firestore rules to allow user self-delete.',
         tag: 'DeleteAccount',
