@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/env/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Writes quick-tile configuration to SharedPreferences using raw string
@@ -24,6 +25,16 @@ class QuickTileConfigService {
     await prefs.setString(PersistenceKeys.quickTileCategoryName, categoryName);
     await prefs.setString(PersistenceKeys.quickTileCategorySource, _sourceToString(source));
     await prefs.setString(PersistenceKeys.quickTileCategoryTarget, _targetToString(target));
+    await persistPexelsApiKey();
+  }
+
+  static Future<void> persistPexelsApiKey() async {
+    final String key = Env.normalize(Env.pexelsApiKey);
+    if (key.isEmpty) {
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(PersistenceKeys.quickTilePexelsApiKey, key);
   }
 
   static Future<QuickTileCategoryConfig?> loadCategoryTileConfig() async {
@@ -52,6 +63,7 @@ class QuickTileConfigService {
   static Future<void> pushWotdUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(PersistenceKeys.quickTileWotdUrl, url);
+    await persistPexelsApiKey();
   }
 
   static Future<QuickTileWotdConfig?> loadWotdTileConfig() async {
@@ -75,6 +87,7 @@ class QuickTileConfigService {
   static Future<void> pushFavWallUrls(List<String> urls) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(PersistenceKeys.quickTileFavWallUrls, jsonEncode(urls));
+    await persistPexelsApiKey();
   }
 
   static Future<QuickTileFavsConfig?> loadFavsTileConfig() async {
