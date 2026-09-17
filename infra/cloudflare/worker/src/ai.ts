@@ -708,7 +708,6 @@ async function executeGeneration(params: {
   if (!config.enabled) {
     return aiError('service_disabled', 503, 'AI generation is disabled');
   }
-
   let dailyCapStatus: { allowed: boolean; current: number };
   try {
     dailyCapStatus = await checkAndIncrementUserDailyCap(params.auth.userId, config.hardUserDailyCap, params.env);
@@ -1428,7 +1427,7 @@ async function renderPublicWatermarkedBytes(
   }
 
   console.warn('[ai] watermark_renderer_unavailable', { width, height, contentType });
-  return { bytes: imageBytes, contentType };
+  throw new Error('watermark_generation_failed');
 }
 
 async function tryRenderWatermarkWithCanvas(
