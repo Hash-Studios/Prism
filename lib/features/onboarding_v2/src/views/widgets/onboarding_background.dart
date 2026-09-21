@@ -28,20 +28,15 @@ class OnboardingBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedNetworkUrl = networkUrl;
-    Widget imageChild =
-        (resolvedNetworkUrl != null && resolvedNetworkUrl.isNotEmpty)
+    Widget imageChild = (resolvedNetworkUrl != null && resolvedNetworkUrl.isNotEmpty)
         ? CachedNetworkImage(
             imageUrl: resolvedNetworkUrl,
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
             fadeInDuration: Duration.zero,
-            placeholder: (_, _) => Image.asset(
-              assetPath,
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-            ),
+            placeholder: (_, _) =>
+                Image.asset(assetPath, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
             errorWidget: (_, _, _) => const SizedBox.expand(),
           )
         : Image.asset(
@@ -53,11 +48,7 @@ class OnboardingBackground extends StatelessWidget {
           );
     if (blurSigma > 0) {
       imageChild = ImageFiltered(
-        imageFilter: ImageFilter.blur(
-          sigmaX: blurSigma,
-          sigmaY: blurSigma,
-          tileMode: TileMode.clamp,
-        ),
+        imageFilter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma, tileMode: TileMode.clamp),
         child: imageChild,
       );
     }
@@ -85,22 +76,16 @@ class OnboardingBackground extends StatelessWidget {
 //     firstWallpaper step.
 // ---------------------------------------------------------------------------
 class OnboardingStepBackground extends StatefulWidget {
-  const OnboardingStepBackground({
-    super.key,
-    required this.step,
-    this.wallpaperUrl,
-  });
+  const OnboardingStepBackground({super.key, required this.step, this.wallpaperUrl});
 
   final OnboardingV2Step step;
   final String? wallpaperUrl;
 
   @override
-  State<OnboardingStepBackground> createState() =>
-      _OnboardingStepBackgroundState();
+  State<OnboardingStepBackground> createState() => _OnboardingStepBackgroundState();
 }
 
-class _OnboardingStepBackgroundState extends State<OnboardingStepBackground>
-    with TickerProviderStateMixin {
+class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> with TickerProviderStateMixin {
   // Scale-reveal — fires once on initial mount.
   late final AnimationController _revealCtrl;
   late final Animation<double> _revealAnim;
@@ -116,18 +101,13 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground>
   void initState() {
     super.initState();
 
-    _revealCtrl = AnimationController(
-      duration: OnboardingMotion.backgroundReveal,
-      vsync: this,
-    );
-    _revealAnim = Tween<double>(begin: 1.18, end: 1.0).animate(
-      CurvedAnimation(parent: _revealCtrl, curve: OnboardingMotion.reveal),
-    );
+    _revealCtrl = AnimationController(duration: OnboardingMotion.backgroundReveal, vsync: this);
+    _revealAnim = Tween<double>(
+      begin: 1.18,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _revealCtrl, curve: OnboardingMotion.reveal));
 
-    _blurCtrl = AnimationController(
-      duration: OnboardingMotion.long,
-      vsync: this,
-    );
+    _blurCtrl = AnimationController(duration: OnboardingMotion.long, vsync: this);
     _blurAnim = Tween<double>(begin: 0, end: 0).animate(_blurCtrl);
 
     _applyStep(widget.step, animate: false);
@@ -152,9 +132,10 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground>
     if (target != _blurTarget) {
       final from = animate ? _blurAnim.value : target;
       _blurTarget = target;
-      _blurAnim = Tween<double>(begin: from, end: target).animate(
-        CurvedAnimation(parent: _blurCtrl, curve: OnboardingMotion.emphasized),
-      );
+      _blurAnim = Tween<double>(
+        begin: from,
+        end: target,
+      ).animate(CurvedAnimation(parent: _blurCtrl, curve: OnboardingMotion.emphasized));
       if (animate) {
         _blurCtrl.forward(from: 0);
       } else {
@@ -182,10 +163,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: Listenable.merge([_revealAnim, _blurAnim]),
-      child: OnboardingBackground(
-        assetPath: OnboardingAssets.wallpaperFinal,
-        networkUrl: widget.wallpaperUrl,
-      ),
+      child: OnboardingBackground(assetPath: OnboardingAssets.wallpaperFinal, networkUrl: widget.wallpaperUrl),
       builder: (context, child) {
         final revealScale = _revealAnim.value;
         final sigma = _blurAnim.value;
@@ -201,11 +179,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground>
                 imageScale: revealScale * (sigma > 0 ? 1.04 : 1.0),
               ),
             ),
-            AnimatedOpacity(
-              duration: OnboardingMotion.normal,
-              opacity: _showFinal ? 1.0 : 0.0,
-              child: child,
-            ),
+            AnimatedOpacity(duration: OnboardingMotion.normal, opacity: _showFinal ? 1.0 : 0.0, child: child),
           ],
         );
       },
