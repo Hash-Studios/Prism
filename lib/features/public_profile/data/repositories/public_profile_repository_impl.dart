@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
@@ -28,6 +30,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   final Map<String, String> _wallCursorByEmail = <String, String>{};
   final Map<String, String> _setupCursorByEmail = <String, String>{};
   static const int _profileReadDedupeMs = 30000;
+  static const int _searchChunkSize = 30;
 
   Future<_UserRow?> _findUser(String email) async {
     final usersv2 = await _firestoreClient.query<_UserRow>(
@@ -343,32 +346,46 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     required String currentUserEmail,
     int limit = 5,
   }) async {
-    if (query.isEmpty || scopeEmails.isEmpty) {
+    final String q = query.trim().toLowerCase();
+    if (q.isEmpty || scopeEmails.isEmpty) {
       return Result.success(const <UserSummaryEntity>[]);
     }
 
     try {
-      // Firestore prefix range query: username >= query AND username < query + '\uf8ff'
-      final end = '$query\uf8ff';
-      final scopeSet = scopeEmails.map((e) => e.trim().toLowerCase()).toSet();
+      final List<String> unique = scopeEmails
+          .map((e) => e.trim().toLowerCase())
+          .where((e) => e.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
       final Set<String> followingSet = app_state.prismUser.following.map((e) => e.trim().toLowerCase()).toSet();
 
-      final rows = await _firestoreClient.query<_UserRow>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.usersV2,
-          sourceTag: 'public_profile.search_by_username',
-          filters: <FirestoreFilter>[
-            FirestoreFilter(field: 'username', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: query),
-            FirestoreFilter(field: 'username', op: FirestoreFilterOp.isLessThan, value: end),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'username')],
-          limit: limit * 4, // over-fetch so we have enough after scope filtering
-        ),
-        (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-      );
+      // One scoped prefix query per 30 emails (the whereIn limit). Each chunk
+      // is ordered by usernameLower, so its top [limit] covers the overall top.
+      final List<List<_UserRow>> chunks = await Future.wait(<Future<List<_UserRow>>>[
+        for (int i = 0; i < unique.length; i += _searchChunkSize)
+          _firestoreClient.query<_UserRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.usersV2,
+              sourceTag: 'public_profile.search_by_username',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(
+                  field: 'email',
+                  op: FirestoreFilterOp.whereIn,
+                  value: unique.sublist(i, math.min(i + _searchChunkSize, unique.length)),
+                ),
+                FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: q),
+                FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isLessThan, value: '$q\uf8ff'),
+              ],
+              orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'usernameLower')],
+              limit: limit,
+            ),
+            (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+          ),
+      ]);
 
+      final List<_UserRow> rows = chunks.expand((rows) => rows).toList()
+        ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
       final summaries = rows
-          .where((row) => scopeSet.contains(row.doc.email.trim().toLowerCase()))
           .take(limit)
           .map((row) {
             final doc = row.doc;
