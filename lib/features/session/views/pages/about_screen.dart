@@ -72,6 +72,7 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
           icon: const Icon(JamIcons.close),
           onPressed: () {
             _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
