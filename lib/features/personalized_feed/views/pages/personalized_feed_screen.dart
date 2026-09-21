@@ -281,52 +281,56 @@ class _FeedCarouselState extends State<_FeedCarousel> {
               final PrismFeedItem? wall = feedIndex >= 0 && feedIndex < previewWalls.length
                   ? previewWalls[feedIndex]
                   : null;
-              return GestureDetector(
-                onTap: () {
-                  if (wall == null) return;
-                  unawaited(
-                    analytics.track(
-                      SurfaceActionTappedEvent(
-                        surface: AnalyticsSurfaceValue.homeWallpaperGrid,
-                        action: AnalyticsActionValue.carouselItemOpened,
-                        sourceContext: 'personalized_feed_carousel',
-                        itemType: ItemTypeValue.wallpaper,
-                        itemId: wall.id,
-                        index: feedIndex,
+              return Semantics(
+                button: wall != null,
+                label: wall?.semanticLabel,
+                child: GestureDetector(
+                  onTap: () {
+                    if (wall == null) return;
+                    unawaited(
+                      analytics.track(
+                        SurfaceActionTappedEvent(
+                          surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+                          action: AnalyticsActionValue.carouselItemOpened,
+                          sourceContext: 'personalized_feed_carousel',
+                          itemType: ItemTypeValue.wallpaper,
+                          itemId: wall.id,
+                          index: feedIndex,
+                        ),
                       ),
-                    ),
-                  );
-                  context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
-                },
-                child: wall == null
-                    ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest)
-                    : PremiumBanner(
-                        comparator: !app_state.isPremiumWall(
-                          app_state.premiumCollections,
-                          wall.wallpaper.collections ?? const <String>[],
-                        ),
-                        top: 160,
-                        left: MediaQuery.of(context).size.width * 0.8 - 50,
-                        right: null,
-                        bottom: null,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                        iconSize: 24,
-                        iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                        fit: StackFit.loose,
-                        clipBehavior: Clip.hardEdge,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            image: DecorationImage(
-                              image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
-                              fit: BoxFit.cover,
+                    );
+                    context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
+                  },
+                  child: wall == null
+                      ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest)
+                      : PremiumBanner(
+                          comparator: !app_state.isPremiumWall(
+                            app_state.premiumCollections,
+                            wall.wallpaper.collections ?? const <String>[],
+                          ),
+                          top: 160,
+                          left: MediaQuery.of(context).size.width * 0.8 - 50,
+                          right: null,
+                          bottom: null,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                          iconSize: 24,
+                          iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                          fit: StackFit.loose,
+                          clipBehavior: Clip.hardEdge,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                ),
               );
             },
           ),
