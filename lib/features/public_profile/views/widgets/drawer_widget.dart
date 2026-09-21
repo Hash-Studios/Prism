@@ -220,8 +220,12 @@ class ProfileDrawer extends StatelessWidget {
               context: context,
               onTap: () async {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
-                Navigator.pop(context);
-                app_state.gAuth.signOutGoogle();
+                // Finish signing out before the restart, or the restarted app still sees the old
+                // session and stays on the splash screen. The restart closes this drawer.
+                if (!await app_state.gAuth.signOutGoogle()) {
+                  toasts.error('Could not log out. Please try again.');
+                  return;
+                }
                 toasts.codeSend('Log out Successful!');
                 final settingsLocal = getIt<SettingsLocalDataSource>();
                 await settingsLocal.set('onboarded_v2_new', false);
