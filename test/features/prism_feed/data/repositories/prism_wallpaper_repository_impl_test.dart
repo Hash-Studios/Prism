@@ -42,6 +42,27 @@ void main() {
       ]);
       expect(repo.hasMore, isFalse);
     });
+
+    test('streak shop queries the same field the wall docs are read from', () async {
+      final firestore = _FakeFirestoreClient(<({String docId, Map<String, dynamic> data})>[
+        (
+          docId: 'doc-1',
+          data: <String, dynamic>{
+            ..._buildWallDocs(count: 1).single.data,
+            'is_streak_exclusive': true,
+            'required_streak_days': 3,
+          },
+        ),
+      ]);
+      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+      final repo = PrismWallpaperRepositoryImpl(firestore, _FakeFeedCacheLocalDataSource(), blocks);
+
+      final result = await repo.fetchStreakShopWallpapers();
+
+      expect(firestore.lastSpec!.filters.map((f) => f.field), contains('is_streak_exclusive'));
+      expect(result.data!.single.isStreakExclusive, isTrue);
+      expect(result.data!.single.requiredStreakDays, 3);
+    });
   });
 }
 
@@ -50,10 +71,12 @@ class _FakeFirestoreClient implements FirestoreClient {
 
   final List<({String docId, Map<String, dynamic> data})> _docs;
   int queryCalls = 0;
+  FirestoreQuerySpec? lastSpec;
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
     queryCalls += 1;
+    lastSpec = spec;
     final int startIndex;
     if (spec.startAfterDocId == null) {
       startIndex = 0;
