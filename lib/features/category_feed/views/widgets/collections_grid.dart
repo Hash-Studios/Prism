@@ -350,10 +350,14 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       return;
     }
     try {
-      await CoinsService.instance.award(
+      final credit = await CoinsService.instance.award(
         CoinEarnAction.rewardedAd,
         sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
       );
+      if (!credit.changed) {
+        toasts.error('Unable to credit coins right now.');
+        return;
+      }
       if (mounted) {
         await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
           context,

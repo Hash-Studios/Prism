@@ -211,7 +211,11 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
       watchRequested = true;
       final AdsState result = await completion;
       if (result.shouldUnlockDownload) {
-        await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
+        final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
+        if (!credit.changed) {
+          toasts.error('Unable to credit coins right now.');
+          return;
+        }
         if (mounted) {
           await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
             context,
