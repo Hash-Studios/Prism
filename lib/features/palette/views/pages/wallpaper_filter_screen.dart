@@ -484,6 +484,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       appBar: AppBar(
         title: Text("Edit Wallpaper", style: Theme.of(context).textTheme.displaySmall),
         leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
           icon: const Icon(JamIcons.close),
           onPressed: () {
             Navigator.pop(context);
@@ -503,6 +504,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
             )
           else
             IconButton(
+              tooltip: 'Download',
               icon: const Icon(JamIcons.download),
               onPressed: () =>
                   unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
@@ -512,6 +514,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               Container()
             else
               IconButton(
+                tooltip: 'Set as wallpaper',
                 icon: const Icon(JamIcons.check),
                 onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
               ),
