@@ -121,7 +121,6 @@ class AppRouter extends RootStackRouter {
     // Global routes (pushed over entire shell as full-screen dialogs)
     AutoRoute(path: '/ai', page: AiTabRoute.page),
     AutoRoute(path: '/wallpaper-detail', page: WallpaperDetailRoute.page),
-    RedirectRoute(path: '/share', redirectTo: '/wallpaper-detail'), // Replaces ShareWallpaperViewRoute
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
     // Standalone path so Edit Profile works when ProfileScreen was opened via
