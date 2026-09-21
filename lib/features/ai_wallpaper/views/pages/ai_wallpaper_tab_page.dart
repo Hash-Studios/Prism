@@ -529,7 +529,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       );
       final result = await PrismMediaHostApi().enqueueDownload(request).timeout(const Duration(seconds: 15));
       if (result.success) {
-        toasts.codeSend('Wall downloaded in Pictures/Prism!');
+        toasts.codeSend(wallpaperSavedMessage);
       } else {
         toasts.error(result.message ?? "Couldn't download! Please retry.");
       }
