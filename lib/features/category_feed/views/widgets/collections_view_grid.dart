@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
@@ -204,70 +205,74 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with TickerProv
               child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
             );
           }
-          return AnimatedBuilder(
-            animation: offsetAnimation,
-            builder: (buildContext, child) {
-              if (offsetAnimation.value < 0.0) {
-                logger.d('${offsetAnimation.value + 8.0}');
-              }
-              return Padding(
-                padding: index == longTapIndex
-                    ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                    : EdgeInsets.zero,
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: animation.value,
-                        borderRadius: BorderRadius.circular(20),
-                        image: DecorationImage(image: CachedNetworkImageProvider(wallpaperThumb), fit: BoxFit.cover),
-                      ),
-                    ),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                          onTap: () {
-                            unawaited(
-                              analytics.track(
-                                SurfaceActionTappedEvent(
-                                  surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
-                                  action: AnalyticsActionValue.tileOpened,
-                                  sourceContext: 'home_collections_grid_tile',
-                                  itemType: ItemTypeValue.wallpaper,
-                                  itemId: wallId,
-                                  index: index,
-                                ),
-                              ),
-                            );
-                            context.router.push(
-                              WallpaperDetailRoute(
-                                wallId: wallId,
-                                source: wallSource,
-                                wallpaperUrl: wallpaperUrl,
-                                thumbnailUrl: wallpaperThumb,
-                                analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
-                              ),
-                            );
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              longTapIndex = index;
-                            });
-                            shakeController.forward(from: 0.0);
-                            HapticFeedback.vibrate();
-                            createDynamicLink(wallId, wallSource, wallpaperUrl, wallpaperThumb);
-                          },
+          return Semantics(
+            button: true,
+            label: wallpaperSemanticLabel(_wallString(wall, 'by')),
+            child: AnimatedBuilder(
+              animation: offsetAnimation,
+              builder: (buildContext, child) {
+                if (offsetAnimation.value < 0.0) {
+                  logger.d('${offsetAnimation.value + 8.0}');
+                }
+                return Padding(
+                  padding: index == longTapIndex
+                      ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
+                      : EdgeInsets.zero,
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: animation.value,
+                          borderRadius: BorderRadius.circular(20),
+                          image: DecorationImage(image: CachedNetworkImageProvider(wallpaperThumb), fit: BoxFit.cover),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                            onTap: () {
+                              unawaited(
+                                analytics.track(
+                                  SurfaceActionTappedEvent(
+                                    surface: AnalyticsSurfaceValue.homeCollectionsViewGrid,
+                                    action: AnalyticsActionValue.tileOpened,
+                                    sourceContext: 'home_collections_grid_tile',
+                                    itemType: ItemTypeValue.wallpaper,
+                                    itemId: wallId,
+                                    index: index,
+                                  ),
+                                ),
+                              );
+                              context.router.push(
+                                WallpaperDetailRoute(
+                                  wallId: wallId,
+                                  source: wallSource,
+                                  wallpaperUrl: wallpaperUrl,
+                                  thumbnailUrl: wallpaperThumb,
+                                  analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+                                ),
+                              );
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                longTapIndex = index;
+                              });
+                              shakeController.forward(from: 0.0);
+                              HapticFeedback.vibrate();
+                              createDynamicLink(wallId, wallSource, wallpaperUrl, wallpaperThumb);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

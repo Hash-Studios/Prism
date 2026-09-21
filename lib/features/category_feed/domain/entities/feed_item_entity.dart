@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -23,4 +24,13 @@ sealed class FeedItemEntity with _$FeedItemEntity {
 
   String get thumbnailUrl =>
       when(prism: (_, w) => w.thumbnailUrl, wallhaven: (_, w) => w.thumbnailUrl, pexels: (_, w) => w.thumbnailUrl);
+
+  /// What screen readers say for this wallpaper's tile.
+  String get semanticLabel => wallpaperSemanticLabel(
+    when(
+      prism: (_, w) => w.core.authorName,
+      wallhaven: (_, w) => w.core.authorName,
+      pexels: (_, w) => w.core.authorName,
+    ),
+  );
 }

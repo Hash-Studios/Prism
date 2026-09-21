@@ -32,8 +32,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isFavorite = _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.id ?? '');
     return CircularMenuButton(
       label: 'Favourite',
+      selected: isFavorite,
       isLoading: isLoading,
       padding: EdgeInsets.zero,
       child: FavoriteIcon(
@@ -52,7 +54,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
         },
         iconColor: Theme.of(context).colorScheme.secondary,
         iconSize: 30,
-        isFavorite: _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.id ?? ''),
+        isFavorite: isFavorite,
       ),
     );
   }

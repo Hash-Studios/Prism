@@ -1,5 +1,11 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 
+/// What screen readers say for a wallpaper tile in any grid.
+String wallpaperSemanticLabel(String? author) {
+  final String name = author?.trim() ?? '';
+  return name.isEmpty ? 'Wallpaper' : 'Wallpaper by $name';
+}
+
 class WallpaperCore {
   const WallpaperCore({
     required this.id,
