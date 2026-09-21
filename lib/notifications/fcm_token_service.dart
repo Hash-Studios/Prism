@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -24,8 +27,29 @@ class FcmTokenService {
       final String? token = await FirebaseMessaging.instance.getToken();
       if (token == null || token.trim().isEmpty) return;
       await _persistToken(userId: userId, token: token);
+      // Carries a Followers switch turned off on an older build over to the server.
+      if (getIt.isRegistered<SettingsLocalDataSource>() &&
+          !getIt<SettingsLocalDataSource>().get<bool>('followersSubscriber', defaultValue: true)) {
+        await saveFollowerAlerts(userId: userId, enabled: false);
+      }
     } catch (e, st) {
       logger.w('FcmTokenService: failed to sync token.', error: e, stackTrace: st);
+    }
+  }
+
+  /// Stores the Followers alert switch where onFollowCreated reads it.
+  Future<void> saveFollowerAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await (client ?? firestoreClient).setDoc(
+        '${FirebaseCollections.usersV2}/$userId/private',
+        'session',
+        <String, dynamic>{'followerAlerts': enabled},
+        merge: true,
+        sourceTag: 'fcm_token.follower_alerts',
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save follower alerts.', error: e, stackTrace: st);
     }
   }
 
