@@ -10,7 +10,6 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -143,11 +142,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                         ),
                         color: Theme.of(context).hintColor,
                       ),
-                      child: const SafeRiveAsset(
-                        assetName: 'assets/animations/Update.riv',
-                        animations: <String>['update'],
-                        fallback: Center(child: Icon(Icons.system_update_alt)),
-                      ),
+                      child: const Center(child: Icon(Icons.system_update_alt)),
                     ),
                     const SizedBox(height: 20),
                     Padding(

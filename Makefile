@@ -7,7 +7,6 @@ RUN_ARGS ?=
 BUILD_ARGS ?=
 IOS_BUILD_ARGS ?=
 APP_SIZE_TARGET_PLATFORM ?= android-arm64
-RIVE_SKIP_SETUP ?= false
 FIREBASE_RUN_ARG ?= $(shell [ -f android/app/google-services.json ] && echo "" || echo "--dart-define=SKIP_FIREBASE_INIT=true")
 DOPPLER_PROJECT ?= prism
 DOPPLER_CONFIG ?= dev
@@ -34,7 +33,6 @@ else
 endif
 GRADLE_USER_HOME_DIR_POSIX := $(subst \,/,$(GRADLE_USER_HOME_DIR))
 GRADLE_COMMON_OPTS ?= -Dorg.gradle.vfs.watch=false
-RIVE_SETUP_ENV := $(if $(filter true,$(RIVE_SKIP_SETUP)),env "ORG_GRADLE_PROJECT_rive.native.skipSetup=true",)
 
 # Ensure POSIX shell recipes work when running make from PowerShell/cmd on Windows.
 ifeq ($(OS),Windows_NT)
@@ -155,9 +153,9 @@ run: ensure-fvm doppler-check
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	if [ -n "$(DEVICE)" ]; then \
-		$(RIVE_SETUP_ENV) $(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(FLUTTER) run -d "$(DEVICE)" $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	else \
-		$(RIVE_SETUP_ENV) $(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
+		$(FLUTTER) run $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(RUN_ARGS); \
 	fi
 
 build: ensure-fvm doppler-check
@@ -169,7 +167,7 @@ build: ensure-fvm doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	$(RIVE_SETUP_ENV) $(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 build-aab: ensure-fvm doppler-check
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
@@ -180,7 +178,7 @@ build-aab: ensure-fvm doppler-check
 	export GRADLE_OPTS="$$GRADLE_OPTS $(GRADLE_COMMON_OPTS)"; \
 	export GRADLE_USER_HOME="$(GRADLE_USER_HOME_DIR_POSIX)"; \
 	mkdir -p "$(GRADLE_USER_HOME_DIR_POSIX)"; \
-	$(RIVE_SETUP_ENV) $(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
+	$(FLUTTER) build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
