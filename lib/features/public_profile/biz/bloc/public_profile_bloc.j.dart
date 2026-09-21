@@ -48,6 +48,10 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     on<_UnfollowFromListRequested>(_onUnfollowFromListRequested);
   }
 
+  // Only the newest search may write results; slower earlier ones are dropped.
+  String _latestFollowerQuery = '';
+  String _latestFollowingQuery = '';
+
   final FetchPublicProfileUseCase _fetchPublicProfileUseCase;
   final FetchPublicProfileWallsUseCase _fetchPublicProfileWallsUseCase;
   final FetchPublicProfileSetupsUseCase _fetchPublicProfileSetupsUseCase;
@@ -378,6 +382,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     _SearchFollowerSummariesRequested event,
     Emitter<PublicProfileState> emit,
   ) async {
+    _latestFollowerQuery = event.query;
     emit(state.copyWith(isSearchingFollowers: true, followerSearchResults: const <UserSummaryEntity>[]));
     final result = await _searchUsersByUsernameUseCase(
       SearchUsersByUsernameParams(
@@ -386,6 +391,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         currentUserEmail: event.currentUserEmail,
       ),
     );
+    if (event.query != _latestFollowerQuery) return;
     result.fold(
       onSuccess: (summaries) => emit(state.copyWith(followerSearchResults: summaries, isSearchingFollowers: false)),
       onFailure: (_) =>
@@ -397,6 +403,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     _SearchFollowingSummariesRequested event,
     Emitter<PublicProfileState> emit,
   ) async {
+    _latestFollowingQuery = event.query;
     emit(state.copyWith(isSearchingFollowing: true, followingSearchResults: const <UserSummaryEntity>[]));
     final result = await _searchUsersByUsernameUseCase(
       SearchUsersByUsernameParams(
@@ -405,6 +412,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         currentUserEmail: event.currentUserEmail,
       ),
     );
+    if (event.query != _latestFollowingQuery) return;
     result.fold(
       onSuccess: (summaries) => emit(state.copyWith(followingSearchResults: summaries, isSearchingFollowing: false)),
       onFailure: (_) =>
@@ -413,10 +421,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   void _onClearFollowerSearch(_ClearFollowerSearch event, Emitter<PublicProfileState> emit) {
+    _latestFollowerQuery = '';
     emit(state.copyWith(followerSearchResults: null, isSearchingFollowers: false));
   }
 
   void _onClearFollowingSearch(_ClearFollowingSearch event, Emitter<PublicProfileState> emit) {
+    _latestFollowingQuery = '';
     emit(state.copyWith(followingSearchResults: null, isSearchingFollowing: false));
   }
 
