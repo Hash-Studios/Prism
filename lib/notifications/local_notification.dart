@@ -6,6 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LocalNotification {
+  // iOS permission is asked after the first download or set, in NotificationPermissionPromptService.
+  @visibleForTesting
+  static const DarwinInitializationSettings darwinSettings = DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestSoundPermission: false,
+    requestBadgePermission: false,
+  );
+
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   AppRouter? router;
   LocalNotification() {
@@ -13,10 +21,9 @@ class LocalNotification {
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
       '@drawable/ic_notification',
     );
-    const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings();
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
+      iOS: darwinSettings,
     );
     flutterLocalNotificationsPlugin.initialize(
       settings: initializationSettings,
