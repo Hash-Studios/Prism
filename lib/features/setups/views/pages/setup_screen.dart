@@ -231,22 +231,26 @@ class _SetupPageState extends State<_SetupPage> {
         else
           Align(
             alignment: Alignment.centerLeft,
-            child: ArrowBounceAnimation(
-              onTap: () {
-                widget.controller.animateToPage(
-                  widget.controller.page!.toInt() - 1,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.fastOutSlowIn,
-                );
-                HapticFeedback.vibrate();
-              },
-              child: Icon(
-                JamIcons.chevron_left,
-                color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                    ? Theme.of(context).colorScheme.error == Colors.black
-                          ? Theme.of(context).colorScheme.secondary
-                          : Theme.of(context).colorScheme.error
-                    : Theme.of(context).colorScheme.error,
+            child: Semantics(
+              button: true,
+              label: 'Previous setup',
+              child: ArrowBounceAnimation(
+                onTap: () {
+                  widget.controller.animateToPage(
+                    widget.controller.page!.toInt() - 1,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.fastOutSlowIn,
+                  );
+                  HapticFeedback.vibrate();
+                },
+                child: Icon(
+                  JamIcons.chevron_left,
+                  color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
+                      ? Theme.of(context).colorScheme.error == Colors.black
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.error,
+                ),
               ),
             ),
           ),

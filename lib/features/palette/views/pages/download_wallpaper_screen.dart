@@ -137,6 +137,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
             child: Padding(
               padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
               child: IconButton(
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 onPressed: () {
                   _trackAction(AnalyticsActionValue.backTapped);
                   Navigator.pop(context);
