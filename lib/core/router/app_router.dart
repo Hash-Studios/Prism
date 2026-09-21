@@ -127,6 +127,8 @@ class AppRouter extends RootStackRouter {
     // root-level ProfileRoute (/user/:id), e.g. home header avatar — nested
     // /dashboard/profile/edit is not reachable from that stack.
     AutoRoute(path: '/edit-profile', page: EditProfilePanelRoute.page, guards: [_signedInGuard]),
+    // Same reason: the Streak tab's "Invite a friend" opens the referral screen outside the profile tab.
+    AutoRoute(path: '/share-prism', page: SharePrismRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/settings', page: SettingsRoute.page),
     AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/about', page: AboutRoute.page),
