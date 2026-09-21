@@ -454,6 +454,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         backgroundColor: theme.primaryColor,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Close',
           icon: Icon(JamIcons.close, color: secondary),
           onPressed: () => Navigator.pop(context),
         ),
@@ -509,26 +510,33 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          GestureDetector(
-            onTap: getCover,
-            child: (_cover == null)
-                ? (app_state.prismUser.coverPhoto != null &&
-                          Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
-                      ? CachedNetworkImage(
-                          imageUrl: app_state.prismUser.coverPhoto!,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => const SizedBox.shrink(),
-                        )
-                      : SvgPicture.string(
-                          defaultHeader
-                              .replaceAll("#181818", "#${theme.primaryColor.toARGB32().toRadixString(16).substring(2)}")
-                              .replaceAll(
-                                "#E77597",
-                                "#${theme.colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
-                              ),
-                          fit: BoxFit.cover,
-                        )
-                : Image.file(_cover!, fit: BoxFit.cover),
+          Semantics(
+            button: true,
+            label: 'Change cover photo',
+            child: GestureDetector(
+              onTap: getCover,
+              child: (_cover == null)
+                  ? (app_state.prismUser.coverPhoto != null &&
+                            Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
+                        ? CachedNetworkImage(
+                            imageUrl: app_state.prismUser.coverPhoto!,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => const SizedBox.shrink(),
+                          )
+                        : SvgPicture.string(
+                            defaultHeader
+                                .replaceAll(
+                                  "#181818",
+                                  "#${theme.primaryColor.toARGB32().toRadixString(16).substring(2)}",
+                                )
+                                .replaceAll(
+                                  "#E77597",
+                                  "#${theme.colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
+                                ),
+                            fit: BoxFit.cover,
+                          )
+                  : Image.file(_cover!, fit: BoxFit.cover),
+            ),
           ),
           // "Edit cover" scrim hint — always legible over any cover image.
           Positioned(
@@ -571,6 +579,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             right: PrismProfile.removeChipPositionOffset,
             child: _iconChip(
               icon: JamIcons.close,
+              label: 'Remove cover photo',
               onTap: () => showRemoveAlertDialog(context, () async {
                 setState(() => _cover = null);
                 app_state.prismUser.coverPhoto = null;
@@ -588,39 +597,43 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        GestureDetector(
-          onTap: getPFP,
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: theme.primaryColor, width: PrismProfile.avatarBorderWidth),
-            ),
-            child: ClipOval(
-              child: (_pfp == null)
-                  ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
-                        ? CachedNetworkImage(
-                            imageUrl: app_state.prismUser.profilePhoto,
-                            fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => ColoredBox(
+        Semantics(
+          button: true,
+          label: 'Change profile photo',
+          child: GestureDetector(
+            onTap: getPFP,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.primaryColor, width: PrismProfile.avatarBorderWidth),
+              ),
+              child: ClipOval(
+                child: (_pfp == null)
+                    ? (Uri.tryParse(app_state.prismUser.profilePhoto)?.hasAuthority == true)
+                          ? CachedNetworkImage(
+                              imageUrl: app_state.prismUser.profilePhoto,
+                              fit: BoxFit.cover,
+                              errorWidget: (context, url, error) => ColoredBox(
+                                color: PrismColors.brandPink.withValues(alpha: 0.12),
+                                child: Icon(
+                                  Icons.person,
+                                  size: size * 0.5,
+                                  color: PrismColors.brandPink.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            )
+                          : ColoredBox(
                               color: PrismColors.brandPink.withValues(alpha: 0.12),
                               child: Icon(
                                 Icons.person,
                                 size: size * 0.5,
                                 color: PrismColors.brandPink.withValues(alpha: 0.5),
                               ),
-                            ),
-                          )
-                        : ColoredBox(
-                            color: PrismColors.brandPink.withValues(alpha: 0.12),
-                            child: Icon(
-                              Icons.person,
-                              size: size * 0.5,
-                              color: PrismColors.brandPink.withValues(alpha: 0.5),
-                            ),
-                          )
-                  : Image.file(_pfp!, fit: BoxFit.cover),
+                            )
+                    : Image.file(_pfp!, fit: BoxFit.cover),
+              ),
             ),
           ),
         ),
@@ -628,17 +641,19 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         Positioned(
           bottom: 0,
           right: 0,
-          child: GestureDetector(
-            onTap: getPFP,
-            child: Container(
-              width: PrismProfile.cameraChipSize,
-              height: PrismProfile.cameraChipSize,
-              decoration: BoxDecoration(
-                color: PrismColors.brandPink,
-                shape: BoxShape.circle,
-                border: Border.all(color: theme.primaryColor, width: PrismProfile.cameraChipBorderWidth),
+          child: ExcludeSemantics(
+            child: GestureDetector(
+              onTap: getPFP,
+              child: Container(
+                width: PrismProfile.cameraChipSize,
+                height: PrismProfile.cameraChipSize,
+                decoration: BoxDecoration(
+                  color: PrismColors.brandPink,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: theme.primaryColor, width: PrismProfile.cameraChipBorderWidth),
+                ),
+                child: const Icon(JamIcons.camera, size: PrismProfile.cameraChipIconSize, color: PrismColors.onPrimary),
               ),
-              child: const Icon(JamIcons.camera, size: PrismProfile.cameraChipIconSize, color: PrismColors.onPrimary),
             ),
           ),
         ),
@@ -754,6 +769,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           top: 0,
           right: 0,
           child: IconButton(
+            tooltip: 'Remove bio',
             onPressed: () => showRemoveAlertDialog(context, () async {
               bioController.text = '';
               app_state.prismUser.bio = '';
@@ -778,53 +794,56 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             border: Border.all(color: borderColor, width: PrismFormField.borderWidth),
           ),
           padding: const EdgeInsets.symmetric(horizontal: PrismProfile.linkSelectorHorizontalPadding),
-          child: DropdownButton<_ProfileLinkOption>(
-            menuWidth: 200,
-            items: linkIcons.map((link) {
-              return DropdownMenuItem(
-                value: link,
-                child: Row(
-                  children: [
-                    Icon(link.icon, size: PrismProfile.linkDropdownIconSize, color: secondary),
-                    const SizedBox(width: PrismProfile.linkDropdownTextGap),
-                    Text(
-                      link.name.inCaps,
-                      style: TextStyle(
-                        fontFamily: PrismFonts.proximaNova,
-                        fontSize: PrismProfile.linkDropdownFontSize,
-                        color: secondary,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-            underline: const SizedBox.shrink(),
-            onChanged: (value) {
-              setState(() => _link = value);
-              linkController.text = _link?.value ?? '';
-            },
-            icon: const SizedBox.shrink(),
-            value: _link,
-            dropdownColor: theme.primaryColor,
-            selectedItemBuilder: (BuildContext context) {
-              return linkIcons.map<Widget>((link) {
-                return Center(
+          child: Semantics(
+            label: 'Link type',
+            child: DropdownButton<_ProfileLinkOption>(
+              menuWidth: 200,
+              items: linkIcons.map((link) {
+                return DropdownMenuItem(
+                  value: link,
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(link.icon, size: PrismProfile.linkSelectorIconSize, color: secondary),
-                      const SizedBox(width: 4),
-                      Icon(
-                        JamIcons.chevron_down,
-                        size: PrismProfile.linkSelectorCaretSize,
-                        color: secondary.withValues(alpha: 0.5),
+                      Icon(link.icon, size: PrismProfile.linkDropdownIconSize, color: secondary),
+                      const SizedBox(width: PrismProfile.linkDropdownTextGap),
+                      Text(
+                        link.name.inCaps,
+                        style: TextStyle(
+                          fontFamily: PrismFonts.proximaNova,
+                          fontSize: PrismProfile.linkDropdownFontSize,
+                          color: secondary,
+                        ),
                       ),
                     ],
                   ),
                 );
-              }).toList();
-            },
+              }).toList(),
+              underline: const SizedBox.shrink(),
+              onChanged: (value) {
+                setState(() => _link = value);
+                linkController.text = _link?.value ?? '';
+              },
+              icon: const SizedBox.shrink(),
+              value: _link,
+              dropdownColor: theme.primaryColor,
+              selectedItemBuilder: (BuildContext context) {
+                return linkIcons.map<Widget>((link) {
+                  return Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(link.icon, size: PrismProfile.linkSelectorIconSize, color: secondary),
+                        const SizedBox(width: 4),
+                        Icon(
+                          JamIcons.chevron_down,
+                          size: PrismProfile.linkSelectorCaretSize,
+                          color: secondary.withValues(alpha: 0.5),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList();
+              },
+            ),
           ),
         ),
         const SizedBox(width: PrismProfile.linkSelectorGap),
@@ -837,6 +856,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               label: _link?.name.inCaps ?? '',
               hintText: _link?.link,
               suffixIcon: IconButton(
+                tooltip: 'Remove link',
                 onPressed: () => showRemoveAlertDialog(context, () async {
                   linkController.text = '';
                   final links = app_state.prismUser.links;
@@ -880,34 +900,38 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         ),
         borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
-          onTap: isActive && !isLoading ? _saveProfile : null,
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: isLoading
-                  ? const SizedBox(
-                      key: ValueKey('loading'),
-                      width: PrismProfile.savingIndicatorSize,
-                      height: PrismProfile.savingIndicatorSize,
-                      child: CircularProgressIndicator(
-                        strokeWidth: PrismProfile.savingIndicatorStrokeWidth,
-                        color: PrismColors.brandPink,
+      child: Semantics(
+        button: true,
+        enabled: isActive && !isLoading,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(PrismFormField.borderRadius),
+            onTap: isActive && !isLoading ? _saveProfile : null,
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: isLoading
+                    ? const SizedBox(
+                        key: ValueKey('loading'),
+                        width: PrismProfile.savingIndicatorSize,
+                        height: PrismProfile.savingIndicatorSize,
+                        child: CircularProgressIndicator(
+                          strokeWidth: PrismProfile.savingIndicatorStrokeWidth,
+                          color: PrismColors.brandPink,
+                        ),
+                      )
+                    : Text(
+                        'Update',
+                        key: const ValueKey('text'),
+                        style: TextStyle(
+                          fontFamily: PrismFonts.proximaNova,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isActive ? secondary : secondary.withValues(alpha: 0.28),
+                        ),
                       ),
-                    )
-                  : Text(
-                      'Update',
-                      key: const ValueKey('text'),
-                      style: TextStyle(
-                        fontFamily: PrismFonts.proximaNova,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: isActive ? secondary : secondary.withValues(alpha: 0.28),
-                      ),
-                    ),
+              ),
             ),
           ),
         ),
@@ -926,17 +950,21 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     );
   }
 
-  Widget _iconChip({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: PrismProfile.removeChipSize,
-        height: PrismProfile.removeChipSize,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: PrismProfile.removeChipScrimAlpha),
-          shape: BoxShape.circle,
+  Widget _iconChip({required IconData icon, required String label, required VoidCallback onTap}) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: PrismProfile.removeChipSize,
+          height: PrismProfile.removeChipSize,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: PrismProfile.removeChipScrimAlpha),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: PrismColors.onPrimary, size: PrismProfile.removeChipIconSize),
         ),
-        child: Icon(icon, color: PrismColors.onPrimary, size: PrismProfile.removeChipIconSize),
       ),
     );
   }
