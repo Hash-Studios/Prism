@@ -40,7 +40,6 @@ class PersistenceKeys {
 
   // Notification preferences
   static const String notifWotd = 'notif.wotd';
-  static const String notifPromo = 'notif.promo';
 
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';
