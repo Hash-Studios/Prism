@@ -34,8 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onFollowCreated = void 0;
+exports.followCollapseKey = followCollapseKey;
 exports.isFollowerAlertsOff = isFollowerAlertsOff;
 const admin = __importStar(require("firebase-admin"));
+const node_crypto_1 = require("node:crypto");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const notificationHelper_1 = require("./notificationHelper");
@@ -117,6 +119,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
         // Look up the follower's display name for a personalised message.
         const followerUsername = await _resolveUsername(followerEmail);
         const followedTopic = (0, notificationHelper_1.userIdToTopic)(followedUid);
+        const collapseKey = followCollapseKey(followerEmail);
         await (0, notificationHelper_1.sendNotification)({
             title: "You have a new follower! 🎉",
             body: `${followerUsername} is now following you.`,
@@ -131,6 +134,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
             // Push to the followed user's own topic (they subscribe on login),
             // unless they turned Followers alerts off. The inbox entry is kept.
             fcmTarget: pushEnabled ? { topic: followedTopic } : undefined,
+            collapseKey,
         });
         if (pushEnabled) {
             await (0, notificationHelper_1.sendNotification)({
@@ -146,6 +150,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
                 channelId: "followers",
                 fcmTarget: { topic: (0, notificationHelper_1.emailToTopic)(followedUserEmail) },
                 pushOnly: true,
+                collapseKey,
             });
         }
         v2_1.logger.info("onFollowCreated: follow notification sent.", {
@@ -154,6 +159,11 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
         });
     }
 });
+/** Same key for both follow pushes, short enough for apns-collapse-id (64 bytes). */
+function followCollapseKey(followerEmail) {
+    const hash = (0, node_crypto_1.createHash)("sha1").update(followerEmail.trim().toLowerCase()).digest("hex").slice(0, 16);
+    return `follow_${hash}`;
+}
 /** True only when the user explicitly turned Followers alerts off. */
 function isFollowerAlertsOff(session) {
     return (session === null || session === void 0 ? void 0 : session.followerAlerts) === false;

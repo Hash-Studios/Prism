@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {createHash} from "node:crypto";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {sendNotification, emailToTopic, userIdToTopic} from "./notificationHelper";
@@ -93,6 +94,7 @@ export const onFollowCreated = onDocumentUpdated(
       const followerUsername = await _resolveUsername(followerEmail);
 
       const followedTopic = userIdToTopic(followedUid);
+      const collapseKey = followCollapseKey(followerEmail);
 
       await sendNotification({
         title: "You have a new follower! 🎉",
@@ -108,6 +110,7 @@ export const onFollowCreated = onDocumentUpdated(
         // Push to the followed user's own topic (they subscribe on login),
         // unless they turned Followers alerts off. The inbox entry is kept.
         fcmTarget: pushEnabled ? {topic: followedTopic} : undefined,
+        collapseKey,
       });
       if (pushEnabled) {
         await sendNotification({
@@ -123,6 +126,7 @@ export const onFollowCreated = onDocumentUpdated(
           channelId: "followers",
           fcmTarget: {topic: emailToTopic(followedUserEmail)},
           pushOnly: true,
+          collapseKey,
         });
       }
 
@@ -133,6 +137,12 @@ export const onFollowCreated = onDocumentUpdated(
     }
   },
 );
+
+/** Same key for both follow pushes, short enough for apns-collapse-id (64 bytes). */
+export function followCollapseKey(followerEmail: string): string {
+  const hash = createHash("sha1").update(followerEmail.trim().toLowerCase()).digest("hex").slice(0, 16);
+  return `follow_${hash}`;
+}
 
 /** True only when the user explicitly turned Followers alerts off. */
 export function isFollowerAlertsOff(session: Record<string, unknown> | undefined): boolean {
