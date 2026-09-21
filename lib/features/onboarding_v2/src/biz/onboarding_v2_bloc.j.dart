@@ -130,6 +130,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         wallpaperData: OnboardingWallpaperData(wallpaper: wallpaperVm, status: FirstWallpaperStatus.idle),
       ),
     );
+    // A signed-in user who left onboarding part way resumes after sign-in.
+    if (app_state.prismUser.loggedIn && state.step == OnboardingV2Step.auth) {
+      add(const OnboardingV2Event.authCompleted());
+    }
   }
 
   Future<void> _onAuthCompleted(_AuthCompleted event, Emitter<OnboardingV2State> emit) async {
