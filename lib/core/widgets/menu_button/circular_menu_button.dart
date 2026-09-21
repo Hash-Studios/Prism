@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 class CircularMenuButton extends StatelessWidget {
   const CircularMenuButton({
     super.key,
+    required this.label,
     required this.child,
     this.onTap,
     required this.isLoading,
     this.padding = const EdgeInsets.all(17),
   });
 
+  final String label;
   final Widget child;
   final VoidCallback? onTap;
   final bool isLoading;
@@ -41,9 +43,10 @@ class CircularMenuButton extends StatelessWidget {
         ),
       ],
     );
-    if (onTap == null) {
-      return button;
-    }
-    return GestureDetector(onTap: onTap, child: button);
+    return Semantics(
+      button: true,
+      label: label,
+      child: onTap == null ? button : GestureDetector(onTap: onTap, child: button),
+    );
   }
 }

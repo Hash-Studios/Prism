@@ -688,6 +688,7 @@ class _SetupViewScreenState extends State<SetupViewScreen> with SingleTickerProv
               child: Padding(
                 padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   onPressed: () {
                     Navigator.pop(context);
                   },
