@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
@@ -117,11 +118,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
               return Center(child: Loader());
             case ConnectionState.done:
               if (snapshot.hasError) {
-                return Center(child: Loader());
+                return const NotFoundPage();
               } else {
                 final setup = snapshot.data;
                 if (setup == null) {
-                  return Center(child: Loader());
+                  return const NotFoundPage();
                 }
                 final SetupWallpaperValue wallpaperValue = setup.wallpaperValue;
                 if (viewCounted == false) {
