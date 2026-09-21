@@ -578,7 +578,8 @@ class _CtaButton extends StatelessWidget {
       }(),
       OnboardingV2Step.starterPack => 'continue',
       OnboardingV2Step.aiGenerate => 'generate my wallpaper',
-      OnboardingV2Step.firstWallpaper => 'set as wallpaper',
+      OnboardingV2Step.firstWallpaper =>
+        defaultTargetPlatform == TargetPlatform.android ? 'set as wallpaper' : 'save to photos',
     };
 
     final showApple = step == OnboardingV2Step.auth && defaultTargetPlatform == TargetPlatform.iOS;
