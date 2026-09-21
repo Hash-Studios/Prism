@@ -20,11 +20,11 @@ class WallOfTheDayCard extends StatefulWidget {
 }
 
 class _WallOfTheDayCardState extends State<WallOfTheDayCard> {
-  bool _impressionFired = false;
+  // The home carousel rebuilds this card on every loop, so count one view per wall per app session.
+  static final Set<String> _viewedWallIds = <String>{};
 
   void _fireImpression(WallOfTheDayEntity entity) {
-    if (_impressionFired) return;
-    _impressionFired = true;
+    if (!_viewedWallIds.add(entity.wallId)) return;
     unawaited(analytics.track(WotdViewedEvent(wallId: entity.wallId)));
   }
 

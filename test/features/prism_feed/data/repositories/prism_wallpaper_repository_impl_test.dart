@@ -42,18 +42,62 @@ void main() {
       ]);
       expect(repo.hasMore, isFalse);
     });
+
+    test('streak shop queries the same field the wall docs are read from', () async {
+      final firestore = _FakeFirestoreClient(<({String docId, Map<String, dynamic> data})>[
+        (
+          docId: 'doc-1',
+          data: <String, dynamic>{
+            ..._buildWallDocs(count: 1).single.data,
+            'is_streak_exclusive': true,
+            'required_streak_days': 3,
+          },
+        ),
+      ]);
+      final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
+      final repo = PrismWallpaperRepositoryImpl(firestore, _FakeFeedCacheLocalDataSource(), blocks);
+
+      final result = await repo.fetchStreakShopWallpapers();
+
+      expect(firestore.lastSpec!.filters.map((f) => f.field), contains('is_streak_exclusive'));
+      expect(result.data!.single.isStreakExclusive, isTrue);
+      expect(result.data!.single.requiredStreakDays, 3);
+    });
+
+    test('fetchById falls back to the doc id that Wall of the Day links carry', () async {
+      final docs = _buildWallDocs(count: 2);
+      docs[1].data['review'] = false;
+      final repo = PrismWallpaperRepositoryImpl(
+        _FakeFirestoreClient(docs, matchIdField: true),
+        _FakeFeedCacheLocalDataSource(),
+        FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+      );
+
+      expect((await repo.fetchById('doc-1')).data?.core.id, 'wall-1');
+      expect((await repo.fetchById('doc-2')).data, isNull, reason: 'unreviewed walls stay hidden');
+      expect((await repo.fetchById('doc-404')).data, isNull);
+    });
   });
 }
 
 class _FakeFirestoreClient implements FirestoreClient {
-  _FakeFirestoreClient(this._docs);
+  _FakeFirestoreClient(this._docs, {this.matchIdField = false});
 
   final List<({String docId, Map<String, dynamic> data})> _docs;
+
+  /// Apply an `id ==` filter like Firestore would (the other tests page through every doc).
+  final bool matchIdField;
   int queryCalls = 0;
+  FirestoreQuerySpec? lastSpec;
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
     queryCalls += 1;
+    lastSpec = spec;
+    if (matchIdField) {
+      final Object? id = spec.filters.where((f) => f.field == 'id').firstOrNull?.value;
+      return _docs.where((doc) => doc.data['id'] == id).map((doc) => map(doc.data, doc.docId)).toList();
+    }
     final int startIndex;
     if (spec.startAfterDocId == null) {
       startIndex = 0;
@@ -75,8 +119,9 @@ class _FakeFirestoreClient implements FirestoreClient {
     T Function(Map<String, dynamic> data, String docId) map, {
     required String sourceTag,
     bool preferCacheFirst = false,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    final matches = _docs.where((doc) => doc.docId == id);
+    return matches.isEmpty ? null : map(matches.first.data, id);
   }
 
   @override
