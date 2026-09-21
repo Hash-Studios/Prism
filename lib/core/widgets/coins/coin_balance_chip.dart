@@ -27,6 +27,16 @@ class CoinBalanceChip extends StatelessWidget {
             final bool isLow = !app_state.prismUser.premium && balance < CoinPolicy.lowBalanceNudgeThreshold;
             final bool isEarn = delta > 0;
             final bool isSpend = delta < 0;
+            void openCoins() {
+              if (isLow) {
+                CoinsService.instance.logLowBalanceNudge(
+                  sourceTag: sourceTag,
+                  requiredCoins: CoinPolicy.lowBalanceNudgeThreshold,
+                );
+              }
+              context.router.push(const CoinTransactionsRoute());
+            }
+
             final Color bgColor = isEarn
                 ? Colors.green.withValues(alpha: 0.2)
                 : isSpend
@@ -39,54 +49,52 @@ class CoinBalanceChip extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   if (showStreak) ...[const StreakPill(compact: true), const SizedBox(width: 8)],
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(999),
-                      onTap: () {
-                        if (isLow) {
-                          CoinsService.instance.logLowBalanceNudge(
-                            sourceTag: sourceTag,
-                            requiredCoins: CoinPolicy.lowBalanceNudgeThreshold,
-                          );
-                        }
-                        context.router.push(const CoinTransactionsRoute());
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: isLow
-                                ? Theme.of(context).colorScheme.error
-                                : Theme.of(context).colorScheme.secondary,
-                            width: 1.2,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const PrismCoinIcon(size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              '$balance',
-                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.w700,
-                              ),
+                  Semantics(
+                    button: true,
+                    label: '$balance Prism coins',
+                    excludeSemantics: true,
+                    onTap: openCoins,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: openCoins,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: bgColor,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: isLow
+                                  ? Theme.of(context).colorScheme.error
+                                  : Theme.of(context).colorScheme.secondary,
+                              width: 1.2,
                             ),
-                            if (delta != 0) ...[
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const PrismCoinIcon(size: 16),
                               const SizedBox(width: 6),
                               Text(
-                                isEarn ? '+$delta' : '$delta',
-                                style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                  color: isEarn ? Colors.green : Colors.red,
+                                '$balance',
+                                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                                  color: Theme.of(context).colorScheme.secondary,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
+                              if (delta != 0) ...[
+                                const SizedBox(width: 6),
+                                Text(
+                                  isEarn ? '+$delta' : '$delta',
+                                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                    color: isEarn ? Colors.green : Colors.red,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
