@@ -112,6 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 body: _ProfileChild(
                   ownProfile: true,
                   parentScaffoldKey: _scaffoldKey,
+                  onProfileEdited: () => setState(() {}),
                   id: app_state.prismUser.id,
                   bio: app_state.prismUser.bio,
                   coverPhoto: app_state.prismUser.coverPhoto,
@@ -260,6 +261,9 @@ class _ProfileChild extends StatefulWidget {
   final List? followers;
   final List? following;
   final GlobalKey<ScaffoldState>? parentScaffoldKey;
+
+  /// Rebuilds the parent, which reads the edited fields from app_state.
+  final VoidCallback? onProfileEdited;
   const _ProfileChild({
     required this.name,
     required this.username,
@@ -274,6 +278,7 @@ class _ProfileChild extends StatefulWidget {
     required this.followers,
     required this.following,
     this.parentScaffoldKey,
+    this.onProfileEdited,
   });
   @override
   _ProfileChildState createState() => _ProfileChildState();
@@ -331,7 +336,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     if (!mounted) {
       return;
     }
-    setState(() {});
+    widget.onProfileEdited?.call();
   }
 
   @override
@@ -341,6 +346,26 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
     final ScrollController? controller = (widget.ownProfile ?? false) ? scrollController : null;
+    // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
+    final bool showBack = !(widget.ownProfile ?? false) || Navigator.canPop(context);
+    final Widget editButton = Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: IconButton(
+        tooltip: 'Edit profile',
+        padding: const EdgeInsets.all(2),
+        icon: Container(
+          padding: const EdgeInsets.all(6.0),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+          ),
+          child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
+        ),
+        onPressed: () {
+          unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
+        },
+      ),
+    );
     final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
       app_state.prismUser,
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
@@ -360,7 +385,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                 primary: false,
                 floating: true,
                 elevation: 0,
-                leading: !(widget.ownProfile ?? false)
+                leading: showBack
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
@@ -381,23 +406,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         ),
                       )
                     : app_state.prismUser.loggedIn
-                    ? Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
-                          padding: const EdgeInsets.all(2),
-                          icon: Container(
-                            padding: const EdgeInsets.all(6.0),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                            ),
-                            child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
-                          ),
-                          onPressed: () {
-                            unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
-                          },
-                        ),
-                      )
+                    ? editButton
                     : null,
                 actions: [
                   if (!(widget.ownProfile ?? false))
@@ -481,10 +490,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                           ],
                         ),
                       ),
+                  if ((widget.ownProfile ?? false) && app_state.prismUser.loggedIn && showBack) editButton,
                   if ((widget.ownProfile ?? false) && app_state.prismUser.loggedIn)
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: IconButton(
+                        tooltip: 'Menu',
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.all(2),
                         icon: Container(
