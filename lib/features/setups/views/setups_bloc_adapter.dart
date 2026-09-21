@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
@@ -46,13 +47,17 @@ extension SetupsBlocAdapterX on BuildContext {
   }
 }
 
-Future<SetupEntity?> getSetupFromName(String? name) async {
+Future<SetupEntity?> getSetupFromName(String? name, {FirestoreClient? client}) async {
   try {
-    final List<(SetupDocDto, String)> value = await firestoreClient.query<(SetupDocDto, String)>(
+    final List<(SetupDocDto, String)> value = await (client ?? firestoreClient).query<(SetupDocDto, String)>(
       FirestoreQuerySpec(
         collection: FirebaseCollections.setups,
         sourceTag: 'setups.lookup.byName',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name)],
+        // Rules only let non-owners read reviewed setups, so the query must say so.
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name),
+          const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+        ],
         limit: 1,
       ),
       (data, docId) => (SetupDocDto.fromJson(data), docId),
