@@ -231,12 +231,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       onSuccess: (profile) {
         // Subscribe to the artist's posts topic so the user gets push
         // notifications when that artist publishes a new wallpaper.
-        final String artistEmailPrefix = profile.email.split('@')[0];
-        if (artistEmailPrefix.isNotEmpty) {
+        final String? artistTopic = followersTopicFromEmail(profile.email);
+        if (artistTopic != null) {
           unawaited(
             subscribeToTopicSafely(
               FirebaseMessaging.instance,
-              '${artistEmailPrefix}_posts',
+              '${artistTopic}_posts',
               sourceTag: 'follow.subscribe_posts_topic',
             ),
           );
@@ -273,12 +273,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       onSuccess: (profile) {
         // Unsubscribe from the artist's posts topic — the user no longer
         // wants notifications for this artist's new walls.
-        final String artistEmailPrefix = profile.email.split('@')[0];
-        if (artistEmailPrefix.isNotEmpty) {
+        final String? artistTopic = followersTopicFromEmail(profile.email);
+        if (artistTopic != null) {
           unawaited(
             unsubscribeFromTopicSafely(
               FirebaseMessaging.instance,
-              '${artistEmailPrefix}_posts',
+              '${artistTopic}_posts',
               sourceTag: 'unfollow.unsubscribe_posts_topic',
             ),
           );
@@ -440,12 +440,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       ),
     );
     if (result.isSuccess) {
-      final String artistEmailPrefix = event.targetUserEmail.split('@')[0];
-      if (artistEmailPrefix.isNotEmpty) {
+      final String? artistTopic = followersTopicFromEmail(event.targetUserEmail);
+      if (artistTopic != null) {
         unawaited(
           subscribeToTopicSafely(
             FirebaseMessaging.instance,
-            '${artistEmailPrefix}_posts',
+            '${artistTopic}_posts',
             sourceTag: 'follow_from_list.subscribe_posts_topic',
           ),
         );
@@ -483,12 +483,12 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       ),
     );
     if (result.isSuccess) {
-      final String artistEmailPrefix = event.targetUserEmail.split('@')[0];
-      if (artistEmailPrefix.isNotEmpty) {
+      final String? artistTopic = followersTopicFromEmail(event.targetUserEmail);
+      if (artistTopic != null) {
         unawaited(
           unsubscribeFromTopicSafely(
             FirebaseMessaging.instance,
-            '${artistEmailPrefix}_posts',
+            '${artistTopic}_posts',
             sourceTag: 'unfollow_from_list.unsubscribe_posts_topic',
           ),
         );

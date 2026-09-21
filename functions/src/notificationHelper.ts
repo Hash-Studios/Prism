@@ -19,6 +19,9 @@ export interface NotificationPayload {
   /** If true, only send FCM push; do not write an in-app notification doc.
    *  Use for e.g. follower broadcasts where one doc per recipient would not scale. */
   pushOnly?: boolean;
+  /** Pushes with the same key replace each other on the device, so one event
+   *  sent to both the uid topic and the legacy email topic shows once. */
+  collapseKey?: string;
 }
 
 /**
@@ -89,10 +92,12 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
         channelId: payload.channelId,
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
         ...(payload.imageUrl ? {imageUrl: payload.imageUrl} : {}),
+        ...(payload.collapseKey ? {tag: payload.collapseKey} : {}),
       },
       priority: "high",
     },
     apns: {
+      ...(payload.collapseKey ? {headers: {"apns-collapse-id": payload.collapseKey}} : {}),
       payload: {
         aps: {
           sound: "default",

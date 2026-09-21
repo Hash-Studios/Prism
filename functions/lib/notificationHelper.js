@@ -82,16 +82,14 @@ async function sendNotification(payload) {
             title: payload.title,
             body: payload.body,
         }, data: Object.assign(Object.assign(Object.assign({}, payload.data), { channel_id: payload.channelId }), (payload.imageUrl ? { imageUrl: payload.imageUrl } : {})), android: {
-            notification: Object.assign({ channelId: payload.channelId, clickAction: "FLUTTER_NOTIFICATION_CLICK" }, (payload.imageUrl ? { imageUrl: payload.imageUrl } : {})),
+            notification: Object.assign(Object.assign({ channelId: payload.channelId, clickAction: "FLUTTER_NOTIFICATION_CLICK" }, (payload.imageUrl ? { imageUrl: payload.imageUrl } : {})), (payload.collapseKey ? { tag: payload.collapseKey } : {})),
             priority: "high",
-        }, apns: {
-            payload: {
+        }, apns: Object.assign(Object.assign({}, (payload.collapseKey ? { headers: { "apns-collapse-id": payload.collapseKey } } : {})), { payload: {
                 aps: {
                     sound: "default",
                     badge: 1,
                 },
-            },
-        } }, ("topic" in payload.fcmTarget ?
+            } }) }, ("topic" in payload.fcmTarget ?
         { topic: payload.fcmTarget.topic } :
         { token: payload.fcmTarget.token }));
     try {
