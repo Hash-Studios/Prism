@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/data/pexels/provider/pexels_without_provider.dart' as pexels_data;
@@ -183,79 +184,85 @@ class _ColorGridState extends State<ColorGrid> with TickerProviderStateMixin {
               );
             }
 
-            final tile = AnimatedBuilder(
-              animation: offsetAnimation,
-              builder: (buildContext, child) {
-                if (offsetAnimation.value < 0.0) {
-                  logger.d('${offsetAnimation.value + 8.0}');
-                }
-                return Padding(
-                  padding: index == longTapIndex
-                      ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                      : EdgeInsets.zero,
-                  child: Stack(
-                    children: [
-                      Container(
-                        decoration: pexels_data.wallsC.isEmpty
-                            ? BoxDecoration(color: animation.value)
-                            : BoxDecoration(
-                                color: animation.value,
-                                image: DecorationImage(
-                                  image: CachedNetworkImageProvider(pexels_data.wallsC[index].core.thumbnailUrl),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                      ),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                          onTap: () {
-                            if (pexels_data.wallsC.isEmpty) {
-                            } else {
-                              unawaited(
-                                analytics.track(
-                                  SurfaceActionTappedEvent(
-                                    surface: AnalyticsSurfaceValue.homeColorGrid,
-                                    action: AnalyticsActionValue.tileOpened,
-                                    sourceContext: 'home_color_grid_tile',
-                                    itemType: ItemTypeValue.wallpaper,
-                                    itemId: pexels_data.wallsC[index].id,
-                                    index: index,
+            final tile = Semantics(
+              button: true,
+              label: wallpaperSemanticLabel(
+                pexels_data.wallsC.isEmpty ? null : pexels_data.wallsC[index].core.authorName,
+              ),
+              child: AnimatedBuilder(
+                animation: offsetAnimation,
+                builder: (buildContext, child) {
+                  if (offsetAnimation.value < 0.0) {
+                    logger.d('${offsetAnimation.value + 8.0}');
+                  }
+                  return Padding(
+                    padding: index == longTapIndex
+                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
+                        : EdgeInsets.zero,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: pexels_data.wallsC.isEmpty
+                              ? BoxDecoration(color: animation.value)
+                              : BoxDecoration(
+                                  color: animation.value,
+                                  image: DecorationImage(
+                                    image: CachedNetworkImageProvider(pexels_data.wallsC[index].core.thumbnailUrl),
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
-                              );
-                              context.router.push(
-                                WallpaperDetailRoute(
-                                  entity: PexelsDetailEntity(wallpaper: pexels_data.wallsC[index]),
-                                  analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                                ),
-                              );
-                            }
-                          },
-                          onLongPress: () {
-                            setState(() {
-                              longTapIndex = index;
-                            });
-                            shakeController.forward(from: 0.0);
-                            if (pexels_data.wallsC.isEmpty) {
-                            } else {
-                              HapticFeedback.vibrate();
-                              createDynamicLink(
-                                pexels_data.wallsC[index].id,
-                                WallpaperSource.pexels,
-                                pexels_data.wallsC[index].core.fullUrl,
-                                pexels_data.wallsC[index].core.thumbnailUrl,
-                              );
-                            }
-                          },
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                            onTap: () {
+                              if (pexels_data.wallsC.isEmpty) {
+                              } else {
+                                unawaited(
+                                  analytics.track(
+                                    SurfaceActionTappedEvent(
+                                      surface: AnalyticsSurfaceValue.homeColorGrid,
+                                      action: AnalyticsActionValue.tileOpened,
+                                      sourceContext: 'home_color_grid_tile',
+                                      itemType: ItemTypeValue.wallpaper,
+                                      itemId: pexels_data.wallsC[index].id,
+                                      index: index,
+                                    ),
+                                  ),
+                                );
+                                context.router.push(
+                                  WallpaperDetailRoute(
+                                    entity: PexelsDetailEntity(wallpaper: pexels_data.wallsC[index]),
+                                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                                  ),
+                                );
+                              }
+                            },
+                            onLongPress: () {
+                              setState(() {
+                                longTapIndex = index;
+                              });
+                              shakeController.forward(from: 0.0);
+                              if (pexels_data.wallsC.isEmpty) {
+                              } else {
+                                HapticFeedback.vibrate();
+                                createDynamicLink(
+                                  pexels_data.wallsC[index].id,
+                                  WallpaperSource.pexels,
+                                  pexels_data.wallsC[index].core.fullUrl,
+                                  pexels_data.wallsC[index].core.thumbnailUrl,
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             );
 
             return tile;
