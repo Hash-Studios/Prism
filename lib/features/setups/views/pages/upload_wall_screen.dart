@@ -7,7 +7,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
@@ -204,11 +203,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               SizedBox(
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
-                child: SafeRiveAsset(
-                  assetName: isUploading ? "assets/animations/Upload.riv" : "assets/animations/Process.riv",
-                  animations: <String>[if (isUploading) "upload" else "process"],
-                  fallback: const Center(child: CircularProgressIndicator()),
-                ),
+                child: const Center(child: CircularProgressIndicator()),
               )
             else
               Container(),

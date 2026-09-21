@@ -4,7 +4,6 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/common/safe_rive_asset.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
@@ -123,11 +122,7 @@ void showChangelog(BuildContext context, VoidCallback func) {
             ),
             child: Stack(
               children: [
-                SafeRiveAsset(
-                  assetName: "assets/animations/Changelog.riv",
-                  animations: const <String>["changelog"],
-                  fallback: Center(child: Icon(JamIcons.refresh, color: Theme.of(context).colorScheme.secondary)),
-                ),
+                Center(child: Icon(JamIcons.refresh, color: Theme.of(context).colorScheme.secondary)),
                 Positioned(
                   bottom: 10,
                   right: 14,

@@ -72,7 +72,6 @@ dependencies:
   purchases_flutter: ^9.12.0
   purchases_ui_flutter: ^9.12.0
   quick_actions: ^1.1.0
-  rive: ^0.14.4
   rxdart: ^0.28.0
   screenshot: ^3.0.0
   sentry_flutter: ^9.14.0
@@ -125,7 +124,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/animations/
     - assets/sounds/
   # To add assets to your application, add an assets section, like this:
   # assets:
