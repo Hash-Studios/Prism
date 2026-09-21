@@ -31,6 +31,7 @@ class _ShareButtonState extends State<ShareButton> {
   @override
   Widget build(BuildContext context) {
     return CircularMenuButton(
+      label: 'Share',
       onTap: () {
         logger.d('Share');
         onShare();
