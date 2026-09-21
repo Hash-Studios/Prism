@@ -269,7 +269,11 @@ class PurchasesService {
     return result.customerInfo;
   }
 
-  Future<CustomerInfo> restore() => Purchases.restorePurchases();
+  /// Restores store purchases and applies them to this account. Returns whether premium is now active.
+  Future<bool> restore() async {
+    await Purchases.restorePurchases();
+    return checkAndPersistPremium();
+  }
 
   Future<Offerings?> getOfferings() async {
     try {
