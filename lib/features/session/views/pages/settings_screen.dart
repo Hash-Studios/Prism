@@ -19,10 +19,12 @@ import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -50,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _categories = _settingsLocal.get<int>('WHcategories', defaultValue: 100);
     _purity = _settingsLocal.get<int>('WHpurity', defaultValue: 100);
     _notifWotd = _settingsLocal.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
-    _notifPromo = _settingsLocal.get<bool>(PersistenceKeys.notifPromo, defaultValue: true);
+    _notifPromo = _settingsLocal.get<bool>('recommendationsSubscriber', defaultValue: true);
     _downloadQuality = _settingsLocal.get<String>(PersistenceKeys.downloadQuality, defaultValue: 'original');
   }
 
@@ -264,6 +266,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onChanged: (value) {
             setState(() => _notifWotd = value);
             _settingsLocal.set(PersistenceKeys.notifWotd, value);
+            _setTopic('wall_of_the_day', value);
           },
         ),
         SwitchListTile(
@@ -274,10 +277,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle: const Text('New features, events & announcements', style: TextStyle(fontSize: 12)),
           onChanged: (value) {
             setState(() => _notifPromo = value);
-            _settingsLocal.set(PersistenceKeys.notifPromo, value);
+            _settingsLocal.set('recommendationsSubscriber', value);
+            _trackSettingsToggle(SettingValue.recommendationsNotifications, value);
+            _setTopic('recommendations', value);
           },
         ),
       ],
+    );
+  }
+
+  void _setTopic(String topic, bool subscribed) {
+    final FirebaseMessaging messaging = FirebaseMessaging.instance;
+    final String sourceTag = 'settings.$topic.${subscribed ? 'enable' : 'disable'}';
+    unawaited(
+      subscribed
+          ? subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag)
+          : unsubscribeFromTopicSafely(messaging, topic, sourceTag: sourceTag),
     );
   }
 
