@@ -26,4 +26,19 @@ void main() {
     await tester.tap(share);
     expect(taps, 1);
   });
+
+  testWidgets('toggle buttons such as Favourite announce whether they are on', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: CircularMenuButton(label: 'Favourite', isLoading: false, selected: true, child: Icon(Icons.favorite)),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Favourite')),
+      containsSemantics(label: 'Favourite', isButton: true, isSelected: true),
+    );
+  });
 }

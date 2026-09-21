@@ -11,6 +11,7 @@ class CircularMenuButton extends StatelessWidget {
     this.onTap,
     required this.isLoading,
     this.padding = const EdgeInsets.all(17),
+    this.selected,
   });
 
   final String label;
@@ -18,6 +19,9 @@ class CircularMenuButton extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isLoading;
   final EdgeInsets padding;
+
+  /// For toggle actions such as Favourite, so screen readers announce the current state.
+  final bool? selected;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,7 @@ class CircularMenuButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: label,
+      selected: selected,
       child: onTap == null ? button : GestureDetector(onTap: onTap, child: button),
     );
   }
