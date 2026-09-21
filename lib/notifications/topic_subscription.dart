@@ -21,7 +21,7 @@ String? followersTopicFromEmail(String email) {
 }
 
 /// New-post pushes for a creator go to this topic (see onWallApproved).
-String? creatorPostsTopicFromEmail(String email) {
+String? _creatorPostsTopicFromEmail(String email) {
   final String? base = followersTopicFromEmail(email);
   return base == null ? null : '${base}_posts';
 }
@@ -37,7 +37,7 @@ Future<void> setCreatorPostsTopics(
   required String sourceTag,
 }) async {
   for (final String email in creatorEmails) {
-    final String? topic = creatorPostsTopicFromEmail(email);
+    final String? topic = _creatorPostsTopicFromEmail(email);
     if (topic == null) continue;
     if (subscribed) {
       await subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
