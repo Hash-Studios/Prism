@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -35,7 +36,8 @@ class ProfileDrawer extends StatelessWidget {
 
   Widget _header(BuildContext context) {
     return SizedBox(
-      height: 130,
+      // DrawerHeader pads for the status bar itself; Dynamic Island insets left too little room at 130.
+      height: math.max(130, MediaQuery.paddingOf(context).top + 80),
       child: DrawerHeader(
         margin: EdgeInsets.zero,
         padding: EdgeInsets.zero,
