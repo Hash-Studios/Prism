@@ -360,6 +360,10 @@ Future<void> _initializeMonitoring(SentryConfig config) async {
       options.replay.onErrorSampleRate = _sentryReplayOnErrorSampleRate;
       options.privacy.maskAllText = true;
       options.privacy.maskAllImages = true;
+      // Sentry turns on debug in debug builds, and then the iOS hang tracker
+      // symbolicates with every thread suspended and can deadlock the app on
+      // launch (getsentry/sentry-cocoa#5609). Release builds keep it.
+      options.enableAppHangTracking = !kDebugMode;
     });
     MonitoringRuntime.reporter = const SentryErrorReporter();
     await MonitoringRuntime.reporter.addBreadcrumb(
