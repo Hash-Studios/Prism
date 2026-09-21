@@ -527,7 +527,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         link: link,
         filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
       );
-      final result = await PrismMediaHostApi().enqueueDownload(request).timeout(const Duration(seconds: 15));
+      final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
         toasts.codeSend(wallpaperSavedMessage);
       } else {
