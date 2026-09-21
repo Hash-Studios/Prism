@@ -45,10 +45,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   String? wallpaperDesc;
   String? wallpaperCategory;
   String? wallpaperThumb;
-  late String wallpaperSha;
-  late String thumbSha;
-  late String wallpaperPath;
-  late String thumbPath;
+  // Set once each file reaches GitHub; null means there is nothing to delete.
+  String? wallpaperSha;
+  String? thumbSha;
+  String? wallpaperPath;
+  String? thumbPath;
   bool? review;
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
@@ -118,14 +119,27 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   Future deleteFile() async {
     final github = GitHubContentApi();
-    await github.deleteFile(
-      repo: Env.normalize(Env.ghRepoWalls),
-      path: wallpaperPath,
-      sha: wallpaperSha,
-      message: wallpaperPath,
-    );
-    await github.deleteFile(repo: Env.normalize(Env.ghRepoWalls), path: thumbPath, sha: thumbSha, message: thumbPath);
-    logger.d("Files deleted");
+    try {
+      if (wallpaperPath != null && wallpaperSha != null) {
+        await github.deleteFile(
+          repo: Env.normalize(Env.ghRepoWalls),
+          path: wallpaperPath!,
+          sha: wallpaperSha!,
+          message: wallpaperPath!,
+        );
+      }
+      if (thumbPath != null && thumbSha != null) {
+        await github.deleteFile(
+          repo: Env.normalize(Env.ghRepoWalls),
+          path: thumbPath!,
+          sha: thumbSha!,
+          message: thumbPath!,
+        );
+      }
+      logger.d("Files deleted");
+    } catch (e) {
+      logger.w("Could not delete unsubmitted upload: $e");
+    }
   }
 
   Future uploadFile() async {
@@ -143,22 +157,21 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         contentBase64: base64Image,
         path: path.basename(image.path),
       );
-      setState(() {
-        wallpaperUrl = value.downloadUrl;
-        wallpaperPath = value.path!;
-        wallpaperSha = value.sha!;
-      });
+      wallpaperUrl = value.downloadUrl;
+      wallpaperPath = value.path;
+      wallpaperSha = value.sha;
+      // Left the screen while uploading: _onPop found nothing to delete, so clean up here.
+      if (!mounted) return deleteFile();
       final thumbValue = await github.putFile(
         repo: Env.normalize(Env.ghRepoWalls),
         message: "thumb_${path.basename(image.path)}",
         contentBase64: base64ImageThumb,
         path: 'thumb_${path.basename(image.path)}',
       );
-      setState(() {
-        wallpaperThumb = thumbValue.downloadUrl;
-        thumbPath = thumbValue.path!;
-        thumbSha = thumbValue.sha!;
-      });
+      wallpaperThumb = thumbValue.downloadUrl;
+      thumbPath = thumbValue.path;
+      thumbSha = thumbValue.sha;
+      if (!mounted) return deleteFile();
       logger.d('File Uploaded');
       setState(() {
         isUploading = false;
