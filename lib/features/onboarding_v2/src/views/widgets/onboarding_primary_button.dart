@@ -43,7 +43,7 @@ class OnboardingPrimaryButton extends StatelessWidget {
                           color: OnboardingColors.buttonText,
                         ),
                       )
-                    : Text(label, style: OnboardingTypography.cta),
+                    : ExcludeSemantics(child: Text(label, style: OnboardingTypography.cta)),
               ),
             ),
           ),
