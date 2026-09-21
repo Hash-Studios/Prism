@@ -428,12 +428,13 @@ private open class PrismMediaApiPigeonCodec : StandardMessageCodec() {
   }
 }
 
+
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
 interface PrismMediaHostApi {
-  fun saveMedia(request: SaveMediaRequest): OperationResult
-  fun enqueueDownload(request: DownloadRequest): OperationResult
-  fun listDownloads(): DownloadItemsResult
-  fun clearDownloads(): OperationResult
+  fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit)
+  fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit)
+  fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit)
+  fun clearDownloads(callback: (Result<OperationResult>) -> Unit)
 
   companion object {
     /** The codec used by PrismMediaHostApi. */
@@ -450,12 +451,15 @@ interface PrismMediaHostApi {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
             val requestArg = args[0] as SaveMediaRequest
-            val wrapped: List<Any?> = try {
-              listOf(api.saveMedia(requestArg))
-            } catch (exception: Throwable) {
-              PrismMediaApiPigeonUtils.wrapError(exception)
+            api.saveMedia(requestArg) { result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
             }
-            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)
@@ -467,12 +471,15 @@ interface PrismMediaHostApi {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
             val requestArg = args[0] as DownloadRequest
-            val wrapped: List<Any?> = try {
-              listOf(api.enqueueDownload(requestArg))
-            } catch (exception: Throwable) {
-              PrismMediaApiPigeonUtils.wrapError(exception)
+            api.enqueueDownload(requestArg) { result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
             }
-            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)
@@ -482,12 +489,15 @@ interface PrismMediaHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            val wrapped: List<Any?> = try {
-              listOf(api.listDownloads())
-            } catch (exception: Throwable) {
-              PrismMediaApiPigeonUtils.wrapError(exception)
+            api.listDownloads{ result: Result<DownloadItemsResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
             }
-            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)
@@ -497,12 +507,15 @@ interface PrismMediaHostApi {
         val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            val wrapped: List<Any?> = try {
-              listOf(api.clearDownloads())
-            } catch (exception: Throwable) {
-              PrismMediaApiPigeonUtils.wrapError(exception)
+            api.clearDownloads{ result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
             }
-            reply.reply(wrapped)
           }
         } else {
           channel.setMessageHandler(null)
