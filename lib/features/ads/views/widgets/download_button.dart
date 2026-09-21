@@ -512,7 +512,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: 'notifications.permission_after_download',
         );
       }
-      toasts.codeSend(hideSetWallpaperUi ? 'Saved to Photos.' : 'Wall downloaded in Pictures/Prism!');
+      toasts.codeSend(wallpaperSavedMessage);
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
