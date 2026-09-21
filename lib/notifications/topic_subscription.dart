@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -16,6 +18,33 @@ String? followersTopicFromEmail(String email) {
     return null;
   }
   return sanitizedLocalPart;
+}
+
+/// New-post pushes for a creator go to this topic (see onWallApproved).
+String? creatorPostsTopicFromEmail(String email) {
+  final String? base = followersTopicFromEmail(email);
+  return base == null ? null : '${base}_posts';
+}
+
+bool get creatorPostsAlertsEnabled => getIt<SettingsLocalDataSource>().get<bool>('postsSubscriber', defaultValue: true);
+
+/// What the Posts switch controls: every followed creator's posts topic.
+// ponytail: one topic call per followed creator, sequentially; batch server-side if follow lists get large.
+Future<void> setCreatorPostsTopics(
+  FirebaseMessaging messaging,
+  Iterable<String> creatorEmails, {
+  required bool subscribed,
+  required String sourceTag,
+}) async {
+  for (final String email in creatorEmails) {
+    final String? topic = creatorPostsTopicFromEmail(email);
+    if (topic == null) continue;
+    if (subscribed) {
+      await subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
+    } else {
+      await unsubscribeFromTopicSafely(messaging, topic, sourceTag: sourceTag);
+    }
+  }
 }
 
 String? userTopicFromId(String uid) {
