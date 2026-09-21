@@ -39,6 +39,7 @@ const admin = __importStar(require("firebase-admin"));
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const notificationHelper_1 = require("./notificationHelper");
+const usernameLower_1 = require("./usernameLower");
 if (!admin.apps.length) {
     admin.initializeApp();
 }
@@ -50,6 +51,8 @@ const db = admin.firestore();
  * user documents (not as a subcollection), so we detect new follows by
  * diffing `before.followers` vs `after.followers`.
  *
+ * It also keeps `usernameLower` equal to the lowercased username.
+ *
  * For each newly added follower email:
  *   1. Look up the follower's display name from their user doc.
  *   2. Unless they muted Followers alerts, send an FCM push to the followed user.
@@ -59,16 +62,27 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
     document: "usersv2/{userId}",
     region: "asia-south1",
 }, async (event) => {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const before = (_b = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before) === null || _b === void 0 ? void 0 : _b.data();
     const after = (_d = (_c = event.data) === null || _c === void 0 ? void 0 : _c.after) === null || _d === void 0 ? void 0 : _d.data();
     if (!before || !after) {
         return;
     }
-    const beforeList = ((_e = before.followers) !== null && _e !== void 0 ? _e : [])
+    // Keep usernameLower in sync for follower/following search. The write
+    // re-fires this trigger once, and that run finds nothing to change.
+    const usernameLower = (0, usernameLower_1.usernameLowerOf)(after.username);
+    if (after.usernameLower !== usernameLower) {
+        try {
+            await ((_e = event.data) === null || _e === void 0 ? void 0 : _e.after.ref.update({ usernameLower }));
+        }
+        catch (err) {
+            v2_1.logger.warn("onFollowCreated: usernameLower sync failed.", { err });
+        }
+    }
+    const beforeList = ((_f = before.followers) !== null && _f !== void 0 ? _f : [])
         .map((e) => e.toString().trim())
         .filter((e) => e.length > 0);
-    const afterList = ((_f = after.followers) !== null && _f !== void 0 ? _f : [])
+    const afterList = ((_g = after.followers) !== null && _g !== void 0 ? _g : [])
         .map((e) => e.toString().trim())
         .filter((e) => e.length > 0);
     const beforeNorm = new Set(beforeList.map((e) => e.toLowerCase()));
@@ -77,7 +91,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
     if (newFollowerEmailsRaw.length === 0) {
         return;
     }
-    const followedUserEmail = ((_g = after.email) !== null && _g !== void 0 ? _g : "").toString().trim();
+    const followedUserEmail = ((_h = after.email) !== null && _h !== void 0 ? _h : "").toString().trim();
     if (!followedUserEmail) {
         return;
     }
