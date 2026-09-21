@@ -121,7 +121,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
           sourceTag: 'PrismWallpaperRepository.fetchStreakShop',
           filters: <FirestoreFilter>[
             FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-            FirestoreFilter(field: 'isStreakExclusive', op: FirestoreFilterOp.isEqualTo, value: true),
+            FirestoreFilter(field: 'is_streak_exclusive', op: FirestoreFilterOp.isEqualTo, value: true),
           ],
           limit: 50,
           dedupeWindowMs: 1000,
