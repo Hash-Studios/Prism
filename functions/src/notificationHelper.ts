@@ -117,15 +117,17 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   }
 }
 
+const INVALID_TOPIC_CHARS = /[^a-zA-Z0-9\-_.~%]/g;
+
 /**
  * Extracts the FCM-safe topic name from an email address.
- * FCM topics must match [a-zA-Z0-9-_.~%]+
- * We use the portion before "@" and replace unsafe chars with "_".
+ * FCM topics must match [a-zA-Z0-9-_.~%]+. Unsafe chars are stripped, not
+ * replaced, to match what the app subscribes to (followersTopicFromEmail).
  */
 export function emailToTopic(email: string): string {
-  return email.split("@")[0].replace(/[^a-zA-Z0-9\-_.~%]/g, "_");
+  return email.split("@")[0].replace(INVALID_TOPIC_CHARS, "");
 }
 
 export function userIdToTopic(uid: string): string {
-  return `u_${uid.replace(/[^a-zA-Z0-9\-_.~%]/g, "_")}`;
+  return `u_${uid.replace(INVALID_TOPIC_CHARS, "")}`;
 }
