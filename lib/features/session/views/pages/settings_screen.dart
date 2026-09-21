@@ -45,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _purity;
   late bool _notifWotd;
   late bool _notifPromo;
+  bool _restoring = false;
   late String _downloadQuality;
 
   @override
@@ -501,15 +502,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           leading: const Icon(Icons.restore_rounded),
           title: Text('Restore Purchases', style: _titleStyle),
           subtitle: const Text('Restore a previously purchased subscription', style: TextStyle(fontSize: 12)),
-          onTap: () async {
-            _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
-            try {
-              await PurchasesService.instance.restore();
-              toasts.codeSend('Purchases restored!');
-            } catch (e) {
-              toasts.error('Could not restore purchases. Please try again.');
-            }
-          },
+          onTap: _restoring
+              ? null
+              : () async {
+                  _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
+                  setState(() => _restoring = true);
+                  toasts.codeSend('Restoring purchases…');
+                  try {
+                    final bool premium = await PurchasesService.instance.restore();
+                    premium
+                        ? toasts.codeSend('Purchases restored!')
+                        : toasts.error('No purchases to restore for this account.');
+                  } catch (e) {
+                    toasts.error('Could not restore purchases. Please try again.');
+                  } finally {
+                    if (mounted) setState(() => _restoring = false);
+                  }
+                },
         ),
         ListTile(
           leading: Icon(Icons.delete_forever_rounded, color: Colors.red[400]),
