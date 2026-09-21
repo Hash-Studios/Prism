@@ -165,7 +165,9 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
       if (results.isEmpty) {
-        return Result.success(null);
+        // Wall of the Day notification links carry the Firestore doc id, not the `id` field.
+        final Result<PrismWallpaper?> byDocId = await fetchByDocumentId(id);
+        return byDocId.data?.review == true ? byDocId : Result.success(null);
       }
       final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
       final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
