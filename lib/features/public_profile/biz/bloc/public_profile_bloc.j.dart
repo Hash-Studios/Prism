@@ -232,7 +232,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
         // Subscribe to the artist's posts topic so the user gets push
         // notifications when that artist publishes a new wallpaper.
         final String? artistTopic = followersTopicFromEmail(profile.email);
-        if (artistTopic != null) {
+        if (artistTopic != null && creatorPostsAlertsEnabled) {
           unawaited(
             subscribeToTopicSafely(
               FirebaseMessaging.instance,
@@ -441,7 +441,7 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     );
     if (result.isSuccess) {
       final String? artistTopic = followersTopicFromEmail(event.targetUserEmail);
-      if (artistTopic != null) {
+      if (artistTopic != null && creatorPostsAlertsEnabled) {
         unawaited(
           subscribeToTopicSafely(
             FirebaseMessaging.instance,
