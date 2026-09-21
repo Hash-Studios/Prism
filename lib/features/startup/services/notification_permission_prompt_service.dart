@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class NotificationPermissionPromptService {
@@ -16,6 +17,12 @@ class NotificationPermissionPromptService {
   static const String _promptedPrefKey = 'notificationPermissionPromptedV1';
   static const String _wotdSubscribedPrefKey = 'subscribedToWotd';
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
+
+  /// Android reports denied until POST_NOTIFICATIONS is granted, even before the first ask.
+  @visibleForTesting
+  static bool canAsk(AuthorizationStatus status, TargetPlatform platform) =>
+      status == AuthorizationStatus.notDetermined ||
+      (status == AuthorizationStatus.denied && platform == TargetPlatform.android);
 
   Future<void> maybePromptAfterValueAction(BuildContext context, {required String sourceTag}) async {
     if (!_settings.isOpen || !context.mounted) {
@@ -41,7 +48,7 @@ class NotificationPermissionPromptService {
       return;
     }
 
-    if (current.authorizationStatus == AuthorizationStatus.denied) {
+    if (!canAsk(current.authorizationStatus, defaultTargetPlatform)) {
       await _settings.set(_promptedPrefKey, true);
       await analytics.track(
         const TomorrowHookPermissionResultEvent(
