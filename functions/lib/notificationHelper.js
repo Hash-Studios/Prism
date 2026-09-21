@@ -106,15 +106,16 @@ async function sendNotification(payload) {
         v2_1.logger.error("Failed to send FCM push.", { err, route: payload.data.route });
     }
 }
+const INVALID_TOPIC_CHARS = /[^a-zA-Z0-9\-_.~%]/g;
 /**
  * Extracts the FCM-safe topic name from an email address.
- * FCM topics must match [a-zA-Z0-9-_.~%]+
- * We use the portion before "@" and replace unsafe chars with "_".
+ * FCM topics must match [a-zA-Z0-9-_.~%]+. Unsafe chars are stripped, not
+ * replaced, to match what the app subscribes to (followersTopicFromEmail).
  */
 function emailToTopic(email) {
-    return email.split("@")[0].replace(/[^a-zA-Z0-9\-_.~%]/g, "_");
+    return email.split("@")[0].replace(INVALID_TOPIC_CHARS, "");
 }
 function userIdToTopic(uid) {
-    return `u_${uid.replace(/[^a-zA-Z0-9\-_.~%]/g, "_")}`;
+    return `u_${uid.replace(INVALID_TOPIC_CHARS, "")}`;
 }
 //# sourceMappingURL=notificationHelper.js.map

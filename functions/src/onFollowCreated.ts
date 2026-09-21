@@ -18,7 +18,7 @@ const db = admin.firestore();
  *
  * For each newly added follower email:
  *   1. Look up the follower's display name from their user doc.
- *   2. Send an FCM push to the followed user (via their own email-prefix topic).
+ *   2. Unless they muted Followers alerts, send an FCM push to the followed user.
  *   3. Write a per-user in-app notification doc (modifier = followed user's email).
  */
 export const onFollowCreated = onDocumentUpdated(
@@ -55,6 +55,7 @@ export const onFollowCreated = onDocumentUpdated(
     }
 
     const followedUid = event.params.userId;
+    const pushEnabled = !(await _followerAlertsMuted(followedUid));
 
     for (const followerEmail of newFollowerEmailsRaw) {
       const followerUid = await _resolveUserIdByEmail(followerEmail);
@@ -90,23 +91,26 @@ export const onFollowCreated = onDocumentUpdated(
         },
         modifier: followedUserEmail,
         channelId: "followers",
-        // Send push to the followed user's own topic (they subscribe on login).
-        fcmTarget: {topic: followedTopic},
+        // Push to the followed user's own topic (they subscribe on login),
+        // unless they turned Followers alerts off. The inbox entry is kept.
+        fcmTarget: pushEnabled ? {topic: followedTopic} : undefined,
       });
-      await sendNotification({
-        title: "You have a new follower! 🎉",
-        body: `${followerUsername} is now following you.`,
-        data: {
-          route: "follower",
-          follower_email: followerEmail.trim(),
-          pageName: "",
-          url: _profileUrl(followerEmail),
-        },
-        modifier: followedUserEmail,
-        channelId: "followers",
-        fcmTarget: {topic: emailToTopic(followedUserEmail)},
-        pushOnly: true,
-      });
+      if (pushEnabled) {
+        await sendNotification({
+          title: "You have a new follower! 🎉",
+          body: `${followerUsername} is now following you.`,
+          data: {
+            route: "follower",
+            follower_email: followerEmail.trim(),
+            pageName: "",
+            url: _profileUrl(followerEmail),
+          },
+          modifier: followedUserEmail,
+          channelId: "followers",
+          fcmTarget: {topic: emailToTopic(followedUserEmail)},
+          pushOnly: true,
+        });
+      }
 
       logger.info("onFollowCreated: follow notification sent.", {
         followedUserEmail,
@@ -115,6 +119,21 @@ export const onFollowCreated = onDocumentUpdated(
     }
   },
 );
+
+/** True only when the user explicitly turned Followers alerts off. */
+export function isFollowerAlertsOff(session: Record<string, unknown> | undefined): boolean {
+  return session?.followerAlerts === false;
+}
+
+async function _followerAlertsMuted(uid: string): Promise<boolean> {
+  try {
+    const snap = await db.doc(`usersv2/${uid}/private/session`).get();
+    return isFollowerAlertsOff(snap.data());
+  } catch (err) {
+    logger.warn("onFollowCreated: could not read follower alert pref.", {uid, err});
+    return false;
+  }
+}
 
 /** Returns usersv2 document id (Firebase uid) for an email, or null. */
 async function _resolveUserIdByEmail(email: string): Promise<string | null> {

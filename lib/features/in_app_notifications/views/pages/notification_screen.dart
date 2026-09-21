@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -11,6 +13,7 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
+import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -877,6 +880,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
         if (app_state.prismUser.loggedIn) {
           await _settingsLocal.set('followersSubscriber', value);
           setState(() => followersSubscriber = value);
+          unawaited(FcmTokenService.instance.saveFollowerAlerts(userId: app_state.prismUser.id, enabled: value));
           analytics.track(
             NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.followers, value: value),
           );
@@ -897,11 +901,6 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               sourceTag: 'notification.settings.followers.enable',
             );
           } else {
-            await unsubscribeFromTopicSafely(
-              FirebaseMessaging.instance,
-              app_state.prismUser.email.split('@')[0],
-              sourceTag: 'notification.settings.followers.disable',
-            );
             await _settingsLocal.set('postsSubscriber', false);
             setState(() => postsSubscriber = false);
             analytics.track(
