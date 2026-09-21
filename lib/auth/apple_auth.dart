@@ -85,7 +85,7 @@ class AppleAuth {
           bio: '',
           createdAt: DateTime.now().toUtc().toIso8601String(),
           email: email,
-          username: displayName,
+          username: sanitizeUsername(displayName),
           followers: [],
           following: [],
           id: user.uid,
