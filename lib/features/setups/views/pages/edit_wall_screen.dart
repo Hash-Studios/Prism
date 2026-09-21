@@ -89,6 +89,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
         ),
         leading: IconButton(
+          tooltip: 'Close',
           icon: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
           onPressed: () {
             Navigator.pop(context);
@@ -96,6 +97,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         ),
         actions: <Widget>[
           IconButton(
+            tooltip: 'Reset adjustments',
             icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
               setState(() {
@@ -106,6 +108,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             },
           ),
           IconButton(
+            tooltip: 'Done',
             icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
             onPressed: () async {
               await crop();
@@ -352,7 +355,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     return Slider(
       activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).hintColor,
-      label: 'sat : ${sat.toStringAsFixed(2)}',
+      label: 'Saturation ${sat.toStringAsFixed(2)}',
       onChanged: (double value) {
         setState(() {
           sat = value;
@@ -368,7 +371,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     return Slider(
       activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).hintColor,
-      label: bright.toStringAsFixed(2),
+      label: 'Brightness ${bright.toStringAsFixed(2)}',
       onChanged: (double value) {
         setState(() {
           bright = value;
@@ -384,7 +387,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     return Slider(
       activeColor: Theme.of(context).colorScheme.secondary,
       inactiveColor: Theme.of(context).hintColor,
-      label: 'con : ${con.toStringAsFixed(2)}',
+      label: 'Contrast ${con.toStringAsFixed(2)}',
       onChanged: (double value) {
         setState(() {
           con = value;
