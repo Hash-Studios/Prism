@@ -97,6 +97,7 @@ exports.onWallApproved = (0, firestore_1.onDocumentUpdated)({
         modifier: artistEmail,
         channelId: "posts",
         fcmTarget: { topic: artistTopic },
+        collapseKey: `wall_${wallId}`,
     });
     if (artistUid) {
         await (0, notificationHelper_1.sendNotification)({
@@ -113,6 +114,7 @@ exports.onWallApproved = (0, firestore_1.onDocumentUpdated)({
             channelId: "posts",
             fcmTarget: { topic: (0, notificationHelper_1.emailToTopic)(artistEmail) },
             pushOnly: true,
+            collapseKey: `wall_${wallId}`,
         });
     }
     v2_1.logger.info("onWallApproved: artist notification sent.", { wallId, artistEmail });
@@ -121,7 +123,8 @@ exports.onWallApproved = (0, firestore_1.onDocumentUpdated)({
     //    - Push only (no in-app doc — one doc per follower would not scale)
     //    - Topic: {artistEmailPrefix}_posts  (followers subscribe to this)
     // ------------------------------------------------------------------ //
-    const followersTopic = `${artistTopic}_posts`;
+    // Followers subscribe to <email prefix>_posts (followersTopicFromEmail).
+    const followersTopic = `${(0, notificationHelper_1.emailToTopic)(artistEmail)}_posts`;
     // Push only — no in-app doc. Otherwise we'd write one doc with modifier=
     // artistEmail and the artist would see a duplicate; followers get the
     // push and can open the wall from the notification.
