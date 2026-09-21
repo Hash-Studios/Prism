@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {sendNotification, emailToTopic, userIdToTopic} from "./notificationHelper";
+import {usernameLowerOf} from "./usernameLower";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -15,6 +16,8 @@ const db = admin.firestore();
  * The follow system stores follower/following relationships as arrays inside
  * user documents (not as a subcollection), so we detect new follows by
  * diffing `before.followers` vs `after.followers`.
+ *
+ * It also keeps `usernameLower` equal to the lowercased username.
  *
  * For each newly added follower email:
  *   1. Look up the follower's display name from their user doc.
@@ -32,6 +35,17 @@ export const onFollowCreated = onDocumentUpdated(
 
     if (!before || !after) {
       return;
+    }
+
+    // Keep usernameLower in sync for follower/following search. The write
+    // re-fires this trigger once, and that run finds nothing to change.
+    const usernameLower = usernameLowerOf(after.username);
+    if (after.usernameLower !== usernameLower) {
+      try {
+        await event.data?.after.ref.update({usernameLower});
+      } catch (err) {
+        logger.warn("onFollowCreated: usernameLower sync failed.", {err});
+      }
     }
 
     const beforeList = (before.followers as string[] | undefined ?? [])
