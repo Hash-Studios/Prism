@@ -431,43 +431,49 @@ class _WatchAdItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color accent = Color(0xFF00BCD4);
-    return GestureDetector(
-      onTap: loading ? null : onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).hintColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: accent.withValues(alpha: 0.4)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(color: accent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-              child: const Icon(Icons.play_circle_outline, size: 22, color: accent),
-            ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Text('Watch Ad', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-            ),
-            if (loading)
-              const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: accent))
-            else
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        onTap: loading ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).hintColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: accent.withValues(alpha: 0.4)),
+          ),
+          child: Row(
+            children: <Widget>[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: accent.withValues(alpha: 0.4)),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  '+${CoinPolicy.rewardedAd}c',
-                  style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 13),
-                ),
+                child: const Icon(Icons.play_circle_outline, size: 22, color: accent),
               ),
-          ],
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text('Watch Ad', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              ),
+              if (loading)
+                const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: accent))
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: accent.withValues(alpha: 0.4)),
+                  ),
+                  child: const Text(
+                    '+${CoinPolicy.rewardedAd}c',
+                    style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
