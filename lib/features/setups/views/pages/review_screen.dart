@@ -63,6 +63,7 @@ class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderSt
             ],
           ),
           leading: IconButton(
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             icon: const Icon(JamIcons.chevron_left),
             onPressed: () {
               Navigator.pop(context);

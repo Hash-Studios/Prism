@@ -653,6 +653,7 @@ class _FavSetupViewScreenState extends State<FavSetupViewScreen> with SingleTick
               child: Padding(
                 padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
                 child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   onPressed: () {
                     Navigator.pop(context);
                   },

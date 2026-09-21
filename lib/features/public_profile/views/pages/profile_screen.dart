@@ -364,6 +364,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
+                          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           padding: const EdgeInsets.all(2),
                           icon: Container(
                             padding: const EdgeInsets.all(6.0),

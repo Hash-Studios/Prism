@@ -16,6 +16,7 @@ class _HeadingChipBarState extends State<HeadingChipBar> {
       automaticallyImplyLeading: false,
       titleSpacing: 0,
       leading: IconButton(
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
         onPressed: () {
           Navigator.pop(context);
