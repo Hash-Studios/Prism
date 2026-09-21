@@ -10,13 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
   id: 'w1',
   wallpaper: PrismWallpaper(
-    core: WallpaperCore(
-      id: 'w1',
-      source: WallpaperSource.prism,
-      fullUrl: '',
-      thumbnailUrl: '',
-      authorName: author,
-    ),
+    core: WallpaperCore(id: 'w1', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: '', authorName: author),
   ),
 );
 
@@ -34,7 +28,11 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              SizedBox(width: 120, height: 200, child: WallpaperTile(item: _item(author: 'Ana'), index: 0)),
+              SizedBox(
+                width: 120,
+                height: 200,
+                child: WallpaperTile(item: _item(author: 'Ana'), index: 0),
+              ),
               const PrismFab(),
             ],
           ),
