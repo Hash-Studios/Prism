@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/google_auth.dart';
@@ -769,7 +770,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _appearanceSection(),
           _contentFiltersSection(),
           _notificationsSection(),
-          _androidWidgetsSection(),
+          if (Platform.isAndroid) _androidWidgetsSection(),
           _storageSection(),
           _accountSection(),
           _premiumSection(),
