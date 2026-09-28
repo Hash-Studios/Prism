@@ -282,7 +282,8 @@ Future<void> main() async {
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                BlocProvider<PaletteBloc>(create: (_) => getIt<PaletteBloc>()),
+                // PaletteBloc is an app-wide singleton: .value so a restart does not close it.
+                BlocProvider<PaletteBloc>.value(value: getIt<PaletteBloc>()),
                 BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                 BlocProvider<UserSearchBloc>(create: (_) => getIt<UserSearchBloc>()),
                 BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
