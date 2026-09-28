@@ -24,8 +24,10 @@ Run these from the repo root.
    ```
    Look for `prism-wallpapers`. If it is not in the list, the logged-in account cannot deploy
    functions or rules. Fix with `firebase login:add` (add another Google account) and
-   `firebase login:use <email>` to switch, then re-run `firebase projects:list`. Do not guess a
-   project id and deploy blind. `.firebaserc` already pins `"default": "prism-wallpapers"`, so a
+   `firebase login:use <email>` to switch, then re-run `firebase projects:list`. Or pass the
+   account on every call: `--account <email>` (the Make targets take `FIREBASE_ACCOUNT=<email>`),
+   which changes nothing else on the machine. The account that owns Prism is
+   `akshaymaurya3006@gmail.com`. Do not guess a project id and deploy blind. `.firebaserc` already pins `"default": "prism-wallpapers"`, so a
    plain `firebase deploy` targets it correctly once the account can see it.
 
 2. **Doppler config has every key the app needs.** The app reads env vars only through
@@ -47,17 +49,26 @@ Run these from the repo root.
    `make doppler-check` runs this same comparison for the config in `DOPPLER_CONFIG` (default
    `dev`); `make secrets-print DOPPLER_CONFIG=<config>` prints the config with every value masked.
 
-3. **Android signing key.** `android/key.properties` and the keystore it points to are
-   `.gitignore`d and normally absent in a fresh checkout, confirmed absent in this worktree. The
-   encrypted source is `android/android_keys.zip.gpg`. Only the **human** decrypts it (gpg asks
-   for the passphrase in `ANDROID_KEYS_SECRET_PASSPHRASE`):
+3. **Release worktree has the gitignored files.** Build from a fresh worktree on the release
+   branch. The human keeps the private files in the **main checkout**
+   (`/Users/codenameakshay/Development/codenameakshay/Prism`). The agent copies them into the
+   worktree. Never commit them, and never print `key.properties` (it holds the keystore
+   passwords):
    ```sh
-   ANDROID_KEYS_SECRET_PASSPHRASE=<passphrase> ./.github/scripts/decrypt_android_secrets.sh
+   M=/Users/codenameakshay/Development/codenameakshay/Prism
+   cp "$M/lib/firebase_options.dart"            lib/
+   cp "$M/android/app/google-services.json"     android/app/
+   cp "$M/ios/Runner/GoogleService-Info.plist"  ios/Runner/
+   cp "$M/android/key.jks" "$M/android/key.properties" android/
+   grep '^storeFile' android/key.properties     # only this line; it must resolve to the copied key.jks
+   git status --short --ignored android/key.jks android/key.properties   # must show "!!"
    ```
-   This unpacks `android_keys.zip` into `android/`, which should produce `android/key.properties`
-   and the `.jks` keystore it references. Never ask the human for the passphrase in chat and never
-   type it yourself. Have them run the decrypt, or export the env var themselves, before you run
-   the build.
+   Without `android/app/google-services.json` the Makefile silently adds
+   `SKIP_FIREBASE_INIT=true`, which ships an app with Firebase off. `build-aab` and `build-ipa`
+   now fail fast when a Firebase config file is missing. If the key files are not in the main
+   checkout, ask the human to put them there. Fallback: the human decrypts
+   `android/android_keys.zip.gpg` (gpg asks for the passphrase; never ask for it in chat). Never
+   generate a new keystore: Play rejects updates signed with a different key.
 
 4. **Play Console access.** Preferred: the `gplay` CLI. Check it with
    `gplay status --package com.hash.prism` (the `tracks` source must be `ok: true`; the
@@ -170,40 +181,68 @@ callables today: `awardCoins`, `spendCoins`, `processReferral` (`functions/src/c
 `githubPutFile`, `githubDeleteFile` (`functions/src/githubContent.ts`), `syncSubscription`
 (`functions/src/syncSubscription.ts`), `deleteAccount` (`functions/src/deleteAccount.ts`).
 
+Before asking for the go, show the human the exact diff against production:
 ```sh
-cd functions && npm run build && cd ..
-firebase deploy --only functions,firestore:indexes
+firebase functions:list --project prism-wallpapers --account <email>     # compare with functions/src/index.ts exports
+firebase firestore:indexes --project prism-wallpapers --account <email>   # compare with firestore.indexes.json
+cd functions && npm ci && npm run build && node --test lib/__tests__/*.test.js && cd ..
+git checkout -- functions/lib   # the build rewrites tracked output; keep it out of the diff
 ```
+List the functions that will be created, updated, and deleted, and the indexes that will be
+added. Firestore adds `__name__` to live indexes on its own, so compare index fields without it.
+`firestore.indexes.json` must list every live index. A forced deploy deletes indexes that are
+missing from the file.
 
-`firebase.json`'s `predeploy` also runs `npm run build` automatically, but running it yourself
-first surfaces TypeScript errors before the deploy attempt. Deploying `firestore:indexes` here
-(not `firestore:rules`) is deliberate. See step 6.
-
-This is a **human-approval step**: state exactly what changed in `functions/src` and Firestore
-indexes, then get an explicit go before running `firebase deploy`.
-
-### 4. Functions secrets (human-only, never echoed)
-
-If a callable needs a new or rotated secret, the human runs this themselves. You never see or
-type the value:
-
+Deploy (human-approval step):
 ```sh
-firebase functions:secrets:set GH_TOKEN
-firebase functions:secrets:set REVENUECAT_SECRET_KEY
+make functions-deploy FIREBASE_ACCOUNT=<email>
+# = make functions-env (functions/.env from Doppler prd), npm run build,
+#   firebase deploy --only functions,firestore:indexes
 ```
+Add `--non-interactive` when running `firebase deploy` by hand, and never `--force`, so a deploy
+can never delete a function or an index. After the deploy: `firebase functions:list` shows every
+export, and `firebase functions:log --lines 60` shows no new errors. Then `git checkout --
+functions/lib`.
 
-Plain (non-secret) env vars the functions read from `process.env`: `GH_USERNAME`,
-`GH_REPO_WALLS`, `GH_REPO_SETUPS` (see `functions/src/githubContent.ts`). These are configured
-through Firebase's runtime environment, not Doppler. Doppler only feeds the Flutter client's
-dart-defines.
+`firebase.json`'s `predeploy` also runs `npm run build`. Deploying `firestore:indexes` here (not
+`firestore:rules`) is deliberate. See step 6.
+
+### 4. Functions secrets and env (Doppler `prd` is the source)
+
+Doppler `prd` holds the values. The human sets or rotates a secret in Doppler only (the command
+prompts, so the value stays out of shell history):
+```sh
+doppler secrets set GH_TOKEN --project prism --config prd
+doppler secrets set REVENUECAT_SECRET_KEY --project prism --config prd
+```
+- `GH_TOKEN`: a fine-grained token owned by `codenameakshay2`, only `prism-walls` and
+  `prism-setups`, Contents read/write. Never the old classic token that shipped in the app.
+- `REVENUECAT_SECRET_KEY`: RevenueCat, Project settings, API keys, new secret key, **API
+  version V1** (`sk_...`). `syncSubscription` calls the v1 API.
+
+Then the agent pipes them into Firebase after the human's go. Values are never printed:
+```sh
+make functions-secrets-sync FIREBASE_ACCOUNT=<email>
+firebase functions:secrets:get GH_TOKEN --project prism-wallpapers --account <email>   # version ENABLED
+```
+Plain settings (`GH_USERNAME`, `GH_REPO_WALLS`, `GH_REPO_SETUPS`) go into the gitignored
+`functions/.env` via `make functions-env`. `make functions-deploy` runs it for you.
 
 ### 5. Data migrations (dry run, then human-approved apply)
+
+Migration scripts use Admin credentials from gcloud. The human logs in once:
+`gcloud auth application-default login` (as the account that owns Prism). Every run needs
+`GOOGLE_CLOUD_PROJECT=prism-wallpapers`.
+
+Before any `--apply`, check which functions fire on the written collection (for example
+`onFollowCreated` fires on every `usersv2` update) and confirm they do nothing harmful, such as
+sending a push. After the apply, re-run the dry run and expect `changed=0`.
 
 Current migration scripts, both in `functions/package.json`:
 
 ```sh
 cd functions
-npm run migrate:username-lower       # dry run: prints "scanned=N changed=M applied=false"
+GOOGLE_CLOUD_PROJECT=prism-wallpapers npm run migrate:username-lower   # dry run: "scanned=N changed=M applied=false"
 npm run migrate:view-stats           # dry run
 ```
 
@@ -245,20 +284,24 @@ Output: `build/app/outputs/bundle/release/app-release.aab`. Record its size:
 ls -lh build/app/outputs/bundle/release/app-release.aab
 ```
 
-### 8. Android: upload (human decides the mechanism and the track)
+### 8. Android: upload (human decides the track and the rollout)
 
-Two options, both human-gated:
+Preferred: `gplay`. It already has Release manager access to `com.hash.prism`.
+```sh
+gplay status --package com.hash.prism          # current tracks and version codes
+gplay release --package com.hash.prism --track internal \
+  --bundle build/app/outputs/bundle/release/app-release.aab \
+  --release-notes @notes.json --wait
+```
+Default to the `internal` track first. Promote later with `gplay promote`, and use `--rollout
+0.1` (a fraction) for a staged production rollout. `--release-notes` as a bare string files the
+note under en-US only; use a JSON file for more locales.
 
-- **Fastlane** (`android/fastlane/Fastfile`, lane `beta`) uploads straight to the **`beta`** track
-  with `release_status: completed`, not `internal`. Needs `android/google-play-console.json`:
-  ```sh
-  cd android && bundle exec fastlane beta
-  ```
-- **Manual**: the human uploads `app-release.aab` themselves in Play Console, choosing the track
-  (internal / closed / production) and any staged-rollout percentage.
+Fallbacks: fastlane lane `beta` (`cd android && bundle exec fastlane beta`, needs
+`android/google-play-console.json`, and it goes straight to the `beta` track), or the human uploads
+by hand in Play Console.
 
-Either way, the **track and rollout percentage are the human's decision.** Never assume
-`internal` is safe or pick a rollout percentage yourself.
+The **track and rollout fraction are the human's decision.** Never pick them yourself.
 
 ### 9. iOS: build the ipa
 
@@ -266,11 +309,9 @@ Either way, the **track and rollout percentage are the human's decision.** Never
 make build-ipa BUILD_NUMBER=<N> DOPPLER_CONFIG=prd
 ```
 
-Note: unlike `build-aab`, `build-ipa` does **not** pass `--obfuscate --split-debug-info` or the
-Sentry dart-defines (`SENTRY_DART_DEFINES` is only wired into `build`/`build-aab`/`size-android` in
-the Makefile). If Sentry symbolication for iOS crashes matters for this release, flag this gap to
-the human rather than assuming it is handled. The Makefile as written does not obfuscate or
-upload iOS debug symbols the way it does for Android.
+`build-ipa` obfuscates and uploads Sentry symbols the same way as `build-aab` (since the 3.0.9
+release branch). If you run an older checkout without that change, iOS crash reports are not
+symbolicated.
 
 Output: `build/ios/ipa/Prism.ipa` (confirmed name from `.github/workflows/testflight.yml`, not
 `Runner.ipa`).
@@ -333,25 +374,14 @@ Prism release: version <VERSION>, build <N>.
 - Decrypting `android/android_keys.zip.gpg` (passphrase stays with the human)
 - Pushing the version-bump commit
 
-## Known gaps found while writing this skill (not yet fixed in the repo)
+## Known gaps
 
-- Doppler `prd` is missing `RC_API_KEY`, `RC_ANDROID_API_KEY`, `RC_IOS_API_KEY`. A release build
-  with `DOPPLER_CONFIG=prd` fails `doppler-check` today. Verified live with
-  `doppler secrets --project prism --config prd --only-names`.
-- `firebase projects:list` under this session's logged-in account does not show
-  `prism-wallpapers` (only unrelated projects). Whoever runs this skill needs an
-  account added via `firebase login:add` that has access.
-- `android/key.properties`, `android/google-play-console.json`, and the decrypted keystore are all
-  absent in a fresh checkout (expected, gitignored) and need the human to provide them per-run.
-- `make build-ipa` does not obfuscate or wire Sentry dart-defines, unlike `make build-aab`. Confirm
-  with the human whether iOS Sentry symbolication is handled some other way, or accept unsymbolicated
-  iOS crash reports for this release.
-- `android/fastlane/Fastfile`'s only lane (`beta`) targets the Play `beta` track directly with
-  `release_status: completed`, not `internal`. There is no `internal`-track fastlane lane in this
-  repo; going to `internal` first means uploading manually in Play Console.
-- No `verify-prism` skill was found in this worktree's `.claude/skills/` at the time of writing;
-  another agent is expected to add it. If it is still missing when this skill runs, do the smoke
-  test manually and say so.
+- `asc`: the local App Store Connect key belongs to another team and cannot see Prism. Use an API
+  key from team `X2955Z4CKQ`, or the `.github/workflows/testflight.yml` workflow.
+- The old classic `GH_TOKEN` still works and ships in store builds up to 3.0.8. Revoke it after a
+  release that forces old versions to update.
+- Firestore rules that refuse direct client writes to coins and premium are in the repo but not
+  deployed. The human picks the timing (step 6).
 
 See `references/troubleshooting.md` for error-mode detail on doppler-check failures, keystore
 issues, and Play/TestFlight upload errors.
