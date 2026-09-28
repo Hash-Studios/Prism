@@ -10,6 +10,7 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -484,10 +485,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           return false;
         }
       } else {
-        final DownloadRequest request = DownloadRequest(
-          link: link,
-          filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
-        );
+        final DownloadRequest request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
           toasts.error(result.message ?? "Couldn't download! Please retry.");

@@ -1,5 +1,17 @@
 ## Changelog
 
+### v3.0.9
+- Shared wallpaper, setup and profile links open the right screen, even when the app was closed
+- Coins are credited on our servers, and the Earn and Invite a friend rows work again
+- Restore Purchases applies what it restores and says what happened
+- Notifications are asked for at the right time, arrive once, and the settings switches work
+- Search falls back to Pexels when WallHaven is down, and you can find followers by name in any case
+- Wall of the Day notifications open the wallpaper
+- Profile edits show at once, new usernames have no spaces, and Log out works from the profile menu
+- Wallpapers save to Photos on iPhone without freezing the app
+- Better screen reader support across the app
+- Security and stability fixes
+
 ### v3.0.8
 - Refined the edit profile flow and redesigned the profile completeness widget
 - Applied minor profile UI polish and layout rework
