@@ -2,9 +2,13 @@ import 'package:pigeon/pigeon.dart';
 
 @HostApi()
 abstract class PrismMediaHostApi {
+  @async
   OperationResult saveMedia(SaveMediaRequest request);
+  @async
   OperationResult enqueueDownload(DownloadRequest request);
+  @async
   DownloadItemsResult listDownloads();
+  @async
   OperationResult clearDownloads();
 }
 
