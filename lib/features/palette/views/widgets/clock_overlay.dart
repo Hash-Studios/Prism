@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -27,6 +28,12 @@ class _ClockOverlayState extends State<ClockOverlay> {
         : dayNo[dayNo.length - 1] == "3"
         ? "ʳᵈ"
         : "ᵗʰ";
+    final Color textColor = widget.accent == null
+        ? Theme.of(context).colorScheme.secondary
+        : widget.accent!.computeLuminance() > 0.5
+        ? Colors.black
+        : Colors.white;
+    final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
     return Material(
       child: Stack(
         children: <Widget>[
@@ -54,68 +61,96 @@ class _ClockOverlayState extends State<ClockOverlay> {
                 fit: BoxFit.cover,
               ),
             ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height / 3,
-            width: MediaQuery.of(context).size.width,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    "$day,",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: widget.accent == null
-                          ? Theme.of(context).colorScheme.secondary
-                          : widget.accent!.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
-                      fontFamily: "Roboto",
-                      fontSize: 25,
-                      fontWeight: FontWeight.w300,
-                    ),
+          if (iosPreview)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        DateFormat('EEEE d MMMM').format(DateTime.now()),
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'CupertinoSystemText',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        DateFormat('h:mm').format(DateTime.now()),
+                        style: TextStyle(
+                          color: textColor,
+                          fontFamily: 'CupertinoSystemDisplay',
+                          fontSize: 96,
+                          fontWeight: FontWeight.w700,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    "$month $dayNo$suffix | 27°C",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: widget.accent == null
-                          ? Theme.of(context).colorScheme.secondary
-                          : widget.accent!.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white,
-                      fontFamily: "Roboto",
-                      fontSize: 25,
-                      fontWeight: FontWeight.w500,
+                ),
+              ),
+            )
+          else ...<Widget>[
+            SizedBox(
+              height: MediaQuery.of(context).size.height / 3,
+              width: MediaQuery.of(context).size.width,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      "$day,",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: textColor,
+                        fontFamily: "Roboto",
+                        fontSize: 25,
+                        fontWeight: FontWeight.w300,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 5),
+                    Text(
+                      "$month $dayNo$suffix | 27°C",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: textColor,
+                        fontFamily: "Roboto",
+                        fontSize: 25,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 100,
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Image.asset("assets/images/dialer.webp", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/messages.webp", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/prism.webp", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/playstore.webp", width: MediaQuery.of(context).size.width * 0.14),
-                  Image.asset("assets/images/chrome.webp", width: MediaQuery.of(context).size.width * 0.14),
-                ],
+            Positioned(
+              bottom: 100,
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Image.asset("assets/images/dialer.webp", width: MediaQuery.of(context).size.width * 0.14),
+                    Image.asset("assets/images/messages.webp", width: MediaQuery.of(context).size.width * 0.14),
+                    Image.asset("assets/images/prism.webp", width: MediaQuery.of(context).size.width * 0.14),
+                    Image.asset("assets/images/playstore.webp", width: MediaQuery.of(context).size.width * 0.14),
+                    Image.asset("assets/images/chrome.webp", width: MediaQuery.of(context).size.width * 0.14),
+                  ],
+                ),
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () => {Navigator.pop(context)},
-            child: SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              child: const Text(""),
+          ],
+          Semantics(
+            button: true,
+            label: 'Close preview',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.pop(context),
+              child: SizedBox(height: MediaQuery.of(context).size.height, width: MediaQuery.of(context).size.width),
             ),
           ),
         ],
