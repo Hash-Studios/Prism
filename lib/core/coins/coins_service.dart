@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -11,6 +10,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
@@ -20,7 +20,6 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 class CoinMutationResult {
   const CoinMutationResult({
@@ -32,6 +31,7 @@ class CoinMutationResult {
     this.bypassed = false,
     this.insufficientBalance = false,
     this.reason = '',
+    this.transactionId = '',
   });
 
   final bool success;
@@ -42,6 +42,7 @@ class CoinMutationResult {
   final int currentBalance;
   final int delta;
   final String reason;
+  final String transactionId;
 
   // ignore: prefer_constructors_over_static_methods
   static CoinMutationResult noChange({required int balance, String reason = '', bool success = true}) {
@@ -124,10 +125,6 @@ class CoinsService {
 
   static const String _coinStateField = 'coinState';
   static const String _txCollection = FirebaseCollections.coinTransactions;
-  static const String _txStatusCompleted = 'completed';
-  static const String _txStatusRolledBack = 'rolled_back';
-  static const String _shareDomain = 'prismwalls.com';
-  static const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
   static const String _streakReminderPrefKey = 'streakReminderSubscriber';
   static const String _streakReminderEnabledField = 'streakReminderEnabled';
@@ -137,7 +134,6 @@ class CoinsService {
   static const String _streakLastClaimServerAtField = 'streakLastClaimServerAt';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
   static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
-  static const Duration _shortLinkTimeout = Duration(seconds: 6);
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
@@ -190,21 +186,23 @@ class CoinsService {
         final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
         final bool active =
             streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
-        coinState[_streakReminderEnabledField] = enabled;
-        coinState[_streakTimezoneOffsetMinutesField] = timezoneOffsetMinutes;
+        // Rules only allow the client to write these specific coinState leaves, never the whole map.
+        final Map<String, dynamic> updates = <String, dynamic>{
+          '$_coinStateField.$_streakReminderEnabledField': enabled,
+          '$_coinStateField.$_streakTimezoneOffsetMinutesField': timezoneOffsetMinutes,
+        };
         if (enabled && active) {
-          final DateTime nextReminderAtUtc = _computeNextReminderAtUtc(
+          updates['$_coinStateField.$_streakReminderNextAtUtcField'] = _computeNextReminderAtUtc(
             nowUtc: nowUtc,
             timezoneOffsetMinutes: timezoneOffsetMinutes,
             lastClaimDate: lastClaimDate,
             todayLocalKey: todayLocalKey,
             activeStreak: true,
           );
-          coinState[_streakReminderNextAtUtcField] = nextReminderAtUtc;
         } else {
-          coinState.remove(_streakReminderNextAtUtcField);
+          updates['$_coinStateField.$_streakReminderNextAtUtcField'] = FirestoreSentinels.delete();
         }
-        tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{_coinStateField: coinState});
+        tx.updateDoc(FirebaseCollections.usersV2, userId, updates);
       },
       sourceTag: sourceTag,
       collection: FirebaseCollections.usersV2,
@@ -218,41 +216,20 @@ class CoinsService {
       return;
     }
     final String userId = app_state.prismUser.id;
-    Map<String, dynamic>? userSnapshot;
-    final CoinMutationResult result = await firestoreClient.runTransaction<CoinMutationResult>(
-      (tx) async {
-        final Map<String, dynamic>? data = await tx.getDoc(FirebaseCollections.usersV2, userId);
-        if (data == null) {
-          return CoinMutationResult.noChange(
-            balance: app_state.prismUser.coins,
-            success: false,
-            reason: 'user_missing',
-          );
-        }
-        userSnapshot = Map<String, dynamic>.from(data);
-        final int coins = _asInt(data['coins']);
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        final bool stateChanged = _ensureCoinStateDefaults(
-          coinState,
-          reminderEnabled: _preferredStreakReminderEnabled(),
-          timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
-        );
-        if (stateChanged) {
-          tx.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{_coinStateField: coinState});
-        }
-        return CoinMutationResult.noChange(balance: coins);
-      },
+    // The server owns coinState defaults now; the rules block writing it from the client,
+    // so this only reads and defaults locally/in-memory instead of persisting anything.
+    final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
+      FirebaseCollections.usersV2,
+      userId,
+      (value, _) => value,
       sourceTag: 'coins.bootstrap',
-      collection: FirebaseCollections.usersV2,
-      docId: userId,
     );
-    _applyLocalBalance(result.currentBalance, delta: 0);
-    final Map<String, dynamic>? snapshot = userSnapshot;
-    if (snapshot != null) {
-      _syncStreakFromUserData(snapshot);
-    } else {
+    if (data == null) {
       await refreshStreakStatus();
+      return;
     }
+    _applyLocalBalance(_asInt(data['coins']), delta: 0);
+    _syncStreakFromUserData(data);
   }
 
   Future<int> refreshBalance() async {
@@ -338,12 +315,15 @@ class CoinsService {
     String sourceTag = 'coins.award',
     int? amountOverride,
     String? reason,
+    String? transactionId,
   }) async {
     if (!_canMutateCoins()) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
     }
-    final int amount = amountOverride ?? action.defaultAmount();
-    if (amount <= 0) {
+    final bool isRefund = action == CoinEarnAction.refund;
+    // Refunds are keyed by the debit's transactionId; the server ignores amount for them.
+    final int? amount = isRefund ? null : (amountOverride ?? action.defaultAmount());
+    if (!isRefund && (amount ?? 0) <= 0) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'invalid_amount');
     }
     final CoinMutationResult result = await _callCoinMutation(
@@ -352,9 +332,10 @@ class CoinsService {
       action: action.name,
       sourceTag: sourceTag,
       reason: reason ?? action.name,
+      transactionId: transactionId,
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) _logEarn(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+    if (result.changed) _logEarn(action: action, amount: amount ?? result.delta, sourceTag: sourceTag, reason: reason);
     return result;
   }
 
@@ -390,14 +371,19 @@ class CoinsService {
   Future<CoinMutationResult> refundSpend(
     CoinSpendAction action, {
     required String sourceTag,
-    int? amountOverride,
+    required String transactionId,
     String? reason,
   }) {
+    if (transactionId.trim().isEmpty) {
+      return Future.value(
+        CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'missing_transaction_id'),
+      );
+    }
     return award(
       CoinEarnAction.refund,
-      amountOverride: amountOverride ?? action.cost(),
       sourceTag: sourceTag,
       reason: reason ?? 'refund_${action.name}',
+      transactionId: transactionId,
     );
   }
 
@@ -427,7 +413,7 @@ class CoinsService {
     final _AiGenerationReservationResult result = _AiGenerationReservationResult(
       mode: mutation.changed ? AiChargeMode.coinSpend : AiChargeMode.insufficient,
       mutation: mutation,
-      transactionId: null,
+      transactionId: mutation.transactionId,
     );
     if (result.mode == AiChargeMode.coinSpend && mutation.changed) {
       _logSpend(action: CoinSpendAction.aiGeneration, amount: cost, sourceTag: sourceTag, reason: 'ai_generation');
@@ -454,22 +440,22 @@ class CoinsService {
     }
 
     if (mode == AiChargeMode.coinSpend) {
-      final int refundAmount = coinsToRefund ?? CoinPolicy.aiGenerationFast;
-      await _markTransactionRolledBack(reservationTransactionId, sourceTag: sourceTag, reason: 'ai_generation_failed');
       final CoinMutationResult refund = await refundSpend(
         CoinSpendAction.aiGeneration,
-        amountOverride: refundAmount,
+        transactionId: reservationTransactionId ?? '',
         sourceTag: sourceTag,
         reason: 'ai_generation_failed_refund',
       );
-      analytics.track(
-        AiChargeRolledBackEvent(
-          mode: aiChargeModeValueFromDomain(mode),
-          coinsRefunded: refundAmount,
-          balance: app_state.prismUser.coins,
-          sourceTag: sourceTag,
-        ),
-      );
+      if (refund.changed) {
+        analytics.track(
+          AiChargeRolledBackEvent(
+            mode: aiChargeModeValueFromDomain(mode),
+            coinsRefunded: refund.delta,
+            balance: app_state.prismUser.coins,
+            sourceTag: sourceTag,
+          ),
+        );
+      }
       return refund;
     }
 
@@ -495,20 +481,6 @@ class CoinsService {
         sourceTag: sourceTag,
       ),
     );
-    if (mode == AiChargeMode.coinSpend) {
-      unawaited(
-        _completeAiGenerationTransaction(
-          reservationTransactionId: reservationTransactionId,
-          generationId: generationId,
-          imageUrl: imageUrl,
-          thumbUrl: thumbUrl,
-          prompt: prompt,
-          stylePreset: stylePreset,
-          sourceTag: sourceTag,
-          coinsSpent: coinsSpent,
-        ),
-      );
-    }
   }
 
   Future<CoinMutationResult> spendForPremiumFilter({String sourceTag = 'coins.spend.premium_filter', String? reason}) {
@@ -588,13 +560,16 @@ class CoinsService {
         (value, _) => value,
         sourceTag: '$sourceTag.read_state',
       );
-      final Map<String, dynamic> coinState = _coinStateFromRaw(data?[_coinStateField]);
+      if (data == null) {
+        return result;
+      }
+      final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
       final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
       previewUnlocks[normalizedKey] =
           DateTime.now().millisecondsSinceEpoch + _premiumPreviewAccessDuration.inMilliseconds;
-      coinState['premiumPreviewUnlocks'] = previewUnlocks;
+      // Rules only allow the client to write this nested leaf, never the whole coinState map.
       await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        _coinStateField: coinState,
+        '$_coinStateField.premiumPreviewUnlocks': previewUnlocks,
       }, sourceTag: sourceTag);
     }
     return result;
@@ -794,145 +769,30 @@ class CoinsService {
     return result;
   }
 
-  Future<void> _markTransactionRolledBack(String? transactionId, {required String sourceTag, String? reason}) async {
-    if (transactionId == null || transactionId.trim().isEmpty) {
-      return;
-    }
-    try {
-      await firestoreClient.updateDoc(_txCollection, transactionId, <String, dynamic>{
-        'status': _txStatusRolledBack,
-        'reason': reason ?? 'rolled_back',
-        'updatedAt': DateTime.now().toUtc(),
-      }, sourceTag: '$sourceTag.tx_mark_rollback');
-    } catch (error, stackTrace) {
-      logCoinError(sourceTag: '$sourceTag.tx_mark_rollback', error: error, stackTrace: stackTrace);
-    }
-  }
-
-  Future<void> _completeAiGenerationTransaction({
-    required String? reservationTransactionId,
-    required String? generationId,
-    required String? imageUrl,
-    required String? thumbUrl,
-    required String? prompt,
-    required String? stylePreset,
-    required String sourceTag,
-    int coinsSpent = 0,
-  }) async {
-    final String txId = reservationTransactionId?.trim() ?? '';
-    final String genId = generationId?.trim() ?? '';
-    if (txId.isEmpty || genId.isEmpty) {
-      return;
-    }
-
-    final Uri canonical = _buildAiCanonicalShareUri(generationId: genId, imageUrl: imageUrl, thumbUrl: thumbUrl);
-    final String shortUrl = await _createShortLinkForAiGeneration(
-      generationId: genId,
-      canonicalUri: canonical,
-      imageSourceUrl: thumbUrl,
-      prompt: prompt,
-      stylePreset: stylePreset,
-    );
-    try {
-      await firestoreClient.updateDoc(_txCollection, txId, <String, dynamic>{
-        'status': _txStatusCompleted,
-        'updatedAt': DateTime.now().toUtc(),
-        'referenceType': 'ai_generation',
-        'referenceId': genId,
-        'deepLinkUrl': canonical.toString(),
-        'shortLinkUrl': shortUrl,
-        'description': 'AI wallpaper generation (-$coinsSpent)',
-        'metadata': <String, dynamic>{
-          if (prompt != null && prompt.trim().isNotEmpty) 'prompt': prompt.trim(),
-          if (stylePreset != null && stylePreset.trim().isNotEmpty) 'stylePreset': stylePreset.trim(),
-        },
-      }, sourceTag: '$sourceTag.tx_complete');
-    } catch (error, stackTrace) {
-      logCoinError(sourceTag: '$sourceTag.tx_complete', error: error, stackTrace: stackTrace);
-    }
-  }
-
-  Uri _buildAiCanonicalShareUri({required String generationId, required String? imageUrl, required String? thumbUrl}) {
-    final String resolvedImage = (imageUrl ?? '').trim();
-    final String resolvedThumb = (thumbUrl ?? resolvedImage).trim();
-    return Uri.https(_shareDomain, '/share', <String, String>{
-      'id': generationId,
-      'provider': 'Prism',
-      if (resolvedImage.isNotEmpty) 'url': resolvedImage,
-      if (resolvedThumb.isNotEmpty) 'thumb': resolvedThumb,
-    });
-  }
-
-  Future<String> _createShortLinkForAiGeneration({
-    required String generationId,
-    required Uri canonicalUri,
-    required String? imageSourceUrl,
-    required String? prompt,
-    required String? stylePreset,
-  }) async {
-    try {
-      final response = await http
-          .post(
-            Uri.parse(_shortLinkApiUrl),
-            headers: const <String, String>{'Content-Type': 'application/json', 'Accept': 'application/json'},
-            body: jsonEncode(<String, dynamic>{
-              'type': 'share',
-              'payload': <String, dynamic>{
-                'id': generationId,
-                'provider': 'Prism',
-                'url': canonicalUri.queryParameters['url'],
-                'thumb': canonicalUri.queryParameters['thumb'],
-              },
-              'canonical_url': canonicalUri.toString(),
-              'preview': <String, dynamic>{
-                'title': 'AI $generationId - Prism',
-                'description': 'Generated with Prism AI${(stylePreset ?? '').trim().isEmpty ? '' : ' ($stylePreset)'}',
-                if ((imageSourceUrl ?? '').trim().isNotEmpty) 'image_source_url': imageSourceUrl!.trim(),
-                if ((prompt ?? '').trim().isNotEmpty) 'prompt': prompt!.trim(),
-                'provider': 'Prism',
-                'wall_id': generationId,
-              },
-            }),
-          )
-          .timeout(_shortLinkTimeout);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        return canonicalUri.toString();
-      }
-      final dynamic decoded = jsonDecode(response.body);
-      if (decoded is Map<String, dynamic>) {
-        final dynamic shortUrl = decoded['short_url'];
-        if (shortUrl is String && shortUrl.trim().isNotEmpty) {
-          return shortUrl.trim();
-        }
-      }
-    } catch (_) {
-      return canonicalUri.toString();
-    }
-    return canonicalUri.toString();
-  }
-
   bool _canMutateCoins() {
     return app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty;
   }
 
   Future<CoinMutationResult> _callCoinMutation({
     required String callableName,
-    required int amount,
+    int? amount,
     required String action,
     required String sourceTag,
     required String reason,
     bool allowPremiumBypass = false,
     String? inviterUserId,
+    String? transactionId,
   }) async {
     try {
       final HttpsCallable callable = FirebaseFunctions.instanceFor(region: 'asia-south1').httpsCallable(callableName);
       final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
-        'amount': amount,
+        if (amount != null) 'amount': amount,
         'action': action,
         'reason': reason,
         'sourceTag': sourceTag,
         'allowPremiumBypass': allowPremiumBypass,
         if (inviterUserId != null) 'inviterUserId': inviterUserId,
+        if (transactionId != null) 'transactionId': transactionId,
       });
       final Map<String, dynamic> data = _asStringDynamicMap(response.data);
       final int balance = _asInt(data['currentBalance']);
@@ -945,6 +805,7 @@ class CoinsService {
         currentBalance: balance,
         delta: _asInt(data['delta']),
         reason: data['reason']?.toString() ?? reason,
+        transactionId: data['transactionId']?.toString() ?? '',
       );
     } on FirebaseFunctionsException catch (error, stackTrace) {
       logCoinError(sourceTag: '$sourceTag.callable', error: error, stackTrace: stackTrace);
