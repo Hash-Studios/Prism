@@ -57,7 +57,11 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
   void _showChangelogCheck() {
     final String? lastSeen = _settingsLocal.get<Object?>('lastSeenVersion') as String?;
+    // A fresh install has no previous version: record it, but a list of fixes means nothing to a new user.
     if (lastSeen != currentAppVersion) {
+      _settingsLocal.set('lastSeenVersion', currentAppVersion);
+    }
+    if (lastSeen != null && lastSeen != currentAppVersion) {
       showChangelog(context, () {
         if (mounted) {
           setState(() {
@@ -65,7 +69,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
           });
         }
       });
-      _settingsLocal.set('lastSeenVersion', currentAppVersion);
       return;
     }
     setState(() {
