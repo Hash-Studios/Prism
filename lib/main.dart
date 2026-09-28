@@ -1065,6 +1065,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       child: ListenableBuilder(
         listenable: DebugFlags.instance,
         builder: (context, _) => MaterialApp.router(
+          debugShowCheckedModeBanner: false,
           builder: (context, child) {
             final double topInset = MediaQuery.paddingOf(context).top;
             app_state.notchSize = topInset;

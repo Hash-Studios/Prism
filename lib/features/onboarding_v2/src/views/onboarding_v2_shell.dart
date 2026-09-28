@@ -452,6 +452,8 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               sy: sy,
               visible: _bottomTextVisible,
               legalTap: widget.legalTap,
+              termsAccepted: widget.termsAccepted,
+              onTermsChanged: widget.onTermsChanged,
               wallpaperCategory: widget.state.wallpaperData.wallpaper?.sourceCategory,
               aiGenerateStatus: widget.state.aiData.status,
             ),
@@ -625,7 +627,7 @@ class _CtaButton extends StatelessWidget {
     };
 
     final label = switch (step) {
-      OnboardingV2Step.auth => 'continue with Google',
+      OnboardingV2Step.auth => 'Continue with Google',
       OnboardingV2Step.interests => () {
         final selected = state.interestsData.selected.length;
         return selected < OnboardingV2Config.minInterests ? 'continue ($selected selected)' : 'continue';
@@ -640,12 +642,9 @@ class _CtaButton extends StatelessWidget {
     final bool showApple = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS;
     // Guest browsing is iOS-only: Android keeps mandatory sign-in.
     final bool showBrowse = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS;
-    const double termsRowHeight = 36;
     const double browseRowHeight = 36;
     final double extraHeight =
-        (showApple ? (OnboardingLayout.ctaHeight + 12) * sy : 0.0) +
-        (isAuthStep ? (termsRowHeight + 6) * sy : 0.0) +
-        (showBrowse ? browseRowHeight * sy : 0.0);
+        (showApple ? (OnboardingLayout.ctaHeight + 12) * sy : 0.0) + (showBrowse ? browseRowHeight * sy : 0.0);
     return Positioned(
       top: OnboardingLayout.ctaY * sy - extraHeight,
       left: OnboardingLayout.ctaX * sx,
@@ -654,41 +653,54 @@ class _CtaButton extends StatelessWidget {
       child: AnimatedOpacity(
         opacity: visible ? 1.0 : 0.0,
         duration: const Duration(milliseconds: 1000),
-        child: Column(
+        child: Stack(
           children: [
-            if (isAuthStep) ...[
-              SizedBox(
-                height: termsRowHeight * sy,
-                child: _TermsCheckboxRow(accepted: termsAccepted, onChanged: onTermsChanged, legalTap: legalTap),
-              ),
-              SizedBox(height: 6 * sy),
-            ],
-            if (showApple) ...[
-              Expanded(
-                child: OnboardingPrimaryButton(
-                  label: 'Continue with Apple',
-                  icon: Icons.apple,
-                  onPressed: onAppleTap,
-                  enabled: isEnabled,
-                  loading: isLoading,
-                ),
-              ),
-              SizedBox(height: 12 * sy),
-            ],
-            Expanded(
-              child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
-            ),
-            if (showBrowse)
-              SizedBox(
-                height: browseRowHeight * sy,
-                child: Center(
-                  child: TextButton(
-                    onPressed: termsAccepted ? onBrowseTap : null,
-                    child: Text(
-                      'Browse without an account',
-                      style: OnboardingTypography.helper.copyWith(fontSize: 13, decoration: TextDecoration.underline),
+            Column(
+              children: [
+                if (showApple) ...[
+                  Expanded(
+                    child: OnboardingPrimaryButton(
+                      label: 'Continue with Apple',
+                      icon: Icons.apple,
+                      onPressed: onAppleTap,
+                      enabled: isEnabled,
+                      loading: isLoading,
                     ),
                   ),
+                  SizedBox(height: 12 * sy),
+                ],
+                Expanded(
+                  child: OnboardingPrimaryButton(
+                    label: label,
+                    onPressed: onCtaTap,
+                    enabled: isEnabled,
+                    loading: isLoading,
+                  ),
+                ),
+                if (showBrowse)
+                  SizedBox(
+                    height: browseRowHeight * sy,
+                    child: Center(
+                      child: TextButton(
+                        onPressed: termsAccepted ? onBrowseTap : null,
+                        child: Text(
+                          'Browse without an account',
+                          style: OnboardingTypography.helper.copyWith(
+                            fontSize: 13,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Disabled buttons swallow taps silently; say why instead.
+            if (isAuthStep && !termsAccepted)
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => toasts.error('Please agree to the Terms of Use first.'),
                 ),
               ),
           ],
@@ -699,7 +711,7 @@ class _CtaButton extends StatelessWidget {
 }
 
 class _TermsCheckboxRow extends StatelessWidget {
-  const _TermsCheckboxRow({required this.accepted, required this.onChanged, required this.legalTap});
+  const _TermsCheckboxRow({required this.accepted, required this.onChanged, required this.legalTap, super.key});
 
   final bool accepted;
   final ValueChanged<bool> onChanged;
@@ -707,43 +719,47 @@ class _TermsCheckboxRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 22,
-          height: 22,
-          child: Checkbox(
-            value: accepted,
-            onChanged: (value) => onChanged(value ?? false),
-            fillColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected)
-                  ? OnboardingColors.buttonBackground
-                  : OnboardingColors.transparent,
-            ),
-            checkColor: OnboardingColors.buttonText,
-            side: const BorderSide(color: OnboardingColors.textOnDark),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: OnboardingTypography.helper,
-              children: [
-                const TextSpan(text: 'I agree to the '),
-                TextSpan(
-                  text: 'Terms of Use',
-                  style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
-                  recognizer: legalTap,
-                ),
-              ],
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onChanged(!accepted),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 22,
+            height: 22,
+            child: Checkbox(
+              value: accepted,
+              onChanged: (value) => onChanged(value ?? false),
+              fillColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? OnboardingColors.buttonBackground
+                    : OnboardingColors.transparent,
+              ),
+              checkColor: OnboardingColors.buttonText,
+              side: const BorderSide(color: OnboardingColors.textOnDark),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 8),
+          Flexible(
+            child: RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: OnboardingTypography.helper,
+                children: [
+                  const TextSpan(text: 'I agree to the '),
+                  TextSpan(
+                    text: 'Terms of Use',
+                    style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
+                    recognizer: legalTap,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -755,6 +771,8 @@ class _BottomText extends StatelessWidget {
     required this.sy,
     required this.visible,
     required this.legalTap,
+    required this.termsAccepted,
+    required this.onTermsChanged,
     this.wallpaperCategory,
     this.aiGenerateStatus,
   });
@@ -764,6 +782,8 @@ class _BottomText extends StatelessWidget {
   final double sy;
   final bool visible;
   final TapGestureRecognizer legalTap;
+  final bool termsAccepted;
+  final ValueChanged<bool> onTermsChanged;
   final String? wallpaperCategory;
   final AiGenerateStatus? aiGenerateStatus;
 
@@ -785,20 +805,11 @@ class _BottomText extends StatelessWidget {
   Widget build(BuildContext context) {
     final Widget content;
     if (step == OnboardingV2Step.auth) {
-      content = RichText(
+      content = _TermsCheckboxRow(
         key: const ValueKey('legal'),
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: OnboardingTypography.helper,
-          children: [
-            const TextSpan(text: 'by continuing you agree to our '),
-            TextSpan(
-              text: 'Terms & Conditions',
-              style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
-              recognizer: legalTap,
-            ),
-          ],
-        ),
+        accepted: termsAccepted,
+        onChanged: onTermsChanged,
+        legalTap: legalTap,
       );
     } else {
       final text = _helperText();
