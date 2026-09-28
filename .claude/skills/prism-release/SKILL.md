@@ -59,16 +59,18 @@ Run these from the repo root.
    type it yourself. Have them run the decrypt, or export the env var themselves, before you run
    the build.
 
-4. **Play Console access for the fastlane lane.** `android/fastlane/Appfile` points at
-   `android/google-play-console.json` (also gitignored, also absent here) for
-   `com.hash.prism`. If it is missing, either the human supplies the service-account JSON at that
-   path, or they upload the `.aab` by hand in Play Console. `bundle exec fastlane beta` (see
-   below) needs the JSON key.
+4. **Play Console access.** Preferred: the `gplay` CLI. Check it with
+   `gplay status --package com.hash.prism` (the `tracks` source must be `ok: true`; the
+   `vitals` source can fail without harm). Fallback: fastlane, whose `android/fastlane/Appfile`
+   points at `android/google-play-console.json` (gitignored). If neither works, the human uploads
+   the `.aab` by hand in Play Console.
 
-5. **`asc` CLI is authenticated.** `asc doctor` should report the ASC profile as complete. This
-   session's check found a valid profile with a private key at
-   `~/Downloads/LeverageLifeAuthKey.p8`. TestFlight app id is `6670200846` (from
-   `.github/workflows/testflight.yml`), group `Prism Alpha`.
+5. **`asc` CLI can see Prism.** `asc doctor` only proves the profile works, not that it belongs
+   to the right team. The key must belong to the team that owns Prism (`X2955Z4CKQ`). Check that
+   `asc apps list` shows bundle id `com.hash.prism`. If it does not, stop: the human adds an App
+   Store Connect API key for that team (`asc auth login`), or the build goes through the
+   `.github/workflows/testflight.yml` workflow, which has its own secrets. TestFlight app id is
+   `6670200846` (from that workflow), group `Prism Alpha`.
 
 6. **Version guard.** `python3 tool/verify_version_sync.py`, checks `pubspec.yaml`'s
    `version:` line against `lib/core/constants/app_constants.dart`'s
@@ -337,7 +339,7 @@ Prism release: version <VERSION>, build <N>.
   with `DOPPLER_CONFIG=prd` fails `doppler-check` today. Verified live with
   `doppler secrets --project prism --config prd --only-names`.
 - `firebase projects:list` under this session's logged-in account does not show
-  `prism-wallpapers` (it shows `jett`, `splitfast`, `Therapy`). Whoever runs this skill needs an
+  `prism-wallpapers` (only unrelated projects). Whoever runs this skill needs an
   account added via `firebase login:add` that has access.
 - `android/key.properties`, `android/google-play-console.json`, and the decrypted keystore are all
   absent in a fresh checkout (expected, gitignored) and need the human to provide them per-run.
