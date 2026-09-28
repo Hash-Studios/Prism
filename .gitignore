@@ -63,6 +63,8 @@ ios/Runner/GoogleService-Info.plist
 docs/**
 !docs/development/
 !docs/development/doppler.md
+!docs/agents/
+!docs/agents/*.md
 sentry.properties
 infra/cloudflare/worker/.wrangler/**
 AuthKey.p8
