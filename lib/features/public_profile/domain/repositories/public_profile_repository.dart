@@ -51,11 +51,10 @@ abstract class PublicProfileRepository {
     int pageSize = 20,
   });
 
-  /// Searches [usersv2] for users whose [username] starts with [query],
-  /// then filters results to those whose email is in [scopeEmails].
+  /// Finds users in [scopeEmails] whose username starts with [query],
+  /// ignoring case (matches on the server-maintained `usernameLower`).
   ///
-  /// Returns at most [limit] results. Uses a Firestore prefix range query
-  /// so it does not require loading all [scopeEmails].
+  /// Returns at most [limit] results, sorted by username.
   Future<Result<List<UserSummaryEntity>>> searchUsersByUsername({
     required String query,
     required List<String> scopeEmails,
