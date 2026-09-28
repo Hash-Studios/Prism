@@ -3,13 +3,12 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -172,10 +171,10 @@ class PurchasesService {
       return;
     }
     try {
-      await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        'premium': isPremium,
-        'subscriptionTier': tier.value,
-      }, sourceTag: 'purchases.sync_subscription_state');
+      // The server owns `premium`/`subscriptionTier`; it derives them itself, so this callable takes no payload.
+      await FirebaseFunctions.instanceFor(region: 'asia-south1')
+          .httpsCallable('syncSubscription', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)))
+          .call<dynamic>();
       _lastPersistedPremium = isPremium;
       _lastPersistedTier = tier.value;
       _lastPersistSubscriptionTime = now;

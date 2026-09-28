@@ -97,10 +97,11 @@ jobs:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
           DOPPLER_PROJECT: prism
           DOPPLER_CONFIG: production
+          BUILD_NUMBER: ${{ github.event.inputs.build_number }}
         run: |
           DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"
           flutter build ipa --release \
-            --build-number=${{ github.event.inputs.build_number }} \
+            --build-number="$BUILD_NUMBER" \
             $DART_DEFINES \
             --dart-define=SKIP_FIREBASE_INIT=true
 
@@ -113,6 +114,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY_B64: ${{ secrets.ASC_PRIVATE_KEY_B64 }}
           ASC_BYPASS_KEYCHAIN: "true"
+          TEST_NOTES: ${{ github.event.inputs.test_notes }}
         run: |
           echo "$ASC_PRIVATE_KEY_B64" | base64 --decode > /tmp/AuthKey.p8
           chmod 600 /tmp/AuthKey.p8
@@ -124,13 +126,13 @@ jobs:
             --issuer-id "$ASC_ISSUER_ID" \
             --private-key /tmp/AuthKey.p8
 
-          if [ -n "${{ github.event.inputs.test_notes }}" ]; then
+          if [ -n "$TEST_NOTES" ]; then
             asc publish testflight \
               --app 6670200846 \
               --ipa build/ios/ipa/Prism.ipa \
               --group "Prism Alpha" \
               --wait \
-              --test-notes "${{ github.event.inputs.test_notes }}" \
+              --test-notes "$TEST_NOTES" \
               --locale en-US
           else
             asc publish testflight \
