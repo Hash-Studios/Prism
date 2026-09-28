@@ -27,6 +27,7 @@ Future<List<WallhavenWallpaper>> getWallsbyQuery(String query, int? categories, 
     },
     onFailure: (failure) {
       logger.e("getWallsbyQuery failed: ${failure.message}");
+      throw Exception(failure.message);
     },
   );
   return wallsS;

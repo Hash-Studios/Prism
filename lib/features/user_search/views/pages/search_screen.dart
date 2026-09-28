@@ -99,6 +99,7 @@ class _SearchScreenState extends State<SearchScreen> {
   late bool isSubmitted;
   TextEditingController searchController = TextEditingController();
   Future? _future;
+  String _provider = _defaultProvider;
 
   // Default provider for free-text/tag searches
   static const String _defaultProvider = 'WallHaven';
@@ -133,18 +134,28 @@ class _SearchScreenState extends State<SearchScreen> {
   void _triggerSearch(String query, String provider) {
     setState(() {
       isSubmitted = true;
-      if (provider == 'WallHaven') {
-        wdata.wallsS = [];
-        _future = wdata.getWallsbyQuery(
+      _provider = provider;
+      _future = _runSearch(query, provider);
+    });
+  }
+
+  Future<void> _runSearch(String query, String provider) async {
+    if (provider == 'WallHaven') {
+      wdata.wallsS = [];
+      try {
+        await wdata.getWallsbyQuery(
           query,
           _settingsLocal.get<int>('WHcategories', defaultValue: 100),
           _settingsLocal.get<int>('WHpurity', defaultValue: 100),
         );
-      } else {
-        pdata.wallsPS = [];
-        _future = pdata.getWallsPbyQuery(query);
+        return;
+      } catch (_) {
+        // WallHaven is down: search Pexels so the user still gets results.
+        if (mounted) setState(() => _provider = 'Pexels');
       }
-    });
+    }
+    pdata.wallsPS = [];
+    await pdata.getWallsPbyQuery(query);
   }
 
   @override
@@ -222,7 +233,12 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: isSubmitted
-          ? _SearchLoader(future: _future, query: searchController.text, selectedProvider: _defaultProvider)
+          ? _SearchLoader(
+              key: ValueKey<Future?>(_future),
+              future: _future,
+              query: searchController.text,
+              selectedProvider: _provider,
+            )
           : BlocProvider<SearchDiscoveryBloc>(
               create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
               child: SearchDiscoveryWidget(
@@ -249,7 +265,7 @@ class _SearchLoader extends StatefulWidget {
   final Future? future;
   final String query;
   final String? selectedProvider;
-  const _SearchLoader({required this.future, required this.query, required this.selectedProvider});
+  const _SearchLoader({super.key, required this.future, required this.query, required this.selectedProvider});
   @override
   _SearchLoaderState createState() => _SearchLoaderState();
 }
@@ -279,9 +295,21 @@ class _SearchLoaderState extends State<_SearchLoader> {
         if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
           logger.d('snapshot none, waiting');
           return const LoadingCards();
-        } else {
-          return SearchGrid(query: widget.query, selectedProvider: widget.selectedProvider);
         }
+        final bool empty = widget.selectedProvider == 'Pexels' ? pdata.wallsPS.isEmpty : wdata.wallsS.isEmpty;
+        if (empty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                'No wallpapers found for "${widget.query}".',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          );
+        }
+        return SearchGrid(query: widget.query, selectedProvider: widget.selectedProvider);
       },
     );
   }
