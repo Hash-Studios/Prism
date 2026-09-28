@@ -70,6 +70,7 @@ export const onWallApproved = onDocumentUpdated(
       modifier: artistEmail,
       channelId: "posts",
       fcmTarget: {topic: artistTopic},
+      collapseKey: `wall_${wallId}`,
     });
     if (artistUid) {
       await sendNotification({
@@ -86,6 +87,7 @@ export const onWallApproved = onDocumentUpdated(
         channelId: "posts",
         fcmTarget: {topic: emailToTopic(artistEmail)},
         pushOnly: true,
+        collapseKey: `wall_${wallId}`,
       });
     }
 
@@ -96,7 +98,8 @@ export const onWallApproved = onDocumentUpdated(
     //    - Push only (no in-app doc — one doc per follower would not scale)
     //    - Topic: {artistEmailPrefix}_posts  (followers subscribe to this)
     // ------------------------------------------------------------------ //
-    const followersTopic = `${artistTopic}_posts`;
+    // Followers subscribe to <email prefix>_posts (followersTopicFromEmail).
+    const followersTopic = `${emailToTopic(artistEmail)}_posts`;
 
     // Push only — no in-app doc. Otherwise we'd write one doc with modifier=
     // artistEmail and the artist would see a duplicate; followers get the

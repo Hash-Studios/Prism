@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendStreakReminders = exports.claimDailyStreak = void 0;
+exports.pickFcmToken = pickFcmToken;
 exports._resolveTimezoneOffset = _resolveTimezoneOffset;
 const admin = __importStar(require("firebase-admin"));
 const v2_1 = require("firebase-functions/v2");
@@ -227,7 +228,6 @@ exports.sendStreakReminders = (0, scheduler_1.onSchedule)({
             processed += 1;
             const userData = userDoc.data();
             const userEmail = _asString(userData.email).toLowerCase();
-            const fcmToken = _asString(userData.fcmToken);
             const coinState = _normalizeCoinState(userData.coinState);
             const offset = _clampTimezoneOffset(_asInt(coinState.streakTimezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES));
             const todayLocalKey = _localDateKeyFromUtc(now, offset);
@@ -246,6 +246,9 @@ exports.sendStreakReminders = (0, scheduler_1.onSchedule)({
                 continue;
             }
             const nextReminderTs = _nextReminderAfterTodayClaim(todayLocalKey, offset);
+            const fcmToken = claimedToday || alreadySentToday || userEmail.length === 0 ?
+                "" :
+                await _fcmTokenFor(userDoc.ref, userData);
             if (claimedToday || alreadySentToday || userEmail.length === 0 || fcmToken.length === 0) {
                 await userDoc.ref.update({
                     "coinState.streakReminderNextAtUtc": nextReminderTs,
@@ -286,6 +289,20 @@ exports.sendStreakReminders = (0, scheduler_1.onSchedule)({
         now: now.toISOString(),
     });
 });
+/** The app now stores the token in private/session; older builds wrote usersv2.fcmToken. */
+function pickFcmToken(sessionToken, legacyToken) {
+    return _asString(sessionToken) || _asString(legacyToken);
+}
+async function _fcmTokenFor(userRef, userData) {
+    try {
+        const session = await userRef.collection("private").doc("session").get();
+        return pickFcmToken(session.get("fcmToken"), userData.fcmToken);
+    }
+    catch (err) {
+        v2_1.logger.warn("sendStreakReminders: could not read session token.", { uid: userRef.id, err });
+        return pickFcmToken(undefined, userData.fcmToken);
+    }
+}
 function _asString(value) {
     return value == null ? "" : String(value).trim();
 }
