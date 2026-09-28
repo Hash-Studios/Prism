@@ -149,8 +149,11 @@ class _WallReviewState extends State<_WallReview> {
               (data, docId) => FirestoreDocument(docId, data),
             ),
             builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+              if (snapshot.hasError) return const _ReviewMessage("Couldn't load your submissions.");
               if (!snapshot.hasData) {
                 return Center(child: Loader());
+              } else if (snapshot.data!.isEmpty) {
+                return const _ReviewMessage('No wallpapers waiting for review.');
               } else {
                 return Column(
                   children: List.generate(
@@ -163,6 +166,20 @@ class _WallReviewState extends State<_WallReview> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ReviewMessage extends StatelessWidget {
+  const _ReviewMessage(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
     );
   }
 }
@@ -501,8 +518,11 @@ class _SetupReviewState extends State<_SetupReview> {
               (data, docId) => FirestoreDocument(docId, data),
             ),
             builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+              if (snapshot.hasError) return const _ReviewMessage("Couldn't load your submissions.");
               if (!snapshot.hasData) {
                 return Center(child: Loader());
+              } else if (snapshot.data!.isEmpty) {
+                return const _ReviewMessage('No setups waiting for review.');
               } else {
                 return Column(
                   children: List.generate(

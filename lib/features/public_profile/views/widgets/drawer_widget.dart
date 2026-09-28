@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -35,7 +36,8 @@ class ProfileDrawer extends StatelessWidget {
 
   Widget _header(BuildContext context) {
     return SizedBox(
-      height: 130,
+      // DrawerHeader pads for the status bar itself; Dynamic Island insets left too little room at 130.
+      height: math.max(130, MediaQuery.paddingOf(context).top + 80),
       child: DrawerHeader(
         margin: EdgeInsets.zero,
         padding: EdgeInsets.zero,
@@ -218,8 +220,12 @@ class ProfileDrawer extends StatelessWidget {
               context: context,
               onTap: () async {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
-                Navigator.pop(context);
-                app_state.gAuth.signOutGoogle();
+                // Finish signing out before the restart, or the restarted app still sees the old
+                // session and stays on the splash screen. The restart closes this drawer.
+                if (!await app_state.gAuth.signOutGoogle()) {
+                  toasts.error('Could not log out. Please try again.');
+                  return;
+                }
                 toasts.codeSend('Log out Successful!');
                 final settingsLocal = getIt<SettingsLocalDataSource>();
                 await settingsLocal.set('onboarded_v2_new', false);
