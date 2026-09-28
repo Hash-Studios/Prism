@@ -43,6 +43,9 @@ export function Footer() {
             >
               Privacy
             </a>
+            <a href="/terms" className="text-neutral-400 hover:text-black transition-all">
+              Terms
+            </a>
             <a
               href={PLAY_STORE_URL}
               target="_blank"
