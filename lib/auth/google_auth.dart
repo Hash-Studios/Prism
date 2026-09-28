@@ -14,6 +14,7 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
+import 'package:Prism/env/env.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -291,6 +292,9 @@ class GoogleAuth {
 
   Future<bool> isSignedIn() async {
     try {
+      if (Env.skipFirebaseInit) {
+        return false;
+      }
       final User? currentUser = _auth.currentUser;
       final bool signedInWithFirebase =
           currentUser != null && !currentUser.isAnonymous && currentUser.uid.trim().isNotEmpty;

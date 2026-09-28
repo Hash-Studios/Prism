@@ -37,6 +37,8 @@ class Env {
   static const String mixpanelEnabled = String.fromEnvironment('MIXPANEL_ENABLED', defaultValue: 'auto');
 
   // Persistence
+  static const bool skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
+
   static const String localPersistenceBackend = String.fromEnvironment(
     'LOCAL_PERSISTENCE_BACKEND',
     defaultValue: 'shared_prefs',

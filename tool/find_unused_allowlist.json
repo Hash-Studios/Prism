@@ -1,6 +1,9 @@
 {
   "unreachable_files": [],
   "unused_symbols": {
+    "lib/data/upload/github_content_api.dart": [
+      "GitHubContent"
+    ],
     "lib/core/analytics/providers/mixpanel_analytics_provider.dart": [
       "MixpanelClient",
       "MixpanelFlutterClient"
