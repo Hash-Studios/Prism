@@ -15,6 +15,7 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -1084,24 +1085,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       actions.insert(
         actions.length - 1,
         _SheetActionTapScale(
-          child: GestureDetector(
+          child: CircularMenuButton(
+            label: 'Report',
+            isLoading: false,
             onTap: () => showContentReportSheet(
               context,
               contentType: 'wall',
               targetFirestoreDocId: reportWallDocId,
               subtitle: entity.id,
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
-                ],
-                borderRadius: BorderRadius.circular(500),
-              ),
-              padding: const EdgeInsets.all(17),
-              child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
-            ),
+            child: Icon(JamIcons.flag, color: Theme.of(context).colorScheme.secondary, size: 20),
           ),
         ),
       );
