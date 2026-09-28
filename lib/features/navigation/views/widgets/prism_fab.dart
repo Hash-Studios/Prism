@@ -56,25 +56,31 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Semantics(
+      button: true,
+      label: 'Upload',
+      excludeSemantics: true,
       onTap: _onPressed,
-      child: SizedBox(
-        width: 56,
-        height: 56,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset('assets/images/button_bottom_layer.webp'),
-            RotationTransition(
-              turns: _rotationController,
-              child: Image.asset('assets/images/button_middle_layer.webp'),
-            ),
-            Image.asset('assets/images/button_top_layer.webp'),
-            RotationTransition(
-              turns: _rotationController,
-              child: Image.asset('assets/images/button_topmost_layer.webp'),
-            ),
-          ],
+      child: GestureDetector(
+        onTap: _onPressed,
+        child: SizedBox(
+          width: 56,
+          height: 56,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset('assets/images/button_bottom_layer.webp'),
+              RotationTransition(
+                turns: _rotationController,
+                child: Image.asset('assets/images/button_middle_layer.webp'),
+              ),
+              Image.asset('assets/images/button_top_layer.webp'),
+              RotationTransition(
+                turns: _rotationController,
+                child: Image.asset('assets/images/button_topmost_layer.webp'),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -65,52 +65,55 @@ class _WotdCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _openWallpaper(context),
-      child: SizedBox.expand(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background image
-            CachedNetworkImage(
-              imageUrl: entity.thumbnailUrl,
-              fit: BoxFit.cover,
-              placeholder: (_, _) => const SizedBox.shrink(),
-              errorWidget: (_, _, _) => const SizedBox.shrink(),
-            ),
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        onTap: () => _openWallpaper(context),
+        child: SizedBox.expand(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background image
+              CachedNetworkImage(
+                imageUrl: entity.thumbnailUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, _) => const SizedBox.shrink(),
+                errorWidget: (_, _, _) => const SizedBox.shrink(),
+              ),
 
-            // Centered text
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'wall of the day',
-                    style: TextStyle(
-                      fontFamily: 'Fraunces',
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  if (entity.photographer.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'by ${entity.photographer}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+              // Centered text
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'wall of the day',
+                      style: TextStyle(
                         fontFamily: 'Fraunces',
                         color: Colors.white,
-                        fontSize: 8,
+                        fontSize: 16,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
+                    if (entity.photographer.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'by ${entity.photographer}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: 'Fraunces',
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

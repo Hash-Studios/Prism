@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
@@ -87,40 +88,47 @@ class _FindCreatorsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => context.router.push(const UserSearchRoute()),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          children: [
-            Icon(JamIcons.user_circle, size: 18, color: Theme.of(context).colorScheme.secondary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Find Creators',
-                    style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.secondary,
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: () => context.router.push(const UserSearchRoute()),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(JamIcons.user_circle, size: 18, color: Theme.of(context).colorScheme.secondary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Find Creators',
+                      style: TextStyle(
+                        fontFamily: 'Satoshi',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Search Prism users by name',
-                    style: TextStyle(
-                      fontFamily: 'Satoshi',
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                    Text(
+                      'Search Prism users by name',
+                      style: TextStyle(
+                        fontFamily: 'Satoshi',
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right, size: 18, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-          ],
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -171,19 +179,23 @@ class _TrendingList extends StatelessWidget {
         itemBuilder: (context, index) {
           final wall = items[index];
           final thumbUrl = wall.thumbs?['original'] ?? wall.core.thumbnailUrl;
-          return GestureDetector(
-            onTap: () {
-              context.router.push(
-                WallpaperDetailRoute(
-                  entity: WallhavenDetailEntity(wallpaper: wall),
-                  analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                ),
-              );
-            },
-            child: SizedBox(
-              width: (MediaQuery.of(context).size.width) / 3.5,
-              height: (MediaQuery.of(context).size.width) / 3.5 * 2,
-              child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
+          return Semantics(
+            button: true,
+            label: wallpaperSemanticLabel(wall.core.authorName),
+            child: GestureDetector(
+              onTap: () {
+                context.router.push(
+                  WallpaperDetailRoute(
+                    entity: WallhavenDetailEntity(wallpaper: wall),
+                    analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                  ),
+                );
+              },
+              child: SizedBox(
+                width: (MediaQuery.of(context).size.width) / 3.5,
+                height: (MediaQuery.of(context).size.width) / 3.5 * 2,
+                child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
+              ),
             ),
           );
         },
@@ -309,44 +321,49 @@ class _CategorySection extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox.shrink(),
             itemBuilder: (context, index) {
               final cat = categoryDefinitions[index];
-              return GestureDetector(
-                onTap: () {
-                  context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'));
-                },
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width / 3.5,
-                  height: MediaQuery.of(context).size.width / 3.5 * 2,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CachedNetworkImage(imageUrl: cat.imageUrl, fit: BoxFit.cover),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+              return Semantics(
+                button: true,
+                child: GestureDetector(
+                  onTap: () {
+                    context.router.push(
+                      CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(cat.name)}'),
+                    );
+                  },
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width / 3.5,
+                    height: MediaQuery.of(context).size.width / 3.5 * 2,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        CachedNetworkImage(imageUrl: cat.imageUrl, fit: BoxFit.cover),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+                            ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        left: 8,
-                        right: 8,
-                        bottom: 10,
-                        child: Text(
-                          cat.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontFamily: 'Satoshi',
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                        Positioned(
+                          left: 8,
+                          right: 8,
+                          bottom: 10,
+                          child: Text(
+                            cat.name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: 'Satoshi',
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -398,9 +415,13 @@ class _ColorSection extends StatelessWidget {
           itemBuilder: (context, index) {
             final swatch = _presetColors[index];
             final color = Color(int.parse('FF${swatch.hex}', radix: 16));
-            return GestureDetector(
-              onTap: () => context.router.push(ColorRoute(hexColor: swatch.hex)),
-              child: Container(decoration: BoxDecoration(color: color)),
+            return Semantics(
+              button: true,
+              label: swatch.name,
+              child: GestureDetector(
+                onTap: () => context.router.push(ColorRoute(hexColor: swatch.hex)),
+                child: Container(decoration: BoxDecoration(color: color)),
+              ),
             );
           },
         ),

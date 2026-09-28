@@ -89,6 +89,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
           style: Theme.of(context).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
         ),
         leading: IconButton(
+          tooltip: 'Close',
           icon: Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
           onPressed: () {
             Navigator.pop(context);
@@ -96,6 +97,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         ),
         actions: <Widget>[
           IconButton(
+            tooltip: 'Reset adjustments',
             icon: Icon(JamIcons.history, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
               setState(() {
@@ -106,6 +108,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
             },
           ),
           IconButton(
+            tooltip: 'Done',
             icon: Icon(Icons.check, color: Theme.of(context).colorScheme.secondary),
             onPressed: () async {
               await crop();
@@ -348,51 +351,62 @@ class _EditWallScreenState extends State<EditWallScreen> {
     editorKey.currentState!.rotate(degree: right ? 90 : -90);
   }
 
+  // Each slider gets its own semantics container: without one, popping this screen on iOS left the engine's
+  // accessibility root empty (zero size, no children), so VoiceOver saw nothing in the app until a restart.
   Widget _buildSat() {
-    return Slider(
-      activeColor: Theme.of(context).colorScheme.secondary,
-      inactiveColor: Theme.of(context).hintColor,
-      label: 'sat : ${sat.toStringAsFixed(2)}',
-      onChanged: (double value) {
-        setState(() {
-          sat = value;
-        });
-      },
-      divisions: 50,
-      value: sat,
-      max: 2,
+    return Semantics(
+      container: true,
+      child: Slider(
+        activeColor: Theme.of(context).colorScheme.secondary,
+        inactiveColor: Theme.of(context).hintColor,
+        label: 'Saturation ${sat.toStringAsFixed(2)}',
+        onChanged: (double value) {
+          setState(() {
+            sat = value;
+          });
+        },
+        divisions: 50,
+        value: sat,
+        max: 2,
+      ),
     );
   }
 
   Widget _buildBrightness() {
-    return Slider(
-      activeColor: Theme.of(context).colorScheme.secondary,
-      inactiveColor: Theme.of(context).hintColor,
-      label: bright.toStringAsFixed(2),
-      onChanged: (double value) {
-        setState(() {
-          bright = value;
-        });
-      },
-      divisions: 50,
-      value: bright,
-      min: -1,
+    return Semantics(
+      container: true,
+      child: Slider(
+        activeColor: Theme.of(context).colorScheme.secondary,
+        inactiveColor: Theme.of(context).hintColor,
+        label: 'Brightness ${bright.toStringAsFixed(2)}',
+        onChanged: (double value) {
+          setState(() {
+            bright = value;
+          });
+        },
+        divisions: 50,
+        value: bright,
+        min: -1,
+      ),
     );
   }
 
   Widget _buildCon() {
-    return Slider(
-      activeColor: Theme.of(context).colorScheme.secondary,
-      inactiveColor: Theme.of(context).hintColor,
-      label: 'con : ${con.toStringAsFixed(2)}',
-      onChanged: (double value) {
-        setState(() {
-          con = value;
-        });
-      },
-      divisions: 50,
-      value: con,
-      max: 4,
+    return Semantics(
+      container: true,
+      child: Slider(
+        activeColor: Theme.of(context).colorScheme.secondary,
+        inactiveColor: Theme.of(context).hintColor,
+        label: 'Contrast ${con.toStringAsFixed(2)}',
+        onChanged: (double value) {
+          setState(() {
+            con = value;
+          });
+        },
+        divisions: 50,
+        value: con,
+        max: 4,
+      ),
     );
   }
 }
