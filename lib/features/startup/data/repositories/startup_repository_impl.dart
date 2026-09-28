@@ -114,7 +114,12 @@ class StartupRepositoryImpl implements StartupRepository {
           'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
           personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
         });
-        await remoteConfig.fetchAndActivate();
+        try {
+          await remoteConfig.fetchAndActivate();
+        } catch (error) {
+          // Offline or throttled: keep the defaults and last activated values instead of failing startup.
+          logger.w('Remote Config fetch failed; using cached values.', tag: 'StartupRepository', error: error);
+        }
       } else {
         logger.w('Firebase not ready; using hardcoded default config values.', tag: 'StartupRepository');
       }
