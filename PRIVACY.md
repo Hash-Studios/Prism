@@ -12,7 +12,7 @@ This page informs visitors regarding our policies for the collection, use, and d
 
 ### When You Use the App Without Signing In
 
-You can use Prism without creating an account. In this case we collect:
+On iOS, you can browse and buy without creating an account. On Android, sign-in is required. When you use Prism without signing in, we collect:
 
 - **Usage and analytics data** — app interactions, screens visited, features used (via Firebase Analytics and Mixpanel)
 - **Crash reports and diagnostic data** — error logs and device information (via Sentry)

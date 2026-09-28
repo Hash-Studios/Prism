@@ -1,8 +1,13 @@
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class OldVersion extends StatelessWidget {
+  String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS
+      ? "https://apps.apple.com/app/id6670200846"
+      : "https://play.google.com/store/apps/details?id=com.hash.prism";
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +37,7 @@ class OldVersion extends StatelessWidget {
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              openPrismLink(context, "https://play.google.com/store/apps/details?id=com.hash.prism");
+              openPrismLink(context, _storeLink);
             },
             style: ButtonStyle(backgroundColor: WidgetStateColor.resolveWith((states) => Colors.white)),
             child: const SizedBox(
