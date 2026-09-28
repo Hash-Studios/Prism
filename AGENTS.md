@@ -1,4 +1,59 @@
-# AGENTS.md
+# Prism: Agent Notes
+
+Flutter wallpaper and home-screen setups app for Android and iOS, with Firebase
+(Firestore, Auth, Cloud Functions in `functions/`) and a Next.js site in `web/`.
+
+## Scope and execution
+
+- System, developer, and harness instructions remain higher priority than this
+  file. Read `CLAUDE.md` for architecture and commands. The user's instructions
+  win over both docs. Treat "can you fix/build" as an action request and
+  "should we/what would it take" as a question. An action request authorizes
+  scoped, reversible work. Ask only before destructive, irreversible, costly,
+  or externally visible work.
+- Inspect the current code and trace callers before editing. Keep the smallest
+  focused diff and preserve unrelated worktree changes.
+- Persist until the authorized outcome and its proof are complete. If one item
+  is blocked, finish the rest and name the specific blocker.
+- When the user requests `akshay-mode`, act as the orchestrator: give disjoint
+  work to workers, one owner per file, then review and verify the exact current
+  tree yourself. A worker report or a green CI label is not proof.
+- Use short, plain paragraphs. Report the outcome, the checks, and the blockers.
+
+## Sources of truth
+
+- `CLAUDE.md`: architecture, commands, gotchas.
+- `.impeccable.md`: users, brand, themes, design principles.
+- `firestore.rules` and `functions/src/` are the security boundary. Verify
+  claims against current code and tests when a document is stale.
+
+## Implementation rules
+
+- Features live in `lib/features/<name>/` with `biz/`, `data/`, `domain/`,
+  `views/`. BLoC + freezed for state, `get_it` + `injectable` for DI,
+  `auto_route` for routing. Widgets do not call repositories.
+- Firestore access goes through `FirestoreClient` with a `sourceTag`.
+- Coins, premium, refunds, uploads and account deletion are server-owned.
+  Validate every callable input. Never trust client-sent amounts.
+- Dart: single quotes, package imports, 120-column format. Do not weaken lint
+  rules or guards to pass; fix the source.
+- Use `Theme.of(context)` and `ColorScheme`, never raw colours. Icon-only
+  buttons need a tooltip or `Semantics` label.
+
+## Commands and proof
+
+- The Makefile is the command source of truth. `make ci` is the full local
+  gate; `make test` runs Flutter tests. Use `fvm`.
+- After editing a freezed/json/injectable/auto_route source, run
+  `make file-gen` and commit the generated files with the source change.
+- Functions: `cd functions && npm ci && npm run build && node --test lib/__tests__/`.
+  Web: `cd web && npm ci && npx tsc --noEmit`.
+- UI changes need an iOS Simulator and Android emulator run with screenshots
+  (`verify-prism` skill). Local proof, hosted CI, merge, deploy, and live
+  behavior are separate gates.
+- Follow `.claude/skills/prism-release/SKILL.md` for releases. Deploys, store
+  uploads, secrets, and data migrations need the user's explicit OK at the
+  final concrete step.
 
 ## Cursor Cloud specific instructions
 
