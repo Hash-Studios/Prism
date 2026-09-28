@@ -409,6 +409,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       try {
         await CoinsService.instance.refundSpend(
           _downloadSpendAction,
+          transactionId: spendResult.transactionId,
           sourceTag: '$sourceTag.refund',
           reason: 'download_failed_refund',
         );

@@ -5,4 +5,5 @@ class FirestoreSentinels {
 
   static Object arrayUnion(List<Object?> values) => FieldValue.arrayUnion(values);
   static Object arrayRemove(List<Object?> values) => FieldValue.arrayRemove(values);
+  static Object delete() => FieldValue.delete();
 }
