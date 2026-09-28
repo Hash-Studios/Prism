@@ -2,10 +2,12 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 class NotificationPermissionPromptService {
@@ -16,6 +18,12 @@ class NotificationPermissionPromptService {
   static const String _promptedPrefKey = 'notificationPermissionPromptedV1';
   static const String _wotdSubscribedPrefKey = 'subscribedToWotd';
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
+
+  /// Android reports denied until POST_NOTIFICATIONS is granted, even before the first ask.
+  @visibleForTesting
+  static bool canAsk(AuthorizationStatus status, TargetPlatform platform) =>
+      status == AuthorizationStatus.notDetermined ||
+      (status == AuthorizationStatus.denied && platform == TargetPlatform.android);
 
   Future<void> maybePromptAfterValueAction(BuildContext context, {required String sourceTag}) async {
     if (!_settings.isOpen || !context.mounted) {
@@ -41,7 +49,7 @@ class NotificationPermissionPromptService {
       return;
     }
 
-    if (current.authorizationStatus == AuthorizationStatus.denied) {
+    if (!canAsk(current.authorizationStatus, defaultTargetPlatform)) {
       await _settings.set(_promptedPrefKey, true);
       await analytics.track(
         const TomorrowHookPermissionResultEvent(
@@ -74,7 +82,7 @@ class NotificationPermissionPromptService {
 
   Future<bool> _subscribeAfterPermissionGrant(FirebaseMessaging messaging, {required String sourceTag}) async {
     bool subscribedToWotd = false;
-    final bool wantsWotd = _settings.get<bool>('streakReminderSubscriber', defaultValue: true);
+    final bool wantsWotd = _settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
     if (wantsWotd) {
       subscribedToWotd = await subscribeToTopicSafely(messaging, 'wall_of_the_day', sourceTag: '$sourceTag.wotd');
       if (subscribedToWotd) {
