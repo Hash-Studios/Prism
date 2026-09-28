@@ -7,4 +7,10 @@ void main() {
 
     expect(matches?.last.name, NotFoundRoute.name);
   });
+
+  test('the referral invite screen is reachable from outside the profile tab', () {
+    final matches = AppRouter().matcher.match('/share-prism');
+
+    expect(matches?.map((m) => m.name), <String>[SharePrismRoute.name]);
+  });
 }

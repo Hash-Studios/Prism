@@ -823,6 +823,7 @@ class _EarnMethodsList extends StatelessWidget {
           amount: '+${CoinPolicy.rewardedAd}c',
           accentColor: accent,
           spacingBelow: _kTightGap,
+          onTap: () => context.router.push(const CoinTransactionsRoute()),
         ),
         _EarnItem(
           icon: Icons.people_outline,
@@ -830,6 +831,7 @@ class _EarnMethodsList extends StatelessWidget {
           amount: '+${CoinPolicy.referral}c',
           accentColor: accent,
           spacingBelow: 0,
+          onTap: () => context.router.push(const SharePrismRoute()),
         ),
       ],
     );
@@ -843,6 +845,7 @@ class _EarnItem extends StatelessWidget {
     required this.amount,
     required this.accentColor,
     required this.spacingBelow,
+    required this.onTap,
   });
 
   final IconData icon;
@@ -850,56 +853,67 @@ class _EarnItem extends StatelessWidget {
   final String amount;
   final Color accentColor;
   final double spacingBelow;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: spacingBelow),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: _kPagePadding - 4, vertical: 14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4), width: 0.5),
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 22, color: accentColor),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, height: 1.3),
+      child: Semantics(
+        button: true,
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: _kPagePadding - 4, vertical: 14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
+                width: 0.5,
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                amount,
-                style: TextStyle(color: accentColor, fontWeight: FontWeight.w600, fontSize: 13),
-              ),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 22, color: accentColor),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500, height: 1.3),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    amount,
+                    style: TextStyle(color: accentColor, fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
+                  size: 20,
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.chevron_right,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.45),
-              size: 20,
-            ),
-          ],
+          ),
         ),
       ),
     );

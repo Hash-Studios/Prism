@@ -354,7 +354,7 @@ class CoinsService {
       reason: reason ?? action.name,
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
-    _logEarn(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
+    if (result.changed) _logEarn(action: action, amount: amount, sourceTag: sourceTag, reason: reason);
     return result;
   }
 
