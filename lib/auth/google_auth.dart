@@ -96,7 +96,7 @@ class GoogleAuth {
           bio: "",
           createdAt: DateTime.now().toUtc().toIso8601String(),
           email: resolvedEmail,
-          username: resolvedDisplayName,
+          username: sanitizeUsername(resolvedDisplayName),
           followers: [],
           following: [],
           id: user.uid,

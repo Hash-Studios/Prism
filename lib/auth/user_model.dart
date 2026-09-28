@@ -63,6 +63,9 @@ String _resolveTierValue({required bool premium, required Object? raw}) {
 }
 
 @JsonSerializable(explicitToJson: true)
+/// Usernames drop spaces and punctuation, the same rule edit profile enforces.
+String sanitizeUsername(String raw) => raw.replaceAll(RegExp(r"(?: |[^\w\s])+"), "");
+
 class PrismUsersV2 {
   String username;
   String email;
@@ -118,7 +121,7 @@ class PrismUsersV2 {
     final bool premium = SubscriptionTier.fromValue(tierValue).isPaid || rawPremium;
     return PrismUsersV2(
       name: (data["name"] ?? user.displayName).toString(),
-      username: (data["username"] ?? user.displayName).toString().replaceAll(RegExp(r"(?: |[^\w\s])+"), ""),
+      username: sanitizeUsername((data["username"] ?? user.displayName).toString()),
       email: (data["email"] ?? user.email).toString(),
       id: data["id"].toString(),
       createdAt: data["createdAt"].toString(),
