@@ -496,9 +496,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.d(link);
       if (link.contains('com.hash.prism')) {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
-        final OperationResult result = await PrismMediaHostApi()
-            .saveMedia(request)
-            .timeout(const Duration(seconds: 15));
+        final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
           toasts.error("Couldn't download! Please retry.");
           return false;
@@ -508,9 +506,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           link: link,
           filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
         );
-        final OperationResult result = await PrismMediaHostApi()
-            .enqueueDownload(request)
-            .timeout(const Duration(seconds: 15));
+        final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
           toasts.error(result.message ?? "Couldn't download! Please retry.");
           return false;
@@ -530,7 +526,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: 'notifications.permission_after_download',
         );
       }
-      toasts.codeSend(hideSetWallpaperUi ? 'Saved to Photos.' : 'Wall downloaded in Pictures/Prism!');
+      toasts.codeSend(wallpaperSavedMessage);
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
