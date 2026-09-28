@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Pre-push hook: run the cheap CI gates locally so a red run never reaches
+# the runner. Install: make hooks
+#
+# Dart changes      -> format-check, env-guard, version-guard, analyze, find-unused-ci
+# functions/ change -> typecheck + node tests (built into a temp dir, so the
+#                      tracked functions/lib/ output is not rewritten)
+# web/ change       -> tsc --noEmit
+#
+# PRE_PUSH_FULL=1 git push  also runs flutter test.
+# SKIP_PRE_PUSH=1 git push  skips the hook once.
+
+set -euo pipefail
+
+if [ "${SKIP_PRE_PUSH:-}" = "1" ]; then
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+base="$(git merge-base HEAD origin/master 2>/dev/null || true)"
+if [ -z "$base" ]; then
+  exit 0
+fi
+changed="$(git diff --name-only "$base" HEAD)"
+
+if grep -qE '^(lib|test|tool)/.*\.dart$|^pubspec\.(yaml|lock)$|^analysis_options\.yaml$' <<<"$changed"; then
+  echo "pre-push: Dart changed, running the static gates"
+  if [ ! -f lib/firebase_options.dart ]; then
+    echo "pre-push: lib/firebase_options.dart is missing; copy it from the main checkout or stub it (see AGENTS.md)."
+    exit 1
+  fi
+  make format-check
+  make env-guard
+  make version-guard
+  fvm flutter analyze --no-pub --no-fatal-infos
+  make find-unused-ci
+  if [ "${PRE_PUSH_FULL:-}" = "1" ]; then
+    fvm flutter test
+  fi
+fi
+
+if grep -qE '^functions/(src/|package(-lock)?\.json$|tsconfig)' <<<"$changed"; then
+  if [ ! -d functions/node_modules ]; then
+    echo "pre-push: functions/node_modules missing; run 'npm ci' in functions/ first."
+    exit 1
+  fi
+  echo "pre-push: functions changed, running typecheck + tests"
+  out="$(mktemp -d)"
+  trap 'rm -rf "$out"' EXIT
+  (cd functions && npx tsc --outDir "$out")
+  NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/__tests__/*.test.js
+fi
+
+if grep -qE '^web/' <<<"$changed"; then
+  if [ ! -d web/node_modules ]; then
+    echo "pre-push: web/node_modules missing; run 'npm ci' in web/ first."
+    exit 1
+  fi
+  echo "pre-push: web changed, running tsc --noEmit"
+  (cd web && npx tsc --noEmit)
+fi

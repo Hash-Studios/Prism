@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -76,6 +76,10 @@ setup: ensure-fvm
 	@$(FLUTTER) pub get
 	@if [ "$$(uname -s)" = "Darwin" ]; then $(MAKE) ios-setup; fi
 	@echo "Setup complete. For full local setup with secrets, run: make setup-dev"
+
+hooks:
+	@git config core.hooksPath .githooks
+	@echo "Git hooks enabled (.githooks)."
 
 setup-dev: ensure-fvm doppler-check
 	@$(MAKE) get
