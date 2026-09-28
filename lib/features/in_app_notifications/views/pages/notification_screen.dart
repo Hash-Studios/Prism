@@ -906,10 +906,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
             analytics.track(
               const NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: false),
             );
-            await unsubscribeFromTopicSafely(
-              FirebaseMessaging.instance,
-              'posts',
-              sourceTag: 'notification.settings.posts.disable_from_followers',
+            unawaited(
+              setCreatorPostsTopics(
+                FirebaseMessaging.instance,
+                app_state.prismUser.following,
+                subscribed: false,
+                sourceTag: 'notification.settings.posts.disable_from_followers',
+              ),
             );
           }
         } else {
@@ -941,19 +944,14 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                 analytics.track(
                   NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value),
                 );
-                if (value) {
-                  await subscribeToTopicSafely(
+                unawaited(
+                  setCreatorPostsTopics(
                     FirebaseMessaging.instance,
-                    'posts',
-                    sourceTag: 'notification.settings.posts.enable',
-                  );
-                } else {
-                  await unsubscribeFromTopicSafely(
-                    FirebaseMessaging.instance,
-                    'posts',
-                    sourceTag: 'notification.settings.posts.disable',
-                  );
-                }
+                    app_state.prismUser.following,
+                    subscribed: value,
+                    sourceTag: value ? 'notification.settings.posts.enable' : 'notification.settings.posts.disable',
+                  ),
+                );
               } else {
                 analytics.track(
                   const NotificationActionBlockedEvent(
