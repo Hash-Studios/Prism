@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/logger/logger.dart';
@@ -19,7 +20,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:github/github.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
@@ -238,19 +238,17 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFile() async {
     try {
       final String base64Image = base64Encode(_compressedPFP);
-      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
-      await github.repositories
-          .createFile(
-            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(message: path.basename(_pfp!.path), content: base64Image, path: path.basename(_pfp!.path)),
-          )
-          .then(
-            (value) => setState(() {
-              pfpUrl = value.content!.downloadUrl!;
-              pfpPath = value.content!.path!;
-              pfpSha = value.content!.sha!;
-            }),
-          );
+      final value = await GitHubContentApi().putFile(
+        repo: Env.normalize(Env.ghRepoWalls),
+        message: path.basename(_pfp!.path),
+        contentBase64: base64Image,
+        path: path.basename(_pfp!.path),
+      );
+      setState(() {
+        pfpUrl = value.downloadUrl!;
+        pfpPath = value.path!;
+        pfpSha = value.sha!;
+      });
       logger.d('File Uploaded');
       app_state.prismUser.profilePhoto = pfpUrl;
       app_state.persistPrismUser();
@@ -264,19 +262,17 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future uploadFileCover() async {
     try {
       final String base64Image = base64Encode(_compressedCover);
-      final github = GitHub(auth: Authentication.withToken(Env.normalize(Env.ghToken)));
-      await github.repositories
-          .createFile(
-            RepositorySlug(Env.normalize(Env.ghUserName), Env.normalize(Env.ghRepoWalls)),
-            CreateFile(message: path.basename(_cover!.path), content: base64Image, path: path.basename(_cover!.path)),
-          )
-          .then(
-            (value) => setState(() {
-              coverUrl = value.content!.downloadUrl!;
-              coverPath = value.content!.path!;
-              coverSha = value.content!.sha!;
-            }),
-          );
+      final value = await GitHubContentApi().putFile(
+        repo: Env.normalize(Env.ghRepoWalls),
+        message: path.basename(_cover!.path),
+        contentBase64: base64Image,
+        path: path.basename(_cover!.path),
+      );
+      setState(() {
+        coverUrl = value.downloadUrl!;
+        coverPath = value.path!;
+        coverSha = value.sha!;
+      });
       logger.d('Cover File Uploaded');
       app_state.prismUser.coverPhoto = coverUrl;
       app_state.persistPrismUser();

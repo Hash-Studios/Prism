@@ -28,6 +28,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   [[ -z "$key" || -z "$value" ]] && continue
   [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+  [[ "$key" == "GH_TOKEN" ]] && continue
 
   token="--dart-define=$key=$value"
   defines="$defines $(printf '%q' "$token")"

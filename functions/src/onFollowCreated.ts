@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {sendNotification, emailToTopic} from "./notificationHelper";
+import {sendNotification, emailToTopic, userIdToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -77,7 +77,7 @@ export const onFollowCreated = onDocumentUpdated(
       // Look up the follower's display name for a personalised message.
       const followerUsername = await _resolveUsername(followerEmail);
 
-      const followedTopic = emailToTopic(followedUserEmail);
+      const followedTopic = userIdToTopic(followedUid);
 
       await sendNotification({
         title: "You have a new follower! 🎉",
@@ -92,6 +92,20 @@ export const onFollowCreated = onDocumentUpdated(
         channelId: "followers",
         // Send push to the followed user's own topic (they subscribe on login).
         fcmTarget: {topic: followedTopic},
+      });
+      await sendNotification({
+        title: "You have a new follower! 🎉",
+        body: `${followerUsername} is now following you.`,
+        data: {
+          route: "follower",
+          follower_email: followerEmail.trim(),
+          pageName: "",
+          url: _profileUrl(followerEmail),
+        },
+        modifier: followedUserEmail,
+        channelId: "followers",
+        fcmTarget: {topic: emailToTopic(followedUserEmail)},
+        pushOnly: true,
       });
 
       logger.info("onFollowCreated: follow notification sent.", {

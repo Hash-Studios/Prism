@@ -13,7 +13,6 @@ class Env {
   }
 
   // GitHub
-  static const String ghToken = String.fromEnvironment('GH_TOKEN');
   static const String ghUserName = String.fromEnvironment('GH_USERNAME');
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
   static const String ghRepoSetups = String.fromEnvironment('GH_REPO_SETUPS');

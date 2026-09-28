@@ -18,6 +18,11 @@ String? followersTopicFromEmail(String email) {
   return sanitizedLocalPart;
 }
 
+String? userTopicFromId(String uid) {
+  final String sanitized = uid.trim().replaceAll(_invalidFcmTopicCharacters, '');
+  return sanitized.isEmpty ? null : 'u_$sanitized';
+}
+
 Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {

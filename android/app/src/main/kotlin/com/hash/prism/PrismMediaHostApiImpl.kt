@@ -95,7 +95,7 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setDestinationInExternalPublicDir(
                     Environment.DIRECTORY_PICTURES,
-                    File.separator + "Prism" + File.separator + filename + ".jpg",
+                    File.separator + "Prism" + File.separator + "Downloads" + File.separator + filename + ".jpg",
                 )
 
             dm.enqueue(downloadRequest)
@@ -176,8 +176,8 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
                 )
                 val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
                 val selectionArgs = arrayOf(
-                    Environment.DIRECTORY_PICTURES + "/Prism/%",
-                    "Prism/%",
+                    Environment.DIRECTORY_PICTURES + "/Prism/Downloads/%",
+                    "Prism/Downloads/%",
                 )
 
                 context.contentResolver.query(
@@ -209,8 +209,8 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
             }
 
             if (items.isEmpty()) {
-                val prismLegacy = File("storage/emulated/0/Prism/")
-                val prismPictures = File("storage/emulated/0/Pictures/Prism/")
+                val prismLegacy = File("storage/emulated/0/Prism/Downloads/")
+                val prismPictures = File("storage/emulated/0/Pictures/Prism/Downloads/")
                 appendFiles(items, prismPictures)
                 appendFiles(items, prismLegacy)
             }
@@ -227,8 +227,8 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
                 val selectionArgs = arrayOf(
-                    Environment.DIRECTORY_PICTURES + "/Prism/%",
-                    "Prism/%",
+                    Environment.DIRECTORY_PICTURES + "/Prism/Downloads/%",
+                    "Prism/Downloads/%",
                 )
                 deleted += context.contentResolver.delete(
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -239,8 +239,8 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         } catch (_: Exception) {
         }
 
-        deleted += deleteDirectory(File("storage/emulated/0/Pictures/Prism/"))
-        deleted += deleteDirectory(File("storage/emulated/0/Prism/"))
+        deleted += deleteDirectory(File("storage/emulated/0/Pictures/Prism/Downloads/"))
+        deleted += deleteDirectory(File("storage/emulated/0/Prism/Downloads/"))
 
         return if (deleted > 0) {
             createSuccessResult()
