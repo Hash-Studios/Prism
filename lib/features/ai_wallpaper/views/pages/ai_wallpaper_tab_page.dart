@@ -12,6 +12,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
@@ -523,10 +524,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Future<void> _save(AiGenerationRecord record) async {
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
-      final request = DownloadRequest(
-        link: link,
-        filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
-      );
+      final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
       final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
         toasts.codeSend(wallpaperSavedMessage);
