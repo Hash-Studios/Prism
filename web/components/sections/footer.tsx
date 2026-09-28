@@ -1,8 +1,6 @@
 import Image from "next/image";
 import { GITHUB_URL, PLAY_STORE_URL } from "@/lib/site-config";
 
-const PRIVACY_POLICY_URL = `${GITHUB_URL}/blob/master/PRIVACY.md`;
-
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -35,12 +33,7 @@ export function Footer() {
 
           <div className="flex flex-col gap-2">
             <h3 className="mb-1 text-base font-semibold text-black">Legal</h3>
-            <a
-              href={PRIVACY_POLICY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-neutral-400 hover:text-black transition-all"
-            >
+            <a href="/privacy" className="text-neutral-400 hover:text-black transition-all">
               Privacy
             </a>
             <a href="/terms" className="text-neutral-400 hover:text-black transition-all">

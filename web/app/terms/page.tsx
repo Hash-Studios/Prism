@@ -4,7 +4,7 @@ import { Header } from "@/components/sections/header";
 import { APP_NAME, SITE_URL } from "@/lib/site-config";
 
 const CONTACT_EMAIL = "hash.studios.inc@gmail.com";
-const EFFECTIVE_DATE = "2026-02-28";
+const EFFECTIVE_DATE = "2026-09-28";
 
 const title = `Terms of Use | ${APP_NAME}`;
 const description = `The Terms of Use (EULA) for ${APP_NAME} by Hash Studios, covering accounts, content, purchases and Prism Coins.`;
