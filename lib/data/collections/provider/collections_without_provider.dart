@@ -1,7 +1,20 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
+
+List<Map<String, dynamic>> _dropBlockedCreators(List<Map<String, dynamic>> rows) {
+  final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
+  if (blocked.isEmpty) {
+    return rows;
+  }
+  return rows
+      .where((row) => !BlockedCreatorsFilter.hidesCreatorEmail(row['email']?.toString(), blocked))
+      .toList(growable: false);
+}
 
 List? collections;
 List<Map<String, dynamic>>? anyCollectionWalls;
@@ -55,7 +68,6 @@ Future<bool> getCollectionWithName(String name) async {
     ),
     (data, docId) => <String, dynamic>{...data, '__docId': docId},
   );
-  anyCollectionWalls = List<Map<String, dynamic>>.from(rows);
   collectionHasMore = rows.length == 24;
   if (rows.isNotEmpty) {
     _lastCollectionCursorDocId = rows.last['__docId']?.toString();
@@ -63,6 +75,7 @@ Future<bool> getCollectionWithName(String name) async {
       row.remove('__docId');
     }
   }
+  anyCollectionWalls = _dropBlockedCreators(rows);
   return true;
 }
 
@@ -93,7 +106,7 @@ Future<bool> seeMoreCollectionWithName() async {
   }
   for (final row in rows) {
     row.remove('__docId');
-    anyCollectionWalls!.add(row);
   }
+  anyCollectionWalls!.addAll(_dropBlockedCreators(rows));
   return true;
 }

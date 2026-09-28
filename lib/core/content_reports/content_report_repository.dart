@@ -2,7 +2,7 @@ import 'package:Prism/core/utils/result.dart';
 
 /// Submits UGC reports via [submitContentReport] Cloud Function.
 abstract class ContentReportRepository {
-  /// [contentType] is `wall` or `setup` (server-enforced).
+  /// [contentType] is `wall`, `setup`, or `user` (server-enforced).
   Future<Result<void>> submitReport({
     required String contentType,
     required String targetFirestoreDocId,
