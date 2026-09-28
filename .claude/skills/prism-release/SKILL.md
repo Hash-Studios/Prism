@@ -60,7 +60,10 @@ Run these from the repo root.
    cp "$M/android/app/google-services.json"     android/app/
    cp "$M/ios/Runner/GoogleService-Info.plist"  ios/Runner/
    cp "$M/android/key.jks" "$M/android/key.properties" android/
-   grep '^storeFile' android/key.properties     # only this line; it must resolve to the copied key.jks
+   # The human's copy may point at an old path (it pointed at C:/Users/... in 2026-09).
+   # Gradle resolves storeFile from android/app/, so point the worktree copy at ../key.jks:
+   sed -i '' 's|^storeFile=.*$|storeFile=../key.jks|' android/key.properties
+   grep '^storeFile' android/key.properties     # read only this line, never the passwords
    git status --short --ignored android/key.jks android/key.properties   # must show "!!"
    ```
    Without `android/app/google-services.json` the Makefile silently adds
