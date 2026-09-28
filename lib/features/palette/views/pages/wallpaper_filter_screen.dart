@@ -349,7 +349,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
     try {
-      await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: '$sourceTag.rewarded_ad');
+      final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: '$sourceTag.rewarded_ad');
+      if (!credit.changed) {
+        toasts.error('Unable to credit coins right now.');
+        return;
+      }
       if (mounted) {
         await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
           context,
