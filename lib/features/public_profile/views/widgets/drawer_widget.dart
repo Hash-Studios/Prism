@@ -7,7 +7,6 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/popup/enter_code_panel.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -237,27 +236,6 @@ class ProfileDrawer extends StatelessWidget {
               },
             ),
 
-            const Divider(),
-
-            // ── MORE ───────────────────────────────────────────────────────
-            _sectionHeader('MORE', context),
-            _item(
-              icon: JamIcons.coin,
-              text: 'Enter Code',
-              context: context,
-              onTap: () {
-                _trackDrawerAction(
-                  AnalyticsActionValue.drawerEnterCodeTapped,
-                  sourceContext: 'profile_drawer_enter_code',
-                );
-                Navigator.pop(context);
-                showModalBottomSheet(
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (_) => const EnterCodePanel(),
-                );
-              },
-            ),
             const Divider(),
 
             _footer(context),
