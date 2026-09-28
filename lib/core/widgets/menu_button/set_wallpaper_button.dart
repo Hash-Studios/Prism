@@ -348,7 +348,7 @@ class _SetOptionsPanelState extends State<SetOptionsPanel> {
             child: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               child: Text(
-                "Select where wallpaper you want to change with this wallpaper. Selecting both, will change the wallpaper on home screen as well as lock screen.",
+                "Choose where to set this wallpaper. Both sets it on your home screen and lock screen.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.secondary),
               ),
