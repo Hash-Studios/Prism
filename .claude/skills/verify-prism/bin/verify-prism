@@ -2,8 +2,8 @@
 """Prism verification helper: lock, launch, doctor, drive, snapshot, cleanup.
 
 Wraps `axe` (iOS Simulator) and `adb` + uiautomator (Android emulator)
-directly. There is no existing e2e harness in this repo, unlike SplitFast's
-`e2e/axe_harness.py`; this script is the whole harness.
+directly. There is no other e2e harness in this repo; this script is the
+whole harness.
 
 Invoke from the repo root:
 

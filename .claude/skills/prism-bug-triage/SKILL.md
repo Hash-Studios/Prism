@@ -85,8 +85,7 @@ Order the deduped list:
 1. **Crashes and data corruption**: app crashes, Firestore writes that corrupt user data.
 2. **Wrong coins/premium/subscription state**: Prism has a real coins economy and paid premium
    tier (`functions/src/coinsCallables.ts`, `syncSubscription.ts`, `deleteAccount.ts`); a wrong
-   balance or an entitlement that doesn't sync is near-crash severity, same as SplitFast treats
-   a wrong money balance.
+   balance or an entitlement that doesn't sync is near-crash severity.
 3. **Broken core flows**: feed loading, wallpaper apply/download, auth, notifications routing.
 4. **Cosmetic / UI/UX**: visual glitches, the `UI/UX` label.
 
