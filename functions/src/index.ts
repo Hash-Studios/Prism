@@ -10,3 +10,6 @@ export {recordWallpaperView, recordSetupView} from "./viewStats";
 export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
+export {githubPutFile, githubDeleteFile} from "./githubContent";
+export {awardCoins, spendCoins, processReferral} from "./coinsCallables";
+

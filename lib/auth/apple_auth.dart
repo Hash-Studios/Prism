@@ -119,6 +119,10 @@ class AppleAuth {
         value: app_state.prismUser.premium ? '1' : '0',
       );
       final String? followersTopic = followersTopicFromEmail(email);
+      final String? userTopic = userTopicFromId(user.uid);
+      if (userTopic != null) {
+        await subscribeToTopicSafely(FirebaseMessaging.instance, userTopic, sourceTag: 'apple_auth.signin.user_topic');
+      }
       if (followersTopic != null) {
         await subscribeToTopicSafely(
           FirebaseMessaging.instance,
@@ -185,6 +189,18 @@ class AppleAuth {
       logger.e('signInWithApple failed', tag: 'AppleAuth', error: e, stackTrace: st);
       rethrow;
     }
+  }
+
+  Future<void> reauthenticateCurrentUser() async {
+    final rawNonce = _generateNonce();
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [AppleIDAuthorizationScopes.email],
+      nonce: _sha256ofString(rawNonce),
+    );
+    final oauthCredential = OAuthProvider(
+      'apple.com',
+    ).credential(idToken: credential.identityToken, rawNonce: rawNonce);
+    await _auth.currentUser!.reauthenticateWithCredential(oauthCredential);
   }
 
   Future<Map<String, dynamic>?> _getUserNEW(User user) async {

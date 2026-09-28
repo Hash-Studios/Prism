@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unblockUser = exports.blockUser = exports.onContentReportCreated = exports.submitContentReport = exports.recordSetupView = exports.recordWallpaperView = exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
+exports.processReferral = exports.spendCoins = exports.awardCoins = exports.githubDeleteFile = exports.githubPutFile = exports.unblockUser = exports.blockUser = exports.onContentReportCreated = exports.submitContentReport = exports.recordSetupView = exports.recordWallpaperView = exports.onCampaignNotificationRequested = exports.categorizeWallpaper = exports.onWallCategorize = exports.onWallSubmitted = exports.onFollowCreated = exports.onWallApproved = exports.sendStreakReminders = exports.claimDailyStreak = exports.wallOfTheDay = void 0;
 var wallOfTheDay_1 = require("./wallOfTheDay");
 Object.defineProperty(exports, "wallOfTheDay", { enumerable: true, get: function () { return wallOfTheDay_1.wallOfTheDay; } });
 var streak_1 = require("./streak");
@@ -28,4 +28,11 @@ Object.defineProperty(exports, "onContentReportCreated", { enumerable: true, get
 var userBlockCallables_1 = require("./userBlockCallables");
 Object.defineProperty(exports, "blockUser", { enumerable: true, get: function () { return userBlockCallables_1.blockUser; } });
 Object.defineProperty(exports, "unblockUser", { enumerable: true, get: function () { return userBlockCallables_1.unblockUser; } });
+var githubContent_1 = require("./githubContent");
+Object.defineProperty(exports, "githubPutFile", { enumerable: true, get: function () { return githubContent_1.githubPutFile; } });
+Object.defineProperty(exports, "githubDeleteFile", { enumerable: true, get: function () { return githubContent_1.githubDeleteFile; } });
+var coinsCallables_1 = require("./coinsCallables");
+Object.defineProperty(exports, "awardCoins", { enumerable: true, get: function () { return coinsCallables_1.awardCoins; } });
+Object.defineProperty(exports, "spendCoins", { enumerable: true, get: function () { return coinsCallables_1.spendCoins; } });
+Object.defineProperty(exports, "processReferral", { enumerable: true, get: function () { return coinsCallables_1.processReferral; } });
 //# sourceMappingURL=index.js.map

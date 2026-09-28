@@ -881,9 +881,19 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
             NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.followers, value: value),
           );
           if (value) {
+            final String? userTopic = userTopicFromId(app_state.prismUser.id);
+            if (userTopic != null) {
+              await subscribeToTopicSafely(
+                FirebaseMessaging.instance,
+                userTopic,
+                sourceTag: 'notification.settings.followers.enable.user_topic',
+              );
+            }
+            final String? followersTopic = followersTopicFromEmail(app_state.prismUser.email);
+            if (followersTopic == null) return;
             await subscribeToTopicSafely(
               FirebaseMessaging.instance,
-              app_state.prismUser.email.split('@')[0],
+              followersTopic,
               sourceTag: 'notification.settings.followers.enable',
             );
           } else {

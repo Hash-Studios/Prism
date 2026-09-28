@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {sendNotification, emailToTopic} from "./notificationHelper";
+import {sendNotification, emailToTopic, userIdToTopic} from "./notificationHelper";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -55,7 +55,8 @@ export const onWallApproved = onDocumentUpdated(
     // 1. Notify the artist that their wall was approved
     //    - In-app doc (modifier = artistEmail)  +  FCM push to their own topic
     // ------------------------------------------------------------------ //
-    const artistTopic = emailToTopic(artistEmail);
+    const artistUid = await _resolveUserIdByEmail(artistEmail);
+    const artistTopic = artistUid ? userIdToTopic(artistUid) : emailToTopic(artistEmail);
     await sendNotification({
       title: "Your wallpaper is live! 🎉",
       body: `"${wallTitle}" has been approved and is now visible to everyone.`,
@@ -70,6 +71,23 @@ export const onWallApproved = onDocumentUpdated(
       channelId: "posts",
       fcmTarget: {topic: artistTopic},
     });
+    if (artistUid) {
+      await sendNotification({
+        title: "Your wallpaper is live! 🎉",
+        body: `"${wallTitle}" has been approved and is now visible to everyone.`,
+        data: {
+          route: "wall",
+          wall_id: wallId,
+          pageName: "",
+          url: "",
+        },
+        imageUrl: wallThumb || undefined,
+        modifier: artistEmail,
+        channelId: "posts",
+        fcmTarget: {topic: emailToTopic(artistEmail)},
+        pushOnly: true,
+      });
+    }
 
     logger.info("onWallApproved: artist notification sent.", {wallId, artistEmail});
 
@@ -149,5 +167,18 @@ async function _notifyAdmins(params: {
     }
   } catch (err) {
     logger.warn("onWallApproved: admin notification failed (non-fatal).", {err});
+  }
+}
+
+async function _resolveUserIdByEmail(email: string): Promise<string | null> {
+  try {
+    const snap = await db.collection("usersv2").where("email", "==", email).limit(1).get();
+    if (!snap.empty) return snap.docs[0].id;
+    const lower = email.toLowerCase();
+    const lowerSnap = await db.collection("usersv2").where("email", "==", lower).limit(1).get();
+    return lowerSnap.empty ? null : lowerSnap.docs[0].id;
+  } catch (err) {
+    logger.warn("onWallApproved: could not resolve artist uid.", {email, err});
+    return null;
   }
 }
