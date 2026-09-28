@@ -673,21 +673,11 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> with Single
                                     children: [
                                       GestureDetector(
                                         onTap: () async {
-                                          if (app_state.prismUser.loggedIn == true) {
-                                            await PaywallOrchestrator.instance.present(
-                                              context,
-                                              placement: PaywallPlacement.mainUpsell,
-                                              source: 'share_setup_view',
-                                            );
-                                          } else {
-                                            googleSignInPopUp(context, () {
-                                              PaywallOrchestrator.instance.present(
-                                                context,
-                                                placement: PaywallPlacement.mainUpsell,
-                                                source: 'share_setup_view',
-                                              );
-                                            });
-                                          }
+                                          await PaywallOrchestrator.instance.presentOrRequireSignIn(
+                                            context,
+                                            placement: PaywallPlacement.mainUpsell,
+                                            source: 'share_setup_view',
+                                          );
                                           toasts.codeSend("This is a premium wallpaper.");
                                         },
                                         child: Container(

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -164,21 +164,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _trackSettingsToggle(SettingValue.animeWallpapers, value);
           },
         ),
-        SwitchListTile(
-          activeThumbColor: _accentColor,
-          secondary: const Icon(JamIcons.stop_sign),
-          value: _purity == 110,
-          title: Text('Show Sketchy Wallpapers', style: _titleStyle),
-          subtitle: Text(
-            _purity == 110 ? 'Disable to hide sketchy wallpapers' : 'Enable to show sketchy wallpapers',
-            style: _subtitleStyle,
+        // App Store review: no sketchy content toggle on iOS, purity is forced SFW-only.
+        if (!Platform.isIOS)
+          SwitchListTile(
+            activeThumbColor: _accentColor,
+            secondary: const Icon(JamIcons.stop_sign),
+            value: _purity == 110,
+            title: Text('Show Sketchy Wallpapers', style: _titleStyle),
+            subtitle: Text(
+              _purity == 110 ? 'Disable to hide sketchy wallpapers' : 'Enable to show sketchy wallpapers',
+              style: _subtitleStyle,
+            ),
+            onChanged: (value) {
+              setState(() => _purity = value ? 110 : 100);
+              _settingsLocal.set('WHpurity', _purity);
+              _trackSettingsToggle(SettingValue.sketchyWallpapers, value);
+            },
           ),
-          onChanged: (value) {
-            setState(() => _purity = value ? 110 : 100);
-            _settingsLocal.set('WHpurity', _purity);
-            _trackSettingsToggle(SettingValue.sketchyWallpapers, value);
-          },
-        ),
         ListTile(
           leading: const Icon(Icons.high_quality_outlined),
           title: Text('Download Quality', style: _titleStyle),
@@ -392,55 +394,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(JamIcons.log_in),
             title: Text('Sign in', style: _titleStyle),
             subtitle: const Text('Sign in to sync data across devices', style: TextStyle(fontSize: 12)),
-            onTap: () async {
+            onTap: () {
               _trackSettingsAction(AnalyticsActionValue.signInTapped);
-              final loaderDialog = Dialog(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  width: MediaQuery.of(context).size.width * .7,
-                  height: MediaQuery.of(context).size.height * .3,
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-              );
-              showDialog(barrierDismissible: false, context: context, builder: (_) => loaderDialog);
-              try {
-                final String signInResult = await app_state.gAuth.signInWithGoogle();
-                if (!mounted) return;
-                if (signInResult == GoogleAuth.signInCancelledResult) {
-                  Navigator.pop(context);
-                  app_state.prismUser.loggedIn = false;
-                  app_state.persistPrismUser();
-                  _trackSettingsAuthResult(
-                    action: AnalyticsActionValue.signInTapped,
-                    result: EventResultValue.cancelled,
-                    reason: AnalyticsReasonValue.userCancelled,
-                  );
-                  toasts.codeSend('Sign in cancelled.');
-                  return;
-                }
-                toasts.codeSend('Login Successful!');
+              // Routes through the shared popup so Apple is offered alongside Google.
+              googleSignInPopUp(context, () {
                 _trackSettingsAuthResult(action: AnalyticsActionValue.signInTapped, result: EventResultValue.success);
-                app_state.prismUser.loggedIn = true;
-                app_state.persistPrismUser();
-                Navigator.pop(context);
                 main.RestartWidget.restartApp(context);
-              } catch (e) {
-                if (!mounted) return;
-                logger.d(e);
-                Navigator.pop(context);
-                _trackSettingsAuthResult(
-                  action: AnalyticsActionValue.signInTapped,
-                  result: EventResultValue.failure,
-                  reason: AnalyticsReasonValue.error,
-                );
-                app_state.prismUser.loggedIn = false;
-                app_state.persistPrismUser();
-                toasts.error('Something went wrong, please try again!');
-              }
+              });
             },
           ),
         ],
@@ -685,25 +645,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
-            if (!app_state.prismUser.loggedIn) {
-              googleSignInPopUp(context, () {
-                if (app_state.prismUser.premium == true) {
-                  main.RestartWidget.restartApp(context);
-                } else {
-                  PaywallOrchestrator.instance.present(
-                    context,
-                    placement: PaywallPlacement.mainUpsell,
-                    source: 'settings_buy_premium',
-                  );
-                }
-              });
-            } else {
-              PaywallOrchestrator.instance.present(
-                context,
-                placement: PaywallPlacement.mainUpsell,
-                source: 'settings_buy_premium',
-              );
-            }
+            PaywallOrchestrator.instance.presentOrRequireSignIn(
+              context,
+              placement: PaywallPlacement.mainUpsell,
+              source: 'settings_buy_premium',
+            );
           },
         ),
       ],
