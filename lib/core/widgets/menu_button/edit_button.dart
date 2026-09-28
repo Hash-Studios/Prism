@@ -35,6 +35,7 @@ class _EditButtonState extends State<EditButton> {
   @override
   Widget build(BuildContext context) {
     return CircularMenuButton(
+      label: 'Edit',
       onTap: () {
         if (!isLoading) {
           onEdit(widget.url);

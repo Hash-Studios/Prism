@@ -11,9 +11,11 @@ test("streak timezone is fixed after first use", () => {
   assert.equal(_resolveTimezoneOffset(330, -720), 330);
 });
 
-test("notification topics distinguish user ids while preserving admin email topics", () => {
-  assert.equal(emailToTopic("sam+one@example.com"), "sam_one");
-  assert.equal(userIdToTopic("abc/123"), "u_abc_123");
+test("notification topics match the names the app subscribes to", () => {
+  assert.equal(emailToTopic("sam+one@example.com"), "samone");
+  assert.equal(emailToTopic("john+alerts.test@example.com"), "johnalerts.test");
+  assert.equal(emailToTopic("Az-_.~%09@example.com"), "Az-_.~%09");
+  assert.equal(userIdToTopic("abc/123"), "u_abc123");
   assert.notEqual(userIdToTopic("a/b"), userIdToTopic("a-b"));
 });
 

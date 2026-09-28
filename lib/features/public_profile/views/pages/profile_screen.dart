@@ -364,6 +364,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: IconButton(
+                          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           padding: const EdgeInsets.all(2),
                           icon: Container(
                             padding: const EdgeInsets.all(6.0),
@@ -658,6 +659,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                                 .toList()
                                                 .map(
                                                   (e) => IconButton(
+                                                    tooltip: e.toString(),
                                                     padding: const EdgeInsets.all(4),
                                                     icon: Container(
                                                       padding: const EdgeInsets.all(7.0),

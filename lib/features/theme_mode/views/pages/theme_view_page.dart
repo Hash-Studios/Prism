@@ -69,6 +69,7 @@ class _ThemeViewState extends State<ThemeView> {
         automaticallyImplyLeading: false,
         actions: <Widget>[
           IconButton(
+            tooltip: 'Apply theme',
             icon: Icon(JamIcons.check, size: 30, color: Theme.of(context).colorScheme.secondary),
             onPressed: () {
               final Color resolvedAccentColor = selectedAccentColor ?? const Color(0xFFE57697);
