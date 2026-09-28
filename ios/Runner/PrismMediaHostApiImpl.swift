@@ -3,12 +3,17 @@ import Photos
 
 final class PrismMediaHostApiImpl: PrismMediaHostApi {
   private let workerQueue = DispatchQueue(label: "com.hash.prism.media-api", qos: .userInitiated)
+  private let savePhoto: (Data) throws -> Void
 
-  func saveMedia(request: SaveMediaRequest) throws -> OperationResult {
-    return performBlocking {
+  init(savePhoto: ((Data) throws -> Void)? = nil) {
+    self.savePhoto = savePhoto ?? PrismMediaHostApiImpl.saveToPhotoLibrary
+  }
+
+  func saveMedia(request: SaveMediaRequest, completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    runInBackground(completion) {
       do {
         let data = try self.resolveImageData(link: request.link, isLocalFile: request.isLocalFile)
-        try self.saveToPhotoLibrary(data: data)
+        try self.savePhoto(data)
         return OperationResult(success: true, errorCode: nil, message: nil)
       } catch let error as PrismMediaSaveError {
         return OperationResult(success: false, errorCode: error.code, message: error.message)
@@ -18,10 +23,11 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     }
   }
 
-  func enqueueDownload(request: DownloadRequest) throws -> OperationResult {
-    return performBlocking {
+  func enqueueDownload(request: DownloadRequest, completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    runInBackground(completion) {
       do {
         let data = try self.resolveImageData(link: request.link, isLocalFile: false)
+        try self.savePhoto(data)
         let ext = URL(string: request.link)?.pathExtension.lowercased() ?? ""
         let resolvedExt = ["jpg", "jpeg", "png", "webp", "gif"].contains(ext) ? ext : "jpg"
         let dir = try self.downloadsDirectory()
@@ -37,7 +43,11 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     }
   }
 
-  func listDownloads() throws -> DownloadItemsResult {
+  func listDownloads(completion: @escaping (Result<DownloadItemsResult, Error>) -> Void) {
+    runInBackground(completion) { self.listDownloadsNow() }
+  }
+
+  private func listDownloadsNow() -> DownloadItemsResult {
     do {
       let dir = try downloadsDirectory()
       let contents = try FileManager.default.contentsOfDirectory(
@@ -54,7 +64,11 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     }
   }
 
-  func clearDownloads() throws -> OperationResult {
+  func clearDownloads(completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    runInBackground(completion) { self.clearDownloadsNow() }
+  }
+
+  private func clearDownloadsNow() -> OperationResult {
     do {
       let dir = try downloadsDirectory()
       let contents = try FileManager.default.contentsOfDirectory(
@@ -83,17 +97,14 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     return dir
   }
 
-  private func performBlocking(_ task: @escaping () -> OperationResult) -> OperationResult {
-    let semaphore = DispatchSemaphore(value: 0)
-    var result = OperationResult(success: false, errorCode: "UNKNOWN", message: "Unknown error")
-
+  private func runInBackground<T>(
+    _ completion: @escaping (Result<T, Error>) -> Void,
+    _ task: @escaping () -> T
+  ) {
     workerQueue.async {
-      result = task()
-      semaphore.signal()
+      let result = task()
+      DispatchQueue.main.async { completion(.success(result)) }
     }
-
-    semaphore.wait()
-    return result
   }
 
   private func resolveImageData(link: String, isLocalFile: Bool) throws -> Data {
@@ -148,7 +159,7 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     return data
   }
 
-  private func saveToPhotoLibrary(data: Data) throws {
+  private static func saveToPhotoLibrary(data: Data) throws {
     try ensurePhotoPermission()
 
     let semaphore = DispatchSemaphore(value: 0)
@@ -174,7 +185,7 @@ final class PrismMediaHostApiImpl: PrismMediaHostApi {
     }
   }
 
-  private func ensurePhotoPermission() throws {
+  private static func ensurePhotoPermission() throws {
     if #available(iOS 14, *) {
       let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
       switch status {
@@ -315,7 +326,7 @@ private enum PrismMediaSaveError: Error {
     case .localReadFailed(let path, let underlying):
       return "Failed reading local file \(path): \(underlying.localizedDescription)"
     case .permissionDenied:
-      return "Photo Library permission denied."
+      return "Allow Prism to add photos in Settings to save wallpapers."
     case .permissionRestricted:
       return "Photo Library permission restricted."
     case .permissionUnknown:
