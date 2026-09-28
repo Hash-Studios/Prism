@@ -33,6 +33,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
   @override
   Widget build(BuildContext context) {
     return CircularMenuButton(
+      label: 'Favourite',
       isLoading: isLoading,
       padding: EdgeInsets.zero,
       child: FavoriteIcon(

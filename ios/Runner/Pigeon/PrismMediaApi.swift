@@ -403,12 +403,13 @@ class PrismMediaApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable
   static let shared = PrismMediaApiPigeonCodec(readerWriter: PrismMediaApiPigeonCodecReaderWriter())
 }
 
+
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol PrismMediaHostApi {
-  func saveMedia(request: SaveMediaRequest) throws -> OperationResult
-  func enqueueDownload(request: DownloadRequest) throws -> OperationResult
-  func listDownloads() throws -> DownloadItemsResult
-  func clearDownloads() throws -> OperationResult
+  func saveMedia(request: SaveMediaRequest, completion: @escaping (Result<OperationResult, Error>) -> Void)
+  func enqueueDownload(request: DownloadRequest, completion: @escaping (Result<OperationResult, Error>) -> Void)
+  func listDownloads(completion: @escaping (Result<DownloadItemsResult, Error>) -> Void)
+  func clearDownloads(completion: @escaping (Result<OperationResult, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -422,11 +423,13 @@ class PrismMediaHostApiSetup {
       saveMediaChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
         let requestArg = args[0] as! SaveMediaRequest
-        do {
-          let result = try api.saveMedia(request: requestArg)
-          reply(wrapResult(result))
-        } catch {
-          reply(wrapError(error))
+        api.saveMedia(request: requestArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
         }
       }
     } else {
@@ -437,11 +440,13 @@ class PrismMediaHostApiSetup {
       enqueueDownloadChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
         let requestArg = args[0] as! DownloadRequest
-        do {
-          let result = try api.enqueueDownload(request: requestArg)
-          reply(wrapResult(result))
-        } catch {
-          reply(wrapError(error))
+        api.enqueueDownload(request: requestArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
         }
       }
     } else {
@@ -450,11 +455,13 @@ class PrismMediaHostApiSetup {
     let listDownloadsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       listDownloadsChannel.setMessageHandler { _, reply in
-        do {
-          let result = try api.listDownloads()
-          reply(wrapResult(result))
-        } catch {
-          reply(wrapError(error))
+        api.listDownloads { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
         }
       }
     } else {
@@ -463,11 +470,13 @@ class PrismMediaHostApiSetup {
     let clearDownloadsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.clearDownloads\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       clearDownloadsChannel.setMessageHandler { _, reply in
-        do {
-          let result = try api.clearDownloads()
-          reply(wrapResult(result))
-        } catch {
-          reply(wrapError(error))
+        api.clearDownloads { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
         }
       }
     } else {

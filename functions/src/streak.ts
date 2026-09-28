@@ -265,7 +265,6 @@ export const sendStreakReminders = onSchedule(
         processed += 1;
         const userData = userDoc.data() as Record<string, unknown>;
         const userEmail = _asString(userData.email).toLowerCase();
-        const fcmToken = _asString(userData.fcmToken);
         const coinState = _normalizeCoinState(userData.coinState);
 
         const offset = _clampTimezoneOffset(
@@ -291,6 +290,9 @@ export const sendStreakReminders = onSchedule(
         }
 
         const nextReminderTs = _nextReminderAfterTodayClaim(todayLocalKey, offset);
+        const fcmToken = claimedToday || alreadySentToday || userEmail.length === 0 ?
+          "" :
+          await _fcmTokenFor(userDoc.ref, userData);
 
         if (claimedToday || alreadySentToday || userEmail.length === 0 || fcmToken.length === 0) {
           await userDoc.ref.update({
@@ -338,6 +340,24 @@ export const sendStreakReminders = onSchedule(
     });
   },
 );
+
+/** The app now stores the token in private/session; older builds wrote usersv2.fcmToken. */
+export function pickFcmToken(sessionToken: unknown, legacyToken: unknown): string {
+  return _asString(sessionToken) || _asString(legacyToken);
+}
+
+async function _fcmTokenFor(
+  userRef: admin.firestore.DocumentReference,
+  userData: Record<string, unknown>,
+): Promise<string> {
+  try {
+    const session = await userRef.collection("private").doc("session").get();
+    return pickFcmToken(session.get("fcmToken"), userData.fcmToken);
+  } catch (err) {
+    logger.warn("sendStreakReminders: could not read session token.", {uid: userRef.id, err});
+    return pickFcmToken(undefined, userData.fcmToken);
+  }
+}
 
 function _asString(value: unknown): string {
   return value == null ? "" : String(value).trim();

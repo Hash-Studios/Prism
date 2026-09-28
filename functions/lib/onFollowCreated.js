@@ -34,7 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onFollowCreated = void 0;
+exports.followCollapseKey = followCollapseKey;
+exports.isFollowerAlertsOff = isFollowerAlertsOff;
 const admin = __importStar(require("firebase-admin"));
+const node_crypto_1 = require("node:crypto");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const v2_1 = require("firebase-functions/v2");
 const notificationHelper_1 = require("./notificationHelper");
@@ -51,7 +54,7 @@ const db = admin.firestore();
  *
  * For each newly added follower email:
  *   1. Look up the follower's display name from their user doc.
- *   2. Send an FCM push to the followed user (via their own email-prefix topic).
+ *   2. Unless they muted Followers alerts, send an FCM push to the followed user.
  *   3. Write a per-user in-app notification doc (modifier = followed user's email).
  */
 exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
@@ -81,6 +84,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
         return;
     }
     const followedUid = event.params.userId;
+    const pushEnabled = !(await _followerAlertsMuted(followedUid));
     for (const followerEmail of newFollowerEmailsRaw) {
         const followerUid = await _resolveUserIdByEmail(followerEmail);
         if (followerUid) {
@@ -101,6 +105,7 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
         // Look up the follower's display name for a personalised message.
         const followerUsername = await _resolveUsername(followerEmail);
         const followedTopic = (0, notificationHelper_1.userIdToTopic)(followedUid);
+        const collapseKey = followCollapseKey(followerEmail);
         await (0, notificationHelper_1.sendNotification)({
             title: "You have a new follower! 🎉",
             body: `${followerUsername} is now following you.`,
@@ -112,29 +117,53 @@ exports.onFollowCreated = (0, firestore_1.onDocumentUpdated)({
             },
             modifier: followedUserEmail,
             channelId: "followers",
-            // Send push to the followed user's own topic (they subscribe on login).
-            fcmTarget: { topic: followedTopic },
+            // Push to the followed user's own topic (they subscribe on login),
+            // unless they turned Followers alerts off. The inbox entry is kept.
+            fcmTarget: pushEnabled ? { topic: followedTopic } : undefined,
+            collapseKey,
         });
-        await (0, notificationHelper_1.sendNotification)({
-            title: "You have a new follower! 🎉",
-            body: `${followerUsername} is now following you.`,
-            data: {
-                route: "follower",
-                follower_email: followerEmail.trim(),
-                pageName: "",
-                url: _profileUrl(followerEmail),
-            },
-            modifier: followedUserEmail,
-            channelId: "followers",
-            fcmTarget: { topic: (0, notificationHelper_1.emailToTopic)(followedUserEmail) },
-            pushOnly: true,
-        });
+        if (pushEnabled) {
+            await (0, notificationHelper_1.sendNotification)({
+                title: "You have a new follower! 🎉",
+                body: `${followerUsername} is now following you.`,
+                data: {
+                    route: "follower",
+                    follower_email: followerEmail.trim(),
+                    pageName: "",
+                    url: _profileUrl(followerEmail),
+                },
+                modifier: followedUserEmail,
+                channelId: "followers",
+                fcmTarget: { topic: (0, notificationHelper_1.emailToTopic)(followedUserEmail) },
+                pushOnly: true,
+                collapseKey,
+            });
+        }
         v2_1.logger.info("onFollowCreated: follow notification sent.", {
             followedUserEmail,
             followerEmail: followerEmail.toLowerCase(),
         });
     }
 });
+/** Same key for both follow pushes, short enough for apns-collapse-id (64 bytes). */
+function followCollapseKey(followerEmail) {
+    const hash = (0, node_crypto_1.createHash)("sha1").update(followerEmail.trim().toLowerCase()).digest("hex").slice(0, 16);
+    return `follow_${hash}`;
+}
+/** True only when the user explicitly turned Followers alerts off. */
+function isFollowerAlertsOff(session) {
+    return (session === null || session === void 0 ? void 0 : session.followerAlerts) === false;
+}
+async function _followerAlertsMuted(uid) {
+    try {
+        const snap = await db.doc(`usersv2/${uid}/private/session`).get();
+        return isFollowerAlertsOff(snap.data());
+    }
+    catch (err) {
+        v2_1.logger.warn("onFollowCreated: could not read follower alert pref.", { uid, err });
+        return false;
+    }
+}
 /** Returns usersv2 document id (Firebase uid) for an email, or null. */
 async function _resolveUserIdByEmail(email) {
     const trimmed = email.trim();

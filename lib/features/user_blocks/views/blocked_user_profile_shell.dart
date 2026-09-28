@@ -34,6 +34,7 @@ class BlockedUserProfileShell extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   icon: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),

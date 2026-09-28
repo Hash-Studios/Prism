@@ -27,7 +27,6 @@ import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
-import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -35,16 +34,8 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val ioExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
-    override fun saveMedia(request: SaveMediaRequest): OperationResult {
-        return try {
-            ioExecutor.submit<OperationResult> { saveMediaInternal(request) }.get()
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            createErrorResult("INTERRUPTED", "Save media task interrupted")
-        } catch (e: ExecutionException) {
-            val message = e.cause?.message ?: e.message
-            createErrorResult("EXCEPTION", message)
-        }
+    override fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit) {
+        runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }) { saveMediaInternal(request) }
     }
 
     private fun saveMediaInternal(request: SaveMediaRequest): OperationResult {
@@ -77,7 +68,11 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         }
     }
 
-    override fun enqueueDownload(request: DownloadRequest): OperationResult {
+    override fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit) {
+        callback(Result.success(enqueueDownloadNow(request)))
+    }
+
+    private fun enqueueDownloadNow(request: DownloadRequest): OperationResult {
         val link = request.link
         val filename = request.filenameWithoutExtension
 
@@ -107,27 +102,22 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         }
     }
 
-    override fun listDownloads(): DownloadItemsResult {
-        return try {
-            ioExecutor.submit<DownloadItemsResult> { listDownloadsInternal() }.get()
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            createDownloadItemsError("INTERRUPTED", "List downloads task interrupted")
-        } catch (e: ExecutionException) {
-            val message = e.cause?.message ?: e.message
-            createDownloadItemsError("EXCEPTION", message)
-        }
+    override fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit) {
+        runInBackground(callback, { createDownloadItemsError("EXCEPTION", it.message) }) { listDownloadsInternal() }
     }
 
-    override fun clearDownloads(): OperationResult {
-        return try {
-            ioExecutor.submit<OperationResult> { clearDownloadsInternal() }.get()
-        } catch (e: InterruptedException) {
-            Thread.currentThread().interrupt()
-            createErrorResult("INTERRUPTED", "Clear downloads task interrupted")
-        } catch (e: ExecutionException) {
-            val message = e.cause?.message ?: e.message
-            createErrorResult("EXCEPTION", message)
+    override fun clearDownloads(callback: (Result<OperationResult>) -> Unit) {
+        runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }) { clearDownloadsInternal() }
+    }
+
+    private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Exception) -> T, task: () -> T) {
+        ioExecutor.execute {
+            val result = try {
+                task()
+            } catch (e: Exception) {
+                onError(e)
+            }
+            mainHandler.post { callback(Result.success(result)) }
         }
     }
 

@@ -10,6 +10,7 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
@@ -59,30 +60,11 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return CircularMenuButton(
+      label: 'Download',
       onTap: _handleTap,
-      child: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: .25), blurRadius: 4, offset: const Offset(0, 4)),
-              ],
-              borderRadius: BorderRadius.circular(500),
-            ),
-            padding: const EdgeInsets.all(17),
-            child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            height: 53,
-            width: 53,
-            child: isLoading ? const CircularProgressIndicator() : Container(),
-          ),
-        ],
-      ),
+      isLoading: isLoading,
+      child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
     );
   }
 
@@ -491,9 +473,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.d(link);
       if (link.contains('com.hash.prism')) {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
-        final OperationResult result = await PrismMediaHostApi()
-            .saveMedia(request)
-            .timeout(const Duration(seconds: 15));
+        final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
           toasts.error("Couldn't download! Please retry.");
           return false;
@@ -503,9 +483,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           link: link,
           filenameWithoutExtension: link.split('/').last.replaceAll('.jpg', '').replaceAll('.png', ''),
         );
-        final OperationResult result = await PrismMediaHostApi()
-            .enqueueDownload(request)
-            .timeout(const Duration(seconds: 15));
+        final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
           toasts.error(result.message ?? "Couldn't download! Please retry.");
           return false;
@@ -525,7 +503,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: 'notifications.permission_after_download',
         );
       }
-      toasts.codeSend(hideSetWallpaperUi ? 'Saved to Photos.' : 'Wall downloaded in Pictures/Prism!');
+      toasts.codeSend(wallpaperSavedMessage);
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
