@@ -605,6 +605,7 @@ _i174.GetIt initGetIt(
     () => _i195.CategoryFeedBloc(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
+      gh<_i112.UserBlockRepository>(),
     ),
   );
   gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
@@ -614,6 +615,7 @@ _i174.GetIt initGetIt(
     () => _i1070.WallOfTheDayRepositoryImpl(
       gh<_i349.FirestoreClient>(),
       gh<_i727.PrismWallpaperRepository>(),
+      gh<_i112.UserBlockRepository>(),
     ),
   );
   gh.factory<_i736.ThemeModeBloc>(
@@ -640,12 +642,16 @@ _i174.GetIt initGetIt(
     ),
   );
   gh.factory<_i318.SetupsBloc>(
-    () => _i318.SetupsBloc(gh<_i247.FetchSetupsUseCase>()),
+    () => _i318.SetupsBloc(
+      gh<_i247.FetchSetupsUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
   );
   gh.factory<_i872.PersonalizedFeedBloc>(
     () => _i872.PersonalizedFeedBloc(
       gh<_i212.FetchPersonalizedFeedUseCase>(),
       gh<_i567.PersonalizedFeedRepository>(),
+      gh<_i112.UserBlockRepository>(),
     ),
   );
   gh.factory<_i941.ProfileSetupsBloc>(

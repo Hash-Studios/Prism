@@ -13,6 +13,7 @@ const USERS_V2 = "usersv2";
 const BLOCKED_USERS = "blockedUsers";
 const RATE_DAILY = "userBlockRateDaily";
 const RATE_TARGET = "userBlockRateByTarget";
+const CONTENT_REPORTS = "contentReports";
 
 const MAX_ACTIONS_PER_DAY = 200;
 const MIN_MS_BETWEEN_SAME_TARGET = 60 * 1000;
@@ -64,6 +65,28 @@ interface UnblockUserResponse {
   ok: true;
 }
 
+/**
+ * Shape of the auto-filed `contentReports` doc created when a user blocks
+ * another user, so admins are alerted via the same pipeline as a manual
+ * report. Field names must match what `submitContentReport` writes and what
+ * `onContentReportCreated` / the admin review screen read.
+ */
+export function buildBlockContentReportDoc(params: {
+  blockedUid: string;
+  callerUid: string;
+  now: admin.firestore.Timestamp;
+}): Record<string, unknown> {
+  return {
+    contentType: "user",
+    targetFirestoreDocId: params.blockedUid,
+    targetCollection: USERS_V2,
+    reason: "blocked",
+    reporterUid: params.callerUid,
+    status: "open",
+    createdAt: params.now,
+  };
+}
+
 export function isSameTargetCooldownActive(params: {
   action: "block" | "unblock";
   lastAtMs?: number;
@@ -102,6 +125,7 @@ export const blockUser = onCall(
 
     const dailyRateRef = db.collection(RATE_DAILY).doc(`${callerUid}_${today}`);
     const targetRateRef = db.collection(RATE_TARGET).doc(`${callerUid}_${blockedUid}`);
+    const contentReportRef = db.collection(CONTENT_REPORTS).doc();
 
     await db.runTransaction(async (tx) => {
       const [callerSnap, blockedSnap, blockSnap, dailyRateSnap, targetRateSnap] = await Promise.all([
@@ -203,9 +227,13 @@ export const blockUser = onCall(
         },
         {merge: true},
       );
+
+      // File a contentReports doc so admins are alerted (via onContentReportCreated)
+      // within the same 24h moderation pipeline as a manual report.
+      tx.set(contentReportRef, buildBlockContentReportDoc({blockedUid, callerUid, now}));
     });
 
-    logger.info("blockUser: success", {callerUid, blockedUid});
+    logger.info("blockUser: success", {callerUid, blockedUid, contentReportId: contentReportRef.id});
 
     return {ok: true};
   },
