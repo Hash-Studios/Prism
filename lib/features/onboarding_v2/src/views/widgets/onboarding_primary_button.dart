@@ -18,28 +18,33 @@ class OnboardingPrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = enabled && onPressed != null && !loading;
-    return AnimatedOpacity(
-      duration: OnboardingMotion.short,
-      opacity: isEnabled ? 1 : OnboardingOpacity.disabledButton,
-      child: Material(
-        color: OnboardingColors.buttonBackground,
-        borderRadius: BorderRadius.circular(OnboardingRadius.cta),
-        child: InkWell(
+    return Semantics(
+      button: true,
+      enabled: isEnabled,
+      label: label,
+      child: AnimatedOpacity(
+        duration: OnboardingMotion.short,
+        opacity: isEnabled ? 1 : OnboardingOpacity.disabledButton,
+        child: Material(
+          color: OnboardingColors.buttonBackground,
           borderRadius: BorderRadius.circular(OnboardingRadius.cta),
-          onTap: isEnabled ? onPressed : null,
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: OnboardingMotion.short,
-              child: loading
-                  ? const SizedBox(
-                      width: OnboardingLayout.loadingIndicatorSize,
-                      height: OnboardingLayout.loadingIndicatorSize,
-                      child: CircularProgressIndicator(
-                        strokeWidth: OnboardingLayout.loadingIndicatorStroke,
-                        color: OnboardingColors.buttonText,
-                      ),
-                    )
-                  : Text(label, style: OnboardingTypography.cta),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(OnboardingRadius.cta),
+            onTap: isEnabled ? onPressed : null,
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: OnboardingMotion.short,
+                child: loading
+                    ? const SizedBox(
+                        width: OnboardingLayout.loadingIndicatorSize,
+                        height: OnboardingLayout.loadingIndicatorSize,
+                        child: CircularProgressIndicator(
+                          strokeWidth: OnboardingLayout.loadingIndicatorStroke,
+                          color: OnboardingColors.buttonText,
+                        ),
+                      )
+                    : Text(label, style: OnboardingTypography.cta),
+              ),
             ),
           ),
         ),
