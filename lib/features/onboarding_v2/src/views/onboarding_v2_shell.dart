@@ -4,6 +4,7 @@ import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -11,6 +12,7 @@ import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f0_auth_page.dart';
@@ -46,7 +48,9 @@ class OnboardingV2Shell extends StatefulWidget {
 class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   late final OnboardingV2Bloc _bloc;
   late final TapGestureRecognizer _legalTap;
+  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _imagesPrecached = false;
+  bool _termsAccepted = false;
 
   static const List<Widget> _pages = [
     F0AuthPage(),
@@ -67,8 +71,10 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     _bloc = getIt<OnboardingV2Bloc>();
     _bloc.add(const OnboardingV2Event.started());
     AppSoundManager.instance.playOnboardingSwoosh();
+    // Once accepted, don't ask again on a later onboarding run (e.g. after logout).
+    _termsAccepted = _settingsLocal.get<bool>(OnboardingV2Config.termsAcceptedKey, defaultValue: false);
     _legalTap = TapGestureRecognizer()
-      ..onTap = () => launchUrl(Uri.parse('https://prism-app-terms.web.app'), mode: LaunchMode.externalApplication);
+      ..onTap = () => launchUrl(Uri.parse(OnboardingV2Config.termsUrl), mode: LaunchMode.externalApplication);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -133,8 +139,11 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     } catch (error) {
       if (mounted) {
         final String message = error.toString();
+        final bool isPlayServicesError =
+            defaultTargetPlatform == TargetPlatform.android &&
+            (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
         toasts.error(
-          message.contains('providerConfigurationError') || message.contains('no provider dependencies')
+          isPlayServicesError
               ? 'Google Play services on this device cannot sign in.'
               : 'Something went wrong, please try again!',
         );
@@ -162,6 +171,20 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       if (mounted) toasts.error('Something went wrong, please try again!');
       _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
+  }
+
+  void _setTermsAccepted(bool accepted) {
+    setState(() => _termsAccepted = accepted);
+    _settingsLocal.set(OnboardingV2Config.termsAcceptedKey, accepted);
+  }
+
+  /// iOS-only guest path (Guideline 5.1.1(v)): browsing must not require an
+  /// account. Marks onboarding done the same way a completed sign-in flow
+  /// does, then goes straight to the dashboard signed out.
+  Future<void> _handleBrowseWithoutAccount() async {
+    await _settingsLocal.set(OnboardingV2Keys.onboardedNew, true);
+    if (!mounted) return;
+    context.router.replaceAll([const DashboardRoute()]);
   }
 
   void _handleCtaTap(OnboardingV2Step step) {
@@ -289,6 +312,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                         legalTap: _legalTap,
                         onCtaTap: () => _handleCtaTap(state.step),
                         onAppleTap: _handleAppleSignIn,
+                        termsAccepted: _termsAccepted,
+                        onTermsChanged: _setTermsAccepted,
+                        onBrowseTap: _handleBrowseWithoutAccount,
                       ),
                     ),
                   ],
@@ -307,12 +333,23 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
 // Staggered fade-in fires once on initial mount (F0 open).
 // ---------------------------------------------------------------------------
 class _SharedOverlay extends StatefulWidget {
-  const _SharedOverlay({required this.state, required this.legalTap, required this.onCtaTap, required this.onAppleTap});
+  const _SharedOverlay({
+    required this.state,
+    required this.legalTap,
+    required this.onCtaTap,
+    required this.onAppleTap,
+    required this.termsAccepted,
+    required this.onTermsChanged,
+    required this.onBrowseTap,
+  });
 
   final OnboardingV2State state;
   final TapGestureRecognizer legalTap;
   final VoidCallback onCtaTap;
   final VoidCallback onAppleTap;
+  final bool termsAccepted;
+  final ValueChanged<bool> onTermsChanged;
+  final VoidCallback onBrowseTap;
 
   @override
   State<_SharedOverlay> createState() => _SharedOverlayState();
@@ -404,6 +441,10 @@ class _SharedOverlayState extends State<_SharedOverlay> {
               state: widget.state,
               onCtaTap: widget.onCtaTap,
               onAppleTap: widget.onAppleTap,
+              termsAccepted: widget.termsAccepted,
+              onTermsChanged: widget.onTermsChanged,
+              legalTap: widget.legalTap,
+              onBrowseTap: widget.onBrowseTap,
             ),
             _BottomText(
               step: step,
@@ -543,6 +584,10 @@ class _CtaButton extends StatelessWidget {
     required this.state,
     required this.onCtaTap,
     required this.onAppleTap,
+    required this.termsAccepted,
+    required this.onTermsChanged,
+    required this.legalTap,
+    required this.onBrowseTap,
   });
 
   final OnboardingV2Step step;
@@ -552,6 +597,15 @@ class _CtaButton extends StatelessWidget {
   final OnboardingV2State state;
   final VoidCallback onCtaTap;
   final VoidCallback onAppleTap;
+
+  /// "I agree to the Terms of Use" gate — Google, Apple and the guest button
+  /// all stay disabled until this is ticked.
+  final bool termsAccepted;
+  final ValueChanged<bool> onTermsChanged;
+  final TapGestureRecognizer legalTap;
+
+  /// iOS-only guest entry point (Guideline 5.1.1(v)).
+  final VoidCallback onBrowseTap;
 
   @override
   Widget build(BuildContext context) {
@@ -563,7 +617,7 @@ class _CtaButton extends StatelessWidget {
     };
 
     final isEnabled = switch (step) {
-      OnboardingV2Step.auth => true,
+      OnboardingV2Step.auth => termsAccepted,
       OnboardingV2Step.interests => state.interestsData.canContinue,
       OnboardingV2Step.starterPack => state.starterPackData.canContinue,
       OnboardingV2Step.aiGenerate => true,
@@ -582,8 +636,16 @@ class _CtaButton extends StatelessWidget {
         defaultTargetPlatform == TargetPlatform.android ? 'set as wallpaper' : 'save to photos',
     };
 
-    final showApple = step == OnboardingV2Step.auth && defaultTargetPlatform == TargetPlatform.iOS;
-    final extraHeight = showApple ? (OnboardingLayout.ctaHeight + 12) * sy : 0.0;
+    final bool isAuthStep = step == OnboardingV2Step.auth;
+    final bool showApple = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS;
+    // Guest browsing is iOS-only: Android keeps mandatory sign-in.
+    final bool showBrowse = isAuthStep && defaultTargetPlatform == TargetPlatform.iOS;
+    const double termsRowHeight = 36;
+    const double browseRowHeight = 36;
+    final double extraHeight =
+        (showApple ? (OnboardingLayout.ctaHeight + 12) * sy : 0.0) +
+        (isAuthStep ? (termsRowHeight + 6) * sy : 0.0) +
+        (showBrowse ? browseRowHeight * sy : 0.0);
     return Positioned(
       top: OnboardingLayout.ctaY * sy - extraHeight,
       left: OnboardingLayout.ctaX * sx,
@@ -594,10 +656,18 @@ class _CtaButton extends StatelessWidget {
         duration: const Duration(milliseconds: 1000),
         child: Column(
           children: [
+            if (isAuthStep) ...[
+              SizedBox(
+                height: termsRowHeight * sy,
+                child: _TermsCheckboxRow(accepted: termsAccepted, onChanged: onTermsChanged, legalTap: legalTap),
+              ),
+              SizedBox(height: 6 * sy),
+            ],
             if (showApple) ...[
               Expanded(
                 child: OnboardingPrimaryButton(
-                  label: 'continue with Apple',
+                  label: 'Continue with Apple',
+                  icon: Icons.apple,
                   onPressed: onAppleTap,
                   enabled: isEnabled,
                   loading: isLoading,
@@ -608,9 +678,72 @@ class _CtaButton extends StatelessWidget {
             Expanded(
               child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
             ),
+            if (showBrowse)
+              SizedBox(
+                height: browseRowHeight * sy,
+                child: Center(
+                  child: TextButton(
+                    onPressed: termsAccepted ? onBrowseTap : null,
+                    child: Text(
+                      'Browse without an account',
+                      style: OnboardingTypography.helper.copyWith(fontSize: 13, decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TermsCheckboxRow extends StatelessWidget {
+  const _TermsCheckboxRow({required this.accepted, required this.onChanged, required this.legalTap});
+
+  final bool accepted;
+  final ValueChanged<bool> onChanged;
+  final TapGestureRecognizer legalTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 22,
+          height: 22,
+          child: Checkbox(
+            value: accepted,
+            onChanged: (value) => onChanged(value ?? false),
+            fillColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected)
+                  ? OnboardingColors.buttonBackground
+                  : OnboardingColors.transparent,
+            ),
+            checkColor: OnboardingColors.buttonText,
+            side: const BorderSide(color: OnboardingColors.textOnDark),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: OnboardingTypography.helper,
+              children: [
+                const TextSpan(text: 'I agree to the '),
+                TextSpan(
+                  text: 'Terms of Use',
+                  style: OnboardingTypography.helper.copyWith(decoration: TextDecoration.underline),
+                  recognizer: legalTap,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

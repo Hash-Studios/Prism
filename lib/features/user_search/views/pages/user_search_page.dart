@@ -1,8 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -92,7 +94,8 @@ class _UserSearchState extends State<UserSearch> {
           ),
         ),
       ),
-      body: const _UserSearchLoader(),
+      // usersV2 reads require auth per firestore.rules; guests must sign in first.
+      body: app_state.prismUser.loggedIn ? const _UserSearchLoader() : const SignInPrompt(feature: 'creator search'),
     );
   }
 }

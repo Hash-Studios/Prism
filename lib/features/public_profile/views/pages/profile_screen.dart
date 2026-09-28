@@ -10,7 +10,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
+import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -84,6 +86,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // usersV2 reads require auth per firestore.rules; guests (iOS browse-without-account)
+    // must sign in first, for both their own profile and other users' profiles.
+    if (!app_state.prismUser.loggedIn) {
+      return Scaffold(body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'));
+    }
     if (_isOwnProfile) {
       _contentLoadTracker.success(
         itemCount: 1,
@@ -468,10 +475,19 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 child: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
                               ),
                               onSelected: (String value) async {
+                                final String uid = (widget.id ?? '').trim();
+                                if (value == 'report') {
+                                  if (uid.isEmpty) {
+                                    return;
+                                  }
+                                  // 'user' contentType: another agent is adding support for it to the
+                                  // report sheet and the submitContentReport callable.
+                                  await showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid);
+                                  return;
+                                }
                                 if (value != 'block') {
                                   return;
                                 }
-                                final String uid = (widget.id ?? '').trim();
                                 final String em = (widget.email ?? '').trim();
                                 if (uid.isEmpty || em.isEmpty) {
                                   return;
@@ -484,6 +500,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 );
                               },
                               itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
+                                PopupMenuItem<String>(value: 'report', child: Text('Report user')),
                                 PopupMenuItem<String>(value: 'block', child: Text('Block user')),
                               ],
                             ),

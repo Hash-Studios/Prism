@@ -14,6 +14,10 @@ class OnboardingV2Config {
   static const String paywallSource = 'onboarding_v2_last_step';
   static const String remoteConfigStarterPackKey = 'onboarding_starter_pack_v1';
   static const String excludedCategory = 'Community';
+  static const String termsUrl = 'https://prismwalls.com/terms';
+
+  /// Local prefs key: has the user ever ticked "I agree to the Terms of Use"?
+  static const String termsAcceptedKey = 'onboarding_terms_accepted';
 
   static const List<AiStylePreset> aiOnboardingStyles = [
     AiStylePreset.nature,
