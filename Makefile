@@ -257,7 +257,10 @@ build-ipa: ensure-fvm doppler-check
 		echo "Usage: make build-ipa BUILD_NUMBER=303"; \
 		exit 1; \
 	fi
-	@$(FLUTTER) build ipa --release --build-number=$(BUILD_NUMBER) $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
+	@$(FLUTTER) build ipa --release --build-number=$(BUILD_NUMBER) --obfuscate --split-debug-info=build/ios/outputs/symbols $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(IOS_BUILD_ARGS)
+	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
+		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
+	fi
 
 ifeq ($(CI),true)
 ensure-fvm:
