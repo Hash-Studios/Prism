@@ -482,6 +482,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
   final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
   bool _bootstrapCompleted = false;
+  static bool _launchLinkHandled = false;
   bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
@@ -786,6 +787,12 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
+    // RestartWidget rebuilds the router after logout and account deletion, and the platform still reports the link
+    // the process was launched with. Replaying it would reopen that screen (or not-found) in the new session.
+    if (platformDeepLink.initial) {
+      if (_launchLinkHandled) return DeepLink.defaultPath;
+      _launchLinkHandled = true;
+    }
     final DeepLinkActionEntity action = _deepLinkParser.parse(platformDeepLink.uri);
     final TargetTypeValue targetType = _deepLinkTargetType(action);
     final bool isKnown = action is! UnknownIntent;
