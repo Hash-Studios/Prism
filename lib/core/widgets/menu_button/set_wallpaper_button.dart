@@ -189,6 +189,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
               );
       },
       child: CircularMenuButton(
+        label: 'Set as wallpaper',
         isLoading: isLoading,
         child: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary, size: 20),
       ),
