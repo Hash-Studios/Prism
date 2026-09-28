@@ -205,8 +205,10 @@ export const wallOfTheDay = onSchedule(
     const wallTitle = (newWall.title as string | undefined)?.trim() || "Check it out";
     const wallpaperUrl = String(newWall.wallpaper_url ?? "");
     const thumbnailUrl = String(newWall.wallpaper_thumb ?? "");
+    // Share links resolve walls by their `id` field, which is not the doc id.
+    const shareId = typeof newWall.id === "string" && newWall.id.trim() ? newWall.id.trim() : newWallId;
     const canonicalWallUrl = _wallShareUrl({
-      wallId: newWallId,
+      wallId: shareId,
       wallpaperUrl,
       thumbnailUrl,
     });
