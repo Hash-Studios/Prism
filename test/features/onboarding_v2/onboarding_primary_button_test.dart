@@ -25,4 +25,31 @@ void main() {
       ),
     );
   });
+
+  testWidgets('an icon renders next to the label when provided (e.g. Continue with Apple)', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: OnboardingPrimaryButton(label: 'Continue with Apple', icon: Icons.apple, onPressed: () {}),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.apple), findsOneWidget);
+    expect(find.text('Continue with Apple'), findsOneWidget);
+  });
+
+  testWidgets('no icon means no icon widget is inserted', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: OnboardingPrimaryButton(label: 'continue with Google', onPressed: () {}),
+        ),
+      ),
+    );
+
+    expect(find.byType(Icon), findsNothing);
+  });
 }

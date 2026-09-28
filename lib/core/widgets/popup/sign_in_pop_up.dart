@@ -280,8 +280,8 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.apple, color: Colors.white, size: 18),
-              SizedBox(width: 4),
-              Text('APPLE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+              SizedBox(width: 6),
+              Text('Sign in with Apple', style: TextStyle(fontSize: 16.0, color: Colors.white)),
             ],
           ),
         ),

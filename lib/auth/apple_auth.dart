@@ -191,6 +191,9 @@ class AppleAuth {
     }
   }
 
+  /// Re-authenticates with a fresh Apple credential, then revokes the Sign in
+  /// with Apple authorization. Required by Apple before account deletion
+  /// (HIG: apps must let users revoke "Sign in with Apple" on deletion).
   Future<void> reauthenticateCurrentUser() async {
     final rawNonce = _generateNonce();
     final credential = await SignInWithApple.getAppleIDCredential(
@@ -201,6 +204,9 @@ class AppleAuth {
       'apple.com',
     ).credential(idToken: credential.identityToken, rawNonce: rawNonce);
     await _auth.currentUser!.reauthenticateWithCredential(oauthCredential);
+    if (credential.authorizationCode.isNotEmpty) {
+      await _auth.revokeTokenWithAuthorizationCode(credential.authorizationCode);
+    }
   }
 
   Future<Map<String, dynamic>?> _getUserNEW(User user) async {
