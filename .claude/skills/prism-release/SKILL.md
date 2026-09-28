@@ -287,6 +287,32 @@ Output: `build/app/outputs/bundle/release/app-release.aab`. Record its size:
 ls -lh build/app/outputs/bundle/release/app-release.aab
 ```
 
+### 7b. Release notes (one source for Play and the App Store)
+
+Collect the user-facing changes since the last release tag:
+```sh
+git log v<LAST_VERSION>..HEAD --no-merges --pretty=format:"- %s" \
+  | grep -vE "^- (chore|style|test|ci|build|docs|refactor)"
+```
+Do not paste the list. Write **one** polished note from it:
+- 80 to 140 words. Calm, premium, restrained. No emojis, no exclamation marks, no em dashes.
+- Open with an observation about the release (craft, trust, momentum), not "What's new".
+- Group changes into user-facing themes. Fold small fixes into one phrase, for example
+  "Plus a number of fixes and improvements behind the scenes."
+- End with a short closing line, for example "Quietly, a lot better." or "Refined where it matters."
+- British spelling: the Play listing's default language is **en-GB** (also de-DE, es-ES, fr-FR).
+- Leave out platform-only changes on the other store (no "Save to Photos" on Play).
+
+**Play version:** at most **500 characters** (Play rejects the whole edit above that). Rewrite to
+fit; never cut mid-sentence. Measure with `printf '%s' "$(cat notes-play.txt)" | wc -m`. Pass
+it as locale-tagged JSON, because a bare `--release-notes` string is filed under en-US, which
+no one sees on an en-GB listing:
+```sh
+python3 -c 'import json,sys; print(json.dumps([{"language":"en-GB","text":open(sys.argv[1]).read().strip()}]))' notes-play.txt > notes.json
+```
+Show the human both versions before any upload. The full note goes to TestFlight What to Test
+and the App Store "What's New" (4000 characters max).
+
 ### 8. Android: upload (human decides the track and the rollout)
 
 Preferred: `gplay`. It already has Release manager access to `com.hash.prism`.
@@ -294,7 +320,7 @@ Preferred: `gplay`. It already has Release manager access to `com.hash.prism`.
 gplay status --package com.hash.prism          # current tracks and version codes
 gplay release --package com.hash.prism --track internal \
   --bundle build/app/outputs/bundle/release/app-release.aab \
-  --release-notes @notes.json --wait
+  --release-notes @notes.json --wait   # notes.json from step 7b
 ```
 Default to the `internal` track first. Promote later with `gplay promote`, and use `--rollout
 0.1` (a fraction) for a staged production rollout. `--release-notes` as a bare string files the
