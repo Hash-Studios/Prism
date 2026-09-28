@@ -1,0 +1,676 @@
+#!/usr/bin/env python3
+"""Prism verification helper: lock, launch, doctor, drive, snapshot, cleanup.
+
+Wraps `axe` (iOS Simulator) and `adb` + uiautomator (Android emulator)
+directly. There is no other e2e harness in this repo; this script is the
+whole harness.
+
+Invoke from the repo root:
+
+  .claude/skills/verify-prism/bin/verify-prism doctor
+  .claude/skills/verify-prism/bin/verify-prism doctor --platform ios
+  .claude/skills/verify-prism/bin/verify-prism launch --platform android
+  .claude/skills/verify-prism/bin/verify-prism cleanup --platform ios
+
+Read SKILL.md first. This file only implements the primitives; the recipe
+for each screen lives in features/*.md.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import time
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from pathlib import Path
+
+SKILL_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = SKILL_DIR.parent.parent.parent
+ARTIFACTS = SKILL_DIR / "artifacts"
+
+BUNDLE_ID = "com.hash.prism"
+
+# Our devices only. Never touch a simulator or emulator not named/serialed here.
+IOS_SIM_NAME = "Prism QA iPhone 17 Pro"
+ANDROID_AVD_NAME = "Prism_QA_API36"
+ANDROID_SERIAL_DEFAULT = "emulator-5580"
+
+IOS_APP_PATH = REPO_ROOT / "build" / "ios" / "iphonesimulator" / "Runner.app"
+ANDROID_APK_PATH = REPO_ROOT / "build" / "app" / "outputs" / "flutter-apk" / "app-debug.apk"
+
+LOCK = {
+    "ios": Path("/tmp/prism-verify-ios.lock"),
+    "android": Path("/tmp/prism-verify-android.lock"),
+}
+STATE = {
+    "ios": Path("/tmp/prism-verify-ios.state"),
+    "android": Path("/tmp/prism-verify-android.state"),
+}
+
+STALE_LOCK_S = 4 * 3600
+
+
+def _die(msg: str, code: int = 1) -> None:
+    print(f"verify-prism: {msg}", file=sys.stderr)
+    raise SystemExit(code)
+
+
+def _run(cmd: list[str], timeout: int = 120, check: bool = False) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=check)
+
+
+def _read_kv(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    out: dict[str, str] = {}
+    for line in path.read_text().splitlines():
+        if "=" in line:
+            k, v = line.split("=", 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+def _write_kv(path: Path, data: dict[str, str]) -> None:
+    path.write_text("".join(f"{k}={v}\n" for k, v in data.items()))
+
+
+def lock_owner(platform: str) -> dict[str, str] | None:
+    path = LOCK[platform]
+    if not path.exists():
+        return None
+    age = time.time() - path.stat().st_mtime
+    if age > STALE_LOCK_S:
+        print(f"verify-prism: dropping stale {platform} lock ({int(age)}s old)", file=sys.stderr)
+        path.unlink(missing_ok=True)
+        STATE[platform].unlink(missing_ok=True)
+        return None
+    return _read_kv(path) or {"pid": "unknown"}
+
+
+def acquire_lock(platform: str, device_id: str, run_id: str) -> None:
+    if os.environ.get("PRISM_VERIFY_TAKEOVER") == "1":
+        LOCK[platform].unlink(missing_ok=True)
+        STATE[platform].unlink(missing_ok=True)
+    owner = lock_owner(platform)
+    if owner:
+        _die(
+            f"refusing to double-drive {platform}: lock held device={owner.get('device_id')} "
+            f"run_id={owner.get('run_id')}. Run cleanup first, or set "
+            f"PRISM_VERIFY_TAKEOVER=1 after you confirm the other run is done.",
+            3,
+        )
+    run_dir = ARTIFACTS / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    data = {
+        "pid": str(os.getpid()),
+        "device_id": device_id,
+        "run_id": run_id,
+        "artifacts": str(run_dir),
+        "started": datetime.now(timezone.utc).isoformat(),
+    }
+    _write_kv(LOCK[platform], data)
+    _write_kv(STATE[platform], data)
+
+
+def require_state(platform: str) -> dict[str, str]:
+    data = _read_kv(STATE[platform])
+    if not data.get("run_id"):
+        _die(f"no {platform} verification state. Run launch --platform {platform} first.")
+    return data
+
+
+# ---------- iOS (axe) ----------
+
+
+def ios_resolve_udid() -> tuple[str, str]:
+    """Returns (udid, boot_state) for the device named IOS_SIM_NAME, or ('','') if absent."""
+    env = os.environ.get("PRISM_VERIFY_IOS_UDID", "").strip()
+    r = _run(["xcrun", "simctl", "list", "devices"])
+    for line in r.stdout.splitlines():
+        if env:
+            if env in line:
+                state = "Booted" if "(Booted)" in line else "Shutdown"
+                return env, state
+            continue
+        if IOS_SIM_NAME in line and "(" in line:
+            udid = line.split("(")[1].split(")")[0]
+            state = "Booted" if "(Booted)" in line else "Shutdown"
+            return udid, state
+    return "", ""
+
+
+def ios_other_booted(our_udid: str) -> list[str]:
+    """Other booted simulators we must not touch."""
+    r = _run(["xcrun", "simctl", "list", "devices", "booted"])
+    others = []
+    for line in r.stdout.splitlines():
+        if "(Booted)" not in line or "(" not in line:
+            continue
+        udid = line.split("(")[1].split(")")[0]
+        if udid != our_udid:
+            others.append(line.strip())
+    return others
+
+
+def ios_app_installed(udid: str) -> bool:
+    r = _run(["xcrun", "simctl", "get_app_container", udid, BUNDLE_ID, "app"])
+    return r.returncode == 0
+
+
+def cmd_doctor_ios() -> list[str]:
+    problems: list[str] = []
+    axe = _run(["axe", "--version"])
+    ver = (axe.stdout or axe.stderr or "").strip()
+    if axe.returncode != 0 or not ver:
+        problems.append("axe not on PATH (brew install cameroncooke/axe/axe)")
+    else:
+        try:
+            major, minor, *_ = (int(p) for p in ver.split(".")[:2])
+            if (major, minor) < (1, 7):
+                problems.append(f"axe {ver} < 1.7")
+        except ValueError:
+            problems.append(f"could not parse axe version: {ver!r}")
+
+    udid, state = ios_resolve_udid()
+    print("verify-prism doctor [ios]")
+    print(f"  axe:            {ver or 'MISSING'}")
+    print(f"  sim name:       {IOS_SIM_NAME}")
+    if not udid:
+        problems.append(f'no simulator named "{IOS_SIM_NAME}" exists on this Mac; create it (see SKILL.md)')
+        print("  udid:           MISSING")
+    else:
+        print(f"  udid:           {udid} ({state})")
+
+    others = ios_other_booted(udid)
+    if others:
+        print("  other booted (do not touch):")
+        for line in others:
+            print(f"    {line}")
+
+    owner = lock_owner("ios")
+    print(f"  lock:           {owner or 'none'}")
+    installed = ios_app_installed(udid) if udid else False
+    print(f"  installed:      {installed}")
+    print(f"  local build:    {IOS_APP_PATH.is_dir()} ({IOS_APP_PATH})")
+    if udid and state == "Booted" and not installed:
+        problems.append(f"{BUNDLE_ID} not installed on {udid}")
+    return problems
+
+
+def cmd_launch_ios(args: argparse.Namespace) -> int:
+    if args.build:
+        print("verify-prism: fvm flutter build ios --debug --simulator --dart-define=SKIP_FIREBASE_INIT=true")
+        r = subprocess.run(
+            [
+                "fvm", "flutter", "build", "ios",
+                "--debug", "--simulator",
+                "--dart-define=SKIP_FIREBASE_INIT=true",
+            ],
+            cwd=REPO_ROOT,
+        )
+        if r.returncode != 0:
+            _die("flutter build ios failed", r.returncode)
+
+    udid, state = ios_resolve_udid()
+    if not udid:
+        _die(
+            f'no simulator named "{IOS_SIM_NAME}". Create it once with:\n'
+            f'  xcrun simctl create "{IOS_SIM_NAME}" "iPhone 17 Pro" <ios-runtime-id>\n'
+            f"(pick a runtime id from `xcrun simctl list runtimes`)"
+        )
+    others = ios_other_booted(udid)
+    if others and os.environ.get("PRISM_VERIFY_TAKEOVER") != "1":
+        print("verify-prism: other simulators are booted; leaving them alone:", file=sys.stderr)
+        for line in others:
+            print(f"  {line}", file=sys.stderr)
+
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{os.getpid()}"
+    acquire_lock("ios", udid, run_id)
+
+    if state != "Booted":
+        print(f"verify-prism: booting {udid}")
+        _run(["xcrun", "simctl", "boot", udid])
+        _run(["xcrun", "simctl", "bootstatus", udid, "-b"])
+
+    if args.fresh:
+        print("verify-prism: keychain reset")
+        _run(["xcrun", "simctl", "keychain", udid, "reset"])
+        if IOS_APP_PATH.is_dir():
+            _run(["xcrun", "simctl", "uninstall", udid, BUNDLE_ID])
+            time.sleep(0.3)
+            _run(["xcrun", "simctl", "install", udid, str(IOS_APP_PATH)])
+            time.sleep(1.5)
+        elif not ios_app_installed(udid):
+            _die(f"no {IOS_APP_PATH} and app not installed. Run launch --build first.")
+    elif IOS_APP_PATH.is_dir() and not ios_app_installed(udid):
+        _run(["xcrun", "simctl", "install", udid, str(IOS_APP_PATH)])
+        time.sleep(1.5)
+    elif not ios_app_installed(udid):
+        _die(f"{BUNDLE_ID} not installed and {IOS_APP_PATH} missing")
+
+    _run(["xcrun", "simctl", "launch", udid, BUNDLE_ID])
+    print(f"verify-prism: launched {BUNDLE_ID} on {udid}, run_id={run_id}")
+    print(f"verify-prism: artifacts {ARTIFACTS / run_id}")
+    print("verify-prism: sign-in is real Google/Apple OAuth. Do not type credentials;")
+    print("verify-prism: ask the human to sign in, or drive signed-out flows only.")
+    return 0
+
+
+def ios_describe(udid: str) -> str:
+    r = _run(["axe", "describe-ui", "--udid", udid], timeout=30)
+    if r.returncode != 0:
+        _die(f"axe describe-ui failed: {r.stderr.strip()}")
+    return r.stdout
+
+
+def cmd_describe_ios() -> int:
+    state = require_state("ios")
+    print(ios_describe(state["device_id"]), end="")
+    return 0
+
+
+def cmd_tap_ios(args: argparse.Namespace) -> int:
+    state = require_state("ios")
+    cmd = ["axe", "tap", "--udid", state["device_id"]]
+    if args.label:
+        cmd += ["--label", args.label]
+    elif args.x is not None and args.y is not None:
+        cmd += ["-x", str(args.x), "-y", str(args.y)]
+    else:
+        _die("tap requires --label or --x/--y")
+    r = _run(cmd, timeout=30)
+    if r.returncode != 0:
+        _die(f"axe tap failed: {r.stderr.strip()}")
+    time.sleep(0.4)
+    return 0
+
+
+def cmd_type_ios(args: argparse.Namespace) -> int:
+    state = require_state("ios")
+    r = _run(["axe", "type", args.text, "--udid", state["device_id"]], timeout=30)
+    if r.returncode != 0:
+        _die(f"axe type failed: {r.stderr.strip()}")
+    return 0
+
+
+def cmd_snapshot_ios(tag: str) -> int:
+    state = require_state("ios")
+    run_dir = Path(state["artifacts"])
+    run_dir.mkdir(parents=True, exist_ok=True)
+    png = run_dir / f"{tag}.png"
+    tree = run_dir / f"{tag}.tree.txt"
+    meta = run_dir / f"{tag}.meta.txt"
+    _run(["axe", "screenshot", "--udid", state["device_id"], "--output", str(png)], timeout=30)
+    tree.write_text(ios_describe(state["device_id"]))
+    meta.write_text(
+        f"run_id={state['run_id']}\n"
+        f"udid={state['device_id']}\n"
+        f"bundle={BUNDLE_ID}\n"
+        f"tag={tag}\n"
+        f"utc={datetime.now(timezone.utc).isoformat()}\n"
+    )
+    print(f"verify-prism: snapshot {png}")
+    print(f"verify-prism: tree {tree}")
+    return 0
+
+
+def cmd_cleanup_ios() -> int:
+    data = _read_kv(STATE["ios"])
+    udid = data.get("device_id") or ios_resolve_udid()[0]
+    if udid:
+        _run(["xcrun", "simctl", "terminate", udid, BUNDLE_ID])
+    artifacts = data.get("artifacts", "")
+    LOCK["ios"].unlink(missing_ok=True)
+    STATE["ios"].unlink(missing_ok=True)
+    print("verify-prism: terminated app, dropped ios lock")
+    _print_artifacts(artifacts)
+    return 0
+
+
+# ---------- Android (adb + uiautomator) ----------
+
+
+def android_serial() -> str:
+    return os.environ.get("PRISM_VERIFY_ANDROID_SERIAL", ANDROID_SERIAL_DEFAULT)
+
+
+def android_devices() -> dict[str, str]:
+    r = _run(["adb", "devices"])
+    out: dict[str, str] = {}
+    for line in r.stdout.splitlines()[1:]:
+        line = line.strip()
+        if not line or "\t" not in line:
+            continue
+        serial, status = line.split("\t", 1)
+        out[serial] = status
+    return out
+
+
+def cmd_doctor_android() -> list[str]:
+    problems: list[str] = []
+    serial = android_serial()
+    print("verify-prism doctor [android]")
+
+    adb_v = _run(["adb", "version"])
+    if adb_v.returncode != 0:
+        problems.append("adb not on PATH")
+    avds = _run(["emulator", "-list-avds"])
+    have_avd = ANDROID_AVD_NAME in avds.stdout.splitlines()
+    print(f"  AVD present:    {have_avd} ({ANDROID_AVD_NAME})")
+    if not have_avd:
+        problems.append(f"AVD {ANDROID_AVD_NAME} not found (emulator -list-avds)")
+
+    devices = android_devices()
+    others = {s: st for s, st in devices.items() if s != serial}
+    print(f"  our serial:     {serial} -> {devices.get(serial, 'not running')}")
+    if others:
+        print("  other emulators (do not touch):")
+        for s, st in others.items():
+            print(f"    {s}: {st}")
+
+    owner = lock_owner("android")
+    print(f"  lock:           {owner or 'none'}")
+
+    installed = False
+    if devices.get(serial) == "device":
+        r = _run(["adb", "-s", serial, "shell", "pm", "path", BUNDLE_ID])
+        installed = r.returncode == 0 and bool(r.stdout.strip())
+    else:
+        problems.append(f"{serial} is not running (boot it with: emulator -avd {ANDROID_AVD_NAME} -port 5580)")
+    print(f"  installed:      {installed}")
+    print(f"  local apk:      {ANDROID_APK_PATH.is_file()} ({ANDROID_APK_PATH})")
+    return problems
+
+
+def cmd_launch_android(args: argparse.Namespace) -> int:
+    serial = android_serial()
+    if args.build:
+        print("verify-prism: fvm flutter build apk --debug --dart-define=SKIP_FIREBASE_INIT=true")
+        r = subprocess.run(
+            ["fvm", "flutter", "build", "apk", "--debug", "--dart-define=SKIP_FIREBASE_INIT=true"],
+            cwd=REPO_ROOT,
+        )
+        if r.returncode != 0:
+            _die("flutter build apk failed", r.returncode)
+
+    devices = android_devices()
+    if devices.get(serial) != "device":
+        _die(
+            f"{serial} is not running. Boot our AVD first (in another shell):\n"
+            f"  emulator -avd {ANDROID_AVD_NAME} -port 5580\n"
+            f"Do not boot it on a port used by someone else's emulator."
+        )
+    others = {s: st for s, st in devices.items() if s != serial}
+    if others:
+        print("verify-prism: other emulators are running; leaving them alone:", file=sys.stderr)
+        for s, st in others.items():
+            print(f"  {s}: {st}", file=sys.stderr)
+
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{os.getpid()}"
+    acquire_lock("android", serial, run_id)
+
+    if args.fresh:
+        _run(["adb", "-s", serial, "shell", "pm", "clear", BUNDLE_ID])
+        if ANDROID_APK_PATH.is_file():
+            _run(["adb", "-s", serial, "install", "-r", str(ANDROID_APK_PATH)], timeout=180)
+    else:
+        r = _run(["adb", "-s", serial, "shell", "pm", "path", BUNDLE_ID])
+        if r.returncode != 0 and ANDROID_APK_PATH.is_file():
+            _run(["adb", "-s", serial, "install", "-r", str(ANDROID_APK_PATH)], timeout=180)
+        elif r.returncode != 0:
+            _die(f"{BUNDLE_ID} not installed and {ANDROID_APK_PATH} missing. Run launch --build first.")
+
+    # monkey can exit 0 without starting anything, so start the activity directly and check the process.
+    _run(["adb", "-s", serial, "shell", "am", "start", "-W", "-n", f"{BUNDLE_ID}/.MainActivity"], timeout=60)
+    pid = _run(["adb", "-s", serial, "shell", "pidof", BUNDLE_ID]).stdout.strip()
+    if not pid:
+        _die(f"{BUNDLE_ID} did not start on {serial}. Check `adb -s {serial} logcat -b crash`.")
+    print(f"verify-prism: launched {BUNDLE_ID} on {serial}, run_id={run_id}")
+    print(f"verify-prism: artifacts {ARTIFACTS / run_id}")
+    print("verify-prism: sign-in is real Google/Apple OAuth. Do not type credentials;")
+    print("verify-prism: ask the human to sign in, or drive signed-out flows only.")
+    return 0
+
+
+_BOUNDS_RE = re.compile(r"\[(-?\d+),(-?\d+)\]\[(-?\d+),(-?\d+)\]")
+
+
+def android_dump(serial: str) -> ET.Element:
+    device_path = "/sdcard/prism-verify-dump.xml"
+    r = _run(["adb", "-s", serial, "shell", "uiautomator", "dump", device_path], timeout=30)
+    if r.returncode != 0:
+        _die(f"uiautomator dump failed: {r.stderr.strip()}")
+    local = ARTIFACTS / "_dump.xml"
+    local.parent.mkdir(parents=True, exist_ok=True)
+    _run(["adb", "-s", serial, "pull", device_path, str(local)], timeout=30)
+    return ET.fromstring(local.read_text(encoding="utf-8", errors="replace"))
+
+
+def android_nodes(root: ET.Element) -> list[dict[str, str]]:
+    out = []
+    for node in root.iter("node"):
+        attrib = node.attrib
+        if attrib.get("text") or attrib.get("content-desc") or attrib.get("resource-id"):
+            out.append(dict(attrib))
+    return out
+
+
+def android_tree_text(root: ET.Element) -> str:
+    lines = []
+    for n in android_nodes(root):
+        lines.append(
+            f"class={n.get('class', '')!r} text={n.get('text', '')!r} "
+            f"desc={n.get('content-desc', '')!r} id={n.get('resource-id', '')!r}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def android_find_center(root: ET.Element, text: str | None, desc: str | None) -> tuple[int, int]:
+    nodes = list(android_nodes(root))
+
+    def value(n: ET.Element) -> str:
+        return (n.get("text") if text else n.get("content-desc")) or ""
+
+    wanted = text or desc
+    # Flutter labels often carry extra lines ("Watch a short video\n+10c"), so fall back to the first line,
+    # then to a unique prefix, before giving up.
+    exact = [n for n in nodes if value(n) == wanted]
+    first_line = [n for n in nodes if value(n).split("\n", 1)[0] == wanted]
+    prefix = [n for n in nodes if value(n).startswith(wanted)]
+    for candidates in (exact, first_line, prefix):
+        if len(candidates) == 1 or (candidates and candidates is exact):
+            match = candidates[0]
+            break
+    else:
+        close = sorted({value(n) for n in prefix})[:5]
+        _die(f"no unique android node matching text={text!r} desc={desc!r}" + (f"; candidates: {close}" if close else ""))
+    m = _BOUNDS_RE.match(match.get("bounds", ""))
+    if not m:
+        _die(f"could not parse bounds {match.get('bounds')!r}")
+    x1, y1, x2, y2 = (int(v) for v in m.groups())
+    return (x1 + x2) // 2, (y1 + y2) // 2
+
+
+def cmd_describe_android() -> int:
+    state = require_state("android")
+    print(android_tree_text(android_dump(state["device_id"])), end="")
+    return 0
+
+
+def cmd_tap_android(args: argparse.Namespace) -> int:
+    state = require_state("android")
+    serial = state["device_id"]
+    if args.x is not None and args.y is not None:
+        x, y = args.x, args.y
+    else:
+        if not args.text and not args.desc:
+            _die("tap requires --text, --desc, or --x/--y")
+        x, y = android_find_center(android_dump(serial), args.text, args.desc)
+    _run(["adb", "-s", serial, "shell", "input", "tap", str(x), str(y)])
+    time.sleep(0.4)
+    return 0
+
+
+def cmd_type_android(args: argparse.Namespace) -> int:
+    state = require_state("android")
+    escaped = args.text.replace(" ", "%s")
+    _run(["adb", "-s", state["device_id"], "shell", "input", "text", escaped])
+    return 0
+
+
+def cmd_snapshot_android(tag: str) -> int:
+    state = require_state("android")
+    serial = state["device_id"]
+    run_dir = Path(state["artifacts"])
+    run_dir.mkdir(parents=True, exist_ok=True)
+    png = run_dir / f"{tag}.png"
+    tree = run_dir / f"{tag}.tree.txt"
+    meta = run_dir / f"{tag}.meta.txt"
+    # Binary output: do not use the text=True _run() helper, it would mangle the PNG bytes.
+    shot = subprocess.run(
+        ["adb", "-s", serial, "exec-out", "screencap", "-p"],
+        capture_output=True,
+        timeout=30,
+    )
+    png.write_bytes(shot.stdout)
+    tree.write_text(android_tree_text(android_dump(serial)))
+    meta.write_text(
+        f"run_id={state['run_id']}\n"
+        f"serial={serial}\n"
+        f"package={BUNDLE_ID}\n"
+        f"tag={tag}\n"
+        f"utc={datetime.now(timezone.utc).isoformat()}\n"
+    )
+    print(f"verify-prism: snapshot {png}")
+    print(f"verify-prism: tree {tree}")
+    return 0
+
+
+def cmd_cleanup_android() -> int:
+    data = _read_kv(STATE["android"])
+    serial = data.get("device_id") or android_serial()
+    _run(["adb", "-s", serial, "shell", "am", "force-stop", BUNDLE_ID])
+    artifacts = data.get("artifacts", "")
+    LOCK["android"].unlink(missing_ok=True)
+    STATE["android"].unlink(missing_ok=True)
+    print("verify-prism: force-stopped app, dropped android lock")
+    _print_artifacts(artifacts)
+    return 0
+
+
+def _print_artifacts(artifacts: str) -> None:
+    if not artifacts:
+        return
+    print(f"verify-prism: evidence kept at {artifacts}")
+    p = Path(artifacts)
+    if p.exists():
+        for f in sorted(p.iterdir()):
+            print(f"  {f}")
+    else:
+        print("  (directory missing, proof was not captured)")
+
+
+# ---------- dispatch ----------
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    problems: list[str] = []
+    if args.platform in ("ios", "both"):
+        problems += cmd_doctor_ios()
+    if args.platform in ("android", "both"):
+        if args.platform == "both":
+            print()
+        problems += cmd_doctor_android()
+    print()
+    if problems:
+        print("FAIL")
+        for p in problems:
+            print(f"  - {p}")
+        return 1
+    print("OK")
+    return 0
+
+
+def cmd_launch(args: argparse.Namespace) -> int:
+    return cmd_launch_ios(args) if args.platform == "ios" else cmd_launch_android(args)
+
+
+def cmd_describe(args: argparse.Namespace) -> int:
+    return cmd_describe_ios() if args.platform == "ios" else cmd_describe_android()
+
+
+def cmd_tap(args: argparse.Namespace) -> int:
+    return cmd_tap_ios(args) if args.platform == "ios" else cmd_tap_android(args)
+
+
+def cmd_type(args: argparse.Namespace) -> int:
+    return cmd_type_ios(args) if args.platform == "ios" else cmd_type_android(args)
+
+
+def cmd_snapshot(args: argparse.Namespace) -> int:
+    return cmd_snapshot_ios(args.tag) if args.platform == "ios" else cmd_snapshot_android(args.tag)
+
+
+def cmd_cleanup(args: argparse.Namespace) -> int:
+    return cmd_cleanup_ios() if args.platform == "ios" else cmd_cleanup_android()
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(prog="verify-prism")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    def add_platform(sp: argparse.ArgumentParser, default: str = "ios") -> None:
+        sp.add_argument("--platform", choices=["ios", "android"], default=default)
+
+    dp = sub.add_parser("doctor", help="read-only health check")
+    dp.add_argument("--platform", choices=["ios", "android", "both"], default="both")
+
+    lp = sub.add_parser("launch", help="lock, boot, install, launch")
+    add_platform(lp)
+    lp.add_argument("--fresh", action="store_true", help="reset app state before install/launch")
+    lp.add_argument("--build", action="store_true", help="build a debug binary first")
+
+    ds = sub.add_parser("describe", help="print accessibility / view tree")
+    add_platform(ds)
+
+    tp = sub.add_parser("tap")
+    add_platform(tp)
+    tp.add_argument("--label", help="iOS: accessibility label")
+    tp.add_argument("--text", help="Android: node text")
+    tp.add_argument("--desc", help="Android: node content-desc")
+    tp.add_argument("--x", type=float)
+    tp.add_argument("--y", type=float)
+
+    typ = sub.add_parser("type")
+    add_platform(typ)
+    typ.add_argument("--text", required=True)
+
+    sp = sub.add_parser("snapshot")
+    add_platform(sp)
+    sp.add_argument("--tag", required=True)
+
+    sub.add_parser("cleanup", help="terminate app this run started; keep artifacts").add_argument(
+        "--platform", choices=["ios", "android"], default="ios"
+    )
+
+    args = p.parse_args()
+    cmds = {
+        "doctor": cmd_doctor,
+        "launch": cmd_launch,
+        "describe": cmd_describe,
+        "tap": cmd_tap,
+        "type": cmd_type,
+        "snapshot": cmd_snapshot,
+        "cleanup": cmd_cleanup,
+    }
+    try:
+        return cmds[args.cmd](args)
+    except KeyboardInterrupt:
+        return 130
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
