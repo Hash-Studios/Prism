@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
@@ -222,34 +223,39 @@ class _PhotographerWallTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].wallpaperThumb?.trim() ?? '';
     final bool hasValidImageUrl = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
-    return Stack(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: animation!.value,
-            image: hasValidImageUrl
-                ? DecorationImage(image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover)
-                : null,
+    final String? author = context.publicProfileAdapter().userProfileWalls![index].by;
+    return Semantics(
+      button: true,
+      label: wallpaperSemanticLabel(author),
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: animation!.value,
+              image: hasValidImageUrl
+                  ? DecorationImage(image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover)
+                  : null,
+            ),
           ),
-        ),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-            onTap: () {
-              final list = context.publicProfileAdapter(listen: false).userProfileWalls;
-              if (list == null || list.isEmpty) {
-                return;
-              }
-              final entity = WallpaperDetailEntityX.fromPublicProfileWall(list[index]);
-              context.router.push(
-                WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
-              );
-            },
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+              onTap: () {
+                final list = context.publicProfileAdapter(listen: false).userProfileWalls;
+                if (list == null || list.isEmpty) {
+                  return;
+                }
+                final entity = WallpaperDetailEntityX.fromPublicProfileWall(list[index]);
+                context.router.push(
+                  WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

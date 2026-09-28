@@ -36,18 +36,28 @@ class PrismTopAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
                 Expanded(
                   child: Center(
-                    child: GestureDetector(
+                    child: Semantics(
+                      button: true,
+                      label: 'Feed settings',
+                      excludeSemantics: true,
                       onTap: onLogoTap,
-                      behavior: HitTestBehavior.opaque,
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          _PrismLogo(),
-                          SizedBox(width: 4),
-                          Text('prism', style: PrismTextStyles.brandName),
-                          SizedBox(width: 2),
-                          Icon(PrismIcons.dropdownCaret, color: PrismColors.onPrimary, size: PrismAppBarSizes.iconSize),
-                        ],
+                      child: GestureDetector(
+                        onTap: onLogoTap,
+                        behavior: HitTestBehavior.opaque,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            _PrismLogo(),
+                            SizedBox(width: 4),
+                            Text('prism', style: PrismTextStyles.brandName),
+                            SizedBox(width: 2),
+                            Icon(
+                              PrismIcons.dropdownCaret,
+                              color: PrismColors.onPrimary,
+                              size: PrismAppBarSizes.iconSize,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -142,18 +152,25 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String photoUrl = app_state.prismUser.profilePhoto;
-    return GestureDetector(
-      onTap: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email)),
-      child: Container(
-        width: PrismAppBarSizes.profileAvatarSize,
-        height: PrismAppBarSizes.profileAvatarSize,
-        padding: const EdgeInsets.all(PrismAppBarSizes.profileAvatarInnerPadding),
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: photoUrl,
-            fit: BoxFit.cover,
-            errorWidget: (context, url, error) =>
-                const ColoredBox(color: Colors.transparent, child: Icon(Icons.person, size: 24)),
+    void openProfile() => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.email));
+    return Semantics(
+      button: true,
+      label: 'Your profile',
+      excludeSemantics: true,
+      onTap: openProfile,
+      child: GestureDetector(
+        onTap: openProfile,
+        child: Container(
+          width: PrismAppBarSizes.profileAvatarSize,
+          height: PrismAppBarSizes.profileAvatarSize,
+          padding: const EdgeInsets.all(PrismAppBarSizes.profileAvatarInnerPadding),
+          child: ClipOval(
+            child: CachedNetworkImage(
+              imageUrl: photoUrl,
+              fit: BoxFit.cover,
+              errorWidget: (context, url, error) =>
+                  const ColoredBox(color: Colors.transparent, child: Icon(Icons.person, size: 24)),
+            ),
           ),
         ),
       ),

@@ -37,33 +37,37 @@ class WallpaperTile extends StatelessWidget {
     final columns = crossAxisCount ?? (MediaQuery.orientationOf(context) == Orientation.portrait ? 3 : 5);
     final width = (MediaQuery.sizeOf(context).width / columns).toInt();
     final height = memCacheHeight ?? (width * 2 * 1.5).toInt();
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-        highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-        onTap: () {
-          unawaited(
-            analytics.track(
-              SurfaceActionTappedEvent(
-                surface: _surface,
-                action: AnalyticsActionValue.tileOpened,
-                sourceContext: _sourceContext,
-                itemType: ItemTypeValue.wallpaper,
-                itemId: item.id,
-                index: index,
+    return Semantics(
+      button: true,
+      label: item.semanticLabel,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+          onTap: () {
+            unawaited(
+              analytics.track(
+                SurfaceActionTappedEvent(
+                  surface: _surface,
+                  action: AnalyticsActionValue.tileOpened,
+                  sourceContext: _sourceContext,
+                  itemType: ItemTypeValue.wallpaper,
+                  itemId: item.id,
+                  index: index,
+                ),
               ),
-            ),
-          );
-          context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(item)));
-        },
-        child: CachedNetworkImage(
-          imageUrl: item.thumbnailUrl,
-          fit: BoxFit.cover,
-          fadeInDuration: Duration.zero,
-          memCacheHeight: height,
-          placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-          errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+            );
+            context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(item)));
+          },
+          child: CachedNetworkImage(
+            imageUrl: item.thumbnailUrl,
+            fit: BoxFit.cover,
+            fadeInDuration: Duration.zero,
+            memCacheHeight: height,
+            placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+            errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+          ),
         ),
       ),
     );
