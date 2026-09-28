@@ -116,6 +116,17 @@ localNotification.router!.push(const SomeRoute());
 
 `main.dart` sets `localNotification.router = _appRouter` in `initState`. This is a shortcut for reaching a deep screen fast, not a substitute for driving the real entry point at least once. For a type `main.dart` does not import (for example `File`), evaluate the object in another library and pass it with the VM service's `scope` parameter.
 
+**Signed-in debug builds (Android).** Google sign-in fails on a debug build: the debug key is not registered in
+Firebase, and the failure looks like a cancel (`signInWithGoogle canceled by user`). For a signed-in debug run, sign
+the debug build with the release key in a local, uncommitted change to `android/app/build.gradle`
+(`buildTypes { debug { signingConfig signingConfigs.release } }`), with `android/key.jks` and `android/key.properties`
+copied from the main checkout. Revert the Gradle change before you commit. Release builds strip app logs, so use
+this debug run whenever you need logs from a signed-in path.
+
+**Restart without tapping through Settings.** With a debug run attached, evaluate this in the `main.dart` library
+through the VM service: `RestartWidget.restartApp(localNotification.router!.navigatorKey.currentContext!)`. Log out,
+account deletion, and Settings, Restart App all go through this restart, so test it signed in and signed out.
+
 **Full route map**: `lib/core/router/app_router.dart` (`AppRouter.routes`). Routes with `guards: [_signedInGuard]` need a signed-in human first; `guards: [_adminGuard]` need an admin account, skip those unless the human says otherwise.
 
 ## Evidence
