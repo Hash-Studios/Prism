@@ -259,7 +259,6 @@ The following packages are needed for the development of this application.
 
 **UI & Animations**
 - `animations: ^2.0.0` for dialog/transition animations
-- `rive: ^0.14.4` for vector animations
 - `carousel_slider: ^5.1.2` for carousel widget
 - `flutter_floating_bottom_bar: ^1.4.0` for the floating bottom navigation bar
 - `flutter_staggered_grid_view: ^0.7.0` for staggered grid layouts
