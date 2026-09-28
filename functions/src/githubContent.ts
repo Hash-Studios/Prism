@@ -1,7 +1,14 @@
+import * as admin from "firebase-admin";
 import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
+const db = admin.firestore();
 const REGION = "asia-south1";
+const UPLOADS = "githubUploads";
 const githubToken = defineSecret("GH_TOKEN");
 
 type GithubContentData = {
@@ -45,19 +52,32 @@ function requiredString(value: unknown, name: string): string {
   return value.trim();
 }
 
-function validateData(data: GithubContentData, requireSha: boolean): {repo: string; path: string; message: string; contentBase64?: string; sha?: string} {
+function validateCommon(data: GithubContentData): {repo: string; path: string; message: string} {
   const repo = requiredString(data.repo, "repo");
   const filePath = requiredString(data.path, "path");
   const message = requiredString(data.message, "message");
   if (!isAllowedRepo(repo)) throw new HttpsError("permission-denied", "Repository is not allowed.");
   if (!isValidGithubPath(filePath)) throw new HttpsError("invalid-argument", "Invalid file path.");
+  return {repo, path: filePath, message};
+}
 
-  const sha = data.sha == null ? undefined : requiredString(data.sha, "sha");
-  if (requireSha && !sha) throw new HttpsError("invalid-argument", "sha is required.");
-  if (requireSha) return {repo, path: filePath, message, sha};
+export interface GithubUploadRecord {
+  uid?: unknown;
+  repo?: unknown;
+  path?: unknown;
+}
 
-  const contentBase64 = requiredString(data.contentBase64, "contentBase64");
-  return {repo, path: filePath, message, contentBase64, sha};
+/** True when `record` (a githubUploads/{sha} doc) proves `callerUid` owns this repo+path, or the caller is an admin. */
+export function canDeleteUpload(
+  record: GithubUploadRecord | undefined,
+  callerUid: string,
+  repo: string,
+  path: string,
+  isAdmin: boolean,
+): boolean {
+  if (isAdmin) return true;
+  if (!record) return false;
+  return record.uid === callerUid && record.repo === repo && record.path === path;
 }
 
 function githubUrl(repo: string, filePath: string): string {
@@ -92,24 +112,52 @@ async function githubRequest(url: string, init: RequestInit): Promise<Record<str
 export const githubPutFile = onCall(
   {region: REGION, cors: true, secrets: [githubToken]},
   async (request: CallableRequest<GithubContentData>) => {
-    if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Sign in to upload files.");
-    const data = validateData(request.data ?? {}, false);
-    return githubRequest(githubUrl(data.repo, data.path), {
+    const callerUid = request.auth?.uid;
+    if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to upload files.");
+    const rawSha = request.data?.sha;
+    if (rawSha != null) throw new HttpsError("invalid-argument", "Overwrites are not allowed.");
+    const {repo, path, message} = validateCommon(request.data ?? {});
+    const contentBase64 = requiredString(request.data?.contentBase64, "contentBase64");
+
+    const result = await githubRequest(githubUrl(repo, path), {
       method: "PUT",
-      body: JSON.stringify({message: data.message, content: data.contentBase64, ...(data.sha ? {sha: data.sha} : {})}),
+      body: JSON.stringify({message, content: contentBase64}),
     });
+
+    const contentSha = (result.content as Record<string, unknown> | undefined)?.sha;
+    if (typeof contentSha === "string" && contentSha) {
+      await db.collection(UPLOADS).doc(contentSha).set({
+        uid: callerUid,
+        repo,
+        path,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    return result;
   },
 );
 
 export const githubDeleteFile = onCall(
   {region: REGION, cors: true, secrets: [githubToken]},
   async (request: CallableRequest<GithubContentData>) => {
-    if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Sign in to delete files.");
-    const data = validateData(request.data ?? {}, true);
-    await githubRequest(githubUrl(data.repo, data.path), {
+    const callerUid = request.auth?.uid;
+    if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete files.");
+    const {repo, path, message} = validateCommon(request.data ?? {});
+    const sha = requiredString(request.data?.sha, "sha");
+    const isAdmin = request.auth?.token?.admin === true;
+
+    const uploadRef = db.collection(UPLOADS).doc(sha);
+    const uploadSnap = await uploadRef.get();
+    const record = uploadSnap.exists ? (uploadSnap.data() as GithubUploadRecord) : undefined;
+    if (!canDeleteUpload(record, callerUid, repo, path, isAdmin)) {
+      throw new HttpsError("permission-denied", "You cannot delete this file.");
+    }
+
+    await githubRequest(githubUrl(repo, path), {
       method: "DELETE",
-      body: JSON.stringify({message: data.message, sha: data.sha}),
+      body: JSON.stringify({message, sha}),
     });
+    await uploadRef.delete();
     return {ok: true};
   },
 );
