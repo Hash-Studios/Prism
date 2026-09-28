@@ -423,12 +423,11 @@ def cmd_launch_android(args: argparse.Namespace) -> int:
         elif r.returncode != 0:
             _die(f"{BUNDLE_ID} not installed and {ANDROID_APK_PATH} missing. Run launch --build first.")
 
-    _run(
-        [
-            "adb", "-s", serial, "shell", "monkey",
-            "-p", BUNDLE_ID, "-c", "android.intent.category.LAUNCHER", "1",
-        ]
-    )
+    # monkey can exit 0 without starting anything, so start the activity directly and check the process.
+    _run(["adb", "-s", serial, "shell", "am", "start", "-W", "-n", f"{BUNDLE_ID}/.MainActivity"], timeout=60)
+    pid = _run(["adb", "-s", serial, "shell", "pidof", BUNDLE_ID]).stdout.strip()
+    if not pid:
+        _die(f"{BUNDLE_ID} did not start on {serial}. Check `adb -s {serial} logcat -b crash`.")
     print(f"verify-prism: launched {BUNDLE_ID} on {serial}, run_id={run_id}")
     print(f"verify-prism: artifacts {ARTIFACTS / run_id}")
     print("verify-prism: sign-in is real Google/Apple OAuth. Do not type credentials;")
@@ -470,15 +469,24 @@ def android_tree_text(root: ET.Element) -> str:
 
 
 def android_find_center(root: ET.Element, text: str | None, desc: str | None) -> tuple[int, int]:
-    for n in android_nodes(root):
-        if text and n.get("text") == text:
-            match = n
-            break
-        if desc and n.get("content-desc") == desc:
-            match = n
+    nodes = list(android_nodes(root))
+
+    def value(n: ET.Element) -> str:
+        return (n.get("text") if text else n.get("content-desc")) or ""
+
+    wanted = text or desc
+    # Flutter labels often carry extra lines ("Watch a short video\n+10c"), so fall back to the first line,
+    # then to a unique prefix, before giving up.
+    exact = [n for n in nodes if value(n) == wanted]
+    first_line = [n for n in nodes if value(n).split("\n", 1)[0] == wanted]
+    prefix = [n for n in nodes if value(n).startswith(wanted)]
+    for candidates in (exact, first_line, prefix):
+        if len(candidates) == 1 or (candidates and candidates is exact):
+            match = candidates[0]
             break
     else:
-        _die(f"no android node matching text={text!r} desc={desc!r}")
+        close = sorted({value(n) for n in prefix})[:5]
+        _die(f"no unique android node matching text={text!r} desc={desc!r}" + (f"; candidates: {close}" if close else ""))
     m = _BOUNDS_RE.match(match.get("bounds", ""))
     if not m:
         _die(f"could not parse bounds {match.get('bounds')!r}")
