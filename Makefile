@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -33,6 +33,12 @@ else
 endif
 GRADLE_USER_HOME_DIR_POSIX := $(subst \,/,$(GRADLE_USER_HOME_DIR))
 GRADLE_COMMON_OPTS ?= -Dorg.gradle.vfs.watch=false
+FIREBASE_PROJECT ?= prism-wallpapers
+FIREBASE_ACCOUNT ?=
+FIREBASE_ARGS = --project $(FIREBASE_PROJECT) $(if $(FIREBASE_ACCOUNT),--account $(FIREBASE_ACCOUNT),)
+FUNCTIONS_DOPPLER_CONFIG ?= prd
+FUNCTIONS_SECRETS ?= GH_TOKEN REVENUECAT_SECRET_KEY
+FUNCTIONS_ENV_KEYS ?= GH_USERNAME GH_REPO_WALLS GH_REPO_SETUPS
 
 # Ensure POSIX shell recipes work when running make from PowerShell/cmd on Windows.
 ifeq ($(OS),Windows_NT)
@@ -170,6 +176,7 @@ build: ensure-fvm doppler-check
 	$(FLUTTER) build apk --obfuscate --split-debug-info=build/app/outputs/symbols $(FIREBASE_RUN_ARG) $(ENV_DART_DEFINES) $(SENTRY_DART_DEFINES) $(BUILD_ARGS)
 
 build-aab: ensure-fvm doppler-check
+	@test -f android/app/google-services.json || { echo "android/app/google-services.json is missing: a release build would skip Firebase init. Copy it from the main checkout."; exit 1; }
 	@if [ -n "$(ANDROID_JAVA_HOME)" ]; then \
 		export JAVA_HOME="$(ANDROID_JAVA_HOME)"; \
 		export PATH="$$JAVA_HOME/bin:$$PATH"; \
@@ -182,6 +189,27 @@ build-aab: ensure-fvm doppler-check
 	@if [ "$(SENTRY_UPLOAD)" = "true" ]; then \
 		DOPPLER_PROJECT=$(DOPPLER_PROJECT) SENTRY_DOPPLER_CONFIG=$(SENTRY_DOPPLER_CONFIG) DART_CMD="$(DART)" ./tool/sentry_upload.sh; \
 	fi
+
+# Cloud Functions config comes from Doppler ($(FUNCTIONS_DOPPLER_CONFIG)). Values are piped, never printed.
+functions-env:
+	@set -e; out=functions/.env; : > $$out; \
+	for k in $(FUNCTIONS_ENV_KEYS); do \
+		v="$$(doppler secrets get $$k --plain --project $(DOPPLER_PROJECT) --config $(FUNCTIONS_DOPPLER_CONFIG))"; \
+		[ -n "$$v" ] || { echo "Doppler $(FUNCTIONS_DOPPLER_CONFIG) has no value for $$k"; exit 1; }; \
+		printf '%s=%s\n' "$$k" "$$v" >> $$out; \
+	done; echo "Wrote $$out ($(FUNCTIONS_ENV_KEYS))"
+
+functions-secrets-sync:
+	@set -e; for k in $(FUNCTIONS_SECRETS); do \
+		v="$$(doppler secrets get $$k --plain --project $(DOPPLER_PROJECT) --config $(FUNCTIONS_DOPPLER_CONFIG))"; \
+		[ -n "$$v" ] || { echo "Doppler $(FUNCTIONS_DOPPLER_CONFIG) has no value for $$k"; exit 1; }; \
+		printf '%s' "$$v" | firebase functions:secrets:set $$k --data-file=- $(FIREBASE_ARGS) >/dev/null; \
+		echo "Synced $$k from Doppler $(FUNCTIONS_DOPPLER_CONFIG)"; \
+	done
+
+functions-deploy: functions-env
+	@cd functions && npm run build
+	@firebase deploy --only functions,firestore:indexes $(FIREBASE_ARGS)
 
 gradle-reset:
 	@echo "Stopping Gradle daemons and clearing transform cache..."
@@ -224,6 +252,7 @@ build-ios: ensure-fvm doppler-check
 	@$(FLUTTER) build ios $(ENV_DART_DEFINES) $(IOS_BUILD_ARGS)
 
 build-ipa: ensure-fvm doppler-check
+	@test -f ios/Runner/GoogleService-Info.plist || { echo "ios/Runner/GoogleService-Info.plist is missing. Copy it from the main checkout."; exit 1; }
 	@if [ -z "$(BUILD_NUMBER)" ]; then \
 		echo "Usage: make build-ipa BUILD_NUMBER=303"; \
 		exit 1; \
