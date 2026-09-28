@@ -45,10 +45,25 @@ service cloud.firestore {
               == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1);
     }
 
+    // New profiles start empty: coins, premium and coinState are server-owned.
     function canCreateUserDoc(userId) {
       return isOwner(userId)
           && request.resource.data.id is string
-          && request.resource.data.id == userId;
+          && request.resource.data.id == userId
+          && request.resource.data.get('coins', 0) == 0
+          && request.resource.data.get('premium', false) == false
+          && request.resource.data.get('subscriptionTier', 'free') == 'free'
+          && request.resource.data.get('followers', []).size() == 0
+          && request.resource.data.get('badges', []).size() == 0
+          && !('coinState' in request.resource.data);
+    }
+
+    // Owners may only touch the client-side coinState keys; award flags stay server-owned.
+    function ownerCoinStateOk() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['coinState'])
+          || request.resource.data.coinState.diff(resource.data.get('coinState', {})).affectedKeys().hasOnly([
+            'premiumPreviewUnlocks', 'streakReminderEnabled', 'streakTimezoneOffsetMinutes', 'streakReminderNextAtUtc'
+          ]);
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -144,11 +159,10 @@ service cloud.firestore {
       allow update: if isConfiguredAdmin()
           || canToggleFollowersOnly()
           || (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'name', 'username', 'profilePhoto', 'bio', 'lastLoginAt', 'loggedIn',
+            'name', 'username', 'profilePhoto', 'coverPhoto', 'bio', 'links', 'lastLoginAt', 'loggedIn',
             'following', 'interestCategories', 'onboardingV2', 'uploadsWeekStart',
-            'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'premium',
-            'subscriptionTier', 'coinState'
-          ]));
+            'uploadsThisWeek', 'id', 'createdAt', 'updatedAt', 'coinState'
+          ]) && ownerCoinStateOk());
       allow delete: if isConfiguredAdmin();
 
       match /private/session {
@@ -182,7 +196,7 @@ service cloud.firestore {
           && (hasAuthEmail() && resource.data.modifier == authEmail()
               || resource.data.modifier in ['all', 'premium', 'free']
               || resource.data.modifier == request.auth.uid
-              || resource.data.modifier.matches('^[0-9].*'));
+              || resource.data.modifier.matches('^[0-9]+([.][0-9]+)*$'));
       allow write: if isConfiguredAdmin();
     }
 
