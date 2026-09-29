@@ -1,11 +1,8 @@
-/// Holds the Firebase initialisation future so that code running after
-/// [runApp] (specifically [StartupRepositoryImpl.bootstrap]) can await
-/// Firebase being ready without blocking the UI thread.
+/// Holds the shared Firebase initialisation future.
 ///
-/// [main] kicks off initialisation and calls [setFuture] immediately.
-/// [StartupRepositoryImpl.bootstrap] awaits [readyFuture] before touching
-/// FirebaseRemoteConfig, so the splash screen renders immediately while
-/// Firebase boots in the background.
+/// [main] starts Firebase while persistence and monitoring initialize, then
+/// awaits [readyFuture] before calling [runApp]. Startup bootstrap also awaits
+/// the same future before accessing Firebase Remote Config.
 class FirebaseInit {
   FirebaseInit._();
 

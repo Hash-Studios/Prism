@@ -254,6 +254,8 @@ extension RcOrFallbackValueX on RcOrFallbackValue {
 }
 
 extension PaywallResultValueX on PaywallResultValue {
+  bool get indicatesPurchase => this == PaywallResultValue.purchased;
+
   String get wireValue {
     switch (this) {
       case PaywallResultValue.placementOverriddenToV3:

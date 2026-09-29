@@ -32,7 +32,7 @@ class PaywallOrchestrator {
   bool get _rcPaywallsEnabled => app_state.useRcPaywalls;
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
-  Future<void> present(BuildContext context, {required String placement, required String source}) async {
+  Future<PaywallResultValue> present(BuildContext context, {required String placement, required String source}) async {
     final String normalizedPlacement = placement.trim().isEmpty ? PaywallPlacement.mainUpsell : placement.trim();
     _logPlacementTriggerContext(placement: normalizedPlacement, source: source);
     analytics.track(
@@ -43,15 +43,12 @@ class PaywallOrchestrator {
       ),
     );
 
-    bool presentedByRc = false;
     if (_rcPaywallsEnabled) {
-      presentedByRc = await _presentRevenueCatPaywall(placement: normalizedPlacement, source: source);
-      if (presentedByRc) {
-        return;
-      }
+      return _presentRevenueCatPaywall(placement: normalizedPlacement, source: source);
     }
 
     // RevenueCat paywall not available — no fallback screen.
+    return PaywallResultValue.notPresented;
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell(BuildContext context, {required String source}) async {
@@ -94,7 +91,7 @@ class PaywallOrchestrator {
     }
   }
 
-  Future<bool> _presentRevenueCatPaywall({required String placement, required String source}) async {
+  Future<PaywallResultValue> _presentRevenueCatPaywall({required String placement, required String source}) async {
     try {
       await PurchasesService.instance.ensureConfigured(app_state.prismUser.id);
       final Offering? placementOffering = await PurchasesService.instance.getCurrentOfferingForPlacement(placement);
@@ -131,7 +128,7 @@ class PaywallOrchestrator {
             rcOrFallback: RcOrFallbackValue.rc,
           ),
         );
-        return false;
+        return PaywallResultValue.noOffering;
       }
 
       final PaywallResult paywallResult = await RevenueCatUI.presentPaywall(
@@ -151,7 +148,7 @@ class PaywallOrchestrator {
             rcOrFallback: RcOrFallbackValue.rc,
           ),
         );
-        return false;
+        return paywallResultValueFromSdkName(paywallResult.name);
       }
 
       final bool isPremium = await PurchasesService.instance.checkAndPersistPremium(
@@ -171,7 +168,7 @@ class PaywallOrchestrator {
           rcOrFallback: RcOrFallbackValue.rc,
         ),
       );
-      return true;
+      return paywallResultValueFromSdkName(paywallResult.name);
     } catch (error) {
       analytics.track(
         PaywallResultEvent(
@@ -182,7 +179,7 @@ class PaywallOrchestrator {
           rcOrFallback: RcOrFallbackValue.rc,
         ),
       );
-      return false;
+      return PaywallResultValue.rcError;
     }
   }
 }
