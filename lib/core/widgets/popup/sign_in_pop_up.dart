@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
@@ -31,19 +32,21 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
       child: const Center(child: CircularProgressIndicator()),
     ),
   );
+  // Capped so the dialog does not stretch across a tablet.
+  final double dialogWidth = min(MediaQuery.sizeOf(context).width * .78, 480);
   final AlertDialog signinPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: SingleChildScrollView(
       child: Container(
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
-        width: MediaQuery.of(context).size.width * .78,
+        width: dialogWidth,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
               height: 150,
-              width: MediaQuery.of(context).size.width * .78,
+              width: dialogWidth,
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
                 color: Theme.of(context).hintColor,
@@ -78,7 +81,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 ),
                 const SizedBox(width: 20),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6,
+                  width: dialogWidth - 70,
                   child: Text(
                     "The ability to favourite wallpapers.",
                     style: Theme.of(
@@ -101,7 +104,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 ),
                 const SizedBox(width: 20),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6,
+                  width: dialogWidth - 70,
                   child: Text(
                     "The ability to upload wallpapers.",
                     style: Theme.of(
@@ -111,52 +114,56 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const SizedBox(width: 20),
-                Icon(
-                  JamIcons.instant_picture,
-                  size: 22,
-                  color: Theme.of(context).colorScheme.error == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 20),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  child: Text(
-                    "The ability to upload setups.",
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+            if (!Platform.isIOS) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const SizedBox(width: 20),
+                  Icon(
+                    JamIcons.instant_picture,
+                    size: 22,
+                    color: Theme.of(context).colorScheme.error == Colors.black
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.error,
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const SizedBox(width: 20),
-                Icon(
-                  JamIcons.coin,
-                  size: 22,
-                  color: Theme.of(context).colorScheme.error == Colors.black
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 20),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6,
-                  child: Text(
-                    "The ability to view premium content.",
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                  const SizedBox(width: 20),
+                  SizedBox(
+                    width: dialogWidth - 70,
+                    child: Text(
+                      "The ability to upload setups.",
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
+            if (!Platform.isIOS) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const SizedBox(width: 20),
+                  Icon(
+                    JamIcons.coin,
+                    size: 22,
+                    color: Theme.of(context).colorScheme.error == Colors.black
+                        ? Colors.white
+                        : Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(width: 20),
+                  SizedBox(
+                    width: dialogWidth - 70,
+                    child: Text(
+                      "The ability to view premium content.",
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 10),
             Row(
               children: [
@@ -170,7 +177,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
                 ),
                 const SizedBox(width: 20),
                 SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6,
+                  width: dialogWidth - 70,
                   child: Text(
                     "The ability to cloud sync data.",
                     style: Theme.of(
@@ -238,7 +245,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
       if (Platform.isIOS || Platform.isMacOS)
         MaterialButton(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Colors.black,
+          color: Colors.white,
           onPressed: () {
             navigator.pop();
             loaderVisible = true;
@@ -279,9 +286,9 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.apple, color: Colors.white, size: 18),
+              Icon(Icons.apple, color: Colors.black, size: 18),
               SizedBox(width: 6),
-              Text('Sign in with Apple', style: TextStyle(fontSize: 16.0, color: Colors.white)),
+              Text('Sign in with Apple', style: TextStyle(fontSize: 16.0, color: Colors.black)),
             ],
           ),
         ),
