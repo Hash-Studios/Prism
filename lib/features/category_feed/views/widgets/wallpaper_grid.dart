@@ -13,6 +13,7 @@ import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -123,7 +124,7 @@ class _WallpaperGridState extends State<WallpaperGrid> {
             itemCount: subWalls.isEmpty ? 20 : subWalls.length,
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+              crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
               childAspectRatio: 0.5,
             ),
             itemBuilder: (context, index) {

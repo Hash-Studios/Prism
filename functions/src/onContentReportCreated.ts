@@ -40,7 +40,10 @@ export const onContentReportCreated = onDocumentCreated(
 
     const adminEmails = await getAdminEmails();
     if (adminEmails.length === 0) {
-      logger.warn("onContentReportCreated: no admin emails configured in config/adminNotifications.");
+      logger.error("onContentReportCreated: no admin emails configured in config/adminNotifications.", {
+        reportId,
+        contentType,
+      });
       return;
     }
 

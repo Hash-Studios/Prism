@@ -138,10 +138,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       ]);
 
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-      final List<FeedItemEntity> creatorItems = _filterBlockedPrism(results[0], blocked);
+      final List<FeedItemEntity> creatorItems = BlockedCreatorsFilter.filterFeedItems(results[0], blocked);
       final wallhavenItems = results[1];
       final pexelsItems = results[2];
-      final List<FeedItemEntity> discoveryItems = _filterBlockedPrism(results[3], blocked);
+      final List<FeedItemEntity> discoveryItems = BlockedCreatorsFilter.filterFeedItems(results[3], blocked);
 
       final ranking = _rankingService.rankAndMix(
         creatorItems: creatorItems,
@@ -165,7 +165,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         request.refresh ? const <FeedItemEntity>[] : request.existingItems,
         feedItems,
       );
-      final List<FeedItemEntity> mergedFiltered = _filterBlockedPrism(merged, blocked);
+      final List<FeedItemEntity> mergedFiltered = BlockedCreatorsFilter.filterFeedItems(merged, blocked);
       await _writeCacheState(scope: cacheScope, seenKeys: nextSeen, cachedItems: mergedFiltered);
 
       logger.i(
@@ -501,7 +501,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         .toList(growable: false);
 
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    return _CacheState(seenKeys: seen, cachedItems: _filterBlockedPrism(items, blocked));
+    return _CacheState(seenKeys: seen, cachedItems: BlockedCreatorsFilter.filterFeedItems(items, blocked));
   }
 
   Future<void> _writeCacheState({
@@ -527,20 +527,6 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       out.add(list.sublist(i, end));
     }
     return out;
-  }
-
-  List<FeedItemEntity> _filterBlockedPrism(List<FeedItemEntity> items, Set<String> blocked) {
-    if (blocked.isEmpty) {
-      return items;
-    }
-    return items
-        .where(
-          (FeedItemEntity e) => e.maybeWhen(
-            prism: (_, w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked),
-            orElse: () => true,
-          ),
-        )
-        .toList(growable: false);
   }
 }
 

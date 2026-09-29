@@ -9,16 +9,18 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../../support/fake_user_block_repository.dart';
+
 class _MockFetchSetupsUseCase extends Mock implements FetchSetupsUseCase {}
 
-SetupEntity _setup(String id) {
+SetupEntity _setup(String id, {String email = ''}) {
   return SetupEntity(
     id: id,
     by: '',
     icon: '',
     iconUrl: '',
     desc: '',
-    email: '',
+    email: email,
     image: '',
     name: '',
     userPhoto: '',
@@ -58,7 +60,7 @@ void main() {
 
   blocTest<SetupsBloc, SetupsState>(
     'paginates and appends unique setups',
-    build: () => SetupsBloc(fetchUseCase),
+    build: () => SetupsBloc(fetchUseCase, FakeUserBlockRepository.pending()),
     act: (bloc) => bloc
       ..add(const SetupsEvent.started())
       ..add(const SetupsEvent.fetchMoreRequested()),
@@ -69,4 +71,33 @@ void main() {
       expect(bloc.state.items.map((e) => e.id), containsAll(<String>['1', '2']));
     },
   );
+
+  test('blocking a creator removes their setups from the emitted state without a refetch', () async {
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(
+        SetupsPage(
+          items: <SetupEntity>[
+            _setup('1', email: 'blocked@example.com'),
+            _setup('2', email: 'kept@example.com'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+    final blockRepo = FakeUserBlockRepository.pending();
+    final bloc = SetupsBloc(fetchUseCase, blockRepo);
+    addTearDown(bloc.close);
+
+    bloc.add(const SetupsEvent.started());
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    blockRepo.completeInitial(<String>{});
+    await Future<void>.delayed(Duration.zero);
+    blockRepo.completeInitial(<String>{'blocked@example.com'});
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items.map((e) => e.id), <String>['2']);
+    verify(() => fetchUseCase(any())).called(1);
+  });
 }

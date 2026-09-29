@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -12,6 +14,9 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+/// Portrait card width: 3.5 cards across a phone, capped so a tablet does not get giant cards.
+double _cardWidth(BuildContext context) => min(MediaQuery.sizeOf(context).width / 3.5, 160);
 
 class SearchDiscoveryWidget extends StatelessWidget {
   const SearchDiscoveryWidget({super.key, required this.tags, required this.selectedTag, required this.onTagPressed});
@@ -192,8 +197,8 @@ class _TrendingList extends StatelessWidget {
                 );
               },
               child: SizedBox(
-                width: (MediaQuery.of(context).size.width) / 3.5,
-                height: (MediaQuery.of(context).size.width) / 3.5 * 2,
+                width: _cardWidth(context),
+                height: _cardWidth(context) * 2,
                 child: CachedNetworkImage(imageUrl: thumbUrl, fit: BoxFit.cover),
               ),
             ),
@@ -260,7 +265,7 @@ class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleT
 
   @override
   Widget build(BuildContext context) {
-    final itemWidth = MediaQuery.of(context).size.width / 3.5;
+    final itemWidth = _cardWidth(context);
     final itemHeight = itemWidth * 2;
     return SizedBox(
       height: itemHeight,
@@ -313,7 +318,7 @@ class _CategorySection extends StatelessWidget {
         const _SectionHeader(label: 'Browse by Category', icon: JamIcons.grid_f),
         const SizedBox(height: 12),
         SizedBox(
-          height: MediaQuery.of(context).size.width / 3.5 * 2,
+          height: _cardWidth(context) * 2,
           child: ListView.separated(
             padding: EdgeInsets.zero,
             scrollDirection: Axis.horizontal,
@@ -330,8 +335,8 @@ class _CategorySection extends StatelessWidget {
                     );
                   },
                   child: SizedBox(
-                    width: MediaQuery.of(context).size.width / 3.5,
-                    height: MediaQuery.of(context).size.width / 3.5 * 2,
+                    width: _cardWidth(context),
+                    height: _cardWidth(context) * 2,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -410,7 +415,7 @@ class _ColorSection extends StatelessWidget {
           padding: EdgeInsets.zero,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4),
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 120),
           itemCount: _presetColors.length,
           itemBuilder: (context, index) {
             final swatch = _presetColors[index];

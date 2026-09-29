@@ -9,8 +9,26 @@ import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/config.dart' as config;
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+/// Whether the user should land on onboarding instead of the dashboard.
+///
+/// A guest (never signed in, but already onboarded) only counts as "signed
+/// in enough" to skip onboarding where guest browsing is allowed (iOS).
+/// Logout and account deletion reset [isOnboarded] to false, so a guest who
+/// signs out sees onboarding again. Extracted as a pure function so the
+/// routing decision is unit-testable without a widget tree.
+bool shouldShowOnboarding({
+  required bool isLoggedIn,
+  required bool isOnboarded,
+  required bool v2Enabled,
+  required bool guestBrowsingAllowed,
+}) {
+  final bool treatAsSignedIn = isLoggedIn || (guestBrowsingAllowed && isOnboarded);
+  return !treatAsSignedIn || (!isOnboarded && v2Enabled);
+}
 
 @RoutePage(name: 'SplashWidgetRoute')
 class SplashWidget extends StatefulWidget {
@@ -68,8 +86,14 @@ class _SplashWidgetState extends State<SplashWidget> {
       if (!mounted) {
         return;
       }
-      final isLoggedIn = app_state.prismUser.loggedIn;
-      if (!isLoggedIn || (!isOnboarded && v2Enabled)) {
+      final bool showOnboarding = shouldShowOnboarding(
+        isLoggedIn: app_state.prismUser.loggedIn,
+        isOnboarded: isOnboarded,
+        v2Enabled: v2Enabled,
+        // Guest browsing (no account) only exists on iOS; Android always forces sign-in.
+        guestBrowsingAllowed: defaultTargetPlatform == TargetPlatform.iOS,
+      );
+      if (showOnboarding) {
         _debugOnboardingShownThisSession = true;
         context.router.replaceAll([const OnboardingV2ShellRoute()]);
       } else {
