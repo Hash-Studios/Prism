@@ -205,16 +205,10 @@ service cloud.firestore {
       allow read, write: if isConfiguredAdmin();
     }
 
-    // Referral/redeem codes.
+    // Referral/redeem codes. Admin-only: the Enter Code feature was removed client-side,
+    // and any signed-in user could otherwise read every code in the collection.
     match /codes/{docId} {
-      allow read: if isSignedIn();
-      allow create, delete: if isConfiguredAdmin();
-      allow update: if isSignedIn()
-          && resource.data.redeemed == false
-          && request.resource.data.redeemed == true
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemed', 'winner', 'when'])
-          && request.resource.data.winner is map
-          && request.resource.data.winner.id == request.auth.uid;
+      allow read, write: if isConfiguredAdmin();
     }
 
     // AI generation history is private per user.

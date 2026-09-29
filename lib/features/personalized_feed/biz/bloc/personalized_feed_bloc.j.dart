@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/personalized_feed/domain/usecases/personalized_feed_usecases.dart';
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -20,16 +24,74 @@ int _elapsedLoadMs(Stopwatch sw) {
   return sw.elapsedMilliseconds;
 }
 
+/// Dispatched when the blocked-creators stream emits a change, so the current
+/// items can be re-filtered in place without a refetch. Hand-written (not a
+/// case in the `@freezed` [PersonalizedFeedEvent] union) since that union
+/// declares no abstract members beyond `Object`'s (freezed's `when`/`map`
+/// live in a separate extension, unused by this bloc), so implementing it
+/// directly here needs no `build_runner` regen.
+// ignore: avoid_implementing_value_types
+class _BlockedCreatorsChanged implements PersonalizedFeedEvent {
+  const _BlockedCreatorsChanged(this.blocked);
+
+  final Set<String> blocked;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is _BlockedCreatorsChanged &&
+          other.blocked.length == blocked.length &&
+          other.blocked.containsAll(blocked));
+
+  @override
+  int get hashCode => Object.hashAllUnordered(blocked);
+}
+
 @injectable
 class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedState> {
-  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase, this._repository) : super(PersonalizedFeedState.initial()) {
+  PersonalizedFeedBloc(this._fetchPersonalizedFeedUseCase, this._repository, this._userBlockRepository)
+    : super(PersonalizedFeedState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
+    on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
+    // Blocking a creator removes their items from the on-screen feed instantly,
+    // without waiting for the next fetch. skip(1) ignores the initial snapshot.
+    _blockedCreatorsSub = _userBlockRepository
+        .watchBlockedCreatorEmails()
+        .skip(1)
+        .listen((blocked) => add(_BlockedCreatorsChanged(blocked)));
   }
 
   final FetchPersonalizedFeedUseCase _fetchPersonalizedFeedUseCase;
   final PersonalizedFeedRepository _repository;
+  final UserBlockRepository _userBlockRepository;
+  StreamSubscription<Set<String>>? _blockedCreatorsSub;
+
+  void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<PersonalizedFeedState> emit) {
+    if (event.blocked.isEmpty) {
+      return;
+    }
+    final filtered = BlockedCreatorsFilter.filterFeedItems(state.items, event.blocked);
+    if (filtered.length == state.items.length) {
+      return;
+    }
+    final counts = _resolveSourceCounts(filtered);
+    emit(
+      state.copyWith(
+        items: filtered,
+        sourcePrism: counts.prism,
+        sourceWallhaven: counts.wallhaven,
+        sourcePexels: counts.pexels,
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() {
+    unawaited(_blockedCreatorsSub?.cancel());
+    return super.close();
+  }
 
   Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
     // Restore persisted seen keys so the feed shows wallpapers the user hasn't

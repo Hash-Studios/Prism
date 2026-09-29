@@ -57,6 +57,17 @@ class _ContentReportSheetBody extends StatefulWidget {
   State<_ContentReportSheetBody> createState() => _ContentReportSheetBodyState();
 }
 
+String _contentTypeLabel(String contentType) {
+  switch (contentType) {
+    case 'setup':
+      return 'setup';
+    case 'user':
+      return 'user';
+    default:
+      return 'wallpaper';
+  }
+}
+
 class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
   String? _selectedWire;
   final TextEditingController _details = TextEditingController();
@@ -124,16 +135,14 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
       top: 8,
       bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
     );
-    return Padding(
+    // Scrolls so the keyboard never pushes Submit off the sheet.
+    return SingleChildScrollView(
       padding: pad,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'Report ${widget.contentType == 'setup' ? 'setup' : 'wallpaper'}',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('Report ${_contentTypeLabel(widget.contentType)}', style: Theme.of(context).textTheme.titleLarge),
           if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...<Widget>[
             const SizedBox(height: 6),
             Text(widget.subtitle!, style: Theme.of(context).textTheme.bodySmall),

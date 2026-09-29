@@ -150,6 +150,9 @@
     ],
     "lib/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart": [
       "PersonalizedFeedSettingsSheet"
+    ],
+    "lib/features/startup/views/pages/splash_widget.dart": [
+      "shouldShowOnboarding"
     ]
   }
 }

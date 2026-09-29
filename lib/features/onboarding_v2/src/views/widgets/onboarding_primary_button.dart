@@ -8,12 +8,16 @@ class OnboardingPrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.enabled = true,
     this.loading = false,
+    this.icon,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool enabled;
   final bool loading;
+
+  /// Optional leading icon (e.g. the Apple logo for "Continue with Apple").
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +47,18 @@ class OnboardingPrimaryButton extends StatelessWidget {
                           color: OnboardingColors.buttonText,
                         ),
                       )
-                    : ExcludeSemantics(child: Text(label, style: OnboardingTypography.cta)),
+                    : ExcludeSemantics(
+                        child: icon == null
+                            ? Text(label, style: OnboardingTypography.cta)
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(icon, size: 18, color: OnboardingColors.buttonText),
+                                  const SizedBox(width: 8),
+                                  Text(label, style: OnboardingTypography.cta),
+                                ],
+                              ),
+                      ),
               ),
             ),
           ),

@@ -472,7 +472,9 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
 
     final ThemeData theme = Theme.of(context);
     final double viewportW = MediaQuery.sizeOf(context).width;
-    final double cellWidth = (viewportW - gridPadding.horizontal - gridSpacing) / 2;
+    // Cards up to ~260 pt wide: 2 columns on a phone, more on a tablet.
+    final int columns = (viewportW / 260).ceil().clamp(2, 6);
+    final double cellWidth = (viewportW - gridPadding.horizontal - gridSpacing * (columns - 1)) / columns;
     final double cellHeight = cellWidth / _kCollectionsGridChildAspectRatio;
     final double imageDecodeHeight = (cellHeight - _kCollectionsTitleBlockHeight - _kCollectionsTitleImageGap).clamp(
       48.0,
@@ -570,8 +572,8 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         padding: gridPadding,
         itemCount: itemCount,
         physics: AlwaysScrollableScrollPhysics(parent: ScrollConfiguration.of(context).getScrollPhysics(context)),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
           childAspectRatio: _kCollectionsGridChildAspectRatio,
           mainAxisSpacing: gridSpacing,
           crossAxisSpacing: gridSpacing,

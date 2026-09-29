@@ -398,7 +398,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       body: SlidingUpPanel(
         onPanelOpened: () => _handlePanelOpened(context, state),
         onPanelClosed: () => _handlePanelClosed(context, state),
-        backdropEnabled: true,
+        // No backdropEnabled: its invisible backdrop covered Back and Clock while the panel was open.
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(_panelTopRadius),
           topRight: Radius.circular(_panelTopRadius),
@@ -410,7 +410,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         color: Colors.transparent,
         maxHeight: MediaQuery.of(context).size.height * 0.43,
         controller: panelController,
-        backdropOpacity: 0,
         panel: _buildInfoPanel(context, state),
         body: _buildImageBody(context, _offsetAnimation, paletteLoading, state),
       ),

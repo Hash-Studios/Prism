@@ -48,9 +48,12 @@ class AppleAuth {
         nonce: nonce,
       );
 
-      final oauthCredential = OAuthProvider(
-        'apple.com',
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
+      // The Apple-specific credential; the generic OAuthProvider('apple.com') path fails on iOS with invalid-credential.
+      final oauthCredential = AppleAuthProvider.credentialWithIDToken(
+        appleCredential.identityToken!,
+        rawNonce,
+        AppleFullPersonName(givenName: appleCredential.givenName, familyName: appleCredential.familyName),
+      );
 
       final UserCredential authResult = await _auth.signInWithCredential(oauthCredential);
       final User? user = authResult.user;
@@ -191,16 +194,24 @@ class AppleAuth {
     }
   }
 
+  /// Re-authenticates with a fresh Apple credential, then revokes the Sign in
+  /// with Apple authorization. Required by Apple before account deletion
+  /// (HIG: apps must let users revoke "Sign in with Apple" on deletion).
   Future<void> reauthenticateCurrentUser() async {
     final rawNonce = _generateNonce();
     final credential = await SignInWithApple.getAppleIDCredential(
       scopes: [AppleIDAuthorizationScopes.email],
       nonce: _sha256ofString(rawNonce),
     );
-    final oauthCredential = OAuthProvider(
-      'apple.com',
-    ).credential(idToken: credential.identityToken, rawNonce: rawNonce);
+    final oauthCredential = AppleAuthProvider.credentialWithIDToken(
+      credential.identityToken!,
+      rawNonce,
+      AppleFullPersonName(),
+    );
     await _auth.currentUser!.reauthenticateWithCredential(oauthCredential);
+    if (credential.authorizationCode.isNotEmpty) {
+      await _auth.revokeTokenWithAuthorizationCode(credential.authorizationCode);
+    }
   }
 
   Future<Map<String, dynamic>?> _getUserNEW(User user) async {

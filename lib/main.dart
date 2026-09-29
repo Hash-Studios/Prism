@@ -248,6 +248,10 @@ Future<void> main() async {
       optimisedWallpapers = localPrefs.get('optimisedWallpapers') == true;
       categories = localPrefs.get('WHcategories') as int? ?? 100;
       purity = localPrefs.get('WHpurity') as int? ?? 100;
+      // App Store review: no sketchy content on iOS, regardless of the stored pref.
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        purity = 100;
+      }
 
       await Future.wait(<Future<void>>[
         localPrefs.put("systemOverlayColor", systemOverlayColorValue),
@@ -528,8 +532,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
     app_state.prismUser.loggedIn = value;
     await _syncAnalyticsIdentityFromAppState(sourceTag: 'startup_login_status');
+    // RevenueCat starts anonymous, so this also restores a guest's premium
+    // entitlement (iOS 5.1.1(v)) after the signed-out reset above wiped it.
+    // Coins require auth, so coin sync only runs for signed-in users.
+    await PurchasesService.instance.checkAndPersistPremium();
     if (value) {
-      await PurchasesService.instance.checkAndPersistPremium();
       unawaited(_syncCoinEconomy(sourceTag: 'startup_login_status'));
     }
     app_state.persistPrismUser();
@@ -1058,6 +1065,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       child: ListenableBuilder(
         listenable: DebugFlags.instance,
         builder: (context, _) => MaterialApp.router(
+          debugShowCheckedModeBanner: false,
           builder: (context, child) {
             final double topInset = MediaQuery.paddingOf(context).top;
             app_state.notchSize = topInset;

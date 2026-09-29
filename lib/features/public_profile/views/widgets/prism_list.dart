@@ -7,10 +7,17 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class PrismList extends StatelessWidget {
+  bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
+
+  String get _shareText => _isIOS
+      ? "Fall in love with your phone's personalization again! Check out Prism -\nhttps://apps.apple.com/app/id6670200846"
+      : "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism";
+
   void _trackAction(AnalyticsActionValue action, {required String sourceContext}) {
     unawaited(
       analytics.track(
@@ -70,11 +77,7 @@ class PrismList extends StatelessWidget {
           subtitle: const Text("Quick link to pass on to your friends and enemies", style: TextStyle(fontSize: 12)),
           onTap: () async {
             _trackAction(AnalyticsActionValue.drawerSharePrismTapped, sourceContext: 'profile_prism_list_share');
-            await ShareService.shareText(
-              text:
-                  "Fall in love with Android customisation again! Check out Prism -\nhttps://play.google.com/store/apps/details?id=com.hash.prism",
-              context: context,
-            );
+            await ShareService.shareText(text: _shareText, context: context);
           },
         ),
         ListTile(
