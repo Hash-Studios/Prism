@@ -48,6 +48,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   Future<Result<List<FavouriteWallEntity>>> fetchFavourites({required String userId}) async {
     try {
       final items = await _read(userId);
+      await _favoritesLocal.replaceWallFavourites(userId, items.map((item) => item.id));
       return Result.success(items);
     } catch (error) {
       return Result.error(ServerFailure('Unable to fetch favourite walls: $error'));
