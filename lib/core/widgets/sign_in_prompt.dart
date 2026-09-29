@@ -25,7 +25,7 @@ class SignInPrompt extends StatelessWidget {
             Text(
               'Sign in to use $feature',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.secondary),
             ),
             const SizedBox(height: 16),
             FilledButton(
