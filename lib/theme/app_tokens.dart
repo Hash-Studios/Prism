@@ -224,6 +224,10 @@ abstract final class PrismAppBarSizes {
 // Feed layout
 // ---------------------------------------------------------------------------
 
+/// Wallpaper grid columns for a screen [width]: about one per 180 pt, so a phone gets 3 in portrait
+/// and 5 in landscape, and a tablet gets more instead of huge, blurry tiles.
+int wallpaperGridColumns(double width) => (width / 180).round().clamp(3, 8);
+
 /// Layout constants for the personalized feed carousel and wallpaper grid.
 abstract final class PrismFeedLayout {
   // -- Carousel --------------------------------------------------------------
@@ -241,12 +245,6 @@ abstract final class PrismFeedLayout {
 
   /// Grid tile aspect ratio (width : height).
   static const double gridTileAspectRatio = 0.5;
-
-  /// Number of grid columns in portrait orientation.
-  static const int gridColumnCountPortrait = 3;
-
-  /// Number of grid columns in landscape orientation.
-  static const int gridColumnCountLandscape = 5;
 
   /// How many logical pixels from the scroll end to trigger next-page fetch.
   static const double prefetchThreshold = 400;

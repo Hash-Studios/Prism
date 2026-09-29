@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:Prism/auth/apple_auth.dart';
@@ -645,10 +646,12 @@ class _CtaButton extends StatelessWidget {
     const double browseRowHeight = 36;
     final double extraHeight =
         (showApple ? (OnboardingLayout.ctaHeight + 12) * sy : 0.0) + (showBrowse ? browseRowHeight * sy : 0.0);
+    // Buttons stay at most 480 pt wide, centered, so a tablet does not stretch them edge to edge.
+    final double side = math.max(OnboardingLayout.ctaX * sx, (MediaQuery.sizeOf(context).width - 480) / 2);
     return Positioned(
       top: OnboardingLayout.ctaY * sy - extraHeight,
-      left: OnboardingLayout.ctaX * sx,
-      right: OnboardingLayout.ctaX * sx,
+      left: side,
+      right: side,
       height: OnboardingLayout.ctaHeight * sy + extraHeight,
       child: AnimatedOpacity(
         opacity: visible ? 1.0 : 0.0,
