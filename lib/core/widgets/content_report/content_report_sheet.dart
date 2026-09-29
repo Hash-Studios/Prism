@@ -135,7 +135,8 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
       top: 8,
       bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
     );
-    return Padding(
+    // Scrolls so the keyboard never pushes Submit off the sheet.
+    return SingleChildScrollView(
       padding: pad,
       child: Column(
         mainAxisSize: MainAxisSize.min,
