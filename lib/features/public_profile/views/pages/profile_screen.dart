@@ -89,7 +89,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // usersV2 reads require auth per firestore.rules; guests (iOS browse-without-account)
     // must sign in first, for both their own profile and other users' profiles.
     if (!app_state.prismUser.loggedIn) {
-      return Scaffold(body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'));
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        // The app bar gives guests a Back button out of this screen.
+        appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.surface),
+        body: SignInPrompt(feature: _isOwnProfile ? 'your profile' : 'profiles'),
+      );
     }
     if (_isOwnProfile) {
       _contentLoadTracker.success(
