@@ -380,6 +380,18 @@ asc publish testflight --app 6670200846 --ipa build/ios/ipa/Prism.ipa --group "P
 ```
 Add `--test-notes "<text>" --locale en-US` for What to Test.
 
+What 3.0.9 (336) needed to get submitted through `asc review` (App Store Connect quirks):
+- **Resubmitting a rejected version:** the version stays in the old submission (`UNRESOLVED_ISSUES`),
+  which accepts no new items. `asc review submissions-cancel --id <old> --confirm` frees it
+  (`CANCELING` then `COMPLETE`, about a minute), then add the version to a new submission.
+- **First-time purchases go in the same submission:** add `inAppPurchaseVersions` and
+  `subscriptionVersions` items, **plus the `subscriptionGroupVersions` item** while the group has no
+  approved version. The paywall sells `prism_v3_pro_monthly`, `prism_v3_pro_annual` and
+  `prism_v3_pro_lifetime_ios`. Never add the old non-renewing `prism_v3_pro_lifetime`.
+- A draft submission (`READY_FOR_REVIEW`) can neither be cancelled nor have items removed, so
+  build it in the right order and check `asc validate` shows 0 blocking first.
+- RevenueCat paywall edits show only after a cold app start (the SDK caches the paywall).
+
 App Store submission (as opposed to TestFlight-only) is a separate, human-approved step. Use
 `asc-release-flow`'s staging flow and get explicit confirmation before `--submit`. App Review
 needs: in-app account deletion (present, `lib/core/account/delete_account_service.dart`) and Sign
