@@ -17,6 +17,7 @@ import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/log_toast_overlay.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
+import 'package:Prism/core/monitoring/flutter_error_handler.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
@@ -160,29 +161,13 @@ Future<void> main() async {
         } catch (_) {}
         return true;
       };
-      FlutterError.onError = (FlutterErrorDetails details) {
-        FlutterError.dumpErrorToConsole(details, forceReport: true);
-        logger.e(
-          'Uncaught Flutter framework error',
-          tag: 'FlutterError',
-          error: details.exception,
-          stackTrace: details.stack,
-          fields: <String, Object?>{
-            if (details.library != null) 'library': details.library,
-            if (details.context != null) 'context': details.context.toString(),
-          },
-        );
-        try {
-          unawaited(analytics.track(const AppCrashFatalEvent()));
-        } catch (_) {}
-      };
+      installFlutterFrameworkErrorHandler();
 
       const skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
       final SentryConfig sentryConfig = _resolveSentryConfig();
 
-      // Kick off Firebase in background — does NOT block runApp.
-      // StartupRepositoryImpl.bootstrap() will await FirebaseInit.readyFuture
-      // before touching FirebaseRemoteConfig.
+      // Start Firebase early so it can initialize while persistence and monitoring run.
+      // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
       if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
           _initFirebase().then((_) => true).catchError((Object e, StackTrace s) {
@@ -268,10 +253,6 @@ Future<void> main() async {
       ]);
       applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
 
-      // Await Firebase init before building the widget tree.
-      // DI lazy singletons (Firestore, Auth, RemoteConfig) call .instance which
-      // requires Firebase to be ready. Firebase was kicked off at the top of
-      // main() so in practice it completes during or before Persistence init.
       await FirebaseInit.readyFuture;
 
       await PurchasesService.instance.configureEarly();

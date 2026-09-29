@@ -1387,6 +1387,11 @@ events:
         key: total_elapsed_ms
         type: int
   - id: app_crash_fatal
+  - id: app_error
+    fields:
+      - name: error_source
+        key: error_source
+        type: string
   - id: quality_daily_snapshot
     fields:
       - name: crash_free_users_pct
