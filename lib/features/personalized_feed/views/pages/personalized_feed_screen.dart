@@ -84,9 +84,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
               .whereType<PrismFeedItem>()
               .take(_carouselPreviewCount)
               .toList(growable: false);
-          final crossAxisCount = MediaQuery.of(context).orientation == Orientation.portrait
-              ? PrismFeedLayout.gridColumnCountPortrait
-              : PrismFeedLayout.gridColumnCountLandscape;
+          final crossAxisCount = wallpaperGridColumns(MediaQuery.sizeOf(context).width);
           final tileMemCacheHeight = ((MediaQuery.sizeOf(context).width / crossAxisCount) * 1.5 * 2).toInt();
 
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {

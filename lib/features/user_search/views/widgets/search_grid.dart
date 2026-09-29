@@ -14,6 +14,7 @@ import 'package:Prism/data/wallhaven/provider/wallhaven_without_provider.dart' a
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -213,7 +214,7 @@ class _SearchGridState extends State<SearchGrid> with TickerProviderStateMixin {
               : p_data.wallsPS.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+            crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
             childAspectRatio: 0.5,
           ),
           itemBuilder: (context, index) {
