@@ -243,6 +243,13 @@ class GoogleAuth {
       transactions: [],
       coverPhoto: "",
     );
+    // isSignedIn() reads FirebaseAuth.currentUser directly, so it must actually be cleared
+    // here too. Used for Apple-signed-in users as well, not just Google.
+    try {
+      await _auth.signOut();
+    } catch (e, st) {
+      logger.w('FirebaseAuth signOut failed; continuing local sign-out cleanup.', error: e, stackTrace: st);
+    }
     await syncSentryUserScope(loggedIn: false, id: "", email: "");
     await app_state.persistPrismUser();
     try {

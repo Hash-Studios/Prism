@@ -8,6 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
+import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -48,6 +49,14 @@ class _StreakPageState extends State<StreakPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Coin callables require auth; guests (iOS browse-without-account) need to sign in first.
+    if (!app_state.prismUser.loggedIn) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.surface, title: const Text('Daily streak')),
+        body: const SignInPrompt(feature: 'streaks'),
+      );
+    }
     return BlocProvider<StreakShopBloc>(
       create: (_) {
         final bloc = getIt<StreakShopBloc>();

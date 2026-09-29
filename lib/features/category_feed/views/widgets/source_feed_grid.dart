@@ -10,6 +10,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -117,7 +118,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
           itemCount: walls.isEmpty ? 20 : walls.length,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: MediaQuery.of(context).orientation == Orientation.portrait ? 3 : 5,
+            crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
             childAspectRatio: 0.5,
           ),
           itemBuilder: (context, index) {

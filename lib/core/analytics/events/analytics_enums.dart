@@ -100,7 +100,6 @@ enum AnalyticsActionValue {
   drawerClearDownloadsTapped,
   drawerClearDownloadsConfirmed,
   drawerReviewStatusTapped,
-  drawerEnterCodeTapped,
   drawerSharePrismTapped,
   drawerContactSupportTapped,
   drawerLogoutTapped,
@@ -460,8 +459,6 @@ extension AnalyticsActionValueX on AnalyticsActionValue {
         return 'drawer_clear_downloads_confirmed';
       case AnalyticsActionValue.drawerReviewStatusTapped:
         return 'drawer_review_status_tapped';
-      case AnalyticsActionValue.drawerEnterCodeTapped:
-        return 'drawer_enter_code_tapped';
       case AnalyticsActionValue.drawerSharePrismTapped:
         return 'drawer_share_prism_tapped';
       case AnalyticsActionValue.drawerContactSupportTapped:

@@ -37,9 +37,15 @@ function normalizeTargetDocId(raw: unknown): string {
   return t;
 }
 
-function normalizeContentType(raw: unknown): "wall" | "setup" {
-  if (raw !== "wall" && raw !== "setup") {
-    throw new HttpsError("invalid-argument", "contentType must be 'wall' or 'setup'.");
+const COLLECTION_BY_CONTENT_TYPE: Record<"wall" | "setup" | "user", string> = {
+  wall: "walls",
+  setup: "setups",
+  user: "usersv2",
+};
+
+function normalizeContentType(raw: unknown): "wall" | "setup" | "user" {
+  if (raw !== "wall" && raw !== "setup" && raw !== "user") {
+    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', or 'user'.");
   }
   return raw;
 }
@@ -117,7 +123,7 @@ export const submitContentReport = onCall(
     const details = normalizeDetails(request.data?.details);
     const appVersion = normalizeAppVersion(request.data?.appVersion);
 
-    const collection = contentType === "wall" ? "walls" : "setups";
+    const collection = COLLECTION_BY_CONTENT_TYPE[contentType];
     const targetSnap = await db.collection(collection).doc(targetFirestoreDocId).get();
     if (!targetSnap.exists) {
       throw new HttpsError("not-found", "Content was not found.");

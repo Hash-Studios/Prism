@@ -124,7 +124,6 @@ enums:
       - drawer_clear_downloads_tapped
       - drawer_clear_downloads_confirmed
       - drawer_review_status_tapped
-      - drawer_enter_code_tapped
       - drawer_share_prism_tapped
       - drawer_contact_support_tapped
       - drawer_logout_tapped
