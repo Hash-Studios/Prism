@@ -345,6 +345,25 @@ symbolicated.
 Output: `build/ios/ipa/Prism.ipa` (confirmed name from `.github/workflows/testflight.yml`, not
 `Runner.ipa`).
 
+**If the archive fails with `No Accounts` / `doesn't include signing certificate`** (Xcode has no
+Apple ID signed in on this Mac), sign with the `prism` App Store Connect API key instead. Its key
+file is `~/.asc/keys/AuthKey_B3QRNA5QHB.p8`; get the issuer with `asc --profile prism auth issuer-id`.
+This is what shipped 3.0.9 (336):
+```sh
+fvm flutter build ios --config-only --release --build-number=<N> \
+  --obfuscate --split-debug-info=build/ios/outputs/symbols $(DOPPLER_CONFIG=prd ./tool/dart_defines_from_doppler.sh)
+AUTH=(-allowProvisioningUpdates -authenticationKeyPath ~/.asc/keys/AuthKey_B3QRNA5QHB.p8
+      -authenticationKeyID B3QRNA5QHB -authenticationKeyIssuerID <issuer>)
+xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -configuration Release \
+  -destination 'generic/platform=iOS' -archivePath build/ios/archive/Runner.xcarchive archive "${AUTH[@]}"
+xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa \
+  -exportOptionsPlist ExportOptions.plist "${AUTH[@]}"   # method app-store-connect, teamID X2955Z4CKQ, signingStyle automatic
+DOPPLER_PROJECT=prism SENTRY_DOPPLER_CONFIG=prd DART_CMD="fvm dart" ./tool/sentry_upload.sh
+```
+The ipa is then `build/ios/ipa/prism.ipa` (lower case). Run this from a script file, and never echo
+the defines. Do not use `.github/workflows/testflight.yml` as it is: it reads Doppler config
+`production` and passes `SKIP_FIREBASE_INIT=true`, which ships an app with Firebase off.
+
 ### 10. iOS: upload to TestFlight and App Store Connect
 
 Prefer the installed `asc-*` skills over hand-rolling this:

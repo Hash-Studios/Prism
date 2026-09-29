@@ -12,7 +12,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
-import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -81,13 +80,13 @@ class _DownloadButtonState extends State<DownloadButton> {
       return;
     }
 
-    if (!app_state.prismUser.loggedIn) {
-      await _showGuestAdGatePopup();
+    if (app_state.prismUser.premium) {
+      await _performDownload();
       return;
     }
 
-    if (app_state.prismUser.premium) {
-      await _performDownload();
+    if (!app_state.prismUser.loggedIn) {
+      await _showGuestAdGatePopup();
       return;
     }
 
@@ -164,23 +163,12 @@ class _DownloadButtonState extends State<DownloadButton> {
                           shape: const StadiumBorder(),
                           color: Theme.of(context).colorScheme.error,
                           onPressed: () {
-                            if (app_state.prismUser.loggedIn == false) {
-                              googleSignInPopUp(context, () {
-                                Navigator.of(dialogContext).pop();
-                                PaywallOrchestrator.instance.present(
-                                  this.context,
-                                  placement: PaywallPlacement.mainUpsell,
-                                  source: 'download_guest_buy_premium',
-                                );
-                              });
-                            } else {
-                              Navigator.of(dialogContext).pop();
-                              PaywallOrchestrator.instance.present(
-                                this.context,
-                                placement: PaywallPlacement.mainUpsell,
-                                source: 'download_guest_buy_premium',
-                              );
-                            }
+                            Navigator.of(dialogContext).pop();
+                            PaywallOrchestrator.instance.presentOrRequireSignIn(
+                              this.context,
+                              placement: PaywallPlacement.mainUpsell,
+                              source: 'download_guest_buy_premium',
+                            );
                           },
                           child: Text(
                             'BUY PREMIUM',

@@ -76,11 +76,12 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/', page: SplashWidgetRoute.page),
     AutoRoute(path: '/onboarding/v2', page: OnboardingV2ShellRoute.page),
 
-    // Dashboard shell with bottom nav tabs
+    // Dashboard shell with bottom nav tabs. iOS guests may browse (Guideline 5.1.1(v)); Android still requires
+    // sign-in. Upload, edit, review and profile-edit routes keep the strict guard.
     AutoRoute(
       path: '/dashboard',
       page: DashboardRoute.page,
-      guards: [_signedInGuard],
+      guards: const [SignedInGuard(allowIosGuests: true)],
       children: [
         // Home tab
         AutoRoute(path: 'home', page: HomeTabRoute.page),

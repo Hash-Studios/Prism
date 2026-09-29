@@ -13,6 +13,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:github/github.dart';
@@ -28,6 +29,12 @@ class AboutScreen extends StatefulWidget {
 class _AboutScreenState extends State<AboutScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   int _versionTapCount = 0;
+
+  bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
+
+  String get _storeLink => _isIOS
+      ? "https://apps.apple.com/app/id6670200846"
+      : "https://play.google.com/store/apps/details?id=com.hash.prism";
 
   @override
   void initState() {
@@ -107,29 +114,33 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "A feature-rich wallpaper and setup manager for Android.",
+              "A feature-rich wallpaper and setup manager.",
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 10),
-            const Wrap(
+            Wrap(
               alignment: WrapAlignment.center,
               children: [
-                ActionButton(icon: JamIcons.github, text: "GITHUB", link: "https://www.github.com/Hash-Studios/Prism"),
-                ActionButton(
-                  icon: JamIcons.star_full,
-                  text: "RATE",
-                  link: "https://play.google.com/store/apps/details?id=com.hash.prism",
+                const ActionButton(
+                  icon: JamIcons.github,
+                  text: "GITHUB",
+                  link: "https://www.github.com/Hash-Studios/Prism",
                 ),
-                ActionButton(icon: JamIcons.twitter, text: "TWITTER", link: "https://twitter.com/PrismWallpapers"),
-                ActionButton(
+                ActionButton(icon: JamIcons.star_full, text: "RATE", link: _storeLink),
+                const ActionButton(
+                  icon: JamIcons.twitter,
+                  text: "TWITTER",
+                  link: "https://twitter.com/PrismWallpapers",
+                ),
+                const ActionButton(
                   icon: JamIcons.instagram,
                   text: "INSTAGRAM",
                   link: "https://www.instagram.com/prismwallpapers",
                 ),
-                ActionButton(icon: JamIcons.paper_plane, text: "TELEGRAM", link: "http://t.me/PrismWallpapers"),
+                const ActionButton(icon: JamIcons.paper_plane, text: "TELEGRAM", link: "http://t.me/PrismWallpapers"),
               ],
             ),
             const SizedBox(height: 10),

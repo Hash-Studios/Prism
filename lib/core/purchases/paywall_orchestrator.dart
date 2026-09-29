@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -5,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:flutter/widgets.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/purchases_ui_flutter.dart';
@@ -49,6 +52,20 @@ class PaywallOrchestrator {
 
     // RevenueCat paywall not available — no fallback screen.
     return PaywallResultValue.notPresented;
+  }
+
+  /// Same as [present], but for a signed-out user it requires sign-in first
+  /// unless the platform allows guest browsing (iOS 5.1.1(v): purchases must
+  /// not require an account). Android has no guest path, so signed-out users
+  /// there always see the sign-in prompt.
+  Future<void> presentOrRequireSignIn(BuildContext context, {required String placement, required String source}) async {
+    if (app_state.prismUser.loggedIn || Platform.isIOS) {
+      await present(context, placement: placement, source: source);
+      return;
+    }
+    googleSignInPopUp(context, () {
+      present(context, placement: placement, source: source);
+    });
   }
 
   Future<void> recordRewardedAdWatchAndMaybeUpsell(BuildContext context, {required String source}) async {
