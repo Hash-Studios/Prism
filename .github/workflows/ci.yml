@@ -48,27 +48,17 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
-      - name: Install dependencies
-        run: make get CI=true
-
       - name: Generate Firebase options stub for CI
         run: |
           printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
 
-      - name: Check formatting
-        run: make format-check CI=true
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-      - name: Env define guard
-        run: make env-guard
-
-      - name: Version sync guard
-        run: make version-guard
-
-      - name: Analyze
-        run: make analyze CI=true
-
-      - name: Run tests
-        run: make test CI=true
+      - name: Run local CI gate
+        run: make ci CI=true
 
   app_size:
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
