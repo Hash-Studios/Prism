@@ -1,4 +1,4 @@
-import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

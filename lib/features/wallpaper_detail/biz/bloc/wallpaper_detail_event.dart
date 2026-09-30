@@ -1,5 +1,5 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 

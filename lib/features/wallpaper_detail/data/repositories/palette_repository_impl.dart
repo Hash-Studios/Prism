@@ -1,8 +1,8 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/url_utils.dart';
-import 'package:Prism/features/palette/domain/entities/palette_entity.dart';
-import 'package:Prism/features/palette/domain/repositories/palette_repository.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/palette_entity.dart';
+import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
