@@ -111,7 +111,7 @@ class StartupRepositoryImpl implements StartupRepository {
           'ai_variations_enabled': defaultAiVariationsEnabled,
           'use_rc_paywalls': defaultUseRcPaywalls,
           'onboarding_v2_enabled': defaultOnboardingV2Enabled,
-          'onboarding_starter_pack_v1': defaultOnboardingStarterPack.toString(),
+          'onboarding_starter_pack_v1': defaultOnboardingStarterPack,
           personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
         });
         try {
@@ -160,7 +160,7 @@ class StartupRepositoryImpl implements StartupRepository {
       final followersTab = _settingsLocal.get<bool>('followersTab', defaultValue: true);
       final onboardingV2Enabled = remoteConfig?.getBool('onboarding_v2_enabled') ?? defaultOnboardingV2Enabled;
       final onboardingStarterPack = _parseStarterPack(
-        remoteConfig?.getString('onboarding_starter_pack_v1') ?? defaultOnboardingStarterPack.toString(),
+        remoteConfig?.getString('onboarding_starter_pack_v1') ?? defaultOnboardingStarterPack,
       );
 
       final entity = StartupConfigEntity(

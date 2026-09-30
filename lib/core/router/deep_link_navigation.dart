@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
@@ -9,8 +10,6 @@ import 'package:http/http.dart' as http;
 
 class DeepLinkNavigation {
   const DeepLinkNavigation({this.parser = const DeepLinkParser(), this.httpClient});
-
-  static const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 
   final DeepLinkParser parser;
   final http.Client? httpClient;
@@ -62,7 +61,7 @@ class DeepLinkNavigation {
       return null;
     }
 
-    final Uri endpoint = Uri.parse('$_shortLinkResolveApiBase/$shortCode');
+    final Uri endpoint = Uri.parse('$shortLinkApiUrl/$shortCode');
     try {
       final Future<http.Response> responseFuture = httpClient != null
           ? httpClient!.get(endpoint, headers: const <String, String>{'Accept': 'application/json'})
