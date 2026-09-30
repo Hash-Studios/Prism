@@ -19,23 +19,51 @@ void main() {
     bloc = _MockPublicProfileBloc();
   });
 
-  Future<void> pumpGrid(WidgetTester tester, PublicProfileState state) async {
+  Future<void> pumpGrid(WidgetTester tester, PublicProfileState state, {bool ownProfile = false}) async {
     when(() => bloc.state).thenReturn(state);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: BlocProvider<PublicProfileBloc>.value(value: bloc, child: const UserProfileGrid()),
+          body: BlocProvider<PublicProfileBloc>.value(
+            value: bloc,
+            child: CustomScrollView(slivers: <Widget>[UserProfileGrid(ownProfile: ownProfile)]),
+          ),
         ),
       ),
     );
+    // Glint loops, so pump a bounded time instead of settling.
+    await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('shows the empty illustration after a successful empty load', (tester) async {
+  testWidgets('shows a skeleton before the first load finishes', (tester) async {
+    await pumpGrid(tester, PublicProfileState.initial());
+
+    expect(find.byType(LoadingCards), findsOneWidget);
+    expect(find.text('No wallpapers yet'), findsNothing);
+  });
+
+  testWidgets('says there are no wallpapers yet after a successful empty load', (tester) async {
     await pumpGrid(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success));
 
-    expect(find.byType(ListView), findsOneWidget);
+    expect(find.text('No wallpapers yet'), findsOneWidget);
+    expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
     expect(find.byType(LoadingCards), findsNothing);
-    expect(find.byType(GridView), findsNothing);
+    expect(find.byType(SliverGrid), findsNothing);
+  });
+
+  testWidgets('invites the owner to upload when their gallery is empty', (tester) async {
+    await pumpGrid(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), ownProfile: true);
+
+    expect(find.text('No wallpapers yet'), findsOneWidget);
+    expect(find.text('Upload your first wallpaper to start your gallery.'), findsOneWidget);
+  });
+
+  testWidgets('shows an error with a retry that refreshes when the first load failed', (tester) async {
+    await pumpGrid(tester, PublicProfileState.initial().copyWith(status: LoadStatus.failure));
+
+    expect(find.text('Could not load wallpapers'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
   });
 
   for (final thumbnail in <String, String>{
@@ -78,8 +106,8 @@ void main() {
         PublicProfileState.initial().copyWith(status: LoadStatus.success, walls: walls, hasMoreWalls: true),
       );
 
-      final grid = tester.widget<GridView>(find.byType(GridView));
-      expect((grid.childrenDelegate as SliverChildBuilderDelegate).childCount, walls.length + 1);
+      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
+      expect((grid.delegate as SliverChildBuilderDelegate).childCount, walls.length + 1);
       for (var index = 1; index <= walls.length; index++) {
         expect(find.bySemanticsLabel('Wallpaper by Author $index'), findsOneWidget);
       }
@@ -101,8 +129,8 @@ void main() {
         PublicProfileState.initial().copyWith(status: LoadStatus.success, walls: walls, hasMoreWalls: false),
       );
 
-      final grid = tester.widget<GridView>(find.byType(GridView));
-      expect((grid.childrenDelegate as SliverChildBuilderDelegate).childCount, walls.length);
+      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
+      expect((grid.delegate as SliverChildBuilderDelegate).childCount, walls.length);
       expect(find.text('See more'), findsNothing);
       expect(find.bySemanticsLabel('Wallpaper by Author 3'), findsOneWidget);
     } finally {
