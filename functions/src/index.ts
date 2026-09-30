@@ -1,5 +1,6 @@
 export {wallOfTheDay} from "./wallOfTheDay";
 export {claimDailyStreak, sendStreakReminders} from "./streak";
+export {sendWinBackPushes} from "./winBack";
 export {onWallApproved} from "./onWallApproved";
 export {onFollowCreated} from "./onFollowCreated";
 export {onWallSubmitted} from "./onWallSubmitted";

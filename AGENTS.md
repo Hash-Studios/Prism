@@ -1,6 +1,6 @@
 # Prism: Agent Notes
 
-Flutter wallpaper and home-screen setups app for Android and iOS, with Firebase
+Flutter wallpaper app for Android and iOS, with Firebase
 (Firestore, Auth, Cloud Functions in `functions/`) and a Next.js site in `web/`.
 
 ## Scope and execution

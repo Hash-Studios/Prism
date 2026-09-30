@@ -27,10 +27,9 @@ final class UserLinkIntent extends DeepLinkActionEntity {
   final String profileIdentifier;
 }
 
+/// A legacy shared setup link. Setups were removed; the app opens Home instead.
 final class SetupLinkIntent extends DeepLinkActionEntity {
-  const SetupLinkIntent({required this.setupName, required super.rawUri});
-
-  final String setupName;
+  const SetupLinkIntent({required super.rawUri});
 }
 
 final class ReferLinkIntent extends DeepLinkActionEntity {

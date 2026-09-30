@@ -210,8 +210,7 @@ fvm flutter test test/features/<name>/
   files are exempt.
 - `no_shape_parse_guard.sh` only scans a fixed list of `data/` directories,
   set in `tool/no_shape_parse_guard.sh` (`wallhaven_feed`, `pexels_feed`,
-  `prism_feed`, `setups`, `profile_setups`, `profile_walls`,
-  `public_profile`, `favourite_setups`, `favourite_walls`). If the new
+  `prism_feed`, `public_profile`, `favourite_walls`). If the new
   feature's data layer hand-parses untyped JSON shapes (`is Map`, `is List`,
   `Object?` locals), add its `data/` path to that `TARGETS` array. It is not
   covered by default.

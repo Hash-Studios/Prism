@@ -13,7 +13,7 @@ Onboarding is a 5-step full-screen shell at route `/onboarding/v2` (`lib/feature
 ## How to get to it (user POV)
 
 - Cold-start the app with no stored session (`launch --fresh`).
-- Tap any guarded action while signed out (for example a setup upload button); `route_guards.dart` sends the user to `/onboarding/v2`.
+- Tap any guarded action while signed out (for example the upload button); `route_guards.dart` sends the user to `/onboarding/v2`.
 
 ## Driving it with the helper
 
