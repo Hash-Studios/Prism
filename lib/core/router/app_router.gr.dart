@@ -1401,21 +1401,12 @@ class WallpaperDetailRouteArgs {
 /// [WallpaperFilterScreen]
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({
+    required String filePath,
     Key? key,
-    Image? image,
-    Image? finalImage,
-    String? filename,
-    String? finalFilename,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperFilterRoute.name,
-         args: WallpaperFilterRouteArgs(
-           key: key,
-           image: image,
-           finalImage: finalImage,
-           filename: filename,
-           finalFilename: finalFilename,
-         ),
+         args: WallpaperFilterRouteArgs(filePath: filePath, key: key),
          initialChildren: children,
        );
 
@@ -1424,60 +1415,31 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<WallpaperFilterRouteArgs>(
-        orElse: () => const WallpaperFilterRouteArgs(),
-      );
-      return WallpaperFilterScreen(
-        key: args.key,
-        image: args.image,
-        finalImage: args.finalImage,
-        filename: args.filename,
-        finalFilename: args.finalFilename,
-      );
+      final args = data.argsAs<WallpaperFilterRouteArgs>();
+      return WallpaperFilterScreen(filePath: args.filePath, key: args.key);
     },
   );
 }
 
 class WallpaperFilterRouteArgs {
-  const WallpaperFilterRouteArgs({
-    this.key,
-    this.image,
-    this.finalImage,
-    this.filename,
-    this.finalFilename,
-  });
+  const WallpaperFilterRouteArgs({required this.filePath, this.key});
+
+  final String filePath;
 
   final Key? key;
 
-  final Image? image;
-
-  final Image? finalImage;
-
-  final String? filename;
-
-  final String? finalFilename;
-
   @override
   String toString() {
-    return 'WallpaperFilterRouteArgs{key: $key, image: $image, finalImage: $finalImage, filename: $filename, finalFilename: $finalFilename}';
+    return 'WallpaperFilterRouteArgs{filePath: $filePath, key: $key}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! WallpaperFilterRouteArgs) return false;
-    return key == other.key &&
-        image == other.image &&
-        finalImage == other.finalImage &&
-        filename == other.filename &&
-        finalFilename == other.finalFilename;
+    return filePath == other.filePath && key == other.key;
   }
 
   @override
-  int get hashCode =>
-      key.hashCode ^
-      image.hashCode ^
-      finalImage.hashCode ^
-      filename.hashCode ^
-      finalFilename.hashCode;
+  int get hashCode => filePath.hashCode ^ key.hashCode;
 }

@@ -59,7 +59,6 @@ import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' show Image;
 
 part 'app_router.gr.dart';
 
