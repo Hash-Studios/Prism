@@ -5,7 +5,6 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -13,6 +12,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import com.hash.prism.pigeon.DownloadItemsResult
 import com.hash.prism.pigeon.DownloadRequest
@@ -24,7 +24,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -44,19 +43,64 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         val link = request.link
         val isLocalFile = request.isLocalFile
         val kind = request.kind
+        var connection: HttpURLConnection? = null
+        var input: InputStream? = null
+        var downloadedFile: File? = null
         return try {
-            val bitmap = if (isLocalFile) {
-                loadBitmapFromFile(link)
-            } else {
-                loadBitmapFromUrl(link)
-            }
-
-            if (bitmap == null) {
-                return createErrorResult("FAILED_TO_LOAD_BITMAP", "Could not load image from source")
+            val mime: String
+            try {
+                if (isLocalFile) {
+                    val path = if (link.startsWith("file://")) {
+                        Uri.parse(link).path ?: throw IOException("Invalid file URI")
+                    } else {
+                        link
+                    }
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(path, options)
+                    mime = options.outMimeType ?: return createErrorResult(
+                        "FAILED_TO_LOAD_BITMAP",
+                        "Could not load image from source",
+                    )
+                    if (!mime.startsWith("image/") || options.outWidth <= 0 || options.outHeight <= 0) {
+                        return createErrorResult("FAILED_TO_LOAD_BITMAP", "Could not load image from source")
+                    }
+                    input = File(path).inputStream()
+                } else {
+                    val httpConnection = openDownloadConnection(URL(link))
+                    connection = httpConnection
+                    val responseMime = httpConnection.contentType?.substringBefore(';')?.trim()?.lowercase(Locale.US)
+                        ?.takeIf { it.startsWith("image/") }
+                    val tempFile = File.createTempFile("prism-media-", ".tmp", context.cacheDir)
+                    downloadedFile = tempFile
+                    var downloadedBytes = 0L
+                    httpConnection.inputStream.use { source ->
+                        FileOutputStream(tempFile).use { downloadedBytes = source.copyTo(it) }
+                    }
+                    val contentLength = httpConnection.contentLengthLong
+                    val contentEncoding = httpConnection.contentEncoding
+                    val unencoded = contentEncoding.isNullOrBlank() || contentEncoding.trim().equals("identity", ignoreCase = true)
+                    if (contentLength >= 0 && unencoded && downloadedBytes != contentLength) {
+                        return createErrorResult("FAILED_TO_LOAD_BITMAP", "Incomplete image response")
+                    }
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(tempFile.path, options)
+                    val detectedMime = options.outMimeType
+                    if (options.outWidth <= 0 || options.outHeight <= 0 || detectedMime == null) {
+                        return createErrorResult("FAILED_TO_LOAD_BITMAP", "Could not load image from source")
+                    }
+                    val finalUrl = httpConnection.url.toString()
+                    val declaredMime = responseMime ?: mimeFromExtension(finalUrl) ?: mimeFromExtension(link)
+                    mime = declaredMime?.takeIf { it == detectedMime } ?: detectedMime
+                    input = tempFile.inputStream()
+                }
+            } catch (e: Exception) {
+                return createErrorResult("FAILED_TO_LOAD_BITMAP", e.message)
             }
 
             val folderName = if (kind == SaveMediaKind.SETUP) "Prism Setups" else "Prism"
-            val saved = saveBitmapToPictures(bitmap, folderName)
+            val source = input
+            input = null
+            val saved = source?.use { writeToPictures(it, mime, folderName) } == true
 
             if (saved) {
                 showToastOnMainThread("Saved in Pictures/$folderName!")
@@ -67,6 +111,13 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         } catch (e: Exception) {
             e.printStackTrace()
             createErrorResult("EXCEPTION", e.message)
+        } finally {
+            try {
+                input?.close()
+            } catch (_: Exception) {
+            }
+            downloadedFile?.delete()
+            connection?.disconnect()
         }
     }
 
@@ -208,36 +259,6 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
                 onError(e)
             }
             mainHandler.post { callback(Result.success(result)) }
-        }
-    }
-
-    private fun loadBitmapFromFile(path: String): Bitmap? {
-        return try {
-            val resolvedPath = if (path.startsWith("file://")) path.substring(7) else path
-            BitmapFactory.decodeFile(resolvedPath)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private fun loadBitmapFromUrl(urlString: String): Bitmap? {
-        var connection: HttpURLConnection? = null
-        var inputStream: InputStream? = null
-        return try {
-            connection = openDownloadConnection(URL(urlString))
-            inputStream = connection.inputStream
-            BitmapFactory.decodeStream(inputStream)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        } finally {
-            try {
-                inputStream?.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-            connection?.disconnect()
         }
     }
 
@@ -402,32 +423,57 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         return deleted
     }
 
-    private fun saveBitmapToPictures(bitmap: Bitmap, folderName: String): Boolean {
+    // Some CDNs serve images as application/octet-stream.
+    private fun mimeFromExtension(link: String): String? {
+        return when (Uri.parse(link).lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US)) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            else -> null
+        }
+    }
+
+    private fun writeToPictures(input: InputStream, mime: String, folderName: String): Boolean {
         val resolver: ContentResolver = context.contentResolver
-        val filename = "default_" + System.currentTimeMillis()
+        val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "jpg"
+        val filename = "default_" + System.currentTimeMillis() + "." + ext
 
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, "$filename.jpg")
-                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mime)
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + folderName)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
                 val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
                     ?: return false
 
-                resolver.openOutputStream(imageUri)?.use { fos ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                try {
+                    val out = resolver.openOutputStream(imageUri) ?: throw IOException("No output stream")
+                    out.use { input.copyTo(it) }
+                    val published = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
+                    if (resolver.update(imageUri, published, null, null) != 1) {
+                        throw IOException("Could not publish image")
+                    }
+                    true
+                } catch (e: Exception) {
+                    resolver.delete(imageUri, null, null)
+                    throw e
                 }
-                true
             } else {
                 val imagesDir = Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES + File.separator + folderName,
-                ).toString()
-                val image = File(imagesDir, "$filename.jpg")
-                FileOutputStream(image).use { fos ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                )
+                imagesDir.mkdirs()
+                val imageFile = File(imagesDir, filename)
+                try {
+                    FileOutputStream(imageFile).use { input.copyTo(it) }
+                } catch (e: Exception) {
+                    imageFile.delete()
+                    throw e
                 }
                 true
             }

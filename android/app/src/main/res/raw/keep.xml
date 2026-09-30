@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Resources looked up by name at runtime. Optimized resource shrinking (AGP 9 default) removes them otherwise. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/default_web_client_id,@drawable/ic_feed,@drawable/ic_collections,@drawable/ic_downloads" />
