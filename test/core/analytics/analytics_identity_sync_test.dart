@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_identity_sync.dart';
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -99,6 +100,34 @@ void main() {
       expect(analytics.userProperties.length, 6);
       expect(analytics.userProperties.last.key, 'logged_in');
       expect(analytics.userProperties.last.value, '1');
+    });
+
+    test('re-applies identity once the runtime analytics replaces the startup no-op', () async {
+      addTearDown(AnalyticsRuntime.reset);
+      AnalyticsRuntime.reset();
+      final AnalyticsIdentitySync sync = AnalyticsIdentitySync();
+      Future<void> syncUser() =>
+          sync.sync(loggedIn: true, userId: 'user_123', subscriptionTier: 'pro', isPremium: true, sourceTag: 'test');
+
+      await syncUser();
+      final FakeAppAnalytics runtime = FakeAppAnalytics();
+      AnalyticsRuntime.instance = runtime;
+      await syncUser();
+      await syncUser();
+
+      expect(runtime.userIds, <String?>['user_123']);
+    });
+
+    test('runtime notifies listeners when the analytics instance changes', () {
+      addTearDown(AnalyticsRuntime.reset);
+      int notified = 0;
+      void listener() => notified++;
+      AnalyticsRuntime.changes.addListener(listener);
+      addTearDown(() => AnalyticsRuntime.changes.removeListener(listener));
+
+      AnalyticsRuntime.instance = FakeAppAnalytics();
+
+      expect(notified, 1);
     });
   });
 }
