@@ -118,12 +118,10 @@ class _SecondarySplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = MediaQuery.platformBrightnessOf(context);
-    final bool darkModeOn = brightness == Brightness.dark;
     return Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height,
-      color: darkModeOn ? Colors.black : Colors.white,
+      color: Theme.of(context).primaryColor,
       child: Center(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.29074074074,
