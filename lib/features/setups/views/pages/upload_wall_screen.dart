@@ -1,320 +1,540 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
+import 'package:Prism/data/upload/upload_id.dart';
+import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
-import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
 class UploadWallScreen extends StatefulWidget {
-  const UploadWallScreen({super.key, required this.image, required this.fromSetupRoute});
+  const UploadWallScreen({
+    super.key,
+    required this.image,
+    required this.fromSetupRoute,
+    @visibleForTesting this.prepareImageForTesting,
+    @visibleForTesting this.uploadFileForTesting,
+    @visibleForTesting this.deleteFileForTesting,
+    @visibleForTesting this.createRecordForTesting,
+  });
 
   final File image;
   final bool fromSetupRoute;
 
+  @visibleForTesting
+  final Future<void> Function()? prepareImageForTesting;
+
+  @visibleForTesting
+  final Future<GitHubContent> Function({required bool isThumbnail})? uploadFileForTesting;
+
+  @visibleForTesting
+  final Future<void> Function({required String path, required String sha})? deleteFileForTesting;
+
+  @visibleForTesting
+  final Future<wall_store.WallSubmissionResult> Function()? createRecordForTesting;
+
   @override
-  _UploadWallScreenState createState() => _UploadWallScreenState();
+  State<UploadWallScreen> createState() => _UploadWallScreenState();
+}
+
+enum _UploadStage {
+  processing,
+  ready,
+  uploading,
+  saving,
+  failedProcessing,
+  failedUpload,
+  failedSubmission,
+  quotaExceeded,
 }
 
 class _UploadWallScreenState extends State<UploadWallScreen> {
-  late bool isUploading;
-  late bool isProcessing;
-  late bool fromSetupRoute;
-  late File image;
-  String? id;
-  String? tempid;
-  String? wallpaperUrl;
+  late final String id = randomUploadId(4);
+  _UploadStage _stage = _UploadStage.processing;
+  String? _errorMessage;
   String? wallpaperResolution;
-  String? wallpaperProvider;
+  String? wallpaperProvider = 'Prism';
   String? wallpaperSize;
-  String? wallpaperDesc;
-  String? wallpaperCategory;
+  String? wallpaperDesc = 'Community';
+  String? wallpaperCategory = 'General';
   String? wallpaperThumb;
-  // Set once each file reaches GitHub; null means there is nothing to delete.
+  String? wallpaperUrl;
   String? wallpaperSha;
   String? thumbSha;
   String? wallpaperPath;
   String? thumbPath;
-  bool? review;
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
   bool _submitted = false;
+  bool _submissionAttempted = false;
+  bool _discarding = false;
+  bool _leaving = false;
+
+  bool get _isBusy =>
+      _stage == _UploadStage.processing ||
+      _stage == _UploadStage.uploading ||
+      _stage == _UploadStage.saving ||
+      _discarding;
+  bool get _hasStagedFiles => wallpaperSha != null || thumbSha != null;
+
+  @override
+  void dispose() {
+    if (!_leaving && !_submitted && !_submissionAttempted && !_isBusy && _hasStagedFiles) {
+      unawaited(_deleteFile());
+    }
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
-    image = widget.image;
-    fromSetupRoute = widget.fromSetupRoute;
-    isUploading = false;
-    isProcessing = true;
-    randomId();
-    wallpaperProvider = "Prism";
-    wallpaperDesc = "Community";
-    wallpaperCategory = "General";
-    review = false;
-    processImage();
+    unawaited(_prepareImage());
   }
 
-  void randomId() {
-    tempid = "";
-    final alp = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split("");
-    final r = Random();
-    final choice = r.nextInt(4);
-    for (var i = 0; i < 4; i++) {
-      if (choice == i) {
-        final ran = r.nextInt(10);
-        tempid = tempid! + ran.toString();
-      } else {
-        final ran = r.nextInt(26);
-        tempid = tempid! + alp[ran];
-      }
-    }
-    setState(() {
-      id = tempid;
-    });
-    logger.d(id);
-  }
-
-  Future<Uint8List> compressFile(File file) async {
+  Future<Uint8List> _compressFile(File file) async {
     final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
-    logger.d(file.lengthSync().toString());
-    logger.d(result!.length.toString());
+    if (result == null || result.isEmpty) {
+      throw StateError('Could not create a wallpaper preview.');
+    }
     return result;
   }
 
-  Future processImage() async {
-    final imgList = image.readAsBytesSync();
-    final decodedImage = await decodeImageFromList(imgList);
-
-    logger.d(decodedImage.width.toString());
-    logger.d(decodedImage.height.toString());
-
-    final res = "${decodedImage.width}x${decodedImage.height}";
-
+  Future<void> _prepareImage() async {
     setState(() {
-      wallpaperResolution = res;
+      _stage = _UploadStage.processing;
+      _errorMessage = null;
     });
-
-    image.length().then((value) => {wallpaperSize = "${(value / 1024 / 1024).toStringAsFixed(2)}MB"});
-
-    imageBytes = await image.readAsBytes();
-    imageBytesThumb = await compressFile(image);
-
-    uploadFile();
+    try {
+      if (widget.prepareImageForTesting case final prepareImageForTesting?) {
+        await prepareImageForTesting();
+        if (!mounted) return;
+        imageBytes = <int>[];
+        imageBytesThumb = <int>[];
+        setState(() {
+          wallpaperResolution = '1x1';
+          wallpaperSize = '0.00MB';
+          _stage = _UploadStage.ready;
+        });
+        return;
+      }
+      final imgList = await widget.image.readAsBytes();
+      final decodedImage = await decodeImageFromList(imgList);
+      final resolution = '${decodedImage.width}x${decodedImage.height}';
+      decodedImage.dispose();
+      imageBytes = imgList;
+      imageBytesThumb = await _compressFile(widget.image);
+      final size = await widget.image.length();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        wallpaperResolution = resolution;
+        wallpaperSize = '${(size / 1024 / 1024).toStringAsFixed(2)}MB';
+      });
+      if (mounted) setState(() => _stage = _UploadStage.ready);
+    } catch (error) {
+      logger.w('Wallpaper preparation failed: $error');
+      if (!mounted) return;
+      setState(() {
+        _stage = _UploadStage.failedProcessing;
+        _errorMessage = 'We could not prepare this image. Try again or choose another image.';
+      });
+    }
   }
 
-  Future deleteFile() async {
+  Future<bool> _deleteFile() async {
     final github = GitHubContentApi();
     try {
       if (wallpaperPath != null && wallpaperSha != null) {
-        await github.deleteFile(
-          repo: Env.normalize(Env.ghRepoWalls),
-          path: wallpaperPath!,
-          sha: wallpaperSha!,
-          message: wallpaperPath!,
-        );
+        if (widget.deleteFileForTesting case final deleteFileForTesting?) {
+          await deleteFileForTesting(path: wallpaperPath!, sha: wallpaperSha!);
+        } else {
+          await github.deleteFile(
+            repo: Env.normalize(Env.ghRepoWalls),
+            path: wallpaperPath!,
+            sha: wallpaperSha!,
+            message: wallpaperPath!,
+          );
+        }
+        wallpaperPath = null;
+        wallpaperSha = null;
+        wallpaperUrl = null;
       }
       if (thumbPath != null && thumbSha != null) {
-        await github.deleteFile(
-          repo: Env.normalize(Env.ghRepoWalls),
-          path: thumbPath!,
-          sha: thumbSha!,
-          message: thumbPath!,
-        );
+        if (widget.deleteFileForTesting case final deleteFileForTesting?) {
+          await deleteFileForTesting(path: thumbPath!, sha: thumbSha!);
+        } else {
+          await github.deleteFile(
+            repo: Env.normalize(Env.ghRepoWalls),
+            path: thumbPath!,
+            sha: thumbSha!,
+            message: thumbPath!,
+          );
+        }
+        thumbPath = null;
+        thumbSha = null;
+        wallpaperThumb = null;
       }
-      logger.d("Files deleted");
-    } catch (e) {
-      logger.w("Could not delete unsubmitted upload: $e");
+      logger.d('Unsubmitted wallpaper files deleted');
+      return true;
+    } catch (error) {
+      logger.w('Could not delete unsubmitted upload: $error');
+      return false;
     }
   }
 
-  Future uploadFile() async {
+  Future<bool> _uploadFiles() async {
+    if (!mounted || _leaving) return false;
     setState(() {
-      isUploading = true;
-      isProcessing = false;
+      _stage = _UploadStage.uploading;
+      _errorMessage = null;
     });
     try {
-      final String base64Image = base64Encode(imageBytes);
-      final String base64ImageThumb = base64Encode(imageBytesThumb);
+      final hasIncompleteFile =
+          (wallpaperPath != null && wallpaperSha != null && wallpaperUrl == null) ||
+          (thumbPath != null && thumbSha != null && wallpaperThumb == null);
+      if (hasIncompleteFile && !await _deleteFile()) {
+        throw StateError('Could not remove an incomplete upload before retrying.');
+      }
+      if (!mounted || _leaving) return false;
       final github = GitHubContentApi();
-      final value = await github.putFile(
-        repo: Env.normalize(Env.ghRepoWalls),
-        message: path.basename(image.path),
-        contentBase64: base64Image,
-        path: path.basename(image.path),
-      );
-      wallpaperUrl = value.downloadUrl;
-      wallpaperPath = value.path;
-      wallpaperSha = value.sha;
-      // Left the screen while uploading: _onPop found nothing to delete, so clean up here.
-      if (!mounted) return await deleteFile();
-      final thumbValue = await github.putFile(
-        repo: Env.normalize(Env.ghRepoWalls),
-        message: "thumb_${path.basename(image.path)}",
-        contentBase64: base64ImageThumb,
-        path: 'thumb_${path.basename(image.path)}',
-      );
-      wallpaperThumb = thumbValue.downloadUrl;
-      thumbPath = thumbValue.path;
-      thumbSha = thumbValue.sha;
-      if (!mounted) return await deleteFile();
-      logger.d('File Uploaded');
+      final baseName = path.basename(widget.image.path);
+      if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
+        final value = widget.uploadFileForTesting != null
+            ? await widget.uploadFileForTesting!(isThumbnail: false)
+            : await github.putFile(
+                repo: Env.normalize(Env.ghRepoWalls),
+                message: baseName,
+                contentBase64: base64Encode(imageBytes),
+                path: baseName,
+              );
+        wallpaperUrl = value.downloadUrl;
+        wallpaperPath = value.path ?? baseName;
+        wallpaperSha = value.sha;
+        if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
+          throw StateError('The wallpaper upload returned incomplete file details.');
+        }
+      }
+      if (!mounted || _leaving) {
+        await _deleteFile();
+        return false;
+      }
+      if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
+        final thumbValue = widget.uploadFileForTesting != null
+            ? await widget.uploadFileForTesting!(isThumbnail: true)
+            : await github.putFile(
+                repo: Env.normalize(Env.ghRepoWalls),
+                message: 'thumb_$baseName',
+                contentBase64: base64Encode(imageBytesThumb),
+                path: 'thumb_$baseName',
+              );
+        wallpaperThumb = thumbValue.downloadUrl;
+        thumbPath = thumbValue.path ?? 'thumb_$baseName';
+        thumbSha = thumbValue.sha;
+        if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
+          throw StateError('The preview upload returned incomplete file details.');
+        }
+      }
+      if (!mounted || _leaving) {
+        await _deleteFile();
+        return false;
+      }
+      return true;
+    } catch (error) {
+      logger.w('Wallpaper upload failed: $error');
+      if (!mounted || _leaving) {
+        await _deleteFile();
+        return false;
+      }
       setState(() {
-        isUploading = false;
+        _stage = _UploadStage.failedUpload;
+        _errorMessage = 'The upload did not finish. Your image is still here, so you can try again.';
       });
-    } catch (e) {
-      logger.d(e.toString());
-      if (!mounted) return;
-      Navigator.pop(context);
-      toasts.error("Some uploading issue, please try again.");
+      return false;
     }
+  }
+
+  Future<void> _retryUpload() async {
+    if (_stage == _UploadStage.failedProcessing) {
+      await _prepareImage();
+    }
+  }
+
+  Future<void> _submit() async {
+    if ((_stage != _UploadStage.ready && _stage != _UploadStage.failedUpload) ||
+        _submitted ||
+        _discarding ||
+        _leaving) {
+      return;
+    }
+    setState(() {
+      _stage = _UploadStage.uploading;
+      _errorMessage = null;
+    });
+    if (!await _uploadFiles() || !mounted || _leaving) return;
+    setState(() => _stage = _UploadStage.saving);
+    _submissionAttempted = true;
+    try {
+      final result = widget.createRecordForTesting != null
+          ? await widget.createRecordForTesting!()
+          : await wall_store.createRecord(
+              id,
+              wallpaperProvider,
+              wallpaperThumb,
+              wallpaperUrl,
+              wallpaperResolution,
+              wallpaperSize,
+              null,
+              wallpaperCategory,
+              wallpaperDesc,
+              widget.fromSetupRoute ? 'setup' : false,
+            );
+      if (result == wall_store.WallSubmissionResult.quotaExceeded) {
+        _submissionAttempted = false;
+        final deleted = await _deleteFile();
+        if (!mounted) return;
+        setState(() {
+          _stage = _UploadStage.quotaExceeded;
+          _errorMessage = deleted
+              ? 'You have reached this week’s free wallpaper upload limit.'
+              : 'You reached the upload limit, but uploaded files could not be removed. Try Back again to retry.';
+        });
+        return;
+      }
+    } catch (error) {
+      logger.w('Wallpaper submission failed: $error');
+      if (!mounted) return;
+      setState(() {
+        _stage = _UploadStage.failedSubmission;
+        _errorMessage = 'We could not confirm the submission. Check your review status before trying again.';
+      });
+      return;
+    }
+    _submitted = true;
+    analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
+    if (!mounted || _leaving) return;
+    final router = widget.fromSetupRoute ? null : context.router;
+    Navigator.pop(context, UploadedWallpaper(url: wallpaperUrl!, id: id));
+    if (router != null) unawaited(router.push(const ReviewRoute()));
   }
 
   void _onPop() {
-    if (!_submitted) deleteFile();
+    _leaving = true;
+    if (!_submitted && !_submissionAttempted && !_isBusy) unawaited(_deleteFile());
   }
+
+  Future<void> _confirmDiscard() async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard this upload?'),
+        content: const Text('Uploaded files will be removed. Your selected image will stay on your device.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Keep editing')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Discard upload')),
+        ],
+      ),
+    );
+    if (discard != true || !mounted) return;
+    if (_discarding) return;
+    setState(() => _discarding = true);
+    final deleted = await _deleteFile();
+    if (!mounted) return;
+    if (!deleted) {
+      setState(() => _discarding = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not remove uploaded files. Try again.')));
+      return;
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
+
+  String get _stageTitle => switch (_stage) {
+    _UploadStage.processing => 'Preparing wallpaper',
+    _UploadStage.uploading => 'Uploading wallpaper',
+    _UploadStage.ready => 'Ready to submit',
+    _UploadStage.saving => 'Submitting wallpaper',
+    _UploadStage.failedProcessing => 'Image could not be prepared',
+    _UploadStage.failedUpload => 'Upload did not finish',
+    _UploadStage.failedSubmission => 'Submission did not finish',
+    _UploadStage.quotaExceeded => 'Upload limit reached',
+  };
+
+  String get _stageDescription =>
+      _errorMessage ??
+      switch (_stage) {
+        _UploadStage.processing => 'Preparing your image and a smaller preview.',
+        _UploadStage.uploading => 'Uploading the wallpaper and its preview.',
+        _UploadStage.ready =>
+          widget.fromSetupRoute
+              ? 'Add this wallpaper to your setup. You will return to the setup editor after upload.'
+              : 'Your wallpaper appears in the community after approval. Track it in Review status.',
+        _UploadStage.saving => 'Saving your submission for review.',
+        _UploadStage.failedProcessing => '',
+        _UploadStage.failedUpload => '',
+        _UploadStage.failedSubmission => '',
+        _UploadStage.quotaExceeded => '',
+      };
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final failure =
+        _stage == _UploadStage.failedProcessing ||
+        _stage == _UploadStage.failedUpload ||
+        _stage == _UploadStage.failedSubmission ||
+        _stage == _UploadStage.quotaExceeded;
     return PopScope(
+      canPop: !_isBusy && (!_hasStagedFiles || _submissionAttempted),
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) _onPop();
+        if (!didPop && _hasStagedFiles && !_submissionAttempted && !_isBusy) {
+          unawaited(_confirmDiscard());
+        }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: AppBar(
-          title: Text("Upload Wallpaper", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-        ),
-        body: Column(
-          children: <Widget>[
-            ClipRRect(
-              child: Container(
-                color: Theme.of(context).hintColor,
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.width,
-                child: PhotoView(
-                  imageProvider: FileImage(image),
-                  backgroundDecoration: BoxDecoration(color: Theme.of(context).hintColor),
-                ),
-              ),
-            ),
-            if (isProcessing || isUploading)
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 2.4,
-                height: MediaQuery.of(context).size.width / 2.4,
-                child: const Center(child: CircularProgressIndicator()),
-              )
-            else
-              Container(),
-            if (isUploading)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Text(
-                  "Uploading...",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                ),
-              )
-            else
-              Container(),
-            if (isProcessing)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Text(
-                  "Processing...",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                ),
-              )
-            else
-              Container(),
-            if (isProcessing || isUploading)
-              SizedBox(
-                width: MediaQuery.of(context).size.width / 2,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(500),
-                  child: LinearProgressIndicator(
-                    backgroundColor: Theme.of(context).hintColor,
-                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
-                  ),
-                ),
-              )
-            else
-              Container(),
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
-              child: Row(
-                children: <Widget>[
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.2,
-                    child: Center(
-                      child: Icon(JamIcons.info, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6)),
-                    ),
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.6,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: Text(
-                          app_state.prismUser.premium == true
-                              ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
-                              : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
+        appBar: AppBar(title: const Text('Upload wallpaper')),
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final previewHeight = (constraints.maxHeight * 0.56).clamp(220.0, 440.0);
+              return Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: previewHeight, maxWidth: 480),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.file(
+                                  widget.image,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => ColoredBox(
+                                    color: colors.surfaceContainerHighest,
+                                    child: SizedBox(
+                                      height: previewHeight,
+                                      child: Center(
+                                        child: Icon(Icons.broken_image_outlined, color: colors.onSurfaceVariant),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 24),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_isBusy)
+                                SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: colors.primary),
+                                )
+                              else
+                                Icon(
+                                  failure ? Icons.error_outline : Icons.check_circle_outline,
+                                  color: failure ? colors.error : colors.primary,
+                                  size: 24,
+                                ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _stageTitle,
+                                      style: theme.textTheme.titleMedium?.copyWith(color: colors.onSurface),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _stageDescription,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: failure ? colors.error : colors.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (wallpaperResolution != null) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              '$wallpaperResolution  ·  ${wallpaperSize ?? ''}',
+                              style: theme.textTheme.labelMedium?.copyWith(color: colors.onSurfaceVariant),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: _stage == _UploadStage.failedProcessing
+                          ? FilledButton.icon(
+                              onPressed: _retryUpload,
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Try again'),
+                            )
+                          : _stage == _UploadStage.quotaExceeded
+                          ? FilledButton(onPressed: () => Navigator.maybePop(context), child: const Text('Back'))
+                          : _stage == _UploadStage.failedSubmission
+                          ? FilledButton.icon(
+                              onPressed: () => unawaited(context.router.push(const ReviewRoute())),
+                              icon: const Icon(Icons.open_in_new),
+                              label: const Text('Check review status'),
+                            )
+                          : FilledButton.icon(
+                              onPressed:
+                                  !_discarding && (_stage == _UploadStage.ready || _stage == _UploadStage.failedUpload)
+                                  ? _submit
+                                  : null,
+                              icon: _stage == _UploadStage.saving
+                                  ? const SizedBox.square(
+                                      dimension: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(JamIcons.check),
+                              label: Text(
+                                _stage == _UploadStage.uploading
+                                    ? 'Uploading…'
+                                    : _stage == _UploadStage.saving
+                                    ? 'Submitting…'
+                                    : widget.fromSetupRoute
+                                    ? 'Use this wallpaper'
+                                    : 'Submit for review',
+                              ),
+                            ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: !isProcessing && !isUploading
-              ? Theme.of(context).colorScheme.error
-              : Theme.of(context).hintColor,
-          disabledElevation: 0,
-          onPressed: !isProcessing && !isUploading
-              ? () {
-                  _submitted = true;
-                  Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
-                  wall_store.createRecord(
-                    id,
-                    wallpaperProvider,
-                    wallpaperThumb,
-                    wallpaperUrl,
-                    wallpaperResolution,
-                    wallpaperSize,
-                    null,
-                    wallpaperCategory,
-                    wallpaperDesc,
-                    fromSetupRoute ? "setup" : review,
-                  );
-                  context.router.push(const ReviewRoute());
-                }
-              : null,
-          child: const Icon(JamIcons.check, size: 40, color: Colors.white),
+              );
+            },
+          ),
         ),
       ),
     );

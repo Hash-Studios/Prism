@@ -1005,7 +1005,7 @@ packages:
     source: hosted
     version: "4.1.2"
   image:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: image
       sha256: "8e9d133755c3e84c73288363e6343157c383a0c6c56fc51afcc5d4d7180306d6"
@@ -1108,14 +1108,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
-  in_app_update:
-    dependency: "direct main"
-    description:
-      name: in_app_update
-      sha256: "9924a3efe592e1c0ec89dda3683b3cfec3d4cd02d908e6de00c24b759038ddb1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.5"
   injectable:
     dependency: "direct main"
     description:
@@ -1476,14 +1468,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.15.0"
-  photofilters:
-    dependency: "direct main"
-    description:
-      name: photofilters
-      sha256: "757197a7b54b4db36eed3fbdf0afcc8cc3b9058b1242c8f6675426aca1b56d39"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.1"
   pigeon:
     dependency: "direct dev"
     description:
@@ -1620,14 +1604,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
-  screenshot:
-    dependency: "direct main"
-    description:
-      name: screenshot
-      sha256: "63817697a7835e6ce82add4228e15d233b74d42975c143ad8cfe07009fab866b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.0"
   sentry:
     dependency: transitive
     description:

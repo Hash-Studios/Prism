@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
+import { Section } from "@/components/legal/section";
 import { Footer } from "@/components/sections/footer";
 import { Header } from "@/components/sections/header";
-import { APP_NAME, SITE_URL } from "@/lib/site-config";
+import { APP_NAME, CONTACT_EMAIL, EFFECTIVE_DATE, SITE_URL } from "@/lib/site-config";
 
-const CONTACT_EMAIL = "hash.studios.inc@gmail.com";
-const EFFECTIVE_DATE = "2026-09-28";
 
 const title = `Terms of Use | ${APP_NAME}`;
 const description = `The Terms of Use (EULA) for ${APP_NAME} by Hash Studios, covering accounts, content, purchases and Prism Coins.`;
@@ -26,15 +25,6 @@ export const metadata: Metadata = {
     description,
   },
 };
-
-function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-10">
-      <h2 className="text-xl font-semibold text-black">{heading}</h2>
-      <div className="mt-2 space-y-3 text-neutral-600 leading-relaxed">{children}</div>
-    </section>
-  );
-}
 
 export default function TermsPage() {
   return (

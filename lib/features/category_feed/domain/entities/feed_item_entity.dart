@@ -22,8 +22,13 @@ sealed class FeedItemEntity with _$FeedItemEntity {
     pexels: (_, _) => WallpaperSource.pexels,
   );
 
+  WallpaperCore get wallpaperCore =>
+      when(prism: (_, w) => w.core, wallhaven: (_, w) => w.core, pexels: (_, w) => w.core);
+
   String get thumbnailUrl =>
       when(prism: (_, w) => w.thumbnailUrl, wallhaven: (_, w) => w.thumbnailUrl, pexels: (_, w) => w.thumbnailUrl);
+
+  String get fullUrl => when(prism: (_, w) => w.fullUrl, wallhaven: (_, w) => w.fullUrl, pexels: (_, w) => w.fullUrl);
 
   /// What screen readers say for this wallpaper's tile.
   String get semanticLabel => wallpaperSemanticLabel(

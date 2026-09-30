@@ -1,42 +1,12 @@
-import 'package:Prism/auth/badge_model.dart';
-import 'package:Prism/auth/transaction_model.dart';
-import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const String _defaultPhotoUrl = 'https://example.com/default.png';
-
-PrismUsersV2 _user({
-  String profilePhoto = _defaultPhotoUrl,
-  String username = '',
-  String bio = '',
-  Map<String, String>? links,
-}) {
-  return PrismUsersV2(
-    username: username,
-    email: 'user@example.com',
-    id: 'u1',
-    createdAt: DateTime.now().toUtc().toIso8601String(),
-    premium: false,
-    lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-    links: links ?? const <String, String>{},
-    followers: const <String>[],
-    following: const <String>[],
-    profilePhoto: profilePhoto,
-    bio: bio,
-    loggedIn: true,
-    badges: <Badge>[],
-    subPrisms: const <String>[],
-    coins: 0,
-    transactions: <PrismTransaction>[],
-    name: '',
-    coverPhoto: '',
-  );
-}
+import '../../support/profile_user_fixture.dart';
 
 void main() {
   test('returns 0/4 when only defaults exist', () {
-    final status = ProfileCompletenessEvaluator.evaluate(_user(), defaultProfilePhotoUrl: _defaultPhotoUrl);
+    final status = ProfileCompletenessEvaluator.evaluate(profileUser(), defaultProfilePhotoUrl: defaultProfilePhotoUrl);
 
     expect(status.completedSteps, 0);
     expect(status.percent, 0);
@@ -46,12 +16,12 @@ void main() {
 
   test('default profile photo does not count as completed photo', () {
     final status = ProfileCompletenessEvaluator.evaluate(
-      _user(
+      profileUser(
         username: 'creator_01',
         bio: 'hello world',
         links: const <String, String>{'instagram': 'https://instagram.com/creator'},
       ),
-      defaultProfilePhotoUrl: _defaultPhotoUrl,
+      defaultProfilePhotoUrl: defaultProfilePhotoUrl,
     );
 
     expect(status.completedSteps, 3);
@@ -61,25 +31,25 @@ void main() {
 
   test('transitions 25, 50, 75, and 100 percent as fields are completed', () {
     final status25 = ProfileCompletenessEvaluator.evaluate(
-      _user(profilePhoto: 'https://example.com/photo.png'),
-      defaultProfilePhotoUrl: _defaultPhotoUrl,
+      profileUser(profilePhoto: 'https://example.com/photo.png'),
+      defaultProfilePhotoUrl: defaultProfilePhotoUrl,
     );
     final status50 = ProfileCompletenessEvaluator.evaluate(
-      _user(profilePhoto: 'https://example.com/photo.png', username: 'creator_01'),
-      defaultProfilePhotoUrl: _defaultPhotoUrl,
+      profileUser(profilePhoto: 'https://example.com/photo.png', username: 'creator_01'),
+      defaultProfilePhotoUrl: defaultProfilePhotoUrl,
     );
     final status75 = ProfileCompletenessEvaluator.evaluate(
-      _user(profilePhoto: 'https://example.com/photo.png', username: 'creator_01', bio: 'hello world'),
-      defaultProfilePhotoUrl: _defaultPhotoUrl,
+      profileUser(profilePhoto: 'https://example.com/photo.png', username: 'creator_01', bio: 'hello world'),
+      defaultProfilePhotoUrl: defaultProfilePhotoUrl,
     );
     final status100 = ProfileCompletenessEvaluator.evaluate(
-      _user(
+      profileUser(
         profilePhoto: 'https://example.com/photo.png',
         username: 'creator_01',
         bio: 'hello world',
         links: const <String, String>{'github': 'https://github.com/creator'},
       ),
-      defaultProfilePhotoUrl: _defaultPhotoUrl,
+      defaultProfilePhotoUrl: defaultProfilePhotoUrl,
     );
 
     expect(status25.percent, 25);
@@ -91,13 +61,13 @@ void main() {
 
   test('any non-empty social link value satisfies social link step', () {
     final status = ProfileCompletenessEvaluator.evaluate(
-      _user(
+      profileUser(
         profilePhoto: 'https://example.com/photo.png',
         username: 'creator_01',
         bio: 'hello world',
         links: const <String, String>{'custom link': '   https://site.example/u1  '},
       ),
-      defaultProfilePhotoUrl: _defaultPhotoUrl,
+      defaultProfilePhotoUrl: defaultProfilePhotoUrl,
     );
 
     expect(status.percent, 100);

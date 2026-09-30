@@ -1,6 +1,8 @@
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +26,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
       builder: (context, _) => ListView(
         padding: const EdgeInsets.only(bottom: 32),
         children: [
-          const _SectionHeader('Rendering (Debug/Profile only)'),
+          const DebugSectionHeader('Rendering (Debug/Profile only)'),
           _ToggleTile(
             icon: Icons.grid_on,
             title: 'Paint Size Enabled',
@@ -60,9 +62,9 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             value: DebugFlags.instance.showSemanticsDebugger,
             onChanged: (v) => DebugFlags.instance.showSemanticsDebugger = v,
           ),
-          const _SectionHeader('Animation Speed'),
+          const DebugSectionHeader('Animation Speed'),
           const _AnimationSpeedTile(),
-          const _SectionHeader('Logging'),
+          const DebugSectionHeader('Logging'),
           _ToggleTile(
             icon: Icons.notifications_active_outlined,
             title: 'Show Log Toasts',
@@ -70,7 +72,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             value: DebugFlags.instance.showLogToasts,
             onChanged: (v) => DebugFlags.instance.showLogToasts = v,
           ),
-          const _SectionHeader('Network'),
+          const DebugSectionHeader('Network'),
           _ToggleTile(
             icon: Icons.wifi_off,
             title: 'Simulate No Internet',
@@ -78,7 +80,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             value: DebugFlags.instance.simulateNoInternet,
             onChanged: (v) => DebugFlags.instance.simulateNoInternet = v,
           ),
-          const _SectionHeader('Maintenance'),
+          const DebugSectionHeader('Maintenance'),
           _ActionTile(
             icon: Icons.image_not_supported_outlined,
             title: 'Clear Image Cache',
@@ -86,9 +88,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             onTap: () {
               PaintingBinding.instance.imageCache.clear();
               PaintingBinding.instance.imageCache.clearLiveImages();
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Image cache cleared'), duration: Duration(seconds: 2)));
+              showDebugSnackBar(context, 'Image cache cleared');
             },
           ),
           _ActionTile(
@@ -99,14 +99,10 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
               try {
                 await getIt<CacheMaintenanceService>().clearTransientCache();
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('App cache cleared'), duration: Duration(seconds: 2)));
+                showDebugSnackBar(context, 'App cache cleared');
               } catch (e) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Error: $e'), duration: const Duration(seconds: 3)));
+                showDebugSnackBar(context, 'Error: $e', duration: const Duration(seconds: 3));
               }
             },
           ),
@@ -116,25 +112,23 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             subtitle: 'Restore all toggles to default values',
             onTap: () {
               DebugFlags.instance.reset();
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Debug flags reset'), duration: Duration(seconds: 2)));
+              showDebugSnackBar(context, 'Debug flags reset');
             },
           ),
-          const _SectionHeader('Admin Shortcuts'),
+          const DebugSectionHeader('Admin Shortcuts'),
           _ActionTile(
             icon: Icons.analytics_outlined,
             title: 'Firestore Telemetry',
             subtitle: 'View Firestore read/write profiling',
-            onTap: () => context.router.pushPath('/admin-firestore-telemetry'),
+            onTap: () => context.router.push(const FirestoreTelemetryRoute()),
           ),
           _ActionTile(
             icon: Icons.admin_panel_settings_outlined,
             title: 'Admin Review',
             subtitle: 'Content moderation & push notification tool',
-            onTap: () => context.router.pushPath('/admin-review'),
+            onTap: () => context.router.push(AdminReviewRoute()),
           ),
-          const _SectionHeader('Danger Zone'),
+          const DebugSectionHeader('Danger Zone'),
           _ActionTile(
             icon: Icons.warning_amber,
             title: 'Force Crash',
@@ -178,27 +172,6 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-          letterSpacing: 1.0,
-        ),
       ),
     );
   }

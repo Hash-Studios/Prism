@@ -15,11 +15,6 @@ class ContentLoadTracker {
     _completed = false;
   }
 
-  void reset() {
-    _startedAt = null;
-    _completed = false;
-  }
-
   void success({required ContentLoadSuccessCallback onSuccess, int? itemCount}) {
     if (_completed) {
       return;

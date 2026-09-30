@@ -1,4 +1,4 @@
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/core/widgets/accent_color.dart';
 import 'package:flutter/material.dart';
 
 class Loader extends StatefulWidget {
@@ -47,14 +47,7 @@ class _LoaderState extends State<Loader> with TickerProviderStateMixin {
       child: Opacity(
         opacity: animation2.value,
         child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                ? Theme.of(context).colorScheme.error == Colors.black
-                      ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).colorScheme.error
-                : Theme.of(context).colorScheme.error,
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: accentColor(context)),
           child: const SizedBox(width: 45, height: 45),
         ),
       ),

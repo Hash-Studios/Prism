@@ -21,25 +21,18 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   String _collectionPath(String userId) => 'usersv2/$userId/images';
 
   Future<List<FavouriteWallEntity>> _read(String userId) async {
-    final rows = await _firestoreClient.query<_FavouriteWallRow>(
+    final rows = await _firestoreClient.query<({String docId, FavouriteWallDocDto doc})>(
       FirestoreQuerySpec(
         collection: _collectionPath(userId),
         sourceTag: 'favourite_walls.read',
         cachePolicy: FirestoreCachePolicy.memoryFirst,
         dedupeWindowMs: 1500,
       ),
-      (data, docId) => _FavouriteWallRow(docId: docId, doc: FavouriteWallDocDto.fromJson(data)),
+      (data, docId) => (docId: docId, doc: FavouriteWallDocDto.fromJson(data)),
     );
     final items = rows.map((row) => _mapFavouriteWall(row.doc, row.docId)).toList();
 
-    items.sort((a, b) {
-      final DateTime? aDate = a.createdAt;
-      final DateTime? bDate = b.createdAt;
-      if (aDate == null && bDate == null) return 0;
-      if (aDate == null) return 1;
-      if (bDate == null) return -1;
-      return bDate.compareTo(aDate);
-    });
+    items.sort(compareByCreatedAtDesc);
 
     return items;
   }
@@ -227,17 +220,6 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
   }
 
   @override
-  Future<Result<bool>> removeFavourite({required String userId, required String wallId}) async {
-    try {
-      await _firestoreClient.deleteDoc(_collectionPath(userId), wallId, sourceTag: 'favourite_walls.remove');
-      await _favoritesLocal.setWallFavourite(userId, wallId, false);
-      return Result.success(true);
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to remove favourite wall: $error'));
-    }
-  }
-
-  @override
   Future<Result<bool>> clearAll({required String userId, required List<String> wallIds}) async {
     try {
       for (final String rawId in wallIds) {
@@ -251,11 +233,4 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
       return Result.error(ServerFailure('Unable to clear favourite walls: $error'));
     }
   }
-}
-
-class _FavouriteWallRow {
-  const _FavouriteWallRow({required this.docId, required this.doc});
-
-  final String docId;
-  final FavouriteWallDocDto doc;
 }

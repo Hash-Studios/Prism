@@ -1,7 +1,7 @@
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_tools_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/log_viewer_page.dart';
-import 'package:Prism/features/debug_panel/views/pages/network_log_page.dart';
+import 'package:Prism/features/debug_panel/views/pages/mascot_gallery_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/storage_viewer_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -48,15 +48,15 @@ class DebugPanelPage extends StatelessWidget {
             labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
             tabs: const [
               Tab(icon: Icon(Icons.list_alt, size: 18), text: 'Logs'),
-              Tab(icon: Icon(Icons.wifi, size: 18), text: 'Network'),
               Tab(icon: Icon(Icons.build, size: 18), text: 'Tools'),
               Tab(icon: Icon(Icons.storage, size: 18), text: 'Storage'),
               Tab(icon: Icon(Icons.info_outline, size: 18), text: 'App Info'),
+              Tab(icon: Icon(Icons.face_retouching_natural, size: 18), text: 'Mascot'),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [LogViewerPage(), NetworkLogPage(), DebugToolsPage(), StorageViewerPage(), AppInfoPage()],
+          children: [LogViewerPage(), DebugToolsPage(), StorageViewerPage(), AppInfoPage(), MascotGalleryPage()],
         ),
       ),
     );
