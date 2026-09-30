@@ -217,7 +217,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
                                   WallpaperDetailRoute(
                                     wallId: wallId,
                                     source: wallSource,
-                                    wallpaperUrl: wallpaperUrl,
                                     thumbnailUrl: wallpaperThumb,
                                     analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
                                   ),

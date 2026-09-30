@@ -94,7 +94,6 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
         WallpaperDetailRoute(
           wallId: _setup.wallId,
           source: _setup.source ?? WallpaperSource.unknown,
-          wallpaperUrl: wallpaper.primaryUrl,
           thumbnailUrl: _setup.wallpaperThumb.isNotEmpty ? _setup.wallpaperThumb : wallpaper.primaryUrl,
           analyticsSurface: widget.sharedLink
               ? AnalyticsSurfaceValue.shareSetupViewScreen

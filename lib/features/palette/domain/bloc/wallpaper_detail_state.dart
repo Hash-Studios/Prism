@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -29,12 +27,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     required this.entity,
     this.views,
     this.viewsLoading = false,
-    this.viewsError,
     this.colors,
     this.accent,
     this.colorChanged = false,
-    this.screenshotTaken = false,
-    this.imageFile,
     this.panelClosed = true,
     this.panelCollapsed = true,
     this.panelScrollInProgress = false,
@@ -43,12 +38,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final WallpaperDetailEntity entity;
   final String? views;
   final bool viewsLoading;
-  final String? viewsError;
   final List<Color?>? colors;
   final Color? accent;
   final bool colorChanged;
-  final bool screenshotTaken;
-  final File? imageFile;
   final bool panelClosed;
   final bool panelCollapsed;
   final bool panelScrollInProgress;
@@ -57,12 +49,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     WallpaperDetailEntity? entity,
     String? views,
     bool? viewsLoading,
-    String? viewsError,
     List<Color?>? colors,
     Color? accent,
     bool? colorChanged,
-    bool? screenshotTaken,
-    File? imageFile,
     bool? panelClosed,
     bool? panelCollapsed,
     bool? panelScrollInProgress,
@@ -71,12 +60,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
       entity: entity ?? this.entity,
       views: views ?? this.views,
       viewsLoading: viewsLoading ?? this.viewsLoading,
-      viewsError: viewsError,
       colors: colors ?? this.colors,
       accent: accent ?? this.accent,
       colorChanged: colorChanged ?? this.colorChanged,
-      screenshotTaken: screenshotTaken ?? this.screenshotTaken,
-      imageFile: imageFile ?? this.imageFile,
       panelClosed: panelClosed ?? this.panelClosed,
       panelCollapsed: panelCollapsed ?? this.panelCollapsed,
       panelScrollInProgress: panelScrollInProgress ?? this.panelScrollInProgress,
@@ -88,12 +74,9 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     entity,
     views,
     viewsLoading,
-    viewsError,
     colors,
     accent,
     colorChanged,
-    screenshotTaken,
-    imageFile,
     panelClosed,
     panelCollapsed,
     panelScrollInProgress,

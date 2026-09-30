@@ -3,9 +3,6 @@ import 'dart:math' show min;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
-import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -27,7 +24,6 @@ import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/palette/palette.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -37,7 +33,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -48,7 +43,6 @@ class WallpaperDetailScreen extends StatefulWidget {
     this.entity,
     this.wallId,
     this.source,
-    this.wallpaperUrl,
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
@@ -56,7 +50,6 @@ class WallpaperDetailScreen extends StatefulWidget {
   final WallpaperDetailEntity? entity;
   final String? wallId;
   final WallpaperSource? source;
-  final String? wallpaperUrl;
   final String? thumbnailUrl;
   final AnalyticsSurfaceValue analyticsSurface;
 
@@ -65,10 +58,6 @@ class WallpaperDetailScreen extends StatefulWidget {
 }
 
 class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with SingleTickerProviderStateMixin {
-  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-
   static const double _sheetHPad = 24.0;
   static const double _panelSideInset = 10.0;
   static const double _panelTopRadius = 20.0;
@@ -77,14 +66,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   late AnimationController shakeController;
   late Animation<double> _offsetAnimation;
-  ScreenshotController screenshotController = ScreenshotController();
   PanelController panelController = PanelController();
-  int _toastFirstTime = 0;
+  bool _accentToastShown = false;
 
-  /// Identity for the wallpaper currently shown; resets capture readiness when it changes.
+  /// Identity for the wallpaper currently shown; resets [_wallpaperImageShown] when it changes.
   String? _wallpaperLoadIdentity;
-  int _wallpaperCaptureGeneration = 0;
-  bool _wallpaperReadyForCapture = false;
+  bool _wallpaperImageShown = false;
 
   String _getSourceContext(WallpaperDetailState? blocState) {
     final source = blocState is WallpaperDetailLoaded ? blocState.entity.source : widget.source;
@@ -107,63 +94,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   void _handlePanelOpened(BuildContext context, WallpaperDetailLoaded state) {
-    final bloc = context.read<WallpaperDetailBloc>();
-    bloc.add(const OnPanelOpened());
+    context.read<WallpaperDetailBloc>().add(const OnPanelOpened());
     _trackAction(state, AnalyticsActionValue.panelOpened);
-
-    if (state.panelClosed) {
-      logger.d('Screenshot Starting');
-      final gen = _wallpaperCaptureGeneration;
-      unawaited(_captureWallpaperScreenshotWhenReady(context, bloc, gen));
-    }
-  }
-
-  Future<void> _captureWallpaperScreenshotWhenReady(
-    BuildContext context,
-    WallpaperDetailBloc bloc,
-    int captureGeneration,
-  ) async {
-    final deadline = DateTime.now().add(const Duration(seconds: 15));
-    while (mounted && captureGeneration == _wallpaperCaptureGeneration && !_wallpaperReadyForCapture) {
-      if (DateTime.now().isAfter(deadline)) return;
-      await WidgetsBinding.instance.endOfFrame;
-    }
-    if (!mounted || captureGeneration != _wallpaperCaptureGeneration) return;
-
-    final current = bloc.state;
-    if (current is! WallpaperDetailLoaded) return;
-
-    final capture = current.colorChanged
-        ? screenshotController.capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-        : _settingsLocal.get<bool>('optimisedWallpapers', defaultValue: true) == true
-        ? screenshotController.capture(pixelRatio: 3, delay: const Duration(milliseconds: 10))
-        : Future<Uint8List?>.value();
-
-    try {
-      final Uint8List? image = await capture;
-      if (image != null && mounted && captureGeneration == _wallpaperCaptureGeneration) {
-        bloc.add(CaptureScreenshot(imageBytes: image));
-        logger.d('Screenshot Taken');
-      }
-    } catch (e, st) {
-      logger.d('$e\n$st');
-    }
   }
 
   void _syncWallpaperIdentity(WallpaperDetailEntity entity) {
     final key = '${entity.id}|${entity.fullUrl}|${entity.thumbnailUrl}';
     if (_wallpaperLoadIdentity != key) {
       _wallpaperLoadIdentity = key;
-      _wallpaperCaptureGeneration++;
-      _wallpaperReadyForCapture = false;
+      _wallpaperImageShown = false;
     }
   }
 
   void _scheduleWallpaperDisplayReady() {
-    if (_wallpaperReadyForCapture) return;
+    if (_wallpaperImageShown) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _wallpaperReadyForCapture) return;
-      setState(() => _wallpaperReadyForCapture = true);
+      if (!mounted || _wallpaperImageShown) return;
+      setState(() => _wallpaperImageShown = true);
     });
   }
 
@@ -182,9 +129,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     _setStatusBarIconBrightness(state.accent ?? Colors.white);
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
-    if (_toastFirstTime == 0) {
+    if (!_accentToastShown) {
       toasts.codeSend('Long press to reset');
-      _toastFirstTime = 1;
+      _accentToastShown = true;
     }
   }
 
@@ -219,22 +166,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) shakeController.reverse();
           });
-    _contentLoadTracker.start();
 
-    final bloc = context.read<WallpaperDetailBloc>();
-    if (widget.entity != null) {
-      bloc.add(LoadFromEntity(entity: widget.entity!, analyticsSurface: widget.analyticsSurface));
-    } else {
-      bloc.add(
-        LoadFromId(
-          wallId: widget.wallId!,
-          source: widget.source!,
-          wallpaperUrl: widget.wallpaperUrl,
-          thumbnailUrl: widget.thumbnailUrl,
-          analyticsSurface: widget.analyticsSurface,
-        ),
-      );
-    }
+    _loadWallpaper(context);
   }
 
   @override
@@ -243,20 +176,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     super.dispose();
   }
 
-  void _retryWallpaperLoad(BuildContext context) {
+  void _loadWallpaper(BuildContext context) {
     final bloc = context.read<WallpaperDetailBloc>();
-    if (widget.entity != null) {
-      bloc.add(LoadFromEntity(entity: widget.entity!, analyticsSurface: widget.analyticsSurface));
+    final entity = widget.entity;
+    if (entity != null) {
+      bloc.add(LoadFromEntity(entity: entity));
     } else {
-      bloc.add(
-        LoadFromId(
-          wallId: widget.wallId!,
-          source: widget.source!,
-          wallpaperUrl: widget.wallpaperUrl,
-          thumbnailUrl: widget.thumbnailUrl,
-          analyticsSurface: widget.analyticsSurface,
-        ),
-      );
+      bloc.add(LoadFromId(wallId: widget.wallId!, source: widget.source!, thumbnailUrl: widget.thumbnailUrl));
     }
   }
 
@@ -376,7 +302,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 ),
               ],
               const SizedBox(height: 24),
-              FilledButton(onPressed: () => _retryWallpaperLoad(context), child: const Text('Try again')),
+              FilledButton(onPressed: () => _loadWallpaper(context), child: const Text('Try again')),
               const SizedBox(height: 4),
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
             ],
@@ -393,7 +319,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     });
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: paletteLoading ? Theme.of(context).primaryColor : state.accent,
       body: SlidingUpPanel(
         onPanelOpened: () => _handlePanelOpened(context, state),
@@ -411,7 +336,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         maxHeight: MediaQuery.of(context).size.height * 0.43,
         controller: panelController,
         panel: _buildInfoPanel(context, state),
-        body: _buildImageBody(context, _offsetAnimation, paletteLoading, state),
+        body: _buildImageBody(context, paletteLoading, state),
       ),
     );
   }
@@ -1057,7 +982,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildActionButtons(BuildContext context, WallpaperDetailLoaded state) {
     final entity = state.entity;
-    final url = state.screenshotTaken && state.imageFile != null ? state.imageFile!.path : entity.fullUrl;
+    final url = entity.fullUrl;
     final List<Widget> actions = <Widget>[
       _SheetActionTapScale(
         child: DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
@@ -1106,12 +1031,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
-  Widget _buildImageBody(
-    BuildContext context,
-    Animation<double> offsetAnimation,
-    bool paletteLoading,
-    WallpaperDetailLoaded state,
-  ) {
+  Widget _buildImageBody(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
     final entity = state.entity;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final topPad = _topOverlayPadding(context);
@@ -1119,9 +1039,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return Stack(
       children: [
         AnimatedBuilder(
-          animation: offsetAnimation,
+          animation: _offsetAnimation,
           builder: (context, child) {
-            final t = reduceMotion ? 0.0 : offsetAnimation.value;
+            final t = reduceMotion ? 0.0 : _offsetAnimation.value;
             return Semantics(
               label: 'Wallpaper',
               hint: 'Tap to cycle accent color. Long press to reset. Swipe up for details.',
@@ -1135,20 +1055,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   if (!paletteLoading) _handleAccentTap(context, state);
                   if (!reduceMotion) shakeController.forward(from: 0.0);
                 },
-                child: Screenshot(
-                  controller: screenshotController,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(vertical: t * 1.25, horizontal: t / 2),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(t),
-                      child: _buildProgressiveWallpaperImage(
-                        context: context,
-                        entity: entity,
-                        state: state,
-                        paletteLoading: paletteLoading,
-                        progressOutsideScreenshot: true,
-                        onWallpaperDisplayReady: _scheduleWallpaperDisplayReady,
-                      ),
+                child: Container(
+                  margin: EdgeInsets.symmetric(vertical: t * 1.25, horizontal: t / 2),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(t),
+                    child: _buildProgressiveWallpaperImage(
+                      context: context,
+                      entity: entity,
+                      state: state,
+                      paletteLoading: paletteLoading,
+                      onWallpaperDisplayReady: _scheduleWallpaperDisplayReady,
                     ),
                   ),
                 ),
@@ -1156,7 +1072,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             );
           },
         ),
-        if (!_wallpaperReadyForCapture)
+        if (!_wallpaperImageShown)
           Positioned.fill(
             child: Center(
               child: Semantics(
@@ -1227,17 +1143,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
-  /// Thumbnail first, loader while full resolution downloads, then full image on top (Wallhaven/Pexels).
-  ///
-  /// When [progressOutsideScreenshot] is true, download progress is not painted inside this subtree
-  /// (so [Screenshot] cannot capture spinners); use [onWallpaperDisplayReady] when the full bitmap
-  /// is shown or an error/empty state is finalized.
+  /// Thumbnail first, then the full image on top. The spinner lives outside this subtree;
+  /// [onWallpaperDisplayReady] fires when the full bitmap is shown or an error/empty state is final.
   Widget _buildProgressiveWallpaperImage({
     required BuildContext context,
     required WallpaperDetailEntity entity,
     required WallpaperDetailLoaded state,
     required bool paletteLoading,
-    bool progressOutsideScreenshot = false,
     VoidCallback? onWallpaperDisplayReady,
   }) {
     final String thumb = entity.thumbnailUrl.trim();
@@ -1273,14 +1185,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 child: Image(image: imageProvider, fit: BoxFit.cover),
               );
             },
-            progressIndicatorBuilder: progressOutsideScreenshot
-                ? (context, url, downloadProgress) => const SizedBox.shrink()
-                : (context, url, downloadProgress) => Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
-                      value: downloadProgress.progress,
-                    ),
-                  ),
+            progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
             errorWidget: (context, url, error) {
               onWallpaperDisplayReady?.call();
               return const SizedBox.shrink();
@@ -1306,20 +1211,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               child: Image(image: imageProvider, fit: BoxFit.cover),
             );
           },
-          progressIndicatorBuilder: progressOutsideScreenshot
-              ? (context, url, downloadProgress) => const SizedBox.shrink()
-              : (context, url, downloadProgress) => Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    const SizedBox.expand(),
-                    Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
-                        value: downloadProgress.progress,
-                      ),
-                    ),
-                  ],
-                ),
+          progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
           errorWidget: (context, url, error) {
             onWallpaperDisplayReady?.call();
             return Center(

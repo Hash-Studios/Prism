@@ -72,7 +72,6 @@ dependencies:
   purchases_ui_flutter: ^9.12.0
   quick_actions: ^1.1.0
   rxdart: ^0.28.0
-  screenshot: ^3.0.0
   sentry_flutter: ^9.14.0
   share_plus: ^11.1.0
   shared_preferences: ^2.3.2

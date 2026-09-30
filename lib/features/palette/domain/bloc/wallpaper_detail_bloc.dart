@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
@@ -29,7 +27,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     on<SelectAccentColor>(_onSelectAccentColor);
     on<CycleAccentColor>(_onCycleAccentColor);
     on<ResetAccentColor>(_onResetAccentColor);
-    on<CaptureScreenshot>(_onCaptureScreenshot);
     on<OnPanelOpened>(_onPanelOpened);
     on<OnPanelClosed>(_onPanelClosed);
     on<OnPanelScrollStart>(_onPanelScrollStart);
@@ -74,14 +71,13 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
 
     emit(currentState.copyWith(viewsLoading: true));
 
-    final entity = currentState.entity;
-    final result = await _recordPrismWallpaperViewsUsecase(entity.id.toUpperCase());
+    final result = await _recordPrismWallpaperViewsUsecase(currentState.entity.id);
 
     result.fold(
       onFailure: (failure) {
         final latestState = state;
         if (latestState is! WallpaperDetailLoaded) return;
-        emit(latestState.copyWith(viewsLoading: false, viewsError: failure.message));
+        emit(latestState.copyWith(viewsLoading: false));
       },
       onSuccess: (views) {
         final latestState = state;
@@ -108,11 +104,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (colors == null || colors.isEmpty) return;
     if (!colors.contains(accent)) return;
 
-    final currentIndex = colors.indexOf(accent);
-    if (currentIndex < 0) return;
-    final nextIndex = (currentIndex + 1) % colors.length;
-    if (nextIndex >= colors.length) return;
-    final nextColor = colors[nextIndex];
+    final nextColor = colors[(colors.indexOf(accent) + 1) % colors.length];
 
     emit(currentState.copyWith(accent: nextColor, colorChanged: true));
   }
@@ -122,14 +114,6 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (currentState is! WallpaperDetailLoaded) return;
 
     emit(currentState.copyWith(colorChanged: false));
-  }
-
-  void _onCaptureScreenshot(CaptureScreenshot event, Emitter<WallpaperDetailState> emit) {
-    final currentState = state;
-    if (currentState is! WallpaperDetailLoaded) return;
-
-    final imageFile = File.fromRawPath(event.imageBytes);
-    emit(currentState.copyWith(screenshotTaken: true, imageFile: imageFile));
   }
 
   void _onPanelOpened(OnPanelOpened event, Emitter<WallpaperDetailState> emit) {
@@ -235,11 +219,8 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     _paletteBloc.add(PaletteEvent.paletteRequested(imageUrl: imageUrl));
   }
 
-  Future<void> _fetchAndUpdateViews(WallpaperDetailEntity entity) async {
-    if (entity.source != WallpaperSource.prism) {
-      return;
-    }
-    add(const FetchViews());
+  void _fetchAndUpdateViews(WallpaperDetailEntity entity) {
+    if (entity.source == WallpaperSource.prism) add(const FetchViews());
   }
 
   /// Search/list responses often omit `uploader`; single-wall API includes it.

@@ -1240,7 +1240,6 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     WallpaperDetailEntity? entity,
     String? wallId,
     WallpaperSource? source,
-    String? wallpaperUrl,
     String? thumbnailUrl,
     AnalyticsSurfaceValue analyticsSurface =
         AnalyticsSurfaceValue.wallpaperScreen,
@@ -1252,7 +1251,6 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            entity: entity,
            wallId: wallId,
            source: source,
-           wallpaperUrl: wallpaperUrl,
            thumbnailUrl: thumbnailUrl,
            analyticsSurface: analyticsSurface,
          ),
@@ -1272,7 +1270,6 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
         entity: args.entity,
         wallId: args.wallId,
         source: args.source,
-        wallpaperUrl: args.wallpaperUrl,
         thumbnailUrl: args.thumbnailUrl,
         analyticsSurface: args.analyticsSurface,
       );
@@ -1286,7 +1283,6 @@ class WallpaperDetailRouteArgs {
     this.entity,
     this.wallId,
     this.source,
-    this.wallpaperUrl,
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
   });
@@ -1299,15 +1295,13 @@ class WallpaperDetailRouteArgs {
 
   final WallpaperSource? source;
 
-  final String? wallpaperUrl;
-
   final String? thumbnailUrl;
 
   final AnalyticsSurfaceValue analyticsSurface;
 
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
   }
 
   @override
@@ -1318,7 +1312,6 @@ class WallpaperDetailRouteArgs {
         entity == other.entity &&
         wallId == other.wallId &&
         source == other.source &&
-        wallpaperUrl == other.wallpaperUrl &&
         thumbnailUrl == other.thumbnailUrl &&
         analyticsSurface == other.analyticsSurface;
   }
@@ -1329,7 +1322,6 @@ class WallpaperDetailRouteArgs {
       entity.hashCode ^
       wallId.hashCode ^
       source.hashCode ^
-      wallpaperUrl.hashCode ^
       thumbnailUrl.hashCode ^
       analyticsSurface.hashCode;
 }

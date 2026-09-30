@@ -92,7 +92,6 @@ class NotificationRouteMapper {
     return WallpaperDetailRoute(
       wallId: id,
       source: source,
-      wallpaperUrl: wallpaperUrl,
       thumbnailUrl: thumbnailUrl,
       analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
     );
