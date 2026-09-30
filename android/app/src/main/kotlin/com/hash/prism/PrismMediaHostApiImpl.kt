@@ -74,6 +74,7 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             // DownloadManager owns the MediaStore rows it creates, and Prism has no media read permission, so
             // listDownloads could not see them. Writing through MediaStore makes Prism the owner.
+            // ponytail: in-process transfer, stops if the app is killed. Move to WorkManager if that matters.
             runInBackground(callback, { createErrorResult("DOWNLOAD_FAILED", it.message) }, executor = downloadExecutor) {
                 downloadToMediaStore(request)
             }
