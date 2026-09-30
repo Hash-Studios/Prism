@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -77,7 +78,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   final AiGenerationRepositoryImpl? _aiRepositoryOverride;
 
   // Built on first use: the default impl touches FirebaseAuth.instance on construction.
-  late final AiGenerationRepositoryImpl _aiRepository = _aiRepositoryOverride ?? AiGenerationRepositoryImpl();
+  late final AiGenerationRepositoryImpl _aiRepository = _aiRepositoryOverride ?? getIt<AiGenerationRepositoryImpl>();
 
   final math.Random _random = math.Random();
 

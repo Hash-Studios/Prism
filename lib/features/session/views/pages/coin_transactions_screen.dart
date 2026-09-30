@@ -9,7 +9,6 @@ import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -171,58 +170,23 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
     }
   }
 
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<void> _watchRewardedAdAndCreditCoins() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      toasts.error('Ads unavailable right now. Try again later.');
+    if (!await watchRewardedAd(context.read<AdsBloc>())) {
+      toasts.error('Ad was not completed.');
       return;
     }
-    bool watchRequested = false;
     try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      if (result.shouldUnlockDownload) {
-        final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
-        if (!credit.changed) {
-          toasts.error('Unable to credit coins right now.');
-          return;
-        }
-        if (mounted) {
-          await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'coin_hub_rewarded_ad');
-        }
-        toasts.success('+${CoinPolicy.rewardedAd} coins');
+      final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
+      if (!credit.changed) {
+        toasts.error('Unable to credit coins right now.');
         return;
       }
-      toasts.error('Ad was not completed.');
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'coin_hub_rewarded_ad');
+      }
+      toasts.success('+${CoinPolicy.rewardedAd} coins');
     } catch (_) {
       toasts.error('Ad was not completed.');
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
     }
   }
 
