@@ -17,5 +17,8 @@ void main() {
   test('total streak reward adds the bonus to the daily reward', () {
     expect(CoinPolicy.streakTotalRewardForDay(6), 12);
     expect(CoinPolicy.streakTotalRewardForDay(7), 55);
+    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: false), 8);
+    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: true), 13);
+    expect(CoinPolicy.streakClaimRewardForDay(7, isPro: true), 75);
   });
 }

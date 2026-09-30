@@ -131,8 +131,9 @@ class _HeroSection extends StatelessWidget {
         final int streakDay = status.active ? status.streakDay.clamp(1, 7) : 0;
         final int claimDay = status.active ? streakDay : 1;
         final int nextDay = status.active ? (status.streakDay >= 7 ? 1 : status.streakDay + 1) : 1;
-        final int nextReward = CoinPolicy.streakTotalRewardForDay(nextDay);
-        final int todayReward = CoinPolicy.streakTotalRewardForDay(claimDay);
+        final bool isPro = app_state.prismUser.premium;
+        final int nextReward = CoinPolicy.streakClaimRewardForDay(nextDay, isPro: isPro);
+        final int todayReward = CoinPolicy.streakClaimRewardForDay(claimDay, isPro: isPro);
 
         final String headlineFigure = status.active ? '$streakDay' : '0';
         final String headlineCaption = !status.active
@@ -146,7 +147,7 @@ class _HeroSection extends StatelessWidget {
         } else if (status.active) {
           nextUnlockLine = 'Claim today in Daily rewards for +$todayReward coins';
         } else {
-          nextUnlockLine = 'Day 1 pays +${CoinPolicy.streakTotalRewardForDay(1)} coins when you claim';
+          nextUnlockLine = 'Day 1 pays +${CoinPolicy.streakClaimRewardForDay(1, isPro: isPro)} coins when you claim';
         }
 
         final Color top = scheme.primaryContainer;
@@ -291,11 +292,7 @@ class _DayCardsRowState extends State<_DayCardsRow> with SingleTickerProviderSta
                 itemBuilder: (_, index) {
                   final ColorScheme scheme = Theme.of(context).colorScheme;
                   final int day = index + 1;
-                  final int baseReward = CoinPolicy.streakTotalRewardForDay(day);
-                  final int proBonus = isPro
-                      ? (day == 7 ? CoinPolicy.proStreak7Bonus : CoinPolicy.proStreakDailyBonus)
-                      : 0;
-                  final int reward = baseReward + proBonus;
+                  final int reward = CoinPolicy.streakClaimRewardForDay(day, isPro: isPro);
                   final bool isCurrent = day == currentDay;
                   final bool isPast = currentDay > 0 && day < currentDay;
 
