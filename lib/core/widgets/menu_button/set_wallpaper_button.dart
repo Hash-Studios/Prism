@@ -43,18 +43,18 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  Future<void> _setWallpaper(WallpaperTarget target, WallpaperTargetValue analyticsTarget) async {
+  Future<void> _setWallpaper(WallpaperTarget target) async {
     try {
       final bool result = await WallpaperService.setWallpaperFromSource(widget.url!, target);
       if (result) {
-        analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.success));
+        analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success));
         toasts.success("Wallpaper set successfully!");
         await _maybePromptNotificationPermission();
       } else {
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.failure));
+      analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.failure));
       logger.e('Set wallpaper failed', error: e);
       toasts.error(_errorMessage(e));
     }
@@ -65,13 +65,13 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  void _onTargetSelected(WallpaperTarget target, WallpaperTargetValue analyticsTarget) {
+  void _onTargetSelected(WallpaperTarget target) {
     HapticFeedback.vibrate();
     Navigator.of(context).pop();
     setState(() {
       isLoading = true;
     });
-    _setWallpaper(target, analyticsTarget);
+    _setWallpaper(target);
   }
 
   @override
@@ -83,9 +83,9 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           isScrollControlled: true,
           context: context,
           builder: (context) => SetOptionsPanel(
-            onTap1: () => _onTargetSelected(WallpaperTarget.home, WallpaperTargetValue.home),
-            onTap2: () => _onTargetSelected(WallpaperTarget.lock, WallpaperTargetValue.lock),
-            onTap3: () => _onTargetSelected(WallpaperTarget.both, WallpaperTargetValue.both),
+            onTap1: () => _onTargetSelected(WallpaperTarget.home),
+            onTap2: () => _onTargetSelected(WallpaperTarget.lock),
+            onTap3: () => _onTargetSelected(WallpaperTarget.both),
           ),
         );
       },

@@ -113,18 +113,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     XProIIFilter(),
   ];
 
-  Future<void> _setWallpaper(String path, WallpaperTarget target, WallpaperTargetValue analyticsTarget) async {
+  Future<void> _setWallpaper(String path, WallpaperTarget target) async {
     try {
       final bool result = await WallpaperService.setWallpaperFromSource(path, target);
       if (result) {
-        analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.success));
+        analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success));
         toasts.success("Wallpaper set successfully!");
       } else {
         toasts.error("Something went wrong!");
       }
     } catch (e) {
       logger.e('Set wallpaper failed', error: e);
-      analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.failure));
+      analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.failure));
     }
     if (!mounted) {
       return;
@@ -342,17 +342,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         onTap1: () {
           HapticFeedback.vibrate();
           Navigator.of(context).pop();
-          _setWallpaper(imageFile.path, WallpaperTarget.home, WallpaperTargetValue.home);
+          _setWallpaper(imageFile.path, WallpaperTarget.home);
         },
         onTap2: () {
           HapticFeedback.vibrate();
           Navigator.of(context).pop();
-          _setWallpaper(imageFile.path, WallpaperTarget.lock, WallpaperTargetValue.lock);
+          _setWallpaper(imageFile.path, WallpaperTarget.lock);
         },
         onTap3: () {
           HapticFeedback.vibrate();
           Navigator.of(context).pop();
-          _setWallpaper(imageFile.path, WallpaperTarget.both, WallpaperTargetValue.both);
+          _setWallpaper(imageFile.path, WallpaperTarget.both);
         },
       ),
     );

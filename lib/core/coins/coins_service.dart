@@ -420,7 +420,7 @@ class CoinsService {
     }
     analytics.track(
       AiChargeReservedEvent(
-        mode: aiChargeModeValueFromDomain(result.mode),
+        mode: result.mode,
         coinsSpent: result.coinsSpent,
         balance: app_state.prismUser.coins,
         sourceTag: sourceTag,
@@ -448,7 +448,7 @@ class CoinsService {
       if (refund.changed) {
         analytics.track(
           AiChargeRolledBackEvent(
-            mode: aiChargeModeValueFromDomain(mode),
+            mode: mode,
             coinsRefunded: refund.delta,
             balance: app_state.prismUser.coins,
             sourceTag: sourceTag,
@@ -468,7 +468,7 @@ class CoinsService {
   }) {
     analytics.track(
       AiChargeCommittedEvent(
-        mode: aiChargeModeValueFromDomain(mode),
+        mode: mode,
         coinsSpent: coinsSpent,
         balance: app_state.prismUser.coins,
         sourceTag: sourceTag,
@@ -941,7 +941,7 @@ class CoinsService {
   void _logEarn({required CoinEarnAction action, required int amount, required String sourceTag, String? reason}) {
     analytics.track(
       CoinEarnedEvent(
-        action: coinEarnActionValueFromDomain(action),
+        action: action,
         amount: amount,
         balance: app_state.prismUser.coins,
         sourceTag: sourceTag,
@@ -953,7 +953,7 @@ class CoinsService {
   void _logSpend({required CoinSpendAction action, required int amount, required String sourceTag, String? reason}) {
     analytics.track(
       CoinSpentEvent(
-        action: coinSpendActionValueFromDomain(action),
+        action: action,
         amount: amount,
         balance: app_state.prismUser.coins,
         sourceTag: sourceTag,

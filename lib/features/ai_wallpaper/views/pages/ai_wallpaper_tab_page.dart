@@ -375,11 +375,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         chargeMode: mode,
         coinsSpent: coinsSpent,
       ),
-      successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) => AiGenerateSuccessEvent(
-        provider: generated.provider,
-        mode: aiChargeModeValueFromDomain(mode),
-        coinsSpent: coinsSpent,
-      ),
+      successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
+          AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (AiGenerationRecord generated) {
         if (_isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
           toasts.error('Crop may differ slightly on your device.');
@@ -414,11 +411,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         coinsSpent: coinsSpent,
         variationPrompt: prompt,
       ),
-      successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) => AiVariationUsedEvent(
-        provider: generated.provider,
-        mode: aiChargeModeValueFromDomain(mode),
-        coinsSpent: coinsSpent,
-      ),
+      successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
+          AiVariationUsedEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
       onSuccess: (_) => _variationController.clear(),
     );
   }
@@ -448,7 +442,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       AiGenerateStartedEvent(
         style: _selectedStyle.apiValue,
         quality: _selectedQualityTier.apiValue,
-        mode: aiChargeModeValueFromDomain(reservation.mode),
+        mode: reservation.mode,
       ),
     );
 
@@ -479,9 +473,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
       );
-      analytics.track(
-        AiGenerateFailedEvent(error: error.toString(), mode: aiChargeModeValueFromDomain(reservation.mode)),
-      );
+      analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
       toasts.error(_toastForGenerateFailure(error));
     } finally {
       if (mounted) {
