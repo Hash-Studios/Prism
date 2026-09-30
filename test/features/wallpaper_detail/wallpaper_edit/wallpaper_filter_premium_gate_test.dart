@@ -4,8 +4,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -23,9 +23,9 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_scr
 import 'package:async_wallpaper/pigeon_impl_api.dart' as wallpaper_api;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -86,6 +86,7 @@ void main() {
       ..loggedIn = true
       ..coins = 0;
     CoinsService.instance.balanceNotifier.value = 0;
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
   });
 
   tearDown(() async {
@@ -253,6 +254,7 @@ void main() {
     expect(saveCalls, 0);
     expect(refundCalls, 1);
     expect(CoinsService.instance.balanceNotifier.value, 20);
+    await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });
 
@@ -332,7 +334,7 @@ void main() {
     await _waitForCount(tester, () => saveCalls, 2, 'second native save');
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(spendCalls, 2, 'a failed export must not unlock premium filters for this session');
+    expect(spendCalls, 2, reason: 'a failed export must not unlock premium filters for this session');
     expect(refundCalls, 1);
     expect(CoinsService.instance.balanceNotifier.value, 15);
 
@@ -340,9 +342,10 @@ void main() {
     await _waitForCount(tester, () => saveCalls, 3, 'session-unlocked native save');
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(spendCalls, 2, 'a successful export should unlock later exports in this session');
+    expect(spendCalls, 2, reason: 'a successful export should unlock later exports in this session');
     expect(refundCalls, 1);
     expect(CoinsService.instance.balanceNotifier.value, 15);
+    await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });
 
@@ -401,7 +404,7 @@ void main() {
       }
       fail('Unexpected callable: ${call['functionName']}');
     });
-    final MessageCodec<Object?> wallpaperCodec = wallpaper_api.WallpaperApi.pigeonChannelCodec;
+    const MessageCodec<Object?> wallpaperCodec = wallpaper_api.WallpaperApi.pigeonChannelCodec;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(_setWallpaperChannel, (
       _,
     ) async {
@@ -429,10 +432,15 @@ void main() {
     expect(spendCalls, 1);
     expect(refundCalls, 0);
     expect(CoinsService.instance.balanceNotifier.value, 15);
+    await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('keeps filter retry tags extended after an ad credit is still insufficient', (tester) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_gate_retry_');
     addTearDown(() => directory.deleteSync(recursive: true));
     final File source = File('${directory.path}/source.png');
@@ -456,8 +464,7 @@ void main() {
 
     final List<String> spendTags = <String>[];
     final List<String> awardTags = <String>[];
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
-    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       _toastChannel,
       (_) async => true,
@@ -514,6 +521,7 @@ void main() {
       'coins.filter.download.watch_and_retry',
     );
     expect(settings.get<int>('paywall_ad_watch_count', defaultValue: 0), 1);
+    await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });
 
@@ -624,6 +632,7 @@ Future<void> _waitForText(WidgetTester tester, String text) async {
     await tester.pump(const Duration(milliseconds: 25));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
   }
+  await tester.pump(const Duration(milliseconds: 500));
   expect(find.text(text), findsOneWidget);
 }
 

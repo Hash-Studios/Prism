@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -105,7 +106,7 @@ void main() {
         isMounted: () => true,
         perform: () async => false,
         choose: (_) async => CoinGateChoice.cancel,
-        onSpent: (_, __) => throw StateError('success callback failed'),
+        onSpent: (_, _) => throw StateError('success callback failed'),
       ),
     );
 
@@ -329,10 +330,11 @@ void main() {
     port.awardAmount = 2;
     choice = CoinGateChoice.watchAd;
     int prompted = 0;
-    final Future<CoinGateChoice> Function(CoinGatePrompt) choose = (_) async {
+    Future<CoinGateChoice> choose(CoinGatePrompt _) async {
       prompted++;
       return prompted == 1 ? CoinGateChoice.watchAd : CoinGateChoice.cancel;
-    };
+    }
+
     final CoinGateSpec retry = CoinGateSpec(
       action: CoinSpendAction.premiumFilter,
       tags: _tags,

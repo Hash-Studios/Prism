@@ -5,9 +5,9 @@ import '../../support/fake_coin_gate_port.dart';
 
 class _ThrowingUpsellPort extends FakeCoinGatePort {
   @override
-  Future<void> recordRewardedAdWatch({required String source}) async {
+  Future<void> recordRewardedAdWatch({required String source}) {
     log.add('watch:$source');
-    throw StateError('upsell failed');
+    return Future<void>.error(StateError('upsell failed'));
   }
 }
 
