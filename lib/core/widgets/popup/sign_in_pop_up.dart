@@ -73,7 +73,6 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
   final List<(IconData, String)> benefits = <(IconData, String)>[
     (JamIcons.heart, 'The ability to favourite wallpapers.'),
     (JamIcons.upload, 'The ability to upload wallpapers.'),
-    if (!Platform.isIOS) (JamIcons.instant_picture, 'The ability to upload setups.'),
     if (!Platform.isIOS) (JamIcons.coin, 'The ability to view premium content.'),
     (JamIcons.cloud, 'The ability to cloud sync data.'),
   ];

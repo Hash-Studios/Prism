@@ -27,4 +27,4 @@ If this becomes multi-context, add a root `CONTEXT-MAP.md` that points at one `C
 
 ## Use the product vocabulary
 
-Use the terms the app uses: **wall** (wallpaper), **setup** (home-screen setup), **Prism Coins**, **Prism Premium**, **streak**, **Wall of the Day (WOTD)**, **collection**, **creator**. Do not drift to synonyms in issue titles, test names, or proposals.
+Use the terms the app uses: **wall** (wallpaper), **Prism Coins**, **Prism Premium**, **streak**, **Wall of the Day (WOTD)**, **collection**, **creator**. Do not drift to synonyms in issue titles, test names, or proposals.

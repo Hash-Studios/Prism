@@ -30,12 +30,6 @@ class _CanonicalLinkBuilder {
     return Uri.https(_shareDomain, '/user/${Uri.encodeComponent(identifier)}');
   }
 
-  Uri setup({required String name, required String thumbUrl}) {
-    return Uri.https(_shareDomain, '/setup/${Uri.encodeComponent(name)}', <String, String>{
-      if (thumbUrl.trim().isNotEmpty) 'thumbUrl': thumbUrl,
-    });
-  }
-
   Uri refer({required String userId}) {
     return Uri.https(_shareDomain, '/refer/${Uri.encodeComponent(userId)}');
   }
@@ -203,38 +197,6 @@ Future<void> createUserDynamicLink(
   }
 }
 
-Future<void> createSetupDynamicLink(String name, String thumbUrl, {BuildContext? context}) async {
-  try {
-    final Uri canonical = _canonicalLinkBuilder.setup(name: name, thumbUrl: thumbUrl);
-    final String link = await _buildShareableLink(
-      type: 'setup',
-      canonicalUri: canonical,
-      payload: <String, dynamic>{'name': name, 'thumbUrl': thumbUrl},
-      preview: <String, dynamic>{
-        'title': '$name - Prism',
-        'description': 'Check out this setup shared from Prism.',
-        'image_source_url': thumbUrl,
-        'setup_name': name,
-      },
-    );
-
-    await Clipboard.setData(ClipboardData(text: link));
-    if (context != null && !context.mounted) {
-      return;
-    }
-    await ShareService.shareText(text: 'Hey check this out ➜ $link', context: context);
-    _trackDynamicLinkCreateResult(shareType: ShareTypeValue.setup, result: EventResultValue.success);
-  } catch (error, stackTrace) {
-    logger.e('Failed to create setup dynamic link.', error: error, stackTrace: stackTrace);
-    _trackDynamicLinkCreateResult(
-      shareType: ShareTypeValue.setup,
-      result: EventResultValue.failure,
-      reason: AnalyticsReasonValue.error,
-    );
-    rethrow;
-  }
-}
-
 Future<String> createSharingPrismLink(String userID) async {
   try {
     final Uri canonical = _canonicalLinkBuilder.refer(userId: userID);
@@ -244,7 +206,7 @@ Future<String> createSharingPrismLink(String userID) async {
       payload: <String, dynamic>{'userID': userID},
       preview: <String, dynamic>{
         'title': 'Join Prism',
-        'description': 'Download Prism to discover beautiful wallpapers and setups.',
+        'description': 'Download Prism to discover beautiful wallpapers.',
       },
     );
 

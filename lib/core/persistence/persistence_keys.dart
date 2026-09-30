@@ -30,8 +30,6 @@ class PersistenceKeys {
   /// JSON list under a single key per user scope.
   static String favoritesWallSet(String userId) => '${favoritesWallPrefix}__set.$userId';
 
-  static String favoritesSetupSet(String userId) => '${favoritesSetupPrefix}__set.$userId';
-
   // Notification preferences
   static const String notifWotd = 'notif.wotd';
 

@@ -18,7 +18,6 @@ class PaywallPlacement {
   static const String mainUpsell = 'main_upsell';
   static const String lowBalance = 'low_balance';
   static const String afterAdWatch3 = 'after_ad_watch_3';
-  static const String blockedSetupCreate = 'blocked_setup_create';
   static const String uploadLimitReached = 'upload_limit_reached';
   static const String autoRotate = 'auto_rotate';
 }
@@ -96,9 +95,6 @@ class PaywallOrchestrator {
         return;
       case PaywallPlacement.afterAdWatch3:
         analytics.track(SubscriptionTriggerAfterAdWatch3Event(source: source, placement: placement));
-        return;
-      case PaywallPlacement.blockedSetupCreate:
-        analytics.track(SubscriptionTriggerSetupCreateBlockEvent(source: source, placement: placement));
         return;
       case PaywallPlacement.uploadLimitReached:
         analytics.track(SubscriptionTriggerUploadLimitBlockEvent(source: source, placement: placement));
