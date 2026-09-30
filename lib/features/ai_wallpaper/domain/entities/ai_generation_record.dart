@@ -1,7 +1,7 @@
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AiGenerationRecord {
   const AiGenerationRecord({
@@ -24,7 +24,6 @@ class AiGenerationRecord {
     this.parentGenerationId,
     this.submittedWallId,
     this.submittedAt,
-    this.errorCode,
   });
 
   final String id;
@@ -46,7 +45,6 @@ class AiGenerationRecord {
   final String? parentGenerationId;
   final String? submittedWallId;
   final DateTime? submittedAt;
-  final String? errorCode;
 
   String displayUrl({required bool isPremium}) => isPremium ? imageUrl : watermarkedImageUrl;
 
@@ -71,44 +69,32 @@ class AiGenerationRecord {
       'parentGenerationId': parentGenerationId,
       'submittedWallId': submittedWallId,
       'submittedAt': submittedAt?.toUtc(),
-      'errorCode': errorCode,
     };
   }
 
   factory AiGenerationRecord.fromJson(Map<String, dynamic> json, {String? fallbackId}) {
-    int parseInt(dynamic raw, {int fallback = 0}) {
-      if (raw is int) return raw;
-      if (raw is num) return raw.toInt();
-      return int.tryParse(raw?.toString() ?? '') ?? fallback;
-    }
-
-    DateTime parseDate(dynamic raw) {
-      if (raw is DateTime) return raw.toUtc();
-      if (raw is Timestamp) return raw.toDate().toUtc();
-      return DateTime.tryParse(raw?.toString() ?? '')?.toUtc() ?? DateTime.now().toUtc();
-    }
+    DateTime parseDate(Object? raw) => parseDateTime(raw)?.toUtc() ?? DateTime.now().toUtc();
 
     return AiGenerationRecord(
-      id: (json['id'] ?? fallbackId ?? '').toString(),
-      userId: (json['userId'] ?? '').toString(),
+      id: parseString(json['id'] ?? fallbackId),
+      userId: parseString(json['userId']),
       createdAt: parseDate(json['createdAt']),
-      prompt: (json['prompt'] ?? '').toString(),
-      stylePreset: AiStylePreset.fromApiValue((json['stylePreset'] ?? 'abstract').toString()),
-      qualityTier: AiQualityTier.fromApiValue((json['qualityTier'] ?? 'balanced').toString()),
-      provider: (json['provider'] ?? '').toString(),
-      model: (json['model'] ?? '').toString(),
-      seed: parseInt(json['seed']),
-      width: parseInt(json['width']),
-      height: parseInt(json['height']),
-      imageUrl: (json['imageUrl'] ?? '').toString(),
-      watermarkedImageUrl: (json['watermarkedImageUrl'] ?? json['imageUrl'] ?? '').toString(),
+      prompt: parseString(json['prompt']),
+      stylePreset: AiStylePreset.fromApiValue(parseString(json['stylePreset'], fallback: 'abstract')),
+      qualityTier: AiQualityTier.fromApiValue(parseString(json['qualityTier'], fallback: 'balanced')),
+      provider: parseString(json['provider']),
+      model: parseString(json['model']),
+      seed: parseInt(json['seed']) ?? 0,
+      width: parseInt(json['width']) ?? 0,
+      height: parseInt(json['height']) ?? 0,
+      imageUrl: parseString(json['imageUrl']),
+      watermarkedImageUrl: parseString(json['watermarkedImageUrl'] ?? json['imageUrl']),
       chargeMode: AiChargeMode.fromValue(json['chargeMode']?.toString()),
-      coinsSpent: parseInt(json['coinsSpent']),
-      status: (json['status'] ?? 'success').toString(),
+      coinsSpent: parseInt(json['coinsSpent']) ?? 0,
+      status: parseString(json['status'], fallback: 'success'),
       parentGenerationId: json['parentGenerationId']?.toString(),
       submittedWallId: json['submittedWallId']?.toString(),
       submittedAt: json['submittedAt'] == null ? null : parseDate(json['submittedAt']),
-      errorCode: json['errorCode']?.toString(),
     );
   }
 
@@ -118,7 +104,6 @@ class AiGenerationRecord {
     String? submittedWallId,
     DateTime? submittedAt,
     String? status,
-    String? errorCode,
   }) {
     return AiGenerationRecord(
       id: id,
@@ -140,7 +125,6 @@ class AiGenerationRecord {
       parentGenerationId: parentGenerationId,
       submittedWallId: submittedWallId ?? this.submittedWallId,
       submittedAt: submittedAt ?? this.submittedAt,
-      errorCode: errorCode ?? this.errorCode,
     );
   }
 }
