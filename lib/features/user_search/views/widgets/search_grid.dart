@@ -5,7 +5,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -13,7 +15,6 @@ import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -34,22 +35,11 @@ class SearchGrid extends StatefulWidget {
   State<SearchGrid> createState() => _SearchGridState();
 }
 
-class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateMixin {
+class _SearchGridState extends State<SearchGrid> {
   final WallpaperSearchService _search = getIt<WallpaperSearchService>();
-  late final AnimationController shakeController = AnimationController(
-    duration: const Duration(milliseconds: 300),
-    vsync: this,
-  );
-  late final Animation<double> offsetAnimation =
-      Tween(begin: 0.0, end: 8.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            shakeController.reverse();
-          }
-        });
+  final ShakeController _shake = ShakeController();
   final GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
   late List<FeedItemEntity> _results = widget.initialResults;
-  int? longTapIndex;
   bool seeMoreLoader = false;
   bool _hasMore = true;
   int _currentPage = 1;
@@ -114,7 +104,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    shakeController.dispose();
+    _shake.dispose();
     super.dispose();
   }
 
@@ -150,15 +140,16 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
       ),
     );
     context.router.push(
-      WallpaperDetailRoute(entity: wallpaper, analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen),
+      WallpaperDetailRoute(
+        entity: wallpaper,
+        analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+        heroTag: prismHeroTag(this, index, wallpaper.id),
+      ),
     );
   }
 
   void _shareWallpaper(FeedItemEntity wallpaper, int index) {
-    setState(() {
-      longTapIndex = index;
-    });
-    shakeController.forward(from: 0.0);
+    _shake.shake(index);
     HapticFeedback.vibrate();
     createDynamicLink(wallpaper.id, wallpaper.source, wallpaper.fullUrl, wallpaper.thumbnailUrl);
   }
@@ -177,7 +168,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
           return false;
         },
         child: PulsePlaceholder(
-          builder: (context, placeholderColor) => GridView.builder(
+          builder: (context, _) => GridView.builder(
             padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
             itemCount: _results.length + (_hasMore && _results.length >= 24 ? 1 : 0),
             shrinkWrap: true,
@@ -194,34 +185,22 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
               return Semantics(
                 button: true,
                 label: wallpaperSemanticLabel(_authorName(wallpaper)),
-                child: AnimatedBuilder(
-                  animation: offsetAnimation,
-                  builder: (buildContext, child) => Padding(
-                    padding: index == longTapIndex
-                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                        : EdgeInsets.zero,
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: placeholderColor,
-                            image: DecorationImage(
-                              image: CachedNetworkImageProvider(wallpaper.thumbnailUrl),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                child: ShakeOnce(
+                  controller: _shake,
+                  target: index,
+                  child: Stack(
+                    children: [
+                      PrismImageTile(url: wallpaper.thumbnailUrl, heroTag: prismHeroTag(this, index, wallpaper.id)),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          onTap: () => _openWallpaper(wallpaper, index),
+                          onLongPress: () => _shareWallpaper(wallpaper, index),
                         ),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                            onTap: () => _openWallpaper(wallpaper, index),
-                            onLongPress: () => _shareWallpaper(wallpaper, index),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );

@@ -102,6 +102,7 @@ ThemeData _lightTheme({
       ),
     ),
     colorScheme: ColorScheme.light(primary: accent).copyWith(secondary: secondary, error: accent),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: accent, refreshBackgroundColor: primary),
   );
 }
 
@@ -170,6 +171,7 @@ ThemeData _darkTheme({
       bodySmall: TextStyle(fontFamily: PrismFonts.roboto, fontSize: 16, fontWeight: FontWeight.w400, color: text),
     ),
     colorScheme: ColorScheme.dark(primary: accent).copyWith(secondary: secondary, error: error ?? accent),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: accent, refreshBackgroundColor: primary),
   );
 }
 
