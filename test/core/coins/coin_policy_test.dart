@@ -21,4 +21,15 @@ void main() {
     expect(CoinPolicy.streakClaimRewardForDay(3, isPro: true), 13);
     expect(CoinPolicy.streakClaimRewardForDay(7, isPro: true), 75);
   });
+
+  test('isStreakAlive allows one missed day per held freeze', () {
+    expect(isStreakAlive('2026-03-01', '2026-03-01', 0), isTrue);
+    expect(isStreakAlive('2026-03-01', '2026-03-02', 0), isTrue);
+    expect(isStreakAlive('2026-03-01', '2026-03-03', 0), isFalse);
+    expect(isStreakAlive('2026-03-01', '2026-03-03', 1), isTrue);
+    expect(isStreakAlive('2026-03-01', '2026-03-04', 1), isFalse);
+    expect(isStreakAlive('2026-03-01', '2026-03-04', 2), isTrue);
+    expect(isStreakAlive('2026-02-28', '2026-03-01', 0), isTrue);
+    expect(isStreakAlive('', '2026-03-01', 2), isFalse);
+  });
 }

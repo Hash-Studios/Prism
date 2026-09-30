@@ -22,6 +22,8 @@ class CoinPolicy {
   static const int aiGenerationQuality = 100;
   static const int premiumFilter = 5;
   static const int premiumPreview24h = 10;
+  static const int streakFreezeCost = 50;
+  static const int maxStreakFreezes = 2;
 
   // UX
   static const int lowBalanceNudgeThreshold = 10;
@@ -59,4 +61,20 @@ class CoinPolicy {
     final int proBonus = !isPro ? 0 : (day >= 7 ? proStreak7Bonus : proStreakDailyBonus);
     return streakTotalRewardForDay(day) + proBonus;
   }
+}
+
+/// Whole days from day key [a] to day key [b] (`yyyy-MM-dd`). Null when either key is invalid.
+int? dayKeyGap(String a, String b) {
+  final DateTime? da = DateTime.tryParse(a.trim());
+  final DateTime? db = DateTime.tryParse(b.trim());
+  if (da == null || db == null) {
+    return null;
+  }
+  return DateTime.utc(db.year, db.month, db.day).difference(DateTime.utc(da.year, da.month, da.day)).inDays;
+}
+
+/// Same rule as the server: a streak lives while the missed days fit inside the held freezes.
+bool isStreakAlive(String lastKey, String todayKey, int freezes) {
+  final int? gap = dayKeyGap(lastKey, todayKey);
+  return gap != null && gap <= 1 + freezes;
 }
