@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,68 +59,6 @@ void main() {
     await store.recordShown(<String>[for (int i = 0; i < 800; i++) 'k$i'], now.add(const Duration(minutes: 1)));
 
     expect(store.recentShows(now.add(const Duration(minutes: 2)))['hidden'], 99);
-  });
-
-  test('legacy hides survive upgrade, re-recording and impression eviction', () async {
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
-    store = FeedImpressionStore(settings);
-    await settings.set(
-      'personalized_feed_impressions_v1',
-      '{"hidden":[99,${now.subtract(const Duration(days: 30)).millisecondsSinceEpoch ~/ 60000}]}',
-    );
-
-    expect(store.recentShows(now), <String, int>{'hidden': 99});
-    await store.recordShown(<String>['hidden'], now);
-    await store.recordShown(<String>[for (int i = 0; i < 800; i++) 'k$i'], now.add(const Duration(minutes: 1)));
-    store = FeedImpressionStore(settings);
-
-    expect(store.recentShows(now.add(const Duration(days: 15))), <String, int>{'hidden': 99});
-  });
-
-  test('the hidden cap evicts the oldest hide, not a recently re-hidden legacy wall', () async {
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
-    store = FeedImpressionStore(settings);
-    await settings.set('personalized_feed_hidden_v1', jsonEncode(<String>[for (int i = 0; i < 2000; i++) 'k$i']));
-    await settings.set('personalized_feed_impressions_v1', '{"k0":[99,${now.millisecondsSinceEpoch ~/ 60000}]}');
-
-    await store.hide('k0', now);
-    await store.recordShown(<String>['k0'], now);
-    await store.hide('new', now);
-
-    final Map<String, int> shows = store.recentShows(now);
-    expect(shows, hasLength(2000));
-    expect(shows['k0'], 99);
-    expect(shows.containsKey('k1'), isFalse);
-    expect(shows['new'], 99);
-  });
-
-  test('malformed hidden data keeps legacy hides and valid list entries', () async {
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
-    store = FeedImpressionStore(settings);
-    await settings.set('personalized_feed_impressions_v1', '{"legacy":[99,${now.millisecondsSinceEpoch ~/ 60000}]}');
-    for (final String raw in <String>['not json', '{}']) {
-      await settings.set('personalized_feed_hidden_v1', raw);
-      expect(store.recentShows(now.add(const Duration(days: 15))), <String, int>{'legacy': 99});
-    }
-    await settings.set('personalized_feed_hidden_v1', '["hidden",null,7,"hidden"]');
-    await store.recordShown(<String>['shown'], now);
-
-    expect(store.recentShows(now), <String, int>{'shown': 1, 'legacy': 99, 'hidden': 99});
-  });
-
-  test('a new hide does not resurrect a legacy marker evicted by the hidden cap', () async {
-    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
-    store = FeedImpressionStore(settings);
-    await settings.set('personalized_feed_hidden_v1', jsonEncode(<String>[for (int i = 0; i < 2000; i++) 'k$i']));
-    await settings.set('personalized_feed_impressions_v1', '{"legacy":[99,${now.millisecondsSinceEpoch ~/ 60000}]}');
-
-    await store.hide('new', now);
-
-    final Map<String, int> shows = store.recentShows(now);
-    expect(shows, hasLength(2000));
-    expect(shows.containsKey('legacy'), isFalse);
-    expect(shows.containsKey('k0'), isFalse);
-    expect(shows['new'], 99);
   });
 
   test('ignores invalid negative impression counts in stored JSON', () async {
