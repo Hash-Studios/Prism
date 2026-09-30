@@ -15,7 +15,7 @@ void main() {
 
     test('normalizes parameter keys and values to provider-safe primitives', () {
       final NormalizedAnalyticsEvent event = normalizer.normalizeEvent(
-        name: 'report_setup',
+        name: 'collections_checked',
         parameters: <String, Object?>{
           'generationId': 'gen_1',
           'isPremium': true,
@@ -27,7 +27,7 @@ void main() {
         },
       );
 
-      expect(event.name, 'report_setup');
+      expect(event.name, 'collections_checked');
       expect(event.parameters['generation_id'], 'gen_1');
       expect(event.parameters['is_premium'], 1);
       expect(event.parameters['created_at'], '2026-02-19T12:00:00.000Z');
