@@ -138,7 +138,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: PrismTopAppBar(onLogoTap: _openFeedSettings),
       body: Stack(
         children: <Widget>[

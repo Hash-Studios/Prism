@@ -1,9 +1,13 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+/// The floating pill with the four tab destinations. A circle slides behind the active one.
 class PrismBottomNav extends StatefulWidget {
   const PrismBottomNav({super.key});
 
@@ -12,11 +16,30 @@ class PrismBottomNav extends StatefulWidget {
 }
 
 class _PrismBottomNavState extends State<PrismBottomNav> {
+  static const double _slot = 48;
+  static const double _indicator = 44;
+  static const double _height = 60;
+
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
-    _NavTabConfig(label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
-    _NavTabConfig(label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
-    _NavTabConfig(label: 'Rewards', icon: JamIcons.gift_f, value: NavTabValue.streak),
-    _NavTabConfig(label: 'Collections', icon: JamIcons.grid_f, value: NavTabValue.collection),
+    _NavTabConfig(label: 'Home', icon: Icons.home_outlined, activeIcon: Icons.home_rounded, value: NavTabValue.home),
+    _NavTabConfig(
+      label: 'Search',
+      icon: Icons.search_rounded,
+      activeIcon: Icons.search_rounded,
+      value: NavTabValue.search,
+    ),
+    _NavTabConfig(
+      label: 'Rewards',
+      icon: Icons.card_giftcard_outlined,
+      activeIcon: Icons.card_giftcard_rounded,
+      value: NavTabValue.streak,
+    ),
+    _NavTabConfig(
+      label: 'Collections',
+      icon: Icons.grid_view_outlined,
+      activeIcon: Icons.grid_view_rounded,
+      value: NavTabValue.collection,
+    ),
   ];
 
   TabsRouter? _tabsRouter;
@@ -49,37 +72,56 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     if (fromIndex == toIndex) {
       return;
     }
+    HapticFeedback.selectionClick();
     _trackTabSelection(fromIndex: fromIndex, toIndex: toIndex);
     _tabsRouter!.setActiveIndex(toIndex);
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeIndex = _tabsRouter?.activeIndex ?? 0;
+    final int activeIndex = _tabsRouter?.activeIndex ?? 0;
+    final Color indicator = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1);
+    final double x = -1 + 2 * activeIndex / (_tabs.length - 1);
 
-    return Container(
-      padding: const EdgeInsets.all(4),
-      height: 56,
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF000000).withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
-        ],
-        borderRadius: BorderRadius.circular(500),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < _tabs.length; i++)
-              _TabButton(
-                tooltip: _tabs[i].label,
-                isActive: activeIndex == i,
-                icon: _tabs[i].icon,
-                onPressed: () => _switchTab(toIndex: i),
-              ),
-          ],
+    return DecoratedBox(
+      decoration: navBarDecoration(context),
+      child: SizedBox(
+        height: _height,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: (_height - _slot) / 2),
+          child: SizedBox(
+            width: _slot * 4,
+            child: Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                AnimatedAlign(
+                  alignment: Alignment(x, 0),
+                  duration: context.motion(PrismDurations.base),
+                  curve: PrismCurves.move,
+                  child: SizedBox.square(
+                    dimension: _slot,
+                    child: Center(
+                      child: Container(
+                        width: _indicator,
+                        height: _indicator,
+                        decoration: BoxDecoration(color: indicator, shape: BoxShape.circle),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: <Widget>[
+                    for (var i = 0; i < _tabs.length; i++)
+                      _TabButton(
+                        config: _tabs[i],
+                        isActive: activeIndex == i,
+                        onPressed: () => _switchTab(toIndex: i),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -87,37 +129,58 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
 }
 
 class _TabButton extends StatelessWidget {
-  final String tooltip;
-  final bool isActive;
-  final IconData icon;
-  final VoidCallback onPressed;
+  const _TabButton({required this.config, required this.isActive, required this.onPressed});
 
-  const _TabButton({required this.tooltip, required this.isActive, required this.icon, required this.onPressed});
+  final _NavTabConfig config;
+  final bool isActive;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = isActive
-        ? Theme.of(context).colorScheme.secondary
-        : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4);
-
-    return Container(
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: isActive ? const Color(0xFF252525) : Colors.transparent, shape: BoxShape.circle),
-      child: IconButton(
-        tooltip: tooltip,
-        padding: EdgeInsets.zero,
-        iconSize: 19,
-        onPressed: onPressed,
-        icon: Icon(icon, color: iconColor, size: 19),
+    final Color ink = Theme.of(context).colorScheme.onSurface;
+    return SizedBox(
+      width: _PrismBottomNavState._slot,
+      height: _PrismBottomNavState._slot,
+      child: Semantics(
+        button: true,
+        selected: isActive,
+        label: config.label,
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: Tooltip(
+          message: config.label,
+          excludeFromSemantics: true,
+          child: PressScale(
+            scale: 0.92,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onPressed,
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: context.motion(PrismDurations.fast),
+                  switchInCurve: PrismCurves.enter,
+                  switchOutCurve: PrismCurves.enter,
+                  child: Icon(
+                    isActive ? config.activeIcon : config.icon,
+                    key: ValueKey<bool>(isActive),
+                    size: 22,
+                    color: isActive ? ink : ink.withValues(alpha: 0.55),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 class _NavTabConfig {
+  const _NavTabConfig({required this.label, required this.icon, required this.activeIcon, required this.value});
+
   final String label;
   final IconData icon;
+  final IconData activeIcon;
   final NavTabValue value;
-
-  const _NavTabConfig({required this.label, required this.icon, required this.value});
 }

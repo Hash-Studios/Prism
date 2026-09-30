@@ -72,14 +72,9 @@ class _DashboardPageState extends State<DashboardPage> {
           duration: PrismDurations.fast,
           transitionBuilder: (context, child, animation) {
             if (context.reduceMotion) return child;
-            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
             return FadeTransition(
-              opacity: t,
-              child: AnimatedBuilder(
-                animation: t,
-                builder: (context, child) => Transform.translate(offset: Offset(0, 6 * (1 - t.value)), child: child),
-                child: child,
-              ),
+              opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
+              child: child,
             );
           },
           builder: (context, child) {
