@@ -1252,12 +1252,19 @@ class InviteShareTappedEvent extends AnalyticsEvent {
 }
 
 class InviteShareResultEvent extends AnalyticsEvent {
-  const InviteShareResultEvent({required this.channel, required this.result, this.reason, this.sourceContext});
+  const InviteShareResultEvent({
+    required this.channel,
+    required this.result,
+    this.reason,
+    this.sourceContext,
+    this.format,
+  });
 
   final ShareChannelValue channel;
   final EventResultValue result;
   final AnalyticsReasonValue? reason;
   final String? sourceContext;
+  final ShareFormatValue? format;
 
   @override
   String get eventName => 'invite_share_result';
@@ -1269,6 +1276,7 @@ class InviteShareResultEvent extends AnalyticsEvent {
       'result': result.wireValue,
       if (reason != null) 'reason': reason!.wireValue,
       if (sourceContext != null) 'source_context': sourceContext!,
+      if (format != null) 'format': format!.wireValue,
     };
   }
 }

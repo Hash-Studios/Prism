@@ -12,6 +12,7 @@ import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
@@ -64,9 +65,16 @@ List<AiGenerationRecord> mergeAiSubmissionHistory(
 
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard = shareWallpaperCard});
 
   final AiGenerationRepositoryImpl? repository;
+  final Future<ShareFormatValue> Function(
+    BuildContext context, {
+    required String imageUrl,
+    required String link,
+    String? contextLine,
+  })
+  shareCard;
   final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
   @override
@@ -582,6 +590,27 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error(_toastForDownloadFailure(error));
     } finally {
       _saving = false;
+    }
+  }
+
+  Future<void> _share(AiGenerationRecord record) async {
+    try {
+      final ShareFormatValue format = await widget.shareCard(
+        context,
+        imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
+        link: 'https://prismwalls.com',
+        contextLine: 'Made with Prism AI',
+      );
+      analytics.track(
+        InviteShareResultEvent(
+          channel: ShareChannelValue.shareSheet,
+          result: EventResultValue.success,
+          sourceContext: 'ai_wallpaper',
+          format: format,
+        ),
+      );
+    } catch (error, stackTrace) {
+      logger.w('AI share failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -1192,6 +1221,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             label: 'Save',
             semanticLabel: 'Save image to your device',
             onTap: () => _save(current),
+          ),
+          _ActionButton(
+            icon: Icons.ios_share_outlined,
+            label: 'Share',
+            semanticLabel: 'Share this wallpaper',
+            onTap: () => _share(current),
           ),
           if (canVary)
             _ActionButton(

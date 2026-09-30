@@ -163,6 +163,11 @@ enums:
     values:
       - share_sheet
       - link
+  - name: share_format
+    dart_type: ShareFormatValue
+    values:
+      - card
+      - text
   - name: dismiss_mode
     dart_type: DismissModeValue
     values:
@@ -1006,6 +1011,11 @@ events:
       - name: source_context
         key: source_context
         type: string
+        required: false
+      - name: format
+        key: format
+        type: enum
+        enum: ShareFormatValue
         required: false
   - id: dynamic_link_create_result
     fields:
