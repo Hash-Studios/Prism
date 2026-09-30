@@ -104,7 +104,6 @@ enum AnalyticsActionValue {
   notificationSettingsOpened,
   quickActionFollowFeed,
   quickActionCollections,
-  quickActionAiWallpapers,
   quickActionDownloads,
   quickActionUnknown,
   backTapped,
