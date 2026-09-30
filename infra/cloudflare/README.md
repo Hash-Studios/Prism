@@ -63,12 +63,7 @@ wrangler deploy
 
 ## Association file source of truth
 
-Worker serves association payloads directly; no separate static hosting step is required.
-
-Source reference files must stay in sync with worker-served payloads:
-- `infra/cloudflare/static/.well-known/assetlinks.json`
-- `infra/cloudflare/static/.well-known/apple-app-site-association`
-- `infra/cloudflare/static/apple-app-site-association`
+Worker serves association payloads directly from `worker/src/association_files.ts`; no separate static hosting step is required.
 
 Before deploying, verify values:
 - Android package name: `com.hash.prism`

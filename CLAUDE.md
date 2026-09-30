@@ -118,7 +118,7 @@ cd functions && npm ci && npm run build && node --test lib/__tests__/
 cd web && npm ci && npm run build
 ```
 
-`functions/lib/` is compiled output that is still tracked in git (16 files). Deploy rebuilds from `src/` (`firebase.json` predeploy). Do not commit build noise in `functions/lib/` with a source change unless the diff needs it.
+`functions/lib/` is compiled output and is ignored. Deploy rebuilds from `src/` (`firebase.json` predeploy).
 
 ### Secrets: Doppler
 
