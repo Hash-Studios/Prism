@@ -169,7 +169,7 @@ Use the `prism-create-feature` skill to scaffold one. Older code in `lib/data/`,
 
 ### UI
 
-Follow `.impeccable.md`. Use `Theme.of(context)` and `ColorScheme`; no hard-coded colours. Respect the active light/dark variant and the user accent. Content (the wallpaper) is the hero. Icon-only buttons need a tooltip or a `Semantics` label.
+Follow `.impeccable.md` and build on the design system in `docs/agents/design-system.md` (one import: `lib/core/widgets/prism/prism_ui.dart`). Use `Theme.of(context)` and `ColorScheme`; no hard-coded colours. Respect the active light/dark variant and the user accent. Content (the wallpaper) is the hero. Icon-only buttons need a tooltip or a `Semantics` label.
 
 ---
 
