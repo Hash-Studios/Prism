@@ -1,7 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svg_assets.dart';
@@ -51,13 +49,11 @@ class ThemeView extends StatefulWidget {
 }
 
 class _ThemeViewState extends State<ThemeView> {
-  final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   late bool changingLight = !context.isDarkMode;
 
   // Theme and accent taps apply live, so every way out (Back, swipe, the check) keeps them.
-  void _saveOverlayColor() {
+  void _trackAccent() {
     final Color accent = Color(context.prismLightAccentValue(listen: false));
-    _settingsLocal.set('systemOverlayColor', accent.toARGB32());
     analytics.track(AccentChangedEvent(color: accent.rgbHex));
   }
 
@@ -83,7 +79,7 @@ class _ThemeViewState extends State<ThemeView> {
     final double previewHeight = screenHeight * (themeMode == ThemeMode.system ? 0.35 : 0.45);
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) _saveOverlayColor();
+        if (didPop) _trackAccent();
       },
       child: Scaffold(
         appBar: AppBar(
