@@ -30,9 +30,8 @@ class _CanonicalLinkBuilder {
     return Uri.https(_shareDomain, '/user/${Uri.encodeComponent(identifier)}');
   }
 
-  Uri setup({required String index, required String name, required String thumbUrl}) {
+  Uri setup({required String name, required String thumbUrl}) {
     return Uri.https(_shareDomain, '/setup/${Uri.encodeComponent(name)}', <String, String>{
-      if (index.trim().isNotEmpty) 'index': index,
       if (thumbUrl.trim().isNotEmpty) 'thumbUrl': thumbUrl,
     });
   }
@@ -205,13 +204,13 @@ Future<void> createUserDynamicLink(
   }
 }
 
-Future<void> createSetupDynamicLink(String index, String name, String thumbUrl, {BuildContext? context}) async {
+Future<void> createSetupDynamicLink(String name, String thumbUrl, {BuildContext? context}) async {
   try {
-    final Uri canonical = _canonicalLinkBuilder.setup(index: index, name: name, thumbUrl: thumbUrl);
+    final Uri canonical = _canonicalLinkBuilder.setup(name: name, thumbUrl: thumbUrl);
     final String link = await _buildShareableLink(
       type: 'setup',
       canonicalUri: canonical,
-      payload: <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl},
+      payload: <String, dynamic>{'name': name, 'thumbUrl': thumbUrl},
       preview: <String, dynamic>{
         'title': '$name - Prism',
         'description': 'Check out this setup shared from Prism.',
