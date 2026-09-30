@@ -261,13 +261,13 @@ class CoinsService {
 
   /// Set only when a daily claim really paid out. The UI shows the daily sheet, then calls [consumeLastClaim].
   final ValueNotifier<StreakClaimResult?> lastClaimNotifier = ValueNotifier<StreakClaimResult?>(null);
-  Object? _lastClaimUser;
+  String? _lastClaimUserId;
   String? _lastPublishedClaimDay;
   String? _pendingFreezeUserId;
   String? _pendingFreezeRequestId;
 
   StreakClaimResult? get pendingClaimForCurrentUser {
-    if (!_canMutateCoins() || !identical(_lastClaimUser, app_state.prismUser)) consumeLastClaim();
+    if (!_canMutateCoins() || _lastClaimUserId != app_state.prismUser.id) consumeLastClaim();
     return lastClaimNotifier.value;
   }
 
@@ -366,8 +366,8 @@ class CoinsService {
       (value, _) => value,
       sourceTag: 'coins.bootstrap',
     );
-    if (!_canMutateCoins() || !identical(user, app_state.prismUser)) return;
-    if (!identical(_lastClaimUser, user)) consumeLastClaim();
+    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return;
+    if (_lastClaimUserId != user.id) consumeLastClaim();
     if (data == null) {
       await refreshStreakStatus();
       return;
@@ -388,7 +388,7 @@ class CoinsService {
       (data, _) => data,
       sourceTag: 'coins.refresh_balance',
     );
-    if (!_canMutateCoins() || !identical(user, app_state.prismUser)) return app_state.prismUser.coins;
+    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return app_state.prismUser.coins;
     if (userData == null) {
       return app_state.prismUser.coins;
     }
@@ -413,7 +413,7 @@ class CoinsService {
       (data, _) => data,
       sourceTag: 'coins.refresh_streak',
     );
-    if (!_canMutateCoins() || !identical(user, app_state.prismUser)) return StreakStatus.empty;
+    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return StreakStatus.empty;
     if (userData == null) {
       return streakNotifier.value;
     }
@@ -727,7 +727,7 @@ class CoinsService {
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
         'reminderEnabled': reminderEnabled,
       });
-      if (!_canMutateCoins() || !identical(user, app_state.prismUser)) return _notLoggedIn;
+      if (!_canMutateCoins() || user.id != app_state.prismUser.id) return _notLoggedIn;
       final Map<String, dynamic> payload = toJsonMap(response.data);
       final StreakClaimResult result = StreakClaimResult.fromPayload(payload);
       final bool claimed = result.claimed;
@@ -762,8 +762,8 @@ class CoinsService {
             ? null
             : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
       );
-      if (claimed && (!identical(_lastClaimUser, user) || _lastPublishedClaimDay != todayLocalKey)) {
-        _lastClaimUser = user;
+      if (claimed && (_lastClaimUserId != user.id || _lastPublishedClaimDay != todayLocalKey)) {
+        _lastClaimUserId = user.id;
         _lastPublishedClaimDay = todayLocalKey;
         lastClaimNotifier.value = result;
       }
@@ -803,7 +803,7 @@ class CoinsService {
       );
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.claim_daily_and_streak.callable', error: error, stackTrace: stackTrace);
-      if (_canMutateCoins() && identical(user, app_state.prismUser)) await refreshStreakStatus();
+      if (_canMutateCoins() && user.id == app_state.prismUser.id) await refreshStreakStatus();
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'callable_failed');
     }
   }
@@ -829,7 +829,7 @@ class CoinsService {
 
     try {
       if (settings.isOpen) await settings.set(pendingKey, requestId);
-      if (!_canMutateCoins() || !identical(user, app_state.prismUser)) {
+      if (!_canMutateCoins() || user.id != app_state.prismUser.id) {
         return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'session_changed');
       }
       final HttpsCallable callable = appFunctions.httpsCallable('buyStreakFreeze');
@@ -838,7 +838,7 @@ class CoinsService {
       if (_asBool(data['success']) || _asBool(data['atCap']) || _asBool(data['insufficientBalance'])) {
         await clearPending();
       }
-      if (!_canMutateCoins() || !identical(user, app_state.prismUser)) {
+      if (!_canMutateCoins() || user.id != app_state.prismUser.id) {
         return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'session_changed');
       }
       final int freezes = _clampFreezes(parseIntOr(data['streakFreezes']));
@@ -974,7 +974,7 @@ class CoinsService {
       reason: reason,
       inviterUserId: inviterUserId,
     );
-    if (!_canMutateCoins() || !identical(user, app_state.prismUser)) return _notLoggedIn;
+    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
       final CoinEarnFlags flags = earnFlagsNotifier.value;
