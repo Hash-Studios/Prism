@@ -49,7 +49,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> {
       future: _initialLoad,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done || setups == null) {
-          return const LoadingCards(childAspectRatio: 0.5025);
+          return const LoadingCards(childAspectRatio: 0.5025, borderRadius: BorderRadius.all(Radius.circular(20)));
         }
         _contentLoadTracker.success(
           itemCount: setups.length,
