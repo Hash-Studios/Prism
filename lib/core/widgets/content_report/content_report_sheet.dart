@@ -38,7 +38,6 @@ Future<void> showContentReportSheet(
   await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
-    useSafeArea: false,
     showDragHandle: true,
     builder: (BuildContext sheetContext) {
       return _ContentReportSheetBody(

@@ -1,4 +1,5 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
@@ -22,6 +23,67 @@ void main() {
   tearDown(() {
     svc.streakNotifier.value = StreakStatus.empty;
     svc.balanceNotifier.value = balance;
+  });
+
+  testWidgets('standalone guest rewards can navigate back while tab has no back button', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RewardsPage())),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.byType(BackButton), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('open'), findsOneWidget);
+    await tester.pumpWidget(const MaterialApp(home: RewardsTabPage()));
+    await tester.pump();
+    expect(find.byType(BackButton), findsNothing);
+  });
+
+  testWidgets('freeze sheet tracks balance changes while open', (tester) async {
+    svc.balanceNotifier.value = 20;
+    await _pump(tester, ThemeData.light(), FreezeCard(onEarnCoins: () {}));
+    await tester.tap(find.textContaining('Get one'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('You need 50 coins.'), findsOneWidget);
+    svc.balanceNotifier.value = 100;
+    await tester.pump();
+    expect(find.text('Balance after: 50'), findsOneWidget);
+    expect(find.text('Buy'), findsOneWidget);
+  });
+
+  testWidgets('hero cycle settles when reduce motion is enabled while running', (tester) async {
+    svc.streakNotifier.value = StreakStatus.empty.copyWith(count: 3, streakDay: 3, active: true);
+    final reduce = ValueNotifier<bool>(false);
+    addTearDown(reduce.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder<bool>(
+          valueListenable: reduce,
+          builder: (context, reduced, _) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: reduced),
+            child: const Scaffold(body: RewardsHero()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    reduce.value = true;
+    await tester.pump();
+    final opacities = find.ancestor(of: find.byIcon(Icons.check_rounded), matching: find.byType(Opacity));
+    expect(opacities, findsNWidgets(3));
+    for (final opacity in tester.widgetList<Opacity>(opacities)) {
+      expect(opacity.opacity, 1);
+    }
   });
 
   for (final ThemeData theme in <ThemeData>[ThemeData.light(), ThemeData.dark()]) {

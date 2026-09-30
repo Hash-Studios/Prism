@@ -27,7 +27,7 @@ class StreakPill extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(999),
-            onTap: () => context.router.push(RewardsRoute(showBack: true)),
+            onTap: () => context.router.push(RewardsRoute()),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 6 : 8),
               decoration: BoxDecoration(

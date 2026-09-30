@@ -48,4 +48,20 @@ void main() {
     await tester.pump(const Duration(milliseconds: 120));
     expect(tester.getRect(find.byKey(const Key('a'))), a0);
   });
+
+  testWidgets('settles an active shake when reduce motion changes', (tester) async {
+    final ShakeController c = ShakeController();
+    addTearDown(c.dispose);
+    await tester.pumpWidget(host(c));
+    final Rect resting = tester.getRect(find.byKey(const Key('a')));
+    c.shake(1);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(tester.getRect(find.byKey(const Key('a'))), isNot(resting));
+
+    await tester.pumpWidget(host(c, reduce: true));
+    expect(tester.getRect(find.byKey(const Key('a'))), resting);
+    await tester.pump(const Duration(milliseconds: 30));
+    expect(tester.binding.hasScheduledFrame, isFalse);
+  });
 }

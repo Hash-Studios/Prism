@@ -92,6 +92,7 @@ class RewardsSpendSection extends StatelessWidget {
   static void _showInfo(BuildContext context, {required String title, required String body}) {
     showPrismSheet<void>(
       context: context,
+      useSafeArea: true,
       builder: (sheetContext) {
         final ThemeData theme = Theme.of(sheetContext);
         return Padding(
@@ -137,9 +138,10 @@ class _SpendTile extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
     return Semantics(
-      button: true,
+      button: onTap != null,
       label: '$label, $price coins',
       excludeSemantics: true,
+      onTap: onTap,
       child: PressScale(
         child: Material(
           color: scheme.surfaceContainerLow,

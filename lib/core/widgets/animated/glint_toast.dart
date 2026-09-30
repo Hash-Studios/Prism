@@ -41,6 +41,15 @@ class _GlintToastState extends State<_GlintToast> with SingleTickerProviderState
     duration: const Duration(milliseconds: 220),
     reverseDuration: PrismDurations.fast,
   );
+  late final CurvedAnimation _curve = CurvedAnimation(
+    parent: _controller,
+    curve: PrismCurves.enter,
+    reverseCurve: PrismCurves.exit,
+  );
+  late final Animation<Offset> _position = Tween<Offset>(
+    begin: const Offset(0, 0.12),
+    end: Offset.zero,
+  ).animate(_curve);
   Timer? _timer;
 
   @override
@@ -55,26 +64,29 @@ class _GlintToastState extends State<_GlintToast> with SingleTickerProviderState
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) _controller.value = 0;
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
+    _curve.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> curved = CurvedAnimation(
-      parent: _controller,
-      curve: PrismCurves.enter,
-      reverseCurve: PrismCurves.exit,
-    );
+    if (context.reduceMotion) return const SizedBox.shrink();
     return IgnorePointer(
       child: Align(
         alignment: const Alignment(0, 0.35),
         child: FadeTransition(
-          opacity: curved,
+          opacity: _curve,
           child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(curved),
+            position: _position,
             child: Glint(mood: widget.mood, size: widget.size),
           ),
         ),

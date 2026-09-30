@@ -373,7 +373,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     try {
       final WallpaperTarget? target = await showPrismSheet<WallpaperTarget>(
         isScrollControlled: true,
-        useSafeArea: false,
         context: context,
         builder: (context) => SetOptionsPanel(
           onTap1: () {

@@ -844,7 +844,7 @@ class ReviewRoute extends PageRouteInfo<void> {
 /// generated route for
 /// [RewardsPage]
 class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
-  RewardsRoute({Key? key, bool showBack = false, List<PageRouteInfo>? children})
+  RewardsRoute({Key? key, bool showBack = true, List<PageRouteInfo>? children})
     : super(
         RewardsRoute.name,
         args: RewardsRouteArgs(key: key, showBack: showBack),
@@ -865,7 +865,7 @@ class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
 }
 
 class RewardsRouteArgs {
-  const RewardsRouteArgs({this.key, this.showBack = false});
+  const RewardsRouteArgs({this.key, this.showBack = true});
 
   final Key? key;
 

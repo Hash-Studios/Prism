@@ -41,6 +41,7 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
   await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     builder: (sheetContext) => AnimatedPadding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheetContext).bottom),
       duration: const Duration(milliseconds: 200),

@@ -16,6 +16,7 @@ Future<void> buyStreakFreezeFlow(BuildContext context, {required VoidCallback on
   }
   final _FreezeSheetResult? result = await showPrismSheet<_FreezeSheetResult>(
     context: context,
+    useSafeArea: true,
     builder: (_) => const _FreezeSheet(),
   );
   if (result == null || !context.mounted) return;
@@ -147,6 +148,24 @@ class _FreezeSheet extends StatefulWidget {
 class _FreezeSheetState extends State<_FreezeSheet> {
   bool _busy = false;
   bool _short = CoinsService.instance.balanceNotifier.value < CoinPolicy.streakFreezeCost;
+
+  @override
+  void initState() {
+    super.initState();
+    CoinsService.instance.balanceNotifier.addListener(_balanceChanged);
+  }
+
+  void _balanceChanged() {
+    setState(() {
+      if (!_busy) _short = CoinsService.instance.balanceNotifier.value < CoinPolicy.streakFreezeCost;
+    });
+  }
+
+  @override
+  void dispose() {
+    CoinsService.instance.balanceNotifier.removeListener(_balanceChanged);
+    super.dispose();
+  }
 
   Future<void> _buy() async {
     setState(() => _busy = true);

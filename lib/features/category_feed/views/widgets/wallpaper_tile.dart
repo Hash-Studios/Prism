@@ -63,16 +63,20 @@ class WallpaperTile extends StatelessWidget {
             );
             context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
           },
-          child: Hero(
-            tag: heroTag,
-            child: CachedNetworkImage(
-              imageUrl: item.thumbnailUrl,
-              fit: BoxFit.cover,
-              fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-              fadeInCurve: Curves.easeOut,
-              memCacheHeight: height,
-              placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-              errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+          child: HeroMode(
+            enabled: !context.reduceMotion,
+            child: Hero(
+              tag: heroTag,
+              child: CachedNetworkImage(
+                imageUrl: item.thumbnailUrl,
+                fit: BoxFit.cover,
+                fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+                fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
+                fadeInCurve: Curves.easeOut,
+                memCacheHeight: height,
+                placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+                errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+              ),
             ),
           ),
         ),

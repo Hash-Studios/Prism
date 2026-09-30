@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 /// Streak, freezes and coins in one page. It is the Rewards tab, and a pushed route with a back button.
 @RoutePage()
 class RewardsPage extends StatefulWidget {
-  const RewardsPage({super.key, this.showBack = false});
+  const RewardsPage({super.key, this.showBack = true});
 
   final bool showBack;
 
@@ -94,7 +94,7 @@ class RewardsTabPage extends StatelessWidget {
   const RewardsTabPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const RewardsPage();
+  Widget build(BuildContext context) => const RewardsPage(showBack: false);
 }
 
 class _Header extends StatelessWidget {

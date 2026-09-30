@@ -80,7 +80,7 @@ class AppRouter extends RootStackRouter {
           reverseDuration: const Duration(milliseconds: 200),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             if (context.reduceMotion) return child;
-            final Animation<double> t = CurvedAnimation(parent: animation, curve: PrismCurves.enter);
+            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
             return FadeTransition(
               opacity: t,
               child: AnimatedBuilder(

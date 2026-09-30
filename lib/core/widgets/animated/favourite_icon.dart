@@ -50,6 +50,12 @@ class _FavoriteIconState extends State<FavoriteIcon> with SingleTickerProviderSt
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) _controller.value = 0;
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

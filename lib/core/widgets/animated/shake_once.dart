@@ -55,6 +55,12 @@ class _ShakeOnceState extends State<ShakeOnce> with SingleTickerProviderStateMix
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) _animation.value = 0;
+  }
+
+  @override
   void dispose() {
     widget.controller.removeListener(_onShake);
     _animation.dispose();

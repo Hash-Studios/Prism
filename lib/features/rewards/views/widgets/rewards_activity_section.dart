@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -18,28 +19,51 @@ class RewardsActivitySection extends StatefulWidget {
 class _RewardsActivitySectionState extends State<RewardsActivitySection> {
   bool _loading = true;
   bool _failed = false;
+  bool _inFlight = false;
+  bool _reloadRequested = false;
   List<CoinTransactionEntry> _items = const <CoinTransactionEntry>[];
 
   @override
   void initState() {
     super.initState();
+    CoinsService.instance.balanceNotifier.addListener(_load);
     _load();
   }
 
+  @override
+  void dispose() {
+    CoinsService.instance.balanceNotifier.removeListener(_load);
+    super.dispose();
+  }
+
   Future<void> _load() async {
+    if (_inFlight) {
+      _reloadRequested = true;
+      return;
+    }
+    _inFlight = true;
+    final user = app_state.prismUser;
     setState(() {
       _loading = true;
       _failed = false;
     });
     try {
-      final List<CoinTransactionEntry> rows = await CoinsService.instance.fetchTransactions(limit: _kActivityLimit);
-      if (!mounted) return;
+      final List<CoinTransactionEntry> rows = await CoinsService.instance.fetchTransactions(
+        limit: _kActivityLimit,
+        fresh: true,
+      );
+      if (!mounted || !identical(user, app_state.prismUser)) return;
       setState(() => _items = rows);
     } catch (_) {
       if (!mounted) return;
       setState(() => _failed = true);
     } finally {
+      _inFlight = false;
       if (mounted) setState(() => _loading = false);
+      if (mounted && _reloadRequested) {
+        _reloadRequested = false;
+        _load();
+      }
     }
   }
 

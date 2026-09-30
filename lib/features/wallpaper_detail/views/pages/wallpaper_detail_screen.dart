@@ -219,6 +219,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         CachedNetworkImage(
           imageUrl: thumbnailUrl,
           fit: BoxFit.cover,
+          fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+          fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
           width: double.infinity,
           height: double.infinity,
           placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
@@ -228,7 +230,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
     );
   }
 
-  Widget _withHero(Widget child) => widget.heroTag == null ? child : Hero(tag: widget.heroTag!, child: child);
+  Widget _withHero(Widget child) => widget.heroTag == null
+      ? child
+      : HeroMode(
+          enabled: !context.reduceMotion,
+          child: Hero(tag: widget.heroTag!, child: child),
+        );
 
   Widget _buildErrorState(WallpaperDetailError state) {
     final message = state.message.trim();
@@ -897,7 +904,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
                     reverseTransitionDuration: context.motion(const Duration(milliseconds: 200)),
                     pageBuilder: (context, animation, secondaryAnimation) {
                       return FadeTransition(
-                        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                        opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
                         child: ClockOverlay(
                           colorChanged: state.colorChanged,
                           accent: state.accent,
@@ -938,6 +945,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
         children: [
           CachedNetworkImage(
             imageUrl: thumb,
+            fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+            fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
@@ -949,7 +958,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
           CachedNetworkImage(
             imageUrl: full,
             fit: BoxFit.cover,
-            fadeInDuration: const Duration(milliseconds: 280),
+            fadeInDuration: context.motion(const Duration(milliseconds: 280)),
             fadeOutDuration: Duration.zero,
             imageBuilder: (context, imageProvider) {
               return SizedBox.expand(
@@ -970,6 +979,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
       } else {
         imageLayer = CachedNetworkImage(
           imageUrl: url,
+          fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+          fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
           imageBuilder: (context, imageProvider) {
             return SizedBox.expand(
               child: Image(image: imageProvider, fit: BoxFit.cover),
