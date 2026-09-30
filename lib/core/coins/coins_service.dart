@@ -21,6 +21,7 @@ import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
@@ -129,7 +130,6 @@ class CoinsService {
   static const String _coinStateField = 'coinState';
   static const String _txCollection = FirebaseCollections.coinTransactions;
   static const String _pendingReferralInviterPrefKey = 'pendingReferralInviterId';
-  static const String _streakReminderPrefKey = 'streakReminderSubscriber';
   static const String _streakReminderEnabledField = 'streakReminderEnabled';
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
@@ -166,7 +166,7 @@ class CoinsService {
     String sourceTag = 'coins.streak_reminder.preference',
   }) async {
     if (_settings.isOpen) {
-      await _settings.set(_streakReminderPrefKey, enabled);
+      await _settings.set(NotificationPrefKeys.streakReminders, enabled);
     }
     if (!_canMutateCoins()) {
       streakNotifier.value = streakNotifier.value.copyWith(reminderEnabled: enabled);
@@ -812,7 +812,7 @@ class CoinsService {
     if (!_settings.isOpen) {
       return true;
     }
-    return _settings.get<bool>(_streakReminderPrefKey, defaultValue: true);
+    return _settings.get<bool>(NotificationPrefKeys.streakReminders, defaultValue: true);
   }
 
   int _clampStreakDay(int day) {

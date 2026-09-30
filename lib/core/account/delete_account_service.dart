@@ -43,9 +43,7 @@ class DeleteAccountService {
     // Sign out from Google SDK so silent re-auth doesn't recreate the account.
     await globalGoogleAuth.signOutGoogle();
 
-    await _settingsLocal.delete(OnboardingV2Keys.onboardedNew);
-    await _settingsLocal.delete(OnboardingV2Keys.selectedInterests);
-    await _settingsLocal.delete(OnboardingV2Keys.followedCreators);
+    await resetOnboardingLocalState(_settingsLocal);
     await getIt<SessionLocalDataSource>().clearCurrentUser();
 
     logger.i('[DeleteAccount] Done', tag: 'DeleteAccount');
