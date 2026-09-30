@@ -3,6 +3,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_section.dart';
+import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
@@ -13,7 +19,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-const double _kCardAspect = 0.6;
+const double _kTileAspect = 0.6;
+const int _kColumns = 3;
 
 /// "Streak collection": wallpapers unlocked by a long streak (or enough coins). Hidden when there are none.
 class RewardsCollectionSection extends StatelessWidget {
@@ -41,34 +48,34 @@ class _CollectionBody extends StatelessWidget {
       builder: (context, state) {
         final bool loading = state.status == StreakShopStatus.initial || state.status == StreakShopStatus.loading;
         final bool failed = state.status == StreakShopStatus.failure;
+        // An optional section: with nothing to unlock there is nothing to show.
         if (!loading && !failed && state.items.isEmpty) {
           return const SizedBox.shrink();
         }
-        return Padding(
-          padding: const EdgeInsets.only(top: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('Streak collection', style: PrismTextStyles.sectionTitle(context)),
-              const SizedBox(height: 4),
-              Text('Wallpapers you unlock by keeping your streak.', style: PrismTextStyles.caption(context)),
-              const SizedBox(height: 12),
-              if (loading)
-                const _CollectionSkeleton()
-              else if (failed)
-                Row(
-                  children: <Widget>[
-                    Expanded(child: Text("Couldn't load the collection.", style: PrismTextStyles.body(context))),
-                    TextButton(
-                      onPressed: () => context.read<StreakShopBloc>().add(const StreakShopLoaded()),
-                      child: const Text('Try again'),
-                    ),
-                  ],
-                )
-              else
-                _CollectionGrid(items: state.items),
-            ],
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            const PrismSectionHeader(
+              title: 'Streak collection',
+              padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.xxs),
+            ),
+            Text('Wallpapers you unlock by keeping your streak.', style: PrismTextStyles.caption(context)),
+            const SizedBox(height: PrismSpace.sm),
+            if (loading)
+              const _CollectionSkeleton()
+            else if (failed)
+              GlintState(
+                kind: GlintStateKind.error,
+                title: "Couldn't load the collection",
+                body: 'Check your connection and try again.',
+                actionLabel: 'Try again',
+                onAction: () => context.read<StreakShopBloc>().add(const StreakShopLoaded()),
+                glintSize: 56,
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
+              )
+            else
+              _CollectionGrid(items: state.items),
+          ],
         );
       },
     );
@@ -80,15 +87,15 @@ class _CollectionSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PulsePlaceholder(
-      builder: (context, _) => Row(
+    return PrismSkeleton(
+      child: Row(
         children: <Widget>[
-          for (int i = 0; i < 3; i++) ...<Widget>[
-            if (i > 0) const SizedBox(width: 8),
+          for (int i = 0; i < _kColumns; i++) ...<Widget>[
+            if (i > 0) const SizedBox(width: PrismWallGrid.spacing),
             const Expanded(
               child: AspectRatio(
-                aspectRatio: _kCardAspect,
-                child: PulseFill(borderRadius: BorderRadius.all(Radius.circular(14))),
+                aspectRatio: _kTileAspect,
+                child: PulseFill(borderRadius: PrismWallGrid.tileRadius),
               ),
             ),
           ],
@@ -105,27 +112,34 @@ class _CollectionGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<StreakStatus>(
-      valueListenable: CoinsService.instance.streakNotifier,
-      builder: (context, streak, _) => ValueListenableBuilder<int>(
-        valueListenable: CoinsService.instance.balanceNotifier,
-        builder: (context, balance, _) => GridView.builder(
-          shrinkWrap: true,
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 14,
-            childAspectRatio: 0.44,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double cell = (constraints.maxWidth - PrismWallGrid.spacing * (_kColumns - 1)) / _kColumns;
+        // The tile, then room for a two line caption.
+        final double extent = cell / _kTileAspect + PrismSpace.xs + MediaQuery.textScalerOf(context).scale(32);
+        return ValueListenableBuilder<StreakStatus>(
+          valueListenable: CoinsService.instance.streakNotifier,
+          builder: (context, streak, _) => ValueListenableBuilder<int>(
+            valueListenable: CoinsService.instance.balanceNotifier,
+            builder: (context, balance, _) => GridView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _kColumns,
+                crossAxisSpacing: PrismWallGrid.spacing,
+                mainAxisSpacing: PrismSpace.sm,
+                mainAxisExtent: extent,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final PrismWallpaper w = items[index];
+                return _CollectionCard(wallpaper: w, unlocked: w.isUnlockedFor(streak, balance));
+              },
+            ),
           ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final PrismWallpaper w = items[index];
-            return _CollectionCard(wallpaper: w, unlocked: w.isUnlockedFor(streak, balance));
-          },
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -170,16 +184,22 @@ class _CollectionCard extends StatelessWidget {
       );
       return;
     }
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(_lockedMessage)));
+    showPrismSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) => PrismSheetBody(
+        title: 'Still locked',
+        message: _lockedMessage,
+        actions: <Widget>[
+          PrismButton(label: 'Got it', expand: true, onPressed: () => Navigator.of(sheetContext).pop()),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final MediaQueryData mq = MediaQuery.of(context);
-    final int cacheWidth = (mq.size.width / 3 * mq.devicePixelRatio).round().clamp(120, 1200);
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final String category = (wallpaper.core.category ?? '').isEmpty ? 'Wallpaper' : wallpaper.core.category!;
     return Semantics(
       button: true,
@@ -187,6 +207,7 @@ class _CollectionCard extends StatelessWidget {
       excludeSemantics: true,
       onTap: () => _onTap(context),
       child: PressScale(
+        scale: unlocked ? 0.96 : 0.98,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => _onTap(context),
@@ -194,41 +215,32 @@ class _CollectionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: <Widget>[
-                      Image.network(
-                        wallpaper.thumbnailUrl,
-                        fit: BoxFit.cover,
-                        cacheWidth: cacheWidth,
-                        errorBuilder: (_, _, _) => ColoredBox(color: scheme.surfaceContainerHigh),
-                      ),
-                      if (!unlocked) ...<Widget>[
-                        ColoredBox(color: scheme.scrim.withValues(alpha: 0.42)),
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(9),
-                            decoration: BoxDecoration(
-                              color: scheme.scrim.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
+                child: PrismWallTile(
+                  url: wallpaper.thumbnailUrl,
+                  overlay: unlocked
+                      ? null
+                      : ClipRRect(
+                          borderRadius: PrismWallGrid.tileRadius,
+                          child: ColoredBox(
+                            color: cs.scrim.withValues(alpha: 0.42),
+                            child: Center(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: cs.scrim.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(PrismSpace.xs + 1),
+                                  child: Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white),
+                                ),
+                              ),
                             ),
-                            child: const Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white70),
                           ),
                         ),
-                      ],
-                    ],
-                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                _caption,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: PrismTextStyles.caption(context).copyWith(height: 1.25),
-              ),
+              const SizedBox(height: PrismSpace.xs - 2),
+              Text(_caption, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
             ],
           ),
         ),

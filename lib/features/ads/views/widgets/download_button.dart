@@ -5,19 +5,18 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +28,8 @@ class DownloadButton extends StatefulWidget {
     this.contentId,
     this.sourceContext,
     this.onDownloaded,
+    this.primary = false,
+    this.labelled = false,
     super.key,
   });
 
@@ -37,6 +38,12 @@ class DownloadButton extends StatefulWidget {
   final String? contentId;
   final String? sourceContext;
   final VoidCallback? onDownloaded;
+
+  /// Draws a compact accent button with a label instead of a round icon button.
+  final bool primary;
+
+  /// Shows a caption under the round icon button.
+  final bool labelled;
 
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
@@ -54,11 +61,15 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.primary) {
+      return PrismButton(label: 'Download', size: PrismButtonSize.compact, loading: isLoading, onPressed: _handleTap);
+    }
     return CircularMenuButton(
       label: 'Download',
+      caption: widget.labelled ? 'Download' : null,
       onTap: _handleTap,
       isLoading: isLoading,
-      child: Icon(JamIcons.download, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: const Icon(JamIcons.download),
     );
   }
 
@@ -109,115 +120,20 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<void> _showGuestAdGatePopup() async {
-    await showModal<void>(
+    await showPrismSheet<void>(
       context: context,
-      builder: (BuildContext dialogContext) {
-        bool watchingAd = false;
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Theme.of(context).primaryColor,
-                ),
-                width: MediaQuery.of(context).size.width * .78,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Container(
-                      height: 150,
-                      width: MediaQuery.of(context).size.width * .78,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                        color: Theme.of(context).hintColor,
-                      ),
-                      child: const Center(child: Icon(Icons.system_update_alt)),
-                    ),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'Watch a small video ad to download this wallpaper.',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: <Widget>[
-                        MaterialButton(
-                          shape: const StadiumBorder(),
-                          color: Theme.of(context).colorScheme.error,
-                          onPressed: () {
-                            Navigator.of(dialogContext).pop();
-                            PaywallOrchestrator.instance.presentOrRequireSignIn(
-                              this.context,
-                              placement: PaywallPlacement.mainUpsell,
-                              source: 'download_guest_buy_premium',
-                            );
-                          },
-                          child: Text(
-                            'BUY PREMIUM',
-                            style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                          ),
-                        ),
-                        MaterialButton(
-                          shape: const StadiumBorder(),
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          onPressed: watchingAd
-                              ? null
-                              : () async {
-                                  setDialogState(() => watchingAd = true);
-                                  final bool watched = await watchRewardedAd(context.read<AdsBloc>());
-                                  if (mounted) {
-                                    setDialogState(() => watchingAd = false);
-                                  }
-                                  if (!watched) {
-                                    toasts.error('Ad was not completed.');
-                                    return;
-                                  }
-                                  if (!dialogContext.mounted) {
-                                    return;
-                                  }
-                                  if (Navigator.of(dialogContext).canPop()) {
-                                    Navigator.of(dialogContext).pop();
-                                  }
-                                  await _performDownload();
-                                },
-                          child: AnimatedSwitcher(
-                            duration: context.motion(PrismDurations.fast),
-                            child: watchingAd
-                                ? const SizedBox(
-                                    key: ValueKey<bool>(true),
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : Text(
-                                    'WATCH AD',
-                                    key: const ValueKey<bool>(false),
-                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => _GuestAdGateSheet(
+        onBuyPremium: () {
+          Navigator.of(sheetContext).pop();
+          PaywallOrchestrator.instance.presentOrRequireSignIn(
+            context,
+            placement: PaywallPlacement.mainUpsell,
+            source: 'download_guest_buy_premium',
+          );
+        },
+        onWatched: _performDownload,
+      ),
     );
   }
 
@@ -434,5 +350,54 @@ class _DownloadButtonState extends State<DownloadButton> {
         setState(() => isLoading = false);
       }
     }
+  }
+}
+
+/// The sheet a signed-out user sees before a download: watch an ad or go Premium.
+class _GuestAdGateSheet extends StatefulWidget {
+  const _GuestAdGateSheet({required this.onBuyPremium, required this.onWatched});
+
+  final VoidCallback onBuyPremium;
+
+  /// Runs after the ad is watched and the sheet has closed.
+  final Future<bool> Function() onWatched;
+
+  @override
+  State<_GuestAdGateSheet> createState() => _GuestAdGateSheetState();
+}
+
+class _GuestAdGateSheetState extends State<_GuestAdGateSheet> {
+  bool _watching = false;
+
+  Future<void> _watch() async {
+    setState(() => _watching = true);
+    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
+    if (mounted) setState(() => _watching = false);
+    if (!watched) {
+      toasts.error('Ad was not completed.');
+      return;
+    }
+    if (!mounted) return;
+    final NavigatorState navigator = Navigator.of(context);
+    final Future<bool> Function() onWatched = widget.onWatched;
+    if (navigator.canPop()) navigator.pop();
+    await onWatched();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PrismSheetBody(
+      title: 'Download this wallpaper',
+      message: 'Watch a small video ad to download this wallpaper.',
+      actions: <Widget>[
+        PrismButton(label: 'Watch ad', expand: true, loading: _watching, onPressed: _watch),
+        PrismButton(
+          label: 'Buy premium',
+          expand: true,
+          variant: PrismButtonVariant.tonal,
+          onPressed: _watching ? null : widget.onBuyPremium,
+        ),
+      ],
+    );
   }
 }

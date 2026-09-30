@@ -11,7 +11,10 @@ import 'package:path_provider/path_provider.dart';
 
 class EditButton extends StatefulWidget {
   final String? url;
-  const EditButton({required this.url, super.key});
+
+  /// Shows a caption under the round button.
+  final bool labelled;
+  const EditButton({required this.url, this.labelled = false, super.key});
 
   @override
   _EditButtonState createState() => _EditButtonState();
@@ -30,13 +33,14 @@ class _EditButtonState extends State<EditButton> {
   Widget build(BuildContext context) {
     return CircularMenuButton(
       label: 'Edit',
+      caption: widget.labelled ? 'Edit' : null,
       onTap: () {
         if (!isLoading) {
           onEdit(widget.url);
         }
       },
       isLoading: isLoading,
-      child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: const Icon(JamIcons.pencil),
     );
   }
 

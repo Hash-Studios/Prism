@@ -50,7 +50,14 @@ class PrismChip extends StatelessWidget {
                   Icon(icon, size: 16, color: fg),
                   const SizedBox(width: 6),
                 ],
-                Text(label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14, color: fg)),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14, color: fg),
+                  ),
+                ),
               ],
             ),
           ),

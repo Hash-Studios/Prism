@@ -3,14 +3,14 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/detail_panel.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,9 +58,10 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topPad = (app_state.notchSize ?? MediaQuery.paddingOf(context).top) + 8;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final double topPad = (app_state.notchSize ?? MediaQuery.paddingOf(context).top) + PrismSpace.xs;
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: cs.surface,
       body: Stack(
         children: <Widget>[
           ShakeOnce(
@@ -72,12 +73,20 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
                 onTap: _bounce,
                 child: Container(
                   margin: EdgeInsets.symmetric(vertical: value * 1.25, horizontal: value / 2),
-                  decoration: BoxDecoration(
+                  height: double.infinity,
+                  width: double.infinity,
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(value),
-                    image: DecorationImage(image: FileImage(widget.file), fit: BoxFit.cover),
+                    child: Image.file(
+                      widget.file,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const GlintState(
+                        kind: GlintStateKind.error,
+                        title: "Couldn't open this wallpaper",
+                        body: 'The file may have been moved or deleted.',
+                      ),
+                    ),
                   ),
-                  height: MediaQuery.of(context).size.height,
-                  width: MediaQuery.of(context).size.width,
                 ),
               );
             },
@@ -85,56 +94,76 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
           if (!hideSetWallpaperUi)
             Align(
               alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: SetWallpaperButton(url: widget.file.path),
-              ),
+              child: _ActionPanel(file: widget.file),
             ),
-          Align(
-            alignment: Alignment.topLeft,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
-              child: IconButton(
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: () {
-                  _trackAction(AnalyticsActionValue.backTapped);
-                  Navigator.pop(context);
-                },
-                color: Theme.of(context).colorScheme.secondary,
-                icon: const Icon(JamIcons.chevron_left),
-              ),
+          Positioned(
+            top: topPad,
+            left: PrismSpace.md,
+            child: PrismIconButton(
+              icon: Icons.arrow_back_rounded,
+              tooltip: 'Back',
+              onImage: true,
+              onPressed: () {
+                _trackAction(AnalyticsActionValue.backTapped);
+                Navigator.pop(context);
+              },
             ),
           ),
-          Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
-              child: IconButton(
-                tooltip: 'Clock preview',
-                onPressed: () {
-                  _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                  Navigator.push(
-                    context,
-                    PageRouteBuilder(
-                      transitionDuration: context.motion(const Duration(milliseconds: 200)),
-                      reverseTransitionDuration: context.motion(const Duration(milliseconds: 200)),
-                      pageBuilder: (context, animation, secondaryAnimation) {
-                        return FadeTransition(
-                          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                          child: ClockOverlay(colorChanged: false, accent: null, link: widget.file.path, file: true),
-                        );
-                      },
-                      fullscreenDialog: true,
-                      opaque: false,
-                    ),
-                  );
-                },
-                color: Theme.of(context).colorScheme.secondary,
-                icon: const Icon(JamIcons.clock),
-              ),
+          Positioned(
+            top: topPad,
+            right: PrismSpace.md,
+            child: PrismIconButton(
+              icon: Icons.schedule_rounded,
+              tooltip: 'Clock preview',
+              onImage: true,
+              onPressed: () {
+                _trackAction(AnalyticsActionValue.clockOverlayOpened);
+                pushClockPreview(context, link: widget.file.path, file: true);
+              },
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The docked bar at the bottom of the viewer: the file name and the one main action.
+class _ActionPanel extends StatelessWidget {
+  const _ActionPanel({required this.file});
+
+  final File file;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: DetailPanel.surfaceDecoration(context),
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: PrismSpace.md),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, 0),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      file.uri.pathSegments.isEmpty ? 'Downloaded wallpaper' : file.uri.pathSegments.last,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PrismTextStyles.cardTitle(context),
+                    ),
+                    Text('Saved on this device', style: PrismTextStyles.caption(context)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: PrismSpace.sm),
+              SetWallpaperButton(url: file.path, primary: true),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -32,6 +34,7 @@ Future<void> buyStreakFreezeFlow(BuildContext context, {required VoidCallback on
 
 enum _FreezeSheetResult { bought, earn }
 
+/// How many streak freezes you hold, and the way to buy one.
 class FreezeCard extends StatelessWidget {
   const FreezeCard({super.key, required this.onEarnCoins});
 
@@ -40,81 +43,56 @@ class FreezeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme cs = theme.colorScheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return ValueListenableBuilder<StreakStatus>(
       valueListenable: CoinsService.instance.streakNotifier,
       builder: (context, status, _) {
         final int held = status.freezes.clamp(0, CoinPolicy.maxStreakFreezes);
         final bool full = held >= CoinPolicy.maxStreakFreezes;
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return PrismCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Text('Streak freeze', style: PrismTextStyles.cardTitle(context)),
+                  Text(
+                    '$held of ${CoinPolicy.maxStreakFreezes}',
+                    style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: PrismSpace.xxs),
+              Text('Saves your streak if you miss a day. It applies on its own.', style: PrismTextStyles.body(context)),
+              const SizedBox(height: PrismSpace.sm),
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: PrismSpace.xs,
                   children: <Widget>[
-                    Text('Streak freeze', style: PrismTextStyles.cardTitle(context)),
-                    Text(
-                      '$held of ${CoinPolicy.maxStreakFreezes}',
-                      style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w600),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        for (int i = 0; i < CoinPolicy.maxStreakFreezes; i++) ...<Widget>[
+                          if (i > 0) const SizedBox(width: PrismSpace.xs),
+                          _Slot(filled: i < held),
+                        ],
+                      ],
+                    ),
+                    PrismButton(
+                      label: full ? 'Full' : 'Get one · ${CoinPolicy.streakFreezeCost}',
+                      trailing: full ? null : const PrismCoinIcon(size: 16),
+                      variant: PrismButtonVariant.tonal,
+                      size: PrismButtonSize.compact,
+                      onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text('Saves your streak if you miss a day. Used on its own.', style: PrismTextStyles.body(context)),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    runSpacing: 8,
-                    children: <Widget>[
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          for (int i = 0; i < CoinPolicy.maxStreakFreezes; i++) ...<Widget>[
-                            if (i > 0) const SizedBox(width: 8),
-                            _Slot(filled: i < held),
-                          ],
-                        ],
-                      ),
-                      FilledButton.tonal(
-                        onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: cs.onSurface.withValues(alpha: 0.08),
-                          disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.05),
-                          foregroundColor: cs.onSurface,
-                          disabledForegroundColor: cs.onSurface.withValues(alpha: 0.4),
-                          minimumSize: const Size(0, 40),
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          shape: const StadiumBorder(),
-                          textStyle: PrismTextStyles.rowTitle(context),
-                        ),
-                        child: full
-                            ? const Text('Full')
-                            : const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text('Get one · ${CoinPolicy.streakFreezeCost}'),
-                                  SizedBox(width: 8),
-                                  PrismCoinIcon(size: 16),
-                                ],
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
@@ -135,17 +113,15 @@ class _Slot extends StatelessWidget {
       excludeSemantics: true,
       child: AnimatedContainer(
         duration: context.motion(PrismDurations.fast),
+        curve: PrismCurves.enter,
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(PrismRadius.sm),
           color: filled ? cs.primary.withValues(alpha: 0.12) : Colors.transparent,
-          border: Border.all(
-            color: filled ? cs.primary.withValues(alpha: 0.4) : cs.onSurface.withValues(alpha: 0.12),
-            width: 1.5,
-          ),
+          border: Border.all(color: filled ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant, width: 1.5),
         ),
-        child: Icon(Icons.ac_unit_rounded, size: 22, color: filled ? cs.primary : cs.onSurface.withValues(alpha: 0.3)),
+        child: Icon(Icons.ac_unit_rounded, size: 22, color: filled ? cs.primary : cs.onSurfaceVariant),
       ),
     );
   }
@@ -208,41 +184,35 @@ class _FreezeSheetState extends State<_FreezeSheet> {
   Widget build(BuildContext context) {
     final int balance = CoinsService.instance.balanceNotifier.value;
     const int cost = CoinPolicy.streakFreezeCost;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            if (_short) ...<Widget>[
-              const Center(child: Glint(mood: GlintMood.worried, size: 72)),
-              const SizedBox(height: 12),
-              Text('You need $cost coins.', textAlign: TextAlign.center, style: PrismTextStyles.sectionTitle(context)),
-              const SizedBox(height: 4),
-              Text('You have $balance.', textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(_FreezeSheetResult.earn),
-                child: const Text('Earn coins'),
-              ),
-            ] else ...<Widget>[
-              Text('Buy a streak freeze for $cost coins?', style: PrismTextStyles.sectionTitle(context)),
-              const SizedBox(height: 4),
-              Text('Balance after: ${balance - cost}', style: PrismTextStyles.body(context)),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _busy ? null : _buy,
-                child: _busy
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Buy'),
-              ),
-              const SizedBox(height: 4),
-              TextButton(onPressed: _busy ? null : () => Navigator.of(context).pop(), child: const Text('Cancel')),
-            ],
-          ],
-        ),
-      ),
+    return PopScope(
+      canPop: !_busy,
+      child: _short
+          ? PrismSheetBody(
+              mood: GlintMood.worried,
+              centered: true,
+              title: 'You need $cost coins.',
+              message: 'You have $balance.',
+              actions: <Widget>[
+                PrismButton(
+                  label: 'Earn coins',
+                  expand: true,
+                  onPressed: () => Navigator.of(context).pop(_FreezeSheetResult.earn),
+                ),
+              ],
+            )
+          : PrismSheetBody(
+              title: 'Buy a streak freeze for $cost coins?',
+              message: 'Balance after: ${balance - cost}',
+              actions: <Widget>[
+                PrismButton(label: 'Buy', expand: true, loading: _busy, onPressed: _busy ? null : _buy),
+                PrismButton(
+                  label: 'Cancel',
+                  expand: true,
+                  variant: PrismButtonVariant.ghost,
+                  onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
     );
   }
 }
