@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -7,9 +6,9 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
@@ -23,88 +22,57 @@ class DownloadScreen extends StatefulWidget {
 }
 
 class _DownloadScreenState extends State<DownloadScreen> {
-  bool dataFetched = false;
-  Map<String, Object?> allImageInfo = HashMap<String, Object?>();
-  List<FileSystemEntity> files = [];
+  List<File> files = [];
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  ScrollController? controller;
   GlobalKey<RefreshIndicatorState> refreshDownloadKey = GlobalKey<RefreshIndicatorState>();
+
   @override
   void initState() {
     super.initState();
-    dataFetched = false;
-    files = [];
     readData();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   Future<void> readData() async {
     _contentLoadTracker.start();
+    List<File> found;
     try {
       final result = await PrismMediaHostApi().listDownloads();
       if (!result.success) {
         logger.w(result.message ?? 'Unable to list downloads');
-        files = <FileSystemEntity>[];
+        found = <File>[];
       } else {
-        files = result.items.map((path) => File(path)).where((file) => file.existsSync()).toList(growable: false);
+        found = result.items.map(File.new).where((file) => file.existsSync()).toList(growable: false);
       }
     } catch (e) {
       logger.d(e.toString());
-      files = <FileSystemEntity>[];
+      found = <File>[];
     }
-    if (files.isEmpty) {
-      setState(() {
-        dataFetched = false;
-      });
-      _contentLoadTracker.success(
-        itemCount: 0,
-        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-          await analytics.track(
-            SurfaceContentLoadedEvent(
-              surface: AnalyticsSurfaceValue.downloadScreen,
-              result: EventResultValue.empty,
-              loadTimeMs: loadTimeMs,
-              sourceContext: 'download_screen_read_data',
-              itemCount: itemCount,
-            ),
-          );
-        },
-      );
-    } else {
-      setState(() {
-        dataFetched = true;
-      });
-      _contentLoadTracker.success(
-        itemCount: files.length,
-        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-          await analytics.track(
-            SurfaceContentLoadedEvent(
-              surface: AnalyticsSurfaceValue.downloadScreen,
-              result: EventResultValue.success,
-              loadTimeMs: loadTimeMs,
-              sourceContext: 'download_screen_read_data',
-              itemCount: itemCount,
-            ),
-          );
-        },
-      );
-    }
+    if (!mounted) return;
+    setState(() {
+      files = found;
+    });
+    _contentLoadTracker.success(
+      itemCount: found.length,
+      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+        await analytics.track(
+          SurfaceContentLoadedEvent(
+            surface: AnalyticsSurfaceValue.downloadScreen,
+            result: found.isEmpty ? EventResultValue.empty : EventResultValue.success,
+            loadTimeMs: loadTimeMs,
+            sourceContext: 'download_screen_read_data',
+            itemCount: itemCount,
+          ),
+        );
+      },
+    );
   }
 
-  // ignore: prefer_void_to_null
-  Future<Null> refreshList() async {
+  Future<void> refreshList() async {
     refreshDownloadKey.currentState?.show();
     setState(() {
       files = [];
-      dataFetched = false;
     });
-    readData();
-
-    return null;
+    await readData();
   }
 
   @override
@@ -120,7 +88,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
           backgroundColor: Theme.of(context).primaryColor,
           key: refreshDownloadKey,
           onRefresh: refreshList,
-          child: dataFetched
+          child: files.isNotEmpty
               ? GridView.builder(
                   shrinkWrap: true,
                   padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
@@ -135,16 +103,11 @@ class _DownloadScreenState extends State<DownloadScreen> {
                     return Stack(
                       children: [
                         Container(
-                          decoration: files.isEmpty
-                              ? BoxDecoration(
-                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                )
-                              : BoxDecoration(
-                                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                  image: DecorationImage(image: FileImage(files[index] as File), fit: BoxFit.cover),
-                                ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            image: DecorationImage(image: FileImage(files[index]), fit: BoxFit.cover),
+                          ),
                         ),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),
@@ -165,10 +128,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                                   ),
                                 );
                                 context.router.push(
-                                  DownloadWallpaperRoute(
-                                    source: WallpaperSource.downloaded,
-                                    file: File(files[index].path),
-                                  ),
+                                  DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: files[index]),
                                 );
                               },
                             ),
@@ -183,65 +143,7 @@ class _DownloadScreenState extends State<DownloadScreen> {
                   children: <Widget>[
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
-                      child: context.prismModeStyleForContext() == "Dark"
-                          ? SvgPicture.string(
-                              downloadsDark
-                                  .replaceAll(
-                                    "181818",
-                                    Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "E57697",
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                  )
-                                  .replaceAll(
-                                    "F0F0F0",
-                                    Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "2F2E41",
-                                    Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "3F3D56",
-                                    Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "2F2F2F",
-                                    Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                  ),
-                            )
-                          : SvgPicture.string(
-                              downloadsLight
-                                  .replaceAll(
-                                    "181818",
-                                    Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "E57697",
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                  )
-                                  .replaceAll(
-                                    "F0F0F0",
-                                    Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "2F2E41",
-                                    Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "3F3D56",
-                                    Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                  )
-                                  .replaceAll(
-                                    "2F2F2F",
-                                    Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                  ),
-                            ),
+                      child: SvgPicture.string(themedIllustration(context, dark: downloadsDark, light: downloadsLight)),
                     ),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,

@@ -3,13 +3,11 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -23,17 +21,14 @@ class DownloadWallpaperScreen extends StatefulWidget {
   final File file;
 
   @override
-  _DownloadWallpaperScreenState createState() => _DownloadWallpaperScreenState();
+  State<DownloadWallpaperScreen> createState() => _DownloadWallpaperScreenState();
 }
 
 class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
-  final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  late AnimationController shakeController;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late final WallpaperSource source;
-  late final File file;
+  late final AnimationController shakeController;
+  late final Animation<double> offsetAnimation;
 
-  String get _sourceContext => '${source.wireValue}_download_wallpaper_screen';
+  String get _sourceContext => '${widget.source.wireValue}_download_wallpaper_screen';
 
   void _trackAction(AnalyticsActionValue action) {
     unawaited(
@@ -43,7 +38,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
           action: action,
           sourceContext: _sourceContext,
           itemType: ItemTypeValue.wallpaper,
-          itemId: file.path,
+          itemId: widget.file.path,
         ),
       ),
     );
@@ -51,25 +46,15 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
 
   @override
   void initState() {
-    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
     super.initState();
-    source = widget.source;
-    file = widget.file;
-    _contentLoadTracker.start();
-    _contentLoadTracker.success(
-      itemCount: 1,
-      onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-        await analytics.track(
-          SurfaceContentLoadedEvent(
-            surface: AnalyticsSurfaceValue.downloadWallpaperScreen,
-            result: EventResultValue.success,
-            loadTimeMs: loadTimeMs,
-            sourceContext: _sourceContext,
-            itemCount: itemCount,
-          ),
-        );
-      },
-    );
+    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    offsetAnimation =
+        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              shakeController.reverse();
+            }
+          });
   }
 
   @override
@@ -78,37 +63,24 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
     super.dispose();
   }
 
+  void _bounce() {
+    HapticFeedback.vibrate();
+    shakeController.forward(from: 0.0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Animation<double> offsetAnimation =
-        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              shakeController.reverse();
-            }
-          });
+    final topPad = (app_state.notchSize ?? MediaQuery.paddingOf(context).top) + 8;
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Theme.of(context).primaryColor,
       body: Stack(
         children: <Widget>[
           AnimatedBuilder(
             animation: offsetAnimation,
             builder: (buildContext, child) {
-              if (offsetAnimation.value < 0.0) {
-                logger.d('${offsetAnimation.value + 8.0}');
-              }
               return GestureDetector(
-                onLongPress: () {
-                  _trackAction(AnalyticsActionValue.paletteResetLongPressed);
-                  HapticFeedback.vibrate();
-                  shakeController.forward(from: 0.0);
-                },
-                onTap: () {
-                  _trackAction(AnalyticsActionValue.paletteCycleTapped);
-                  HapticFeedback.vibrate();
-                  shakeController.forward(from: 0.0);
-                },
+                onLongPress: _bounce,
+                onTap: _bounce,
                 child: Container(
                   margin: EdgeInsets.symmetric(
                     vertical: offsetAnimation.value * 1.25,
@@ -116,7 +88,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(offsetAnimation.value),
-                    image: DecorationImage(image: FileImage(file), fit: BoxFit.cover),
+                    image: DecorationImage(image: FileImage(widget.file), fit: BoxFit.cover),
                   ),
                   height: MediaQuery.of(context).size.height,
                   width: MediaQuery.of(context).size.width,
@@ -129,13 +101,13 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: SetWallpaperButton(colorChanged: false, url: file.path),
+                child: SetWallpaperButton(colorChanged: false, url: widget.file.path),
               ),
             ),
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
+              padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
               child: IconButton(
                 tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 onPressed: () {
@@ -150,11 +122,11 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
           Align(
             alignment: Alignment.topRight,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(8.0, app_state.notchSize! + 8, 8, 8),
+              padding: EdgeInsets.fromLTRB(8.0, topPad, 8, 8),
               child: IconButton(
+                tooltip: 'Clock preview',
                 onPressed: () {
                   _trackAction(AnalyticsActionValue.clockOverlayOpened);
-                  final link = file.path;
                   Navigator.push(
                     context,
                     PageRouteBuilder(
@@ -162,7 +134,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                         animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                         return FadeTransition(
                           opacity: animation,
-                          child: ClockOverlay(colorChanged: false, accent: null, link: link, file: true),
+                          child: ClockOverlay(colorChanged: false, accent: null, link: widget.file.path, file: true),
                         );
                       },
                       fullscreenDialog: true,
