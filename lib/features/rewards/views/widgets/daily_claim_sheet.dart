@@ -153,7 +153,7 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
                   shape: const StadiumBorder(),
                   textStyle: PrismTextStyles.rowTitle(context),
                 ),
-                child: const Text('Nice'),
+                child: Text(r.streakBroken ? 'OK' : 'Nice'),
               ),
             ),
             const SizedBox(height: 4),
