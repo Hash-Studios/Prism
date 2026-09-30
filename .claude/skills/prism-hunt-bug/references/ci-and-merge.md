@@ -54,11 +54,11 @@ Do not weaken lint, the analytics schema guard, the env-define guard, the Dopple
 
 ## Hosted proof
 
-The workflow is `.github/workflows/ci.yml` with jobs `ci`, `app_size`, `functions-ci`, and
-`web-ci`. **`ci`** is the required check for merge. `app_size` only runs on PRs that touch
-app-size-relevant paths (`lib/**`, `android/**`, `pubspec.*`, `ios/**`, `assets/**`, `tool/**`,
-`.fvmrc`, the workflow file itself); a skip there for an unrelated change is expected, not a
-gap. `functions-ci` and `web-ci` run unconditionally on every push/PR.
+The workflow is `.github/workflows/ci.yml`. It runs on non-draft PRs only. The `changes` job
+path-filters `flutter`, `functions`, `web`, `rules`, and `app_size`; a change to the workflow
+file runs them all. **`ci`** aggregates `flutter`, `functions`, `web`, and `rules` and is the
+required check for merge. A job skipped for an unrelated change is expected, not a gap.
+`app_size` is not required.
 
 After pushing, read the PR's current `headRefOid`, base, draft state, and checks:
 
