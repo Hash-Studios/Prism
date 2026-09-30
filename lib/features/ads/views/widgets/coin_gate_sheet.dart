@@ -23,56 +23,58 @@ Future<T?> showCoinGateSheet<T>(
 }) {
   return showPrismSheet<T>(
     context: context,
-    backgroundColor: Theme.of(context).primaryColor,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (sheetContext) {
       final int missing = (cost - CoinsService.instance.balanceNotifier.value).clamp(0, cost);
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 32,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(sheetContext).hintColor,
-                borderRadius: BorderRadius.circular(99),
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(sheetContext).hintColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            if (missing > 0) ...[const Glint(mood: GlintMood.worried, size: 72), const SizedBox(height: 8)],
-            Text(title, style: PrismTextStyles.sheetHeadline(sheetContext)),
-            const SizedBox(height: 10),
-            Text(message(missing), textAlign: TextAlign.center, style: PrismTextStyles.body(sheetContext)),
-            const SizedBox(height: 16),
-            for (final (int index, CoinGateOption<T> option) in options.indexed) ...[
-              if (index > 0) const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: option.outlined
-                    ? OutlinedButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(option.value),
-                        child: Text(option.label),
-                      )
-                    : FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(option.value),
-                        child: Text(option.label),
-                      ),
-              ),
+              const SizedBox(height: 16),
+              if (missing > 0) ...[const Glint(mood: GlintMood.worried, size: 72), const SizedBox(height: 8)],
+              Text(title, style: PrismTextStyles.sheetHeadline(sheetContext)),
+              const SizedBox(height: 10),
+              Text(message(missing), textAlign: TextAlign.center, style: PrismTextStyles.body(sheetContext)),
+              const SizedBox(height: 16),
+              for (final (int index, CoinGateOption<T> option) in options.indexed) ...[
+                if (index > 0) const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: option.outlined
+                      ? OutlinedButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(option.value),
+                          child: Text(option.label),
+                        )
+                      : FilledButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(option.value),
+                          child: Text(option.label),
+                        ),
+                ),
+              ],
+              if (missing > 0) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    final StackRouter router = context.router;
+                    Navigator.of(sheetContext).pop();
+                    router.pushPath('/rewards');
+                  },
+                  child: const Text('Earn coins'),
+                ),
+              ],
             ],
-            if (missing > 0) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () {
-                  final StackRouter router = context.router;
-                  Navigator.of(sheetContext).pop();
-                  router.pushPath('/rewards');
-                },
-                child: const Text('Earn coins'),
-              ),
-            ],
-          ],
+          ),
         ),
       );
     },

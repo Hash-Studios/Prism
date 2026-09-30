@@ -33,12 +33,12 @@ class BalanceCard extends StatelessWidget {
               builder: (context, balance, _) => Semantics(
                 label: '$balance Prism coins',
                 excludeSemantics: true,
-                child: Row(
+                child: Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
                     const PrismCoinIcon(size: 36),
-                    const SizedBox(width: 14),
                     Text('$balance', style: PrismTextStyles.numeral(context, 40).copyWith(letterSpacing: -0.4)),
-                    const SizedBox(width: 8),
                     Text('coins', style: PrismTextStyles.body(context)),
                   ],
                 ),
@@ -56,7 +56,7 @@ class BalanceCard extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text('What you can do with them', style: PrismTextStyles.rowTitle(context)),
+                      Expanded(child: Text('What you can do with them', style: PrismTextStyles.rowTitle(context))),
                       Container(
                         width: 32,
                         height: 32,

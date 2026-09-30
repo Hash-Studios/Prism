@@ -18,10 +18,6 @@ abstract final class PrismColors {
   /// Foreground color on primary / app-bar surfaces.
   /// Always white so that content stays legible regardless of the active theme.
   static const Color onPrimary = Colors.white;
-
-  /// Green for coins gained (activity amounts). Differs by brightness for contrast.
-  static Color coinGain(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark ? const Color(0xFF7CF0C0) : const Color(0xFF1E9E6A);
 }
 
 /// Font family name constants.

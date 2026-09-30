@@ -73,9 +73,9 @@ class _HeroCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text('STREAK', style: PrismTextStyles.eyebrow(context)),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
+                        Wrap(
+                          spacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.end,
                           children: <Widget>[
                             TweenAnimationBuilder<double>(
                               tween: Tween<double>(end: count.toDouble()),
@@ -86,7 +86,6 @@ class _HeroCard extends StatelessWidget {
                                 style: PrismTextStyles.numeral(context, 64).copyWith(letterSpacing: -1),
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Text(count == 1 ? 'day' : 'days', style: PrismTextStyles.body(context)),
                           ],
                         ),
@@ -107,7 +106,7 @@ class _HeroCard extends StatelessWidget {
               children: <Widget>[
                 Icon(Icons.card_giftcard_rounded, size: 15, color: cs.onSurface.withValues(alpha: 0.55)),
                 const SizedBox(width: 7),
-                Text('Finish day 7 for a +${CoinPolicy.streak7Bonus} week bonus', style: caption),
+                Expanded(child: Text('Finish day 7 for a +${CoinPolicy.streak7Bonus} week bonus', style: caption)),
               ],
             ),
           ],

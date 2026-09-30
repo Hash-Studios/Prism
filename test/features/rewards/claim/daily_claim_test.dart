@@ -6,6 +6,7 @@ import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/coins_test_backend.dart';
@@ -52,8 +53,23 @@ void _tall(WidgetTester tester) {
 final List<ThemeData> _themes = [ThemeData.light(), ThemeData.dark()];
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final backend = CoinsTestBackend();
-  tearDown(() => CoinsService.instance.consumeLastClaim());
+
+  setUpAll(() async {
+    await (FontLoader('Proxima Nova')
+          ..addFont(rootBundle.load('assets/fonts/ProximaNova-Regular.otf'))
+          ..addFont(rootBundle.load('assets/fonts/Proxima Nova Bold.otf'))
+          ..addFont(rootBundle.load('assets/fonts/Proxima Nova Extrabold.otf')))
+        .load();
+    await (FontLoader('Fraunces')..addFont(rootBundle.load('assets/fonts/Fraunces-Variable.ttf'))).load();
+  });
+
+  tearDown(() async {
+    CoinsService.instance.consumeLastClaim();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await getIt.reset();
+  });
 
   testWidgets('week-complete sheet does not overflow at 320x568 with text scale 1.3', (tester) async {
     tester.view.physicalSize = const Size(320, 568);
@@ -82,6 +98,63 @@ void main() {
     await tester.scrollUntilVisible(find.text('See rewards'), 100, scrollable: find.byType(Scrollable).last);
     expect(find.text('Nice'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('claim sheet variants keep both actions reachable at 320px and text scale 1.3', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    bool sawRewards = false;
+    StreakClaimResult current = _r();
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDailyClaimSheet(context, current, onSeeRewards: () => sawRewards = true),
+              child: const Text('go'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    for (final StreakClaimResult result in <StreakClaimResult>[
+      _r(),
+      _r(day: 7, count: 7, week: true, bonus: 40),
+      _r(broken: true, daily: 5),
+      _r(freezesUsed: 1, count: 20),
+      _r(milestone: 30),
+    ]) {
+      current = result;
+      await tester.tap(find.text('go'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
+
+      final Finder primary = find.text(result.streakBroken ? 'OK' : 'Nice');
+      await tester.ensureVisible(primary);
+      expect(primary, findsOneWidget);
+      await tester.tap(primary);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.text('go'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      final Finder secondary = find.text(result.streakBroken ? 'Get a freeze for next time' : 'See rewards');
+      await tester.ensureVisible(secondary);
+      expect(secondary, findsOneWidget);
+      await tester.tap(secondary);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+    }
+    expect(sawRewards, isTrue);
   });
 
   for (final ThemeData theme in _themes) {
@@ -212,7 +285,7 @@ void main() {
     await backend.install();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'user-2'
+      ..id = 'other-${backend.userId}'
       ..loggedIn = true;
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump(const Duration(seconds: 2));
