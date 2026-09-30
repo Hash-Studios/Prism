@@ -35,14 +35,11 @@ class FirestoreDocument {
   String get widget2 => _string('widget2');
   String get widgetUrl => _string('widget_url');
   String get widgetUrl2 => _string('widget_url2');
-  String get link => _string('link');
   bool get review => _bool('review');
   String get resolution => _string('resolution');
   String get size => _string('size');
-  List<String> get collections => _stringList('collections');
 
   Map<String, dynamic> data() => payload;
-  dynamic operator [](String key) => payload[key];
 
   String _string(String key) => payload[key]?.toString() ?? '';
 
@@ -70,13 +67,5 @@ class FirestoreDocument {
       return null;
     }
     return DateTime.tryParse(raw);
-  }
-
-  List<String> _stringList(String key) {
-    final value = payload[key];
-    if (value is List) {
-      return value.map((entry) => entry?.toString() ?? '').where((entry) => entry.isNotEmpty).toList(growable: false);
-    }
-    return const <String>[];
   }
 }
