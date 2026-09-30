@@ -881,142 +881,136 @@ class _UploadSetupScreenState extends State<UploadSetupScreen> {
                     ),
                   ),
                 )
-              else
-                groupValue == 1
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                        child: FloatingActionButton.extended(
-                          backgroundColor: wallpaperUploaded == true
-                              ? Theme.of(context).hintColor
-                              : Theme.of(context).colorScheme.error,
-                          onPressed: wallpaperUploaded == true
-                              ? null
-                              : () async {
-                                  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-                                  if (!mounted) return;
-                                  if (pickedFile != null) {
-                                    Future.delayed(Duration.zero).then((value) async {
-                                      if (!context.mounted) return;
-                                      final argumentsFromWall = await context.router.push(
-                                        UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
-                                      );
-                                      if (argumentsFromWall != null) {
-                                        final List argsC = argumentsFromWall as List;
-                                        if (argsC.length == 2) {
-                                          setState(() {
-                                            wallpaperUploadLink = argsC[0].toString();
-                                            wallpaperId = argsC[1].toString();
-                                            wallpaperUploaded = true;
-                                          });
-                                        }
-                                      }
+              else if (groupValue == 1)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                  child: FloatingActionButton.extended(
+                    backgroundColor: wallpaperUploaded == true
+                        ? Theme.of(context).hintColor
+                        : Theme.of(context).colorScheme.error,
+                    onPressed: wallpaperUploaded == true
+                        ? null
+                        : () async {
+                            final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                            if (!mounted) return;
+                            if (pickedFile != null) {
+                              Future.delayed(Duration.zero).then((value) async {
+                                if (!context.mounted) return;
+                                final argumentsFromWall = await context.router.push(
+                                  UploadWallRoute(image: File(pickedFile.path), fromSetupRoute: true),
+                                );
+                                if (argumentsFromWall != null) {
+                                  final List argsC = argumentsFromWall as List;
+                                  if (argsC.length == 2) {
+                                    setState(() {
+                                      wallpaperUploadLink = argsC[0].toString();
+                                      wallpaperId = argsC[1].toString();
+                                      wallpaperUploaded = true;
                                     });
                                   }
-                                },
-                          label: Text(
-                            wallpaperUploaded == true ? "Uploaded" : "Upload",
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.normal,
-                            ),
-                          ),
-                          icon: Icon(JamIcons.upload, color: Theme.of(context).colorScheme.secondary),
+                                }
+                              });
+                            }
+                          },
+                    label: Text(
+                      wallpaperUploaded == true ? "Uploaded" : "Upload",
+                      style: TextStyle(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.normal),
+                    ),
+                    icon: Icon(JamIcons.upload, color: Theme.of(context).colorScheme.secondary),
+                  ),
+                )
+              else
+                Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
                         ),
-                      )
-                    : Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor,
-                              ),
-                              child: TextField(
-                                cursorColor: Theme.of(context).colorScheme.error,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                controller: wallpaperAppName,
-                                focusNode: textFocusNode,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                  border: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  hintText: "Write wallpaper app name...",
-                                  hintStyle: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                  suffixIcon: Icon(JamIcons.android, color: Theme.of(context).colorScheme.secondary),
-                                ),
-                              ),
-                            ),
+                        child: TextField(
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: wallpaperAppName,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write wallpaper app name...",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: Icon(JamIcons.android, color: Theme.of(context).colorScheme.secondary),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor,
-                              ),
-                              child: TextField(
-                                cursorColor: Theme.of(context).colorScheme.error,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                controller: wallpaperAppLink,
-                                focusNode: textFocusNode,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                  border: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  hintText: "Write app link...",
-                                  hintStyle: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                  suffixIcon: Icon(
-                                    JamIcons.google_play,
-                                    color: Theme.of(context).colorScheme.secondary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(500),
-                                color: Theme.of(context).hintColor,
-                              ),
-                              child: TextField(
-                                cursorColor: Theme.of(context).colorScheme.error,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                controller: wallpaperAppWallName,
-                                focusNode: textFocusNode,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                                  border: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  hintText: "Write wallpaper name",
-                                  hintStyle: Theme.of(
-                                    context,
-                                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                  suffixIcon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
+                        ),
+                        child: TextField(
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: wallpaperAppLink,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write app link...",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: Icon(JamIcons.google_play, color: Theme.of(context).colorScheme.secondary),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(500),
+                          color: Theme.of(context).hintColor,
+                        ),
+                        child: TextField(
+                          cursorColor: Theme.of(context).colorScheme.error,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                          controller: wallpaperAppWallName,
+                          focusNode: textFocusNode,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.only(left: 30, top: 15),
+                            border: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            hintText: "Write wallpaper name",
+                            hintStyle: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            suffixIcon: Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           const Divider(height: 1),
