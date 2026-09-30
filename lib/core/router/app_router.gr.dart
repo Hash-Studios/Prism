@@ -791,7 +791,7 @@ class ReviewRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return ReviewScreen();
+      return const ReviewScreen();
     },
   );
 }
