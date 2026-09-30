@@ -490,14 +490,18 @@ class _DownloadButtonState extends State<DownloadButton> {
           premiumContent: widget.isPremiumContent,
         ),
       );
-      if (mounted) {
-        await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
-          context,
-          sourceTag: 'notifications.permission_after_download',
-        );
-      }
       toasts.codeSend(wallpaperSavedMessage);
       widget.onDownloaded?.call();
+      if (mounted) {
+        try {
+          await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+            context,
+            sourceTag: 'notifications.permission_after_download',
+          );
+        } catch (e, stackTrace) {
+          logger.w('Notification permission prompt after download failed', error: e, stackTrace: stackTrace);
+        }
+      }
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {

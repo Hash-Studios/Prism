@@ -4,6 +4,7 @@ import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 
 /// Where a candidate came from. The prior discounts sources further from the
 /// user's own network, like X's out-of-network discount.
@@ -74,7 +75,8 @@ class PersonalizedRankingService {
   }) {
     final Map<String, _Scored> byKey = <String, _Scored>{};
     for (final RankingCandidate candidate in candidates) {
-      if (excludedKeys.contains(candidate.key)) {
+      if (excludedKeys.contains(candidate.key) ||
+          (recentShows[candidate.key] ?? 0) >= FeedImpressionStore.hiddenShows) {
         continue;
       }
       final _Scored scored = _score(candidate, profile, recentShows[candidate.key] ?? 0, random, now);
@@ -137,7 +139,7 @@ class PersonalizedRankingService {
     return _Scored(
       candidate: candidate,
       score: candidate.pool.prior * base * fatigue * noise,
-      explore: taste <= 0 && creator <= 0,
+      explore: taste == 0 && creator == 0,
     );
   }
 

@@ -25,7 +25,8 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   static const int _feedTtlHours = 6;
 
   @override
-  bool hasMoreForCategory(String categoryName) => _hasMoreMap[categoryName] ?? true;
+  bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
+      _hasMoreMap[paginationKey ?? categoryName] ?? true;
 
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -34,13 +35,15 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     int categories = 100,
     int purity = 100,
     int startPage = 1,
+    String? paginationKey,
   }) async {
+    final String pageKey = paginationKey ?? categoryName;
     if (refresh) {
-      _pageNumbers[categoryName] = startPage;
-      _hasMoreMap[categoryName] = true;
+      _pageNumbers[pageKey] = startPage;
+      _hasMoreMap[pageKey] = true;
     }
 
-    final int page = _pageNumbers[categoryName] ?? 1;
+    final int page = _pageNumbers[pageKey] ?? 1;
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
       'q': categoryName,
       'page': page.toString(),
@@ -58,6 +61,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       if (response.statusCode != 200) {
         return await _cachedOrFailure(
           categoryName: categoryName,
+          paginationKey: paginationKey,
           categories: categories,
           purity: purity,
           failure: ServerFailure(
@@ -74,10 +78,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
 
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
 
-      _pageNumbers[categoryName] = currentPage + 1;
-      _hasMoreMap[categoryName] = hasMore;
+      _pageNumbers[pageKey] = currentPage + 1;
+      _hasMoreMap[pageKey] = hasMore;
       await _writeCache(
         categoryName: categoryName,
+        paginationKey: paginationKey,
         categories: categories,
         purity: purity,
         payload: payload,
@@ -91,7 +96,12 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = await _readCached(categoryName: categoryName, categories: categories, purity: purity);
+      final cached = await _readCached(
+        categoryName: categoryName,
+        categories: categories,
+        purity: purity,
+        paginationKey: paginationKey,
+      );
       if (cached != null) {
         logger.w(
           '[WallhavenWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -203,9 +213,15 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     required String categoryName,
     required int categories,
     required int purity,
+    String? paginationKey,
     required Failure failure,
   }) async {
-    final cached = await _readCached(categoryName: categoryName, categories: categories, purity: purity);
+    final cached = await _readCached(
+      categoryName: categoryName,
+      categories: categories,
+      purity: purity,
+      paginationKey: paginationKey,
+    );
     if (cached != null) {
       logger.w(
         '[WallhavenWallpaperRepository] remote status failed; returning cached snapshot',
@@ -220,13 +236,14 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     required String categoryName,
     required int categories,
     required int purity,
+    String? paginationKey,
     required WallhavenSearchResponseDto payload,
     required int nextPage,
     required bool hasMore,
   }) {
     return _feedCacheLocal.write(
       source: 'wallhaven',
-      scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
+      scope: _scope(categoryName: categoryName, categories: categories, purity: purity, paginationKey: paginationKey),
       ttlHours: _feedTtlHours,
       payload: <String, Object?>{
         'payload': jsonDecode(jsonEncode(payload.toJson())),
@@ -240,10 +257,11 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     required String categoryName,
     required int categories,
     required int purity,
+    String? paginationKey,
   }) async {
     final snapshot = await _feedCacheLocal.read(
       source: 'wallhaven',
-      scope: _scope(categoryName: categoryName, categories: categories, purity: purity),
+      scope: _scope(categoryName: categoryName, categories: categories, purity: purity, paginationKey: paginationKey),
     );
     if (snapshot == null || snapshot.payload is! Map) {
       return null;
@@ -261,13 +279,17 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       return null;
     }
 
-    _pageNumbers[categoryName] = (map['nextPage'] as num?)?.toInt() ?? (_pageNumbers[categoryName] ?? 1);
-    _hasMoreMap[categoryName] = map['hasMore'] == true;
+    final String pageKey = paginationKey ?? categoryName;
+    _pageNumbers[pageKey] = (map['nextPage'] as num?)?.toInt() ?? (_pageNumbers[pageKey] ?? 1);
+    _hasMoreMap[pageKey] = map['hasMore'] == true;
     return walls;
   }
 
-  String _scope({required String categoryName, required int categories, required int purity}) {
-    final normalizedCategory = categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
+  String _scope({required String categoryName, required int categories, required int purity, String? paginationKey}) {
+    final String cacheKey = paginationKey == null || paginationKey == categoryName
+        ? categoryName
+        : '$categoryName.$paginationKey';
+    final normalizedCategory = cacheKey.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
     return '$normalizedCategory.$categories.$purity';
   }
 }

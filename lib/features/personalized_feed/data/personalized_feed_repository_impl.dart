@@ -69,6 +69,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
   /// Reused on `page > 1` to avoid Remote Config + Firestore user doc on every scroll page.
   String? _bootstrapScope;
+  Future<void>? _tasteSeedInFlight;
   List<PersonalizedInterest> _catalog = const <PersonalizedInterest>[];
   List<String> _interests = const <String>[];
   List<String> _following = const <String>[];
@@ -95,9 +96,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
     try {
       if (request.refresh || _bootstrapScope != cacheScope) {
-        final Map<String, dynamic> userDoc = isGuest
-            ? const <String, dynamic>{}
-            : await _resolveUserDoc(userId: userId);
+        Map<String, dynamic> userDoc = const <String, dynamic>{};
+        if (!isGuest) {
+          try {
+            userDoc = await _resolveUserDoc(userId: userId);
+          } catch (error) {
+            logger.w('[PersonalizedFeed] user profile source failed: $error');
+          }
+        }
         _catalog = await PersonalizedInterestsCatalog.load(
           remoteConfig: FirebaseRemoteConfig.instance,
           settingsLocal: _settingsLocal,
@@ -119,13 +125,48 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       );
       final FeedMix mix = FeedMix.parse(_settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
+      int successfulSources = 0;
+      int failedSources = 0;
+      final List<String> tasteCategories = _tasteCategories(profile);
       final List<List<RankingCandidate>> pools = await Future.wait(<Future<List<RankingCandidate>>>[
-        _pool(CandidatePool.following, _fetchCreatorItems(following: _following, page: request.page)),
-        _pool(CandidatePool.fresh, _fetchFreshItems()),
-        _pool(CandidatePool.gems, _randomWallSlice(sourceTag: 'personalized.gems', limit: 30)),
-        _pool(CandidatePool.taste, _fetchTasteItems(profile)),
-        _fetchExternal(WallpaperSource.wallhaven, refresh: request.refresh, maxQueries: 3),
-        _fetchExternal(WallpaperSource.pexels, refresh: request.refresh, maxQueries: 2),
+        _pool(
+          CandidatePool.following,
+          _fetchCreatorItems(following: _following, page: request.page),
+          onSuccess: _following.isEmpty ? null : () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _pool(
+          CandidatePool.fresh,
+          _fetchFreshItems(),
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _pool(
+          CandidatePool.gems,
+          _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _pool(
+          CandidatePool.taste,
+          _fetchTasteItems(tasteCategories),
+          onSuccess: tasteCategories.isEmpty ? null : () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _fetchExternal(
+          WallpaperSource.wallhaven,
+          refresh: request.refresh,
+          maxQueries: 3,
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _fetchExternal(
+          WallpaperSource.pexels,
+          refresh: request.refresh,
+          maxQueries: 2,
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
       ]);
 
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
@@ -133,16 +174,25 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           .expand((pool) => pool)
           .where((c) => !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked))
           .toList(growable: false);
+      if (successfulSources == 0) {
+        throw StateError('Personalized feed sources failed without candidates');
+      }
 
       final PersonalizedRankingResult ranking = _rankingService.rank(
         candidates: candidates,
         profile: profile,
         recentShows: _impressions.recentShows(now),
-        excludedKeys: request.seenKeys.toSet(),
+        excludedKeys: <String>{
+          ...request.seenKeys,
+          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
+        },
         mix: mix,
         random: _random,
         now: now,
       );
+      if (failedSources > 0 && ranking.items.isEmpty) {
+        throw StateError('Personalized feed sources failed without ranked candidates');
+      }
       await _impressions.recordShown(ranking.usedKeys, now);
 
       final List<FeedItemEntity> merged = _mergeCachedAndNew(
@@ -178,12 +228,19 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
       final List<FeedItemEntity> cachedItems = await _readCachedItems(scope: cacheScope);
       if (cachedItems.isNotEmpty) {
+        final Set<String> excluded = <String>{
+          ...request.seenKeys,
+          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
+        };
+        final List<FeedItemEntity> unseenCachedItems = cachedItems
+            .where((item) => !excluded.contains(PersonalizedRankingService.canonicalKey(item)))
+            .toList(growable: false);
         return Result.success(
           PersonalizedFeedPage(
-            items: cachedItems,
-            hasMore: true,
-            usedKeys: cachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
-            sourceCounts: _countSources(cachedItems),
+            items: unseenCachedItems,
+            hasMore: unseenCachedItems.isNotEmpty,
+            usedKeys: unseenCachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+            sourceCounts: _countSources(unseenCachedItems),
           ),
         );
       }
@@ -192,11 +249,19 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   /// One failing source must not empty the whole feed.
-  Future<List<RankingCandidate>> _pool(CandidatePool pool, Future<List<FeedItemEntity>> items) async {
+  Future<List<RankingCandidate>> _pool(
+    CandidatePool pool,
+    Future<List<FeedItemEntity>> items, {
+    void Function()? onSuccess,
+    required void Function() onFailure,
+  }) async {
     try {
-      return (await items).map((item) => RankingCandidate(item: item, pool: pool)).toList(growable: false);
+      final List<FeedItemEntity> result = await items;
+      onSuccess?.call();
+      return result.map((item) => RankingCandidate(item: item, pool: pool)).toList(growable: false);
     } catch (error) {
       logger.w('[PersonalizedFeed] ${pool.name} source failed: $error');
+      onFailure();
       return const <RankingCandidate>[];
     }
   }
@@ -207,37 +272,52 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     if (_tasteSignals.isSeeded) {
       return;
     }
-    final Result<List<FavouriteWallEntity>> result = await _favouriteWallsRepository.fetchFavourites(userId: userId);
-    if (result.isFailure) {
-      return;
+    final Future<void> seeding = _tasteSeedInFlight ??= _loadTasteFromFavourites(userId);
+    try {
+      await seeding.timeout(const Duration(seconds: 1));
+    } catch (error) {
+      logger.w('[PersonalizedFeed] favourite taste seed failed: $error');
     }
-    final DateTime now = DateTime.now().toUtc();
-    final List<TasteSignal> signals = <TasteSignal>[
-      for (final FavouriteWallEntity fav in result.data ?? const <FavouriteWallEntity>[])
-        ?switch (fav) {
-          PrismFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
-            TasteAction.favourite,
-            wallpaper.core,
-            tags: wallpaper.tags,
-            collections: wallpaper.collections,
-            at: fav.createdAt ?? now,
-          ),
-          WallhavenFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
-            TasteAction.favourite,
-            wallpaper.core,
-            tags: wallpaper.tags,
-            at: now,
-          ),
-          PexelsFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
-            TasteAction.favourite,
-            wallpaper.core,
-            at: now,
-          ),
-          _ => null,
-        },
-    ];
-    await _tasteSignals.recordAll(signals);
-    await _tasteSignals.markSeeded();
+  }
+
+  Future<void> _loadTasteFromFavourites(String userId) async {
+    try {
+      final Result<List<FavouriteWallEntity>> result = await _favouriteWallsRepository.fetchFavourites(userId: userId);
+      if (result.isFailure || _tasteSignals.isSeeded) {
+        return;
+      }
+      final DateTime now = DateTime.now().toUtc();
+      final List<TasteSignal> signals = <TasteSignal>[
+        for (final FavouriteWallEntity fav in result.data ?? const <FavouriteWallEntity>[])
+          ?switch (fav) {
+            PrismFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+              TasteAction.favourite,
+              wallpaper.core,
+              tags: wallpaper.tags,
+              collections: wallpaper.collections,
+              at: fav.createdAt ?? now,
+            ),
+            WallhavenFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+              TasteAction.favourite,
+              wallpaper.core,
+              tags: wallpaper.tags,
+              at: now,
+            ),
+            PexelsFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+              TasteAction.favourite,
+              wallpaper.core,
+              at: now,
+            ),
+            _ => null,
+          },
+      ];
+      await _tasteSignals.recordAll(signals);
+      await _tasteSignals.markSeeded();
+    } catch (error) {
+      logger.w('[PersonalizedFeed] favourite taste seed failed: $error');
+    } finally {
+      _tasteSeedInFlight = null;
+    }
   }
 
   Future<Map<String, dynamic>> _resolveUserDoc({required String userId}) async {
@@ -363,11 +443,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   );
 
   /// Walls from the taste's top categories, from a random point in each.
-  Future<List<FeedItemEntity>> _fetchTasteItems(TasteProfile profile) async {
-    final List<String> categories = <String>{
-      for (final String term in profile.topTerms(6))
-        ?_wallCategories.where((c) => term.contains(c.toLowerCase()) || c.toLowerCase().contains(term)).firstOrNull,
-    }.toList()..shuffle(_random);
+  List<String> _tasteCategories(TasteProfile profile) => <String>{
+    for (final String term in profile.topTerms(6))
+      ?_wallCategories.where((c) => term.contains(c.toLowerCase()) || c.toLowerCase().contains(term)).firstOrNull,
+  }.toList()..shuffle(_random);
+
+  Future<List<FeedItemEntity>> _fetchTasteItems(List<String> categories) async {
     final List<List<FeedItemEntity>> slices = await Future.wait(
       categories
           .take(2)
@@ -422,6 +503,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     WallpaperSource source, {
     required bool refresh,
     required int maxQueries,
+    required void Function() onSuccess,
+    required void Function() onFailure,
   }) async {
     final Set<String> picked = _interests.map((e) => e.toLowerCase()).toSet();
     List<PersonalizedInterest> entries = _catalog
@@ -433,19 +516,25 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     entries.shuffle(_random);
 
     final CandidatePool pool = source == WallpaperSource.wallhaven ? CandidatePool.wallhaven : CandidatePool.pexels;
+    int succeeded = 0;
     final List<List<RankingCandidate>> results = await Future.wait(
       entries.take(maxQueries).map((entry) async {
         try {
           final List<FeedItemEntity> items = await _fetchExternalPage(source, entry.query, refresh: refresh);
+          succeeded++;
           return items
               .map((item) => RankingCandidate(item: item, pool: pool, extraTerms: <String>[entry.name]))
               .toList(growable: false);
         } catch (error) {
           logger.w('[PersonalizedFeed] ${source.name} "${entry.query}" failed: $error');
+          onFailure();
           return const <RankingCandidate>[];
         }
       }),
     );
+    if (succeeded > 0) {
+      onSuccess();
+    }
     return results.expand((e) => e).toList(growable: false);
   }
 
@@ -456,14 +545,26 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           categoryName: query,
           refresh: refresh,
           startPage: startPage,
+          paginationKey: 'personalized:$query',
           categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
           purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
         );
+        if (result.isFailure) {
+          throw StateError('Wallhaven feed request failed');
+        }
         return (result.data ?? const <WallhavenWallpaper>[])
             .map((wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall))
             .toList(growable: false);
       }
-      final result = await _pexelsRepository.fetchFeed(categoryName: query, refresh: refresh, startPage: startPage);
+      final result = await _pexelsRepository.fetchFeed(
+        categoryName: query,
+        refresh: refresh,
+        startPage: startPage,
+        paginationKey: 'personalized:$query',
+      );
+      if (result.isFailure) {
+        throw StateError('Pexels feed request failed');
+      }
       return (result.data ?? const <PexelsWallpaper>[])
           .map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall))
           .toList(growable: false);
@@ -511,7 +612,12 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         .whereType<FeedItemEntity>()
         .toList(growable: false);
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    return BlockedCreatorsFilter.filterFeedItems(items, blocked);
+    final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
+    return BlockedCreatorsFilter.filterFeedItems(items, blocked)
+        .where(
+          (item) => (recentShows[PersonalizedRankingService.canonicalKey(item)] ?? 0) < FeedImpressionStore.hiddenShows,
+        )
+        .toList(growable: false);
   }
 
   Future<void> _writeCachedItems({required String scope, required List<FeedItemEntity> cachedItems}) {

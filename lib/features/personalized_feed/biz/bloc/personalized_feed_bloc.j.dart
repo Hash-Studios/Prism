@@ -68,6 +68,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   final PersonalizedFeedRepository _repository;
   final UserBlockRepository _userBlockRepository;
   StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  int _loadVersion = 0;
 
   void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<PersonalizedFeedState> emit) {
     if (event.blocked.isEmpty) {
@@ -125,6 +126,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress, failure: null));
 
+    final int loadVersion = _loadVersion;
     final nextPage = state.page + 1;
     final loadMoreStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
@@ -136,6 +138,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
       ),
     );
     final loadMoreMs = _elapsedLoadMs(loadMoreStopwatch);
+    if (loadVersion != _loadVersion || emit.isDone) return;
 
     result.fold(
       onSuccess: (page) {
@@ -185,6 +188,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   }
 
   Future<void> _load(Emitter<PersonalizedFeedState> emit, {required bool refresh}) async {
+    final int loadVersion = ++_loadVersion;
     final baseState = refresh
         ? state.copyWith(
             status: LoadStatus.loading,
@@ -209,6 +213,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
       ),
     );
     final initialLoadMs = _elapsedLoadMs(initialStopwatch);
+    if (loadVersion != _loadVersion || emit.isDone) return;
 
     result.fold(
       onSuccess: (page) {
