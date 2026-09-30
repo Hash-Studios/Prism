@@ -39,6 +39,7 @@ abstract final class _AiGenSpace {
   static const double xl = 24;
 }
 
+@RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
   const AiWallpaperTabPage({super.key});
 

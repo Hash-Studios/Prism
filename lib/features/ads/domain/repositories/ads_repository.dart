@@ -6,8 +6,4 @@ abstract class AdsRepository {
   Future<Result<AdsEntity>> createRewardedAd();
 
   Future<Result<AdsEntity>> showRewardedAd();
-
-  Future<Result<AdsEntity>> addReward({required num rewardAmount});
-
-  Future<Result<AdsEntity>> reset();
 }

@@ -43,23 +43,7 @@ class AdminReviewRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [AdsNotLoading]
-class AdsNotLoadingRoute extends PageRouteInfo<void> {
-  const AdsNotLoadingRoute({List<PageRouteInfo>? children})
-    : super(AdsNotLoadingRoute.name, initialChildren: children);
-
-  static const String name = 'AdsNotLoadingRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const AdsNotLoading();
-    },
-  );
-}
-
-/// generated route for
-/// [AiTabPage]
+/// [AiWallpaperTabPage]
 class AiTabRoute extends PageRouteInfo<void> {
   const AiTabRoute({List<PageRouteInfo>? children})
     : super(AiTabRoute.name, initialChildren: children);
@@ -69,7 +53,7 @@ class AiTabRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AiTabPage();
+      return const AiWallpaperTabPage();
     },
   );
 }
