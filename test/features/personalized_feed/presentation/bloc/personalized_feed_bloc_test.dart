@@ -1,3 +1,5 @@
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -10,6 +12,7 @@ import 'package:Prism/features/personalized_feed/domain/usecases/personalized_fe
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../../support/fake_app_analytics.dart';
 import '../../../../support/fake_user_block_repository.dart';
 
 class _MockFetchPersonalizedFeedUseCase extends Mock implements FetchPersonalizedFeedUseCase {}
@@ -79,5 +82,55 @@ void main() {
 
     expect(bloc.state.items.map((e) => e.id), <String>['2']);
     verify(() => fetchUseCase(any())).called(1);
+  });
+
+  test('the first load and a refresh report their own source context', () async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(
+        PersonalizedFeedPage(items: <FeedItemEntity>[_prismItem('1', authorEmail: 'kept@example.com')], hasMore: false),
+      ),
+    );
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+
+    bloc.add(const PersonalizedFeedEvent.started());
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const PersonalizedFeedEvent.refreshRequested());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(analytics.events.whereType<SurfaceContentLoadedEvent>().map((event) => event.sourceContext), <String>[
+      'personalized_feed_initial',
+      'personalized_feed_refresh',
+    ]);
+  });
+
+  test('fetching more advances the page and keeps one copy of a repeated wallpaper', () async {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(AnalyticsRuntime.reset);
+    when(() => fetchUseCase(any())).thenAnswer((invocation) async {
+      final request = invocation.positionalArguments.single as FetchPersonalizedFeedRequest;
+      final ids = request.page == 1 ? <String>['1', '2'] : <String>['2', '3'];
+      return Result.success(
+        PersonalizedFeedPage(
+          items: <FeedItemEntity>[for (final id in ids) _prismItem(id, authorEmail: 'kept@example.com')],
+          hasMore: request.page == 1,
+          usedKeys: ids,
+        ),
+      );
+    });
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+
+    bloc.add(const PersonalizedFeedEvent.started());
+    await Future<void>.delayed(Duration.zero);
+    bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.page, 2);
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2', '3']);
+    expect(bloc.state.hasMore, isFalse);
   });
 }
