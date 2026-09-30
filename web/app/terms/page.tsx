@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Section } from "@/components/legal/section";
 import { Footer } from "@/components/sections/footer";
 import { Header } from "@/components/sections/header";
-import { APP_NAME, EFFECTIVE_DATE, SITE_URL } from "@/lib/site-config";
+import { APP_NAME, CONTACT_EMAIL, EFFECTIVE_DATE, SITE_URL } from "@/lib/site-config";
 
-const CONTACT_EMAIL = "hash.studios.inc@gmail.com";
 
 const title = `Terms of Use | ${APP_NAME}`;
 const description = `The Terms of Use (EULA) for ${APP_NAME} by Hash Studios, covering accounts, content, purchases and Prism Coins.`;
