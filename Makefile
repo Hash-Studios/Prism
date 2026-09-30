@@ -61,6 +61,8 @@ ifeq ($(CI),true)
   FLUTTER := flutter
   DART := dart
   ANALYZE_FLAGS := --no-fatal-infos
+  # flutter test defaults to half the cores; the CI runner is otherwise idle.
+  TEST_FLAGS := --concurrency=$(shell getconf _NPROCESSORS_ONLN)
 else
   FLUTTER := fvm flutter
   DART := fvm dart
@@ -296,7 +298,7 @@ ci: get format-check env-guard secrets-guard version-guard analytics-check analy
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test; \
+		$(FLUTTER) test $(TEST_FLAGS); \
 	else \
 		echo "No test files found, skipping."; \
 	fi
