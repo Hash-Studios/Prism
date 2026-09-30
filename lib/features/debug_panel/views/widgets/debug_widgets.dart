@@ -1,53 +1,33 @@
-import 'package:Prism/logger/app_logger.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-extension AppLogLevelColor on AppLogLevel {
-  Color get color => switch (this) {
-    AppLogLevel.debug => Colors.blueGrey,
-    AppLogLevel.info => Colors.green,
-    AppLogLevel.warn => Colors.orange,
-    AppLogLevel.error => Colors.red,
-  };
+const String _monospaceFamily = 'monospace';
+
+/// Caption text in the platform monospace family. Log lines, keys and ids read better in it.
+TextStyle debugMono(BuildContext context, {double size = 12, double alpha = 1}) {
+  final TextStyle caption = PrismTextStyles.caption(context);
+  return caption.copyWith(
+    fontFamily: _monospaceFamily,
+    fontSize: size,
+    fontWeight: FontWeight.w500,
+    height: 1.35,
+    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: alpha),
+  );
 }
 
-void showDebugSnackBar(BuildContext context, String message, {Duration duration = const Duration(seconds: 2)}) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), duration: duration));
+/// Shows a short message in the app toast. Errors stay on screen longer.
+void showDebugSnackBar(BuildContext context, String message, {bool isError = false}) {
+  isError ? toasts.error(message) : toasts.success(message);
 }
 
-void copyToClipboard(
-  BuildContext context,
-  String text, {
-  String label = 'Copied',
-  Duration duration = const Duration(seconds: 1),
-}) {
+void copyToClipboard(BuildContext context, String text, {String label = 'Copied'}) {
   Clipboard.setData(ClipboardData(text: text));
-  showDebugSnackBar(context, label, duration: duration);
+  showDebugSnackBar(context, label);
 }
 
-class DebugSectionHeader extends StatelessWidget {
-  const DebugSectionHeader(this.title, {super.key, this.top = 20});
-
-  final String title;
-  final double top;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, top, 16, 6),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-          letterSpacing: 1.0,
-        ),
-      ),
-    );
-  }
-}
-
+/// A search field with a search icon and a clear button that shows once there is text.
 class DebugSearchField extends StatelessWidget {
   const DebugSearchField({super.key, required this.controller, required this.hintText});
 
@@ -56,17 +36,17 @@ class DebugSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        hintText: hintText,
-        prefixIcon: const Icon(Icons.search, size: 18),
-        suffixIcon: controller.text.isNotEmpty
-            ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: controller.clear)
-            : null,
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => PrismTextField(
+        controller: controller,
+        hint: hintText,
+        prefixIcon: Icons.search_rounded,
+        autocorrect: false,
+        textInputAction: TextInputAction.search,
+        suffix: controller.text.isEmpty
+            ? null
+            : PrismIconButton(icon: Icons.close_rounded, tooltip: 'Clear search', onPressed: controller.clear),
       ),
     );
   }
