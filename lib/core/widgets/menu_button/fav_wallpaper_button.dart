@@ -69,8 +69,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       });
       return;
     }
-    context.favouriteWallsAdapter(listen: false).favCheck(wall).then((value) {
-      analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
+    context.favouriteWallsAdapter(listen: false).favCheck(wall).then((success) {
+      if (success) {
+        analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
+      }
       if (mounted) {
         setState(() {
           isLoading = false;

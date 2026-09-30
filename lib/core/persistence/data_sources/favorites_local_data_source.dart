@@ -55,6 +55,10 @@ class FavoritesLocalDataSource {
     await _saveWallSet(scope, ids);
   }
 
+  Future<void> replaceWallFavourites(String userId, Iterable<String> itemIds) {
+    return _saveWallSet(_scope(userId), itemIds.where((id) => id.isNotEmpty).toSet());
+  }
+
   Future<void> setSetupFavourite(String userId, String itemId, bool value) async {
     final scope = _scope(userId);
     final ids = _setupSet(scope);

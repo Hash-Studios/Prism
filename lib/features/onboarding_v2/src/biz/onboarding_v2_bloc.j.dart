@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -23,6 +26,7 @@ import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wal
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -71,9 +75,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   final math.Random _random = math.Random();
 
-  DateTime? _f3EnteredAt;
+  Stopwatch? _onboardingStopwatch;
+  bool _completionInFlight = false;
+  bool _completionTracked = false;
 
   Future<void> _onStarted(_Started event, Emitter<OnboardingV2State> emit) async {
+    _onboardingStopwatch ??= Stopwatch()..start();
     emit(state.copyWith(loadStatus: LoadStatus.loading, failure: null, navRequest: null));
     final settingsLocal = getIt<SettingsLocalDataSource>();
     final catalog = await PersonalizedInterestsCatalog.load(
@@ -159,10 +166,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     final isPremium = app_state.prismUser.premium;
 
     if (skipInterests && skipStarterPack) {
-      // All steps already done — set skip flags then go to paywall (or complete if premium)
+      // All steps already done — set skip flags then go to paywall (or complete if premium).
       emit(state.copyWith(isAuthLoading: false, skipInterests: true, skipStarterPack: true, navRequest: null));
       if (isPremium) {
-        await _finishOnboarding(emit, didPurchase: true);
+        await _finishOnboarding(emit, didPurchase: false);
       } else {
         emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
       }
@@ -214,6 +221,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       emit(state.copyWith(actionStatus: ActionStatus.failure, failure: result.failure));
       return;
     }
+
+    unawaited(analytics.track(OnboardingV2InterestsCompletedEvent(selectedCount: selectedInterests.length)));
 
     final refreshedWallpaper = await _firstWallpaperService.recommendForOnboarding(selectedInterests);
 
@@ -268,12 +277,14 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       return;
     }
 
+    unawaited(analytics.track(OnboardingV2StarterPackCompletedEvent(followedCount: selectedCreators.length)));
+
     if (state.skipInterests) {
       // Interests was skipped → wallpaper must also be skipped → go directly to paywall
       logger.d('starterPackConfirmed — skipInterests=true, going directly to paywall', tag: 'OnboardingV2Bloc');
       emit(state.copyWith(actionStatus: ActionStatus.success, navRequest: null));
       if (app_state.prismUser.premium) {
-        await _finishOnboarding(emit, didPurchase: true);
+        await _finishOnboarding(emit, didPurchase: false);
       } else {
         emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
       }
@@ -302,9 +313,9 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
       ),
     );
 
-    final startMs = DateTime.now().millisecondsSinceEpoch;
+    final actionStopwatch = Stopwatch()..start();
     final success = await _firstWallpaperService.performAction(wallpaperVm.fullUrl);
-    final elapsedMs = DateTime.now().millisecondsSinceEpoch - startMs;
+    final elapsedMs = actionStopwatch.elapsedMilliseconds;
 
     if (!isClosed) {
       add(OnboardingV2Event.firstWallpaperActionCompleted(success: success, elapsedMs: elapsedMs));
@@ -312,6 +323,15 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   void _onFirstWallpaperActionCompleted(_FirstWallpaperActionCompleted event, Emitter<OnboardingV2State> emit) {
+    unawaited(
+      analytics.track(
+        OnboardingV2FirstWallpaperActionEvent(
+          result: event.success ? BinaryResultValue.success : BinaryResultValue.failure,
+          elapsedMs: event.elapsedMs,
+          platform: defaultTargetPlatform.name.toLowerCase(),
+        ),
+      ),
+    );
     emit(
       state.copyWith(
         wallpaperData: state.wallpaperData.copyWith(
@@ -327,7 +347,7 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     Emitter<OnboardingV2State> emit,
   ) async {
     if (app_state.prismUser.premium) {
-      await _finishOnboarding(emit, didPurchase: true);
+      await _finishOnboarding(emit, didPurchase: false);
     } else {
       emit(state.copyWith(navRequest: OnboardingV2NavRequest.openPaywall));
     }
@@ -338,19 +358,27 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _finishOnboarding(Emitter<OnboardingV2State> emit, {required bool didPurchase}) async {
+    if (_completionInFlight || _completionTracked) return;
+    _completionInFlight = true;
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null, navRequest: null));
-    final totalMs = _f3EnteredAt != null
-        ? DateTime.now().millisecondsSinceEpoch - _f3EnteredAt!.millisecondsSinceEpoch
-        : 0;
-    final result = await _completeOnboardingUseCase(
-      CompleteOnboardingParams(didPurchase: didPurchase, totalElapsedMs: totalMs),
-    );
-    result.fold(
-      onSuccess: (_) => emit(
-        state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding),
-      ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
-    );
+    try {
+      final totalMs = _onboardingStopwatch?.elapsedMilliseconds ?? 0;
+      final result = await _completeOnboardingUseCase(
+        CompleteOnboardingParams(didPurchase: didPurchase, totalElapsedMs: totalMs),
+      );
+      result.fold(
+        onSuccess: (_) {
+          _completionTracked = true;
+          unawaited(analytics.track(OnboardingV2CompletedEvent(didPurchase: didPurchase, totalElapsedMs: totalMs)));
+          emit(
+            state.copyWith(actionStatus: ActionStatus.success, navRequest: OnboardingV2NavRequest.completeOnboarding),
+          );
+        },
+        onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
+      );
+    } finally {
+      _completionInFlight = false;
+    }
   }
 
   void _onStepBack(_StepBack event, Emitter<OnboardingV2State> emit) {
@@ -424,7 +452,11 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
   }
 
   Future<void> _onAiGenerationStepContinued(_AiGenerationStepContinued event, Emitter<OnboardingV2State> emit) async {
-    _f3EnteredAt = DateTime.now();
+    if (state.step == OnboardingV2Step.firstWallpaper) return;
+    final wallpaper = state.wallpaperData.wallpaper;
+    if (wallpaper != null && wallpaper.fullUrl.trim().isNotEmpty) {
+      unawaited(analytics.track(const OnboardingV2FirstWallpaperShownEvent()));
+    }
     emit(state.copyWith(step: OnboardingV2Step.firstWallpaper, navRequest: null));
   }
 
