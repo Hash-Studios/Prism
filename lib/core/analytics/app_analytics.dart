@@ -1,8 +1,6 @@
 import 'package:Prism/core/analytics/analytics_event_normalizer.dart';
-import 'package:Prism/core/analytics/analytics_route_observer.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/analytics/providers/analytics_provider.dart';
-import 'package:flutter/widgets.dart';
 
 abstract class AppAnalytics {
   Future<void> track(AnalyticsEvent event);
@@ -14,8 +12,6 @@ abstract class AppAnalytics {
   Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters});
 
   Future<void> flush();
-
-  List<NavigatorObserver> buildNavigatorObservers();
 }
 
 class ProviderBackedAppAnalytics implements AppAnalytics {
@@ -69,11 +65,6 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
     return _provider.flush();
   }
 
-  @override
-  List<NavigatorObserver> buildNavigatorObservers() {
-    return <NavigatorObserver>[AnalyticsRouteObserver(onScreenView: logScreenView)];
-  }
-
   String? _nonEmptyOrNull(String? value) {
     if (value == null) {
       return null;
@@ -88,9 +79,6 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
 
 class NoopAppAnalytics implements AppAnalytics {
   const NoopAppAnalytics();
-
-  @override
-  List<NavigatorObserver> buildNavigatorObservers() => const <NavigatorObserver>[];
 
   @override
   Future<void> track(AnalyticsEvent event) async {}

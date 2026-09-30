@@ -83,7 +83,10 @@ void main() {
     AnalyticsRuntime.instance = firstRuntime;
 
     observer.didPush(
-      MaterialPageRoute<void>(builder: (_) => const SizedBox(), settings: const RouteSettings(name: '/first')),
+      MaterialPageRoute<void>(
+        builder: (_) => const SizedBox(),
+        settings: const RouteSettings(name: '/first'),
+      ),
       null,
     );
     await tester.pump();
@@ -91,7 +94,10 @@ void main() {
     final _RecordingAnalytics secondRuntime = _RecordingAnalytics();
     AnalyticsRuntime.instance = secondRuntime;
     observer.didPush(
-      MaterialPageRoute<void>(builder: (_) => const SizedBox(), settings: const RouteSettings(name: '/second')),
+      MaterialPageRoute<void>(
+        builder: (_) => const SizedBox(),
+        settings: const RouteSettings(name: '/second'),
+      ),
       null,
     );
     await tester.pump();
@@ -105,7 +111,11 @@ class _RecordingAnalytics extends FakeAppAnalytics {
   final List<String> screenViews = <String>[];
 
   @override
-  Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters}) async {
+  Future<void> logScreenView({
+    required String screenName,
+    String? screenClass,
+    Map<String, Object?>? parameters,
+  }) async {
     screenViews.add(screenName);
   }
 }
