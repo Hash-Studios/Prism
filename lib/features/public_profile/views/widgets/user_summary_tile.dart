@@ -1,6 +1,7 @@
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,7 +43,7 @@ class UserSummaryTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontFamily: 'Proxima Nova',
+                      fontFamily: PrismFonts.proximaNova,
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.secondary,
@@ -54,7 +55,7 @@ class UserSummaryTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontFamily: 'Proxima Nova',
+                        fontFamily: PrismFonts.proximaNova,
                         fontSize: 13,
                         color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.55),
                       ),
@@ -113,7 +114,7 @@ class _FallbackAvatar extends StatelessWidget {
       child: Text(
         initial,
         style: TextStyle(
-          fontFamily: 'Proxima Nova',
+          fontFamily: PrismFonts.proximaNova,
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: Theme.of(context).colorScheme.secondary,
@@ -148,7 +149,7 @@ class _FollowButton extends StatelessWidget {
         child: Text(
           isFollowing ? 'Following' : 'Follow',
           style: TextStyle(
-            fontFamily: 'Proxima Nova',
+            fontFamily: PrismFonts.proximaNova,
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: isFollowing
@@ -161,28 +162,14 @@ class _FollowButton extends StatelessWidget {
   }
 
   void _onPressed(BuildContext context) {
-    final bloc = context.read<PublicProfileBloc>();
-    final String currentUserId = app_state.prismUser.id;
-    final String currentUserEmail = app_state.prismUser.email;
-
-    if (user.isFollowedByCurrentUser) {
-      bloc.add(
-        PublicProfileEvent.unfollowFromListRequested(
-          currentUserId: currentUserId,
-          currentUserEmail: currentUserEmail,
-          targetUserId: user.id,
-          targetUserEmail: user.email,
-        ),
-      );
-    } else {
-      bloc.add(
-        PublicProfileEvent.followFromListRequested(
-          currentUserId: currentUserId,
-          currentUserEmail: currentUserEmail,
-          targetUserId: user.id,
-          targetUserEmail: user.email,
-        ),
-      );
-    }
+    context.read<PublicProfileBloc>().add(
+      PublicProfileEvent.followChangeRequested(
+        follow: !user.isFollowedByCurrentUser,
+        currentUserId: app_state.prismUser.id,
+        currentUserEmail: app_state.prismUser.email,
+        targetUserId: user.id,
+        targetUserEmail: user.email,
+      ),
+    );
   }
 }

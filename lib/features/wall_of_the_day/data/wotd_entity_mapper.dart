@@ -6,7 +6,6 @@ WallOfTheDayEntity wallOfTheDayEntityFromPrismWallpaper(PrismWallpaper wallpaper
     wallId: wallpaper.id,
     url: wallpaper.fullUrl,
     thumbnailUrl: wallpaper.thumbnailUrl,
-    title: wallpaper.core.category ?? '',
     photographer: wallpaper.core.authorName ?? '',
     source: wallpaper.source,
   );

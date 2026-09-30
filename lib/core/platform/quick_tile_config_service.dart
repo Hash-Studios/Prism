@@ -4,6 +4,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/env/env.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Writes quick-tile configuration to SharedPreferences using raw string
@@ -99,7 +100,9 @@ class QuickTileConfigService {
     if (urlsRaw != null) {
       try {
         urls = (jsonDecode(urlsRaw) as List<Object?>).cast<String>();
-      } catch (_) {}
+      } catch (error, stackTrace) {
+        logger.w('Failed to decode favourites tile urls', error: error, stackTrace: stackTrace);
+      }
     }
     return QuickTileFavsConfig(target: _targetFromString(targetRaw), wallUrls: urls);
   }

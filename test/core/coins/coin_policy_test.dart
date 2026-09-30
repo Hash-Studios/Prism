@@ -1,42 +1,24 @@
-import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
-import 'package:Prism/core/coins/streak_shop_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('coin earn values match revenue model', () {
-    expect(CoinPolicy.rewardedAd, 10);
-    expect(CoinPolicy.dailyLogin, 5);
-    expect(CoinPolicy.streak7Bonus, 40);
-    expect(CoinPolicy.firstWallpaperUpload, 50);
-    expect(CoinPolicy.referral, 100);
-    expect(CoinPolicy.profileCompletion, 25);
-    expect(CoinPolicy.proDailyBonus, 50);
-
-    expect(CoinEarnAction.rewardedAd.defaultAmount(), 10);
-    expect(CoinEarnAction.dailyLogin.defaultAmount(), 5);
-    expect(CoinEarnAction.streakBonus.defaultAmount(), 40);
-    expect(CoinEarnAction.firstWallpaperUpload.defaultAmount(), 50);
-    expect(CoinEarnAction.referral.defaultAmount(), 100);
-    expect(CoinEarnAction.profileCompletion.defaultAmount(), 25);
-    expect(CoinEarnAction.proDailyBonus.defaultAmount(), 50);
+  test('daily streak reward climbs the ladder and caps at day 7', () {
+    const expected = <int, int>{0: 5, 1: 5, 2: 5, 3: 8, 4: 8, 5: 12, 6: 12, 7: 15, 30: 15};
+    for (final entry in expected.entries) {
+      expect(CoinPolicy.streakDailyRewardForDay(entry.key), entry.value, reason: 'day ${entry.key}');
+    }
   });
 
-  test('coin spend values match revenue model', () {
-    expect(CoinPolicy.wallpaperDownload, 5);
-    expect(CoinPolicy.premiumWallpaperDownload, 15);
-    expect(CoinPolicy.aiGenerationFast, 10);
-    expect(CoinPolicy.aiGenerationBalanced, 75);
-    expect(CoinPolicy.aiGenerationQuality, 100);
-    expect(CoinPolicy.premiumFilter, 5);
-    expect(CoinPolicy.premiumPreview24h, 10);
-    expect(CoinPolicy.lowBalanceNudgeThreshold, 10);
+  test('streak bonus is paid only from day 7', () {
+    expect(CoinPolicy.streakBonusRewardForDay(6), 0);
+    expect(CoinPolicy.streakBonusRewardForDay(7), 40);
+  });
 
-    expect(CoinSpendAction.wallpaperDownload.cost(), 5);
-    expect(CoinSpendAction.premiumWallpaperDownload.cost(), 15);
-    expect(CoinSpendAction.aiGeneration.cost(), 10);
-    expect(CoinSpendAction.premiumFilter.cost(), 5);
-    expect(CoinSpendAction.premiumPreview24h.cost(), 10);
-    expect(CoinSpendAction.streakFreeze.cost(), StreakShopPolicy.streakFreezeCoins);
+  test('total streak reward adds the bonus to the daily reward', () {
+    expect(CoinPolicy.streakTotalRewardForDay(6), 12);
+    expect(CoinPolicy.streakTotalRewardForDay(7), 55);
+    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: false), 8);
+    expect(CoinPolicy.streakClaimRewardForDay(3, isPro: true), 13);
+    expect(CoinPolicy.streakClaimRewardForDay(7, isPro: true), 75);
   });
 }

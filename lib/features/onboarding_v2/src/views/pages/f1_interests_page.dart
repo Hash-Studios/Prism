@@ -1,6 +1,7 @@
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/interest_category_tile.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_fade_mask.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -42,37 +43,28 @@ class F1InterestsPage extends StatelessWidget {
                   height: OnboardingLayout.tilesHeight * sy,
                   child: available.isEmpty
                       ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                      : ShaderMask(
-                          shaderCallback: (rect) => const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Colors.white, Colors.white, Colors.transparent],
-                            stops: [0.01, 0.10, 0.82, 1.0],
-                          ).createShader(rect),
-                          blendMode: BlendMode.dstIn,
-                          child: Padding(
-                            padding: const EdgeInsets.all(1),
-                            child: GridView.builder(
-                              padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: available.length,
-                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: OnboardingLayout.tileGap * sx,
-                                mainAxisSpacing: OnboardingLayout.tileGap * sy,
-                                childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
-                              ),
-                              itemBuilder: (context, index) {
-                                final category = available[index];
-                                return InterestCategoryTile(
-                                  name: category,
-                                  imageUrl: interestsData.categoryImages[category],
-                                  isSelected: interestsData.selected.contains(category),
-                                  onTap: () =>
-                                      context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
-                                );
-                              },
+                      : OnboardingFadeMask(
+                          stops: const [0.01, 0.10, 0.82, 1.0],
+                          child: GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(0, 25, 0, 60),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: available.length,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: OnboardingLayout.tileGap * sx,
+                              mainAxisSpacing: OnboardingLayout.tileGap * sy,
+                              childAspectRatio: (OnboardingLayout.tileSize * sx) / (OnboardingLayout.tileSize * sy),
                             ),
+                            itemBuilder: (context, index) {
+                              final category = available[index];
+                              return InterestCategoryTile(
+                                name: category,
+                                imageUrl: interestsData.categoryImages[category],
+                                isSelected: interestsData.selected.contains(category),
+                                onTap: () =>
+                                    context.read<OnboardingV2Bloc>().add(OnboardingV2Event.interestToggled(category)),
+                              );
+                            },
                           ),
                         ),
                 ),

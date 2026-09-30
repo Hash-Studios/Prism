@@ -7,9 +7,6 @@ class NoopAnalyticsProvider implements AnalyticsProvider {
   Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) async {}
 
   @override
-  Future<void> logLogin({String? loginMethod}) async {}
-
-  @override
   Future<void> setUserId(String? userId) async {}
 
   @override
@@ -21,9 +18,6 @@ class NoopAnalyticsProvider implements AnalyticsProvider {
     String? screenClass,
     Map<String, Object> parameters = const <String, Object>{},
   }) async {}
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
 
   @override
   Future<void> flush() async {}

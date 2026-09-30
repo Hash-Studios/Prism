@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:Prism/core/utils/json_utils.dart';
+
 enum FirestoreFilterOp {
   isEqualTo,
   isNotEqualTo,
@@ -23,7 +25,7 @@ class FirestoreFilter {
   final FirestoreFilterOp op;
   final Object? value;
 
-  Map<String, Object?> toJson() => <String, Object?>{'field': field, 'op': op.name, 'value': _jsonSafeValue(value)};
+  Map<String, Object?> toJson() => <String, Object?>{'field': field, 'op': op.name, 'value': toJsonSafe(value)};
 }
 
 const String firestoreDocumentIdField = '__name__';
@@ -69,27 +71,11 @@ class FirestoreQuerySpec {
     'orderBy': orderBy.map((o) => o.toJson()).toList(growable: false),
     'limit': limit,
     'startAfterDocId': startAfterDocId,
-    'startAfterFieldValues': startAfterFieldValues?.map(_jsonSafeValue).toList(growable: false),
+    'startAfterFieldValues': startAfterFieldValues?.map(toJsonSafe).toList(growable: false),
     'isStream': isStream,
     'cachePolicy': cachePolicy.name,
     'dedupeWindowMs': dedupeWindowMs,
   };
 
   String get filtersHash => base64Url.encode(utf8.encode(jsonEncode(toJson())));
-}
-
-Object? _jsonSafeValue(Object? value) {
-  if (value == null || value is num || value is bool || value is String) {
-    return value;
-  }
-  if (value is DateTime) {
-    return value.toUtc().toIso8601String();
-  }
-  if (value is List) {
-    return value.map((e) => _jsonSafeValue(e)).toList(growable: false);
-  }
-  if (value is Map) {
-    return value.map<String, Object?>((key, val) => MapEntry(key.toString(), _jsonSafeValue(val)));
-  }
-  return value.toString();
 }

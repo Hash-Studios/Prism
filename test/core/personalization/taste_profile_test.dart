@@ -1,5 +1,6 @@
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

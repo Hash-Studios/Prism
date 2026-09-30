@@ -1,9 +1,10 @@
-import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _RecordingClient implements FirestoreClient {
-  final List<(String, String, Map<String, dynamic>, bool)> writes = <(String, String, Map<String, dynamic>, bool)>[];
+import '../support/fake_firestore_client.dart';
+
+class _MergeRecordingClient extends FakeFirestoreClient {
+  bool? merged;
 
   @override
   Future<void> setDoc(
@@ -12,22 +13,21 @@ class _RecordingClient implements FirestoreClient {
     Map<String, dynamic> data, {
     bool merge = false,
     required String sourceTag,
-  }) async {
-    writes.add((collection, id, data, merge));
+  }) {
+    merged = merge;
+    return super.setDoc(collection, id, data, merge: merge, sourceTag: sourceTag);
   }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 void main() {
   test('the Followers switch is stored where onFollowCreated reads it', () async {
-    final client = _RecordingClient();
+    final client = _MergeRecordingClient();
 
     await FcmTokenService.instance.saveFollowerAlerts(userId: 'uid1', enabled: false, client: client);
 
-    final (collection, id, data, merge) = client.writes.single;
-    expect((collection, id, merge), ('usersv2/uid1/private', 'session', true));
-    expect(data, <String, dynamic>{'followerAlerts': false});
+    final write = client.writes.single;
+    expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
+    expect(client.merged, isTrue);
+    expect(write.data, <String, dynamic>{'followerAlerts': false});
   });
 }

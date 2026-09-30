@@ -55,12 +55,13 @@ extension SetupsEventPatterns on SetupsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that);case _:
   return orElse();
 
 }
@@ -78,12 +79,13 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,required TResult Function( _BlockedCreatorsChanged value)  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _FetchMoreRequested():
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _BlockedCreatorsChanged():
+return blockedCreatorsChanged(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -100,12 +102,13 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult? Function( _BlockedCreatorsChanged value)?  blockedCreatorsChanged,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that);case _:
   return null;
 
 }
@@ -122,11 +125,12 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  fetchMoreRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  fetchMoreRequested,TResult Function( Set<String> blocked)?  blockedCreatorsChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that.blocked);case _:
   return orElse();
 
 }
@@ -144,11 +148,12 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  fetchMoreRequested,required TResult Function( Set<String> blocked)  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _FetchMoreRequested():
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _BlockedCreatorsChanged():
+return blockedCreatorsChanged(_that.blocked);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -165,11 +170,12 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  fetchMoreRequested,TResult? Function( Set<String> blocked)?  blockedCreatorsChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _BlockedCreatorsChanged() when blockedCreatorsChanged != null:
+return blockedCreatorsChanged(_that.blocked);case _:
   return null;
 
 }
@@ -242,9 +248,81 @@ String toString() {
 
 
 /// @nodoc
+
+
+class _BlockedCreatorsChanged implements SetupsEvent {
+  const _BlockedCreatorsChanged(final  Set<String> blocked): _blocked = blocked;
+  
+
+ final  Set<String> _blocked;
+ Set<String> get blocked {
+  if (_blocked is EqualUnmodifiableSetView) return _blocked;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableSetView(_blocked);
+}
+
+
+/// Create a copy of SetupsEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$BlockedCreatorsChangedCopyWith<_BlockedCreatorsChanged> get copyWith => __$BlockedCreatorsChangedCopyWithImpl<_BlockedCreatorsChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BlockedCreatorsChanged&&const DeepCollectionEquality().equals(other._blocked, _blocked));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_blocked));
+
+@override
+String toString() {
+  return 'SetupsEvent.blockedCreatorsChanged(blocked: $blocked)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$BlockedCreatorsChangedCopyWith<$Res> implements $SetupsEventCopyWith<$Res> {
+  factory _$BlockedCreatorsChangedCopyWith(_BlockedCreatorsChanged value, $Res Function(_BlockedCreatorsChanged) _then) = __$BlockedCreatorsChangedCopyWithImpl;
+@useResult
+$Res call({
+ Set<String> blocked
+});
+
+
+
+
+}
+/// @nodoc
+class __$BlockedCreatorsChangedCopyWithImpl<$Res>
+    implements _$BlockedCreatorsChangedCopyWith<$Res> {
+  __$BlockedCreatorsChangedCopyWithImpl(this._self, this._then);
+
+  final _BlockedCreatorsChanged _self;
+  final $Res Function(_BlockedCreatorsChanged) _then;
+
+/// Create a copy of SetupsEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? blocked = null,}) {
+  return _then(_BlockedCreatorsChanged(
+null == blocked ? _self._blocked : blocked // ignore: cast_nullable_to_non_nullable
+as Set<String>,
+  ));
+}
+
+
+}
+
+/// @nodoc
 mixin _$SetupsState {
 
- LoadStatus get status; ActionStatus get actionStatus; List<SetupEntity> get items; bool get hasMore; String? get nextCursor; bool get isFetchingMore; Failure? get failure;
+ LoadStatus get status; List<SetupEntity> get items; bool get hasMore; bool get isFetchingMore;
 /// Create a copy of SetupsState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -255,16 +333,16 @@ $SetupsStateCopyWith<SetupsState> get copyWith => _$SetupsStateCopyWithImpl<Setu
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SetupsState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SetupsState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.items, items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(items),hasMore,nextCursor,isFetchingMore,failure);
+int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(items),hasMore,isFetchingMore);
 
 @override
 String toString() {
-  return 'SetupsState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, nextCursor: $nextCursor, isFetchingMore: $isFetchingMore, failure: $failure)';
+  return 'SetupsState(status: $status, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore)';
 }
 
 
@@ -275,7 +353,7 @@ abstract mixin class $SetupsStateCopyWith<$Res>  {
   factory $SetupsStateCopyWith(SetupsState value, $Res Function(SetupsState) _then) = _$SetupsStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<SetupEntity> items, bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure
+ LoadStatus status, List<SetupEntity> items, bool hasMore, bool isFetchingMore
 });
 
 
@@ -292,16 +370,13 @@ class _$SetupsStateCopyWithImpl<$Res>
 
 /// Create a copy of SetupsState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? nextCursor = freezed,Object? isFetchingMore = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
-as ActionStatus,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
+as LoadStatus,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
 as List<SetupEntity>,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
-as bool,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
-as String?,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
-as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as bool,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -386,10 +461,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<SetupEntity> items,  bool hasMore,  String? nextCursor,  bool isFetchingMore,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  List<SetupEntity> items,  bool hasMore,  bool isFetchingMore)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SetupsState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.nextCursor,_that.isFetchingMore,_that.failure);case _:
+return $default(_that.status,_that.items,_that.hasMore,_that.isFetchingMore);case _:
   return orElse();
 
 }
@@ -407,10 +482,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  List<SetupEntity> items,  bool hasMore,  String? nextCursor,  bool isFetchingMore,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  List<SetupEntity> items,  bool hasMore,  bool isFetchingMore)  $default,) {final _that = this;
 switch (_that) {
 case _SetupsState():
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.nextCursor,_that.isFetchingMore,_that.failure);case _:
+return $default(_that.status,_that.items,_that.hasMore,_that.isFetchingMore);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -427,10 +502,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  List<SetupEntity> items,  bool hasMore,  String? nextCursor,  bool isFetchingMore,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  List<SetupEntity> items,  bool hasMore,  bool isFetchingMore)?  $default,) {final _that = this;
 switch (_that) {
 case _SetupsState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.nextCursor,_that.isFetchingMore,_that.failure);case _:
+return $default(_that.status,_that.items,_that.hasMore,_that.isFetchingMore);case _:
   return null;
 
 }
@@ -442,11 +517,10 @@ return $default(_that.status,_that.actionStatus,_that.items,_that.hasMore,_that.
 
 
 class _SetupsState implements SetupsState {
-  const _SetupsState({required this.status, required this.actionStatus, required final  List<SetupEntity> items, required this.hasMore, required this.nextCursor, required this.isFetchingMore, this.failure}): _items = items;
+  const _SetupsState({required this.status, required final  List<SetupEntity> items, required this.hasMore, required this.isFetchingMore}): _items = items;
   
 
 @override final  LoadStatus status;
-@override final  ActionStatus actionStatus;
  final  List<SetupEntity> _items;
 @override List<SetupEntity> get items {
   if (_items is EqualUnmodifiableListView) return _items;
@@ -455,9 +529,7 @@ class _SetupsState implements SetupsState {
 }
 
 @override final  bool hasMore;
-@override final  String? nextCursor;
 @override final  bool isFetchingMore;
-@override final  Failure? failure;
 
 /// Create a copy of SetupsState
 /// with the given fields replaced by the non-null parameter values.
@@ -469,16 +541,16 @@ _$SetupsStateCopyWith<_SetupsState> get copyWith => __$SetupsStateCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SetupsState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SetupsState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._items, _items)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.isFetchingMore, isFetchingMore) || other.isFetchingMore == isFetchingMore));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,const DeepCollectionEquality().hash(_items),hasMore,nextCursor,isFetchingMore,failure);
+int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(_items),hasMore,isFetchingMore);
 
 @override
 String toString() {
-  return 'SetupsState(status: $status, actionStatus: $actionStatus, items: $items, hasMore: $hasMore, nextCursor: $nextCursor, isFetchingMore: $isFetchingMore, failure: $failure)';
+  return 'SetupsState(status: $status, items: $items, hasMore: $hasMore, isFetchingMore: $isFetchingMore)';
 }
 
 
@@ -489,7 +561,7 @@ abstract mixin class _$SetupsStateCopyWith<$Res> implements $SetupsStateCopyWith
   factory _$SetupsStateCopyWith(_SetupsState value, $Res Function(_SetupsState) _then) = __$SetupsStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, List<SetupEntity> items, bool hasMore, String? nextCursor, bool isFetchingMore, Failure? failure
+ LoadStatus status, List<SetupEntity> items, bool hasMore, bool isFetchingMore
 });
 
 
@@ -506,16 +578,13 @@ class __$SetupsStateCopyWithImpl<$Res>
 
 /// Create a copy of SetupsState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? items = null,Object? hasMore = null,Object? nextCursor = freezed,Object? isFetchingMore = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? items = null,Object? hasMore = null,Object? isFetchingMore = null,}) {
   return _then(_SetupsState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
-as ActionStatus,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
+as LoadStatus,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
 as List<SetupEntity>,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
-as bool,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
-as String?,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
-as bool,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as bool,isFetchingMore: null == isFetchingMore ? _self.isFetchingMore : isFetchingMore // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

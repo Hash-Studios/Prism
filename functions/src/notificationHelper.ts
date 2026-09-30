@@ -38,9 +38,6 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   const db = admin.firestore();
   const messaging = admin.messaging();
 
-  // ------------------------------------------------------------------ //
-  // 1. Write the in-app notification doc (unless pushOnly)
-  // ------------------------------------------------------------------ //
   if (!payload.pushOnly) {
     try {
       await db.collection("notifications").add({
@@ -49,7 +46,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
           body: payload.body,
         },
         data: {
-          route: payload.data.route ?? "",
+          route: payload.data.route,
           imageUrl: payload.imageUrl ?? "",
           url: payload.data.url ?? "",
           pageName: payload.data.pageName ?? "",
@@ -66,13 +63,10 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
       });
     } catch (err) {
       logger.error("Failed to write notification doc to Firestore.", {err, payload});
-    // Do not throw — attempt FCM push even if Firestore write fails.
+      // Do not throw: still attempt the FCM push.
     }
   }
 
-  // ------------------------------------------------------------------ //
-  // 2. Send FCM push (if a target was provided)
-  // ------------------------------------------------------------------ //
   if (!payload.fcmTarget) {
     return;
   }
@@ -119,6 +113,22 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
     });
   } catch (err) {
     logger.error("Failed to send FCM push.", {err, route: payload.data.route});
+  }
+}
+
+/**
+ * Sends to the user's uid topic (with an in-app doc), then to the legacy email
+ * topic as push only. The shared collapseKey shows the push once on a device
+ * subscribed to both. Without a uid topic, sends only to the email topic.
+ */
+export async function sendToUidAndEmailTopics(
+  payload: Omit<NotificationPayload, "fcmTarget" | "pushOnly">,
+  uidTopic: string | undefined,
+  emailTopic: string,
+): Promise<void> {
+  await sendNotification({...payload, fcmTarget: {topic: uidTopic ?? emailTopic}});
+  if (uidTopic) {
+    await sendNotification({...payload, fcmTarget: {topic: emailTopic}, pushOnly: true});
   }
 }
 

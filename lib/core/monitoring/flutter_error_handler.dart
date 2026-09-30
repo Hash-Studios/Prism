@@ -21,7 +21,5 @@ void _handleFlutterFrameworkError(FlutterErrorDetails details) {
       if (details.context != null) 'context': details.context.toString(),
     },
   );
-  try {
-    unawaited(analytics.track(const AppErrorEvent(errorSource: 'flutter_framework')));
-  } catch (_) {}
+  unawaited(analytics.track(const AppErrorEvent(errorSource: 'flutter_framework')));
 }

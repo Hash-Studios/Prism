@@ -9,6 +9,9 @@ abstract class PexelsWallpaperRepository {
     String? paginationKey,
   });
 
+  /// Wallpapers matching a colour. [hex] is six hex digits, with or without a leading `#`.
+  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({required String hex, required bool refresh});
+
   Future<Result<PexelsWallpaper?>> fetchById(String id);
   bool hasMoreForCategory(String categoryName, {String? paginationKey});
 }

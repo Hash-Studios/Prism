@@ -13,9 +13,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   final NotificationsLocalDataSource _notificationsLocal;
 
   Future<List<InAppNotificationEntity>> _readAll() async {
-    final items = (await _notificationsLocal.readAll()).toList(growable: false);
-    final sorted = items.toList(growable: false)..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return sorted;
+    return (await _notificationsLocal.readAll()).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override

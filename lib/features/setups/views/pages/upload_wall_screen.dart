@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -8,6 +7,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/github_content_api.dart';
+import 'package:Prism/data/upload/upload_id.dart';
+import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
@@ -32,76 +33,38 @@ class UploadWallScreen extends StatefulWidget {
 }
 
 class _UploadWallScreenState extends State<UploadWallScreen> {
-  late bool isUploading;
-  late bool isProcessing;
-  late bool fromSetupRoute;
-  late File image;
-  String? id;
-  String? tempid;
+  late final String id = randomUploadId(4);
+  bool isUploading = false;
+  bool isProcessing = true;
   String? wallpaperUrl;
   String? wallpaperResolution;
-  String? wallpaperProvider;
   String? wallpaperSize;
-  String? wallpaperDesc;
-  String? wallpaperCategory;
   String? wallpaperThumb;
   // Set once each file reaches GitHub; null means there is nothing to delete.
   String? wallpaperSha;
   String? thumbSha;
   String? wallpaperPath;
   String? thumbPath;
-  bool? review;
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
   bool _submitted = false;
+
+  File get image => widget.image;
+
   @override
   void initState() {
     super.initState();
-    image = widget.image;
-    fromSetupRoute = widget.fromSetupRoute;
-    isUploading = false;
-    isProcessing = true;
-    randomId();
-    wallpaperProvider = "Prism";
-    wallpaperDesc = "Community";
-    wallpaperCategory = "General";
-    review = false;
     processImage();
-  }
-
-  void randomId() {
-    tempid = "";
-    final alp = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split("");
-    final r = Random();
-    final choice = r.nextInt(4);
-    for (var i = 0; i < 4; i++) {
-      if (choice == i) {
-        final ran = r.nextInt(10);
-        tempid = tempid! + ran.toString();
-      } else {
-        final ran = r.nextInt(26);
-        tempid = tempid! + alp[ran];
-      }
-    }
-    setState(() {
-      id = tempid;
-    });
-    logger.d(id);
   }
 
   Future<Uint8List> compressFile(File file) async {
     final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
-    logger.d(file.lengthSync().toString());
-    logger.d(result!.length.toString());
-    return result;
+    return result!;
   }
 
   Future processImage() async {
     final imgList = image.readAsBytesSync();
     final decodedImage = await decodeImageFromList(imgList);
-
-    logger.d(decodedImage.width.toString());
-    logger.d(decodedImage.height.toString());
 
     final res = "${decodedImage.width}x${decodedImage.height}";
 
@@ -136,7 +99,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           message: thumbPath!,
         );
       }
-      logger.d("Files deleted");
     } catch (e) {
       logger.w("Could not delete unsubmitted upload: $e");
     }
@@ -172,12 +134,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       thumbPath = thumbValue.path;
       thumbSha = thumbValue.sha;
       if (!mounted) return await deleteFile();
-      logger.d('File Uploaded');
+      if (wallpaperUrl == null || wallpaperThumb == null) throw StateError('GitHub returned no download URL');
       setState(() {
         isUploading = false;
       });
     } catch (e) {
-      logger.d(e.toString());
+      logger.w('Wall upload failed', error: e);
       if (!mounted) return;
       Navigator.pop(context);
       toasts.error("Some uploading issue, please try again.");
@@ -217,9 +179,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
                 child: const Center(child: CircularProgressIndicator()),
-              )
-            else
-              Container(),
+              ),
             if (isUploading)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -228,9 +188,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                 ),
-              )
-            else
-              Container(),
+              ),
             if (isProcessing)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -239,9 +197,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                 ),
-              )
-            else
-              Container(),
+              ),
             if (isProcessing || isUploading)
               SizedBox(
                 width: MediaQuery.of(context).size.width / 2,
@@ -252,9 +208,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.error),
                   ),
                 ),
-              )
-            else
-              Container(),
+              ),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
@@ -272,7 +226,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                       padding: const EdgeInsets.all(8.0),
                       child: Center(
                         child: Text(
-                          app_state.prismUser.premium == true
+                          app_state.prismUser.premium
                               ? "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. Your photo will be visible in the profile/community section."
                               : "Note - We have a strong review policy, and submitting irrelevant images will lead to ban. We take about 24 hours to review the submissions, and after a successful review, your photo will be visible in the profile/community section.",
                           textAlign: TextAlign.center,
@@ -297,19 +251,19 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           onPressed: !isProcessing && !isUploading
               ? () {
                   _submitted = true;
-                  Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
+                  Navigator.pop(context, UploadedWallpaper(url: wallpaperUrl!, id: id));
+                  analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
                   wall_store.createRecord(
                     id,
-                    wallpaperProvider,
+                    'Prism',
                     wallpaperThumb,
                     wallpaperUrl,
                     wallpaperResolution,
                     wallpaperSize,
                     null,
-                    wallpaperCategory,
-                    wallpaperDesc,
-                    fromSetupRoute ? "setup" : review,
+                    'General',
+                    'Community',
+                    widget.fromSetupRoute ? 'setup' : false,
                   );
                   context.router.push(const ReviewRoute());
                 }

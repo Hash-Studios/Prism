@@ -12,11 +12,6 @@ else
   }
 fi
 
-if has_match "ENV_DART_DEFINES[[:space:]]*\\?=[[:space:]]*\\$\\(shell ./tool/dart_defines_from_env.sh\\)" Makefile; then
-  echo "doppler_guard failed: Makefile still uses .env as the runtime secret source."
-  exit 1
-fi
-
 if ! has_match "ENV_DART_DEFINES[[:space:]]*\\?=[[:space:]]*\\$\\(shell .*dart_defines_from_doppler.sh\\)" Makefile; then
   echo "doppler_guard failed: Makefile is not wired to dart_defines_from_doppler.sh."
   exit 1

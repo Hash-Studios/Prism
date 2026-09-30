@@ -1,10 +1,9 @@
-import 'dart:convert';
-
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
 import 'package:Prism/features/wallhaven_feed/data/mappers/wallhaven_dto_mapper.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
@@ -14,19 +13,19 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: WallhavenWallpaperRepository)
 class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
-  WallhavenWallpaperRepositoryImpl(this._feedCacheLocal);
+  WallhavenWallpaperRepositoryImpl(FeedCacheLocalDataSource feedCacheLocal)
+    : _cache = PagedFeedCache(feedCacheLocal, source: 'wallhaven');
 
-  final FeedCacheLocalDataSource _feedCacheLocal;
-  final Map<String, int> _pageNumbers = <String, int>{};
-  final Map<String, bool> _hasMoreMap = <String, bool>{};
+  final PagedFeedCache _cache;
 
   static const String _host = 'wallhaven.cc';
   static const String _searchPath = '/api/v1/search';
-  static const int _feedTtlHours = 6;
+  static const String _toplistKey = 'toplist';
+  static const String _toplistScope = 'toplist.3d';
 
   @override
   bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
-      _hasMoreMap[paginationKey ?? categoryName] ?? true;
+      _cache.hasMore(paginationKey ?? categoryName);
 
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchFeed({
@@ -39,22 +38,16 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
   }) async {
     final String pageKey = paginationKey ?? categoryName;
     if (refresh) {
-      _pageNumbers[pageKey] = startPage;
-      _hasMoreMap[pageKey] = true;
+      _cache.reset(pageKey);
     }
 
-    final int page = _pageNumbers[pageKey] ?? 1;
+    final int page = refresh ? startPage : _cache.pageFor(pageKey);
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
       'q': categoryName,
       'page': page.toString(),
       'categories': categories.toString(),
       'purity': purity.toString(),
     });
-
-    logger.d(
-      '[WallhavenWallpaperRepository] fetchFeed',
-      fields: <String, Object?>{'category': categoryName, 'page': page, 'refresh': refresh},
-    );
 
     try {
       final http.Response response = await http.get(uri);
@@ -78,14 +71,10 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
 
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
 
-      _pageNumbers[pageKey] = currentPage + 1;
-      _hasMoreMap[pageKey] = hasMore;
-      await _writeCache(
-        categoryName: categoryName,
-        paginationKey: paginationKey,
-        categories: categories,
-        purity: purity,
-        payload: payload,
+      await _cache.write(
+        pageKey,
+        scope: _scope(categoryName: categoryName, categories: categories, purity: purity, paginationKey: paginationKey),
+        payload: payload.toJson(),
         nextPage: currentPage + 1,
         hasMore: hasMore,
       );
@@ -116,8 +105,6 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     }
   }
 
-  static const String _toplistScope = 'toplist.1M';
-
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1}) async {
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
@@ -127,8 +114,6 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       'categories': '100',
       'page': page.toString(),
     });
-
-    logger.d('[WallhavenWallpaperRepository] fetchToplist', fields: <String, Object?>{'page': page});
 
     try {
       final http.Response response = await http.get(uri);
@@ -144,11 +129,12 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
       final WallhavenSearchResponseDto payload = WallhavenSearchResponseDto.fromJson(decoded);
       final List<WallhavenWallpaper> walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
 
-      await _feedCacheLocal.write(
-        source: 'wallhaven',
+      await _cache.write(
+        _toplistKey,
         scope: _toplistScope,
-        ttlHours: _feedTtlHours,
-        payload: <String, Object?>{'payload': jsonDecode(jsonEncode(payload.toJson()))},
+        payload: payload.toJson(),
+        nextPage: page + 1,
+        hasMore: walls.isNotEmpty,
       );
 
       logger.i('[WallhavenWallpaperRepository] fetchToplist success', fields: <String, Object?>{'count': walls.length});
@@ -176,16 +162,8 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     return Result.error(failure);
   }
 
-  Future<List<WallhavenWallpaper>?> _readCachedToplist() async {
-    final snapshot = await _feedCacheLocal.read(source: 'wallhaven', scope: _toplistScope);
-    if (snapshot == null || snapshot.payload is! Map) return null;
-    final map = toJsonMap(snapshot.payload);
-    final payloadMap = toJsonMap(map['payload']);
-    if (payloadMap.isEmpty) return null;
-    final payload = WallhavenSearchResponseDto.fromJson(payloadMap);
-    final walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
-    return walls.isEmpty ? null : walls;
-  }
+  Future<List<WallhavenWallpaper>?> _readCachedToplist() =>
+      _cache.read(_toplistKey, scope: _toplistScope, decode: _decodeWalls);
 
   @override
   Future<Result<WallhavenWallpaper?>> fetchById(String id) async {
@@ -232,64 +210,24 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     return Result.error(failure);
   }
 
-  Future<void> _writeCache({
-    required String categoryName,
-    required int categories,
-    required int purity,
-    String? paginationKey,
-    required WallhavenSearchResponseDto payload,
-    required int nextPage,
-    required bool hasMore,
-  }) {
-    return _feedCacheLocal.write(
-      source: 'wallhaven',
-      scope: _scope(categoryName: categoryName, categories: categories, purity: purity, paginationKey: paginationKey),
-      ttlHours: _feedTtlHours,
-      payload: <String, Object?>{
-        'payload': jsonDecode(jsonEncode(payload.toJson())),
-        'nextPage': nextPage,
-        'hasMore': hasMore,
-      },
-    );
-  }
-
   Future<List<WallhavenWallpaper>?> _readCached({
     required String categoryName,
     required int categories,
     required int purity,
     String? paginationKey,
-  }) async {
-    final snapshot = await _feedCacheLocal.read(
-      source: 'wallhaven',
-      scope: _scope(categoryName: categoryName, categories: categories, purity: purity, paginationKey: paginationKey),
-    );
-    if (snapshot == null || snapshot.payload is! Map) {
-      return null;
-    }
+  }) => _cache.read(
+    paginationKey ?? categoryName,
+    scope: _scope(categoryName: categoryName, categories: categories, purity: purity, paginationKey: paginationKey),
+    decode: _decodeWalls,
+  );
 
-    final map = toJsonMap(snapshot.payload);
-    final payloadMap = toJsonMap(map['payload']);
-    if (payloadMap.isEmpty) {
-      return null;
-    }
-
-    final payload = WallhavenSearchResponseDto.fromJson(payloadMap);
-    final walls = payload.data.map((item) => item.toDomain()).toList(growable: false);
-    if (walls.isEmpty) {
-      return null;
-    }
-
-    final String pageKey = paginationKey ?? categoryName;
-    _pageNumbers[pageKey] = (map['nextPage'] as num?)?.toInt() ?? (_pageNumbers[pageKey] ?? 1);
-    _hasMoreMap[pageKey] = map['hasMore'] == true;
-    return walls;
-  }
+  List<WallhavenWallpaper> _decodeWalls(Map<String, dynamic> payload) =>
+      WallhavenSearchResponseDto.fromJson(payload).data.map((item) => item.toDomain()).toList(growable: false);
 
   String _scope({required String categoryName, required int categories, required int purity, String? paginationKey}) {
     final String cacheKey = paginationKey == null || paginationKey == categoryName
         ? categoryName
         : '$categoryName.$paginationKey';
-    final normalizedCategory = cacheKey.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
-    return '$normalizedCategory.$categories.$purity';
+    return '${feedCacheSlug(cacheKey)}.$categories.$purity';
   }
 }

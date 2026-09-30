@@ -1,6 +1,5 @@
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
-import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/features/favourite_walls/views/widgets/fav_loader.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +15,7 @@ class FavouriteWallpaperScreen extends StatelessWidget {
         preferredSize: Size(double.infinity, 55),
         child: HeadingChipBar(current: "Favourites"),
       ),
-      body: FavLoader(future: context.favouriteWallsAdapter(listen: false).getDataBase()),
+      body: const FavouriteGrid(),
     );
   }
 }
