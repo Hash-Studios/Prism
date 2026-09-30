@@ -25,7 +25,6 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
   Future getSetup() async {
     if (!app_state.prismUser.premium) {
       await PaywallOrchestrator.instance.present(
-        context,
         placement: PaywallPlacement.blockedSetupCreate,
         source: 'setup_guidelines_blocked_create',
       );

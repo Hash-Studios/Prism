@@ -309,7 +309,6 @@ class _DownloadButtonState extends State<DownloadButton> {
       case _LowBalanceAction.upgrade:
         if (mounted) {
           await PaywallOrchestrator.instance.present(
-            context,
             placement: PaywallPlacement.lowBalance,
             source: 'download_low_balance_upgrade',
           );
@@ -338,7 +337,6 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       if (mounted) {
         await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-          context,
           source: 'download_watch_and_download_rewarded_ad',
         );
       }

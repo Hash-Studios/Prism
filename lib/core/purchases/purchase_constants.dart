@@ -38,23 +38,4 @@ class PurchaseConstants {
 
   /// Canonical v3 offering containing monthly/annual/lifetime packages.
   static const String offeringV3Default = 'v3_default';
-
-  /// Fallback hero image for paywall (used until metadata is added to RC).
-  static const String defaultHeroImageUrl =
-      'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/'
-      'Replacement%20Thumbnails%2Fprism%20mock.png?alt=media&token=a86d1386-dbb5-493f-8399-ff0160b1a86a';
-
-  /// Privacy Policy URL for paywall footer.
-  static const String privacyPolicyUrl = 'https://github.com/Hash-Studios/Prism/blob/master/PRIVACY.md';
-
-  /// Terms of Use / EULA URL for paywall footer (Apple standard EULA).
-  static const String termsOfUseUrl = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
-
-  /// Sample wallpaper preview URLs shown as floating cards in the paywall hero.
-  /// Replace these with your own premium wallpaper thumbnail URLs.
-  static const List<String> previewWallpaperUrls = [
-    'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fprism%20mock.png?alt=media&token=a86d1386-dbb5-493f-8399-ff0160b1a86a',
-    'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4',
-    'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fprism%20mock.png?alt=media&token=a86d1386-dbb5-493f-8399-ff0160b1a86a',
-  ];
 }

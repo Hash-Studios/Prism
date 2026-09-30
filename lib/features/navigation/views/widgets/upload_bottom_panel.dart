@@ -46,7 +46,6 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(
-          context,
           placement: PaywallPlacement.uploadLimitReached,
           source: 'upload_wallpaper_limit_reached',
         );

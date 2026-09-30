@@ -1095,14 +1095,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
-  in_app_update:
-    dependency: "direct main"
-    description:
-      name: in_app_update
-      sha256: "9924a3efe592e1c0ec89dda3683b3cfec3d4cd02d908e6de00c24b759038ddb1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.5"
   injectable:
     dependency: "direct main"
     description:

@@ -330,7 +330,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       case _PremiumFilterLowBalanceAction.upgrade:
         if (mounted) {
           await PaywallOrchestrator.instance.present(
-            context,
             placement: PaywallPlacement.lowBalance,
             source: 'premium_filter_low_balance',
           );
@@ -355,10 +354,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         return;
       }
       if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-          context,
-          source: 'premium_filter_watch_ad',
-        );
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'premium_filter_watch_ad');
       }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: '$sourceTag.rewarded_ad', error: error, stackTrace: stackTrace);
