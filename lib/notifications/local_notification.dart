@@ -14,10 +14,9 @@ class LocalNotification {
     requestBadgePermission: false,
   );
 
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   AppRouter? router;
   LocalNotification() {
-    flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
       '@drawable/ic_notification',
     );
@@ -33,6 +32,13 @@ class LocalNotification {
         }
       },
     );
+  }
+
+  /// Title for the download summary notification: one more than the count in [previousTitle].
+  @visibleForTesting
+  static String downloadedTitle(String? previousTitle) {
+    final int count = (int.tryParse(RegExp(r'^\d+').stringMatch(previousTitle ?? '') ?? '') ?? 0) + 1;
+    return '$count ${count == 1 ? 'wall' : 'walls'} downloaded.';
   }
 
   Future<void> fetchNotificationData(BuildContext context) async {
@@ -143,11 +149,10 @@ class LocalNotification {
             .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
             ?.getActiveNotifications() ??
         [];
+    final String? previousTitle = activeNotifications.where((n) => n.id == 1).firstOrNull?.title;
     await flutterLocalNotificationsPlugin.show(
       id: 1,
-      title: (activeNotifications.length + 1) == 1
-          ? '1 wall downloaded.'
-          : '${int.parse(activeNotifications[0].title![0]) + 1} walls downloaded.',
+      title: downloadedTitle(previousTitle),
       body: "Tap to open Prism.",
       notificationDetails: platformChannelSpecifics,
       payload: "downloaded",

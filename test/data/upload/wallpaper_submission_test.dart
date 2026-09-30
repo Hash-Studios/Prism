@@ -43,8 +43,11 @@ class _FakeFirestoreClient extends Fake implements FirestoreClient {
   }
 }
 
-Future<bool> _submit() =>
+Future<wall_store.WallSubmissionResult> _submit() =>
     wall_store.createRecord('wall', 'Prism', 'thumb', 'image', '100x100', '1MB', null, 'General', 'Community', false);
+
+const wall_store.WallSubmissionResult _submitted = wall_store.WallSubmissionResult.submitted;
+const wall_store.WallSubmissionResult _quotaExceeded = wall_store.WallSubmissionResult.quotaExceeded;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -89,27 +92,27 @@ void main() {
     final submission = _submit();
     final countWhilePending = UploadQuota.currentUploadsThisWeek();
     firestore.saveGate!.complete();
-    expect(await submission, isTrue);
+    expect(await submission, _submitted);
     expect(countWhilePending, 0);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
   });
 
-  test('quota rejection writes no wall and returns false', () async {
+  test('quota rejection writes no wall and reports quotaExceeded', () async {
     for (var i = 0; i < UploadQuota.freeUploadsPerWeek; i++) {
       await UploadQuota.incrementWeeklyUploads();
     }
-    expect(await _submit(), isFalse);
+    expect(await _submit(), _quotaExceeded);
     expect(firestore.wallWrites, 0);
     expect(UploadQuota.currentUploadsThisWeek(), 3);
     expect(toasts, ['Free users can upload 3 wallpapers per week.']);
   });
 
   test('saved wall consumes one upload and reports success', () async {
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(firestore.wallWrites, 1);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
     expect(app_state.prismUser.uploadsThisWeek, 1);
-    expect(toasts, ['Your wall is submitted, and is under review.']);
+    expect(toasts, ['Your wall is submitted and is under review.']);
   });
 
   test('premium upload bypasses an exhausted free quota without incrementing it', () async {
@@ -117,38 +120,38 @@ void main() {
       await UploadQuota.incrementWeeklyUploads();
     }
     app_state.prismUser.premium = true;
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(firestore.wallWrites, 1);
     expect(UploadQuota.currentUploadsThisWeek(), 3);
-    expect(toasts, ['Successfully uploaded']);
+    expect(toasts, ['Your wall is submitted and is under review.']);
   });
 
   test('profile sync failure does not reject an already saved wall', () async {
     app_state.prismUser.id = 'user';
     firestore.syncError = StateError('profile offline');
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(firestore.wallWrites, 1);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
-    expect(toasts, ['Your wall is submitted, and is under review.']);
+    expect(toasts, ['Your wall is submitted and is under review.']);
   });
 
   test('quota persistence failure does not reject an already saved wall', () async {
     UploadQuota.currentUploadsThisWeek();
     local.failWrites = true;
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(firestore.wallWrites, 1);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
-    expect(toasts, ['Your wall is submitted, and is under review.']);
+    expect(toasts, ['Your wall is submitted and is under review.']);
   });
 
   test('reward failure does not reject an already saved wall', () async {
     // No Firebase app is initialized, so the reward callable fails.
     app_state.prismUser.id = 'user';
     app_state.prismUser.loggedIn = true;
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(firestore.wallWrites, 1);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
-    expect(toasts, ['Your wall is submitted, and is under review.']);
+    expect(toasts, ['Your wall is submitted and is under review.']);
   });
 
   test('overlapping submissions cannot both use the last free upload', () async {
@@ -156,11 +159,11 @@ void main() {
     await UploadQuota.incrementWeeklyUploads();
     firestore.saveGate = Completer<void>();
     final first = _submit();
-    final second = await _submit();
+    final second = _submit();
     firestore.saveGate!.complete();
-    expect(await first, isTrue);
-    expect(second, isFalse);
-    expect(await _submit(), isFalse);
+    expect(await first, _submitted);
+    expect(await second, _quotaExceeded);
+    expect(await _submit(), _quotaExceeded);
     expect(firestore.wallWrites, 1);
     expect(UploadQuota.currentUploadsThisWeek(), 3);
   });
@@ -169,7 +172,7 @@ void main() {
     firestore.saveError = StateError('offline');
     await expectLater(_submit(), throwsStateError);
     firestore.saveError = null;
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
     expect(firestore.wallWrites, 2);
   });
@@ -179,7 +182,7 @@ void main() {
     for (var i = 0; i < UploadQuota.freeUploadsPerWeek; i++) {
       await UploadQuota.incrementWeeklyUploads(now: lastWeek);
     }
-    expect(await _submit(), isTrue);
+    expect(await _submit(), _submitted);
     expect(UploadQuota.currentUploadsThisWeek(), 1);
   });
 }

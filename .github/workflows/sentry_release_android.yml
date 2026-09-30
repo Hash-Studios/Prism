@@ -20,7 +20,7 @@ jobs:
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
       DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
       DOPPLER_PROJECT: prism
-      DOPPLER_CONFIG: production
+      DOPPLER_CONFIG: prd
 
     steps:
       - name: Checkout
@@ -32,16 +32,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.0'
+          flutter-version: ${{ steps.fvm.outputs.version }}
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Version sync guard
-        run: python3 tool/verify_version_sync.py
+        run: python3 tool/sync_app_version.py --check
 
       - name: Install Doppler CLI
         run: |
@@ -50,13 +54,11 @@ jobs:
       - name: Inject required app secrets
         run: |
           FIREBASE_SECRET="$(doppler secrets get FIREBASE_SECRET --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
-          GITKEY_DART="$(doppler secrets get GITKEY_DART --plain --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG")"
-          if [ -z "$FIREBASE_SECRET" ] || [ -z "$GITKEY_DART" ]; then
-            echo "FIREBASE_SECRET and GITKEY_DART secrets are required."
+          if [ -z "$FIREBASE_SECRET" ]; then
+            echo "FIREBASE_SECRET secret is required."
             exit 1
           fi
           echo "$FIREBASE_SECRET" > android/app/google-services.json
-          echo "$GITKEY_DART" > lib/gitkey.dart
 
       - name: Resolve Sentry environment variables
         env:

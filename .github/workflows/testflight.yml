@@ -38,7 +38,7 @@ jobs:
         run: make get CI=true
 
       - name: Version sync guard
-        run: python3 tool/verify_version_sync.py
+        run: python3 tool/sync_app_version.py --check
 
       - name: Setup Ruby & CocoaPods
         uses: ruby/setup-ruby@v1
@@ -96,7 +96,7 @@ jobs:
         env:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN_PRODUCTION }}
           DOPPLER_PROJECT: prism
-          DOPPLER_CONFIG: production
+          DOPPLER_CONFIG: prd
           BUILD_NUMBER: ${{ github.event.inputs.build_number }}
         run: |
           DART_DEFINES="$(./tool/dart_defines_from_doppler.sh)"

@@ -63,11 +63,10 @@ These are already declared in `wrangler.toml`.
 Update these files:
 
 - `lib/site-config.ts`: app/store links, brand constants
-- `lib/marketing-content.ts`: homepage copy, feature lists, FAQ, credibility items
 
 ## Images used by the site
 
 - App icon: `public/assets/ios.png`
-- Screenshots: `public/assets/screenshots/screen1.jpg` to `screen5.jpg`
+- Screenshots: `public/assets/screenshots/screen1.jpg` to `screen4.jpg`
 
 If you want to refresh visuals later, keep the same filenames to avoid changing code references.

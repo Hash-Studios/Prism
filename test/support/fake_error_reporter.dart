@@ -28,28 +28,12 @@ class CapturedMessage {
   final Map<String, Object?> extras;
 }
 
-class CapturedBreadcrumb {
-  CapturedBreadcrumb({required this.message, required this.category, required this.severity, required this.data});
-
-  final String message;
-  final String category;
-  final ErrorSeverity severity;
-  final Map<String, Object?> data;
-}
-
 class FakeErrorReporter extends ErrorReporter {
-  FakeErrorReporter({bool isEnabled = true}) : _isEnabled = isEnabled;
-
-  bool _isEnabled;
-
   @override
-  bool get isEnabled => _isEnabled;
-
-  set isEnabled(bool value) => _isEnabled = value;
+  bool get isEnabled => true;
 
   final List<CapturedException> capturedExceptions = <CapturedException>[];
   final List<CapturedMessage> capturedMessages = <CapturedMessage>[];
-  final List<CapturedBreadcrumb> breadcrumbs = <CapturedBreadcrumb>[];
 
   String? lastUserId;
   String? lastUserEmail;
@@ -62,9 +46,7 @@ class FakeErrorReporter extends ErrorReporter {
     String category = 'app.lifecycle',
     ErrorSeverity severity = ErrorSeverity.info,
     Map<String, Object?> data = const <String, Object?>{},
-  }) async {
-    breadcrumbs.add(CapturedBreadcrumb(message: message, category: category, severity: severity, data: data));
-  }
+  }) async {}
 
   @override
   Future<SentryId?> captureException(

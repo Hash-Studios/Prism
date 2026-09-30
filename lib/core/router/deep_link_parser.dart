@@ -80,15 +80,10 @@ class DeepLinkParser {
         uri.queryParameters['setupName'],
         uri.queryParameters['setup_name'],
       ]);
-      final String thumbnailUrl = _firstNonEmpty(<String?>[
-        uri.queryParameters['thumb'],
-        uri.queryParameters['thumbUrl'],
-        uri.queryParameters['thumbnail'],
-      ]);
       if (setupName.isEmpty) {
         return UnknownIntent(rawUri: uri.toString());
       }
-      return SetupLinkIntent(setupName: setupName, thumbnailUrl: thumbnailUrl, rawUri: uri.toString());
+      return SetupLinkIntent(setupName: setupName, rawUri: uri.toString());
     }
 
     if (_referRoots.contains(root)) {

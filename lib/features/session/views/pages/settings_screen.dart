@@ -14,12 +14,16 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -27,7 +31,19 @@ import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+
+enum _DownloadQuality {
+  original('Original', 'Full resolution, larger file size'),
+  compressed('Compressed', 'Smaller file size, slightly reduced quality');
+
+  const _DownloadQuality(this.title, this.subtitle);
+
+  final String title;
+  final String subtitle;
+
+  static _DownloadQuality fromName(String name) =>
+      values.firstWhere((quality) => quality.name == name, orElse: () => original);
+}
 
 @RoutePage()
 class SettingsScreen extends StatefulWidget {
@@ -41,21 +57,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final CacheMaintenanceService _cacheMaintenance = getIt<CacheMaintenanceService>();
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
 
-  late int _categories;
-  late int _purity;
+  static final Color _destructiveColor = Colors.red[400]!;
+
+  late bool _showAnime;
+  late bool _showSketchy;
   late bool _notifWotd;
   late bool _notifPromo;
   bool _restoring = false;
-  late String _downloadQuality;
+  late _DownloadQuality _downloadQuality;
 
   @override
   void initState() {
     super.initState();
-    _categories = _settingsLocal.get<int>('WHcategories', defaultValue: 100);
-    _purity = _settingsLocal.get<int>('WHpurity', defaultValue: 100);
+    _showAnime = _settingsLocal.get<int>('WHcategories', defaultValue: 100) == 111;
+    _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
     _notifWotd = _settingsLocal.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
-    _notifPromo = _settingsLocal.get<bool>('recommendationsSubscriber', defaultValue: true);
-    _downloadQuality = _settingsLocal.get<String>(PersistenceKeys.downloadQuality, defaultValue: 'original');
+    _notifPromo = _settingsLocal.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true);
+    _downloadQuality = _DownloadQuality.fromName(
+      _settingsLocal.get<String>(PersistenceKeys.downloadQuality, defaultValue: _DownloadQuality.original.name),
+    );
   }
 
   void _trackSettingsAction(AnalyticsActionValue action) {
@@ -81,8 +101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     unawaited(analytics.track(SettingsAuthActionResultEvent(action: action, result: result, reason: reason)));
   }
-
-  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   Color get _accentColor {
     final c = Theme.of(context).colorScheme.error;
@@ -128,8 +146,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   static const TextStyle _subtitleStyle = TextStyle(fontSize: 12);
 
-  // ── Sections ─────────────────────────────────────────────────────────────────
-
   Widget _appearanceSection() {
     return _sectionCard(
       title: 'APPEARANCE',
@@ -137,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.wrench),
           title: Text('Themes', style: _titleStyle),
-          subtitle: const Text('Accent colours, light & dark themes', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Accent colours, light & dark themes', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const ThemeViewRoute()),
         ),
@@ -152,15 +168,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         SwitchListTile(
           activeThumbColor: _accentColor,
           secondary: const Icon(JamIcons.picture),
-          value: _categories == 111,
+          value: _showAnime,
           title: Text('Show Anime Wallpapers', style: _titleStyle),
           subtitle: Text(
-            _categories == 111 ? 'Disable to hide anime wallpapers' : 'Enable to show anime wallpapers',
+            _showAnime ? 'Disable to hide anime wallpapers' : 'Enable to show anime wallpapers',
             style: _subtitleStyle,
           ),
           onChanged: (value) {
-            setState(() => _categories = value ? 111 : 100);
-            _settingsLocal.set('WHcategories', _categories);
+            setState(() => _showAnime = value);
+            _settingsLocal.set('WHcategories', value ? 111 : 100);
             _trackSettingsToggle(SettingValue.animeWallpapers, value);
           },
         ),
@@ -169,22 +185,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             activeThumbColor: _accentColor,
             secondary: const Icon(JamIcons.stop_sign),
-            value: _purity == 110,
+            value: _showSketchy,
             title: Text('Show Sketchy Wallpapers', style: _titleStyle),
             subtitle: Text(
-              _purity == 110 ? 'Disable to hide sketchy wallpapers' : 'Enable to show sketchy wallpapers',
+              _showSketchy ? 'Disable to hide sketchy wallpapers' : 'Enable to show sketchy wallpapers',
               style: _subtitleStyle,
             ),
             onChanged: (value) {
-              setState(() => _purity = value ? 110 : 100);
-              _settingsLocal.set('WHpurity', _purity);
+              setState(() => _showSketchy = value);
+              _settingsLocal.set('WHpurity', value ? 110 : 100);
               _trackSettingsToggle(SettingValue.sketchyWallpapers, value);
             },
           ),
         ListTile(
           leading: const Icon(Icons.high_quality_outlined),
           title: Text('Download Quality', style: _titleStyle),
-          subtitle: Text(_downloadQuality == 'original' ? 'Original resolution' : 'Compressed', style: _subtitleStyle),
+          subtitle: Text(
+            _downloadQuality == _DownloadQuality.original ? 'Original resolution' : 'Compressed',
+            style: _subtitleStyle,
+          ),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: _showDownloadQualitySheet,
         ),
@@ -198,60 +217,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: Theme.of(context).primaryColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 4,
-                    width: 36,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(color: Theme.of(ctx).hintColor, borderRadius: BorderRadius.circular(2)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text('Download Quality', style: Theme.of(ctx).textTheme.titleMedium),
-                  ),
-                  RadioListTile<String>(
-                    value: 'original',
-                    // ignore: deprecated_member_use
-                    groupValue: _downloadQuality,
-                    // ignore: deprecated_member_use
-                    activeColor: _accentColor,
-                    title: Text('Original', style: _titleStyle),
-                    subtitle: const Text('Full resolution, larger file size', style: TextStyle(fontSize: 12)),
-                    // ignore: deprecated_member_use
-                    onChanged: (v) {
-                      setSheetState(() {});
-                      setState(() => _downloadQuality = v ?? _downloadQuality);
-                      _settingsLocal.set(PersistenceKeys.downloadQuality, v ?? _downloadQuality);
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                  RadioListTile<String>(
-                    value: 'compressed',
-                    // ignore: deprecated_member_use
-                    groupValue: _downloadQuality,
-                    // ignore: deprecated_member_use
-                    activeColor: _accentColor,
-                    title: Text('Compressed', style: _titleStyle),
-                    subtitle: const Text('Smaller file size, slightly reduced quality', style: TextStyle(fontSize: 12)),
-                    // ignore: deprecated_member_use
-                    onChanged: (v) {
-                      setSheetState(() {});
-                      setState(() => _downloadQuality = v ?? _downloadQuality);
-                      _settingsLocal.set(PersistenceKeys.downloadQuality, v ?? _downloadQuality);
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
+        return RadioGroup<_DownloadQuality>(
+          groupValue: _downloadQuality,
+          onChanged: (quality) {
+            if (quality == null) return;
+            setState(() => _downloadQuality = quality);
+            _settingsLocal.set(PersistenceKeys.downloadQuality, quality.name);
+            Navigator.pop(ctx);
           },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AiSheetDragHandle(),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text('Download Quality', style: Theme.of(ctx).textTheme.titleMedium),
+                ),
+                for (final quality in _DownloadQuality.values)
+                  RadioListTile<_DownloadQuality>(
+                    value: quality,
+                    activeColor: _accentColor,
+                    title: Text(quality.title, style: _titleStyle),
+                    subtitle: Text(quality.subtitle, style: _subtitleStyle),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -266,7 +261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondary: const Icon(Icons.wb_sunny_outlined),
           value: _notifWotd,
           title: Text('Wall of the Day', style: _titleStyle),
-          subtitle: const Text('Daily wallpaper recommendation alert', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Daily wallpaper recommendation alert', style: _subtitleStyle),
           onChanged: (value) {
             setState(() => _notifWotd = value);
             _settingsLocal.set(PersistenceKeys.notifWotd, value);
@@ -278,10 +273,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           secondary: const Icon(Icons.campaign_outlined),
           value: _notifPromo,
           title: Text('Promotional Alerts', style: _titleStyle),
-          subtitle: const Text('New features, events & announcements', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('New features, events & announcements', style: _subtitleStyle),
           onChanged: (value) {
             setState(() => _notifPromo = value);
-            _settingsLocal.set('recommendationsSubscriber', value);
+            _settingsLocal.set(NotificationPrefKeys.recommendations, value);
             _trackSettingsToggle(SettingValue.recommendationsNotifications, value);
             _setTopic('recommendations', value);
           },
@@ -307,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(Icons.grid_view_rounded),
           title: Text('Quick Tile Settings', style: _titleStyle),
-          subtitle: const Text('Configure Android Quick Settings tiles', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Configure Android Quick Settings tiles', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const QuickTileSettingsRoute()),
         ),
@@ -322,17 +317,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.pie_chart_alt),
           title: Text('Clear Cache', style: _titleStyle),
-          subtitle: const Text('Clear locally cached images', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Clear locally cached images', style: _subtitleStyle),
           onTap: () async {
             _trackSettingsAction(AnalyticsActionValue.clearCacheTapped);
             await _cacheMaintenance.clearTransientCache();
-            toasts.codeSend('Cleared cache!');
+            toasts.success('Cleared cache!');
           },
         ),
         ListTile(
           leading: const Icon(JamIcons.trash_alt),
           title: Text('Clear all Downloads', style: _titleStyle),
-          subtitle: const Text('Remove all downloaded wallpapers', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Remove all downloaded wallpapers', style: _subtitleStyle),
           onTap: () => _showClearDownloadsDialog(),
         ),
       ],
@@ -340,33 +335,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showClearDownloadsDialog() {
+    _showYesNoDialog('Do you want to remove all your downloads?', () async {
+      bool deleted = false;
+      try {
+        final result = await PrismMediaHostApi().clearDownloads();
+        deleted = result.success;
+      } catch (e) {
+        logger.w('Clearing downloads failed.', error: e);
+      }
+      if (deleted) {
+        toasts.success('Deleted all downloads!');
+      } else {
+        toasts.error('No downloads found.');
+      }
+    });
+  }
+
+  void _showYesNoDialog(String message, FutureOr<void> Function() onYes) {
     showModal(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        content: const SizedBox(
-          height: 50,
-          width: 250,
-          child: Center(child: Text('Do you want to remove all your downloads?')),
-        ),
+        content: SizedBox(height: 50, width: 250, child: Center(child: Text(message))),
         actions: [
           MaterialButton(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-            onPressed: () async {
+            onPressed: () {
               Navigator.of(ctx).pop();
-              bool deleted = false;
-              try {
-                final result = await PrismMediaHostApi().clearDownloads();
-                deleted = result.success;
-              } catch (e) {
-                logger.d(e.toString());
-              }
-              Fluttertoast.showToast(
-                msg: deleted ? 'Deleted all downloads!' : 'No downloads found.',
-                toastLength: Toast.LENGTH_LONG,
-                textColor: Colors.white,
-                backgroundColor: deleted ? Colors.green[400] : Colors.red[400],
-              );
+              onYes();
             },
             child: Text('YES', style: TextStyle(fontSize: 16.0, color: _accentColor)),
           ),
@@ -393,7 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             leading: const Icon(JamIcons.log_in),
             title: Text('Sign in', style: _titleStyle),
-            subtitle: const Text('Sign in to sync data across devices', style: TextStyle(fontSize: 12)),
+            subtitle: const Text('Sign in to sync data across devices', style: _subtitleStyle),
             onTap: () {
               _trackSettingsAction(AnalyticsActionValue.signInTapped);
               // Routes through the shared popup so Apple is offered alongside Google.
@@ -425,21 +421,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.check),
           title: Text('Review Status', style: _titleStyle),
-          subtitle: const Text('Track your submitted wallpaper reviews', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Track your submitted wallpaper reviews', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const ReviewRoute()),
         ),
         ListTile(
           leading: const Icon(JamIcons.user_remove),
           title: Text('Blocked accounts', style: _titleStyle),
-          subtitle: const Text('Manage users you have blocked', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Manage users you have blocked', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const BlockedAccountsRoute()),
         ),
         ListTile(
           leading: const Icon(JamIcons.share_alt),
           title: Text('Share your Profile', style: _titleStyle),
-          subtitle: const Text('Share a link to your Prism profile', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Share a link to your Prism profile', style: _subtitleStyle),
           onTap: () => createUserDynamicLink(
             app_state.prismUser.name,
             app_state.prismUser.username,
@@ -452,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.heart),
           title: Text('Clear favourite walls', style: _titleStyle),
-          subtitle: const Text('Remove all favourite wallpapers', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Remove all favourite wallpapers', style: _subtitleStyle),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
             _showClearFavWallsDialog();
@@ -461,17 +457,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(Icons.restore_rounded),
           title: Text('Restore Purchases', style: _titleStyle),
-          subtitle: const Text('Restore a previously purchased subscription', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Restore a previously purchased subscription', style: _subtitleStyle),
           onTap: _restoring
               ? null
               : () async {
                   _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
                   setState(() => _restoring = true);
-                  toasts.codeSend('Restoring purchases…');
+                  toasts.success('Restoring purchases…');
                   try {
                     final bool premium = await PurchasesService.instance.restore();
                     premium
-                        ? toasts.codeSend('Purchases restored!')
+                        ? toasts.success('Purchases restored!')
                         : toasts.error('No purchases to restore for this account.');
                   } catch (e) {
                     toasts.error('Could not restore purchases. Please try again.');
@@ -481,9 +477,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
         ),
         ListTile(
-          leading: Icon(Icons.delete_forever_rounded, color: Colors.red[400]),
-          title: Text('Delete Account', style: _titleStyle.copyWith(color: Colors.red[400])),
-          subtitle: const Text('Permanently delete your account and data', style: TextStyle(fontSize: 12)),
+          leading: Icon(Icons.delete_forever_rounded, color: _destructiveColor),
+          title: Text('Delete Account', style: _titleStyle.copyWith(color: _destructiveColor)),
+          subtitle: const Text('Permanently delete your account and data', style: _subtitleStyle),
           onTap: () => _showDeleteAccountDialog(),
         ),
         ListTile(
@@ -493,18 +489,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () async {
             _trackSettingsAction(AnalyticsActionValue.logoutTapped);
             try {
-              final bool signedOut = await app_state.gAuth.signOutGoogle();
+              final bool signedOut = await globalGoogleAuth.signOutGoogle();
               _trackSettingsAuthResult(
                 action: AnalyticsActionValue.logoutTapped,
                 result: signedOut ? EventResultValue.success : EventResultValue.failure,
                 reason: signedOut ? null : AnalyticsReasonValue.error,
               );
               if (signedOut) {
-                toasts.codeSend('Log out Successful!');
-                final settingsLocal = getIt<SettingsLocalDataSource>();
-                await settingsLocal.set('onboarded_v2_new', false);
-                await settingsLocal.set('onboarding_v2_interests', '');
-                await settingsLocal.set('onboarding_v2_followed_creators', '');
+                toasts.success('Log out Successful!');
+                await resetOnboardingLocalState(_settingsLocal);
                 if (context.mounted) {
                   // ignore: use_build_context_synchronously
                   main.RestartWidget.restartApp(context);
@@ -526,39 +519,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showClearFavWallsDialog() {
-    showModal(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        content: const SizedBox(
-          height: 50,
-          width: 250,
-          child: Center(child: Text('Do you want to remove all your favourite wallpapers?')),
-        ),
-        actions: [
-          MaterialButton(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-            onPressed: () {
-              _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsConfirmed);
-              Navigator.of(ctx).pop();
-              toasts.error('Cleared all favourite wallpapers!');
-              context.favouriteWallsAdapter(listen: false).deleteData();
-            },
-            child: Text('YES', style: TextStyle(fontSize: 16.0, color: _accentColor)),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: MaterialButton(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-              color: _accentColor,
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('NO', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-            ),
-          ),
-        ],
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-    );
+    _showYesNoDialog('Do you want to remove all your favourite wallpapers?', () {
+      _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsConfirmed);
+      toasts.error('Cleared all favourite wallpapers!');
+      context.favouriteWallsAdapter(listen: false).deleteData();
+    });
   }
 
   void _showDeleteAccountDialog() {
@@ -566,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-        title: Text('Delete Account', style: _titleStyle.copyWith(color: Colors.red[400])),
+        title: Text('Delete Account', style: _titleStyle.copyWith(color: _destructiveColor)),
         content: const SizedBox(
           width: 250,
           child: Text(
@@ -576,7 +541,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           MaterialButton(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-            color: Colors.red[400],
+            color: _destructiveColor,
             onPressed: () async {
               Navigator.of(ctx).pop();
               final loaderDialog = Dialog(
@@ -634,14 +599,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _premiumSection() {
-    if (app_state.prismUser.premium == true) return const SizedBox.shrink();
+    if (app_state.prismUser.premium) return const SizedBox.shrink();
     return _sectionCard(
       title: 'PREMIUM',
       children: [
         ListTile(
           leading: const Icon(JamIcons.instant_picture_f),
           title: Text('Buy Premium', style: _titleStyle),
-          subtitle: const Text('Get unlimited setups and filters.', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Get unlimited setups and filters.', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
@@ -664,21 +629,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(Icons.bug_report_outlined),
           title: Text('Debug Panel', style: _titleStyle),
-          subtitle: const Text('Logs, network, tools, storage inspector', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Logs, network, tools, storage inspector', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.pushPath('/debug-panel'),
         ),
         ListTile(
           leading: const Icon(JamIcons.shield_check),
           title: Text('Admin Moderation', style: _titleStyle),
-          subtitle: const Text('Review and moderate submitted content', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Review and moderate submitted content', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const AdminReviewRoute()),
+          onTap: () => context.router.push(AdminReviewRoute()),
         ),
         ListTile(
           leading: const Icon(JamIcons.file),
           title: Text('Firestore Telemetry', style: _titleStyle),
-          subtitle: const Text('Database usage and telemetry stats', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Database usage and telemetry stats', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const FirestoreTelemetryRoute()),
         ),
@@ -699,7 +664,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.refresh),
           title: Text('Restart App', style: _titleStyle),
-          subtitle: const Text('Force the application to restart', style: TextStyle(fontSize: 12)),
+          subtitle: const Text('Force the application to restart', style: _subtitleStyle),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.restartAppTapped);
             main.RestartWidget.restartApp(context);
@@ -708,8 +673,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
     );
   }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {

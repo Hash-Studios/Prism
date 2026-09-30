@@ -1,13 +1,7 @@
-import * as admin from "firebase-admin";
 import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {db, REGION} from "./common";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
-const REGION = "asia-south1";
 const USERS = "usersv2";
 const revenueCatSecret = defineSecret("REVENUECAT_SECRET_KEY");
 

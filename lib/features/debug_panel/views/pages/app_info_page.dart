@@ -5,10 +5,10 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AppInfoPage extends StatefulWidget {
@@ -39,7 +39,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
       final devicePlugin = DeviceInfoPlugin();
       final pkgInfo = await PackageInfo.fromPlatform();
 
-      // Device info
       if (Platform.isAndroid) {
         final info = await devicePlugin.androidInfo;
         _deviceInfo = {
@@ -67,7 +66,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
         };
       }
 
-      // Package info
       _packageInfo = {
         'App Name': pkgInfo.appName,
         'Package Name': pkgInfo.packageName,
@@ -76,7 +74,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
         'Build Signature': pkgInfo.buildSignature.isEmpty ? 'N/A' : pkgInfo.buildSignature,
       };
 
-      // Remote Config snapshot
       try {
         final rc = getIt<FirebaseRemoteConfig>();
         _remoteConfig = {};
@@ -110,7 +107,9 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
   Map<String, String> get _envInfo {
     return {
       'App Version': '${app_state.currentAppVersion}+${app_state.currentAppVersionCode}',
-      'Persistence Backend': PersistenceRuntime.isInitialized ? PersistenceRuntime.backend.name : 'unknown',
+      'Persistence Backend': PersistenceRuntime.isInitialized
+          ? PersistenceRuntime.store.runtimeType.toString()
+          : 'unknown',
       'Sentry DSN Present': Env.sentryDsn.isNotEmpty.toString(),
       'Sentry Env': Env.sentryEnvironment.isEmpty ? '(default)' : Env.sentryEnvironment,
       'Sentry Enabled': Env.sentryEnabled,
@@ -167,18 +166,17 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
     return ListView(
       padding: const EdgeInsets.only(bottom: 32),
       children: [
-        // Copy All button
         Padding(
           padding: const EdgeInsets.all(12),
           child: FilledButton.icon(
             icon: const Icon(Icons.copy_all, size: 18),
             label: const Text('Copy Full Diagnostic Report'),
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: _buildDiagnosticReport()));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Diagnostic report copied to clipboard'), duration: Duration(seconds: 2)),
-              );
-            },
+            onPressed: () => copyToClipboard(
+              context,
+              _buildDiagnosticReport(),
+              label: 'Diagnostic report copied to clipboard',
+              duration: const Duration(seconds: 2),
+            ),
           ),
         ),
         _InfoSection(title: 'Package', data: _packageInfo),
@@ -211,18 +209,7 @@ class _InfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-          child: Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-              letterSpacing: 1.0,
-            ),
-          ),
-        ),
+        DebugSectionHeader(title, top: 16),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
@@ -230,15 +217,17 @@ class _InfoSection extends StatelessWidget {
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Column(
-            children: data.entries.map((e) {
-              final isLast = e.key == data.entries.last.key;
-              return Container(
-                decoration: BoxDecoration(
-                  border: isLast ? null : Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
+            children: [
+              for (final (i, e) in data.entries.indexed)
+                Container(
+                  decoration: BoxDecoration(
+                    border: i == data.length - 1
+                        ? null
+                        : Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
+                  ),
+                  child: _InfoRow(label: e.key, value: e.value),
                 ),
-                child: _InfoRow(label: e.key, value: e.value),
-              );
-            }).toList(),
+            ],
           ),
         ),
       ],
@@ -254,12 +243,7 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onLongPress: () {
-        Clipboard.setData(ClipboardData(text: value));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Copied: $value'), duration: const Duration(seconds: 1)));
-      },
+      onLongPress: () => copyToClipboard(context, value, label: 'Copied: $value'),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(

@@ -26,13 +26,13 @@ final RegExp _partRe = RegExp(r"""^part\s+['"]([^'"]+)['"]""", multiLine: true);
 
 /// Matches top-level type declarations (class, mixin, enum, extension, typedef).
 final RegExp _typeDeclRe = RegExp(
-  r"""^\s*(?:(?:abstract|sealed|final|base|interface)\s+)*(?:mixin\s+class|class|mixin|enum|extension(?:\s+type)?|typedef)\s+([A-Za-z][a-zA-Z0-9_]*)""",
+  r"""^\s*(?:(?:abstract|sealed|final|base|interface)\s+)*(?:mixin\s+class|class|mixin|enum|extension(?:\s+type)?|typedef)\s+([A-Za-z_][a-zA-Z0-9_]*)""",
   multiLine: true,
 );
 
 /// Matches top-level function/getter declarations with common return types.
 final RegExp _funcDeclRe = RegExp(
-  r"""^(?:Future|Stream|List|Map|Set|String|int|double|bool|void|Object|dynamic|num|Uint8List|Widget|Color|ThemeData)[<\w,\s>?\[\]]*\s+(?:get\s+)?([a-z][a-zA-Z0-9_]*)\s*(?:\(|=>|\{)""",
+  r"""^(?:Future|Stream|List|Map|Set|String|int|double|bool|void|Object|dynamic|num|Uint8List|Widget|Color|ThemeData)[<\w,\s>?\[\]]*\s+(?:get\s+)?([a-z_][a-zA-Z0-9_]*)\s*(?:\(|=>|\{)""",
   multiLine: true,
 );
 
@@ -238,17 +238,13 @@ bool _isGenerated(String path) {
 // ---------------------------------------------------------------------------
 
 Map<String, List<String>> _findUnusedPublicSymbols(Set<String> reachable, Set<String> allFiles) {
-  // Load all file contents once.
+  // Load all file contents once, with comments blanked so doc comments do not count as references.
   final Map<String, String> contents = <String, String>{};
   for (final String f in allFiles) {
     try {
-      contents[f] = File(f).readAsStringSync();
+      contents[f] = _blankComments(File(f).readAsStringSync());
     } catch (_) {}
   }
-
-  // Concatenated content of ALL files (used to check cross-file references).
-  // We'll search per-file rather than building a mega-string to avoid RAM spike.
-  final List<String> otherFiles = allFiles.toList(); // will skip defining file per symbol
 
   final Map<String, List<String>> result = <String, List<String>>{};
 
@@ -257,25 +253,11 @@ Map<String, List<String>> _findUnusedPublicSymbols(Set<String> reachable, Set<St
     final String? content = contents[file];
     if (content == null) continue;
 
-    final List<String> symbols = _extractPublicSymbols(content);
-    if (symbols.isEmpty) continue;
-
-    final List<String> unused = <String>[];
-    for (final String symbol in symbols) {
-      // Count occurrences in all OTHER files.
-      bool foundElsewhere = false;
-      final RegExp symbolRe = RegExp('\\b${RegExp.escape(symbol)}\\b');
-      for (final String other in otherFiles) {
-        if (other == file) continue;
-        final String? otherContent = contents[other];
-        if (otherContent == null) continue;
-        if (symbolRe.hasMatch(otherContent)) {
-          foundElsewhere = true;
-          break;
-        }
-      }
-      if (!foundElsewhere) unused.add(symbol);
-    }
+    final List<_Decl> decls = _extractDecls(content);
+    final List<String> unused = <String>[
+      for (final _Decl decl in decls)
+        if (!decl.name.startsWith('_') && !_isReferenced(decl, file, decls, contents)) decl.name,
+    ];
 
     if (unused.isNotEmpty) result[file] = unused;
   }
@@ -283,22 +265,158 @@ Map<String, List<String>> _findUnusedPublicSymbols(Set<String> reachable, Set<St
   return result;
 }
 
-List<String> _extractPublicSymbols(String content) {
-  final Set<String> symbols = <String>{};
+/// A symbol counts as used when another file mentions its name, when its own file mentions it
+/// outside its declaration, or (for an extension) when one of its members is called as `.member`.
+bool _isReferenced(_Decl decl, String file, List<_Decl> decls, Map<String, String> contents) {
+  final String content = contents[file]!;
+  final String source = content.substring(decl.start, decl.end);
+  final List<RegExp> patterns = <RegExp>[
+    RegExp('\\b${RegExp.escape(decl.name)}\\b'),
+    if (decl.isExtension)
+      for (final String member in _extensionMembers(source)) RegExp('\\.${RegExp.escape(member)}\\b'),
+  ];
+
+  // Blank the declaration itself and the private helpers it creates: a widget's `_FooState`
+  // mentions `Foo`, which does not make `Foo` used.
+  String own = content;
+  for (final _Decl d in decls) {
+    if (d == decl || (d.name.startsWith('_') && source.contains(d.name))) {
+      own = own.replaceRange(d.start, d.end, ' ' * (d.end - d.start));
+    }
+  }
+
+  for (final RegExp re in patterns) {
+    if (re.hasMatch(own)) return true;
+    for (final MapEntry<String, String> other in contents.entries) {
+      if (other.key != file && re.hasMatch(other.value)) return true;
+    }
+  }
+  return false;
+}
+
+/// A top-level declaration and the source range of its signature and body.
+class _Decl {
+  _Decl(this.name, this.start, this.end, {required this.isExtension});
+  final String name;
+  final int start;
+  final int end;
+  final bool isExtension;
+}
+
+List<_Decl> _extractDecls(String content) {
+  final Map<String, _Decl> decls = <String, _Decl>{};
 
   for (final Match m in _typeDeclRe.allMatches(content)) {
     final String name = m.group(1) ?? '';
-    if (name.isEmpty || name.startsWith('_')) continue;
-    symbols.add(name);
+    if (name.isEmpty) continue;
+    final bool isExtension = RegExp(r'\bextension\b').hasMatch(m.group(0)!);
+    decls.putIfAbsent(name, () => _Decl(name, m.start, _declEnd(content, m.start), isExtension: isExtension));
   }
 
   for (final Match m in _funcDeclRe.allMatches(content)) {
     final String name = m.group(1) ?? '';
-    if (name.isEmpty || name.startsWith('_')) continue;
-    symbols.add(name);
+    if (name.isEmpty) continue;
+    decls.putIfAbsent(name, () => _Decl(name, m.start, _declEnd(content, m.start), isExtension: false));
   }
 
-  return symbols.toList();
+  return decls.values.toList();
+}
+
+/// Replaces comments with spaces of the same length, so offsets stay valid.
+String _blankComments(String content) =>
+    content.replaceAllMapped(RegExp(r'//[^\n]*|/\*.*?\*/', dotAll: true), (Match m) => ' ' * m.group(0)!.length);
+
+/// End of the declaration that starts at [start]: the brace that closes its body, or the `;`
+/// that ends a typedef, an arrow function or a mixin application.
+int _declEnd(String content, int start) {
+  int parens = 0;
+  for (int i = start; i < content.length; i++) {
+    final String ch = content[i];
+    if (ch == '(' || ch == '[') {
+      parens++;
+    } else if (ch == ')' || ch == ']') {
+      parens--;
+    } else if (parens <= 0) {
+      if (ch == ';') return i + 1;
+      if (ch == '{') return _skipBraces(content, i);
+      if (ch == '=' && i + 1 < content.length && content[i + 1] == '>') return _skipToSemicolon(content, i + 2);
+    }
+  }
+  return content.length;
+}
+
+/// Offset just after the `}` that closes the `{` at [open].
+int _skipBraces(String content, int open) => _skipBalanced(content, open, '{', '}');
+
+/// Offset just after the `)` that closes the `(` at [open].
+int _skipParens(String content, int open) => _skipBalanced(content, open, '(', ')');
+
+int _skipBalanced(String content, int open, String opener, String closer) {
+  int depth = 0;
+  for (int i = open; i < content.length; i++) {
+    if (content[i] == opener) depth++;
+    if (content[i] == closer && --depth == 0) return i + 1;
+  }
+  return content.length;
+}
+
+/// Offset just after the next `;` that is not nested in brackets.
+int _skipToSemicolon(String content, int from) {
+  int depth = 0;
+  for (int i = from; i < content.length; i++) {
+    final String ch = content[i];
+    if (ch == '(' || ch == '[' || ch == '{') depth++;
+    if (ch == ')' || ch == ']' || ch == '}') depth--;
+    if (ch == ';' && depth <= 0) return i + 1;
+  }
+  return content.length;
+}
+
+/// Names of the members declared directly in an extension body.
+List<String> _extensionMembers(String extensionSource) {
+  final int open = extensionSource.indexOf('{');
+  if (open < 0) return const <String>[];
+
+  final List<String> members = <String>[];
+  final StringBuffer header = StringBuffer();
+  int i = open + 1;
+  while (i < extensionSource.length) {
+    final String ch = extensionSource[i];
+    if (ch == '}') break;
+    if (ch == '@') {
+      // Annotation: skip its name and optional argument list.
+      i++;
+      while (i < extensionSource.length && RegExp(r'[\w.]').hasMatch(extensionSource[i])) {
+        i++;
+      }
+      if (i < extensionSource.length && extensionSource[i] == '(') i = _skipParens(extensionSource, i);
+      continue;
+    }
+    if (ch != '(' && ch != '{' && ch != ';' && ch != '=') {
+      header.write(ch);
+      i++;
+      continue;
+    }
+
+    final Match? name = RegExp(r'(\w+)\s*(?:<[^>]*>)?\s*$').firstMatch(header.toString());
+    if (name != null) members.add(name.group(1)!);
+    header.clear();
+
+    if (ch == '(') {
+      // Skip the parameter list, then the block or arrow expression after it.
+      i = _skipParens(extensionSource, i);
+      while (i < extensionSource.length && !'{=;'.contains(extensionSource[i])) {
+        i++;
+      }
+      if (i >= extensionSource.length) break;
+      i = extensionSource[i] == '{' ? _skipBraces(extensionSource, i) : _skipToSemicolon(extensionSource, i);
+    } else if (ch == '{') {
+      i = _skipBraces(extensionSource, i);
+    } else {
+      i = _skipToSemicolon(extensionSource, i + 1);
+    }
+  }
+  return members;
 }
 
 // ---------------------------------------------------------------------------

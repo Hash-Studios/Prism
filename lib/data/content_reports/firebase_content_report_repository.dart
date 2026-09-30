@@ -1,3 +1,4 @@
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -8,10 +9,7 @@ import 'package:injectable/injectable.dart';
 class FirebaseContentReportRepository implements ContentReportRepository {
   FirebaseContentReportRepository();
 
-  static const String _region = 'asia-south1';
   static const Duration _timeout = Duration(seconds: 25);
-
-  cf.FirebaseFunctions get _functions => cf.FirebaseFunctions.instanceFor(region: _region);
 
   @override
   Future<Result<void>> submitReport({
@@ -27,7 +25,7 @@ class FirebaseContentReportRepository implements ContentReportRepository {
       return Result.error(const ServerFailure('Invalid report.'));
     }
     try {
-      final cf.HttpsCallable callable = _functions.httpsCallable(
+      final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'submitContentReport',
         options: cf.HttpsCallableOptions(timeout: _timeout),
       );

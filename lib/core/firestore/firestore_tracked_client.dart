@@ -93,6 +93,7 @@ class FirestoreTrackedClient implements FirestoreClient {
   static const int _defaultCacheWindowMs = 30000;
   static const int _maxQueryCacheEntries = 200;
   static const int _maxCursorDocCacheEntries = 600;
+  static const int _transactionMaxRetries = 2;
 
   Query<Map<String, dynamic>> _applySpec(FirestoreQuerySpec spec) {
     Query<Map<String, dynamic>> query = _firestore.collection(spec.collection);
@@ -123,7 +124,9 @@ class FirestoreTrackedClient implements FirestoreClient {
       }
     }
     for (final FirestoreOrderBy order in spec.orderBy) {
-      query = query.orderBy(order.field, descending: order.descending);
+      query = order.field == firestoreDocumentIdField
+          ? query.orderBy(FieldPath.documentId, descending: order.descending)
+          : query.orderBy(order.field, descending: order.descending);
     }
     if (spec.startAfterFieldValues != null && spec.startAfterFieldValues!.isNotEmpty) {
       query = query.startAfter(spec.startAfterFieldValues!);
@@ -136,10 +139,6 @@ class FirestoreTrackedClient implements FirestoreClient {
 
   List<String> _orderByList(FirestoreQuerySpec spec) =>
       spec.orderBy.map((e) => '${e.field}:${e.descending ? 'desc' : 'asc'}').toList(growable: false);
-
-  Future<void> _emitTelemetry(FirestoreTelemetryEvent event) async {
-    unawaited(_telemetry.emit(event));
-  }
 
   String _queryKey(FirestoreQuerySpec spec) => spec.filtersHash;
 
@@ -215,61 +214,94 @@ class FirestoreTrackedClient implements FirestoreClient {
     return query;
   }
 
-  Future<_QueryCacheEntry> _executeNetworkQuery(FirestoreQuerySpec spec) async {
+  Future<T> _tracked<T>({
+    required String sourceTag,
+    required FirestoreOperation operation,
+    required String collection,
+    required String filtersHash,
+    required Future<T> Function() body,
+    List<String>? orderBy,
+    int? limit,
+    String? docId,
+    int? Function(T result)? resultCount,
+    String? Function(T result)? docIdOf,
+  }) async {
     final Stopwatch sw = Stopwatch()..start();
     try {
-      Query<Map<String, dynamic>> query = _applySpec(spec);
-      query = await _applyCursorIfRequired(query, spec);
-      final QuerySnapshot<Map<String, dynamic>> result = await query.get();
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
-        _cacheCursorDoc(doc, spec.collection);
-      }
-      final _QueryCacheEntry cached = _QueryCacheEntry(
-        result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
-        DateTime.now(),
-      );
-      if (_canUseCache(spec)) {
-        _saveQueryCache(_queryKey(spec), cached);
-      }
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: spec.sourceTag,
-          operation: FirestoreOperation.queryGet,
-          collection: spec.collection,
-          filtersHash: spec.filtersHash,
-          orderBy: _orderByList(spec),
-          limit: spec.limit,
-          durationMs: sw.elapsedMilliseconds,
-          resultCount: result.docs.length,
-          success: true,
+      final T result = await body();
+      unawaited(
+        _telemetry.emit(
+          FirestoreTelemetryEvent(
+            timestamp: DateTime.now(),
+            sourceTag: sourceTag,
+            operation: operation,
+            collection: collection,
+            filtersHash: filtersHash,
+            orderBy: orderBy,
+            limit: limit,
+            durationMs: sw.elapsedMilliseconds,
+            resultCount: resultCount?.call(result),
+            docId: docIdOf?.call(result) ?? docId,
+            success: true,
+          ),
         ),
       );
-      return cached;
+      return result;
     } catch (error) {
       final FirestoreError mapped = mapFirestoreError(error);
       if (mapped.code == 'permission-denied') {
         logger.w(
-          '[Firestore] permission-denied on query — collection: ${spec.collection}, sourceTag: ${spec.sourceTag}',
+          '[Firestore] permission-denied on ${operation.name}, collection: $collection, sourceTag: $sourceTag',
           error: mapped,
         );
       }
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: spec.sourceTag,
-          operation: FirestoreOperation.queryGet,
-          collection: spec.collection,
-          filtersHash: spec.filtersHash,
-          orderBy: _orderByList(spec),
-          limit: spec.limit,
-          durationMs: sw.elapsedMilliseconds,
-          success: false,
-          errorCode: mapped.code,
+      unawaited(
+        _telemetry.emit(
+          FirestoreTelemetryEvent(
+            timestamp: DateTime.now(),
+            sourceTag: sourceTag,
+            operation: operation,
+            collection: collection,
+            filtersHash: filtersHash,
+            orderBy: orderBy,
+            limit: limit,
+            durationMs: sw.elapsedMilliseconds,
+            docId: docId,
+            success: false,
+            errorCode: mapped.code,
+          ),
         ),
       );
       throw mapped;
     }
+  }
+
+  Future<_QueryCacheEntry> _executeNetworkQuery(FirestoreQuerySpec spec) {
+    return _tracked<_QueryCacheEntry>(
+      sourceTag: spec.sourceTag,
+      operation: FirestoreOperation.queryGet,
+      collection: spec.collection,
+      filtersHash: spec.filtersHash,
+      orderBy: _orderByList(spec),
+      limit: spec.limit,
+      resultCount: (cached) => cached.docs.length,
+      body: () async {
+        Query<Map<String, dynamic>> query = _applySpec(spec);
+        query = await _applyCursorIfRequired(query, spec);
+        final QuerySnapshot<Map<String, dynamic>> result = await query.get();
+        for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in result.docs) {
+          _cacheCursorDoc(doc, spec.collection);
+        }
+        final _QueryCacheEntry cached = _QueryCacheEntry(
+          result.docs.map((doc) => _RawQueryDoc(doc.id, Map<String, dynamic>.from(doc.data()))).toList(growable: false),
+          DateTime.now(),
+        );
+        if (_canUseCache(spec)) {
+          _saveQueryCache(_queryKey(spec), cached);
+        }
+        return cached;
+      },
+    );
   }
 
   void _refreshInBackground(FirestoreQuerySpec spec) {
@@ -329,17 +361,19 @@ class FirestoreTrackedClient implements FirestoreClient {
         final Stopwatch swCache = Stopwatch()..start();
         final DocumentSnapshot<Map<String, dynamic>> cached = await ref.get(const GetOptions(source: Source.cache));
         if (cached.exists && cached.data() != null) {
-          await _emitTelemetry(
-            FirestoreTelemetryEvent(
-              timestamp: DateTime.now(),
-              sourceTag: sourceTag,
-              operation: FirestoreOperation.docGet,
-              collection: collection,
-              filtersHash: '$collection:$id',
-              durationMs: swCache.elapsedMilliseconds,
-              resultCount: 1,
-              docId: id,
-              success: true,
+          unawaited(
+            _telemetry.emit(
+              FirestoreTelemetryEvent(
+                timestamp: DateTime.now(),
+                sourceTag: sourceTag,
+                operation: FirestoreOperation.docGet,
+                collection: collection,
+                filtersHash: '$collection:$id',
+                durationMs: swCache.elapsedMilliseconds,
+                resultCount: 1,
+                docId: id,
+                success: true,
+              ),
             ),
           );
           return map(cached.data()!, cached.id);
@@ -349,79 +383,31 @@ class FirestoreTrackedClient implements FirestoreClient {
       }
     }
 
-    final Stopwatch sw = Stopwatch()..start();
-    try {
-      final DocumentSnapshot<Map<String, dynamic>> doc = await ref.get();
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.docGet,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          resultCount: doc.exists ? 1 : 0,
-          docId: id,
-          success: true,
-        ),
-      );
-      if (!doc.exists || doc.data() == null) {
-        return null;
-      }
-      return map(doc.data()!, doc.id);
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.docGet,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
+    final DocumentSnapshot<Map<String, dynamic>> doc = await _tracked<DocumentSnapshot<Map<String, dynamic>>>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.docGet,
+      collection: collection,
+      filtersHash: '$collection:$id',
+      docId: id,
+      resultCount: (doc) => doc.exists ? 1 : 0,
+      body: ref.get,
+    );
+    if (!doc.exists || doc.data() == null) {
+      return null;
     }
+    return map(doc.data()!, doc.id);
   }
 
   @override
-  Future<String> addDoc(String collection, Map<String, dynamic> data, {required String sourceTag}) async {
-    final Stopwatch sw = Stopwatch()..start();
-    try {
-      final ref = await _firestore.collection(collection).add(data);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.add,
-          collection: collection,
-          filtersHash: collection,
-          durationMs: sw.elapsedMilliseconds,
-          docId: ref.id,
-          success: true,
-        ),
-      );
-      return ref.id;
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.add,
-          collection: collection,
-          filtersHash: collection,
-          durationMs: sw.elapsedMilliseconds,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
-    }
+  Future<String> addDoc(String collection, Map<String, dynamic> data, {required String sourceTag}) {
+    return _tracked<String>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.add,
+      collection: collection,
+      filtersHash: collection,
+      docIdOf: (id) => id,
+      body: () async => (await _firestore.collection(collection).add(data)).id,
+    );
   }
 
   @override
@@ -431,111 +417,39 @@ class FirestoreTrackedClient implements FirestoreClient {
     Map<String, dynamic> data, {
     bool merge = false,
     required String sourceTag,
-  }) async {
-    final Stopwatch sw = Stopwatch()..start();
-    try {
-      await _firestore.collection(collection).doc(id).set(data, SetOptions(merge: merge));
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.set,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: true,
-        ),
-      );
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.set,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
-    }
+  }) {
+    return _tracked<void>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.set,
+      collection: collection,
+      filtersHash: '$collection:$id',
+      docId: id,
+      body: () => _firestore.collection(collection).doc(id).set(data, SetOptions(merge: merge)),
+    );
   }
 
   @override
-  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) async {
-    final Stopwatch sw = Stopwatch()..start();
-    try {
-      await _firestore.collection(collection).doc(id).update(data);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.update,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: true,
-        ),
-      );
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.update,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
-    }
+  Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) {
+    return _tracked<void>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.update,
+      collection: collection,
+      filtersHash: '$collection:$id',
+      docId: id,
+      body: () => _firestore.collection(collection).doc(id).update(data),
+    );
   }
 
   @override
-  Future<void> deleteDoc(String collection, String id, {required String sourceTag}) async {
-    final Stopwatch sw = Stopwatch()..start();
-    try {
-      await _firestore.collection(collection).doc(id).delete();
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.delete,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: true,
-        ),
-      );
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.delete,
-          collection: collection,
-          filtersHash: '$collection:$id',
-          durationMs: sw.elapsedMilliseconds,
-          docId: id,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
-    }
+  Future<void> deleteDoc(String collection, String id, {required String sourceTag}) {
+    return _tracked<void>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.delete,
+      collection: collection,
+      filtersHash: '$collection:$id',
+      docId: id,
+      body: () => _firestore.collection(collection).doc(id).delete(),
+    );
   }
 
   @override
@@ -544,101 +458,50 @@ class FirestoreTrackedClient implements FirestoreClient {
     required String sourceTag,
     required String collection,
     String? docId,
-    int maxRetries = 2,
-  }) async {
-    final Stopwatch sw = Stopwatch()..start();
-    int attempt = 0;
-    while (true) {
-      try {
-        final T result = await _firestore.runTransaction<T>((Transaction transaction) {
-          final _FirestoreTransactionBridge bridge = _FirestoreTransactionBridge(_firestore, transaction);
-          return action(bridge);
-        });
-        await _emitTelemetry(
-          FirestoreTelemetryEvent(
-            timestamp: DateTime.now(),
-            sourceTag: sourceTag,
-            operation: FirestoreOperation.transaction,
-            collection: collection,
-            filtersHash: docId == null ? collection : '$collection:$docId',
-            durationMs: sw.elapsedMilliseconds,
-            docId: docId,
-            success: true,
-          ),
-        );
-        return result;
-      } catch (error) {
-        final FirestoreError mapped = mapFirestoreError(error);
-        if (_isTransientFirestoreError(mapped) && attempt < maxRetries) {
-          attempt++;
-          final int delayMs = (500 * math.pow(2, attempt - 1)).round();
-          logger.w(
-            '[Firestore] transient error (${mapped.code}) on transaction — retrying ($attempt/$maxRetries) after ${delayMs}ms, sourceTag: $sourceTag',
-          );
-          await Future<void>.delayed(Duration(milliseconds: delayMs));
-          continue;
+  }) {
+    return _tracked<T>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.transaction,
+      collection: collection,
+      filtersHash: docId == null ? collection : '$collection:$docId',
+      docId: docId,
+      body: () async {
+        int attempt = 0;
+        while (true) {
+          try {
+            return await _firestore.runTransaction<T>(
+              (Transaction transaction) => action(_FirestoreTransactionBridge(_firestore, transaction)),
+            );
+          } catch (error) {
+            final FirestoreError mapped = mapFirestoreError(error);
+            if (!_isTransientFirestoreError(mapped) || attempt >= _transactionMaxRetries) {
+              rethrow;
+            }
+            attempt++;
+            final int delayMs = (500 * math.pow(2, attempt - 1)).round();
+            logger.w(
+              '[Firestore] transient error (${mapped.code}) on transaction, retrying ($attempt/$_transactionMaxRetries) after ${delayMs}ms, sourceTag: $sourceTag',
+            );
+            await Future<void>.delayed(Duration(milliseconds: delayMs));
+          }
         }
-        if (mapped.code == 'permission-denied') {
-          logger.w(
-            '[Firestore] permission-denied on transaction — collection: $collection, sourceTag: $sourceTag',
-            error: mapped,
-          );
-        }
-        await _emitTelemetry(
-          FirestoreTelemetryEvent(
-            timestamp: DateTime.now(),
-            sourceTag: sourceTag,
-            operation: FirestoreOperation.transaction,
-            collection: collection,
-            filtersHash: docId == null ? collection : '$collection:$docId',
-            durationMs: sw.elapsedMilliseconds,
-            docId: docId,
-            success: false,
-            errorCode: mapped.code,
-          ),
-        );
-        throw mapped;
-      }
-    }
+      },
+    );
   }
 
   @override
-  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) async {
-    final Stopwatch sw = Stopwatch()..start();
-    try {
-      final WriteBatch batch = _firestore.batch();
-      await action(_FirestoreBatchBridge(batch, _firestore));
-      await batch.commit();
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.update,
-          collection: '',
-          filtersHash: 'batch',
-          durationMs: sw.elapsedMilliseconds,
-          success: true,
-        ),
-      );
-    } catch (error) {
-      final FirestoreError mapped = mapFirestoreError(error);
-      if (mapped.code == 'permission-denied') {
-        logger.w('[Firestore] permission-denied on batch — sourceTag: $sourceTag', error: mapped);
-      }
-      await _emitTelemetry(
-        FirestoreTelemetryEvent(
-          timestamp: DateTime.now(),
-          sourceTag: sourceTag,
-          operation: FirestoreOperation.update,
-          collection: '',
-          filtersHash: 'batch',
-          durationMs: sw.elapsedMilliseconds,
-          success: false,
-          errorCode: mapped.code,
-        ),
-      );
-      throw mapped;
-    }
+  Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) {
+    return _tracked<void>(
+      sourceTag: sourceTag,
+      operation: FirestoreOperation.update,
+      collection: '',
+      filtersHash: 'batch',
+      body: () async {
+        final WriteBatch batch = _firestore.batch();
+        await action(_FirestoreBatchBridge(batch, _firestore));
+        await batch.commit();
+      },
+    );
   }
 
   @override
@@ -646,7 +509,7 @@ class FirestoreTrackedClient implements FirestoreClient {
     final Query<Map<String, dynamic>> query = _applySpec(spec);
     final DateTime start = DateTime.now();
     unawaited(
-      _emitTelemetry(
+      _telemetry.emit(
         FirestoreTelemetryEvent(
           timestamp: start,
           sourceTag: spec.sourceTag,
@@ -662,26 +525,30 @@ class FirestoreTrackedClient implements FirestoreClient {
     );
     return query
         .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false);
-        })
-        .handleError((Object error) async {
-          final FirestoreError mapped = mapFirestoreError(error);
-          await _emitTelemetry(
-            FirestoreTelemetryEvent(
-              timestamp: DateTime.now(),
-              sourceTag: spec.sourceTag,
-              operation: FirestoreOperation.streamSubscribe,
-              collection: spec.collection,
-              filtersHash: spec.filtersHash,
-              orderBy: _orderByList(spec),
-              limit: spec.limit,
-              durationMs: DateTime.now().difference(start).inMilliseconds,
-              success: false,
-              errorCode: mapped.code,
-            ),
-          );
-          throw mapped;
-        });
+        .map((snapshot) => snapshot.docs.map((doc) => map(doc.data(), doc.id)).toList(growable: false))
+        .transform(
+          StreamTransformer<List<T>, List<T>>.fromHandlers(
+            handleError: (Object error, StackTrace stackTrace, EventSink<List<T>> sink) {
+              final FirestoreError mapped = mapFirestoreError(error);
+              unawaited(
+                _telemetry.emit(
+                  FirestoreTelemetryEvent(
+                    timestamp: DateTime.now(),
+                    sourceTag: spec.sourceTag,
+                    operation: FirestoreOperation.streamSubscribe,
+                    collection: spec.collection,
+                    filtersHash: spec.filtersHash,
+                    orderBy: _orderByList(spec),
+                    limit: spec.limit,
+                    durationMs: DateTime.now().difference(start).inMilliseconds,
+                    success: false,
+                    errorCode: mapped.code,
+                  ),
+                ),
+              );
+              sink.addError(mapped, stackTrace);
+            },
+          ),
+        );
   }
 }
