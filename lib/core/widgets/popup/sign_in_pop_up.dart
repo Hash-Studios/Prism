@@ -1,18 +1,16 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
-import 'package:Prism/core/widgets/accent_color.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/popup/popup_header.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+/// Opens the sign-in sheet. [func] runs after a successful sign-in.
 void googleSignInPopUp(BuildContext context, VoidCallback func) {
   final NavigatorState navigator = Navigator.of(context, rootNavigator: true);
   bool loaderVisible = false;
@@ -25,20 +23,25 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
     loaderVisible = false;
   }
 
-  final Dialog loaderDialog = Dialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    child: Container(
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
-      width: MediaQuery.of(context).size.width * .7,
-      height: MediaQuery.of(context).size.height * .3,
-      child: const GlintState(kind: GlintStateKind.loading, title: 'Signing in'),
-    ),
-  );
-
   void runSignIn(Future<SignInOutcome> Function() signIn) {
     navigator.pop();
     loaderVisible = true;
-    showDialog(barrierDismissible: false, context: navigator.context, builder: (BuildContext context) => loaderDialog);
+    showPrismSheet<void>(
+      context: navigator.context,
+      useRootNavigator: true,
+      isDismissible: false,
+      enableDrag: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+            child: GlintState(kind: GlintStateKind.loading, title: 'Signing in'),
+          ),
+        ),
+      ),
+    );
     signIn()
         .then((outcome) {
           if (!navigator.mounted) {
@@ -48,10 +51,10 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           if (outcome == SignInOutcome.cancelled) {
             app_state.prismUser.loggedIn = false;
             app_state.persistPrismUser();
-            toasts.success('Sign in cancelled.');
+            toasts.error('Sign in cancelled.');
             return;
           }
-          toasts.success('Login Successful!');
+          toasts.success('Signed in.');
           app_state.prismUser.loggedIn = true;
           app_state.persistPrismUser();
           func();
@@ -64,118 +67,67 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           closeLoaderIfVisible();
           app_state.prismUser.loggedIn = false;
           app_state.persistPrismUser();
-          toasts.error('Something went wrong, please try again!');
+          toasts.error('Something went wrong. Try again.');
         });
   }
 
-  // Capped so the dialog does not stretch across a tablet.
-  final double dialogWidth = min(MediaQuery.sizeOf(context).width * .78, 480);
-  final List<(IconData, String)> benefits = <(IconData, String)>[
-    (JamIcons.heart, 'The ability to favourite wallpapers.'),
-    (JamIcons.upload, 'The ability to upload wallpapers.'),
-    if (!Platform.isIOS) (JamIcons.coin, 'The ability to view premium content.'),
-    (JamIcons.cloud, 'The ability to cloud sync data.'),
-  ];
-  final AlertDialog signinPopUp = AlertDialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    content: SingleChildScrollView(
-      child: Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
-        width: dialogWidth,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            PopupHeader(
-              width: dialogWidth,
-              child: Icon(JamIcons.log_in, size: 54, color: Theme.of(context).colorScheme.secondary),
-            ),
-            Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 0, 4),
-                  child: Text(
-                    'SIGNING IN UNLOCKS:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            for (int i = 0; i < benefits.length; i++) ...[
-              SizedBox(height: i == 0 ? 20 : 10),
-              _BenefitRow(icon: benefits[i].$1, text: benefits[i].$2, width: dialogWidth),
-            ],
-          ],
+  showPrismSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    builder: (_) => PrismSheetBody(
+      mood: GlintMood.happy,
+      centered: true,
+      title: 'Sign in to Prism',
+      message: 'Keep your favourites, uploads and coins on every device.',
+      actions: <Widget>[
+        if (Platform.isIOS || Platform.isMacOS)
+          _AppleButton(onPressed: () => runSignIn(globalAppleAuth.signInWithApple)),
+        PrismButton(
+          label: 'Continue with Google',
+          icon: JamIcons.google,
+          variant: PrismButtonVariant.tonal,
+          expand: true,
+          onPressed: () => runSignIn(globalGoogleAuth.signInWithGoogle),
         ),
-      ),
+        PrismButton(
+          label: 'Not now',
+          variant: PrismButtonVariant.ghost,
+          expand: true,
+          onPressed: () => navigator.pop(),
+        ),
+      ],
     ),
-    actions: [
-      MaterialButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).primaryColor,
-        onPressed: () {
-          navigator.pop();
-        },
-        child: Text('CLOSE', style: TextStyle(fontSize: 16.0, color: Theme.of(context).colorScheme.secondary)),
-      ),
-      MaterialButton(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        color: Theme.of(context).colorScheme.error,
-        onPressed: () {
-          runSignIn(globalGoogleAuth.signInWithGoogle);
-        },
-        child: const Text('GOOGLE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-      ),
-      if (Platform.isIOS || Platform.isMacOS)
-        MaterialButton(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Colors.white,
-          onPressed: () {
-            runSignIn(globalAppleAuth.signInWithApple);
-          },
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.apple, color: Colors.black, size: 18),
-              SizedBox(width: 6),
-              Text('Sign in with Apple', style: TextStyle(fontSize: 16.0, color: Colors.black)),
-            ],
-          ),
-        ),
-    ],
-    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
-    backgroundColor: Theme.of(context).primaryColor,
-    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
   );
-  showModal(context: context, builder: (BuildContext context) => signinPopUp);
 }
 
-class _BenefitRow extends StatelessWidget {
-  const _BenefitRow({required this.icon, required this.text, required this.width});
+/// "Continue with Apple" in Apple's own colours: black on light themes, white on dark themes.
+class _AppleButton extends StatelessWidget {
+  const _AppleButton({required this.onPressed});
 
-  final IconData icon;
-  final String text;
-  final double width;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const SizedBox(width: 20),
-        Icon(icon, size: 22, color: accentColor(context)),
-        const SizedBox(width: 20),
-        SizedBox(
-          width: width - 70,
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
-          ),
+    final bool dark = Theme.of(context).brightness == Brightness.dark;
+    final Color bg = dark ? Colors.white : Colors.black;
+    final Color fg = dark ? Colors.black : Colors.white;
+    return PressScale(
+      child: FilledButton.icon(
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          onPressed();
+        },
+        icon: const Icon(Icons.apple, size: 22),
+        label: const Text('Continue with Apple'),
+        style: FilledButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: fg,
+          minimumSize: const Size(double.infinity, 52),
+          textStyle: PrismTextStyles.button,
+          splashFactory: NoSplash.splashFactory,
         ),
-      ],
+      ),
     );
   }
 }

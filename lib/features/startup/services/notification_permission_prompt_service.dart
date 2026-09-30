@@ -4,11 +4,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 class NotificationPermissionPromptService {
   NotificationPermissionPromptService._();
@@ -60,6 +61,21 @@ class NotificationPermissionPromptService {
       return;
     }
 
+    if (!context.mounted) {
+      return;
+    }
+    if (!await askFirst(context)) {
+      await _settings.set(_promptedPrefKey, true);
+      await analytics.track(
+        const TomorrowHookPermissionResultEvent(
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.userCancelled,
+          subscribedToWotd: false,
+        ),
+      );
+      return;
+    }
+
     final NotificationSettings requested = await messaging.requestPermission(provisional: true);
     await _settings.set(_promptedPrefKey, true);
 
@@ -77,6 +93,36 @@ class NotificationPermissionPromptService {
         subscribedToWotd: subscribedToWotd,
       ),
     );
+  }
+
+  /// Explains the benefit before the system dialog. Resolves true when the user agrees to be asked.
+  @visibleForTesting
+  Future<bool> askFirst(BuildContext context) async {
+    final bool? turnOn = await showPrismSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => PrismSheetBody(
+        mood: GlintMood.surprised,
+        centered: true,
+        title: 'Get the Wall of the Day',
+        message: 'One hand-picked wallpaper each morning. No spam.',
+        actions: <Widget>[
+          PrismButton(
+            label: 'Turn on notifications',
+            expand: true,
+            onPressed: () => Navigator.of(sheetContext).pop(true),
+          ),
+          PrismButton(
+            label: 'Not now',
+            variant: PrismButtonVariant.ghost,
+            expand: true,
+            onPressed: () => Navigator.of(sheetContext).pop(false),
+          ),
+        ],
+      ),
+    );
+    return turnOn ?? false;
   }
 
   Future<bool> _subscribeAfterPermissionGrant(FirebaseMessaging messaging, {required String sourceTag}) async {
