@@ -3,7 +3,7 @@
 # the runner. Install: make hooks
 #
 # Dart changes      -> format-check, env-guard, version-guard, analyze, find-unused-ci
-# functions/ change -> typecheck + node tests (built into a temp dir)
+# functions/ change -> typecheck + lint + node tests (built into a temp dir)
 # web/ change       -> tsc --noEmit
 #
 # PRE_PUSH_FULL=1 git push  also runs flutter test.
@@ -45,10 +45,10 @@ if grep -qE '^functions/(src/|package(-lock)?\.json$|tsconfig)' <<<"$changed"; t
     echo "pre-push: functions/node_modules missing; run 'npm ci' in functions/ first."
     exit 1
   fi
-  echo "pre-push: functions changed, running typecheck + tests"
+  echo "pre-push: functions changed, running typecheck, lint and tests"
   out="$(mktemp -d)"
   trap 'rm -rf "$out"' EXIT
-  (cd functions && npx tsc --outDir "$out")
+  (cd functions && npx tsc --outDir "$out" && npm run lint)
   NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/__tests__/*.test.js
 fi
 

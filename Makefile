@@ -144,7 +144,7 @@ version-sync:
 	@python3 tool/sync_app_version.py
 
 version-guard:
-	@python3 tool/verify_version_sync.py
+	@python3 tool/sync_app_version.py --check
 
 file-gen: ensure-fvm
 	@$(DART) run build_runner build --delete-conflicting-outputs
@@ -223,7 +223,7 @@ gradle-reset:
 
 size-android: ensure-fvm
 	@mkdir -p build/size/local
-	@printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('Size analysis stub');\n}\n" > lib/firebase_options.dart
+	@./tool/write_firebase_options_stub.sh
 	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
 	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
 	@echo "APK + size analysis log written to build/size/local"
@@ -308,5 +308,6 @@ find-unused-html: ensure-fvm ## Find unused code + open HTML visual report
 	@$(DART) run tool/find_unused_code.dart --html
 
 find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
-	@$(DART) run tool/find_unused_code.dart --json > /tmp/prism_find_unused_ci.json
-	@$(DART) run tool/validate_find_unused_allowlist.dart /tmp/prism_find_unused_ci.json tool/find_unused_allowlist.json
+	@report=$$(mktemp) && trap 'rm -f "$$report"' EXIT && \
+		$(DART) run tool/find_unused_code.dart --json > "$$report" && \
+		$(DART) run tool/validate_find_unused_allowlist.dart "$$report" tool/find_unused_allowlist.json
