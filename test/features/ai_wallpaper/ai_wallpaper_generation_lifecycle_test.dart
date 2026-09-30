@@ -200,11 +200,12 @@ void main() {
         check: () => ++connectionCalls == 1 ? Future<bool>.value(true) : connection.future,
       ),
     );
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.tap(generate);
     await tester.pump();
+    expect(find.text('This takes about 20 seconds'), findsOneWidget);
     connection.complete(true);
     await tester.pump();
     final actualSpends = spendCalls;
@@ -244,7 +245,7 @@ void main() {
         },
       ),
     );
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.tap(generate);
@@ -277,7 +278,7 @@ void main() {
       toasts.add(call);
       return true;
     });
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
@@ -299,12 +300,12 @@ void main() {
       spends.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
       return reservation.future;
     }, repository: repository);
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
-    await tester.ensureVisible(find.text('Quality'));
-    await tester.tap(find.text('Quality'));
+    await tester.ensureVisible(find.text('Quality').last);
+    await tester.tap(find.text('Quality').last);
     await tester.pump();
     await tester.ensureVisible(find.byType(ListView).first);
     await tester.pump();
@@ -346,7 +347,7 @@ void main() {
       toasts.add(call);
       return true;
     });
-    final generate = find.textContaining('Generate  ·');
+    final generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -376,7 +377,7 @@ void main() {
       return <String, Object>{'success': true, 'changed': false, 'currentBalance': 100};
     });
 
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -419,7 +420,7 @@ void main() {
       ),
     );
 
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -487,6 +488,7 @@ void main() {
     await tester.tap(refine);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Warmer colors');
+    await tester.pump();
     await tester.tap(find.text('Generate refinement'));
     await tester.pump();
     await variationStarted.future;
@@ -512,7 +514,7 @@ void main() {
         'transactionId': 'reservation-1',
       };
     }, repository: _FakeAiGenerationRepository(_record(), generation: generation));
-    final Finder generate = find.textContaining('Generate  ·');
+    final Finder generate = find.text('Generate');
     await tester.ensureVisible(generate);
     await tester.tap(generate);
     await tester.pump();
@@ -544,7 +546,7 @@ void main() {
     expect(refunds, 1);
     expect(requests, 0);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
-    expect(find.textContaining('Generate  ·'), findsOneWidget);
+    expect(find.text('Generate'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
