@@ -33,12 +33,18 @@ extension PrismThemeContextX on BuildContext {
 
   ThemeData prismLightTheme({bool listen = true}) {
     final state = _themeLightBloc(listen).state;
-    return _withAccent(prismLightThemes.byIdOrDefault(state.theme.themeId).theme, state.theme.accentColorValue);
+    return _withAccent(
+      (prismThemeById(prismLightThemes, state.theme.themeId) ?? prismLightThemes.first).theme,
+      state.theme.accentColorValue,
+    );
   }
 
   ThemeData prismDarkTheme({bool listen = true}) {
     final state = _themeDarkBloc(listen).state;
-    return _withAccent(prismDarkThemes.byIdOrDefault(state.theme.themeId).theme, state.theme.accentColorValue);
+    return _withAccent(
+      (prismThemeById(prismDarkThemes, state.theme.themeId) ?? prismDarkThemes.first).theme,
+      state.theme.accentColorValue,
+    );
   }
 
   String prismLightThemeId({bool listen = true}) => _themeLightBloc(listen).state.theme.themeId;
