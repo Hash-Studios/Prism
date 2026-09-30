@@ -181,7 +181,8 @@ class GoogleAuth {
             )
             .timeout(signOutStepTimeout);
         email = authenticatedProfile?['email']?.toString() ?? '';
-        following = (authenticatedProfile?['following'] as List<dynamic>?)?.whereType<String>().toList() ?? following;
+        final Object? storedFollowing = authenticatedProfile?['following'];
+        following = storedFollowing is List ? storedFollowing.whereType<String>().toList() : following;
       } catch (e, st) {
         logger.w(
           'Failed to load authenticated profile for topic cleanup.',
