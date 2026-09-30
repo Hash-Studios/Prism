@@ -17,7 +17,9 @@ import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class AdminReviewScreen extends StatefulWidget {
-  const AdminReviewScreen({super.key});
+  const AdminReviewScreen({super.key, this.repository});
+
+  final AdminModerationRepository? repository;
 
   @override
   State<AdminReviewScreen> createState() => _AdminReviewScreenState();
@@ -25,19 +27,34 @@ class AdminReviewScreen extends StatefulWidget {
 
 class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTickerProviderStateMixin {
   late TabController _controller;
-  final AdminModerationRepository _repository = getIt<AdminModerationRepository>();
-  late final Stream<(int, int, int)> _pendingCountsStream;
+  late final AdminModerationRepository _repository;
+  late Stream<List<FirestoreDocument>> _pendingWallsStream;
+  late Stream<List<FirestoreDocument>> _pendingSetupsStream;
+  late Stream<List<FirestoreDocument>> _openReportsStream;
+  late Stream<(int, int, int)> _pendingCountsStream;
 
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? getIt<AdminModerationRepository>();
     _controller = TabController(length: 4, vsync: this);
+    _subscribeStreams();
+  }
+
+  void _subscribeStreams() {
+    _pendingWallsStream = _repository.watchPendingWalls();
+    _pendingSetupsStream = _repository.watchPendingSetups();
+    _openReportsStream = _repository.watchOpenContentReports();
     _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
       _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
       _repository.watchPendingSetups().map((List<FirestoreDocument> list) => list.length),
       _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
       (int a, int b, int c) => (a, b, c),
     );
+  }
+
+  void _retryStreams() {
+    setState(_subscribeStreams);
   }
 
   @override
@@ -50,11 +67,13 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   Widget build(BuildContext context) {
     return StreamBuilder<(int, int, int)>(
       stream: _pendingCountsStream,
-      initialData: (0, 0, 0),
       builder: (BuildContext context, AsyncSnapshot<(int, int, int)> countSnapshot) {
-        final int wallsCount = countSnapshot.data!.$1;
-        final int setupsCount = countSnapshot.data!.$2;
-        final int reportsCount = countSnapshot.data!.$3;
+        final counts = countSnapshot.hasError || countSnapshot.connectionState == ConnectionState.waiting
+            ? null
+            : countSnapshot.data;
+        final String wallsCount = counts?.$1.toString() ?? '—';
+        final String setupsCount = counts?.$2.toString() ?? '—';
+        final String reportsCount = counts?.$3.toString() ?? '—';
         return Scaffold(
           appBar: AppBar(
             title: const Text('Admin Moderation'),
@@ -88,8 +107,10 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   Widget _buildWallTab() {
     return _buildPendingTab(
-      stream: _repository.watchPendingWalls(),
+      stream: _pendingWallsStream,
+      keyPrefix: 'wall',
       emptyLabel: 'No pending wallpapers',
+      errorLabel: 'Could not load pending wallpapers.',
       itemBuilder: (BuildContext context, FirestoreDocument wall) {
         final String previewUrl = wall.wallpaperThumb;
         return _moderationCard(
@@ -113,8 +134,10 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   Widget _buildSetupTab() {
     return _buildPendingTab(
-      stream: _repository.watchPendingSetups(),
+      stream: _pendingSetupsStream,
+      keyPrefix: 'setup',
       emptyLabel: 'No pending setups',
+      errorLabel: 'Could not load pending setups.',
       itemBuilder: (BuildContext context, FirestoreDocument setup) {
         return _moderationCard(
           context,
@@ -137,12 +160,17 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   Widget _buildPendingTab({
     required Stream<List<FirestoreDocument>> stream,
+    required String keyPrefix,
     required String emptyLabel,
+    required String errorLabel,
     required Widget Function(BuildContext context, FirestoreDocument doc) itemBuilder,
   }) {
     return StreamBuilder<List<FirestoreDocument>>(
       stream: stream,
       builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+        if (snapshot.hasError) {
+          return _buildStreamError(errorLabel);
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -152,7 +180,16 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         }
         return ListView.builder(
           itemCount: docs.length,
-          itemBuilder: (BuildContext context, int index) => itemBuilder(context, docs[index]),
+          findChildIndexCallback: (Key key) {
+            final int index = docs.indexWhere(
+              (FirestoreDocument doc) => '$keyPrefix-${doc.id}' == (key as ValueKey<String>).value,
+            );
+            return index < 0 ? null : index;
+          },
+          itemBuilder: (BuildContext context, int index) => KeyedSubtree(
+            key: ValueKey<String>('$keyPrefix-${docs[index].id}'),
+            child: itemBuilder(context, docs[index]),
+          ),
         );
       },
     );
@@ -188,8 +225,11 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   Widget _buildReportsTab() {
     return StreamBuilder<List<FirestoreDocument>>(
-      stream: _repository.watchOpenContentReports(),
+      stream: _openReportsStream,
       builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+        if (snapshot.hasError) {
+          return _buildStreamError('Could not load open reports.');
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -210,6 +250,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             final String timeStr = created != null ? timeago.format(created) : '';
             if (ct == 'wall' && tid.isNotEmpty) {
               return _WallContentReportCard(
+                key: ValueKey<String>('report-${r.id}'),
                 report: r,
                 targetDocId: tid,
                 contentTypeLabel: ct,
@@ -251,46 +292,58 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     );
   }
 
+  Widget _buildStreamError(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.cloud_off_outlined, color: Theme.of(context).colorScheme.error, size: 36),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _retryStreams,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _confirmReject(
     BuildContext context, {
     required Future<void> Function(String reason) onSubmit,
     String dialogTitle = 'Reject Item',
     String confirmButtonLabel = 'Reject',
   }) async {
-    final String? reason = await showDialog<String>(
+    await showDialog<void>(
       context: context,
-      builder: (BuildContext context) => _RejectReasonDialog(title: dialogTitle, confirmLabel: confirmButtonLabel),
+      barrierDismissible: false,
+      builder: (_) =>
+          _RejectReasonDialog(title: dialogTitle, confirmButtonLabel: confirmButtonLabel, onSubmit: onSubmit),
     );
-    if (reason == null) {
-      return;
-    }
-    if (reason.isEmpty) {
-      toasts.error('Reason cannot be empty');
-      return;
-    }
-    try {
-      await onSubmit(reason);
-    } catch (e, st) {
-      logger.e('Admin reject failed', tag: 'AdminReview', error: e, stackTrace: st);
-      toasts.error('Action failed');
-    }
   }
 }
 
 class _RejectReasonDialog extends StatefulWidget {
-  const _RejectReasonDialog({required this.title, required this.confirmLabel});
+  const _RejectReasonDialog({required this.title, required this.confirmButtonLabel, required this.onSubmit});
 
   final String title;
-  final String confirmLabel;
+  final String confirmButtonLabel;
+  final Future<void> Function(String reason) onSubmit;
 
   @override
   State<_RejectReasonDialog> createState() => _RejectReasonDialogState();
 }
 
 class _RejectReasonDialogState extends State<_RejectReasonDialog> {
-  final TextEditingController _controller = TextEditingController(
-    text: "Sorry! This item doesn't meet our expectations and failed the review.",
-  );
+  final TextEditingController _controller = TextEditingController();
+  bool _isSaving = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -298,29 +351,81 @@ class _RejectReasonDialogState extends State<_RejectReasonDialog> {
     super.dispose();
   }
 
+  Future<void> _submit() async {
+    if (_isSaving) return;
+    final String reason = _controller.text.trim();
+    if (reason.isEmpty) {
+      setState(() => _errorMessage = 'Enter a reason before rejecting this item.');
+      return;
+    }
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+    try {
+      await widget.onSubmit(reason);
+      if (mounted) Navigator.of(context).pop();
+    } catch (error, stackTrace) {
+      logger.e('Admin reject failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _errorMessage = 'Could not save this decision. Your reason is still here. Try again.';
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.title),
-      content: TextField(
-        controller: _controller,
-        minLines: 2,
-        maxLines: 4,
-        decoration: const InputDecoration(labelText: 'Reason'),
-      ),
-      actions: <Widget>[
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text.trim()),
-          child: Text(widget.confirmLabel),
+    return PopScope(
+      canPop: !_isSaving,
+      child: AlertDialog(
+        scrollable: true,
+        title: Text(widget.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            TextField(
+              controller: _controller,
+              enabled: !_isSaving,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Reason',
+                hintText: 'Explain what needs to change',
+                helperText: 'The creator will see this feedback.',
+              ),
+              onChanged: (_) {
+                if (_errorMessage != null) {
+                  setState(() => _errorMessage = null);
+                }
+              },
+            ),
+            if (_errorMessage != null) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ],
+          ],
         ),
-      ],
+        actions: <Widget>[
+          TextButton(onPressed: _isSaving ? null : () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: _isSaving ? null : _submit,
+            child: _isSaving
+                ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(widget.confirmButtonLabel),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _WallContentReportCard extends StatefulWidget {
   const _WallContentReportCard({
+    super.key,
     required this.report,
     required this.targetDocId,
     required this.contentTypeLabel,
@@ -499,7 +604,7 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
   }
 }
 
-class _ModerationCard extends StatelessWidget {
+class _ModerationCard extends StatefulWidget {
   const _ModerationCard({
     required this.previewUrl,
     required this.fullUrl,
@@ -515,8 +620,40 @@ class _ModerationCard extends StatelessWidget {
   final Future<void> Function() onReject;
 
   @override
+  State<_ModerationCard> createState() => _ModerationCardState();
+}
+
+class _ModerationCardState extends State<_ModerationCard> {
+  bool _isApproving = false;
+  bool _isApproved = false;
+  String? _approvalError;
+
+  Future<void> _approve() async {
+    if (_isApproving || _isApproved) return;
+    setState(() {
+      _isApproving = true;
+      _approvalError = null;
+    });
+    try {
+      await widget.onApprove();
+      if (mounted) setState(() => _isApproved = true);
+    } catch (error, stackTrace) {
+      logger.e('Admin approval failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
+      if (mounted) {
+        setState(() => _approvalError = 'Approval failed. Check your connection, then try again.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isApproving = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final VoidCallback? openFull = fullUrl.isEmpty ? null : () => FullScreenImageView.show(context, fullUrl);
+    final VoidCallback? openFull = widget.fullUrl.isEmpty
+        ? null
+        : () => FullScreenImageView.show(context, widget.fullUrl);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
@@ -524,10 +661,23 @@ class _ModerationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _PortraitPreview(imageUrl: previewUrl, onTap: openFull),
+            _PortraitPreview(imageUrl: widget.previewUrl, onTap: openFull),
             const SizedBox(height: 8),
-            ...metadataLines,
+            ...widget.metadataLines,
             const SizedBox(height: 8),
+            if (_approvalError != null) ...<Widget>[
+              Row(
+                children: <Widget>[
+                  Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(_approvalError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ),
+                  TextButton(onPressed: _isApproving ? null : _approve, child: const Text('Retry')),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
             Row(
               children: <Widget>[
                 Expanded(
@@ -539,11 +689,19 @@ class _ModerationCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: FilledButton(onPressed: onApprove, child: const Text('Approve')),
+                  child: FilledButton(
+                    onPressed: _isApproving || _isApproved ? null : _approve,
+                    child: _isApproving
+                        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Text(_isApproved ? 'Approved' : 'Approve'),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton(onPressed: onReject, child: const Text('Reject')),
+                  child: OutlinedButton(
+                    onPressed: _isApproving || _isApproved ? null : widget.onReject,
+                    child: const Text('Reject'),
+                  ),
                 ),
               ],
             ),

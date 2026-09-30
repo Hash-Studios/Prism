@@ -128,6 +128,8 @@ class ReviewInfoRow extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     final Widget label = Text(
       text,
+      maxLines: fixedWidth ? null : 1,
+      overflow: fixedWidth ? null : TextOverflow.ellipsis,
       style: theme.textTheme.bodyMedium!.copyWith(
         decoration: underline ? TextDecoration.underline : null,
         color: theme.colorScheme.secondary,
@@ -137,7 +139,9 @@ class ReviewInfoRow extends StatelessWidget {
       children: [
         Icon(icon, color: theme.colorScheme.secondary),
         const SizedBox(width: 8),
-        if (fixedWidth) SizedBox(width: MediaQuery.of(context).size.width * 0.3, child: label) else label,
+        Flexible(
+          child: fixedWidth ? SizedBox(width: MediaQuery.of(context).size.width * 0.3, child: label) : label,
+        ),
       ],
     );
     return onTap == null ? row : GestureDetector(onTap: onTap, child: row);

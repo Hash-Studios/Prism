@@ -40,16 +40,38 @@ abstract final class _AiGenSpace {
   static const double xl = 24;
 }
 
+bool canSubmitAiGeneration(AiGenerationRecord record, {required String currentUserId}) =>
+    record.submittedWallId == null && record.userId == currentUserId;
+
+List<AiGenerationRecord> mergeAiSubmissionHistory(
+  List<AiGenerationRecord> fetched,
+  Map<String, AiGenerationRecord> confirmed, {
+  required String fetchedUserId,
+}) {
+  final Map<String, AiGenerationRecord> merged = <String, AiGenerationRecord>{
+    for (final record in fetched) record.id: record,
+  };
+  for (final record in confirmed.values) {
+    if (record.userId == fetchedUserId) {
+      merged[record.id] = record;
+    }
+  }
+  return merged.values.toList(growable: false);
+}
+
 @RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting});
+
+  final AiGenerationRepositoryImpl? repository;
+  final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
   @override
   State<AiWallpaperTabPage> createState() => _AiWallpaperTabPageState();
 }
 
 class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
-  final AiGenerationRepositoryImpl _repository = getIt<AiGenerationRepositoryImpl>();
+  late final AiGenerationRepositoryImpl _repository = widget.repository ?? getIt<AiGenerationRepositoryImpl>();
   final Random _random = Random();
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _variationController = TextEditingController();
@@ -59,10 +81,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   AiQualityTier _selectedQualityTier = AiQualityTier.fast;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
   AiGenerationRecord? _latest;
+  final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
+  String _historyUserId = '';
 
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
   bool _submitting = false;
+  final Set<String> _unconfirmedSubmissionIds = <String>{};
 
   static const int _maxPromptChars = 4000;
   static const int _maxVariationChars = 2000;
@@ -294,10 +319,20 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _loadHistory() async {
+    final String userId = app_state.prismUser.id;
+    if (_historyUserId != userId) {
+      _historyUserId = userId;
+      _history = <AiGenerationRecord>[];
+      _latest = null;
+      _confirmedSubmissionRecords.clear();
+      _unconfirmedSubmissionIds.clear();
+    }
     if (!_isLoggedIn) {
       setState(() {
         _history = <AiGenerationRecord>[];
         _latest = null;
+        _confirmedSubmissionRecords.clear();
+        _unconfirmedSubmissionIds.clear();
       });
       return;
     }
@@ -310,15 +345,19 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         }
         return;
       }
-      final result = await _repository.fetchHistory(userId: app_state.prismUser.id);
+      final result = await _repository.fetchHistory(userId: userId);
+      if (!mounted || app_state.prismUser.id != userId) return;
+      final mergedResult = mergeAiSubmissionHistory(result, _confirmedSubmissionRecords, fetchedUserId: userId);
       setState(() {
-        _history = result;
-        _latest = result.isEmpty ? null : result.first;
+        _history = mergedResult;
+        _latest = mergedResult.isEmpty ? null : mergedResult.first;
       });
       analytics.track(AiHistoryOpenedEvent(count: result.length));
     } catch (error, stackTrace) {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(_toastForHistoryFailure(error));
+      if (mounted) {
+        toasts.error(_toastForHistoryFailure(error));
+      }
     } finally {
       if (mounted) {
         setState(() => _loadingHistory = false);
@@ -341,7 +380,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Future<bool> _isOnlineForGeneration() async {
     final bool online = await _hasNetworkOrUnknown();
-    if (!online) {
+    if (!online && mounted) {
       toasts.error('No connection. Connect to the internet, then try again.');
     }
     return online;
@@ -360,17 +399,19 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Description is too long (max $_maxPromptChars characters).');
       return;
     }
-    if (!await _isOnlineForGeneration() || !mounted) return;
-
+    final AiStylePreset style = _selectedStyle;
+    final AiQualityTier qualityTier = _selectedQualityTier;
     final String targetSize = aiTargetSize(
       size: MediaQuery.sizeOf(context),
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
     );
     await _runGeneration(
+      style: style,
+      qualityTier: qualityTier,
       request: (AiChargeMode mode, int coinsSpent) => _repository.generate(
         prompt: prompt,
-        stylePreset: _selectedStyle,
-        qualityTier: _selectedQualityTier,
+        stylePreset: style,
+        qualityTier: qualityTier,
         targetSize: targetSize,
         chargeMode: mode,
         coinsSpent: coinsSpent,
@@ -402,9 +443,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Refinements are not available right now.');
       return;
     }
-    if (!await _isOnlineForGeneration() || !mounted) return;
-
+    final AiStylePreset style = _selectedStyle;
+    final AiQualityTier qualityTier = _selectedQualityTier;
     await _runGeneration(
+      style: style,
+      qualityTier: qualityTier,
       request: (AiChargeMode mode, int coinsSpent) => _repository.generateVariation(
         generationId: latest.id,
         chargeMode: mode,
@@ -418,36 +461,50 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _runGeneration({
+    required AiStylePreset style,
+    required AiQualityTier qualityTier,
     required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent) request,
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
+    if (!_canStartGeneration()) return;
     setState(() => _loadingGeneration = true);
+    if (!await _isOnlineForGeneration() || !mounted) {
+      if (mounted) setState(() => _loadingGeneration = false);
+      return;
+    }
 
     final reservation = await CoinsService.instance.reserveForAiGeneration(
-      qualityTier: _selectedQualityTier,
+      qualityTier: qualityTier,
       sourceTag: 'coins.reserve.ai_screen',
     );
+    if (!mounted) {
+      if (reservation.success) {
+        await CoinsService.instance.rollbackAiGenerationReservation(
+          reservation.mode,
+          sourceTag: 'coins.rollback.ai_screen',
+          reservationTransactionId: reservation.transactionId,
+        );
+      }
+      return;
+    }
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
-        requiredCoins: _selectedQualityTier.coinCost,
+        requiredCoins: qualityTier.coinCost,
       );
-      toasts.error('Need ${_selectedQualityTier.coinCost} coins to generate.');
+      toasts.error('Need ${qualityTier.coinCost} coins to generate.');
       setState(() => _loadingGeneration = false);
       return;
     }
 
-    analytics.track(
-      AiGenerateStartedEvent(
-        style: _selectedStyle.apiValue,
-        quality: _selectedQualityTier.apiValue,
-        mode: reservation.mode,
-      ),
-    );
-
+    bool generationSucceeded = false;
     try {
+      analytics.track(
+        AiGenerateStartedEvent(style: style.apiValue, quality: qualityTier.apiValue, mode: reservation.mode),
+      );
       final AiGenerationRecord generated = await request(reservation.mode, reservation.coinsSpent);
+      generationSucceeded = true;
 
       CoinsService.instance.commitAiGenerationReservation(
         mode: reservation.mode,
@@ -455,18 +512,29 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         sourceTag: 'coins.commit.ai_screen',
       );
 
-      setState(() {
-        _latest = generated;
-        _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
-      });
+      if (mounted) {
+        setState(() {
+          _latest = generated;
+          _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
+        });
+      }
 
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.lightImpact();
       }
 
       analytics.track(successEvent(generated, reservation.mode, reservation.coinsSpent));
-      onSuccess(generated);
+      if (mounted) onSuccess(generated);
     } catch (error, stackTrace) {
+      if (generationSucceeded) {
+        logger.w(
+          'AI generation succeeded but follow-up work failed',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return;
+      }
       logger.w('AI generation failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       await CoinsService.instance.rollbackAiGenerationReservation(
         reservation.mode,
@@ -474,7 +542,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         reservationTransactionId: reservation.transactionId,
       );
       analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
-      toasts.error(_toastForGenerateFailure(error));
+      if (mounted) toasts.error(_toastForGenerateFailure(error));
     } finally {
       if (mounted) {
         setState(() => _loadingGeneration = false);
@@ -522,6 +590,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _submitToCommunity(AiGenerationRecord record) async {
+    if (!canSubmitAiGeneration(record, currentUserId: app_state.prismUser.id) ||
+        _confirmedSubmissionRecords.containsKey(record.id)) {
+      return;
+    }
     if (!_isLoggedIn) {
       toasts.error('Please sign in to submit wallpapers.');
       return;
@@ -530,66 +602,129 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('AI submit is currently disabled.');
       return;
     }
+    if (_unconfirmedSubmissionIds.contains(record.id)) {
+      toasts.error('Submission status is unconfirmed. Check Review Status before trying again.');
+      return;
+    }
     if (_submitting) return;
     setState(() => _submitting = true);
 
-    analytics.track(AiSubmitStartedEvent(generationId: record.id));
+    bool submissionStarted = false;
+    bool submissionConfirmed = false;
     try {
+      analytics.track(AiSubmitStartedEvent(generationId: record.id));
       final AiSubmissionMetadata metadata = await _repository.prefillSubmissionMetadata(
         generationId: record.id,
         defaultTags: <String>[_selectedStyle.apiValue],
       );
+      if (!mounted || app_state.prismUser.id != record.userId) return;
       final edited = await _showSubmissionEditor(metadata);
+      if (!mounted || app_state.prismUser.id != record.userId) return;
       if (edited == null) {
         return;
       }
 
       final String communityId = _buildCommunityId(record.id);
-      await wallstore.createRecord(
-        communityId,
-        'Prism',
-        record.watermarkedImageUrl,
-        record.watermarkedImageUrl,
-        '${record.width}x${record.height}',
-        'AI',
-        edited.title,
-        edited.category,
-        edited.description,
-        false,
-        wallpaperTags: edited.tags,
-        isAiGenerated: true,
-        aiGenerationId: record.id,
-        aiProvider: record.provider,
-        aiModel: record.model,
-        aiOriginalImageUrl: record.imageUrl,
-        aiPrompt: record.prompt,
-        aiStylePreset: record.stylePreset.apiValue,
-      );
+      submissionStarted = true;
+      final wallstore.WallSubmissionResult submissionResult =
+          await (widget.submitForTesting?.call() ??
+              wallstore.createRecord(
+                communityId,
+                'Prism',
+                record.watermarkedImageUrl,
+                record.watermarkedImageUrl,
+                '${record.width}x${record.height}',
+                'AI',
+                edited.title,
+                edited.category,
+                edited.description,
+                false,
+                wallpaperTags: edited.tags,
+                isAiGenerated: true,
+                aiGenerationId: record.id,
+                aiProvider: record.provider,
+                aiModel: record.model,
+                aiOriginalImageUrl: record.imageUrl,
+                aiPrompt: record.prompt,
+                aiStylePreset: record.stylePreset.apiValue,
+              ));
+      if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
+        return;
+      }
+      submissionConfirmed = true;
+      if (app_state.prismUser.id != record.userId) return;
       final updated = record.copyWith(
         submittedWallId: communityId,
         submittedAt: DateTime.now().toUtc(),
         status: 'submitted',
       );
-      await _repository.saveHistoryRecord(updated);
-      setState(() {
-        _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
-        if (_latest?.id == updated.id) {
-          _latest = updated;
-        }
-      });
-      analytics.track(AiSubmitSuccessEvent(generationId: record.id));
+      _confirmedSubmissionRecords[updated.id] = updated;
+      if (mounted) {
+        setState(() {
+          _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
+          if (_latest?.id == updated.id) {
+            _latest = updated;
+          }
+        });
+      }
+      try {
+        await _repository.saveHistoryRecord(updated);
+      } catch (error, stackTrace) {
+        logger.w(
+          'AI wallpaper submitted but local history could not be saved',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
       }
-      toasts.success('Submitted for review.');
+      if (mounted && app_state.prismUser.id == record.userId) {
+        toasts.success('Submitted for review.');
+      }
     } catch (error, stackTrace) {
-      logger.w('AI community submit failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(
-        _isOfflineOrNetworkError(error) ? 'No connection. Try again when online.' : 'Submit failed. Try again.',
-      );
+      if (submissionConfirmed) {
+        logger.w(
+          'AI wallpaper submission succeeded but follow-up work failed',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      } else if (submissionStarted) {
+        if (mounted && app_state.prismUser.id == record.userId) {
+          setState(() => _unconfirmedSubmissionIds.add(record.id));
+        }
+        logger.w(
+          'AI wallpaper submission status is unconfirmed',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        if (mounted && app_state.prismUser.id == record.userId) {
+          toasts.error('Could not confirm the submission. Check Review Status before trying again.');
+        }
+      } else {
+        logger.w('AI community submit failed before saving', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+        if (mounted && app_state.prismUser.id == record.userId) {
+          toasts.error(_isOfflineOrNetworkError(error) ? 'No connection. Try again.' : 'Submit failed. Please retry.');
+        }
+      }
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
+      }
+      if (submissionConfirmed) {
+        try {
+          await analytics.track(AiSubmitSuccessEvent(generationId: record.id));
+        } catch (error, stackTrace) {
+          logger.w(
+            'AI wallpaper submission succeeded but follow-up work failed',
+            tag: 'ai_wallpaper',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
       }
     }
   }
@@ -844,7 +979,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _buildResultArea(AiGenerationRecord? current, bool loading) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool canSubmit =
-        current != null && current.submittedWallId == null && app_state.aiSubmitEnabled && !_submitting;
+        current != null &&
+        canSubmitAiGeneration(current, currentUserId: app_state.prismUser.id) &&
+        !_confirmedSubmissionRecords.containsKey(current.id) &&
+        app_state.aiSubmitEnabled &&
+        !_submitting &&
+        !_unconfirmedSubmissionIds.contains(current.id);
     final ({int cacheWidth, int cacheHeight}) decode = _mainPreviewDecodeExtents(context);
 
     return RepaintBoundary(
@@ -903,6 +1043,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                                   padding: const EdgeInsets.all(14),
                                   child: Icon(Icons.upload_outlined, color: scheme.onInverseSurface, size: 20),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (_unconfirmedSubmissionIds.contains(current.id))
+                        Positioned(
+                          left: 8,
+                          right: 8,
+                          bottom: 8,
+                          child: Material(
+                            color: scheme.inverseSurface.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              child: Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Text(
+                                      'Submission status is unconfirmed. Check before retrying.',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(color: scheme.onInverseSurface),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => context.router.push(const ReviewRoute()),
+                                    child: Text('Check status', style: TextStyle(color: scheme.onInverseSurface)),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
