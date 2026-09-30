@@ -118,7 +118,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
       child: PulsePlaceholder(
         builder: (context, placeholderColor) => GridView.builder(
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-          itemCount: walls.length + (collectionHasMore ? 1 : 0),
+          itemCount: walls.length + (collectionHasMore && walls.length >= 24 ? 1 : 0),
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -127,7 +127,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
             crossAxisSpacing: 8,
           ),
           itemBuilder: (context, index) {
-            if (index == walls.length && collectionHasMore) {
+            if (index == walls.length && collectionHasMore && walls.length >= 24) {
               return SeeMoreButton(
                 seeMoreLoader: seeMoreLoader,
                 func: () {

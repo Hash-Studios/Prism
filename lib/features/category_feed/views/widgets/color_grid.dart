@@ -68,13 +68,13 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  Future<List<PexelsWallpaper>?> _fetch({required bool refresh}) async {
+  Future<List<PexelsWallpaper>> _fetch({required bool refresh}) async {
     final result = await _repository.fetchColorFeed(hex: widget.hexColor, refresh: refresh);
     return result.fold(
       onSuccess: (walls) => walls,
       onFailure: (failure) {
         logger.e('Colour feed failed: ${failure.message}');
-        return null;
+        return const <PexelsWallpaper>[];
       },
     );
   }
@@ -85,15 +85,8 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
       return;
     }
     setState(() {
-      if (walls == null) {
-        if (_walls == null) {
-          _walls = const <PexelsWallpaper>[];
-          _hasMore = false;
-        }
-      } else {
-        _walls = walls;
-        _hasMore = walls.isNotEmpty;
-      }
+      _walls = walls.isEmpty ? (_walls ?? walls) : walls;
+      _hasMore = walls.isNotEmpty;
     });
   }
 
@@ -106,7 +99,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
     });
     try {
       final more = await _fetch(refresh: false);
-      if (mounted && more != null) {
+      if (mounted) {
         setState(() {
           _walls = <PexelsWallpaper>[...?_walls, ...more];
           _hasMore = more.isNotEmpty;

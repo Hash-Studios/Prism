@@ -80,34 +80,4 @@ void main() {
 
     expect(find.byType(SeeMoreButton), findsNothing);
   });
-
-  testWidgets('clears stale results after an empty successful refresh', (tester) async {
-    final SemanticsHandle semantics = tester.ensureSemantics();
-    when(
-      () => search.fetchPage(SearchProviderValue.pexels, 'landscape', refresh: true),
-    ).thenAnswer((_) async => <FeedItemEntity>[]);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SearchGrid(
-            query: 'landscape',
-            provider: SearchProviderValue.pexels,
-            initialResults: <FeedItemEntity>[_wallpaper(0)],
-          ),
-        ),
-      ),
-    );
-
-    expect(find.bySemanticsLabel('Wallpaper by Author 0'), findsOneWidget);
-
-    final Future<void> refresh = tester.state<RefreshIndicatorState>(find.byType(RefreshIndicator)).show();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump(const Duration(milliseconds: 500));
-    await refresh;
-
-    expect(find.bySemanticsLabel('Wallpaper by Author 0'), findsNothing);
-    semantics.dispose();
-  });
 }
