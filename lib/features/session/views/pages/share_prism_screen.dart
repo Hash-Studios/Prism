@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -16,21 +19,17 @@ class SharePrismScreen extends StatefulWidget {
 
 class _SharePrismScreenState extends State<SharePrismScreen> {
   String link = "";
+
   @override
   void initState() {
     super.initState();
-    getLink();
+    unawaited(_loadLink());
   }
 
-  Future<void> getLink() async {
-    if (app_state.prismUser.id == "") {
-    } else {
-      await createSharingPrismLink(app_state.prismUser.id).then(
-        (value) => setState(() {
-          link = value;
-        }),
-      );
-    }
+  Future<void> _loadLink() async {
+    if (app_state.prismUser.id.isEmpty) return;
+    final value = await createSharingPrismLink(app_state.prismUser.id);
+    if (mounted) setState(() => link = value);
   }
 
   @override
@@ -76,7 +75,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.6,
               child: Text(
-                "Get 100 coins when your friend signs up from the link!",
+                "Get ${CoinPolicy.referral} coins when your friend signs up from the link!",
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -86,7 +85,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.6,
               child: Text(
-                "They also get 100 coins for joining Prism.",
+                "They also get ${CoinPolicy.referral} coins for joining Prism.",
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
@@ -97,40 +96,46 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
             MaterialButton(
               disabledColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
               shape: const StadiumBorder(),
-              color: link == ""
+              color: link.isEmpty
                   ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)
                   : Theme.of(context).colorScheme.error,
-              onPressed: link == ""
+              onPressed: link.isEmpty
                   ? () {
-                      analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen'));
-                      analytics.track(
-                        const InviteShareResultEvent(
-                          channel: ShareChannelValue.link,
-                          result: EventResultValue.blocked,
-                          reason: AnalyticsReasonValue.notSignedIn,
-                          sourceContext: 'share_prism_screen',
+                      unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
+                      unawaited(
+                        analytics.track(
+                          const InviteShareResultEvent(
+                            channel: ShareChannelValue.link,
+                            result: EventResultValue.blocked,
+                            reason: AnalyticsReasonValue.notSignedIn,
+                            sourceContext: 'share_prism_screen',
+                          ),
                         ),
                       );
                       toasts.error("Sign in to generate unique referral link!");
                     }
                   : () async {
-                      analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen'));
+                      unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
                       try {
                         await ShareService.shareText(text: link, context: context);
-                        analytics.track(
-                          const InviteShareResultEvent(
-                            channel: ShareChannelValue.shareSheet,
-                            result: EventResultValue.success,
-                            sourceContext: 'share_prism_screen',
+                        unawaited(
+                          analytics.track(
+                            const InviteShareResultEvent(
+                              channel: ShareChannelValue.shareSheet,
+                              result: EventResultValue.success,
+                              sourceContext: 'share_prism_screen',
+                            ),
                           ),
                         );
                       } catch (_) {
-                        analytics.track(
-                          const InviteShareResultEvent(
-                            channel: ShareChannelValue.shareSheet,
-                            result: EventResultValue.failure,
-                            reason: AnalyticsReasonValue.error,
-                            sourceContext: 'share_prism_screen',
+                        unawaited(
+                          analytics.track(
+                            const InviteShareResultEvent(
+                              channel: ShareChannelValue.shareSheet,
+                              result: EventResultValue.failure,
+                              reason: AnalyticsReasonValue.error,
+                              sourceContext: 'share_prism_screen',
+                            ),
                           ),
                         );
                         toasts.error("Unable to share invite right now.");
@@ -138,8 +143,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                     },
               child: const Text('SHARE INVITE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
             ),
-            const SizedBox(height: 10),
-            const SizedBox(height: 15),
+            const SizedBox(height: 25),
           ],
         ),
       ),
