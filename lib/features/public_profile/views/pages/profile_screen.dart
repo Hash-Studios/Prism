@@ -8,14 +8,17 @@ import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/utils/format_utils.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
-import 'package:Prism/data/profile/wallpaper/public_profile_data.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -44,44 +47,36 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  String? profileIdentifier;
-
-  Object? _mapValue(Map<String, dynamic> data, String key) => data[key];
-  String _mapString(Map<String, dynamic> data, String key) => _mapValue(data, key)?.toString() ?? '';
-  bool _mapBool(Map<String, dynamic> data, String key) {
-    final value = _mapValue(data, key);
-    return value is bool && value;
-  }
-
-  List<Object?> _mapList(Map<String, dynamic> data, String key) {
-    final value = _mapValue(data, key);
-    if (value is List) {
-      return value.whereType<Object?>().toList(growable: false);
-    }
-    return const <Object?>[];
-  }
-
-  Map<String, dynamic> _mapObject(Map<String, dynamic> data, String key) {
-    final value = _mapValue(data, key);
-    if (value is Map) {
-      return Map<String, dynamic>.from(value);
-    }
-    return <String, dynamic>{};
-  }
+  late final String _profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.email;
+  late final Stream<PublicProfileEntity?> _profileStream = getIt<PublicProfileRepository>().watchProfile(
+    _profileIdentifier,
+  );
 
   bool get _isOwnProfile {
-    final String identifier = (profileIdentifier ?? '').trim();
+    final String identifier = _profileIdentifier.trim();
     if (identifier.isEmpty) {
       return true;
     }
     return identifier == app_state.prismUser.email || identifier == app_state.prismUser.username;
   }
 
+  PublicProfileEntity get _ownProfile => PublicProfileEntity(
+    id: app_state.prismUser.id,
+    name: app_state.prismUser.name,
+    email: app_state.prismUser.email,
+    username: app_state.prismUser.username,
+    profilePhoto: app_state.prismUser.profilePhoto,
+    bio: app_state.prismUser.bio,
+    followers: app_state.prismUser.followers,
+    following: app_state.prismUser.following,
+    links: app_state.prismUser.links,
+    coverPhoto: app_state.prismUser.coverPhoto ?? '',
+  );
+
   @override
   void initState() {
-    profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.email;
-    _contentLoadTracker.start();
     super.initState();
+    _contentLoadTracker.start();
   }
 
   @override
@@ -114,194 +109,117 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     return BlocProvider<PublicProfileBloc>(
       create: (_) => getIt<PublicProfileBloc>(),
-      child: PopScope(
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) {}
-        },
-        child: _isOwnProfile
-            ? Scaffold(
-                key: _scaffoldKey,
-                body: _ProfileChild(
-                  ownProfile: true,
-                  parentScaffoldKey: _scaffoldKey,
-                  onProfileEdited: () => setState(() {}),
-                  id: app_state.prismUser.id,
-                  bio: app_state.prismUser.bio,
-                  coverPhoto: app_state.prismUser.coverPhoto,
-                  email: app_state.prismUser.email,
-                  links: app_state.prismUser.links,
-                  name: app_state.prismUser.name,
-                  premium: app_state.prismUser.premium,
-                  userPhoto: app_state.prismUser.profilePhoto,
-                  username: app_state.prismUser.username,
-                  followers: app_state.prismUser.followers,
-                  following: app_state.prismUser.following,
-                ),
-                endDrawer: app_state.prismUser.loggedIn
-                    ? SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: const ProfileDrawer())
-                    : null,
-              )
-            : Scaffold(
-                key: _scaffoldKey,
-                body: StreamBuilder<List<Map<String, dynamic>>>(
-                  stream: getUserProfile(profileIdentifier!),
-                  builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
-                    if (snapshot.hasError) {
-                      _contentLoadTracker.failure(
-                        reason: AnalyticsReasonValue.error,
-                        onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
-                          await analytics.track(
-                            SurfaceContentLoadedEvent(
-                              surface: AnalyticsSurfaceValue.profileScreen,
-                              result: EventResultValue.failure,
-                              loadTimeMs: loadTimeMs,
-                              sourceContext: 'profile_screen_stream',
-                              reason: reason,
-                            ),
-                          );
-                        },
-                      );
-                    }
-                    if (snapshot.hasData && snapshot.data != null) {
-                      if (snapshot.data!.isEmpty) {
-                        _contentLoadTracker.success(
-                          itemCount: 0,
-                          onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-                            await analytics.track(
-                              SurfaceContentLoadedEvent(
-                                surface: AnalyticsSurfaceValue.profileScreen,
-                                result: EventResultValue.empty,
-                                loadTimeMs: loadTimeMs,
-                                sourceContext: 'profile_screen_stream',
-                                itemCount: itemCount,
-                              ),
-                            );
-                          },
-                        );
-                        return ColoredBox(
-                          color: Theme.of(context).primaryColor,
-                          child: Center(
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              child: const Text(
-                                "Sorry! This user is inactive on the latest version, and hence they are not currently viewable.",
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
+      child: _isOwnProfile
+          ? Scaffold(
+              key: _scaffoldKey,
+              body: _ProfileChild(
+                ownProfile: true,
+                parentScaffoldKey: _scaffoldKey,
+                onProfileEdited: () => setState(() {}),
+                profile: _ownProfile,
+              ),
+              endDrawer: SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: const ProfileDrawer()),
+            )
+          : Scaffold(
+              key: _scaffoldKey,
+              body: StreamBuilder<PublicProfileEntity?>(
+                stream: _profileStream,
+                builder: (BuildContext context, AsyncSnapshot<PublicProfileEntity?> snapshot) {
+                  if (snapshot.hasError) {
+                    _contentLoadTracker.failure(
+                      reason: AnalyticsReasonValue.error,
+                      onFailure: ({required int loadTimeMs, AnalyticsReasonValue? reason, int? itemCount}) async {
+                        await analytics.track(
+                          SurfaceContentLoadedEvent(
+                            surface: AnalyticsSurfaceValue.profileScreen,
+                            result: EventResultValue.failure,
+                            loadTimeMs: loadTimeMs,
+                            sourceContext: 'profile_screen_stream',
+                            reason: reason,
                           ),
                         );
-                      }
-                      final data = snapshot.data!.first;
-                      _contentLoadTracker.success(
-                        itemCount: 1,
-                        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-                          await analytics.track(
-                            SurfaceContentLoadedEvent(
-                              surface: AnalyticsSurfaceValue.profileScreen,
-                              result: EventResultValue.success,
-                              loadTimeMs: loadTimeMs,
-                              sourceContext: 'profile_screen_stream',
-                              itemCount: itemCount,
-                            ),
-                          );
-                        },
-                      );
-                      final Map<String, dynamic> links = _mapObject(data, 'links');
-                      final bool premium = _mapBool(data, 'premium');
-                      final List<Object?> followers = _mapList(data, 'followers');
-                      final List<Object?> following = _mapList(data, 'following');
-                      return StreamBuilder<Set<String>>(
-                        stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
-                        builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
-                          final String profileEmail = _mapString(data, 'email');
-                          final Set<String> blocked = blockSnap.data ?? <String>{};
-                          if (app_state.prismUser.loggedIn &&
-                              BlockedCreatorsFilter.hidesCreatorEmail(profileEmail, blocked)) {
-                            String display = _mapString(data, 'name').trim();
-                            if (display.isEmpty) {
-                              display = _mapString(data, 'username').trim();
-                            }
-                            if (display.isEmpty) {
-                              display = profileEmail;
-                            }
-                            return BlockedUserProfileShell(
-                              targetUserId: _mapString(data, '__docId'),
-                              targetEmail: profileEmail,
-                              displayName: display,
-                            );
-                          }
-                          return _ProfileChild(
-                            ownProfile: false,
-                            id: _mapString(data, '__docId'),
-                            bio: _mapString(data, 'bio'),
-                            coverPhoto: _mapString(data, 'coverPhoto'),
-                            email: _mapString(data, 'email'),
-                            links: links,
-                            name: _mapString(data, 'name'),
-                            premium: premium,
-                            userPhoto: _mapString(data, 'profilePhoto'),
-                            username: _mapString(data, 'username'),
-                            followers: followers,
-                            following: following,
-                          );
-                        },
-                      );
-                    }
+                      },
+                    );
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting || snapshot.hasError) {
                     return ColoredBox(
                       color: Theme.of(context).primaryColor,
                       child: Center(child: Loader()),
                     );
-                  },
-                ),
+                  }
+                  final PublicProfileEntity? profile = snapshot.data;
+                  _contentLoadTracker.success(
+                    itemCount: profile == null ? 0 : 1,
+                    onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+                      await analytics.track(
+                        SurfaceContentLoadedEvent(
+                          surface: AnalyticsSurfaceValue.profileScreen,
+                          result: profile == null ? EventResultValue.empty : EventResultValue.success,
+                          loadTimeMs: loadTimeMs,
+                          sourceContext: 'profile_screen_stream',
+                          itemCount: itemCount,
+                        ),
+                      );
+                    },
+                  );
+                  if (profile == null) {
+                    return ColoredBox(
+                      color: Theme.of(context).primaryColor,
+                      child: Center(
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          child: const Text(
+                            'Sorry! This user is inactive on the latest version, and hence they are not currently viewable.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return StreamBuilder<Set<String>>(
+                    stream: getIt<UserBlockRepository>().watchBlockedCreatorEmails(),
+                    builder: (BuildContext context, AsyncSnapshot<Set<String>> blockSnap) {
+                      if (BlockedCreatorsFilter.hidesCreatorEmail(profile.email, blockSnap.data ?? <String>{})) {
+                        final String display = <String>[
+                          profile.name.trim(),
+                          profile.username.trim(),
+                        ].firstWhere((String value) => value.isNotEmpty, orElse: () => profile.email);
+                        return BlockedUserProfileShell(
+                          targetUserId: profile.id,
+                          targetEmail: profile.email,
+                          displayName: display,
+                        );
+                      }
+                      return _ProfileChild(ownProfile: false, profile: profile);
+                    },
+                  );
+                },
               ),
-      ),
+            ),
     );
   }
 }
 
+enum _ProfileMenuAction { report, block }
+
 class _ProfileChild extends StatefulWidget {
-  final String? name;
-  final String? username;
-  final String? id;
-  final String? email;
-  final String? userPhoto;
-  final String? coverPhoto;
-  final bool? premium;
-  final bool? ownProfile;
-  final Map? links;
-  final String? bio;
-  final List? followers;
-  final List? following;
+  const _ProfileChild({required this.profile, required this.ownProfile, this.parentScaffoldKey, this.onProfileEdited});
+
+  final PublicProfileEntity profile;
+  final bool ownProfile;
   final GlobalKey<ScaffoldState>? parentScaffoldKey;
 
   /// Rebuilds the parent, which reads the edited fields from app_state.
   final VoidCallback? onProfileEdited;
-  const _ProfileChild({
-    required this.name,
-    required this.username,
-    required this.id,
-    required this.email,
-    required this.userPhoto,
-    required this.coverPhoto,
-    required this.premium,
-    required this.ownProfile,
-    required this.links,
-    required this.bio,
-    required this.followers,
-    required this.following,
-    this.parentScaffoldKey,
-    this.onProfileEdited,
-  });
+
   @override
   _ProfileChildState createState() => _ProfileChildState();
 }
 
 class _ProfileChildState extends State<_ProfileChild> {
   final ScrollController scrollController = ScrollController();
-  @override
-  void initState() {
-    super.initState();
-  }
+
+  PublicProfileEntity get _profile => widget.profile;
 
   @override
   void dispose() {
@@ -317,7 +235,7 @@ class _ProfileChildState extends State<_ProfileChild> {
           action: action,
           sourceContext: sourceContext,
           itemType: ItemTypeValue.user,
-          itemId: widget.id,
+          itemId: _profile.id,
         ),
       ),
     );
@@ -351,28 +269,61 @@ class _ProfileChildState extends State<_ProfileChild> {
     widget.onProfileEdited?.call();
   }
 
+  void _toggleFollow({required bool following}) {
+    _trackAction(
+      following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
+      sourceContext: 'profile_screen_follow_action',
+    );
+    context.read<PublicProfileBloc>().add(
+      PublicProfileEvent.followChangeRequested(
+        follow: !following,
+        currentUserId: app_state.prismUser.id,
+        currentUserEmail: app_state.prismUser.email,
+        targetUserId: _profile.id,
+        targetUserEmail: _profile.email,
+      ),
+    );
+    if (following) {
+      toasts.error('Unfollowed ${_profile.name}!');
+    } else {
+      toasts.codeSend('Followed ${_profile.name}!');
+    }
+  }
+
+  Future<void> _onMenuSelected(_ProfileMenuAction action) async {
+    final String uid = _profile.id.trim();
+    switch (action) {
+      case _ProfileMenuAction.report:
+        if (uid.isEmpty) {
+          return;
+        }
+        await showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid);
+      case _ProfileMenuAction.block:
+        final String email = _profile.email.trim();
+        if (uid.isEmpty || email.isEmpty) {
+          return;
+        }
+        await confirmAndBlockUser(context: context, targetUserId: uid, targetEmail: email, displayName: _profile.name);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final String safeCoverPhoto = (widget.coverPhoto ?? "").trim();
-    final String safeUserPhoto = (widget.userPhoto ?? "").trim();
+    final ThemeData theme = Theme.of(context);
+    final String safeCoverPhoto = _profile.coverPhoto.trim();
+    final String safeUserPhoto = _profile.profilePhoto.trim();
     final bool hasCoverPhoto = safeCoverPhoto.isNotEmpty;
     final bool hasUserPhoto = safeUserPhoto.isNotEmpty;
-    final ScrollController? controller = (widget.ownProfile ?? false) ? scrollController : null;
+    final bool ownProfile = widget.ownProfile;
+    final ScrollController? controller = ownProfile ? scrollController : null;
+    final List<String> linkKeys = _profile.links.keys.toList(growable: false);
     // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
-    final bool showBack = !(widget.ownProfile ?? false) || Navigator.canPop(context);
+    final bool showBack = !ownProfile || Navigator.canPop(context);
     final Widget editButton = Padding(
       padding: const EdgeInsets.all(8.0),
-      child: IconButton(
+      child: _HeaderButton(
         tooltip: 'Edit profile',
-        padding: const EdgeInsets.all(2),
-        icon: Container(
-          padding: const EdgeInsets.all(6.0),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-          ),
-          child: Icon(JamIcons.pencil, color: Theme.of(context).colorScheme.secondary),
-        ),
+        icon: JamIcons.pencil,
         onPressed: () {
           unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
         },
@@ -382,13 +333,13 @@ class _ProfileChildState extends State<_ProfileChild> {
       app_state.prismUser,
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
-    final bool showProfileCompletenessCard =
-        (widget.ownProfile ?? false) && app_state.prismUser.loggedIn && !profileCompletenessStatus.isComplete;
+    final bool showProfileCompletenessCard = ownProfile && !profileCompletenessStatus.isComplete;
+    final bool following = _profile.followers.contains(app_state.prismUser.email);
 
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
+          backgroundColor: theme.primaryColor,
           body: NestedScrollView(
             controller: controller,
             headerSliverBuilder: (context, innerBoxIsScrolled) => <Widget>[
@@ -400,134 +351,53 @@ class _ProfileChildState extends State<_ProfileChild> {
                 leading: showBack
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: IconButton(
+                        child: _HeaderButton(
                           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                          padding: const EdgeInsets.all(2),
-                          icon: Container(
-                            padding: const EdgeInsets.all(6.0),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                            ),
-                            child: Icon(JamIcons.chevron_left, color: Theme.of(context).colorScheme.secondary),
-                          ),
+                          icon: JamIcons.chevron_left,
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
                             Navigator.pop(context);
                           },
                         ),
                       )
-                    : app_state.prismUser.loggedIn
-                    ? editButton
-                    : null,
+                    : editButton,
                 actions: [
-                  if (!(widget.ownProfile ?? false))
-                    if (app_state.prismUser.loggedIn)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            if ((widget.followers ?? []).contains(app_state.prismUser.email))
-                              IconButton(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.all(2),
-                                icon: Container(
-                                  padding: const EdgeInsets.all(6.0),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                  ),
-                                  child: Icon(JamIcons.user_remove, color: Theme.of(context).colorScheme.secondary),
-                                ),
-                                onPressed: () {
-                                  _trackAction(
-                                    AnalyticsActionValue.unfollowTapped,
-                                    sourceContext: 'profile_screen_follow_action',
-                                  );
-                                  unfollow(widget.email!, widget.id!);
-                                  toasts.error("Unfollowed ${widget.name}!");
-                                },
-                              )
-                            else
-                              IconButton(
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.all(2),
-                                icon: Container(
-                                  padding: const EdgeInsets.all(6.0),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                  ),
-                                  child: Icon(JamIcons.user_plus, color: Theme.of(context).colorScheme.secondary),
-                                ),
-                                onPressed: () {
-                                  _trackAction(
-                                    AnalyticsActionValue.followTapped,
-                                    sourceContext: 'profile_screen_follow_action',
-                                  );
-                                  follow(widget.email!, widget.id!);
-                                  toasts.codeSend("Followed ${widget.name}!");
-                                },
-                              ),
-                            PopupMenuButton<String>(
-                              icon: Container(
-                                padding: const EdgeInsets.all(6.0),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
-                                ),
-                                child: Icon(JamIcons.more_vertical, color: Theme.of(context).colorScheme.secondary),
-                              ),
-                              onSelected: (String value) async {
-                                final String uid = (widget.id ?? '').trim();
-                                if (value == 'report') {
-                                  if (uid.isEmpty) {
-                                    return;
-                                  }
-                                  // 'user' contentType: another agent is adding support for it to the
-                                  // report sheet and the submitContentReport callable.
-                                  await showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid);
-                                  return;
-                                }
-                                if (value != 'block') {
-                                  return;
-                                }
-                                final String em = (widget.email ?? '').trim();
-                                if (uid.isEmpty || em.isEmpty) {
-                                  return;
-                                }
-                                await confirmAndBlockUser(
-                                  context: context,
-                                  targetUserId: uid,
-                                  targetEmail: em,
-                                  displayName: widget.name,
-                                );
-                              },
-                              itemBuilder: (BuildContext context) => const <PopupMenuEntry<String>>[
-                                PopupMenuItem<String>(value: 'report', child: Text('Report user')),
-                                PopupMenuItem<String>(value: 'block', child: Text('Block user')),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                  if ((widget.ownProfile ?? false) && app_state.prismUser.loggedIn && showBack) editButton,
-                  if ((widget.ownProfile ?? false) && app_state.prismUser.loggedIn)
+                  if (!ownProfile)
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: IconButton(
-                        tooltip: 'Menu',
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.all(2),
-                        icon: Container(
-                          padding: const EdgeInsets.all(6.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          _HeaderButton(
+                            icon: following ? JamIcons.user_remove : JamIcons.user_plus,
+                            alignment: Alignment.centerRight,
+                            onPressed: () => _toggleFollow(following: following),
                           ),
-                          child: Icon(JamIcons.menu, color: Theme.of(context).colorScheme.secondary),
-                        ),
+                          PopupMenuButton<_ProfileMenuAction>(
+                            icon: const _CircleIcon(icon: JamIcons.more_vertical),
+                            onSelected: _onMenuSelected,
+                            itemBuilder: (BuildContext context) => const <PopupMenuEntry<_ProfileMenuAction>>[
+                              PopupMenuItem<_ProfileMenuAction>(
+                                value: _ProfileMenuAction.report,
+                                child: Text('Report user'),
+                              ),
+                              PopupMenuItem<_ProfileMenuAction>(
+                                value: _ProfileMenuAction.block,
+                                child: Text('Block user'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (ownProfile && showBack) editButton,
+                  if (ownProfile)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: _HeaderButton(
+                        tooltip: 'Menu',
+                        icon: JamIcons.menu,
+                        alignment: Alignment.centerRight,
                         onPressed: () {
                           _trackAction(
                             AnalyticsActionValue.openDrawerTapped,
@@ -538,9 +408,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ),
                     ),
                 ],
-                backgroundColor: Theme.of(context).primaryColor,
+                backgroundColor: theme.primaryColor,
                 automaticallyImplyLeading: false,
-                expandedHeight: (widget.links ?? {}).keys.toList().isEmpty
+                expandedHeight: linkKeys.isEmpty
                     ? MediaQuery.of(context).size.height * 0.4
                     : MediaQuery.of(context).size.height * 0.46,
                 flexibleSpace: Stack(
@@ -553,14 +423,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                               if (!hasCoverPhoto)
                                 SvgPicture.string(
                                   defaultHeader
-                                      .replaceAll(
-                                        "#181818",
-                                        "#${Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2)}",
-                                      )
-                                      .replaceAll(
-                                        "#E77597",
-                                        "#${Theme.of(context).colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
-                                      ),
+                                      .replaceAll('#181818', '#${theme.primaryColor.rgbHex}')
+                                      .replaceAll('#E77597', '#${theme.colorScheme.error.rgbHex}'),
                                   fit: BoxFit.cover,
                                   width: MediaQuery.of(context).size.width,
                                   height: MediaQuery.of(context).size.height * 0.19,
@@ -576,7 +440,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                               Container(
                                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                                 width: double.maxFinite,
-                                height: (widget.links ?? {}).keys.toList().isEmpty
+                                height: linkKeys.isEmpty
                                     ? MediaQuery.of(context).size.height * 0.21 - 37
                                     : MediaQuery.of(context).size.height * 0.27 - 37,
                                 child: Column(
@@ -584,13 +448,13 @@ class _ProfileChildState extends State<_ProfileChild> {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Text(
-                                        widget.name!,
+                                        _profile.name,
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontFamily: PrismFonts.proximaNova,
-                                          color: Theme.of(context).colorScheme.secondary,
+                                          color: theme.colorScheme.secondary,
                                           fontSize: 22,
                                           // w600 gives the name more presence over the muted username below.
                                           fontWeight: FontWeight.w600,
@@ -601,13 +465,13 @@ class _ProfileChildState extends State<_ProfileChild> {
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Text(
-                                        "@${widget.username}",
+                                        '@${_profile.username}',
                                         textAlign: TextAlign.center,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontFamily: PrismFonts.proximaNova,
-                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.55),
+                                          color: theme.colorScheme.secondary.withValues(alpha: 0.55),
                                           fontSize: 14,
                                           fontWeight: FontWeight.normal,
                                           letterSpacing: 0.2,
@@ -615,174 +479,108 @@ class _ProfileChildState extends State<_ProfileChild> {
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    if ((widget.bio ?? "").isNotEmpty)
+                                    if (_profile.bio.isNotEmpty) ...[
                                       SizedBox(
                                         width: MediaQuery.of(context).size.width * 0.72,
                                         child: Text(
-                                          widget.bio!,
+                                          _profile.bio,
                                           textAlign: TextAlign.center,
                                           // 2 lines: bios up to 150 chars deserve more space.
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             fontFamily: PrismFonts.proximaNova,
-                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.65),
+                                            color: theme.colorScheme.secondary.withValues(alpha: 0.65),
                                             fontSize: 13,
                                             fontWeight: FontWeight.normal,
                                             height: 1.45,
                                           ),
                                         ),
                                       ),
-                                    if ((widget.bio ?? "").isNotEmpty) const SizedBox(height: 2),
+                                      const SizedBox(height: 2),
+                                    ],
                                     const SizedBox(height: 8),
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          // Following count — tappable on own profile only
-                                          // Following count — tappable on own profile only
+                                          // Following count is tappable on own profile only.
                                           GestureDetector(
-                                            onTap: (widget.ownProfile ?? false) && app_state.prismUser.loggedIn
+                                            onTap: ownProfile
                                                 ? () => context.router.push(
-                                                    FollowingListRoute(
-                                                      following: (widget.following ?? []).whereType<String>().toList(
-                                                        growable: false,
-                                                      ),
-                                                    ),
+                                                    FollowingListRoute(following: _profile.following),
                                                   )
                                                 : null,
-                                            child: _StatPill(
-                                              count: (widget.following ?? []).length,
-                                              label: 'Following',
-                                            ),
+                                            child: _StatPill(count: _profile.following.length, label: 'Following'),
                                           ),
                                           Container(
                                             width: 1,
                                             height: 16,
                                             margin: const EdgeInsets.symmetric(horizontal: 16),
-                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                                            color: theme.colorScheme.secondary.withValues(alpha: 0.2),
                                           ),
-                                          // Followers count — tappable on both own and other profiles
+                                          // Followers count is tappable on both own and other profiles.
                                           GestureDetector(
-                                            onTap: () => context.router.push(
-                                              FollowersRoute(
-                                                followers: (widget.followers ?? []).whereType<String>().toList(
-                                                  growable: false,
-                                                ),
-                                              ),
-                                            ),
-                                            child: _StatPill(
-                                              count: (widget.followers ?? []).length,
-                                              label: 'Followers',
-                                            ),
+                                            onTap: () =>
+                                                context.router.push(FollowersRoute(followers: _profile.followers)),
+                                            child: _StatPill(count: _profile.followers.length, label: 'Followers'),
                                           ),
                                         ],
                                       ),
                                     ),
-                                    if ((widget.links ?? {}).keys.toList().isNotEmpty) const SizedBox(height: 8),
-                                    if ((widget.links ?? {}).keys.toList().isNotEmpty)
+                                    if (linkKeys.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
                                       SizedBox(
                                         width: MediaQuery.of(context).size.width,
                                         height: 48,
                                         child: Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            ...(widget.links ?? {}).keys
-                                                .toList()
-                                                .map(
-                                                  (e) => IconButton(
-                                                    tooltip: e.toString(),
-                                                    padding: const EdgeInsets.all(4),
-                                                    icon: Container(
-                                                      padding: const EdgeInsets.all(7.0),
-                                                      decoration: BoxDecoration(
-                                                        shape: BoxShape.circle,
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.secondary.withValues(alpha: 0.1),
-                                                        border: Border.all(
-                                                          color: Theme.of(
-                                                            context,
-                                                          ).colorScheme.secondary.withValues(alpha: 0.12),
-                                                        ),
-                                                      ),
-                                                      child: Icon(
-                                                        linksIconData[e.toString()] ?? JamIcons.link,
-                                                        size: 18,
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.secondary.withValues(alpha: 0.85),
-                                                      ),
-                                                    ),
-                                                    onPressed: () async {
-                                                      _trackAction(
-                                                        AnalyticsActionValue.actionChipTapped,
+                                            for (final String key in linkKeys.take(3))
+                                              _LinkButton(
+                                                tooltip: key,
+                                                icon: linksIconData[key] ?? JamIcons.link,
+                                                onPressed: () async {
+                                                  _trackAction(
+                                                    AnalyticsActionValue.actionChipTapped,
+                                                    sourceContext: 'profile_screen_link_chip',
+                                                  );
+                                                  final String link = _profile.links[key].toString();
+                                                  final String targetLink = link.contains('@gmail.com')
+                                                      ? 'mailto:$link'
+                                                      : link;
+                                                  final bool launched = await launchUrl(Uri.parse(targetLink));
+                                                  unawaited(
+                                                    analytics.track(
+                                                      ExternalLinkOpenResultEvent(
+                                                        surface: AnalyticsSurfaceValue.profileScreen,
+                                                        destination: _destinationForLinkKey(key),
+                                                        result: launched
+                                                            ? EventResultValue.success
+                                                            : EventResultValue.failure,
+                                                        reason: launched ? null : AnalyticsReasonValue.error,
                                                         sourceContext: 'profile_screen_link_chip',
-                                                      );
-                                                      final String link = widget.links![e].toString();
-                                                      final String targetLink = link.contains("@gmail.com")
-                                                          ? "mailto:$link"
-                                                          : link;
-                                                      final bool launched = await launchUrl(Uri.parse(targetLink));
-                                                      unawaited(
-                                                        analytics.track(
-                                                          ExternalLinkOpenResultEvent(
-                                                            surface: AnalyticsSurfaceValue.profileScreen,
-                                                            destination: _destinationForLinkKey(e.toString()),
-                                                            result: launched
-                                                                ? EventResultValue.success
-                                                                : EventResultValue.failure,
-                                                            reason: launched ? null : AnalyticsReasonValue.error,
-                                                            sourceContext: 'profile_screen_link_chip',
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                )
-                                                .toList()
-                                                .sublist(
-                                                  0,
-                                                  (widget.links ?? {}).keys.toList().length > 3
-                                                      ? 3
-                                                      : (widget.links ?? {}).keys.toList().length,
-                                                ),
-                                            if ((widget.links ?? {}).keys.toList().length > 3)
-                                              IconButton(
-                                                padding: const EdgeInsets.all(4),
-                                                icon: Container(
-                                                  padding: const EdgeInsets.all(7.0),
-                                                  decoration: BoxDecoration(
-                                                    shape: BoxShape.circle,
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).colorScheme.secondary.withValues(alpha: 0.1),
-                                                    border: Border.all(
-                                                      color: Theme.of(
-                                                        context,
-                                                      ).colorScheme.secondary.withValues(alpha: 0.12),
+                                                      ),
                                                     ),
-                                                  ),
-                                                  child: Icon(
-                                                    JamIcons.more_horizontal,
-                                                    size: 18,
-                                                    color: Theme.of(
-                                                      context,
-                                                    ).colorScheme.secondary.withValues(alpha: 0.85),
-                                                  ),
-                                                ),
+                                                  );
+                                                },
+                                              ),
+                                            if (linkKeys.length > 3)
+                                              _LinkButton(
+                                                icon: JamIcons.more_horizontal,
                                                 onPressed: () {
                                                   _trackAction(
                                                     AnalyticsActionValue.actionChipTapped,
                                                     sourceContext: 'profile_screen_more_links',
                                                   );
-                                                  showNoLoadLinksPopUp(context, widget.links ?? {});
+                                                  showNoLoadLinksPopUp(context, _profile.links);
                                                 },
                                               ),
                                           ],
                                         ),
                                       ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -799,7 +597,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                     // Brand-locked pink ring — consistent with the
                                     // camera badge in the edit panel.
                                     border: Border.all(color: PrismColors.brandPink, width: 4),
-                                    color: Theme.of(context).colorScheme.secondary,
+                                    color: theme.colorScheme.secondary,
                                   ),
                                   child: ClipOval(
                                     child: hasUserPhoto
@@ -813,7 +611,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                             width: 78,
                                             height: 78,
                                             child: ColoredBox(
-                                              color: Theme.of(context).primaryColor,
+                                              color: theme.primaryColor,
                                               child: const Icon(JamIcons.user, color: PrismColors.brandPink, size: 30),
                                             ),
                                           ),
@@ -828,7 +626,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     Container(
                       width: double.maxFinite,
                       height: MediaQuery.of(context).padding.top,
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.5),
+                      color: theme.primaryColor.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
@@ -848,11 +646,75 @@ class _ProfileChildState extends State<_ProfileChild> {
             ],
             body: Padding(
               padding: const EdgeInsets.only(top: 5),
-              child: UserProfileLoader(email: widget.email),
+              child: UserProfileLoader(email: _profile.email),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Translucent circular icon used by the profile header buttons.
+class _CircleIcon extends StatelessWidget {
+  const _CircleIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6.0),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).primaryColor.withValues(alpha: 0.5)),
+      child: Icon(icon, color: Theme.of(context).colorScheme.secondary),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({required this.icon, required this.onPressed, this.tooltip, this.alignment = Alignment.center});
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String? tooltip;
+  final AlignmentGeometry alignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      alignment: alignment,
+      padding: const EdgeInsets.all(2),
+      icon: _CircleIcon(icon: icon),
+      onPressed: onPressed,
+    );
+  }
+}
+
+/// Outlined circular icon button for one profile link.
+class _LinkButton extends StatelessWidget {
+  const _LinkButton({required this.icon, required this.onPressed, this.tooltip});
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color secondary = Theme.of(context).colorScheme.secondary;
+    return IconButton(
+      tooltip: tooltip,
+      padding: const EdgeInsets.all(4),
+      icon: Container(
+        padding: const EdgeInsets.all(7.0),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: secondary.withValues(alpha: 0.1),
+          border: Border.all(color: secondary.withValues(alpha: 0.12)),
+        ),
+        child: Icon(icon, size: 18, color: secondary.withValues(alpha: 0.85)),
+      ),
+      onPressed: onPressed,
     );
   }
 }
@@ -876,7 +738,7 @@ class _StatPill extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
         // Bold count — larger optical weight draws the eye first.
-        text: count >= 1000 ? '${(count / 1000).toStringAsFixed(count >= 10000 ? 0 : 1)}k' : '$count',
+        text: formatCompactCount(count),
         style: TextStyle(
           fontFamily: PrismFonts.proximaNova,
           color: secondary,

@@ -2,19 +2,20 @@ import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'
-    show CollectionReference, FirebaseFirestore, QueryDocumentSnapshot, QuerySnapshot, Timestamp;
 import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:injectable/injectable.dart';
 import 'package:rxdart/rxdart.dart';
 
 @LazySingleton(as: UserBlockRepository)
 class FirebaseUserBlockRepository implements UserBlockRepository {
-  FirebaseUserBlockRepository(this._session) {
+  FirebaseUserBlockRepository(this._session, this._firestoreClient) {
     // Repository lifetime matches the app lifetime, so this subscription stays active.
     // ignore: cancel_subscriptions
     _session.watchCurrentUser().listen(_handleSessionUser);
@@ -25,6 +26,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   static const String _subcollection = 'blockedUsers';
 
   final SessionRepository _session;
+  final FirestoreClient _firestoreClient;
   StreamSubscription<Set<String>>? _blockedEmailsSubscription;
 
   final BehaviorSubject<Set<String>> _blockedEmailsSubject = BehaviorSubject<Set<String>>.seeded(<String>{});
@@ -36,9 +38,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
 
   @override
   Set<String> get cachedBlockedCreatorEmails => _blockedEmailsSubject.value;
-
-  @override
-  bool get hasLoadedBlockedCreatorEmails => _hasLoadedBlockedCreatorEmails;
 
   @override
   Future<Set<String>> getBlockedCreatorEmails({bool waitForInitialLoad = false}) async {
@@ -66,7 +65,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     }
 
     _beginPendingInitialLoad();
-    _blockedEmailsSubscription = _snapshotStreamForUser(user).listen(_publishSnapshot);
+    _blockedEmailsSubscription = _watchBlockedEmails(nextUserId).listen(_publishSnapshot);
   }
 
   void _beginPendingInitialLoad() {
@@ -85,26 +84,15 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     }
   }
 
-  Stream<Set<String>> _snapshotStreamForUser(PrismUsersV2 user) {
-    final bool loggedIn = user.loggedIn;
-    final String id = user.id.trim();
-    if (!loggedIn || id.isEmpty) {
-      return Stream<Set<String>>.value(<String>{});
-    }
-    final CollectionReference<Map<String, dynamic>> ref = FirebaseFirestore.instance
-        .collection(FirebaseCollections.usersV2)
-        .doc(id)
-        .collection(_subcollection);
-    return ref.snapshots().map((QuerySnapshot<Map<String, dynamic>> snapshot) {
-      final Set<String> out = <String>{};
-      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
-        final String be = (doc.data()['blockedEmail'] ?? '').toString().trim().toLowerCase();
-        if (be.isNotEmpty) {
-          out.add(be);
-        }
-      }
-      return out;
-    });
+  String _blockedUsersPath(String userId) => '${FirebaseCollections.usersV2}/$userId/$_subcollection';
+
+  Stream<Set<String>> _watchBlockedEmails(String userId) {
+    return _firestoreClient
+        .watchQuery<String>(
+          FirestoreQuerySpec(collection: _blockedUsersPath(userId), sourceTag: 'user_blocks.watch', isStream: true),
+          (data, docId) => parseString(data['blockedEmail']).trim().toLowerCase(),
+        )
+        .map((emails) => emails.where((email) => email.isNotEmpty).toSet());
   }
 
   @override
@@ -154,38 +142,32 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       return Result.success(<BlockedUserListRow>[]);
     }
     try {
-      final QuerySnapshot<Map<String, dynamic>> snap = await FirebaseFirestore.instance
-          .collection(FirebaseCollections.usersV2)
-          .doc(id)
-          .collection(_subcollection)
-          .get();
-      final List<QueryDocumentSnapshot<Map<String, dynamic>>> docs = snap.docs.toList(growable: false)
-        ..sort((QueryDocumentSnapshot<Map<String, dynamic>> a, QueryDocumentSnapshot<Map<String, dynamic>> b) {
-          final Object? ca = a.data()['createdAt'];
-          final Object? cb = b.data()['createdAt'];
-          if (ca is Timestamp && cb is Timestamp) {
-            return cb.compareTo(ca);
-          }
-          if (ca is Timestamp) {
-            return -1;
-          }
-          if (cb is Timestamp) {
-            return 1;
-          }
-          return 0;
-        });
-      final List<BlockedUserListRow> rows = docs
-          .map((QueryDocumentSnapshot<Map<String, dynamic>> d) {
-            final Map<String, dynamic> m = d.data();
-            final String email = (m['blockedEmail'] ?? '').toString().trim();
-            final String? username = m['blockedUsername']?.toString().trim();
-            return BlockedUserListRow(
-              blockedUid: d.id,
-              blockedEmail: email,
-              blockedUsername: (username != null && username.isNotEmpty) ? username : null,
-            );
-          })
-          .toList(growable: false);
+      final List<(BlockedUserListRow, DateTime?)> docs = await _firestoreClient.query<(BlockedUserListRow, DateTime?)>(
+        FirestoreQuerySpec(collection: _blockedUsersPath(id), sourceTag: 'user_blocks.list'),
+        (data, docId) {
+          final String username = parseString(data['blockedUsername']).trim();
+          return (
+            BlockedUserListRow(
+              blockedUid: docId,
+              blockedEmail: parseString(data['blockedEmail']).trim(),
+              blockedUsername: username.isEmpty ? null : username,
+            ),
+            parseDateTime(data['createdAt']),
+          );
+        },
+      );
+      docs.sort((a, b) {
+        final DateTime? ca = a.$2;
+        final DateTime? cb = b.$2;
+        if (ca != null && cb != null) {
+          return cb.compareTo(ca);
+        }
+        if (ca != null) {
+          return -1;
+        }
+        return cb != null ? 1 : 0;
+      });
+      final List<BlockedUserListRow> rows = docs.map((doc) => doc.$1).toList(growable: false);
       return Result.success(rows);
     } catch (e) {
       return Result.error(ServerFailure('Failed to load blocked users: $e'));
