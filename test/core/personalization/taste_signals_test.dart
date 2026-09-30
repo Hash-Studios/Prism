@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -111,6 +112,33 @@ void main() {
     TasteSignal.clearRememberedFeedTerms();
 
     expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, isEmpty);
+  });
+
+  test('clearing a user also clears remembered feed terms and sets reseed policy', () async {
+    rememberFeedTerms('f', <String>['space']);
+    await store.record(TasteSignal(action: TasteAction.open, at: DateTime.utc(2026), terms: const <String>['space']));
+
+    await store.clear();
+
+    expect(store.read(), isEmpty);
+    expect(store.isSeeded, isTrue);
+    expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, isEmpty);
+
+    await store.clear(allowReseed: true);
+    expect(store.isSeeded, isFalse);
+  });
+
+  test('clear writes the reseed policy even when deleting signals fails', () async {
+    final FailingDeleteLocalStore localStore = FailingDeleteLocalStore(
+      PersistenceKeys.settings('personalized_taste_signals_v1'),
+    );
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(localStore);
+    store = TasteSignalStore(settings);
+    await store.record(TasteSignal(action: TasteAction.open, at: DateTime.utc(2026), terms: const <String>['space']));
+
+    await expectLater(store.clear(), throwsStateError);
+
+    expect(settings.get<bool>('personalized_taste_seeded_v1', defaultValue: false), isTrue);
   });
 
   test('a wall without a full URL uses the ranker source and id fallback', () {

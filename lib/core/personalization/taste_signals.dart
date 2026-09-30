@@ -125,6 +125,9 @@ class TasteSignalStore {
   static const String _key = 'personalized_taste_signals_v1';
   static const String _seededKey = 'personalized_taste_seeded_v1';
   static const int _cap = 300;
+  int _revision = 0;
+
+  int get revision => _revision;
 
   List<TasteSignal> read() {
     final String raw = _settingsLocal.get<String>(_key, defaultValue: '');
@@ -165,7 +168,8 @@ class TasteSignalStore {
   /// [allowReseed] lets the next user seed from their own favourites (sign-out).
   /// Without it, a user who cleared their history is not re-learned from favourites.
   Future<void> clear({bool allowReseed = false}) async {
-    await _settingsLocal.delete(_key);
-    await _settingsLocal.set(_seededKey, !allowReseed);
+    _revision++;
+    _feedTerms.clear();
+    await Future.wait<void>(<Future<void>>[_settingsLocal.delete(_key), _settingsLocal.set(_seededKey, !allowReseed)]);
   }
 }

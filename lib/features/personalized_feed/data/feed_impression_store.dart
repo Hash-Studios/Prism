@@ -17,6 +17,9 @@ class FeedImpressionStore {
   static const int _cap = 800;
   static const int _hiddenCap = 2000;
   static const Duration _window = Duration(days: 14);
+  int _revision = 0;
+
+  int get revision => _revision;
 
   /// A hidden wallpaper counts as shown this often, which removes it from the feed.
   static const int hiddenShows = 99;
@@ -31,7 +34,10 @@ class FeedImpressionStore {
     };
   }
 
-  Future<void> recordShown(Iterable<String> keys, DateTime now) {
+  Future<void> recordShown(Iterable<String> keys, DateTime now, {int? expectedRevision}) {
+    if (expectedRevision != null && expectedRevision != _revision) {
+      return Future<void>.value();
+    }
     final Map<String, _Impression> all = _read();
     final DateTime cutoff = now.subtract(_window);
     for (final String key in keys) {
@@ -52,8 +58,8 @@ class FeedImpressionStore {
   }
 
   Future<void> clear() async {
-    await _settingsLocal.delete(_key);
-    await _settingsLocal.delete(_hiddenKey);
+    _revision++;
+    await Future.wait<void>(<Future<void>>[_settingsLocal.delete(_key), _settingsLocal.delete(_hiddenKey)]);
   }
 
   List<String> _readHidden() {
