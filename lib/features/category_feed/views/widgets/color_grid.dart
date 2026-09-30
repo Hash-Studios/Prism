@@ -125,7 +125,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final List<PexelsWallpaper>? walls = _walls;
     if (walls == null) {
-      return const LoadingCards(borderRadius: BorderRadius.zero);
+      return const LoadingCards();
     }
     if (walls.isNotEmpty) {
       _contentLoadTracker.success(

@@ -36,7 +36,7 @@ class UserProfileGrid extends StatelessWidget {
       child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
         builder: (context, state) {
           if (state.status == LoadStatus.initial) {
-            return const LoadingCards(borderRadius: BorderRadius.zero);
+            return const LoadingCards();
           }
           final List<PublicProfileWallEntity> walls = state.walls;
           if (walls.isEmpty) {
