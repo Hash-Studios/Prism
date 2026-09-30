@@ -67,8 +67,8 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {Void
 }
 
 Future<bool> _persistInterests(SettingsLocalDataSource settingsLocal, List<String> interests) async {
-  await settingsLocal.set(OnboardingV2Keys.selectedInterests, interests.join(','));
   if (!app_state.prismUser.loggedIn) {
+    await settingsLocal.set(OnboardingV2Keys.selectedInterests, interests.join(','));
     return true;
   }
   final SaveInterestsUseCase saveInterests = getIt<SaveInterestsUseCase>();
