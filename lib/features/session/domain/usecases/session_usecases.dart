@@ -13,23 +13,3 @@ class GetSessionUseCase implements UseCase<SessionEntity, NoParams> {
   @override
   Future<Result<SessionEntity>> call(NoParams params) => _repository.getSession();
 }
-
-@lazySingleton
-class RefreshPremiumUseCase implements UseCase<SessionEntity, NoParams> {
-  RefreshPremiumUseCase(this._repository);
-
-  final SessionRepository _repository;
-
-  @override
-  Future<Result<SessionEntity>> call(NoParams params) => _repository.refreshPremium();
-}
-
-@lazySingleton
-class SignOutUseCase implements UseCase<SessionEntity, NoParams> {
-  SignOutUseCase(this._repository);
-
-  final SessionRepository _repository;
-
-  @override
-  Future<Result<SessionEntity>> call(NoParams params) => _repository.signOut();
-}

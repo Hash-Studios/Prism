@@ -55,13 +55,11 @@ extension SessionEventPatterns on SessionEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _PremiumRefreshRequested value)?  premiumRefreshRequested,TResult Function( _SignOutRequested value)?  signOutRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _PremiumRefreshRequested() when premiumRefreshRequested != null:
-return premiumRefreshRequested(_that);case _SignOutRequested() when signOutRequested != null:
-return signOutRequested(_that);case _:
+return started(_that);case _:
   return orElse();
 
 }
@@ -79,13 +77,11 @@ return signOutRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _PremiumRefreshRequested value)  premiumRefreshRequested,required TResult Function( _SignOutRequested value)  signOutRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _PremiumRefreshRequested():
-return premiumRefreshRequested(_that);case _SignOutRequested():
-return signOutRequested(_that);case _:
+return started(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -102,13 +98,11 @@ return signOutRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _PremiumRefreshRequested value)?  premiumRefreshRequested,TResult? Function( _SignOutRequested value)?  signOutRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _PremiumRefreshRequested() when premiumRefreshRequested != null:
-return premiumRefreshRequested(_that);case _SignOutRequested() when signOutRequested != null:
-return signOutRequested(_that);case _:
+return started(_that);case _:
   return null;
 
 }
@@ -125,12 +119,10 @@ return signOutRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  premiumRefreshRequested,TResult Function()?  signOutRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started();case _PremiumRefreshRequested() when premiumRefreshRequested != null:
-return premiumRefreshRequested();case _SignOutRequested() when signOutRequested != null:
-return signOutRequested();case _:
+return started();case _:
   return orElse();
 
 }
@@ -148,12 +140,10 @@ return signOutRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  premiumRefreshRequested,required TResult Function()  signOutRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started();case _PremiumRefreshRequested():
-return premiumRefreshRequested();case _SignOutRequested():
-return signOutRequested();case _:
+return started();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -170,12 +160,10 @@ return signOutRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  premiumRefreshRequested,TResult? Function()?  signOutRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started();case _PremiumRefreshRequested() when premiumRefreshRequested != null:
-return premiumRefreshRequested();case _SignOutRequested() when signOutRequested != null:
-return signOutRequested();case _:
+return started();case _:
   return null;
 
 }
@@ -216,73 +204,9 @@ String toString() {
 
 
 /// @nodoc
-
-
-class _PremiumRefreshRequested implements SessionEvent {
-  const _PremiumRefreshRequested();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PremiumRefreshRequested);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'SessionEvent.premiumRefreshRequested()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
-
-
-class _SignOutRequested implements SessionEvent {
-  const _SignOutRequested();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SignOutRequested);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'SessionEvent.signOutRequested()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
 mixin _$SessionState {
 
- LoadStatus get status; ActionStatus get actionStatus; SessionEntity get session; Failure? get failure;
+ LoadStatus get status; SessionEntity get session;
 /// Create a copy of SessionState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -293,16 +217,16 @@ $SessionStateCopyWith<SessionState> get copyWith => _$SessionStateCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SessionState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.session, session) || other.session == session)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SessionState&&(identical(other.status, status) || other.status == status)&&(identical(other.session, session) || other.session == session));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,session,failure);
+int get hashCode => Object.hash(runtimeType,status,session);
 
 @override
 String toString() {
-  return 'SessionState(status: $status, actionStatus: $actionStatus, session: $session, failure: $failure)';
+  return 'SessionState(status: $status, session: $session)';
 }
 
 
@@ -313,7 +237,7 @@ abstract mixin class $SessionStateCopyWith<$Res>  {
   factory $SessionStateCopyWith(SessionState value, $Res Function(SessionState) _then) = _$SessionStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure
+ LoadStatus status, SessionEntity session
 });
 
 
@@ -330,13 +254,11 @@ class _$SessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SessionState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? actionStatus = null,Object? session = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? session = null,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
-as ActionStatus,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
-as SessionEntity,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as LoadStatus,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
+as SessionEntity,
   ));
 }
 
@@ -421,10 +343,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  SessionEntity session,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  SessionEntity session)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SessionState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.session,_that.failure);case _:
+return $default(_that.status,_that.session);case _:
   return orElse();
 
 }
@@ -442,10 +364,10 @@ return $default(_that.status,_that.actionStatus,_that.session,_that.failure);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  SessionEntity session,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  SessionEntity session)  $default,) {final _that = this;
 switch (_that) {
 case _SessionState():
-return $default(_that.status,_that.actionStatus,_that.session,_that.failure);case _:
+return $default(_that.status,_that.session);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -462,10 +384,10 @@ return $default(_that.status,_that.actionStatus,_that.session,_that.failure);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  SessionEntity session,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  SessionEntity session)?  $default,) {final _that = this;
 switch (_that) {
 case _SessionState() when $default != null:
-return $default(_that.status,_that.actionStatus,_that.session,_that.failure);case _:
+return $default(_that.status,_that.session);case _:
   return null;
 
 }
@@ -477,13 +399,11 @@ return $default(_that.status,_that.actionStatus,_that.session,_that.failure);cas
 
 
 class _SessionState implements SessionState {
-  const _SessionState({required this.status, required this.actionStatus, required this.session, this.failure});
+  const _SessionState({required this.status, required this.session});
   
 
 @override final  LoadStatus status;
-@override final  ActionStatus actionStatus;
 @override final  SessionEntity session;
-@override final  Failure? failure;
 
 /// Create a copy of SessionState
 /// with the given fields replaced by the non-null parameter values.
@@ -495,16 +415,16 @@ _$SessionStateCopyWith<_SessionState> get copyWith => __$SessionStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SessionState&&(identical(other.status, status) || other.status == status)&&(identical(other.actionStatus, actionStatus) || other.actionStatus == actionStatus)&&(identical(other.session, session) || other.session == session)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SessionState&&(identical(other.status, status) || other.status == status)&&(identical(other.session, session) || other.session == session));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,actionStatus,session,failure);
+int get hashCode => Object.hash(runtimeType,status,session);
 
 @override
 String toString() {
-  return 'SessionState(status: $status, actionStatus: $actionStatus, session: $session, failure: $failure)';
+  return 'SessionState(status: $status, session: $session)';
 }
 
 
@@ -515,7 +435,7 @@ abstract mixin class _$SessionStateCopyWith<$Res> implements $SessionStateCopyWi
   factory _$SessionStateCopyWith(_SessionState value, $Res Function(_SessionState) _then) = __$SessionStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, SessionEntity session, Failure? failure
+ LoadStatus status, SessionEntity session
 });
 
 
@@ -532,13 +452,11 @@ class __$SessionStateCopyWithImpl<$Res>
 
 /// Create a copy of SessionState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? actionStatus = null,Object? session = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? session = null,}) {
   return _then(_SessionState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
-as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
-as ActionStatus,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
-as SessionEntity,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as LoadStatus,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
+as SessionEntity,
   ));
 }
 
