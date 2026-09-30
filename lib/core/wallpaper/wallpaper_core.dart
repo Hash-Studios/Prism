@@ -6,12 +6,14 @@ String wallpaperSemanticLabel(String? author) {
   return name.isEmpty ? 'Wallpaper' : 'Wallpaper by $name';
 }
 
+final RegExp _wallhavenCropThumb = RegExp(r'//th\.wallhaven\.cc/(?:lg|small)/');
+
 class WallpaperCore {
   const WallpaperCore({
     required this.id,
     required this.source,
     required this.fullUrl,
-    required this.thumbnailUrl,
+    required String thumbnailUrl,
     this.resolution,
     this.sizeBytes,
     this.authorName,
@@ -23,12 +25,16 @@ class WallpaperCore {
     this.width,
     this.height,
     this.favourites,
-  });
+  }) : _thumbnailUrl = thumbnailUrl;
 
   final String id;
   final WallpaperSource source;
   final String fullUrl;
-  final String thumbnailUrl;
+  final String _thumbnailUrl;
+
+  /// Wallhaven lg/small thumbs are landscape crops; orig keeps the aspect ratio.
+  String get thumbnailUrl => _thumbnailUrl.replaceFirst(_wallhavenCropThumb, '//th.wallhaven.cc/orig/');
+
   final String? resolution;
   final int? sizeBytes;
   final String? authorName;
