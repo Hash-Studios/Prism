@@ -1,4 +1,8 @@
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/theme/theme.dart';
@@ -7,8 +11,37 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/fake_firestore_client.dart';
+
+class _ReviewFirestoreClient extends FakeFirestoreClient {
+  _ReviewFirestoreClient({this.failRejectedStream = false});
+
+  final bool failRejectedStream;
+  final List<FirestoreDocument> rejectedRows = <FirestoreDocument>[];
+  final List<FirestoreDocument> pendingRows = <FirestoreDocument>[];
+
+  @override
+  Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
+    if (spec.collection == FirebaseCollections.rejectedWalls && failRejectedStream) {
+      return Stream<List<T>>.error(StateError('offline'));
+    }
+    final List<FirestoreDocument> documents = spec.collection == FirebaseCollections.rejectedWalls
+        ? rejectedRows
+        : pendingRows;
+    return Stream<List<T>>.value(documents.map((document) => map(document.data(), document.id)).toList());
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  late _ReviewFirestoreClient firestore;
+
+  setUp(() {
+    firestore = _ReviewFirestoreClient();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+  });
+  tearDown(() => getIt.unregister<FirestoreClient>());
 
   setUpAll(() async {
     await (FontLoader('Proxima Nova')..addFont(rootBundle.load('assets/fonts/ProximaNova-Regular.otf'))).load();
@@ -103,5 +136,64 @@ void main() {
 
     expect(find.text(RejectionFeedback.fallbackReason), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows an error when rejected submissions cannot load', (tester) async {
+    getIt.unregister<FirestoreClient>();
+    firestore = _ReviewFirestoreClient(failRejectedStream: true);
+    getIt.registerSingleton<FirestoreClient>(firestore);
+
+    await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+    await tester.pump();
+
+    expect(find.text("Couldn't load your rejected submissions."), findsOneWidget);
+    expect(find.text('No wallpapers waiting for review.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final bool rejected in <bool>[false, true]) {
+    testWidgets('deletes a ${rejected ? 'rejected' : 'pending'} wall from its source collection', (tester) async {
+      final String collection = rejected ? FirebaseCollections.rejectedWalls : FirebaseCollections.walls;
+      (rejected ? firestore.rejectedRows : firestore.pendingRows).add(
+        const FirestoreDocument('wall-1', <String, dynamic>{
+          'wallpaper_thumb': 'https://example.com/thumb.png',
+          'wallpaper_url': 'https://example.com/wall.png',
+          'size': '2 MB',
+          'resolution': '1440x3200',
+        }),
+      );
+      await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Delete wallpaper'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete this wallpaper?'), findsOneWidget);
+      await tester.tap(find.text('DELETE'));
+      await tester.pumpAndSettle();
+
+      expect(firestore.writes, hasLength(1));
+      expect(firestore.writes.single, (op: 'delete', collection: collection, id: 'wall-1', data: null));
+    });
+  }
+
+  testWidgets('canceling wall deletion leaves the source document unchanged', (tester) async {
+    firestore.rejectedRows.add(
+      const FirestoreDocument('wall-1', <String, dynamic>{
+        'wallpaper_thumb': 'https://example.com/thumb.png',
+        'wallpaper_url': 'https://example.com/wall.png',
+        'size': '2 MB',
+        'resolution': '1440x3200',
+      }),
+    );
+    await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete wallpaper'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete this wallpaper?'), findsOneWidget);
+    await tester.tap(find.text('CANCEL'));
+    await tester.pumpAndSettle();
+
+    expect(firestore.writes, isEmpty);
   });
 }

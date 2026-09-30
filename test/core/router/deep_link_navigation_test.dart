@@ -2,11 +2,30 @@ import 'dart:convert';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final List<String> toastMessages = <String>[];
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (
+      call,
+    ) async {
+      toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']! as String);
+      return true;
+    });
+    toastMessages.clear();
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+  });
+
   test('maps canonical user link to profile route', () async {
     const DeepLinkNavigation navigation = DeepLinkNavigation();
     final route = await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/user/alice'));
@@ -19,6 +38,15 @@ void main() {
     final route = await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/setup/minimal-desk'));
 
     expect(route, isA<HomeTabRoute>());
+    expect(toastMessages, <String>['Home screen setups are no longer available.']);
+  });
+
+  test('custom-scheme setup links map to home and show the legacy link toast', () async {
+    const DeepLinkNavigation navigation = DeepLinkNavigation();
+    final route = await navigation.mapUriToRoute(Uri.parse('prism://setup/minimal-desk'));
+
+    expect(route, isA<HomeTabRoute>());
+    expect(toastMessages, <String>['Home screen setups are no longer available.']);
   });
 
   test('resolves /l short code and maps to share wallpaper route', () async {

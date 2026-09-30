@@ -100,6 +100,7 @@ class ReviewDownloadButton extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondary, shape: BoxShape.circle),
       child: IconButton(
+        tooltip: 'Download wallpaper',
         icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
         onPressed: _download,
       ),
@@ -108,42 +109,27 @@ class ReviewDownloadButton extends StatelessWidget {
 }
 
 class ReviewInfoRow extends StatelessWidget {
-  const ReviewInfoRow({
-    super.key,
-    required this.icon,
-    required this.text,
-    this.onTap,
-    this.underline = false,
-    this.fixedWidth = false,
-  });
+  const ReviewInfoRow({super.key, required this.icon, required this.text});
 
   final IconData icon;
   final String text;
-  final VoidCallback? onTap;
-  final bool underline;
-  final bool fixedWidth;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final Widget label = Text(
       text,
-      maxLines: fixedWidth ? null : 1,
-      overflow: fixedWidth ? null : TextOverflow.ellipsis,
-      style: theme.textTheme.bodyMedium!.copyWith(
-        decoration: underline ? TextDecoration.underline : null,
-        color: theme.colorScheme.secondary,
-      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodyMedium!.copyWith(color: theme.colorScheme.secondary),
     );
     final Widget row = Row(
       children: [
         Icon(icon, color: theme.colorScheme.secondary),
         const SizedBox(width: 8),
-        Flexible(
-          child: fixedWidth ? SizedBox(width: MediaQuery.of(context).size.width * 0.3, child: label) : label,
-        ),
+        Flexible(child: label),
       ],
     );
-    return onTap == null ? row : GestureDetector(onTap: onTap, child: row);
+    return row;
   }
 }
