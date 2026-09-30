@@ -11,7 +11,6 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -268,7 +267,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
     analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _filter.name));
-    final bool watched = await _watchRewardedAd();
+    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
@@ -288,48 +287,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
     await _runWithPremiumFilterGate(action, sourceTag: '$sourceTag.retry');
-  }
-
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _watchRewardedAd() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      return false;
-    }
-    bool watchRequested = false;
-    try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      return result.shouldUnlockDownload;
-    } catch (_) {
-      return false;
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
-    }
   }
 
   Future<void> _handleDownloadAction() async {
