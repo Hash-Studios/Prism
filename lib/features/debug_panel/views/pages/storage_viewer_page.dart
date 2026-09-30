@@ -180,7 +180,9 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
         ),
         const Divider(height: 1),
         if (_loading)
-          const Expanded(child: Center(child: CircularProgressIndicator()))
+          const Expanded(
+            child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+          )
         else if (store == null)
           const Expanded(
             child: Center(
