@@ -4,6 +4,9 @@
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 
 class ReportSetupEvent extends AnalyticsEvent {
   const ReportSetupEvent();
@@ -97,7 +100,7 @@ class DownloadOwnWallEvent extends AnalyticsEvent {
 class SetWallEvent extends AnalyticsEvent {
   const SetWallEvent({required this.wallpaperTarget, required this.result});
 
-  final WallpaperTargetValue wallpaperTarget;
+  final WallpaperTarget wallpaperTarget;
   final BinaryResultValue result;
 
   @override
@@ -396,7 +399,7 @@ class AiChargeReservedEvent extends AnalyticsEvent {
     required this.sourceTag,
   });
 
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
   final int balance;
   final String sourceTag;
@@ -423,7 +426,7 @@ class AiChargeRolledBackEvent extends AnalyticsEvent {
     this.coinsRefunded,
   });
 
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int balance;
   final String sourceTag;
   final int? coinsRefunded;
@@ -450,7 +453,7 @@ class AiChargeCommittedEvent extends AnalyticsEvent {
     required this.sourceTag,
   });
 
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
   final int balance;
   final String sourceTag;
@@ -478,7 +481,7 @@ class CoinEarnedEvent extends AnalyticsEvent {
     this.reason,
   });
 
-  final CoinEarnActionValue action;
+  final CoinEarnAction action;
   final int amount;
   final int balance;
   final String sourceTag;
@@ -508,7 +511,7 @@ class CoinSpentEvent extends AnalyticsEvent {
     this.reason,
   });
 
-  final CoinSpendActionValue action;
+  final CoinSpendAction action;
   final int amount;
   final int balance;
   final String sourceTag;
@@ -593,7 +596,7 @@ class AiGenerateStartedEvent extends AnalyticsEvent {
 
   final String style;
   final String quality;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
 
   @override
   String get eventName => 'ai_generate_started';
@@ -608,7 +611,7 @@ class AiGenerateSuccessEvent extends AnalyticsEvent {
   const AiGenerateSuccessEvent({required this.provider, required this.mode, required this.coinsSpent});
 
   final String provider;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
 
   @override
@@ -624,7 +627,7 @@ class AiVariationUsedEvent extends AnalyticsEvent {
   const AiVariationUsedEvent({required this.provider, required this.mode, required this.coinsSpent});
 
   final String provider;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
 
   @override
@@ -640,7 +643,7 @@ class AiGenerateFailedEvent extends AnalyticsEvent {
   const AiGenerateFailedEvent({required this.error, required this.mode});
 
   final String error;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
 
   @override
   String get eventName => 'ai_generate_failed';

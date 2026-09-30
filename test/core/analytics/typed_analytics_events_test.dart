@@ -6,9 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/recording_analytics_provider.dart';
 
 void main() {
-  test('coin_earned serializes the domain action through its analytics mirror', () {
-    final CoinEarnedEvent event = CoinEarnedEvent(
-      action: coinEarnActionValueFromDomain(CoinEarnAction.rewardedAd),
+  test('coin_earned serializes the domain action wire value', () {
+    const CoinEarnedEvent event = CoinEarnedEvent(
+      action: CoinEarnAction.rewardedAd,
       amount: 10,
       balance: 20,
       sourceTag: 'coins.rewarded_ad',

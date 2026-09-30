@@ -2,7 +2,8 @@ version: 1
 
 enums:
   - name: wallpaper_target
-    dart_type: WallpaperTargetValue
+    dart_type: WallpaperTarget
+    import: package:Prism/core/platform/wallpaper_service.dart
     values:
       - both
       - lock
@@ -36,7 +37,8 @@ enums:
       - success
       - failure
   - name: coin_earn_action
-    dart_type: CoinEarnActionValue
+    dart_type: CoinEarnAction
+    import: package:Prism/core/coins/coin_action.dart
     values:
       - rewarded_ad
       - daily_login
@@ -47,7 +49,8 @@ enums:
       - pro_daily_bonus
       - refund
   - name: coin_spend_action
-    dart_type: CoinSpendActionValue
+    dart_type: CoinSpendAction
+    import: package:Prism/core/coins/coin_action.dart
     values:
       - wallpaper_download
       - premium_wallpaper_download
@@ -55,7 +58,8 @@ enums:
       - premium_filter
       - premium_preview_24h
   - name: ai_charge_mode
-    dart_type: AiChargeModeValue
+    dart_type: AiChargeMode
+    import: package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart
     values:
       - free_trial
       - pro_included
@@ -292,7 +296,7 @@ events:
       - name: wallpaper_target
         key: wallpaper_target
         type: enum
-        enum: WallpaperTargetValue
+        enum: WallpaperTarget
       - name: result
         key: result
         type: enum
@@ -481,7 +485,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
       - name: coins_spent
         key: coins_spent
         type: int
@@ -496,7 +500,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
       - name: balance
         key: balance
         type: int
@@ -512,7 +516,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
       - name: coins_spent
         key: coins_spent
         type: int
@@ -527,7 +531,7 @@ events:
       - name: action
         key: action
         type: enum
-        enum: CoinEarnActionValue
+        enum: CoinEarnAction
       - name: amount
         key: amount
         type: int
@@ -546,7 +550,7 @@ events:
       - name: action
         key: action
         type: enum
-        enum: CoinSpendActionValue
+        enum: CoinSpendAction
       - name: amount
         key: amount
         type: int
@@ -600,7 +604,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
   - id: ai_generate_success
     fields:
       - name: provider
@@ -609,7 +613,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
       - name: coins_spent
         key: coins_spent
         type: int
@@ -621,7 +625,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
       - name: coins_spent
         key: coins_spent
         type: int
@@ -633,7 +637,7 @@ events:
       - name: mode
         key: mode
         type: enum
-        enum: AiChargeModeValue
+        enum: AiChargeMode
   - id: ai_submit_started
     fields:
       - name: generation_id

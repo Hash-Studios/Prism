@@ -1,12 +1,27 @@
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 
-enum WallpaperTargetValue {
-  both,
-  lock,
-  home;
-
+extension WallpaperTargetWire on WallpaperTarget {
   String get wireValue => _snakeCase(name);
+}
+
+extension CoinEarnActionWire on CoinEarnAction {
+  String get wireValue => _snakeCase(name);
+}
+
+extension CoinSpendActionWire on CoinSpendAction {
+  String get wireValue => switch (this) {
+    CoinSpendAction.wallpaperDownload => 'wallpaper_download',
+    CoinSpendAction.premiumWallpaperDownload => 'premium_wallpaper_download',
+    CoinSpendAction.aiGeneration => 'ai_generation',
+    CoinSpendAction.premiumFilter => 'premium_filter',
+    CoinSpendAction.premiumPreview24h => 'premium_preview_24h',
+  };
+}
+
+extension AiChargeModeWire on AiChargeMode {
+  String get wireValue => value;
 }
 
 enum BinaryResultValue {
@@ -43,40 +58,6 @@ enum PaywallResultValue {
 enum SubscriptionEntitlementRefreshResultValue {
   success,
   failure;
-
-  String get wireValue => _snakeCase(name);
-}
-
-enum CoinEarnActionValue {
-  rewardedAd,
-  dailyLogin,
-  streakBonus,
-  firstWallpaperUpload,
-  referral,
-  profileCompletion,
-  proDailyBonus,
-  refund;
-
-  String get wireValue => _snakeCase(name);
-}
-
-enum CoinSpendActionValue {
-  wallpaperDownload('wallpaper_download'),
-  premiumWallpaperDownload('premium_wallpaper_download'),
-  aiGeneration('ai_generation'),
-  premiumFilter('premium_filter'),
-  premiumPreview24h('premium_preview_24h');
-
-  const CoinSpendActionValue(this.wireValue);
-
-  final String wireValue;
-}
-
-enum AiChargeModeValue {
-  freeTrial,
-  proIncluded,
-  coinSpend,
-  insufficient;
 
   String get wireValue => _snakeCase(name);
 }
@@ -315,14 +296,6 @@ enum LinkDestinationValue {
 }
 
 String _snakeCase(String name) => name.replaceAllMapped(RegExp('[A-Z]'), (Match m) => '_${m[0]!.toLowerCase()}');
-
-CoinEarnActionValue coinEarnActionValueFromDomain(CoinEarnAction action) =>
-    CoinEarnActionValue.values.byName(action.name);
-
-CoinSpendActionValue coinSpendActionValueFromDomain(CoinSpendAction action) =>
-    CoinSpendActionValue.values.byName(action.name);
-
-AiChargeModeValue aiChargeModeValueFromDomain(AiChargeMode mode) => AiChargeModeValue.values.byName(mode.name);
 
 PaywallResultValue paywallResultValueFromSdkName(String rawResult) {
   final PaywallResultValue? result = PaywallResultValue.values.asNameMap()[rawResult.trim()];

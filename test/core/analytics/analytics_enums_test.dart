@@ -1,21 +1,22 @@
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('every analytics enum keeps its wire values', () {
     final Map<String, List<String>> actual = <String, List<String>>{
-      'WallpaperTargetValue': WallpaperTargetValue.values.map((v) => v.wireValue).toList(),
+      'WallpaperTarget': WallpaperTarget.values.map((v) => v.wireValue).toList(),
       'BinaryResultValue': BinaryResultValue.values.map((v) => v.wireValue).toList(),
       'RcOrFallbackValue': RcOrFallbackValue.values.map((v) => v.wireValue).toList(),
       'PaywallResultValue': PaywallResultValue.values.map((v) => v.wireValue).toList(),
       'SubscriptionEntitlementRefreshResultValue': SubscriptionEntitlementRefreshResultValue.values
           .map((v) => v.wireValue)
           .toList(),
-      'CoinEarnActionValue': CoinEarnActionValue.values.map((v) => v.wireValue).toList(),
-      'CoinSpendActionValue': CoinSpendActionValue.values.map((v) => v.wireValue).toList(),
-      'AiChargeModeValue': AiChargeModeValue.values.map((v) => v.wireValue).toList(),
+      'CoinEarnAction': CoinEarnAction.values.map((v) => v.wireValue).toList(),
+      'CoinSpendAction': CoinSpendAction.values.map((v) => v.wireValue).toList(),
+      'AiChargeMode': AiChargeMode.values.map((v) => v.wireValue).toList(),
       'SettingValue': SettingValue.values.map((v) => v.wireValue).toList(),
       'AnalyticsActionValue': AnalyticsActionValue.values.map((v) => v.wireValue).toList(),
       'EventResultValue': EventResultValue.values.map((v) => v.wireValue).toList(),
@@ -39,7 +40,7 @@ void main() {
       'LinkDestinationValue': LinkDestinationValue.values.map((v) => v.wireValue).toList(),
     };
     expect(actual, <String, List<String>>{
-      'WallpaperTargetValue': <String>['both', 'lock', 'home'],
+      'WallpaperTarget': <String>['home', 'lock', 'both'],
       'BinaryResultValue': <String>['success', 'failure'],
       'RcOrFallbackValue': <String>['rc_attempt', 'fallback_only', 'rc'],
       'PaywallResultValue': <String>[
@@ -54,7 +55,7 @@ void main() {
         'unknown',
       ],
       'SubscriptionEntitlementRefreshResultValue': <String>['success', 'failure'],
-      'CoinEarnActionValue': <String>[
+      'CoinEarnAction': <String>[
         'rewarded_ad',
         'daily_login',
         'streak_bonus',
@@ -64,14 +65,14 @@ void main() {
         'pro_daily_bonus',
         'refund',
       ],
-      'CoinSpendActionValue': <String>[
+      'CoinSpendAction': <String>[
         'wallpaper_download',
         'premium_wallpaper_download',
         'ai_generation',
         'premium_filter',
         'premium_preview_24h',
       ],
-      'AiChargeModeValue': <String>['free_trial', 'pro_included', 'coin_spend', 'insufficient'],
+      'AiChargeMode': <String>['free_trial', 'pro_included', 'coin_spend', 'insufficient'],
       'SettingValue': <String>['anime_wallpapers', 'sketchy_wallpapers', 'recommendations_notifications'],
       'AnalyticsActionValue': <String>[
         'buy_premium_tapped',
@@ -171,18 +172,6 @@ void main() {
       'ScrollDepthPercentValue': <String>['p25', 'p50', 'p75', 'p100'],
       'LinkDestinationValue': <String>['github', 'play_store', 'twitter', 'instagram', 'telegram', 'email', 'external'],
     });
-  });
-
-  test('domain enums map onto their analytics mirrors by name', () {
-    for (final CoinEarnAction action in CoinEarnAction.values) {
-      expect(coinEarnActionValueFromDomain(action).name, action.name);
-    }
-    for (final CoinSpendAction action in CoinSpendAction.values) {
-      expect(coinSpendActionValueFromDomain(action).name, action.name);
-    }
-    for (final AiChargeMode mode in AiChargeMode.values) {
-      expect(aiChargeModeValueFromDomain(mode).name, mode.name);
-    }
   });
 
   test('paywallResultValueFromSdkName maps SDK results and defaults to unknown', () {
