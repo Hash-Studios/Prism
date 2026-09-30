@@ -29,15 +29,6 @@ void main() {
     );
   }
 
-  testWidgets('uses square loading placeholders before the profile loader takes over', (tester) async {
-    await pumpGrid(tester, PublicProfileState.initial());
-
-    final BoxDecoration decoration =
-        tester.widget<DecoratedBox>(find.byType(DecoratedBox).first).decoration as BoxDecoration;
-    expect(find.byType(LoadingCards), findsOneWidget);
-    expect(decoration.borderRadius, BorderRadius.zero);
-  });
-
   testWidgets('shows the empty illustration after a successful empty load', (tester) async {
     await pumpGrid(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success));
 

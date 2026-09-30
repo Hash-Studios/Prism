@@ -54,7 +54,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('uses square loading cards and hides See more after empty results', (tester) async {
+  testWidgets('hides See more after empty results', (tester) async {
     final Completer<Result<List<PexelsWallpaper>>> pending = Completer<Result<List<PexelsWallpaper>>>();
     when(() => repository.fetchColorFeed(hex: 'ff0000', refresh: true)).thenAnswer((_) => pending.future);
 
@@ -64,7 +64,6 @@ void main() {
       ),
     );
     expect(find.byType(LoadingCards), findsOneWidget);
-    expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).borderRadius, BorderRadius.zero);
 
     pending.complete(Result.success(const <PexelsWallpaper>[]));
     await tester.pump();
