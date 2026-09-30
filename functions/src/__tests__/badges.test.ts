@@ -77,36 +77,77 @@ interface Store {
   ledger: Record<string, Record<string, unknown>>;
 }
 
-function fakeDb(t: test.TestContext, store: Store, counts: Record<string, number>) {
+function fakeDb(
+  t: test.TestContext, store: Store,
+  counts: Record<string, number | ((filters: [string, unknown][]) => number)>,
+  onTransactionRetry?: () => void,
+  onCountQuery?: (collection: string, filters: [string, unknown][], limit: number | undefined) => void,
+) {
   const docRef = (path: string) => ({path, get: async () => snapOf(path)});
   const snapOf = (path: string) => {
     const data = path.startsWith("usersv2/") ? store.user : path.startsWith("badgeCheckRate/") ? store.rate : undefined;
-    return {exists: data !== undefined, data: () => data};
+    const snapshot = data === undefined ? undefined : structuredClone(data);
+    return {exists: snapshot !== undefined, data: () => snapshot};
   };
   t.mock.method(db, "collection", (name: string) => {
+    const filters: [string, unknown][] = [];
+    let queryLimit: number | undefined;
     const query: Record<string, unknown> = {
       doc: (id: string) => docRef(`${name}/${id}`),
-      where: () => query,
-      limit: () => query,
-      count: () => ({get: async () => ({data: () => ({count: counts[name] ?? 0})})}),
+      where: (field: string, _op: string, value: unknown) => {
+        filters.push([field, value]);
+        return query;
+      },
+      limit: (limit: number) => {
+        queryLimit = limit;
+        return query;
+      },
+      count: () => ({get: async () => {
+        onCountQuery?.(name, filters, queryLimit);
+        const count = counts[name];
+        const value = typeof count === "function" ? count(filters) : count ?? 0;
+        return {data: () => ({count: Math.min(value, queryLimit ?? value)})};
+      }}),
     };
     return query;
   });
+  let transactionTail: Promise<void> = Promise.resolve();
+  let transactionNumber = 0;
   t.mock.method(db, "runTransaction", async (cb: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
-    const writes: (() => void)[] = [];
-    await cb({
-      get: async (ref: {path: string}) => snapOf(ref.path),
-      set: (ref: {path: string}, data: Record<string, unknown>) => writes.push(() => {
-        if (ref.path.startsWith("badgeCheckRate/")) store.rate = data;
-        else store.ledger[ref.path] = data;
-      }),
-      update: (_ref: unknown, data: Record<string, unknown>) => writes.push(() => Object.assign(store.user, data)),
-    } as unknown as admin.firestore.Transaction);
-    writes.forEach((w) => w());
+    const previous = transactionTail;
+    let release!: () => void;
+    transactionTail = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    let result: unknown;
+    const currentTransaction = transactionNumber++;
+    try {
+      for (let attempt = 0; attempt < (currentTransaction === 1 && onTransactionRetry ? 2 : 1); attempt++) {
+        const writes: (() => void)[] = [];
+        result = await cb({
+          get: async (ref: {path: string}) => snapOf(ref.path),
+          set: (ref: {path: string}, data: Record<string, unknown>) => writes.push(() => {
+            if (ref.path.startsWith("badgeCheckRate/")) store.rate = data;
+            else store.ledger[ref.path] = data;
+          }),
+          update: (_ref: unknown, data: Record<string, unknown>) => writes.push(() => Object.assign(store.user, data)),
+        } as unknown as admin.firestore.Transaction);
+        if (attempt === 0 && currentTransaction === 1 && onTransactionRetry) {
+          onTransactionRetry();
+        } else {
+          writes.forEach((w) => w());
+        }
+      }
+      return result;
+    } finally {
+      release();
+    }
   });
 }
 
-const call = (uid = "u1") => checkBadges.run({auth: {uid}, data: {}} as Parameters<typeof checkBadges.run>[0]);
+const call = (uid = "u1", email = "a@b.c") =>
+  checkBadges.run({auth: {uid, token: {email}}, data: {}} as Parameters<typeof checkBadges.run>[0]);
 
 function baseStore(): Store {
   return {
@@ -158,28 +199,239 @@ test("checkBadges: awards coin badges once, credits coins and writes the ledger"
   assert.equal(Object.keys(store.ledger).length, 3);
 });
 
+test("checkBadges: creator coins cannot be farmed with a forged profile email", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {};
+  store.user.email = "creator@example.com";
+  t.mock.method(Date, "now", () => 1_700_000_000_000);
+  fakeDb(t, store, {walls: (filters) => filters.some(([field, value]) =>
+    field === "email" && value === "attacker@example.com") ? 0 : 1});
+
+  const result = await call("u1", "attacker@example.com");
+
+  assert.deepEqual(result.newBadges, []);
+  assert.equal(store.user.coins, 10);
+  assert.deepEqual(store.ledger, {});
+});
+
+test("checkBadges: veteran age comes from Auth, not the client-writable profile date", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 7};
+  store.user.createdAt = "2010-01-01T00:00:00.000Z";
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  let lookedUpUid = "";
+  t.mock.method(badgeIo, "accountCreatedMs", async (uid: string) => {
+    lookedUpUid = uid;
+    return now - 29 * 86_400_000;
+  });
+  fakeDb(t, store, {});
+
+  const result = await call();
+
+  assert.equal(lookedUpUid, "u1");
+  assert.deepEqual(result.newBadges, [{id: "week_warrior", coins: 25}]);
+});
+
+test("checkBadges: transaction retry uses the latest server-owned streak", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {};
+  t.mock.method(Date, "now", () => 1_700_000_000_000);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => 1_700_000_000_000);
+  fakeDb(t, store, {}, () => {
+    store.user.coinState = {streakBest: 7};
+  });
+
+  const result = await call();
+
+  assert.deepEqual(result.newBadges, [{id: "week_warrior", coins: 25}]);
+  assert.equal(store.user.coins, 35);
+  assert.deepEqual(Object.keys(store.ledger), ["coinTransactions/ctx_badgeReward_u1_week_warrior"]);
+});
+
+test("checkBadges: a newly current 7-day streak uses Auth age for the veteran badge", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {};
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now - 40 * 86_400_000);
+  fakeDb(t, store, {}, () => {
+    store.user.coinState = {streakBest: 7};
+  });
+
+  const result = await call();
+
+  assert.deepEqual(result.newBadges, [
+    {id: "week_warrior", coins: 25},
+    {id: "prism_veteran", coins: 75},
+  ]);
+  assert.equal(store.user.coins, 110);
+});
+
+test("checkBadges: a transaction retry does not trust an outdated streak snapshot", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 7};
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+  fakeDb(t, store, {}, () => {
+    store.user.coinState = {streakBest: 0};
+  });
+
+  const result = await call();
+
+  assert.deepEqual(result.newBadges, []);
+  assert.equal(store.user.coins, 10);
+  assert.deepEqual(store.ledger, {});
+});
+
+test("checkBadges: transaction retry does not repay a badge committed by a concurrent call", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 7};
+  t.mock.method(Date, "now", () => 1_700_000_000_000);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => 1_700_000_000_000);
+  fakeDb(t, store, {}, () => {
+    store.user.coins = 35;
+    store.user.badges = [{id: "week_warrior"}];
+    store.ledger["coinTransactions/ctx_badgeReward_u1_week_warrior"] = {delta: 25};
+  });
+
+  const result = await call();
+
+  assert.deepEqual(result.newBadges, []);
+  assert.equal(result.currentBalance, 35);
+  assert.equal(store.user.coins, 35);
+  assert.deepEqual(Object.keys(store.ledger), ["coinTransactions/ctx_badgeReward_u1_week_warrior"]);
+});
+
 test("checkBadges: cooldown returns no awards and reads no counts", async (t) => {
   const store = baseStore();
   const now = 1_700_000_000_000;
   t.mock.method(Date, "now", () => now);
   store.rate = {lastAt: now - 30_000};
-  fakeDb(t, store, {});
+  const countQueries: string[] = [];
+  fakeDb(t, store, {}, undefined, (collection) => countQueries.push(collection));
   const result = await call();
   assert.deepEqual(result.newBadges, []);
   assert.deepEqual(store.user.badges, []);
   assert.equal(store.user.coins, 10);
+  assert.deepEqual(countQueries, []);
+});
+
+test("checkBadges: a badge earned during cooldown is awarded after the next eligible check", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 6};
+  let now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+  const countQueries: string[] = [];
+  fakeDb(t, store, {}, undefined, (collection) => countQueries.push(collection));
+
+  const first = await call();
+  assert.deepEqual(first.newBadges, []);
+  assert.equal(countQueries.length, 3);
+
+  store.user.coinState = {streakBest: 7};
+  now += 30_000;
+  const cooling = await call();
+  assert.deepEqual(cooling.newBadges, []);
+  assert.equal(countQueries.length, 3);
+
+  now += 31_000;
+  const eligible = await call();
+  assert.deepEqual(eligible.newBadges, [{id: "week_warrior", coins: 25}]);
+  assert.equal(countQueries.length, 6);
+  assert.equal(store.user.coins, 35);
+});
+
+test("checkBadges: cooldown returns the current profile", async (t) => {
+  const store = baseStore();
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  store.user.badges = [{id: "week_warrior"}];
+  store.user.coins = 35;
+  store.rate = {lastAt: now};
+  fakeDb(t, store, {});
+
+  const result = await call();
+
+  assert.deepEqual(result.newBadges, []);
+  assert.deepEqual(result.badges.map((badge) => badge.id), ["week_warrior"]);
+  assert.equal(result.currentBalance, 35);
 });
 
 test("checkBadges: zero-coin badges add no coins and no ledger rows", async (t) => {
   const store = baseStore();
   store.user.coinState = {};
   store.user.following = Array.from({length: 10}, (_, i) => `f${i}@x.y`);
+  store.user.profilePhoto = "https://x/p.png";
+  store.user.username = "a";
+  store.user.bio = "b";
+  store.user.links = {web: "https://a"};
   t.mock.method(Date, "now", () => 1_700_000_000_000);
-  fakeDb(t, store, {});
+  fakeDb(t, store, {"usersv2/u1/images": 50});
   const result = await call();
-  assert.deepEqual(result.newBadges, [{id: "social_butterfly", coins: 0}]);
+  assert.deepEqual(result.newBadges, [
+    {id: "collector", coins: 0},
+    {id: "art_curator", coins: 0},
+    {id: "social_butterfly", coins: 0},
+    {id: "profile_complete", coins: 0},
+  ]);
   assert.equal(store.user.coins, 10);
   assert.deepEqual(store.ledger, {});
+});
+
+test("checkBadges: aggregate counts are capped at each badge threshold", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 7};
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+  const limits: [string, number | undefined][] = [];
+  fakeDb(t, store, {"walls": 40, "coinTransactions": 40, "usersv2/u1/images": 100}, undefined,
+    (collection, _filters, limit) => limits.push([collection, limit]));
+
+  await call();
+
+  assert.deepEqual(limits.sort(([a], [b]) => a.localeCompare(b)), [
+    ["coinTransactions", 10],
+    ["usersv2/u1/images", 50],
+    ["walls", 1],
+  ]);
+  assert.equal(store.user.coins, 115);
+});
+
+test("checkBadges: already-owned badges skip their aggregate counts", async (t) => {
+  const store = baseStore();
+  store.user.badges = [
+    {id: "creator"}, {id: "ai_artist"}, {id: "collector"}, {id: "art_curator"},
+  ];
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+  const countQueries: string[] = [];
+  fakeDb(t, store, {}, undefined, (collection) => countQueries.push(collection));
+
+  const result = await call();
+
+  assert.deepEqual(result.newBadges, [{id: "week_warrior", coins: 25}, {id: "streak_master", coins: 100}]);
+  assert.deepEqual(countQueries, []);
+});
+
+test("checkBadges: concurrent first checks reserve cooldown before aggregating", async (t) => {
+  const store = baseStore();
+  store.user.coinState = {streakBest: 7};
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+  const countQueries: string[] = [];
+  fakeDb(t, store, {}, undefined, (collection) => countQueries.push(collection));
+
+  const results = await Promise.all([call(), call()]);
+
+  assert.deepEqual(results.flatMap((result) => result.newBadges), [{id: "week_warrior", coins: 25}]);
+  assert.deepEqual(countQueries.sort(), ["coinTransactions", "usersv2/u1/images", "walls"]);
+  assert.equal(store.user.coins, 35);
 });
 
 test("checkBadges: never duplicates or removes existing badges", async (t) => {
@@ -199,7 +451,6 @@ test("checkBadges: a concurrent call that lost the race awards nothing", async (
   t.mock.method(Date, "now", () => now);
   fakeDb(t, store, {});
   t.mock.method(badgeIo, "accountCreatedMs", async () => now);
-  // Another call sets the cooldown after this call's pre-read but before its transaction.
   const original = db.runTransaction.bind(db);
   t.mock.method(db, "runTransaction", async (cb: Parameters<typeof original>[0]) => {
     store.rate = {lastAt: now - 1_000};
