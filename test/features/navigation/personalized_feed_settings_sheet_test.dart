@@ -32,6 +32,13 @@ class _MockPersonalizedFeedBloc extends MockBloc<PersonalizedFeedEvent, Personal
 
 class _MockSaveInterestsUseCase extends Mock implements SaveInterestsUseCase {}
 
+class _FailingClearStore extends TasteSignalStore {
+  _FailingClearStore(super.settingsLocal);
+
+  @override
+  Future<void> clear() async => throw StateError('disk full');
+}
+
 class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
   @override
   FirebaseRemoteConfigPlatform delegateFor({required FirebaseApp app}) => this;
@@ -387,5 +394,19 @@ void main() {
     expect(find.text('Open, save and set walls to teach your feed.'), findsOneWidget);
     expect(find.text('Learning history cleared'), findsOneWidget);
     expect(store.read(), isEmpty);
+  });
+
+  testWidgets('a failed clear keeps the learned terms and says so', (tester) async {
+    store = _FailingClearStore(SettingsLocalDataSource(InMemoryLocalStore()));
+    await store.record(TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>['neon']));
+    await pumpSheet(tester);
+
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Neon'), findsOneWidget);
+    expect(find.text('Could not clear history. Try again.'), findsOneWidget);
+    expect(find.text('Learning history cleared'), findsNothing);
   });
 }
