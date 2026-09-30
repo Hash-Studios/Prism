@@ -65,7 +65,6 @@ NEVER = (
     "firebase_options.dart",
     "google-play-console.json",
     "android_keys.zip",
-    "gitkey.dart",
 )
 
 # File mtimes are a poor "is anyone using this?" signal here: `git worktree add` stamps

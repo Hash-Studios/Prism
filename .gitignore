@@ -43,7 +43,6 @@ android/key.properties
 key.jks
 pubspec.lock
 android/app/google-services.json
-lib/gitkey.dart
 .env
 .doppler.yaml
 android/app/.settings/org.eclipse.buildship.core.prefs

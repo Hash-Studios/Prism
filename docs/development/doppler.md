@@ -4,7 +4,7 @@ Prism uses Doppler as the source of truth for runtime secrets.
 
 - Project: `prism`
 - Local config: `dev`
-- Release config: `production`
+- Release config: `prd`
 
 `.env.example` remains a key contract reference only and is not used as runtime input by Make targets.
 
@@ -30,13 +30,13 @@ Release workflows use Doppler Service Tokens.
 
 - Required GitHub secret: `DOPPLER_TOKEN_PRODUCTION`
 
-Workflows load secrets from `prism/production`.
+Workflows load secrets from `prism/prd`.
 
 ## Secret update protocol
 
 When adding or changing secrets:
 
-1. Add/update key in Doppler (`prism/dev` and `prism/production` as needed).
+1. Add/update key in Doppler (`prism/dev` and `prism/prd` as needed).
 2. Reflect key contract in:
    - `/.env.example`
    - `/lib/env/env.dart` (if app code reads it)
@@ -49,7 +49,7 @@ make env-guard
 
 ## Rotation procedure
 
-1. Create a new Doppler Service Token for `prism/production`.
+1. Create a new Doppler Service Token for `prism/prd`.
 2. Update `DOPPLER_TOKEN_PRODUCTION` in GitHub Secrets.
 3. Trigger a release workflow and verify successful secret fetch.
 4. Revoke the old token.
@@ -63,4 +63,4 @@ make env-guard
 - `cannot access prism/dev`
   - Confirm project/config names and team access.
 - `missing key in Doppler config`
-  - Add missing key to the selected config (`dev` or `production`).
+  - Add missing key to the selected config (`dev` or `prd`).
