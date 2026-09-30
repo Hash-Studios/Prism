@@ -1,23 +1,21 @@
-// Firebase platform-interface packages are transitive, but these fakes need them.
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
+import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore_platform_interface/cloud_firestore_platform_interface.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _FakeAdminReviewRepository extends AdminReviewRepository {
-  _FakeAdminReviewRepository() : super();
+import '../../support/fake_firestore_client.dart';
+
+class _FakeAdminReviewRepository extends AdminModerationRepository {
+  _FakeAdminReviewRepository() : super(FakeFirestoreClient());
 
   final FirestoreDocument wall = const FirestoreDocument('wall-1', <String, dynamic>{
     'by': 'Creator',
@@ -64,52 +62,38 @@ class _FakeAdminReviewRepository extends AdminReviewRepository {
   }
 }
 
-class _FakeFirestorePlatform extends FirebaseFirestorePlatform {
+class _RecordingFirestoreClient extends FakeFirestoreClient {
   final List<String> requestedWallIds = <String>[];
 
   @override
-  FirebaseFirestorePlatform delegateFor({required FirebaseApp app, required String databaseId}) => this;
-
-  @override
-  CollectionReferencePlatform collection(String collectionPath) => _FakeCollectionReference(this, collectionPath);
-}
-
-class _FakeCollectionReference extends CollectionReferencePlatform {
-  _FakeCollectionReference(super.firestore, super.path);
-
-  @override
-  DocumentReferencePlatform doc([String? path]) => _FakeDocumentReference(firestore, '$this/${path ?? ''}');
-}
-
-class _FakeDocumentReference extends DocumentReferencePlatform {
-  _FakeDocumentReference(super.firestore, super.path);
-
-  @override
-  Future<DocumentSnapshotPlatform> get([GetOptions options = const GetOptions()]) async {
-    final String wallId = id;
-    (firestore as _FakeFirestorePlatform).requestedWallIds.add(wallId);
-    return DocumentSnapshotPlatform(firestore, path, <String, Object?>{
-      'wallpaper_thumb': 'https://example.com/$wallId.png',
-    }, PigeonSnapshotMetadata(hasPendingWrites: false, isFromCache: false));
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    requestedWallIds.add(id);
+    return map(<String, dynamic>{'wallpaper_thumb': 'https://example.com/$id.png'}, id);
   }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late PrismUsersV2 originalUser;
-  late _FakeFirestorePlatform firestore;
+  late _RecordingFirestoreClient firestore;
 
   Future<void> pumpReviewScreen(WidgetTester tester, _FakeAdminReviewRepository repository) async {
     await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
     await tester.pumpAndSettle();
   }
 
-  setUpAll(() async {
-    setupFirebaseCoreMocks();
-    await Firebase.initializeApp();
-    firestore = _FakeFirestorePlatform();
-    FirebaseFirestorePlatform.instance = firestore;
+  setUpAll(() {
+    firestore = _RecordingFirestoreClient();
+    getIt.registerSingleton<FirestoreClient>(firestore);
   });
+
+  tearDownAll(() => getIt.unregister<FirestoreClient>());
 
   setUp(() {
     originalUser = app_state.prismUser;

@@ -1,7 +1,7 @@
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/popup/popup_header.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -9,39 +9,25 @@ import 'package:flutter/material.dart';
 import 'package:github/github.dart';
 
 void showContributorDetails(BuildContext context, String username) {
-  Future<User?> getUser(String username) async {
-    final github = GitHub();
-    User? user;
-    await github.users.getUser(username).then((value) {
-      user = value;
-    });
-    logger.d(user!.blog);
-    return user;
-  }
+  Future<User> getUser(String username) => GitHub().users.getUser(username);
 
   final AlertDialog userPopUp = AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     content: Container(
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .78,
-      child: FutureBuilder<User?>(
+      child: FutureBuilder<User>(
         future: getUser(username),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
-            logger.d("snapshot none, waiting");
             return SizedBox(height: 300, child: Center(child: Loader()));
           } else {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Container(
-                  height: 150,
+                PopupHeader(
                   width: MediaQuery.of(context).size.width * .78,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-                    color: Theme.of(context).hintColor,
-                  ),
                   child: Row(
                     children: [
                       const SizedBox(width: 20),

@@ -13,27 +13,20 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
-
-class _MockFirebaseAuth extends Mock implements FirebaseAuth {}
 
 class _FakeConnectivityService implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
-
-  @override
-  Stream<bool> watchConnection() => Stream<bool>.value(true);
 }
 
-class _FakeAiGenerationRepository extends AiGenerationRepositoryImpl {
-  _FakeAiGenerationRepository(this.record, this.metadata, {this.history}) : super(auth: _MockFirebaseAuth());
+class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
+  _FakeAiGenerationRepository(this.record, this.metadata, {this.history});
 
   final AiGenerationRecord record;
-  final Completer<Map<String, dynamic>> metadata;
+  final Completer<AiSubmissionMetadata> metadata;
   final Future<List<AiGenerationRecord>> Function()? history;
   final List<AiGenerationRecord> savedRecords = <AiGenerationRecord>[];
   bool failHistorySave = false;
@@ -43,7 +36,10 @@ class _FakeAiGenerationRepository extends AiGenerationRepositoryImpl {
       history?.call() ?? Future<List<AiGenerationRecord>>.value(<AiGenerationRecord>[record]);
 
   @override
-  Future<Map<String, dynamic>> prefillSubmissionMetadata({required String generationId}) => metadata.future;
+  Future<AiSubmissionMetadata> prefillSubmissionMetadata({
+    required String generationId,
+    required List<String> defaultTags,
+  }) => metadata.future;
 
   @override
   Future<void> saveHistoryRecord(AiGenerationRecord record) async {
@@ -71,6 +67,8 @@ AiGenerationRecord _record({String? submittedWallId, String userId = 'user-1'}) 
   status: submittedWallId == null ? 'success' : 'submitted',
   submittedWallId: submittedWallId,
 );
+
+const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
   test('confirmed submission remains confirmed when a refresh returns stale history', () {
@@ -124,7 +122,7 @@ void main() {
         home: AiWallpaperTabPage(
           repository: _FakeAiGenerationRepository(
             _record(),
-            Completer<Map<String, dynamic>>(),
+            Completer<AiSubmissionMetadata>(),
             history: () {
               historyRequested = true;
               return history.future;
@@ -153,7 +151,7 @@ void main() {
     addTearDown(getIt.reset);
 
     final AiGenerationRecord record = _record();
-    final Completer<Map<String, dynamic>> metadata = Completer<Map<String, dynamic>>();
+    final Completer<AiSubmissionMetadata> metadata = Completer<AiSubmissionMetadata>();
     final repository = _FakeAiGenerationRepository(record, metadata);
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
@@ -179,7 +177,7 @@ void main() {
     await tester.tap(submitButton);
     await tester.pump();
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
-    metadata.complete(<String, dynamic>{});
+    metadata.complete(_emptyMetadata);
     await tester.pump();
 
     expect(tester.takeException(), isNull);
@@ -193,7 +191,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
     addTearDown(getIt.reset);
-    final Completer<Map<String, dynamic>> metadata = Completer<Map<String, dynamic>>();
+    final Completer<AiSubmissionMetadata> metadata = Completer<AiSubmissionMetadata>();
     final List<String> toastCalls = <String>[];
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
@@ -217,7 +215,7 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-2'
       ..loggedIn = true;
-    metadata.complete(<String, dynamic>{});
+    metadata.complete(_emptyMetadata);
     await tester.pump();
 
     expect(toastCalls, isEmpty);
@@ -243,7 +241,7 @@ void main() {
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
     final record = _record();
-    final metadata = Completer<Map<String, dynamic>>()..complete(<String, dynamic>{});
+    final metadata = Completer<AiSubmissionMetadata>()..complete(_emptyMetadata);
     final repository = _FakeAiGenerationRepository(record, metadata)..failHistorySave = true;
     var submissions = 0;
     await tester.pumpWidget(
@@ -294,7 +292,7 @@ void main() {
       ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-    final metadata = Completer<Map<String, dynamic>>()..complete(<String, dynamic>{});
+    final metadata = Completer<AiSubmissionMetadata>()..complete(_emptyMetadata);
     var submissions = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -334,7 +332,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
     addTearDown(getIt.reset);
-    final Completer<Map<String, dynamic>> metadata = Completer<Map<String, dynamic>>()..complete(<String, dynamic>{});
+    final Completer<AiSubmissionMetadata> metadata = Completer<AiSubmissionMetadata>()..complete(_emptyMetadata);
     final Completer<WallSubmissionResult> submission = Completer<WallSubmissionResult>();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
@@ -378,7 +376,7 @@ void main() {
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
     final repository = _FakeAiGenerationRepository(
       _record(),
-      Completer<Map<String, dynamic>>()..complete(<String, dynamic>{}),
+      Completer<AiSubmissionMetadata>()..complete(_emptyMetadata),
     );
     final Completer<WallSubmissionResult> submission = Completer<WallSubmissionResult>();
 

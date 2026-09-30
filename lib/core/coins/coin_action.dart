@@ -1,5 +1,4 @@
 import 'package:Prism/core/coins/coin_policy.dart';
-import 'package:Prism/core/coins/streak_shop_policy.dart';
 
 enum CoinEarnAction {
   rewardedAd,
@@ -12,14 +11,7 @@ enum CoinEarnAction {
   refund,
 }
 
-enum CoinSpendAction {
-  wallpaperDownload,
-  premiumWallpaperDownload,
-  aiGeneration,
-  premiumFilter,
-  premiumPreview24h,
-  streakFreeze,
-}
+enum CoinSpendAction { wallpaperDownload, premiumWallpaperDownload, aiGeneration, premiumFilter, premiumPreview24h }
 
 extension CoinEarnActionX on CoinEarnAction {
   int defaultAmount() {
@@ -57,8 +49,6 @@ extension CoinSpendActionX on CoinSpendAction {
         return CoinPolicy.premiumFilter;
       case CoinSpendAction.premiumPreview24h:
         return CoinPolicy.premiumPreview24h;
-      case CoinSpendAction.streakFreeze:
-        return StreakShopPolicy.streakFreezeCoins;
     }
   }
 }

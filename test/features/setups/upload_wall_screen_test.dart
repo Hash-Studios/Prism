@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
+import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
 import 'package:Prism/theme/theme.dart';
@@ -53,7 +54,7 @@ class _UploadRouteHostState extends State<_UploadRouteHost> {
         createRecordForTesting: () async => wall_store.WallSubmissionResult.submitted,
       ),
     );
-    if (mounted) setState(() => result = uploaded);
+    if (mounted) setState(() => result = uploaded is UploadedWallpaper ? uploaded.url : uploaded);
   }
 
   @override
@@ -172,10 +173,9 @@ void main() {
 
     save.complete(wall_store.WallSubmissionResult.submitted);
     await tester.pumpAndSettle();
-    expect(routeResult, isA<List<Object?>>());
-    expect((routeResult! as List<Object?>).first, 'https://example.test/wall.png');
-    expect((routeResult! as List<Object?>).last, isA<String>());
-    expect((routeResult! as List<Object?>).last, isNotEmpty);
+    expect(routeResult, isA<UploadedWallpaper>());
+    expect((routeResult! as UploadedWallpaper).url, 'https://example.test/wall.png');
+    expect((routeResult! as UploadedWallpaper).id, isNotEmpty);
     expect(find.text('Upload wallpaper'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -191,7 +191,7 @@ void main() {
     await tester.tap(find.text('Use this wallpaper'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('route-result: [https://example.test/wall.png, '), findsOneWidget);
+    expect(find.text('route-result: https://example.test/wall.png'), findsOneWidget);
     expect(find.text('Upload wallpaper'), findsNothing);
     expect(tester.takeException(), isNull);
   });

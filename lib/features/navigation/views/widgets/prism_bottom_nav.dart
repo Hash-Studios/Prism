@@ -1,6 +1,5 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +13,10 @@ class PrismBottomNav extends StatefulWidget {
 
 class _PrismBottomNavState extends State<PrismBottomNav> {
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
-    _NavTabConfig(index: 0, label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
-    _NavTabConfig(index: 1, label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
-    _NavTabConfig(index: 2, label: 'Streak', icon: JamIcons.flame_f, value: NavTabValue.streak),
-    _NavTabConfig(index: 3, label: 'Collections', icon: JamIcons.grid_f, value: NavTabValue.collection),
+    _NavTabConfig(label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
+    _NavTabConfig(label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
+    _NavTabConfig(label: 'Streak', icon: JamIcons.flame_f, value: NavTabValue.streak),
+    _NavTabConfig(label: 'Collections', icon: JamIcons.grid_f, value: NavTabValue.collection),
   ];
 
   TabsRouter? _tabsRouter;
@@ -48,7 +47,6 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   void _switchTab({required int toIndex}) {
     final fromIndex = _tabsRouter!.activeIndex;
     if (fromIndex == toIndex) {
-      logger.d('Currently on ${_tabs[toIndex].label}');
       return;
     }
     _trackTabSelection(fromIndex: fromIndex, toIndex: toIndex);
@@ -74,12 +72,12 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final tab in _tabs)
+            for (var i = 0; i < _tabs.length; i++)
               _TabButton(
-                tooltip: tab.label,
-                isActive: activeIndex == tab.index,
-                icon: tab.icon,
-                onPressed: () => _switchTab(toIndex: tab.index),
+                tooltip: _tabs[i].label,
+                isActive: activeIndex == i,
+                icon: _tabs[i].icon,
+                onPressed: () => _switchTab(toIndex: i),
               ),
           ],
         ),
@@ -117,10 +115,9 @@ class _TabButton extends StatelessWidget {
 }
 
 class _NavTabConfig {
-  final int index;
   final String label;
   final IconData icon;
   final NavTabValue value;
 
-  const _NavTabConfig({required this.index, required this.label, required this.icon, required this.value});
+  const _NavTabConfig({required this.label, required this.icon, required this.value});
 }

@@ -16,24 +16,17 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
-
-class _MockFirebaseAuth extends Mock implements FirebaseAuth {}
 
 class _FakeConnectivityService implements ConnectivityService {
   @override
   Future<bool> hasConnection() async => true;
-
-  @override
-  Stream<bool> watchConnection() => Stream<bool>.value(true);
 }
 
 class _FakeFunctionsPlatform extends FirebaseFunctionsPlatform {
@@ -60,8 +53,8 @@ class _FakeHttpsCallable extends HttpsCallablePlatform {
   Future<dynamic> call([dynamic parameters]) => (functions as _FakeFunctionsPlatform).onCall(name!, parameters);
 }
 
-class _FakeAiGenerationRepository extends AiGenerationRepositoryImpl {
-  _FakeAiGenerationRepository(this.record, {this.generation, this.variation}) : super(auth: _MockFirebaseAuth());
+class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
+  _FakeAiGenerationRepository(this.record, {this.generation, this.variation});
 
   final AiGenerationRecord record;
   final Future<AiGenerationRecord> Function()? generation;

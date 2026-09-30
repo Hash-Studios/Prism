@@ -1,28 +1,16 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
-import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/monitoring/sentry_user_scope.dart';
-import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/notifications/fcm_token_service.dart';
-import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AppleAuth {
-  static const String signInCancelledResult = 'signInWithApple canceled';
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String _generateNonce([int length = 32]) {
@@ -37,7 +25,7 @@ class AppleAuth {
     return digest.toString();
   }
 
-  Future<String> signInWithApple() async {
+  Future<SignInOutcome> signInWithApple() async {
     logger.i('signInWithApple start', tag: 'AppleAuth');
     try {
       final rawNonce = _generateNonce();
@@ -74,67 +62,13 @@ class AppleAuth {
       final String email = appleCredential.email ?? user.email ?? '';
       final String photoURL = user.photoURL ?? app_state.defaultProfilePhotoUrl;
 
-      final Map<String, dynamic>? userDoc = await _getUserNEW(user);
-
-      if (userDoc != null) {
-        app_state.prismUser = PrismUsersV2.fromMapWithUser(userDoc, user);
-        firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
-          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-          'loggedIn': true,
-        }, sourceTag: 'apple_auth.signin.update_last_login');
-      } else {
-        app_state.prismUser = PrismUsersV2(
-          name: displayName,
-          bio: '',
-          createdAt: DateTime.now().toUtc().toIso8601String(),
-          email: email,
-          username: sanitizeUsername(displayName),
-          followers: [],
-          following: [],
-          id: user.uid,
-          lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-          links: {},
-          premium: false,
-          loggedIn: true,
-          profilePhoto: photoURL,
-          badges: [],
-          coins: 0,
-          subPrisms: [],
-          transactions: [],
-          coverPhoto: '',
-        );
-        firestoreClient.setDoc(
-          FirebaseCollections.usersV2,
-          app_state.prismUser.id,
-          app_state.prismUser.toJson(),
-          sourceTag: 'apple_auth.signin.create_user',
-        );
-      }
-
-      await app_state.persistPrismUser();
-      await analytics.setUserId(user.uid);
-      await analytics.setUserProperty(
-        name: AnalyticsUserProperty.subscriptionTier.wireName,
-        value: app_state.prismUser.subscriptionTier,
+      await completeSignIn(
+        user: user,
+        displayName: displayName,
+        email: email,
+        photoUrl: photoURL,
+        sourceTagPrefix: 'apple_auth.signin',
       );
-      await analytics.setUserProperty(
-        name: AnalyticsUserProperty.isPremium.wireName,
-        value: app_state.prismUser.premium ? '1' : '0',
-      );
-      final String? followersTopic = followersTopicFromEmail(email);
-      final String? userTopic = userTopicFromId(user.uid);
-      if (userTopic != null) {
-        await subscribeToTopicSafely(FirebaseMessaging.instance, userTopic, sourceTag: 'apple_auth.signin.user_topic');
-      }
-      if (followersTopic != null) {
-        await subscribeToTopicSafely(
-          FirebaseMessaging.instance,
-          followersTopic,
-          sourceTag: 'apple_auth.signin.followers_topic',
-        );
-      }
-      unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
-      FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.apple,
@@ -142,21 +76,7 @@ class AppleAuth {
           sourceContext: 'apple_auth',
         ),
       );
-      unawaited(() async {
-        await PurchasesService.instance.checkAndPersistPremium();
-        await CoinsService.instance.bootstrapForCurrentUser();
-        await CoinsService.instance.refreshBalance();
-        await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
-        await CoinsService.instance.maybeAwardProDailyBonus();
-        await CoinsService.instance.processPendingReferralIfEligible();
-      }());
-      await syncSentryUserScope(
-        loggedIn: app_state.prismUser.loggedIn,
-        id: app_state.prismUser.id,
-        email: app_state.prismUser.email,
-        username: app_state.prismUser.username,
-      );
-      return 'signInWithApple succeeded: $user';
+      return SignInOutcome.signedIn;
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
         await analytics.track(
@@ -168,7 +88,7 @@ class AppleAuth {
           ),
         );
         logger.i('signInWithApple canceled by user', tag: 'AppleAuth');
-        return signInCancelledResult;
+        return SignInOutcome.cancelled;
       }
       await analytics.track(
         const AuthLoginResultEvent(
@@ -212,21 +132,5 @@ class AppleAuth {
     if (credential.authorizationCode.isNotEmpty) {
       await _auth.revokeTokenWithAuthorizationCode(credential.authorizationCode);
     }
-  }
-
-  Future<Map<String, dynamic>?> _getUserNEW(User user) async {
-    final rows = await firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.usersV2,
-        sourceTag: 'apple_auth.get_user_new',
-        filters: [FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user.uid)],
-        limit: 1,
-      ),
-      (data, docId) => <String, dynamic>{...data, '__docId': docId},
-    );
-    if (rows.isEmpty) return null;
-    final docId = rows.first['__docId']?.toString() ?? '';
-    if (docId.isEmpty) return null;
-    return rows.first;
   }
 }

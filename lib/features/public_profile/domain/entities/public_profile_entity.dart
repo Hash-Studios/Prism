@@ -9,7 +9,6 @@ class PublicProfileEntity {
     required this.followers,
     required this.following,
     required this.links,
-    required this.premium,
     required this.coverPhoto,
   });
 
@@ -22,20 +21,5 @@ class PublicProfileEntity {
   final List<String> followers;
   final List<String> following;
   final Map<String, String> links;
-  final bool premium;
   final String coverPhoto;
-
-  static const PublicProfileEntity empty = PublicProfileEntity(
-    id: '',
-    name: '',
-    email: '',
-    username: '',
-    profilePhoto: '',
-    bio: '',
-    followers: <String>[],
-    following: <String>[],
-    links: <String, String>{},
-    premium: false,
-    coverPhoto: '',
-  );
 }

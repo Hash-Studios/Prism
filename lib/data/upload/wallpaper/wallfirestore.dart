@@ -1,19 +1,16 @@
 import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 
 export 'package:Prism/data/upload/wallpaper/wall_submission.dart';
-
-final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
 
 Future<WallSubmissionResult> createRecord(
   String? id,
@@ -25,7 +22,7 @@ Future<WallSubmissionResult> createRecord(
   String? wallpaperTitle,
   String? wallpaperCategory,
   String? wallpaperDesc,
-  dynamic review, {
+  Object review, {
   List<String>? wallpaperTags,
   bool isAiGenerated = false,
   String? aiGenerationId,
@@ -42,7 +39,7 @@ Future<WallSubmissionResult> createRecord(
     hasFreeQuota: UploadQuota.hasFreeUploadQuotaRemaining,
     consumeFreeQuota: () async {
       UploadQuota.incrementWeeklyUploads();
-      user.uploadsWeekStart = _settingsLocal.get<String>('uploadsWeekStart', defaultValue: '').trim();
+      user.uploadsWeekStart = UploadQuota.storedWeekStart;
       user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
       final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
       if (user.id.trim().isNotEmpty) {
@@ -92,138 +89,43 @@ Future<WallSubmissionResult> createRecord(
   );
 
   if (result == WallSubmissionResult.quotaExceeded) {
-    toasts.codeSend('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+    toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
     return result;
   }
-  toasts.codeSend('Your wall is submitted and is under review.');
+  toasts.success('Your wall is submitted and is under review.');
   return result;
 }
 
-Future<void> createSetup(
-  String? id,
-  String? imageURL,
-  String? wallpaperProvider,
-  String? wallpaperThumb,
-  dynamic wallpaperUrl,
-  String iconName,
-  String iconURL,
-  String widgetName,
-  String widgetURL,
-  String widgetName2,
-  String widgetURL2,
-  String setupName,
-  String setupDesc,
-  String wallId,
-  bool? review,
-) async {
-  await firestoreClient.addDoc(FirebaseCollections.setups, {
-    'by': app_state.prismUser.name,
-    'email': app_state.prismUser.email,
-    'userPhoto': app_state.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': review,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId,
-  }, sourceTag: 'upload.createSetup');
-  toasts.codeSend("Your setup is submitted, and is under review.");
+Map<String, dynamic> _setupPayload(SetupSubmission s) => {
+  'by': app_state.prismUser.name,
+  'email': app_state.prismUser.email,
+  'userPhoto': app_state.prismUser.profilePhoto,
+  ...s.toFirestore(),
+  'created_at': DateTime.now().toUtc(),
+};
+
+Future<void> createSetup(SetupSubmission setup) async {
+  await firestoreClient.addDoc(FirebaseCollections.setups, _setupPayload(setup), sourceTag: 'upload.createSetup');
+  toasts.success("Your setup is submitted, and is under review.");
 }
 
-Future<void> updateSetup(
-  String setupDocId,
-  String? id,
-  String? imageURL,
-  String? wallpaperProvider,
-  String? wallpaperThumb,
-  dynamic wallpaperUrl,
-  String iconName,
-  String iconURL,
-  String widgetName,
-  String widgetURL,
-  String widgetName2,
-  String widgetURL2,
-  String setupName,
-  String setupDesc,
-  String wallId,
-  bool? review,
-) async {
+Future<void> updateSetup(String setupDocId, SetupSubmission setup) async {
   await firestoreClient.setDoc(
     FirebaseCollections.setups,
     setupDocId,
-    {
-      'by': app_state.prismUser.name,
-      'email': app_state.prismUser.email,
-      'userPhoto': app_state.prismUser.profilePhoto,
-      'id': id,
-      'image': imageURL,
-      'wallpaper_provider': wallpaperProvider,
-      'wallpaper_thumb': wallpaperThumb,
-      'wallpaper_url': wallpaperUrl,
-      'icon': iconName,
-      'icon_url': iconURL,
-      'widget': widgetName,
-      'widget_url': widgetURL,
-      'widget2': widgetName2,
-      'widget_url2': widgetURL2,
-      'name': setupName,
-      'desc': setupDesc,
-      'review': review,
-      'created_at': DateTime.now().toUtc(),
-      'wall_id': wallId,
-    },
+    _setupPayload(setup),
     merge: true,
     sourceTag: 'upload.updateSetup',
   );
-  toasts.codeSend("Your setup is edited, and is under review.");
+  toasts.success("Your setup is edited, and is under review.");
 }
 
-Future<void> createDraftSetup(
-  String? id,
-  String? imageURL,
-  String? wallpaperProvider,
-  String? wallpaperThumb,
-  dynamic wallpaperUrl,
-  String? iconName,
-  String? iconURL,
-  String? widgetName,
-  String? widgetURL,
-  String? widgetName2,
-  String? widgetURL2,
-  String? setupName,
-  String? setupDesc,
-  String? wallId,
-) async {
-  await firestoreClient.setDoc(FirebaseCollections.draftSetups, id!, {
-    'by': app_state.prismUser.name,
-    'email': app_state.prismUser.email,
-    'userPhoto': app_state.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': false,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId,
-  }, sourceTag: 'upload.createDraftSetup');
-  toasts.codeSend("Draft saved!");
+Future<void> createDraftSetup(SetupSubmission setup) async {
+  await firestoreClient.setDoc(
+    FirebaseCollections.draftSetups,
+    setup.id,
+    _setupPayload(setup),
+    sourceTag: 'upload.createDraftSetup',
+  );
+  toasts.success("Draft saved!");
 }

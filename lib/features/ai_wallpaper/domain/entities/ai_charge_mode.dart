@@ -1,35 +1,15 @@
 enum AiChargeMode {
-  freeTrial,
-  proIncluded,
-  coinSpend,
-  insufficient;
+  freeTrial('free_trial'),
+  proIncluded('pro_included'),
+  coinSpend('coin_spend'),
+  insufficient('insufficient');
 
-  String get value {
-    switch (this) {
-      case AiChargeMode.freeTrial:
-        return 'free_trial';
-      case AiChargeMode.proIncluded:
-        return 'pro_included';
-      case AiChargeMode.coinSpend:
-        return 'coin_spend';
-      case AiChargeMode.insufficient:
-        return 'insufficient';
-    }
-  }
+  const AiChargeMode(this.value);
 
-  bool get isPaid => this == AiChargeMode.coinSpend;
+  final String value;
 
   static AiChargeMode fromValue(String? value) {
-    switch ((value ?? '').trim().toLowerCase()) {
-      case 'free_trial':
-        return AiChargeMode.freeTrial;
-      case 'pro_included':
-        return AiChargeMode.proIncluded;
-      case 'coin_spend':
-        return AiChargeMode.coinSpend;
-      case 'insufficient':
-      default:
-        return AiChargeMode.insufficient;
-    }
+    final String normalized = (value ?? '').trim().toLowerCase();
+    return values.firstWhere((mode) => mode.value == normalized, orElse: () => insufficient);
   }
 }

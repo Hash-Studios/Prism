@@ -1,53 +1,16 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 
 enum AiQualityTier {
-  fast,
-  balanced,
-  quality;
+  fast('Fast', CoinPolicy.aiGenerationFast),
+  balanced('Balanced', CoinPolicy.aiGenerationBalanced),
+  quality('Quality', CoinPolicy.aiGenerationQuality);
 
-  String get apiValue {
-    switch (this) {
-      case AiQualityTier.fast:
-        return 'fast';
-      case AiQualityTier.balanced:
-        return 'balanced';
-      case AiQualityTier.quality:
-        return 'quality';
-    }
-  }
+  const AiQualityTier(this.label, this.coinCost);
 
-  String get label {
-    switch (this) {
-      case AiQualityTier.fast:
-        return 'Fast';
-      case AiQualityTier.balanced:
-        return 'Balanced';
-      case AiQualityTier.quality:
-        return 'Quality';
-    }
-  }
+  final String label;
+  final int coinCost;
 
-  int get coinCost {
-    switch (this) {
-      case AiQualityTier.fast:
-        return CoinPolicy.aiGenerationFast;
-      case AiQualityTier.balanced:
-        return CoinPolicy.aiGenerationBalanced;
-      case AiQualityTier.quality:
-        return CoinPolicy.aiGenerationQuality;
-    }
-  }
+  String get apiValue => name;
 
-  static AiQualityTier fromApiValue(String value) {
-    final normalized = value.trim().toLowerCase();
-    switch (normalized) {
-      case 'fast':
-        return AiQualityTier.fast;
-      case 'quality':
-        return AiQualityTier.quality;
-      case 'balanced':
-      default:
-        return AiQualityTier.balanced;
-    }
-  }
+  static AiQualityTier fromApiValue(String value) => values.asNameMap()[value.trim().toLowerCase()] ?? balanced;
 }

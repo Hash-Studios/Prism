@@ -31,7 +31,7 @@ class AboutRoute extends PageRouteInfo<void> {
 class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
   AdminReviewRoute({
     Key? key,
-    AdminReviewRepository? repository,
+    AdminModerationRepository? repository,
     List<PageRouteInfo>? children,
   }) : super(
          AdminReviewRoute.name,
@@ -57,7 +57,7 @@ class AdminReviewRouteArgs {
 
   final Key? key;
 
-  final AdminReviewRepository? repository;
+  final AdminModerationRepository? repository;
 
   @override
   String toString() {
@@ -76,35 +76,63 @@ class AdminReviewRouteArgs {
 }
 
 /// generated route for
-/// [AdsNotLoading]
-class AdsNotLoadingRoute extends PageRouteInfo<void> {
-  const AdsNotLoadingRoute({List<PageRouteInfo>? children})
-    : super(AdsNotLoadingRoute.name, initialChildren: children);
-
-  static const String name = 'AdsNotLoadingRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const AdsNotLoading();
-    },
-  );
-}
-
-/// generated route for
-/// [AiTabPage]
-class AiTabRoute extends PageRouteInfo<void> {
-  const AiTabRoute({List<PageRouteInfo>? children})
-    : super(AiTabRoute.name, initialChildren: children);
+/// [AiWallpaperTabPage]
+class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
+  AiTabRoute({
+    Key? key,
+    AiGenerationRepositoryImpl? repository,
+    Future<WallSubmissionResult> Function()? submitForTesting,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AiTabRoute.name,
+         args: AiTabRouteArgs(
+           key: key,
+           repository: repository,
+           submitForTesting: submitForTesting,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'AiTabRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AiTabPage();
+      final args = data.argsAs<AiTabRouteArgs>(
+        orElse: () => const AiTabRouteArgs(),
+      );
+      return AiWallpaperTabPage(
+        key: args.key,
+        repository: args.repository,
+        submitForTesting: args.submitForTesting,
+      );
     },
   );
+}
+
+class AiTabRouteArgs {
+  const AiTabRouteArgs({this.key, this.repository, this.submitForTesting});
+
+  final Key? key;
+
+  final AiGenerationRepositoryImpl? repository;
+
+  final Future<WallSubmissionResult> Function()? submitForTesting;
+
+  @override
+  String toString() {
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AiTabRouteArgs) return false;
+    return key == other.key && repository == other.repository;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ repository.hashCode;
 }
 
 /// generated route for
@@ -798,69 +826,6 @@ class ProfileRouteArgs {
 }
 
 /// generated route for
-/// [ProfileSetupViewScreen]
-class ProfileSetupViewRoute extends PageRouteInfo<ProfileSetupViewRouteArgs> {
-  ProfileSetupViewRoute({
-    Key? key,
-    required int setupIndex,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ProfileSetupViewRoute.name,
-         args: ProfileSetupViewRouteArgs(key: key, setupIndex: setupIndex),
-         initialChildren: children,
-       );
-
-  static const String name = 'ProfileSetupViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<ProfileSetupViewRouteArgs>();
-      return ProfileSetupViewScreen(key: args.key, setupIndex: args.setupIndex);
-    },
-  );
-}
-
-class ProfileSetupViewRouteArgs {
-  const ProfileSetupViewRouteArgs({this.key, required this.setupIndex});
-
-  final Key? key;
-
-  final int setupIndex;
-
-  @override
-  String toString() {
-    return 'ProfileSetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ProfileSetupViewRouteArgs) return false;
-    return key == other.key && setupIndex == other.setupIndex;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ setupIndex.hashCode;
-}
-
-/// generated route for
-/// [ProfileTabPage]
-class ProfileTabRoute extends PageRouteInfo<void> {
-  const ProfileTabRoute({List<PageRouteInfo>? children})
-    : super(ProfileTabRoute.name, initialChildren: children);
-
-  static const String name = 'ProfileTabRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const ProfileTabPage();
-    },
-  );
-}
-
-/// generated route for
 /// [QuickTileSettingsScreen]
 class QuickTileSettingsRoute extends PageRouteInfo<void> {
   const QuickTileSettingsRoute({List<PageRouteInfo>? children})
@@ -887,7 +852,7 @@ class ReviewRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return ReviewScreen();
+      return const ReviewScreen();
     },
   );
 }
@@ -903,7 +868,7 @@ class SearchRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return SearchScreen();
+      return const SearchScreen();
     },
   );
 }
@@ -1057,15 +1022,10 @@ class ShareSetupViewRoute extends PageRouteInfo<ShareSetupViewRouteArgs> {
   ShareSetupViewRoute({
     Key? key,
     required String setupName,
-    String thumbnailUrl = '',
     List<PageRouteInfo>? children,
   }) : super(
          ShareSetupViewRoute.name,
-         args: ShareSetupViewRouteArgs(
-           key: key,
-           setupName: setupName,
-           thumbnailUrl: thumbnailUrl,
-         ),
+         args: ShareSetupViewRouteArgs(key: key, setupName: setupName),
          rawPathParams: {'setupName': setupName},
          initialChildren: children,
        );
@@ -1081,44 +1041,32 @@ class ShareSetupViewRoute extends PageRouteInfo<ShareSetupViewRouteArgs> {
           setupName: pathParams.getString('setupName'),
         ),
       );
-      return ShareSetupViewScreen(
-        key: args.key,
-        setupName: args.setupName,
-        thumbnailUrl: args.thumbnailUrl,
-      );
+      return ShareSetupViewScreen(key: args.key, setupName: args.setupName);
     },
   );
 }
 
 class ShareSetupViewRouteArgs {
-  const ShareSetupViewRouteArgs({
-    this.key,
-    required this.setupName,
-    this.thumbnailUrl = '',
-  });
+  const ShareSetupViewRouteArgs({this.key, required this.setupName});
 
   final Key? key;
 
   final String setupName;
 
-  final String thumbnailUrl;
-
   @override
   String toString() {
-    return 'ShareSetupViewRouteArgs{key: $key, setupName: $setupName, thumbnailUrl: $thumbnailUrl}';
+    return 'ShareSetupViewRouteArgs{key: $key, setupName: $setupName}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ShareSetupViewRouteArgs) return false;
-    return key == other.key &&
-        setupName == other.setupName &&
-        thumbnailUrl == other.thumbnailUrl;
+    return key == other.key && setupName == other.setupName;
   }
 
   @override
-  int get hashCode => key.hashCode ^ setupName.hashCode ^ thumbnailUrl.hashCode;
+  int get hashCode => key.hashCode ^ setupName.hashCode;
 }
 
 /// generated route for
@@ -1361,10 +1309,9 @@ class UserSearchRoute extends PageRouteInfo<void> {
 class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
   WallpaperDetailRoute({
     Key? key,
-    WallpaperDetailEntity? entity,
+    FeedItemEntity? entity,
     String? wallId,
     WallpaperSource? source,
-    String? wallpaperUrl,
     String? thumbnailUrl,
     AnalyticsSurfaceValue analyticsSurface =
         AnalyticsSurfaceValue.wallpaperScreen,
@@ -1376,7 +1323,6 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            entity: entity,
            wallId: wallId,
            source: source,
-           wallpaperUrl: wallpaperUrl,
            thumbnailUrl: thumbnailUrl,
            analyticsSurface: analyticsSurface,
          ),
@@ -1396,7 +1342,6 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
         entity: args.entity,
         wallId: args.wallId,
         source: args.source,
-        wallpaperUrl: args.wallpaperUrl,
         thumbnailUrl: args.thumbnailUrl,
         analyticsSurface: args.analyticsSurface,
       );
@@ -1410,20 +1355,17 @@ class WallpaperDetailRouteArgs {
     this.entity,
     this.wallId,
     this.source,
-    this.wallpaperUrl,
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
   });
 
   final Key? key;
 
-  final WallpaperDetailEntity? entity;
+  final FeedItemEntity? entity;
 
   final String? wallId;
 
   final WallpaperSource? source;
-
-  final String? wallpaperUrl;
 
   final String? thumbnailUrl;
 
@@ -1431,7 +1373,7 @@ class WallpaperDetailRouteArgs {
 
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, wallpaperUrl: $wallpaperUrl, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
   }
 
   @override
@@ -1442,7 +1384,6 @@ class WallpaperDetailRouteArgs {
         entity == other.entity &&
         wallId == other.wallId &&
         source == other.source &&
-        wallpaperUrl == other.wallpaperUrl &&
         thumbnailUrl == other.thumbnailUrl &&
         analyticsSurface == other.analyticsSurface;
   }
@@ -1453,7 +1394,6 @@ class WallpaperDetailRouteArgs {
       entity.hashCode ^
       wallId.hashCode ^
       source.hashCode ^
-      wallpaperUrl.hashCode ^
       thumbnailUrl.hashCode ^
       analyticsSurface.hashCode;
 }
@@ -1463,10 +1403,10 @@ class WallpaperDetailRouteArgs {
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({
     Key? key,
-    Image? image,
-    Image? finalImage,
-    String? filename,
-    String? finalFilename,
+    required Image image,
+    required Image finalImage,
+    required String filename,
+    required String finalFilename,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperFilterRoute.name,
@@ -1485,9 +1425,7 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<WallpaperFilterRouteArgs>(
-        orElse: () => const WallpaperFilterRouteArgs(),
-      );
+      final args = data.argsAs<WallpaperFilterRouteArgs>();
       return WallpaperFilterScreen(
         key: args.key,
         image: args.image,
@@ -1502,21 +1440,21 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
 class WallpaperFilterRouteArgs {
   const WallpaperFilterRouteArgs({
     this.key,
-    this.image,
-    this.finalImage,
-    this.filename,
-    this.finalFilename,
+    required this.image,
+    required this.finalImage,
+    required this.filename,
+    required this.finalFilename,
   });
 
   final Key? key;
 
-  final Image? image;
+  final Image image;
 
-  final Image? finalImage;
+  final Image finalImage;
 
-  final String? filename;
+  final String filename;
 
-  final String? finalFilename;
+  final String finalFilename;
 
   @override
   String toString() {

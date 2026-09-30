@@ -5,13 +5,12 @@ class OnboardingProgressIndicator extends StatelessWidget {
   const OnboardingProgressIndicator({
     super.key,
     required this.step,
-    this.totalSteps = 3,
+    required this.totalSteps,
     this.color = OnboardingColors.progressActive,
   });
 
   final int step;
 
-  /// Total number of steps shown as dots. Defaults to 3 for backward compat.
   final int totalSteps;
   final Color color;
 

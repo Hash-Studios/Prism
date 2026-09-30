@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -30,11 +31,9 @@ class _AboutScreenState extends State<AboutScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   int _versionTapCount = 0;
 
-  bool get _isIOS => defaultTargetPlatform == TargetPlatform.iOS;
+  late final Future<List<Contributor>> _contributors = _fetchContributors();
 
-  String get _storeLink => _isIOS
-      ? "https://apps.apple.com/app/id6670200846"
-      : "https://play.google.com/store/apps/details?id=com.hash.prism";
+  String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS ? appStoreUrl : playStoreUrl;
 
   @override
   void initState() {
@@ -64,15 +63,8 @@ class _AboutScreenState extends State<AboutScreen> {
     );
   }
 
-  Future<List<Contributor>> printStream() async {
-    final github = GitHub();
-    final Stream<Contributor> contri = github.repositories.listContributors(RepositorySlug("Hash-Studios", "Prism"));
-    final List<Contributor> listContri = [];
-    await for (final value in contri) {
-      listContri.add(value);
-    }
-    return listContri;
-  }
+  Future<List<Contributor>> _fetchContributors() =>
+      GitHub().repositories.listContributors(RepositorySlug("Hash-Studios", "Prism")).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -151,11 +143,10 @@ class _AboutScreenState extends State<AboutScreen> {
               child: Text("The Team", textAlign: TextAlign.center, style: Theme.of(context).textTheme.displaySmall),
             ),
             FutureBuilder<List<Contributor>>(
-              future: printStream(),
+              future: _contributors,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
-                  logger.d("snapshot none, waiting");
                   return SizedBox(height: 250, child: Center(child: Loader()));
                 } else if (snapshot.hasError) {
                   _contentLoadTracker.failure(
@@ -188,68 +179,60 @@ class _AboutScreenState extends State<AboutScreen> {
                       );
                     },
                   );
-                  final List<Widget> tiles = [];
-                  tiles.add(
+                  final contributors = snapshot.data!;
+                  final tiles = <Widget>[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _ContributorWidget(contributor: snapshot.data![1], radius: 35),
-                        _ContributorWidget(contributor: snapshot.data![0], radius: 45),
-                        _ContributorWidget(contributor: snapshot.data![2], radius: 35),
+                        for (final (rank, radius) in const [(1, 35.0), (0, 45.0), (2, 35.0)])
+                          if (rank < contributors.length)
+                            _ContributorWidget(contributor: contributors[rank], radius: radius),
                       ],
                     ),
-                  );
-                  tiles.add(const SizedBox(height: 10));
-                  tiles.add(const Divider());
-                  tiles.add(
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      width: MediaQuery.of(context).size.width * 0.9,
-                      child: Text("Other Contributors", style: Theme.of(context).textTheme.displaySmall),
-                    ),
-                  );
-                  for (final Contributor c in snapshot.data!) {
-                    if (snapshot.data!.indexOf(c) == 0 ||
-                        snapshot.data!.indexOf(c) == 1 ||
-                        snapshot.data!.indexOf(c) == 2) {
-                    } else {
-                      tiles.add(
-                        ListTile(
-                          leading: CircleAvatar(backgroundImage: CachedNetworkImageProvider(c.avatarUrl!)),
-                          title: Text(
-                            c.login!,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                          ),
-                          subtitle: Text(
-                            c.contributions == 1 ? "${c.contributions} commit" : "${c.contributions} commits",
-                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          onTap: () {
-                            _trackAction(
-                              AnalyticsActionValue.contributorProfileTapped,
-                              sourceContext: 'about_screen_other_contributor',
-                            );
-                            unawaited(() async {
-                              final bool launched = await openPrismLink(context, c.htmlUrl!);
-                              await analytics.track(
-                                ExternalLinkOpenResultEvent(
-                                  surface: AnalyticsSurfaceValue.aboutScreen,
-                                  destination: LinkDestinationValue.github,
-                                  result: launched ? EventResultValue.success : EventResultValue.failure,
-                                  reason: launched ? null : AnalyticsReasonValue.error,
-                                  sourceContext: 'about_screen_other_contributor',
-                                ),
-                              );
-                            }());
-                          },
+                    if (contributors.length > 3) ...[
+                      const SizedBox(height: 10),
+                      const Divider(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        width: MediaQuery.of(context).size.width * 0.9,
+                        child: Text("Other Contributors", style: Theme.of(context).textTheme.displaySmall),
+                      ),
+                    ],
+                    for (final Contributor c in contributors.skip(3))
+                      ListTile(
+                        leading: CircleAvatar(backgroundImage: CachedNetworkImageProvider(c.avatarUrl!)),
+                        title: Text(
+                          c.login!,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                         ),
-                      );
-                    }
-                  }
+                        subtitle: Text(
+                          c.contributions == 1 ? "${c.contributions} commit" : "${c.contributions} commits",
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        onTap: () {
+                          _trackAction(
+                            AnalyticsActionValue.contributorProfileTapped,
+                            sourceContext: 'about_screen_other_contributor',
+                          );
+                          unawaited(() async {
+                            final bool launched = await openPrismLink(context, c.htmlUrl!);
+                            await analytics.track(
+                              ExternalLinkOpenResultEvent(
+                                surface: AnalyticsSurfaceValue.aboutScreen,
+                                destination: LinkDestinationValue.github,
+                                result: launched ? EventResultValue.success : EventResultValue.failure,
+                                reason: launched ? null : AnalyticsReasonValue.error,
+                                sourceContext: 'about_screen_other_contributor',
+                              ),
+                            );
+                          }());
+                        },
+                      ),
+                  ];
                   return Column(children: tiles);
                 }
               },
@@ -361,7 +344,7 @@ class ActionButton extends StatelessWidget {
       child: ActionChip(
         avatar: Icon(
           icon,
-          color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
+          color: context.isDarkMode && context.prismIsAmoledDark()
               ? Theme.of(context).colorScheme.error == Colors.black
                     ? Theme.of(context).colorScheme.secondary
                     : Theme.of(context).colorScheme.error

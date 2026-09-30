@@ -18,11 +18,6 @@ class CompositeAnalyticsProvider implements AnalyticsProvider {
   }
 
   @override
-  Future<void> logLogin({String? loginMethod}) {
-    return _fanOut((AnalyticsProvider provider) => provider.logLogin(loginMethod: loginMethod), operation: 'logLogin');
-  }
-
-  @override
   Future<void> setUserId(String? userId) {
     return _fanOut((AnalyticsProvider provider) => provider.setUserId(userId), operation: 'setUserId');
   }
@@ -45,14 +40,6 @@ class CompositeAnalyticsProvider implements AnalyticsProvider {
       (AnalyticsProvider provider) =>
           provider.logScreenView(screenName: screenName, screenClass: screenClass, parameters: parameters),
       operation: 'logScreenView',
-    );
-  }
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) {
-    return _fanOut(
-      (AnalyticsProvider provider) => provider.logShare(contentType: contentType, itemId: itemId, method: method),
-      operation: 'logShare',
     );
   }
 
