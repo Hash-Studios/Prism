@@ -8,9 +8,9 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -79,79 +79,30 @@ const double _kCollectionsTitleBlockHeight = 40;
 const double _kCollectionsTitleImageGap = 6;
 const double _kCollectionsGridChildAspectRatio = 0.56;
 
-class _CollectionTileSkeleton extends StatefulWidget {
-  const _CollectionTileSkeleton({required this.cellWidth, required this.base, required this.highlight});
+class _CollectionTileSkeleton extends StatelessWidget {
+  const _CollectionTileSkeleton({required this.cellWidth});
 
   final double cellWidth;
-  final Color base;
-  final Color highlight;
-
-  @override
-  State<_CollectionTileSkeleton> createState() => _CollectionTileSkeletonState();
-}
-
-class _CollectionTileSkeletonState extends State<_CollectionTileSkeleton> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late Animation<Color?> _shimmer;
-
-  void _attachColors() {
-    _shimmer = ColorTween(
-      begin: widget.base,
-      end: widget.highlight,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    _attachColors();
-    _controller.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CollectionTileSkeleton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.base != oldWidget.base || widget.highlight != oldWidget.highlight) {
-      _attachColors();
-      setState(() {});
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final Color fallback = Theme.of(context).colorScheme.surfaceContainer;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SizedBox(
-          height: _kCollectionsTitleBlockHeight,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: AnimatedBuilder(
-              animation: _shimmer,
-              builder: (BuildContext context, Widget? child) {
-                return Container(width: widget.cellWidth * 0.65, height: 13, color: _shimmer.value ?? fallback);
-              },
+    return PulsePlaceholder(
+      builder: (BuildContext context, Color color) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            SizedBox(
+              height: _kCollectionsTitleBlockHeight,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(width: cellWidth * 0.65, height: 13, color: color),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: _kCollectionsTitleImageGap),
-        Expanded(
-          child: AnimatedBuilder(
-            animation: _shimmer,
-            builder: (BuildContext context, Widget? child) {
-              return ColoredBox(color: _shimmer.value ?? fallback);
-            },
-          ),
-        ),
-      ],
+            const SizedBox(height: _kCollectionsTitleImageGap),
+            Expanded(child: ColoredBox(color: color)),
+          ],
+        );
+      },
     );
   }
 }
@@ -344,7 +295,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         sourceTag: 'coins.preview.watch_and_unlock.collections_grid',
       ),
     );
-    final bool watched = await _watchRewardedAd();
+    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
@@ -374,48 +325,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       collectionName: collectionName,
       sourceTag: 'coins.preview.watch_and_unlock.unlock',
     );
-  }
-
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _watchRewardedAd() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      return false;
-    }
-    bool watchRequested = false;
-    try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      return result.shouldUnlockDownload;
-    } catch (_) {
-      return false;
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
-    }
   }
 
   Future<void> refreshList() async {
@@ -479,11 +388,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       if (loading) {
         final Widget tileBody = Material(
           color: Colors.transparent,
-          child: _CollectionTileSkeleton(
-            cellWidth: cellWidth,
-            base: scheme.surfaceContainer,
-            highlight: scheme.surfaceContainerHigh,
-          ),
+          child: _CollectionTileSkeleton(cellWidth: cellWidth),
         );
         return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
       }
