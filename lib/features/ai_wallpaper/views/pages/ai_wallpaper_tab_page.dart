@@ -380,7 +380,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   Future<bool> _isOnlineForGeneration() async {
     final bool online = await _hasNetworkOrUnknown();
-    if (!online) {
+    if (!online && mounted) {
       toasts.error('No connection. Connect to the internet, then try again.');
     }
     return online;
@@ -399,17 +399,19 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Description is too long (max $_maxPromptChars characters).');
       return;
     }
-    if (!await _isOnlineForGeneration() || !mounted) return;
-
+    final AiStylePreset style = _selectedStyle;
+    final AiQualityTier qualityTier = _selectedQualityTier;
     final String targetSize = aiTargetSize(
       size: MediaQuery.sizeOf(context),
       devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
     );
     await _runGeneration(
+      style: style,
+      qualityTier: qualityTier,
       request: (AiChargeMode mode, int coinsSpent) => _repository.generate(
         prompt: prompt,
-        stylePreset: _selectedStyle,
-        qualityTier: _selectedQualityTier,
+        stylePreset: style,
+        qualityTier: qualityTier,
         targetSize: targetSize,
         chargeMode: mode,
         coinsSpent: coinsSpent,
@@ -441,9 +443,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('Refinements are not available right now.');
       return;
     }
-    if (!await _isOnlineForGeneration() || !mounted) return;
-
+    final AiStylePreset style = _selectedStyle;
+    final AiQualityTier qualityTier = _selectedQualityTier;
     await _runGeneration(
+      style: style,
+      qualityTier: qualityTier,
       request: (AiChargeMode mode, int coinsSpent) => _repository.generateVariation(
         generationId: latest.id,
         chargeMode: mode,
@@ -457,14 +461,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _runGeneration({
+    required AiStylePreset style,
+    required AiQualityTier qualityTier,
     required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent) request,
     required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
     required void Function(AiGenerationRecord generated) onSuccess,
   }) async {
+    if (!_canStartGeneration()) return;
     setState(() => _loadingGeneration = true);
+    if (!await _isOnlineForGeneration() || !mounted) {
+      if (mounted) setState(() => _loadingGeneration = false);
+      return;
+    }
 
     final reservation = await CoinsService.instance.reserveForAiGeneration(
-      qualityTier: _selectedQualityTier,
+      qualityTier: qualityTier,
       sourceTag: 'coins.reserve.ai_screen',
     );
     if (!mounted) {
@@ -480,23 +491,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
-        requiredCoins: _selectedQualityTier.coinCost,
+        requiredCoins: qualityTier.coinCost,
       );
-      toasts.error('Need ${_selectedQualityTier.coinCost} coins to generate.');
+      toasts.error('Need ${qualityTier.coinCost} coins to generate.');
       setState(() => _loadingGeneration = false);
       return;
     }
 
-    analytics.track(
-      AiGenerateStartedEvent(
-        style: _selectedStyle.apiValue,
-        quality: _selectedQualityTier.apiValue,
-        mode: reservation.mode,
-      ),
-    );
-
     bool generationSucceeded = false;
     try {
+      analytics.track(
+        AiGenerateStartedEvent(style: style.apiValue, quality: qualityTier.apiValue, mode: reservation.mode),
+      );
       final AiGenerationRecord generated = await request(reservation.mode, reservation.coinsSpent);
       generationSucceeded = true;
 
@@ -536,7 +542,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         reservationTransactionId: reservation.transactionId,
       );
       analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
-      toasts.error(_toastForGenerateFailure(error));
+      if (mounted) toasts.error(_toastForGenerateFailure(error));
     } finally {
       if (mounted) {
         setState(() => _loadingGeneration = false);
@@ -671,7 +677,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           stackTrace: stackTrace,
         );
       }
-      analytics.track(AiSubmitSuccessEvent(generationId: record.id));
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
       }
@@ -708,6 +713,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
+      }
+      if (submissionConfirmed) {
+        try {
+          await analytics.track(AiSubmitSuccessEvent(generationId: record.id));
+        } catch (error, stackTrace) {
+          logger.w(
+            'AI wallpaper submission succeeded but follow-up work failed',
+            tag: 'ai_wallpaper',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
       }
     }
   }

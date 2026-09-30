@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
@@ -11,6 +13,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/fake_app_analytics.dart';
 
 class _TestAppRouter extends AppRouter {
   @override
@@ -180,6 +183,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('tracks a confirmed upload once when the screen was popped while saving', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final save = Completer<wall_store.WallSubmissionResult>();
+    final recorder = FakeAppAnalytics();
+    AnalyticsRuntime.instance = recorder;
+    addTearDown(AnalyticsRuntime.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => UploadWallScreen(
+                    image: image,
+                    fromSetupRoute: false,
+                    prepareImageForTesting: () async {},
+                    uploadFileForTesting: ({required isThumbnail}) async => isThumbnail
+                        ? const GitHubContent(
+                            downloadUrl: 'https://example.test/thumb.png',
+                            path: 'thumb_pixel.png',
+                            sha: 'thumb-sha',
+                          )
+                        : const GitHubContent(
+                            downloadUrl: 'https://example.test/wall.png',
+                            path: 'pixel.png',
+                            sha: 'wall-sha',
+                          ),
+                    createRecordForTesting: () => save.future,
+                  ),
+                ),
+              ),
+              child: const Text('Open uploader'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open uploader'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Submit for review'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Submitting wallpaper'), findsOneWidget);
+
+    Navigator.of(tester.element(find.text('Submitting wallpaper'))).pop();
+    await tester.pumpAndSettle();
+    save.complete(wall_store.WallSubmissionResult.submitted);
+    await tester.pump();
+
+    final uploads = recorder.events.whereType<UploadWallpaperEvent>().toList();
+    expect(uploads, hasLength(1));
+    expect(uploads.single.assetId, isNotEmpty);
+    expect(uploads.single.link, 'https://example.test/wall.png');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('AutoRoute setup caller receives the generated upload route result', (tester) async {
     await setViewport(tester);
     final router = _TestAppRouter();
@@ -237,6 +301,9 @@ void main() {
   testWidgets('shows a weekly quota result without retrying a save', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
+    final recorder = FakeAppAnalytics();
+    AnalyticsRuntime.instance = recorder;
+    addTearDown(AnalyticsRuntime.reset);
     var saveCalls = 0;
     final deletedFiles = <String>[];
 
@@ -271,6 +338,7 @@ void main() {
     expect(find.text('You have reached this week’s free wallpaper upload limit.'), findsOneWidget);
     expect(saveCalls, 1);
     expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
+    expect(recorder.events.whereType<UploadWallpaperEvent>(), isEmpty);
     expect(tester.takeException(), isNull);
   });
 
@@ -325,6 +393,9 @@ void main() {
   testWidgets('keeps an uncertain save visible and offers status check, not retry', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
+    final recorder = FakeAppAnalytics();
+    AnalyticsRuntime.instance = recorder;
+    addTearDown(AnalyticsRuntime.reset);
     var saveCalls = 0;
 
     await tester.pumpWidget(
@@ -355,6 +426,7 @@ void main() {
     expect(find.text('Check review status'), findsOneWidget);
     expect(find.text('Retry submission'), findsNothing);
     expect(saveCalls, 1);
+    expect(recorder.events.whereType<UploadWallpaperEvent>(), isEmpty);
     expect(tester.takeException(), isNull);
   });
 

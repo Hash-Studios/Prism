@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -16,6 +18,8 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/fake_app_analytics.dart';
 
 class _FakeConnectivityService implements ConnectivityService {
   @override
@@ -326,6 +330,9 @@ void main() {
   });
 
   testWidgets('does not apply a completed submission to a newly active account', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -361,6 +368,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Submit wallpaper for community review'), findsNothing);
+    expect(analytics.events.whereType<AiSubmitStartedEvent>(), hasLength(1));
+    expect(analytics.events.whereType<AiSubmitSuccessEvent>(), hasLength(1));
   });
 
   testWidgets('persists confirmed submission history if the page is disposed during the write', (tester) async {

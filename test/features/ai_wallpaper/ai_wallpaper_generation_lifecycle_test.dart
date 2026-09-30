@@ -4,7 +4,6 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -25,11 +24,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/fake_app_analytics.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _FakeConnectivityService implements ConnectivityService {
+  _FakeConnectivityService({this.check});
+
+  final Future<bool> Function()? check;
+
   @override
-  Future<bool> hasConnection() async => true;
+  Future<bool> hasConnection() => check?.call() ?? Future<bool>.value(true);
 }
 
 class _FakeFunctionsPlatform extends FirebaseFunctionsPlatform {
@@ -56,11 +60,10 @@ class _FakeHttpsCallable extends HttpsCallablePlatform {
   Future<dynamic> call([dynamic parameters]) => (functions as _FakeFunctionsPlatform).onCall(name!, parameters);
 }
 
-class _RecordingAnalytics extends Fake implements AppAnalytics {
+class _RecordingAnalytics extends FakeAppAnalytics {
   _RecordingAnalytics({this.throwOn});
 
   final bool Function(AnalyticsEvent event)? throwOn;
-  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
 
   @override
   Future<void> track(AnalyticsEvent event) {
@@ -76,6 +79,7 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   final AiGenerationRecord record;
   final Future<AiGenerationRecord> Function()? generation;
   final Future<AiGenerationRecord> Function()? variation;
+  final List<({AiStylePreset style, AiQualityTier quality, int coinsSpent})> requests = [];
 
   @override
   Future<List<AiGenerationRecord>> fetchHistory({required String userId, int limit = 50}) async => <AiGenerationRecord>[
@@ -91,7 +95,10 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
     required AiChargeMode chargeMode,
     required int coinsSpent,
     int? seed,
-  }) => generation!.call();
+  }) {
+    requests.add((style: stylePreset, quality: qualityTier, coinsSpent: coinsSpent));
+    return generation!.call();
+  }
 
   @override
   Future<AiGenerationRecord> generateVariation({
@@ -138,13 +145,14 @@ void main() {
     WidgetTester tester,
     Future<dynamic> Function(String, dynamic) onCall, {
     _FakeAiGenerationRepository? repository,
+    ConnectivityService? connectivity,
   }) async {
     tester.view.physicalSize = const Size(1000, 2200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await getIt.reset();
-    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    getIt.registerSingleton<ConnectivityService>(connectivity ?? _FakeConnectivityService());
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     functions.onCall = onCall;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async => true);
@@ -167,6 +175,194 @@ void main() {
 
   tearDownAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+  });
+
+  testWidgets('concurrent connectivity checks reserve and generate only once', (tester) async {
+    final connection = Completer<bool>();
+    final generation = Completer<AiGenerationRecord>();
+    var connectionCalls = 0;
+    var spendCalls = 0;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () => generation.future);
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'spendCoins') spendCalls++;
+        return <String, Object>{
+          'success': true,
+          'changed': true,
+          'currentBalance': 90,
+          'delta': -10,
+          'transactionId': 'reservation-1',
+        };
+      },
+      repository: repository,
+      connectivity: _FakeConnectivityService(
+        check: () => ++connectionCalls == 1 ? Future<bool>.value(true) : connection.future,
+      ),
+    );
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.tap(generate);
+    await tester.pump();
+    connection.complete(true);
+    await tester.pump();
+    final actualSpends = spendCalls;
+    final actualRequests = repository.requests.length;
+    generation.complete(_record(id: 'generated-1'));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(actualSpends, 1);
+    expect(actualRequests, 1);
+  });
+
+  testWidgets('a queued second connectivity result cannot start a second paid request', (tester) async {
+    final firstConnection = Completer<bool>();
+    final secondConnection = Completer<bool>();
+    var connectionCalls = 0;
+    var spendCalls = 0;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record(id: 'generated-1'));
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'spendCoins') spendCalls++;
+        return <String, Object>{
+          'success': true,
+          'changed': true,
+          'currentBalance': 90,
+          'delta': -10,
+          'transactionId': 'reservation-1',
+        };
+      },
+      repository: repository,
+      connectivity: _FakeConnectivityService(
+        check: () {
+          connectionCalls++;
+          if (connectionCalls == 1) return Future<bool>.value(true);
+          return connectionCalls == 2 ? firstConnection.future : secondConnection.future;
+        },
+      ),
+    );
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.tap(generate);
+    firstConnection.complete(true);
+    await tester.pumpAndSettle();
+    secondConnection.complete(true);
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(spendCalls, 1);
+    expect(repository.requests, hasLength(1));
+  });
+
+  testWidgets('offline connectivity completing after disposal has no toast or charge', (tester) async {
+    final connection = Completer<bool>();
+    var connectionCalls = 0;
+    var spendCalls = 0;
+    await setUpPage(
+      tester,
+      (name, parameters) async {
+        if (name == 'spendCoins') spendCalls++;
+        return <String, Object>{};
+      },
+      connectivity: _FakeConnectivityService(
+        check: () => ++connectionCalls == 1 ? Future<bool>.value(true) : connection.future,
+      ),
+    );
+    final toasts = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toasts.add(call);
+      return true;
+    });
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    connection.complete(false);
+    await tester.pump();
+
+    expect(toasts, isEmpty);
+    expect(spendCalls, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('pending reservation retains the requested quality and style', (tester) async {
+    final reservation = Completer<dynamic>();
+    final analytics = _RecordingAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final repository = _FakeAiGenerationRepository(_record(), generation: () async => _record(id: 'generated-1'));
+    final spends = <Map<String, Object?>>[];
+    await setUpPage(tester, (name, parameters) {
+      spends.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
+      return reservation.future;
+    }, repository: repository);
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pump();
+    await tester.ensureVisible(find.text('Quality'));
+    await tester.tap(find.text('Quality'));
+    await tester.pump();
+    await tester.ensureVisible(find.byType(ListView).first);
+    await tester.pump();
+    await tester.tap(find.text('Anime'));
+    reservation.complete(<String, Object>{
+      'success': true,
+      'changed': true,
+      'currentBalance': 90,
+      'delta': -10,
+      'transactionId': 'reservation-1',
+    });
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(spends.single['amount'], AiQualityTier.fast.coinCost);
+    expect(repository.requests.single, (style: AiStylePreset.abstract, quality: AiQualityTier.fast, coinsSpent: 10));
+    final started = analytics.events.whereType<AiGenerateStartedEvent>().single;
+    expect(started.quality, 'fast');
+    expect(started.style, 'abstract');
+  });
+
+  testWidgets('failed generation after disposal refunds its debit once without a toast', (tester) async {
+    final analytics = _RecordingAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final generation = Completer<AiGenerationRecord>();
+    final refunds = <Map<String, Object?>>[];
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'awardCoins') refunds.add(Map<String, Object?>.from(parameters as Map<Object?, Object?>));
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': name == 'awardCoins' ? 100 : 90,
+        'delta': name == 'awardCoins' ? 10 : -10,
+        'transactionId': 'reservation-1',
+      };
+    }, repository: _FakeAiGenerationRepository(_record(), generation: () => generation.future));
+    final toasts = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toasts.add(call);
+      return true;
+    });
+    final generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pump();
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    generation.completeError(StateError('generation failed'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1400));
+
+    expect(refunds, hasLength(1));
+    expect(refunds.single['transactionId'], 'reservation-1');
+    expect(refunds.single.containsKey('amount'), isFalse);
+    expect(analytics.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
+    expect(analytics.events.whereType<AiChargeCommittedEvent>(), isEmpty);
+    expect(toasts, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('failed reservation completing after disposal does not set state', (tester) async {
@@ -311,8 +507,8 @@ void main() {
       return <String, Object>{
         'success': true,
         'changed': true,
-        'currentBalance': 10,
-        'delta': -10,
+        'currentBalance': name == 'awardCoins' ? 100 : 90,
+        'delta': name == 'awardCoins' ? 10 : -10,
         'transactionId': 'reservation-1',
       };
     }, repository: _FakeAiGenerationRepository(_record(), generation: generation));
@@ -333,6 +529,23 @@ void main() {
 
     expect(refunds, 1);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
+    expect(app_state.prismUser.coins, 100);
+  });
+
+  testWidgets('a started-event failure rolls back the reservation and releases loading', (tester) async {
+    final recorder = _RecordingAnalytics(throwOn: (event) => event is AiGenerateStartedEvent);
+    AnalyticsRuntime.instance = recorder;
+    var requests = 0;
+    final refunds = await generateAndCountRefunds(tester, () async {
+      requests++;
+      return _record(id: 'generated-1');
+    });
+
+    expect(refunds, 1);
+    expect(requests, 0);
+    expect(recorder.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
+    expect(find.textContaining('Generate  ·'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a committed generation is not refunded when a follow-up step throws', (tester) async {
@@ -344,5 +557,6 @@ void main() {
     expect(recorder.events.whereType<AiChargeCommittedEvent>(), hasLength(1));
     expect(refunds, 0);
     expect(recorder.events.whereType<AiGenerateFailedEvent>(), isEmpty);
+    expect(app_state.prismUser.coins, 90);
   });
 }
