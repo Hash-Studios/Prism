@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -20,7 +21,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:quick_actions/quick_actions.dart';
 
 @RoutePage()
@@ -71,8 +71,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
         action = AnalyticsActionValue.quickActionFollowFeed;
       case 'Collections':
         action = AnalyticsActionValue.quickActionCollections;
-      case 'AI_Wallpapers':
-        action = AnalyticsActionValue.quickActionAiWallpapers;
       case 'Downloads':
         action = AnalyticsActionValue.quickActionDownloads;
       default:
@@ -88,7 +86,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   Future<void> checkConnection() async {
-    final bool isOnline = await InternetConnectionChecker.instance.hasConnection;
+    final bool isOnline = await getIt<ConnectivityService>().hasConnection();
     if (!mounted) return;
     setState(() => _isOnline = isOnline);
   }
