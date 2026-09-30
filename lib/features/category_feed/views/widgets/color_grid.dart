@@ -68,13 +68,13 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  Future<List<PexelsWallpaper>> _fetch({required bool refresh}) async {
+  Future<List<PexelsWallpaper>?> _fetch({required bool refresh}) async {
     final result = await _repository.fetchColorFeed(hex: widget.hexColor, refresh: refresh);
     return result.fold(
       onSuccess: (walls) => walls,
       onFailure: (failure) {
         logger.e('Colour feed failed: ${failure.message}');
-        return const <PexelsWallpaper>[];
+        return null;
       },
     );
   }
@@ -85,8 +85,15 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
       return;
     }
     setState(() {
-      _walls = walls.isEmpty ? (_walls ?? walls) : walls;
-      _hasMore = walls.isNotEmpty;
+      if (walls == null) {
+        if (_walls == null) {
+          _walls = const <PexelsWallpaper>[];
+          _hasMore = false;
+        }
+      } else {
+        _walls = walls;
+        _hasMore = walls.isNotEmpty;
+      }
     });
   }
 
@@ -99,7 +106,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
     });
     try {
       final more = await _fetch(refresh: false);
-      if (mounted) {
+      if (mounted && more != null) {
         setState(() {
           _walls = <PexelsWallpaper>[...?_walls, ...more];
           _hasMore = more.isNotEmpty;
@@ -125,7 +132,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final List<PexelsWallpaper>? walls = _walls;
     if (walls == null) {
-      return const LoadingCards();
+      return const LoadingCards(borderRadius: BorderRadius.zero);
     }
     if (walls.isNotEmpty) {
       _contentLoadTracker.success(
@@ -172,7 +179,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
         child: PulsePlaceholder(
           builder: (context, placeholderColor) => GridView.builder(
             padding: EdgeInsets.zero,
-            itemCount: walls.isEmpty ? 24 : walls.length,
+            itemCount: walls.isEmpty ? 24 : walls.length + (_hasMore ? 1 : 0),
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
@@ -182,7 +189,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
               if (walls.isEmpty) {
                 return DecoratedBox(decoration: BoxDecoration(color: placeholderColor));
               }
-              if (_hasMore && index == walls.length - 1) {
+              if (_hasMore && index == walls.length) {
                 return SeeMoreButton(
                   seeMoreLoader: seeMoreLoader,
                   func: () {

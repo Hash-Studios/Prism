@@ -36,7 +36,7 @@ class UserProfileGrid extends StatelessWidget {
       child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
         builder: (context, state) {
           if (state.status == LoadStatus.initial) {
-            return const LoadingCards();
+            return const LoadingCards(borderRadius: BorderRadius.zero);
           }
           final List<PublicProfileWallEntity> walls = state.walls;
           if (walls.isEmpty) {
@@ -55,13 +55,13 @@ class UserProfileGrid extends StatelessWidget {
           return GridView.builder(
             shrinkWrap: true,
             padding: EdgeInsets.zero,
-            itemCount: walls.length,
+            itemCount: walls.length + (state.hasMoreWalls ? 1 : 0),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
               childAspectRatio: 0.5,
             ),
             itemBuilder: (context, index) {
-              if (index == walls.length - 1 && state.hasMoreWalls) {
+              if (index == walls.length && state.hasMoreWalls) {
                 return SeeMoreButton(
                   seeMoreLoader: state.isFetchingMoreWalls,
                   func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
