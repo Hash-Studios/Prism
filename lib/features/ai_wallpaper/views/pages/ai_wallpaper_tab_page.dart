@@ -89,6 +89,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
+  bool _saving = false;
   bool _submitting = false;
   final Set<String> _unconfirmedSubmissionIds = <String>{};
 
@@ -565,18 +566,24 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _save(AiGenerationRecord record) async {
+    if (_saving) return;
+    _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
       final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
       final result = await PrismMediaHostApi().enqueueDownload(request);
-      if (result.success) {
-        toasts.success(wallpaperSavedMessage);
-      } else {
-        toasts.error(result.message ?? "Couldn't download! Please retry.");
+      if (mounted) {
+        if (result.success) {
+          toasts.success(wallpaperSavedMessage);
+        } else {
+          toasts.error(result.message ?? "Couldn't download! Please retry.");
+        }
       }
     } catch (error, stackTrace) {
       logger.w('AI gallery save failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(_toastForDownloadFailure(error));
+      if (mounted) toasts.error(_toastForDownloadFailure(error));
+    } finally {
+      _saving = false;
     }
   }
 
