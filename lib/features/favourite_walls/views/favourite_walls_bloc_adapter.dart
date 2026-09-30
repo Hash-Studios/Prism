@@ -24,14 +24,14 @@ class FavouriteWallsAdapter {
     return liked;
   }
 
-  Future<void> favCheck(FavouriteWallEntity wall) async {
+  Future<bool> favCheck(FavouriteWallEntity wall) async {
     if (wall.id.isEmpty) {
-      return;
+      return false;
     }
 
     final userId = app_state.prismUser.id;
     if (userId.isEmpty) {
-      return;
+      return false;
     }
 
     await _ensureLoaded();
@@ -39,6 +39,7 @@ class FavouriteWallsAdapter {
     final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
     _bloc.add(FavouriteWallsEvent.toggleRequested(wall: wall));
     await completion;
+    return _bloc.state.actionStatus == ActionStatus.success;
   }
 
   Future<bool> deleteData() async {

@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -107,14 +108,13 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     switch (request) {
       case OnboardingV2NavRequest.openPaywall:
         if (!context.mounted) return;
-        await PaywallOrchestrator.instance.present(
+        final paywallResult = await PaywallOrchestrator.instance.present(
           context,
           placement: OnboardingV2Config.paywallPlacement,
           source: OnboardingV2Config.paywallSource,
         );
         if (!context.mounted) return;
-        final isPremium = app_state.prismUser.premium;
-        _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: isPremium));
+        _bloc.add(OnboardingV2Event.paywallResultReceived(didPurchase: paywallResult.indicatesPurchase));
 
       case OnboardingV2NavRequest.completeOnboarding:
         if (!context.mounted) return;

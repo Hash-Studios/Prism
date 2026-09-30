@@ -1867,6 +1867,20 @@ class AppCrashFatalEvent extends AnalyticsEvent {
   }
 }
 
+class AppErrorEvent extends AnalyticsEvent {
+  const AppErrorEvent({required this.errorSource});
+
+  final String errorSource;
+
+  @override
+  String get eventName => 'app_error';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'error_source': errorSource};
+  }
+}
+
 class QualityDailySnapshotEvent extends AnalyticsEvent {
   const QualityDailySnapshotEvent({required this.crashFreeUsersPct});
 
