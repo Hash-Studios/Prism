@@ -136,7 +136,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
             }
             final Map<String, dynamic> wall = walls[index];
             final String wallId = _wallString(wall, 'id');
-            final String wallpaperThumb = _wallString(wall, 'wallpaper_thumb');
+            final String wallpaperThumb = normalizeWallpaperThumbnailUrl(_wallString(wall, 'wallpaper_thumb'));
             final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
             final WallpaperSource wallSource = _wallSource(wall);
             final bool validPayload =

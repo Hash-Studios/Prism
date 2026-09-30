@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +29,35 @@ class _FailingHttpClient implements HttpClient {
 }
 
 void main() {
+  for (final thumbnail in <String, String>{
+    'https://th.wallhaven.cc/small/21/collection.jpg': 'https://th.wallhaven.cc/orig/21/collection.jpg',
+    'https://images.pexels.com/photos/1/tiny.jpg?fit=crop&w=200&h=280':
+        'https://images.pexels.com/photos/1/tiny.jpg?fit=max&w=200&h=280',
+  }.entries) {
+    testWidgets('normalizes the collection thumbnail ${thumbnail.key}', (tester) async {
+      final originalWalls = anyCollectionWalls;
+      final originalHasMore = collectionHasMore;
+      anyCollectionWalls = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'wall-1',
+          'wallpaper_thumb': thumbnail.key,
+          'wallpaper_url': 'https://example.test/wall.jpg',
+        },
+      ];
+      collectionHasMore = false;
+      AnalyticsRuntime.instance = FakeAppAnalytics();
+      addTearDown(() {
+        anyCollectionWalls = originalWalls;
+        collectionHasMore = originalHasMore;
+        AnalyticsRuntime.reset();
+      });
+
+      await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
+
+      expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl, thumbnail.value);
+    });
+  }
+
   testWidgets('a finished empty collection shows no tile or See more button', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
@@ -144,8 +174,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 120));
 
     final Size pressedSize = tester.getSize(inkWellFinder);
-    expect(pressedSize.width, lessThan(restingSize.width));
-    expect(pressedSize.height, lessThan(restingSize.height));
+    expect(pressedSize.width, closeTo(restingSize.width - 16, 0.1));
+    expect(pressedSize.height, closeTo(restingSize.height - 8, 0.1));
 
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.getSize(inkWellFinder), restingSize);
