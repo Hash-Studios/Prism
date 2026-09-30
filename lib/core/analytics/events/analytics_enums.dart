@@ -17,6 +17,7 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.aiGeneration => 'ai_generation',
     CoinSpendAction.premiumFilter => 'premium_filter',
     CoinSpendAction.premiumPreview24h => 'premium_preview_24h',
+    CoinSpendAction.streakFreeze => 'streak_freeze',
   };
 }
 

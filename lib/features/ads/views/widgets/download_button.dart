@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
@@ -191,12 +192,21 @@ class _DownloadButtonState extends State<DownloadButton> {
                                   }
                                   await _performDownload();
                                 },
-                          child: watchingAd
-                              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text(
-                                  'WATCH AD',
-                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                                ),
+                          child: AnimatedSwitcher(
+                            duration: context.motion(PrismDurations.fast),
+                            child: watchingAd
+                                ? const SizedBox(
+                                    key: ValueKey<bool>(true),
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Text(
+                                    'WATCH AD',
+                                    key: const ValueKey<bool>(false),
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                          ),
                         ),
                       ],
                     ),

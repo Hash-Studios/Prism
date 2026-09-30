@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
@@ -199,15 +200,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   return const LoadingCards();
                 }
                 if (page.results.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Text(
-                        'No wallpapers found for "${searchController.text}".',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
+                  return GlintState(
+                    kind: GlintStateKind.empty,
+                    title: 'No wallpapers found for "${searchController.text}".',
                   );
                 }
                 return SearchGrid(

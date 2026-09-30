@@ -4,6 +4,7 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,6 +37,30 @@ void main() {
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.byType(GridView), findsNothing);
   });
+
+  for (final thumbnail in <String, String>{
+    'https://th.wallhaven.cc/lg/21/profile.jpg': 'https://th.wallhaven.cc/orig/21/profile.jpg',
+    'https://images.pexels.com/photos/1/tiny.jpg?fit=crop&w=200&h=280':
+        'https://images.pexels.com/photos/1/tiny.jpg?fit=max&w=200&h=280',
+  }.entries) {
+    testWidgets('normalizes the profile thumbnail ${thumbnail.key}', (tester) async {
+      await pumpGrid(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.success,
+          walls: <PublicProfileWallEntity>[
+            PublicProfileWallEntity(
+              id: 'wall-1',
+              wallpaperThumb: thumbnail.key,
+              wallpaperUrl: 'https://example.com/wall.jpg',
+            ),
+          ],
+        ),
+      );
+
+      expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl, thumbnail.value);
+    });
+  }
 
   testWidgets('keeps every loaded wall and places See more in its own grid cell', (tester) async {
     final semantics = tester.ensureSemantics();

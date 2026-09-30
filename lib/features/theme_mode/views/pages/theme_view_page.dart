@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -119,7 +120,7 @@ class _ThemeViewState extends State<ThemeView> {
           children: <Widget>[
             ListTile(
               onTap: () {
-                showModalBottomSheet(
+                showPrismSheet(
                   isScrollControlled: true,
                   context: context,
                   builder: (context) => _PreferencePanel(

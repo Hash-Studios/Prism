@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
@@ -146,11 +146,11 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                   // Search mode.
                   if (_isSearchActive) {
                     if (list.isSearching) {
-                      return Center(child: Loader());
+                      return const GlintState(kind: GlintStateKind.loading, title: 'Searching');
                     }
                     final results = list.searchResults ?? const <UserSummaryEntity>[];
                     if (results.isEmpty) {
-                      return Center(child: _emptyText('No results found.', context));
+                      return const GlintState(kind: GlintStateKind.empty, title: 'No results found.');
                     }
                     return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
                   }
@@ -158,11 +158,20 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                   // Paginated mode.
                   final summaries = list.summaries;
                   if (list.isFetching && summaries.isEmpty) {
-                    return Center(child: Loader());
+                    return GlintState(
+                      kind: GlintStateKind.loading,
+                      title: _isFollowers ? 'Loading followers' : 'Loading following',
+                    );
                   }
                   if (summaries.isEmpty) {
-                    return Center(
-                      child: _emptyText(widget.emails.isEmpty ? _emptySourceText : _emptyLoadFailedText, context),
+                    if (widget.emails.isEmpty) {
+                      return GlintState(kind: GlintStateKind.empty, title: _emptySourceText);
+                    }
+                    return GlintState(
+                      kind: GlintStateKind.error,
+                      title: _emptyLoadFailedText,
+                      actionLabel: 'Try again',
+                      onAction: () => _bloc.add(_fetchPageEvent(0)),
                     );
                   }
                   _maybeAutoLoadMore(state);
@@ -177,17 +186,6 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Text _emptyText(String text, BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-        fontSize: 15,
       ),
     );
   }
@@ -217,9 +215,9 @@ class _UserList extends StatelessWidget {
           Divider(height: 1, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08), indent: 72),
       itemBuilder: (context, index) {
         if (index >= users.length) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: Loader()),
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
           );
         }
         final user = users[index];

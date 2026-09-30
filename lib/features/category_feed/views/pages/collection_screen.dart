@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_grid.dart';
 import 'package:flutter/material.dart';
@@ -32,21 +33,28 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
       future: _collectionsFuture,
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return Center(child: Loader());
+          return const LoadingCards();
         }
         if (snapshot.hasError) {
+          Future<void> retry() async {
+            setState(() {
+              _collectionsFuture = getCollections();
+            });
+            await _collectionsFuture;
+          }
+
           return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {
-                _collectionsFuture = getCollections();
-              });
-              await _collectionsFuture;
-            },
+            onRefresh: retry,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              children: const <Widget>[
-                SizedBox(height: 200),
-                Center(child: Text("Can't connect to the Servers!")),
+              children: <Widget>[
+                const SizedBox(height: 120),
+                GlintState(
+                  kind: GlintStateKind.offline,
+                  title: "Can't connect to the Servers!",
+                  actionLabel: 'Try again',
+                  onAction: retry,
+                ),
               ],
             ),
           );

@@ -1,5 +1,5 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:flutter/material.dart';
 
 class SeeMoreButton extends StatelessWidget {
@@ -16,7 +16,16 @@ class SeeMoreButton extends StatelessWidget {
       onPressed: () {
         func();
       },
-      child: !seeMoreLoader ? const Text("See more") : Loader(),
+      child: AnimatedSwitcher(
+        duration: context.motion(PrismDurations.fast),
+        child: !seeMoreLoader
+            ? const Text("See more", key: ValueKey('label'))
+            : const SizedBox.square(
+                key: ValueKey('loading'),
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+      ),
     );
   }
 }

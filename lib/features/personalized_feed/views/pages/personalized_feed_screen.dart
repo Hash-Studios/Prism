@@ -9,7 +9,11 @@ import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carousel_dots.dart';
+import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
@@ -19,7 +23,6 @@ import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -81,7 +84,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
 
   Future<void> _showTileActions(FeedItemEntity item) async {
     HapticFeedback.mediumImpact();
-    final bool? lessLikeThis = await showModalBottomSheet<bool>(
+    final bool? lessLikeThis = await showPrismSheet<bool>(
       context: context,
       showDragHandle: true,
       builder: (BuildContext sheetContext) => SafeArea(
@@ -114,7 +117,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
         builder: (context, state) {
           final bloc = context.read<PersonalizedFeedBloc>();
           if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.items.isEmpty)) {
-            return const Center(child: CircularProgressIndicator.adaptive());
+            return const LoadingCards();
           }
 
           if (state.status == LoadStatus.failure && state.items.isEmpty) {
@@ -212,9 +215,22 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
     }
 
     if (state.isFetchingMore) {
-      return const Padding(
+      return Padding(
         padding: PrismFeedLayout.loadingStatePadding,
-        child: Center(child: CircularProgressIndicator(strokeWidth: PrismFeedLayout.loadingIndicatorStrokeWidth)),
+        child: SizedBox(
+          height: 120,
+          child: PulsePlaceholder(
+            builder: (context, _) => const Row(
+              children: <Widget>[
+                Expanded(child: PulseFill()),
+                SizedBox(width: 8),
+                Expanded(child: PulseFill()),
+                SizedBox(width: 8),
+                Expanded(child: PulseFill()),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
@@ -282,33 +298,30 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                     );
                     openPrismLink(context, app_state.bannerURL);
                   },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      image: DecorationImage(
-                        image: CachedNetworkImageProvider(app_state.topImageLink),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    child: Center(
-                      child: ColoredBox(
-                        color: app_state.bannerTextOn
-                            ? Theme.of(
-                                context,
-                              ).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha)
-                            : Colors.transparent,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            // High-contrast on arbitrary photography under [ColorScheme.scrim].
-                            style: PrismTextStyles.carouselBannerHeadline(context),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      PrismImageTile(url: app_state.topImageLink),
+                      Center(
+                        child: ColoredBox(
+                          color: app_state.bannerTextOn
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.scrim.withValues(alpha: PrismOverlay.carouselBannerScrimAlpha)
+                              : Colors.transparent,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              app_state.bannerTextOn ? app_state.bannerText.toUpperCase() : "",
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              // High-contrast on arbitrary photography under [ColorScheme.scrim].
+                              style: PrismTextStyles.carouselBannerHeadline(context),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 );
               }
@@ -350,15 +363,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                     iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                     fit: StackFit.loose,
                     clipBehavior: Clip.hardEdge,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(wall.wallpaper.thumbnailUrl),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+                    child: SizedBox.expand(child: PrismImageTile(url: wall.wallpaper.thumbnailUrl)),
                   ),
                 ),
               );

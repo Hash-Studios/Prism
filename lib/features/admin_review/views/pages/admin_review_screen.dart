@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -140,7 +141,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           return _buildStreamError(errorLabel);
         }
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)));
         }
         final List<FirestoreDocument> docs = snapshot.data!;
         if (docs.isEmpty) {
@@ -197,7 +198,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           return _buildStreamError('Could not load open reports.');
         }
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)));
         }
         final List<FirestoreDocument> reports = snapshot.data!;
         if (reports.isEmpty) {
@@ -379,9 +380,16 @@ class _RejectReasonDialogState extends State<_RejectReasonDialog> {
           TextButton(onPressed: _isSaving ? null : () => Navigator.of(context).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: _isSaving ? null : _submit,
-            child: _isSaving
-                ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(widget.confirmButtonLabel),
+            child: AnimatedSwitcher(
+              duration: context.motion(PrismDurations.fast),
+              child: _isSaving
+                  ? const SizedBox.square(
+                      key: ValueKey('loading'),
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(widget.confirmButtonLabel, key: const ValueKey('label')),
+            ),
           ),
         ],
       ),
@@ -657,9 +665,16 @@ class _ModerationCardState extends State<_ModerationCard> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _isApproving || _isApproved ? null : _approve,
-                    child: _isApproving
-                        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(_isApproved ? 'Approved' : 'Approve'),
+                    child: AnimatedSwitcher(
+                      duration: context.motion(PrismDurations.fast),
+                      child: _isApproving
+                          ? const SizedBox.square(
+                              key: ValueKey('loading'),
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(_isApproved ? 'Approved' : 'Approve', key: const ValueKey('label')),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -863,12 +878,16 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: _isSending ? null : _send,
-              icon: _isSending
-                  ? const SizedBox.square(
-                      dimension: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.send),
+              icon: AnimatedSwitcher(
+                duration: context.motion(PrismDurations.fast),
+                child: _isSending
+                    ? const SizedBox.square(
+                        key: ValueKey('loading'),
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.send, key: ValueKey('icon')),
+              ),
               label: Text(_isSending ? 'Sending…' : 'Send notification'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),

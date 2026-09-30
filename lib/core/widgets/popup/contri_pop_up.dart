@@ -1,5 +1,5 @@
 import 'package:Prism/core/utils/url_utils.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/popup_header.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -20,7 +20,10 @@ void showContributorDetails(BuildContext context, String username) {
         future: getUser(username),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.connectionState == ConnectionState.none) {
-            return SizedBox(height: 300, child: Center(child: Loader()));
+            return const SizedBox(
+              height: 300,
+              child: GlintState(kind: GlintStateKind.loading, title: 'Loading profile'),
+            );
           } else {
             return Column(
               mainAxisAlignment: MainAxisAlignment.center,
