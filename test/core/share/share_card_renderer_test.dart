@@ -107,8 +107,8 @@ void main() {
       },
     );
 
-    expect(result?.format, ShareFormatValue.text);
-    expect(result?.dismissed, isFalse);
+    expect(result.format, ShareFormatValue.text);
+    expect(result.dismissed, isFalse);
     expect(texts.single, '🔥Check this out ➜ https://x.test/a');
   });
 
