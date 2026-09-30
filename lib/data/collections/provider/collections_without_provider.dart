@@ -4,109 +4,73 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
-import 'package:Prism/logger/logger.dart';
 
-List<Map<String, dynamic>> _dropBlockedCreators(List<Map<String, dynamic>> rows) {
-  final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
-  if (blocked.isEmpty) {
-    return rows;
-  }
-  return rows
-      .where((row) => !BlockedCreatorsFilter.hidesCreatorEmail(row['email']?.toString(), blocked))
-      .toList(growable: false);
-}
+const int _pageSize = 24;
 
-List? collections;
-List<Map<String, dynamic>>? anyCollectionWalls;
-String? _lastCollectionCursorDocId;
-String? currentCollectionName;
+List<Map<String, dynamic>> collections = <Map<String, dynamic>>[];
+List<Map<String, dynamic>> anyCollectionWalls = <Map<String, dynamic>>[];
 bool collectionHasMore = true;
+String? _lastCollectionCursorDocId;
+String? _currentCollectionName;
 
-Future<List?> getCollections() async {
-  logger.d("Fetching collections!");
-  collections = [];
-  await firestoreClient
-      .query<Map<String, dynamic>>(
-        const FirestoreQuerySpec(
-          collection: FirebaseCollections.collections,
-          sourceTag: 'collections.getCollections',
-          orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'lastEditTime', descending: true)],
-          cachePolicy: FirestoreCachePolicy.memoryFirst,
-          dedupeWindowMs: 30000,
-        ),
-        (data, _) => data,
-      )
-      .then((value) {
-        for (final doc in value) {
-          collections!.add(doc);
-        }
-      })
-      .catchError((e) {
-        logger.d(e.toString());
-        logger.d("data done with error");
-      });
-  return collections;
+Future<void> getCollections() async {
+  collections = <Map<String, dynamic>>[];
+  collections = await firestoreClient.query<Map<String, dynamic>>(
+    const FirestoreQuerySpec(
+      collection: FirebaseCollections.collections,
+      sourceTag: 'collections.getCollections',
+      orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'lastEditTime', descending: true)],
+      cachePolicy: FirestoreCachePolicy.memoryFirst,
+      dedupeWindowMs: 30000,
+    ),
+    (data, _) => data,
+  );
 }
 
-Future<bool> getCollectionWithName(String name) async {
-  logger.d("Fetching $name collection's first 24 walls");
-  currentCollectionName = name;
-  anyCollectionWalls = [];
+Future<void> getCollectionWithName(String name) async {
+  _currentCollectionName = name;
+  anyCollectionWalls = <Map<String, dynamic>>[];
   _lastCollectionCursorDocId = null;
   collectionHasMore = true;
-  final List<Map<String, dynamic>> rows = await firestoreClient.query<Map<String, dynamic>>(
+  await _loadCollectionPage(sourceTag: 'collections.getCollectionWithName');
+}
+
+Future<void> seeMoreCollectionWithName() async {
+  final String? cursor = _lastCollectionCursorDocId;
+  if (!collectionHasMore || cursor == null || cursor.isEmpty) {
+    collectionHasMore = false;
+    return;
+  }
+  await _loadCollectionPage(sourceTag: 'collections.seeMoreCollectionWithName', startAfterDocId: cursor);
+}
+
+Future<void> _loadCollectionPage({required String sourceTag, String? startAfterDocId}) async {
+  final String? name = _currentCollectionName;
+  final rows = await firestoreClient.query<({String docId, Map<String, dynamic> data})>(
     FirestoreQuerySpec(
       collection: FirebaseCollections.walls,
-      sourceTag: 'collections.getCollectionWithName',
+      sourceTag: sourceTag,
       filters: <FirestoreFilter>[
         const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
         FirestoreFilter(field: 'collections', op: FirestoreFilterOp.arrayContains, value: name),
       ],
       orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-      limit: 24,
+      startAfterDocId: startAfterDocId,
+      limit: _pageSize,
       dedupeWindowMs: 1000,
     ),
-    (data, docId) => <String, dynamic>{...data, '__docId': docId},
+    (data, docId) => (docId: docId, data: data),
   );
-  collectionHasMore = rows.length == 24;
+  // The user opened another collection while this page loaded.
+  if (name != _currentCollectionName) return;
+  collectionHasMore = rows.length == _pageSize;
   if (rows.isNotEmpty) {
-    _lastCollectionCursorDocId = rows.last['__docId']?.toString();
-    for (final row in rows) {
-      row.remove('__docId');
-    }
+    _lastCollectionCursorDocId = rows.last.docId;
   }
-  anyCollectionWalls = _dropBlockedCreators(rows);
-  return true;
-}
-
-Future<bool> seeMoreCollectionWithName() async {
-  logger.d("Fetching $currentCollectionName collection's more walls");
-  if (!collectionHasMore || _lastCollectionCursorDocId == null || _lastCollectionCursorDocId!.isEmpty) {
-    collectionHasMore = false;
-    return true;
-  }
-  final List<Map<String, dynamic>> rows = await firestoreClient.query<Map<String, dynamic>>(
-    FirestoreQuerySpec(
-      collection: FirebaseCollections.walls,
-      sourceTag: 'collections.seeMoreCollectionWithName',
-      filters: <FirestoreFilter>[
-        const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-        FirestoreFilter(field: 'collections', op: FirestoreFilterOp.arrayContains, value: currentCollectionName),
-      ],
-      orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-      startAfterDocId: _lastCollectionCursorDocId,
-      limit: 24,
-      dedupeWindowMs: 1000,
-    ),
-    (data, docId) => <String, dynamic>{...data, '__docId': docId},
+  final Set<String> blocked = getIt<UserBlockRepository>().cachedBlockedCreatorEmails;
+  anyCollectionWalls.addAll(
+    rows
+        .map((row) => row.data)
+        .where((wall) => !BlockedCreatorsFilter.hidesCreatorEmail(wall['email']?.toString(), blocked)),
   );
-  collectionHasMore = rows.length == 24;
-  if (rows.isNotEmpty) {
-    _lastCollectionCursorDocId = rows.last['__docId']?.toString();
-  }
-  for (final row in rows) {
-    row.remove('__docId');
-  }
-  anyCollectionWalls!.addAll(_dropBlockedCreators(rows));
-  return true;
 }

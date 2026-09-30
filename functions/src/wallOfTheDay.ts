@@ -2,13 +2,7 @@ import * as admin from "firebase-admin";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {logger} from "firebase-functions/v2";
 import {sendNotification} from "./notificationHelper";
-
-// Initialize the Admin SDK once (guarded for module reuse across functions).
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
+import {db, REGION} from "./common";
 
 /**
  * Scheduled Cloud Function — runs daily at 9:00 AM IST (03:30 UTC).
@@ -25,14 +19,9 @@ export const wallOfTheDay = onSchedule(
   {
     schedule: "30 3 * * *", // 03:30 UTC = 09:00 AM IST
     timeZone: "UTC",
-    region: "asia-south1", // Mumbai — lowest latency for India-first app
+    region: REGION,
   },
   async () => {
-    const today = _todayDateString();
-
-    // ------------------------------------------------------------------ //
-    // 1. Archive yesterday's wall
-    // ------------------------------------------------------------------ //
     let currentWallId: string | null = null;
 
     try {
@@ -41,13 +30,13 @@ export const wallOfTheDay = onSchedule(
         .doc("current")
         .get();
 
-      if (currentSnap.exists) {
-        const data = currentSnap.data()!;
+      const data = currentSnap.data();
+      if (data) {
         currentWallId = data.wallId ?? null;
 
         // Archive pointer only: `past_picks/{yyyy-MM-dd}` holds wallId + date for dedup queries.
-        const archiveDate = _firestoreTimestampToDateString(data.date) ?? _yesterdayDateString();
-        const archivePayload: Record<string, unknown> = {
+        const archiveDate = firestoreTimestampToDateString(data.date) ?? yesterdayDateString();
+        const archivePayload = {
           wallId: data.wallId ?? "",
           date: data.date ?? admin.firestore.Timestamp.now(),
         };
@@ -60,9 +49,6 @@ export const wallOfTheDay = onSchedule(
       logger.warn("Could not archive current wall (may not exist yet).", {err});
     }
 
-    // ------------------------------------------------------------------ //
-    // 2. Collect recent past_picks (last 30 days) to avoid repeats
-    // ------------------------------------------------------------------ //
     const excludedWallIds = new Set<string>();
     try {
       const cutoff = new Date();
@@ -82,27 +68,17 @@ export const wallOfTheDay = onSchedule(
       logger.warn("Could not fetch past_picks for dedup; proceeding without exclusion.", {err});
     }
 
-    // ------------------------------------------------------------------ //
-    // 3. Pick a new wall — randomly, with up to MAX_RETRIES attempts to
-    //    avoid a wall that appeared in the last 30 days.
-    //
-    //    Strategy:
-    //      a) Count all approved walls via Firestore count() aggregate.
-    //      b) Pick a random offset and fetch exactly 1 doc at that position,
-    //         ordered by document ID (stable, index-free ordering).
-    //      c) If that doc is in the exclusion set, retry up to MAX_RETRIES
-    //         times with a fresh random offset.
-    //      d) Fallback: if every retry hit an excluded wall (very unlikely
-    //         with 5,000+ walls), fall back to the first non-excluded wall
-    //         from the 100 most-recently-added approved walls.
-    // ------------------------------------------------------------------ //
+    // Pick a random approved wall, retrying up to MAX_RETRIES times to avoid one from the last 30 days.
+    //   a) Count approved walls with a count() aggregate.
+    //   b) Fetch one doc at a random offset, ordered by document ID (stable, index-free).
+    //   c) If it was picked recently, retry with a fresh offset.
+    //   d) If every retry hit an excluded wall, take the first non-excluded wall from the 100 newest.
     const MAX_RETRIES = 5;
 
     let newWall: admin.firestore.DocumentData | null = null;
     let newWallId: string | null = null;
 
     try {
-      // a) Count total approved walls.
       const countSnap = await db
         .collection("walls")
         .where("review", "==", true)
@@ -112,7 +88,6 @@ export const wallOfTheDay = onSchedule(
       logger.info(`Total approved walls: ${totalCount}`);
 
       if (totalCount > 0) {
-        // b & c) Random-offset attempts.
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
           const randomOffset = Math.floor(Math.random() * totalCount);
           const snap = await db
@@ -140,8 +115,6 @@ export const wallOfTheDay = onSchedule(
         }
       }
 
-      // d) Fallback: all retries hit excluded walls — pick the first
-      //    non-excluded wall from the 100 most-recently-added approved walls.
       if (!newWall) {
         logger.warn(
           `All ${MAX_RETRIES} random attempts hit excluded walls; falling back to newest-first scan.`,
@@ -181,17 +154,14 @@ export const wallOfTheDay = onSchedule(
       return;
     }
 
-    // ------------------------------------------------------------------ //
-    // 4. Write wall_of_the_day/current (pointer only — clients load `walls/{wallId}`)
-    // ------------------------------------------------------------------ //
-    const wotdDoc: Record<string, unknown> = {
+    const wotdDoc = {
       wallId: newWallId,
       date: admin.firestore.Timestamp.now(),
     };
 
     try {
       await db.collection("wall_of_the_day").doc("current").set(wotdDoc);
-      logger.info(`wall_of_the_day/current updated for ${today}`, {
+      logger.info("wall_of_the_day/current updated", {
         wallId: newWallId,
       });
     } catch (err) {
@@ -199,15 +169,12 @@ export const wallOfTheDay = onSchedule(
       return;
     }
 
-    // ------------------------------------------------------------------ //
-    // 5. Send FCM topic push + write in-app notification doc
-    // ------------------------------------------------------------------ //
     const wallTitle = (newWall.title as string | undefined)?.trim() || "Check it out";
     const wallpaperUrl = String(newWall.wallpaper_url ?? "");
     const thumbnailUrl = String(newWall.wallpaper_thumb ?? "");
     // Share links resolve walls by their `id` field, which is not the doc id.
     const shareId = typeof newWall.id === "string" && newWall.id.trim() ? newWall.id.trim() : newWallId;
-    const canonicalWallUrl = _wallShareUrl({
+    const canonicalWallUrl = wallShareUrl({
       wallId: shareId,
       wallpaperUrl,
       thumbnailUrl,
@@ -229,21 +196,13 @@ export const wallOfTheDay = onSchedule(
   },
 );
 
-// ------------------------------------------------------------------ //
-// Helpers
-// ------------------------------------------------------------------ //
-
-function _todayDateString(): string {
-  return new Date().toISOString().split("T")[0]; // yyyy-MM-dd
-}
-
-function _yesterdayDateString(): string {
+function yesterdayDateString(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().split("T")[0];
 }
 
-function _firestoreTimestampToDateString(
+function firestoreTimestampToDateString(
   value: admin.firestore.Timestamp | Date | null | undefined,
 ): string | null {
   if (!value) return null;
@@ -255,7 +214,7 @@ function _firestoreTimestampToDateString(
   }
 }
 
-function _wallShareUrl({
+function wallShareUrl({
   wallId,
   wallpaperUrl,
   thumbnailUrl,

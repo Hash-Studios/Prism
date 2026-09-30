@@ -7,9 +7,13 @@ import 'dart:io';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/core/firestore/firestore_tracked_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show FirebaseFirestore;
 import 'package:cloud_firestore_platform_interface/cloud_firestore_platform_interface.dart';
 import 'package:cloud_functions_platform_interface/cloud_functions_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -108,6 +112,9 @@ void main() {
     FirebaseFunctionsPlatform.instance = _FakeFunctionsPlatform(null, 'asia-south1', () => rewardCalls++);
     await getIt.reset();
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    getIt.registerSingleton<FirestoreClient>(
+      FirestoreTrackedClient(FirebaseFirestore.instance, const FirestoreConsoleTelemetrySink()),
+    );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       toastChannel,
       (MethodCall call) async => true,

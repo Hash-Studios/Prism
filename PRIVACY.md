@@ -95,7 +95,7 @@ We use the following third-party services. Each has access only to the data nece
 
 ### Accessing and Deleting Your Data
 
-You can request deletion of your account and associated data at any time by contacting us at **hash.studios.inc+prism@gmail.com**. We will delete your account data within 30 days. Note that some data held by third-party providers (e.g. Apple purchase history) is outside our control and subject to their own retention policies.
+You can request deletion of your account and associated data at any time by contacting us at **hash.studios.inc@gmail.com**. We will delete your account data within 30 days. Note that some data held by third-party providers (e.g. Apple purchase history) is outside our control and subject to their own retention policies.
 
 ### Revoking Consent
 
@@ -113,7 +113,7 @@ This app does not use cookies directly. However, some third-party SDKs (such as 
 
 ## Children's Privacy
 
-This service does not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at **hash.studios.inc+prism@gmail.com** and we will delete it promptly.
+This service does not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us at **hash.studios.inc@gmail.com** and we will delete it promptly.
 
 ---
 
@@ -139,5 +139,5 @@ We may update this Privacy Policy from time to time. Changes will be posted on t
 
 If you have questions or requests regarding this Privacy Policy, contact us at:
 
-**Email:** hash.studios.inc+prism@gmail.com  
+**Email:** hash.studios.inc@gmail.com  
 **Website:** https://prismwalls.com

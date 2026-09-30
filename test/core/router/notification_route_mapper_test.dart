@@ -10,9 +10,9 @@ void main() {
     expect(route, isA<HomeTabRoute>());
   });
 
-  test('maps streak_reminder to profile tab route', () async {
+  test('maps streak_reminder to streak tab route', () async {
     final route = await mapper.fromRoute(route: 'streak_reminder', sourceTag: 'test');
-    expect(route, isA<ProfileTabRoute>());
+    expect(route, isA<StreakTabRoute>());
   });
 
   test('maps follower to profile route when identifier is present', () async {

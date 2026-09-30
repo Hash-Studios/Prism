@@ -54,7 +54,7 @@ class NotificationRouteMapper {
         }
         return const HomeTabRoute();
       case 'streak_reminder':
-        return const ProfileTabRoute();
+        return const StreakTabRoute();
       case 'follower':
         if (profileIdentifier.isNotEmpty) {
           return ProfileRoute(profileIdentifier: profileIdentifier);
@@ -92,7 +92,6 @@ class NotificationRouteMapper {
     return WallpaperDetailRoute(
       wallId: id,
       source: source,
-      wallpaperUrl: wallpaperUrl,
       thumbnailUrl: thumbnailUrl,
       analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
     );

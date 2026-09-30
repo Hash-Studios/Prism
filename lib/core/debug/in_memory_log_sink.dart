@@ -26,16 +26,10 @@ class InMemoryLogSink implements LogSink {
       _buffer.removeAt(0);
     }
     _buffer.add(record);
-    if (!_controller.isClosed) {
-      _controller.add(record);
-    }
+    _controller.add(record);
   }
 
   void clear() {
     _buffer.clear();
-  }
-
-  void dispose() {
-    _controller.close();
   }
 }

@@ -1,4 +1,3 @@
-import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
@@ -12,98 +11,87 @@ import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/features/setups/views/widgets/rejection_feedback.dart';
+import 'package:Prism/features/setups/views/widgets/review_tile_parts.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_view/photo_view.dart';
 
 @RoutePage()
-class ReviewScreen extends StatefulWidget {
-  @override
-  _ReviewScreenState createState() => _ReviewScreenState();
-}
-
-class _ReviewScreenState extends State<ReviewScreen> with SingleTickerProviderStateMixin {
-  TabController? tabController;
-
-  @override
-  void initState() {
-    tabController = TabController(length: 2, vsync: this);
-    super.initState();
-  }
+class ReviewScreen extends StatelessWidget {
+  const ReviewScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        flexibleSpace: AppBar(
-          title: Row(
-            children: [
-              Text("Review Status", style: Theme.of(context).textTheme.displaySmall),
-              Container(
-                margin: const EdgeInsets.only(left: 3, bottom: 5),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.error,
-                  borderRadius: BorderRadius.circular(500),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          flexibleSpace: AppBar(
+            title: Row(
+              children: [
+                Text("Review Status", style: Theme.of(context).textTheme.displaySmall),
+                Container(
+                  margin: const EdgeInsets.only(left: 3, bottom: 5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.error,
+                    borderRadius: BorderRadius.circular(500),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
+                    child: Text("BETA", style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.secondary)),
+                  ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 4),
-                  child: Text("BETA", style: TextStyle(fontSize: 9, color: Theme.of(context).colorScheme.secondary)),
+              ],
+            ),
+            leading: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+              icon: const Icon(JamIcons.chevron_left),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+            backgroundColor: Theme.of(context).primaryColor,
+          ),
+          bottom: TabBar(
+            indicatorColor: Theme.of(context).colorScheme.secondary,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: [
+              Tab(
+                child: Text(
+                  "Wallpapers",
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                ),
+              ),
+              Tab(
+                child: Text(
+                  "Setups",
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
                 ),
               ),
             ],
           ),
-          leading: IconButton(
-            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            icon: const Icon(JamIcons.chevron_left),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          backgroundColor: Theme.of(context).primaryColor,
         ),
-        bottom: TabBar(
-          controller: tabController,
-          indicatorColor: Theme.of(context).colorScheme.secondary,
-          indicatorSize: TabBarIndicatorSize.label,
-          tabs: [
-            Tab(
-              child: Text(
-                "Wallpapers",
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              ),
-            ),
-            Tab(
-              child: Text(
-                "Setups",
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        body: const TabBarView(children: [_WallReview(), _SetupReview()]),
       ),
-      backgroundColor: Theme.of(context).primaryColor,
-      body: TabBarView(controller: tabController, children: [_WallReview(), _SetupReview()]),
     );
   }
 }
 
-class _WallReview extends StatefulWidget {
-  @override
-  _WallReviewState createState() => _WallReviewState();
-}
+class _WallReview extends StatelessWidget {
+  const _WallReview();
 
-class _WallReviewState extends State<_WallReview> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -124,7 +112,7 @@ class _WallReviewState extends State<_WallReview> {
             ),
             builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
               if (!snapshot.hasData) {
-                return Container();
+                return const SizedBox.shrink();
               } else {
                 return Column(
                   children: List.generate(
@@ -186,13 +174,14 @@ class _ReviewMessage extends StatelessWidget {
 }
 
 class WallTile extends StatelessWidget {
+  const WallTile(this.wallpaper, {required this.rejected});
+
   final FirestoreDocument wallpaper;
   final bool rejected;
-  WallTile(this.wallpaper, {required this.rejected});
-  final DateFormat formatter = DateFormat('d MMMM y, h:m a');
-  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
+
   @override
   Widget build(BuildContext context) {
+    final DateTime? createdAt = wallpaper.createdAt;
     return Container(
       width: MediaQuery.of(context).size.width,
       constraints: rejected ? null : const BoxConstraints(minHeight: 340),
@@ -209,20 +198,7 @@ class WallTile extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                        ),
-                      ),
-                    ],
-                  ),
+                  if (createdAt != null) ReviewInfoRow(icon: JamIcons.clock, text: _formatCreatedAt(createdAt)),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
@@ -254,195 +230,41 @@ class WallTile extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      wallpaper.id,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              ReviewInfoRow(icon: JamIcons.id_card, text: wallpaper.id),
+                              const SizedBox(height: 16),
+                              ReviewInfoRow(icon: JamIcons.save, text: wallpaper.size),
+                              const SizedBox(height: 16),
+                              ReviewInfoRow(icon: JamIcons.set_square, text: wallpaper.resolution),
+                              const SizedBox(height: 16),
+                              _ReviewStatusChip(rejected: rejected),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      wallpaper.size,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      wallpaper.resolution,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              if (rejected)
-                                ActionChip(
-                                  backgroundColor: Colors.red,
-                                  avatar: const Icon(JamIcons.close, color: Colors.white),
-                                  onPressed: () {},
-                                  label: Text(
-                                    "REJECTED",
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                                  ),
-                                )
-                              else
-                                ActionChip(
-                                  backgroundColor: Colors.amber,
-                                  avatar: const Icon(JamIcons.clock, color: Colors.black),
-                                  onPressed: () {},
-                                  label: Text(
-                                    "IN REVIEW",
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black),
-                                  ),
-                                ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.secondary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: IconButton(
-                                      icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
-                                      onPressed: () async {
-                                        final link = wallpaper.wallpaperUrl;
-                                        logger.d(link);
-
-                                        final androidInfo = await DeviceInfoPlugin().androidInfo;
-                                        final sdkInt = androidInfo.version.sdkInt;
-                                        logger.d('(SDK $sdkInt)');
-                                        toasts.codeSend("Starting Download");
-                                        main.localNotification.createDownloadNotification();
-
-                                        try {
-                                          final request = SaveMediaRequest(
-                                            link: link,
-                                            isLocalFile: false,
-                                            kind: SaveMediaKind.wallpaper,
-                                          );
-                                          final result = await _prismMediaApi.saveMedia(request);
-                                          if (result.success) {
-                                            analytics.track(DownloadOwnWallEvent(link: link));
-                                            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-                                          } else {
-                                            toasts.codeSend("Couldn't download! Please Retry!");
-                                          }
-                                        } on PlatformException catch (e) {
-                                          if (e.code != 'channel-error') {
-                                            logger.e(
-                                              rejected
-                                                  ? 'saveMedia failed for rejected wall download'
-                                                  : 'saveMedia failed for review wall download',
-                                              error: e,
-                                            );
-                                          }
-                                          toasts.codeSend("Couldn't download! Please Retry!");
-                                        } catch (e) {
-                                          logger.e(
-                                            rejected
-                                                ? 'Unexpected saveMedia failure for rejected wall download'
-                                                : 'Unexpected saveMedia failure for review wall download',
-                                            error: e,
-                                          );
-                                          toasts.codeSend("Couldn't download! Please Retry!");
-                                        } finally {
-                                          main.localNotification.cancelDownloadNotification();
-                                        }
-                                      },
-                                    ),
+                                  ReviewDownloadButton(
+                                    link: wallpaper.wallpaperUrl,
+                                    kind: SaveMediaKind.wallpaper,
+                                    event: DownloadOwnWallEvent(link: wallpaper.wallpaperUrl),
+                                    successMessage: "Wall Downloaded in Pictures/Prism!",
+                                    failLogSuffix: rejected ? 'rejected wall download' : 'review wall download',
+                                    showNotification: true,
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
                                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                     child: IconButton(
                                       icon: const Icon(JamIcons.trash, color: Colors.white),
-                                      onPressed: () {
-                                        final AlertDialog deleteWallPopUp = AlertDialog(
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          title: Text(
-                                            'Delete this wallpaper?',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              fontSize: 16,
-                                              color: Theme.of(context).colorScheme.secondary,
-                                            ),
-                                          ),
-                                          content: Text(
-                                            "This is permanent, and this action can't be undone!",
-                                            style: TextStyle(
-                                              fontFamily: "Proxima Nova",
-                                              fontWeight: FontWeight.normal,
-                                              fontSize: 14,
-                                              color: Theme.of(context).colorScheme.secondary,
-                                            ),
-                                          ),
-                                          actions: [
-                                            MaterialButton(
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                              color: Theme.of(context).hintColor,
-                                              onPressed: () async {
-                                                Navigator.pop(context);
-                                                await _reviewDeleteDoc(
-                                                  collection: rejected
-                                                      ? FirebaseCollections.rejectedWalls
-                                                      : FirebaseCollections.walls,
-                                                  id: wallpaper.id,
-                                                  sourceTag: rejected
-                                                      ? 'review.rejectedWall.delete'
-                                                      : 'review.wall.delete',
-                                                  successToast: "Wallpaper successfully deleted from server!",
-                                                );
-                                              },
-                                              child: const Text(
-                                                'DELETE',
-                                                style: TextStyle(fontSize: 16.0, color: Colors.white),
-                                              ),
-                                            ),
-                                            MaterialButton(
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                              color: Theme.of(context).colorScheme.error,
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: const Text(
-                                                'CANCEL',
-                                                style: TextStyle(fontSize: 16.0, color: Colors.white),
-                                              ),
-                                            ),
-                                          ],
-                                          backgroundColor: Theme.of(context).primaryColor,
-                                          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                                        );
-
-                                        showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
-                                      },
+                                      onPressed: () => showDeleteConfirm(
+                                        context,
+                                        title: 'Delete this wallpaper?',
+                                        onConfirm: () => _reviewDeleteDoc(
+                                          collection: rejected
+                                              ? FirebaseCollections.rejectedWalls
+                                              : FirebaseCollections.walls,
+                                          id: wallpaper.id,
+                                          sourceTag: rejected ? 'review.rejectedWall.delete' : 'review.wall.delete',
+                                          successToast: "Wallpaper successfully deleted from server!",
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -464,12 +286,29 @@ class WallTile extends StatelessWidget {
   }
 }
 
-class _SetupReview extends StatefulWidget {
+class _ReviewStatusChip extends StatelessWidget {
+  const _ReviewStatusChip({required this.rejected});
+
+  final bool rejected;
+
   @override
-  _SetupReviewState createState() => _SetupReviewState();
+  Widget build(BuildContext context) {
+    final Color foreground = rejected ? Colors.white : Colors.black;
+    return ActionChip(
+      backgroundColor: rejected ? Colors.red : Colors.amber,
+      avatar: Icon(rejected ? JamIcons.close : JamIcons.clock, color: foreground),
+      onPressed: () {},
+      label: Text(
+        rejected ? "REJECTED" : "IN REVIEW",
+        style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: foreground),
+      ),
+    );
+  }
 }
 
-class _SetupReviewState extends State<_SetupReview> {
+class _SetupReview extends StatelessWidget {
+  const _SetupReview();
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -490,7 +329,7 @@ class _SetupReviewState extends State<_SetupReview> {
             ),
             builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
               if (!snapshot.hasData) {
-                return Container();
+                return const SizedBox.shrink();
               } else {
                 return Column(
                   children: List.generate(
@@ -538,100 +377,47 @@ class _SetupReviewState extends State<_SetupReview> {
 }
 
 class SetupTile extends StatelessWidget {
+  const SetupTile(this.wallpaper, this.draft, {super.key, this.rejected = false});
+
   final FirestoreDocument wallpaper;
   final bool draft;
   final bool rejected;
-  SetupTile(this.wallpaper, this.draft, {this.rejected = false});
-  final DateFormat formatter = DateFormat('d MMMM y, h:m a');
-  static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
 
-  Future<void> _showDeleteDialog(
-    BuildContext context, {
-    required String title,
-    required Future<void> Function() onConfirmDelete,
-  }) async {
-    final AlertDialog deleteWallPopUp = AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      title: Text(
-        title,
-        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-      ),
-      content: Text(
-        "This is permanent, and this action can't be undone!",
-        style: TextStyle(
-          fontFamily: "Proxima Nova",
-          fontWeight: FontWeight.normal,
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-      ),
-      actions: [
-        MaterialButton(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Theme.of(context).hintColor,
-          onPressed: () async {
-            Navigator.pop(context);
-            await onConfirmDelete();
-          },
-          child: const Text('DELETE', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-        ),
-        MaterialButton(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-          color: Theme.of(context).colorScheme.error,
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('CANCEL', style: TextStyle(fontSize: 16.0, color: Colors.white)),
-        ),
-      ],
-      backgroundColor: Theme.of(context).primaryColor,
-      actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-    );
-
-    showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
+  void _openLink(BuildContext context, String url) {
+    openPrismLink(context, url).catchError((e) {
+      toasts.error("Error in link!");
+      return false;
+    });
   }
 
-  Widget _buildDownloadButton(BuildContext context, {required String successMessage, required String failLogSuffix}) {
-    return Container(
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.secondary, shape: BoxShape.circle),
-      child: IconButton(
-        icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
-        onPressed: () async {
-          final link = wallpaper.image;
-          logger.d(link);
-
-          final androidInfo = await DeviceInfoPlugin().androidInfo;
-          final sdkInt = androidInfo.version.sdkInt;
-          logger.d('(SDK $sdkInt)');
-          toasts.codeSend("Starting Download");
-
-          try {
-            final request = SaveMediaRequest(link: link, isLocalFile: false, kind: SaveMediaKind.setup);
-            final result = await _prismMediaApi.saveMedia(request);
-            if (result.success) {
-              analytics.track(DownloadOwnSetupEvent(link: link));
-              toasts.codeSend(successMessage);
-            } else {
-              toasts.codeSend("Couldn't download! Please Retry!");
-            }
-          } on PlatformException catch (e) {
-            if (e.code != 'channel-error') {
-              logger.e('saveMedia failed for $failLogSuffix', error: e);
-            }
-            toasts.codeSend("Couldn't download! Please Retry!");
-          } catch (e) {
-            logger.e('Unexpected saveMedia failure for $failLogSuffix', error: e);
-            toasts.codeSend("Couldn't download! Please Retry!");
-          }
-        },
-      ),
-    );
+  void _openWallpaper(BuildContext context, SetupWallpaperValue value) {
+    if (!rejected && value.primaryUrl.isEmpty) {
+      toasts.error("Wallpaper not added!");
+      return;
+    }
+    if (!value.isEncoded && wallpaper.wallId.isNotEmpty) {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => PhotoView(
+            onTapUp: (context, details, controller) {
+              Navigator.pop(context);
+            },
+            imageProvider: CachedNetworkImageProvider(value.primaryUrl),
+          ),
+          fullscreenDialog: true,
+        ),
+      );
+    } else {
+      _openLink(context, value.primaryUrl);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final SetupWallpaperValue wallpaperValue = SetupWallpaperValue.parse(wallpaper.wallpaperUrl);
     final bool hasSecondWidget = wallpaper.widget2.isNotEmpty;
+    final DateTime? createdAt = wallpaper.createdAt;
     return Container(
       width: MediaQuery.of(context).size.width,
       constraints: rejected
@@ -650,20 +436,7 @@ class SetupTile extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                        ),
-                      ),
-                    ],
-                  ),
+                  if (createdAt != null) ReviewInfoRow(icon: JamIcons.clock, text: _formatCreatedAt(createdAt)),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
                     child: Row(
@@ -695,7 +468,7 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () {
-                                toasts.codeSend("${wallpaper.name} - ${wallpaper.desc}");
+                                toasts.success("${wallpaper.name} - ${wallpaper.desc}");
                               },
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
@@ -703,7 +476,7 @@ class SetupTile extends StatelessWidget {
                                   text: TextSpan(
                                     text: rejected
                                         ? wallpaper.name
-                                        : (wallpaper.name == "" ? "No name" : wallpaper.name),
+                                        : (wallpaper.name.isEmpty ? "No name" : wallpaper.name),
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
@@ -713,7 +486,7 @@ class SetupTile extends StatelessWidget {
                                       TextSpan(
                                         text: rejected
                                             ? " - ${wallpaper.desc}"
-                                            : (wallpaper.desc == "" ? " - No desc" : " - ${wallpaper.desc}"),
+                                            : (wallpaper.desc.isEmpty ? " - No desc" : " - ${wallpaper.desc}"),
                                         style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                           decoration: TextDecoration.underline,
                                           color: Theme.of(context).colorScheme.secondary,
@@ -733,197 +506,70 @@ class SetupTile extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      wallpaper.id,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                    ),
-                                  ),
-                                ],
+                              ReviewInfoRow(icon: JamIcons.id_card, text: wallpaper.id, fixedWidth: true),
+                              const SizedBox(height: 16),
+                              ReviewInfoRow(
+                                icon: JamIcons.picture,
+                                text: rejected || wallpaperValue.primaryUrl.isNotEmpty
+                                    ? wallpaperValue.tileText(wallId: wallpaper.wallId)
+                                    : "Wallpaper",
+                                underline: true,
+                                fixedWidth: true,
+                                onTap: () => _openWallpaper(context, wallpaperValue),
                               ),
                               const SizedBox(height: 16),
-                              GestureDetector(
+                              ReviewInfoRow(
+                                icon: JamIcons.google_play,
+                                text: rejected ? wallpaper.icon : (wallpaper.icon.isEmpty ? "No icon" : wallpaper.icon),
+                                underline: true,
+                                fixedWidth: true,
                                 onTap: () {
-                                  if (!rejected && wallpaperValue.primaryUrl.isEmpty) {
-                                    toasts.error("Wallpaper not added!");
-                                    return;
-                                  }
-                                  if (!wallpaperValue.isEncoded) {
-                                    if (wallpaper.wallId.isNotEmpty) {
-                                      Navigator.push(
-                                        context,
-                                        CupertinoPageRoute(
-                                          builder: (context) => PhotoView(
-                                            onTapUp: (context, details, controller) {
-                                              Navigator.pop(context);
-                                            },
-                                            imageProvider: CachedNetworkImageProvider(wallpaperValue.primaryUrl),
-                                          ),
-                                          fullscreenDialog: true,
-                                        ),
-                                      );
-                                    } else {
-                                      openPrismLink(context, wallpaperValue.primaryUrl).catchError((e) {
-                                        toasts.error("Error in link!");
-                                        return false;
-                                      });
-                                    }
-                                  } else {
-                                    openPrismLink(context, wallpaperValue.primaryUrl).catchError((e) {
-                                      toasts.error("Error in link!");
-                                      return false;
-                                    });
-                                  }
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(JamIcons.picture, color: Theme.of(context).colorScheme.secondary),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        rejected
-                                            ? wallpaperValue.tileText(wallId: wallpaper.wallId)
-                                            : (wallpaperValue.primaryUrl.isNotEmpty
-                                                  ? wallpaperValue.tileText(wallId: wallpaper.wallId)
-                                                  : "Wallpaper"),
-                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              GestureDetector(
-                                onTap: () {
-                                  if (!rejected && wallpaper.iconUrl == "") {
+                                  if (!rejected && wallpaper.iconUrl.isEmpty) {
                                     toasts.error("No icons added!");
                                     return;
                                   }
-                                  openPrismLink(context, wallpaper.iconUrl).catchError((e) {
-                                    toasts.error("Error in link!");
-                                    return false;
-                                  });
+                                  _openLink(context, wallpaper.iconUrl);
                                 },
-                                child: Row(
-                                  children: [
-                                    Icon(JamIcons.google_play, color: Theme.of(context).colorScheme.secondary),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        rejected ? wallpaper.icon : (wallpaper.icon == "" ? "No icon" : wallpaper.icon),
-                                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                          decoration: TextDecoration.underline,
-                                          color: Theme.of(context).colorScheme.secondary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                              if (wallpaper.widget.isNotEmpty) const SizedBox(height: 16) else Container(),
-                              if (wallpaper.widget.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () {
-                                    openPrismLink(context, wallpaper.widgetUrl).catchError((e) {
-                                      toasts.error("Error in link!");
-                                      return false;
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(JamIcons.google_play, color: Theme.of(context).colorScheme.secondary),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          wallpaper.widget,
-                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                            decoration: TextDecoration.underline,
-                                            color: Theme.of(context).colorScheme.secondary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Container(),
-                              if (wallpaper.widget2.isNotEmpty) const SizedBox(height: 16) else Container(),
-                              if (wallpaper.widget2.isNotEmpty)
-                                GestureDetector(
-                                  onTap: () {
-                                    openPrismLink(context, wallpaper.widgetUrl2).catchError((e) {
-                                      toasts.error("Error in link!");
-                                      return false;
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(JamIcons.google_play, color: Theme.of(context).colorScheme.secondary),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          wallpaper.widget2,
-                                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                            decoration: TextDecoration.underline,
-                                            color: Theme.of(context).colorScheme.secondary,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Container(),
-                              const SizedBox(height: 16),
-                              if (rejected)
-                                ActionChip(
-                                  backgroundColor: Colors.red,
-                                  avatar: const Icon(JamIcons.close, color: Colors.white),
-                                  onPressed: () {},
-                                  label: Text(
-                                    "REJECTED",
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                                  ),
-                                )
-                              else if (draft)
-                                Container()
-                              else
-                                ActionChip(
-                                  backgroundColor: Colors.amber,
-                                  avatar: const Icon(JamIcons.clock, color: Colors.black),
-                                  onPressed: () {},
-                                  label: Text(
-                                    "IN REVIEW",
-                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black),
-                                  ),
+                              if (wallpaper.widget.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                ReviewInfoRow(
+                                  icon: JamIcons.google_play,
+                                  text: wallpaper.widget,
+                                  underline: true,
+                                  fixedWidth: true,
+                                  onTap: () => _openLink(context, wallpaper.widgetUrl),
                                 ),
+                              ],
+                              if (hasSecondWidget) ...[
+                                const SizedBox(height: 16),
+                                ReviewInfoRow(
+                                  icon: JamIcons.google_play,
+                                  text: wallpaper.widget2,
+                                  underline: true,
+                                  fixedWidth: true,
+                                  onTap: () => _openLink(context, wallpaper.widgetUrl2),
+                                ),
+                              ],
+                              const SizedBox(height: 16),
+                              if (rejected || !draft) _ReviewStatusChip(rejected: rejected),
                               const SizedBox(height: 16),
                               if (rejected)
                                 Row(
                                   children: [
-                                    _buildDownloadButton(
-                                      context,
-                                      successMessage: "Setup Downloaded in Pictures/Prism Setups!",
-                                      failLogSuffix: 'rejected setup download',
+                                    _downloadButton(
+                                      "Setup Downloaded in Pictures/Prism Setups!",
+                                      'rejected setup download',
                                     ),
                                     const SizedBox(width: 16),
                                     Container(
                                       decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                       child: IconButton(
                                         icon: const Icon(JamIcons.trash, color: Colors.white),
-                                        onPressed: () => _showDeleteDialog(
+                                        onPressed: () => showDeleteConfirm(
                                           context,
                                           title: 'Delete this setup?',
-                                          onConfirmDelete: () => _reviewDeleteDoc(
+                                          onConfirm: () => _reviewDeleteDoc(
                                             collection: FirebaseCollections.rejectedSetups,
                                             id: wallpaper.id,
                                             sourceTag: 'review.rejectedSetup.delete',
@@ -934,7 +580,7 @@ class SetupTile extends StatelessWidget {
                                     ),
                                   ],
                                 )
-                              else
+                              else ...[
                                 Wrap(
                                   children: [
                                     Container(
@@ -950,15 +596,13 @@ class SetupTile extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    _buildDownloadButton(
-                                      context,
-                                      successMessage: "Setup Downloaded in Pictures/Prism Setup!",
-                                      failLogSuffix: 'review setup download',
+                                    _downloadButton(
+                                      "Setup Downloaded in Pictures/Prism Setup!",
+                                      'review setup download',
                                     ),
                                   ],
                                 ),
-                              if (!rejected) const SizedBox(height: 16),
-                              if (!rejected)
+                                const SizedBox(height: 16),
                                 ActionChip(
                                   backgroundColor: Colors.red,
                                   avatar: const Icon(JamIcons.trash, color: Colors.white),
@@ -966,10 +610,10 @@ class SetupTile extends StatelessWidget {
                                     "DELETE",
                                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
                                   ),
-                                  onPressed: () => _showDeleteDialog(
+                                  onPressed: () => showDeleteConfirm(
                                     context,
                                     title: draft ? 'Delete this draft?' : 'Delete this setup?',
-                                    onConfirmDelete: () => draft
+                                    onConfirm: () => draft
                                         ? _reviewDeleteDoc(
                                             collection: FirebaseCollections.draftSetups,
                                             id: wallpaper.id,
@@ -984,6 +628,7 @@ class SetupTile extends StatelessWidget {
                                           ),
                                   ),
                                 ),
+                              ],
                             ],
                           ),
                         ),
@@ -999,11 +644,19 @@ class SetupTile extends StatelessWidget {
       ),
     );
   }
+
+  Widget _downloadButton(String successMessage, String failLogSuffix) => ReviewDownloadButton(
+    link: wallpaper.image,
+    kind: SaveMediaKind.setup,
+    event: DownloadOwnSetupEvent(link: wallpaper.image),
+    successMessage: successMessage,
+    failLogSuffix: failLogSuffix,
+  );
 }
 
-DateTime _toDateTime(DateTime? value) {
-  return value ?? DateTime.now().toUtc();
-}
+final DateFormat _createdAtFormat = DateFormat('d MMMM y, h:mm a');
+
+String _formatCreatedAt(DateTime value) => _createdAtFormat.format(value.toLocal());
 
 Future<void> _reviewDeleteDoc({
   required String collection,
@@ -1013,10 +666,10 @@ Future<void> _reviewDeleteDoc({
 }) async {
   try {
     await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
-    toasts.codeSend(successToast);
+    toasts.success(successToast);
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);
-    toasts.codeSend(
+    toasts.success(
       e.code == 'permission-denied'
           ? "Couldn't delete: permission denied. Check you're signed in with the same account you used to upload."
           : "Couldn't delete. Please try again.",

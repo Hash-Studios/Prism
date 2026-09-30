@@ -6,6 +6,7 @@ class OnboardingMotion {
   static const Duration short = Duration(milliseconds: 160);
   static const Duration normal = Duration(milliseconds: 280);
   static const Duration long = Duration(milliseconds: 450);
+  static const Duration fade = Duration(milliseconds: 1000);
   static const Duration backgroundReveal = Duration(milliseconds: 5000);
 
   static const Curve emphasized = Curves.easeOutCubic;

@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
+import 'package:Prism/data/upload/upload_id.dart';
+import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
@@ -60,7 +61,7 @@ enum _UploadStage {
 }
 
 class _UploadWallScreenState extends State<UploadWallScreen> {
-  late final String? id;
+  late final String id = randomUploadId(4);
   _UploadStage _stage = _UploadStage.processing;
   String? _errorMessage;
   String? wallpaperResolution;
@@ -99,18 +100,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   @override
   void initState() {
     super.initState();
-    id = _randomId();
     unawaited(_prepareImage());
-  }
-
-  String _randomId() {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    final random = Random();
-    final digitIndex = random.nextInt(4);
-    return List.generate(
-      4,
-      (index) => index == digitIndex ? random.nextInt(10).toString() : alphabet[random.nextInt(26)],
-    ).join();
   }
 
   Future<Uint8List> _compressFile(File file) async {
@@ -334,10 +324,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     }
     if (!mounted) return;
     _submitted = true;
-    analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
+    analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
     if (_leaving) return;
     final router = widget.fromSetupRoute ? null : context.router;
-    Navigator.pop(context, [wallpaperUrl, id]);
+    Navigator.pop(context, UploadedWallpaper(url: wallpaperUrl!, id: id));
     if (router != null) unawaited(router.push(const ReviewRoute()));
   }
 

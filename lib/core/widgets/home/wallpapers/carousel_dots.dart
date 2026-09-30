@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class CarouselDots extends StatelessWidget {
-  const CarouselDots({super.key, required int current}) : _current = current;
+  const CarouselDots({super.key, required this.current, required this.count});
 
-  final int _current;
+  final int current;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +12,7 @@ class CarouselDots extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [0, 1, 2, 3, 4, 5].map((i) {
+        children: List<Widget>.generate(count, (i) {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
@@ -20,10 +21,10 @@ class CarouselDots extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(500),
-              color: _current == i ? Colors.white : Colors.white38,
+              color: current == i ? Colors.white : Colors.white38,
             ),
           );
-        }).toList(),
+        }),
       ),
     );
   }

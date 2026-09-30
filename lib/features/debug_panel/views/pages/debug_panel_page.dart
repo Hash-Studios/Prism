@@ -1,7 +1,6 @@
 import 'package:Prism/features/debug_panel/views/pages/app_info_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_tools_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/log_viewer_page.dart';
-import 'package:Prism/features/debug_panel/views/pages/network_log_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/storage_viewer_page.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +12,7 @@ class DebugPanelPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 4,
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
@@ -48,16 +47,13 @@ class DebugPanelPage extends StatelessWidget {
             labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
             tabs: const [
               Tab(icon: Icon(Icons.list_alt, size: 18), text: 'Logs'),
-              Tab(icon: Icon(Icons.wifi, size: 18), text: 'Network'),
               Tab(icon: Icon(Icons.build, size: 18), text: 'Tools'),
               Tab(icon: Icon(Icons.storage, size: 18), text: 'Storage'),
               Tab(icon: Icon(Icons.info_outline, size: 18), text: 'App Info'),
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [LogViewerPage(), NetworkLogPage(), DebugToolsPage(), StorageViewerPage(), AppInfoPage()],
-        ),
+        body: const TabBarView(children: [LogViewerPage(), DebugToolsPage(), StorageViewerPage(), AppInfoPage()]),
       ),
     );
   }

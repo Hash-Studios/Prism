@@ -55,15 +55,13 @@ extension FavouriteSetupsEventPatterns on FavouriteSetupsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _ToggleRequested value)?  toggleRequested,TResult Function( _RemoveRequested value)?  removeRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _ToggleRequested value)?  toggleRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that);case _ClearRequested() when clearRequested != null:
-return clearRequested(_that);case _:
+return toggleRequested(_that);case _:
   return orElse();
 
 }
@@ -81,15 +79,13 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _ToggleRequested value)  toggleRequested,required TResult Function( _RemoveRequested value)  removeRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _ToggleRequested value)  toggleRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
 return refreshRequested(_that);case _ToggleRequested():
-return toggleRequested(_that);case _RemoveRequested():
-return removeRequested(_that);case _ClearRequested():
-return clearRequested(_that);case _:
+return toggleRequested(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -106,15 +102,13 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _ToggleRequested value)?  toggleRequested,TResult? Function( _RemoveRequested value)?  removeRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _ToggleRequested value)?  toggleRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that);case _ClearRequested() when clearRequested != null:
-return clearRequested(_that);case _:
+return toggleRequested(_that);case _:
   return null;
 
 }
@@ -131,14 +125,12 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId)?  started,TResult Function()?  refreshRequested,TResult Function( FavouriteSetupEntity setup)?  toggleRequested,TResult Function( String setupId)?  removeRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId)?  started,TResult Function()?  refreshRequested,TResult Function( SetupEntity setup)?  toggleRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that.setup);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that.setupId);case _ClearRequested() when clearRequested != null:
-return clearRequested();case _:
+return toggleRequested(_that.setup);case _:
   return orElse();
 
 }
@@ -156,14 +148,12 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId)  started,required TResult Function()  refreshRequested,required TResult Function( FavouriteSetupEntity setup)  toggleRequested,required TResult Function( String setupId)  removeRequested,required TResult Function()  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId)  started,required TResult Function()  refreshRequested,required TResult Function( SetupEntity setup)  toggleRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.userId);case _RefreshRequested():
 return refreshRequested();case _ToggleRequested():
-return toggleRequested(_that.setup);case _RemoveRequested():
-return removeRequested(_that.setupId);case _ClearRequested():
-return clearRequested();case _:
+return toggleRequested(_that.setup);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -180,14 +170,12 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId)?  started,TResult? Function()?  refreshRequested,TResult? Function( FavouriteSetupEntity setup)?  toggleRequested,TResult? Function( String setupId)?  removeRequested,TResult? Function()?  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId)?  started,TResult? Function()?  refreshRequested,TResult? Function( SetupEntity setup)?  toggleRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that.setup);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that.setupId);case _ClearRequested() when clearRequested != null:
-return clearRequested();case _:
+return toggleRequested(_that.setup);case _:
   return null;
 
 }
@@ -300,7 +288,7 @@ class _ToggleRequested implements FavouriteSetupsEvent {
   const _ToggleRequested({required this.setup});
   
 
- final  FavouriteSetupEntity setup;
+ final  SetupEntity setup;
 
 /// Create a copy of FavouriteSetupsEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -332,11 +320,11 @@ abstract mixin class _$ToggleRequestedCopyWith<$Res> implements $FavouriteSetups
   factory _$ToggleRequestedCopyWith(_ToggleRequested value, $Res Function(_ToggleRequested) _then) = __$ToggleRequestedCopyWithImpl;
 @useResult
 $Res call({
- FavouriteSetupEntity setup
+ SetupEntity setup
 });
 
 
-$FavouriteSetupEntityCopyWith<$Res> get setup;
+$SetupEntityCopyWith<$Res> get setup;
 
 }
 /// @nodoc
@@ -352,7 +340,7 @@ class __$ToggleRequestedCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? setup = null,}) {
   return _then(_ToggleRequested(
 setup: null == setup ? _self.setup : setup // ignore: cast_nullable_to_non_nullable
-as FavouriteSetupEntity,
+as SetupEntity,
   ));
 }
 
@@ -360,116 +348,18 @@ as FavouriteSetupEntity,
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$FavouriteSetupEntityCopyWith<$Res> get setup {
+$SetupEntityCopyWith<$Res> get setup {
   
-  return $FavouriteSetupEntityCopyWith<$Res>(_self.setup, (value) {
+  return $SetupEntityCopyWith<$Res>(_self.setup, (value) {
     return _then(_self.copyWith(setup: value));
   });
 }
 }
 
 /// @nodoc
-
-
-class _RemoveRequested implements FavouriteSetupsEvent {
-  const _RemoveRequested({required this.setupId});
-  
-
- final  String setupId;
-
-/// Create a copy of FavouriteSetupsEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$RemoveRequestedCopyWith<_RemoveRequested> get copyWith => __$RemoveRequestedCopyWithImpl<_RemoveRequested>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RemoveRequested&&(identical(other.setupId, setupId) || other.setupId == setupId));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,setupId);
-
-@override
-String toString() {
-  return 'FavouriteSetupsEvent.removeRequested(setupId: $setupId)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$RemoveRequestedCopyWith<$Res> implements $FavouriteSetupsEventCopyWith<$Res> {
-  factory _$RemoveRequestedCopyWith(_RemoveRequested value, $Res Function(_RemoveRequested) _then) = __$RemoveRequestedCopyWithImpl;
-@useResult
-$Res call({
- String setupId
-});
-
-
-
-
-}
-/// @nodoc
-class __$RemoveRequestedCopyWithImpl<$Res>
-    implements _$RemoveRequestedCopyWith<$Res> {
-  __$RemoveRequestedCopyWithImpl(this._self, this._then);
-
-  final _RemoveRequested _self;
-  final $Res Function(_RemoveRequested) _then;
-
-/// Create a copy of FavouriteSetupsEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? setupId = null,}) {
-  return _then(_RemoveRequested(
-setupId: null == setupId ? _self.setupId : setupId // ignore: cast_nullable_to_non_nullable
-as String,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class _ClearRequested implements FavouriteSetupsEvent {
-  const _ClearRequested();
-  
-
-
-
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ClearRequested);
-}
-
-
-@override
-int get hashCode => runtimeType.hashCode;
-
-@override
-String toString() {
-  return 'FavouriteSetupsEvent.clearRequested()';
-}
-
-
-}
-
-
-
-
-/// @nodoc
 mixin _$FavouriteSetupsState {
 
- LoadStatus get status; ActionStatus get actionStatus; String get userId; List<FavouriteSetupEntity> get items; Failure? get failure;
+ LoadStatus get status; ActionStatus get actionStatus; String get userId; List<SetupEntity> get items; Failure? get failure;
 /// Create a copy of FavouriteSetupsState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -500,7 +390,7 @@ abstract mixin class $FavouriteSetupsStateCopyWith<$Res>  {
   factory $FavouriteSetupsStateCopyWith(FavouriteSetupsState value, $Res Function(FavouriteSetupsState) _then) = _$FavouriteSetupsStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteSetupEntity> items, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, String userId, List<SetupEntity> items, Failure? failure
 });
 
 
@@ -523,7 +413,7 @@ status: null == status ? _self.status : status // ignore: cast_nullable_to_non_n
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
 as ActionStatus,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
-as List<FavouriteSetupEntity>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as List<SetupEntity>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }
@@ -609,7 +499,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  String userId,  List<FavouriteSetupEntity> items,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  String userId,  List<SetupEntity> items,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _FavouriteSetupsState() when $default != null:
 return $default(_that.status,_that.actionStatus,_that.userId,_that.items,_that.failure);case _:
@@ -630,7 +520,7 @@ return $default(_that.status,_that.actionStatus,_that.userId,_that.items,_that.f
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  String userId,  List<FavouriteSetupEntity> items,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  ActionStatus actionStatus,  String userId,  List<SetupEntity> items,  Failure? failure)  $default,) {final _that = this;
 switch (_that) {
 case _FavouriteSetupsState():
 return $default(_that.status,_that.actionStatus,_that.userId,_that.items,_that.failure);case _:
@@ -650,7 +540,7 @@ return $default(_that.status,_that.actionStatus,_that.userId,_that.items,_that.f
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  String userId,  List<FavouriteSetupEntity> items,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  ActionStatus actionStatus,  String userId,  List<SetupEntity> items,  Failure? failure)?  $default,) {final _that = this;
 switch (_that) {
 case _FavouriteSetupsState() when $default != null:
 return $default(_that.status,_that.actionStatus,_that.userId,_that.items,_that.failure);case _:
@@ -665,14 +555,14 @@ return $default(_that.status,_that.actionStatus,_that.userId,_that.items,_that.f
 
 
 class _FavouriteSetupsState implements FavouriteSetupsState {
-  const _FavouriteSetupsState({required this.status, required this.actionStatus, required this.userId, required final  List<FavouriteSetupEntity> items, this.failure}): _items = items;
+  const _FavouriteSetupsState({required this.status, required this.actionStatus, required this.userId, required final  List<SetupEntity> items, this.failure}): _items = items;
   
 
 @override final  LoadStatus status;
 @override final  ActionStatus actionStatus;
 @override final  String userId;
- final  List<FavouriteSetupEntity> _items;
-@override List<FavouriteSetupEntity> get items {
+ final  List<SetupEntity> _items;
+@override List<SetupEntity> get items {
   if (_items is EqualUnmodifiableListView) return _items;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_items);
@@ -710,7 +600,7 @@ abstract mixin class _$FavouriteSetupsStateCopyWith<$Res> implements $FavouriteS
   factory _$FavouriteSetupsStateCopyWith(_FavouriteSetupsState value, $Res Function(_FavouriteSetupsState) _then) = __$FavouriteSetupsStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, ActionStatus actionStatus, String userId, List<FavouriteSetupEntity> items, Failure? failure
+ LoadStatus status, ActionStatus actionStatus, String userId, List<SetupEntity> items, Failure? failure
 });
 
 
@@ -733,7 +623,7 @@ status: null == status ? _self.status : status // ignore: cast_nullable_to_non_n
 as LoadStatus,actionStatus: null == actionStatus ? _self.actionStatus : actionStatus // ignore: cast_nullable_to_non_nullable
 as ActionStatus,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
-as List<FavouriteSetupEntity>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
+as List<SetupEntity>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
 as Failure?,
   ));
 }

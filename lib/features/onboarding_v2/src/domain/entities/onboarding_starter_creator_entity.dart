@@ -6,7 +6,6 @@ class OnboardingStarterCreatorEntity {
     required this.photoUrl,
     required this.previewUrls,
     required this.rank,
-    required this.bio,
     required this.followerCount,
   });
 
@@ -16,7 +15,6 @@ class OnboardingStarterCreatorEntity {
   final String photoUrl;
   final List<String> previewUrls;
   final int rank;
-  final String bio;
   final int followerCount;
 
   /// Parses only the curation fields from Remote Config (`email` and `rank`).
@@ -29,7 +27,6 @@ class OnboardingStarterCreatorEntity {
       photoUrl: '',
       previewUrls: const <String>[],
       rank: (map['rank'] as num?)?.toInt() ?? 0,
-      bio: '',
       followerCount: 0,
     );
   }

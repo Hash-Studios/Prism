@@ -10,11 +10,6 @@ class NormalizedAnalyticsEvent {
 class AnalyticsEventNormalizer {
   const AnalyticsEventNormalizer();
 
-  static const Map<String, String> _legacyEventAliases = <String, String>{
-    'reportSetup': 'report_setup',
-    'reportWall': 'report_wall',
-  };
-
   static final RegExp _validEventNamePattern = RegExp(r'^[a-z][a-z0-9_]*$');
 
   NormalizedAnalyticsEvent normalizeEvent({required String name, Map<String, Object?>? parameters}) {
@@ -25,11 +20,6 @@ class AnalyticsEventNormalizer {
     final String trimmed = name.trim();
     if (trimmed.isEmpty) {
       return 'unknown_event';
-    }
-
-    final String? aliased = _legacyEventAliases[trimmed];
-    if (aliased != null) {
-      return aliased;
     }
 
     if (_validEventNamePattern.hasMatch(trimmed)) {
@@ -100,28 +90,10 @@ class AnalyticsEventNormalizer {
   }
 
   Object? _normalizeValue(Object? value) {
-    if (value == null) {
-      return null;
-    }
-    if (value is bool) {
-      return value ? 1 : 0;
-    }
-    if (value is num || value is String) {
-      return value;
-    }
-    if (value is DateTime) {
-      return value.toUtc().toIso8601String();
-    }
-    if (value is Enum) {
-      return value.name;
-    }
-    if (value is Uri) {
-      return value.toString();
-    }
     if (value is Iterable || value is Map) {
       return jsonEncode(_toJsonSafe(value));
     }
-    return value.toString();
+    return _toJsonSafe(value);
   }
 
   Object? _toJsonSafe(Object? value) {

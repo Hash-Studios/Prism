@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:Prism/core/utils/json_utils.dart';
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
 
 class CoinTransactionEntry {
   const CoinTransactionEntry({
@@ -68,47 +69,27 @@ class CoinTransactionEntry {
   }
 
   factory CoinTransactionEntry.fromJson(Map<String, dynamic> json, {String? fallbackId}) {
-    int parseInt(dynamic raw, {int fallback = 0}) {
-      if (raw is int) return raw;
-      if (raw is num) return raw.toInt();
-      return int.tryParse(raw?.toString() ?? '') ?? fallback;
-    }
-
-    DateTime parseDate(dynamic raw) {
-      if (raw is DateTime) return raw.toUtc();
-      if (raw is Timestamp) return raw.toDate().toUtc();
-      return DateTime.tryParse(raw?.toString() ?? '')?.toUtc() ?? DateTime.now().toUtc();
-    }
-
-    Map<String, dynamic>? parseMetadata(dynamic raw) {
-      if (raw is Map<String, dynamic>) {
-        return Map<String, dynamic>.from(raw);
-      }
-      if (raw is Map) {
-        return raw.map((key, value) => MapEntry(key.toString(), value));
-      }
-      return null;
-    }
-
     return CoinTransactionEntry(
       id: (json['id'] ?? fallbackId ?? '').toString(),
       userId: (json['userId'] ?? '').toString(),
-      createdAt: parseDate(json['createdAt']),
-      updatedAt: json['updatedAt'] == null ? null : parseDate(json['updatedAt']),
-      delta: parseInt(json['delta']),
-      balanceBefore: parseInt(json['balanceBefore']),
-      balanceAfter: parseInt(json['balanceAfter']),
+      createdAt: _parseDate(json['createdAt']),
+      updatedAt: json['updatedAt'] == null ? null : _parseDate(json['updatedAt']),
+      delta: parseIntOr(json['delta']),
+      balanceBefore: parseIntOr(json['balanceBefore']),
+      balanceAfter: parseIntOr(json['balanceAfter']),
       action: (json['action'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
       sourceTag: (json['sourceTag'] ?? '').toString(),
       status: (json['status'] ?? 'completed').toString(),
-      type: (json['type'] ?? (parseInt(json['delta']) >= 0 ? 'credit' : 'debit')).toString(),
+      type: (json['type'] ?? (parseIntOr(json['delta']) >= 0 ? 'credit' : 'debit')).toString(),
       reason: json['reason']?.toString(),
       referenceType: json['referenceType']?.toString(),
       referenceId: json['referenceId']?.toString(),
       deepLinkUrl: json['deepLinkUrl']?.toString(),
       shortLinkUrl: json['shortLinkUrl']?.toString(),
-      metadata: parseMetadata(json['metadata']),
+      metadata: json['metadata'] is Map ? toJsonMap(json['metadata']) : null,
     );
   }
+
+  static DateTime _parseDate(Object? raw) => parseDateTime(raw)?.toUtc() ?? DateTime.now().toUtc();
 }
