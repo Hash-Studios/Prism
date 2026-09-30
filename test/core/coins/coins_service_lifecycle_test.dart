@@ -129,17 +129,17 @@ void main() {
     };
     await service.buyStreakFreeze();
     final settings = getIt<SettingsLocalDataSource>();
-    expect(settings.get<String>('pendingStreakFreezeRequest.user-1'), firstRequest);
+    expect(settings.get<String>('pendingStreakFreezeRequest.${backend.userId}'), firstRequest);
     app_state.prismUser.id = 'user-2';
     backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'not-found', message: 'missing');
     await service.buyStreakFreeze();
-    app_state.prismUser.id = 'user-1';
+    app_state.prismUser.id = backend.userId;
     backend.onCall = (_, parameters) async {
       expect(parameters['requestId'], firstRequest);
       return <String, Object>{'success': true, 'changed': false, 'currentBalance': 50, 'delta': 0, 'streakFreezes': 1};
     };
     await service.buyStreakFreeze();
-    expect(settings.get<String>('pendingStreakFreezeRequest.user-1', defaultValue: ''), isEmpty);
+    expect(settings.get<String>('pendingStreakFreezeRequest.${backend.userId}', defaultValue: ''), isEmpty);
   });
 
   test('claim status keeps the server locked timezone', () async {
@@ -223,6 +223,24 @@ void main() {
     }
   });
 
+  test('a profile reload for the same account keeps the refresh', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final response = Completer<Map<String, dynamic>>();
+    firestore.userResponse = response.future;
+    final pending = service.bootstrapForCurrentUser();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true
+      ..coins = 100;
+    response.complete(<String, dynamic>{
+      'coins': 500,
+      'coinState': <String, Object>{'streakDay': 5, 'firstWallpaperUploadRewarded': true},
+    });
+    await pending;
+    expect(service.earnFlagsNotifier.value.firstUploadRewarded, isTrue);
+  });
+
   test('late duplicate freeze response preserves a newer pending purchase', () async {
     final responses = <Completer<dynamic>>[];
     final requestIds = <String>[];
@@ -251,6 +269,6 @@ void main() {
     await next;
     responses[0].complete(result);
     await first;
-    expect(getIt<SettingsLocalDataSource>().get<String>('pendingStreakFreezeRequest.user-1'), requestIds[2]);
+    expect(getIt<SettingsLocalDataSource>().get<String>('pendingStreakFreezeRequest.${backend.userId}'), requestIds[2]);
   });
 }

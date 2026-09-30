@@ -25,6 +25,11 @@ class CoinsTestBackend {
     'todayLocalKey': '2026-09-30',
   };
 
+  static int _installs = 0;
+
+  /// A fresh signed-in user per install, so per-user state in the CoinsService singleton never leaks between tests.
+  late String userId;
+
   Future<void> install() async {
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockDecodedMessageHandler<Object?>(
@@ -82,8 +87,9 @@ class CoinsTestBackend {
     if (!getIt.isRegistered<SettingsLocalDataSource>()) {
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     }
+    userId = 'user-${++_installs}';
     app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'user-1'
+      ..id = userId
       ..loggedIn = true
       ..coins = 100;
   }
