@@ -47,10 +47,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   late final ImageProvider _thumbProvider = ResizeImage(FileImage(File(widget.filePath)), width: 160);
   Size? _imageSize;
   bool _loadFailed = false;
+  bool _previewLoaded = false;
   bool _effectsAvailable = false;
   bool _comparing = false;
   bool _busy = false;
   bool _premiumFilterUnlockedForSession = false;
+  double? _previewPixelShortSide;
 
   @override
   void initState() {
@@ -70,6 +72,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     ui.ImageDescriptor? descriptor;
     try {
       final Uint8List bytes = await File(widget.filePath).readAsBytes();
+      if (!mounted) return;
       buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
       descriptor = await ui.ImageDescriptor.encoded(buffer);
       if (!mounted) {
@@ -95,6 +98,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   bool get _selectedFilterNeedsPremiumSpend => _isEdited;
 
+  bool get _editorReady => !_loadFailed && _previewLoaded && _previewPixelShortSide != null;
+
   void _toggleFilter(WallpaperFilter filter) {
     HapticFeedback.selectionClick();
     setState(() {
@@ -112,17 +117,43 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<File> saveFilteredImage() async {
-    if (!_isEdited) {
+    final List<WallpaperFilter> stack = List<WallpaperFilter>.of(_stack);
+    final WallpaperAdjustments adjustments = _adjustments;
+    final double? previewPixelShortSide = _previewPixelShortSide;
+    if (stack.isEmpty && adjustments.isNone) {
       return File(widget.filePath);
     }
     final ui.Codec codec = await ui.instantiateImageCodec(await File(widget.filePath).readAsBytes());
     try {
       final ui.FrameInfo frame = await codec.getNextFrame();
       try {
-        final Uint8List png = await renderEditedPng(frame.image, _stack, _adjustments);
-        final String dir = (await getTemporaryDirectory()).path;
-        final File file = File('$dir/prism_edit_${DateTime.now().millisecondsSinceEpoch}.png');
-        await file.writeAsBytes(png);
+        final Uint8List png = await renderEditedPng(
+          frame.image,
+          stack,
+          adjustments,
+          previewPixelShortSide: previewPixelShortSide,
+        );
+        if (!mounted) {
+          throw StateError('Wallpaper editor closed before export completed');
+        }
+        final Directory exportBase = Directory('${(await getTemporaryDirectory()).path}/prism_edit');
+        await exportBase.create(recursive: true);
+        final Directory exportDirectory = await exportBase.createTemp('export_');
+        if (!mounted) {
+          await exportDirectory.delete(recursive: true);
+          throw StateError('Wallpaper editor closed before export completed');
+        }
+        final File file = File('${exportDirectory.path}/edited.png');
+        try {
+          await file.writeAsBytes(png);
+        } catch (_) {
+          await exportDirectory.delete(recursive: true);
+          rethrow;
+        }
+        if (!mounted) {
+          await exportDirectory.delete(recursive: true);
+          throw StateError('Wallpaper editor closed before export completed');
+        }
         return file;
       } finally {
         frame.image.dispose();
@@ -130,6 +161,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } finally {
       codec.dispose();
     }
+  }
+
+  Future<void> _deleteEditedFile(File file) async {
+    if (file.path == widget.filePath) return;
+    try {
+      await file.parent.delete(recursive: true);
+    } catch (_) {}
   }
 
   Future<void> _setBothWallPaper(String url) async {
@@ -211,6 +249,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _runWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
+    if (!mounted) return;
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
       return;
@@ -219,7 +258,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     if (!app_state.prismUser.loggedIn) {
       toasts.codeSend('Sign in to use premium filters with coins.');
       googleSignInPopUp(context, () {
-        unawaited(_runWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
+        unawaited(_startActionWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
       });
       return;
     }
@@ -237,6 +276,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       toasts.error('Unable to process coins right now.');
       return;
     }
+    if (!mounted) return;
 
     if (!spendResult.success) {
       if (spendResult.insufficientBalance) {
@@ -262,6 +302,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       toasts.codeSend('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
     }
     await action();
+  }
+
+  Future<void> _startActionWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
+    if (!mounted || _busy || !_editorReady) return;
+    setState(() => _busy = true);
+    try {
+      await _runWithPremiumFilterGate(action, sourceTag: sourceTag);
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 
   Future<void> _showPremiumFilterLowBalanceNudge({
@@ -324,6 +376,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ) ??
         _PremiumFilterLowBalanceAction.none;
 
+    if (!mounted) return;
     switch (action) {
       case _PremiumFilterLowBalanceAction.watchAd:
         await onWatchAd();
@@ -345,6 +398,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
     analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _editLabel));
     final bool watched = await _watchRewardedAd();
+    if (!mounted) return;
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
@@ -391,6 +445,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     if (!await _ensureRewardedAdReady(bloc)) {
       return false;
     }
+    if (!mounted) return false;
     bool watchRequested = false;
     try {
       final Future<AdsState> completion = bloc.stream
@@ -412,13 +467,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _handleDownloadAction() async {
-    if (_busy) {
-      return;
-    }
-    setState(() => _busy = true);
+    File? imageFile;
     try {
       toasts.codeSend("Processing Wallpaper");
-      final imageFile = await saveFilteredImage();
+      imageFile = await saveFilteredImage();
       if (!mounted) {
         return;
       }
@@ -441,18 +493,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       logger.e('Unexpected saveMedia failure', error: e);
       toasts.error("Something went wrong!");
     } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
+      if (imageFile != null) await _deleteEditedFile(imageFile);
     }
   }
 
   Future<void> _handleSetAction() async {
-    if (_busy) {
-      return;
-    }
-    setState(() => _busy = true);
-    final File imageFile;
+    File? imageFile;
     try {
       toasts.codeSend("Processing Wallpaper");
       imageFile = await saveFilteredImage();
@@ -460,81 +506,112 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       logger.e('Unexpected filter render failure', error: e);
       toasts.error("Something went wrong!");
       return;
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
     }
     if (!mounted) {
+      await _deleteEditedFile(imageFile);
       return;
     }
-    showModalBottomSheet(
-      isScrollControlled: true,
-      context: context,
-      builder: (context) => SetOptionsPanel(
-        onTap1: () {
-          HapticFeedback.vibrate();
-          Navigator.of(context).pop();
-          _setHomeWallPaper(imageFile.path);
-        },
-        onTap2: () {
-          HapticFeedback.vibrate();
-          Navigator.of(context).pop();
-          _setLockWallPaper(imageFile.path);
-        },
-        onTap3: () {
-          HapticFeedback.vibrate();
-          Navigator.of(context).pop();
-          _setBothWallPaper(imageFile.path);
-        },
-      ),
-    );
+    try {
+      final WallpaperTarget? target = await showModalBottomSheet<WallpaperTarget>(
+        isScrollControlled: true,
+        context: context,
+        builder: (context) => SetOptionsPanel(
+          onTap1: () {
+            if (!mounted) return;
+            HapticFeedback.vibrate();
+            Navigator.of(context).pop(WallpaperTarget.home);
+          },
+          onTap2: () {
+            if (!mounted) return;
+            HapticFeedback.vibrate();
+            Navigator.of(context).pop(WallpaperTarget.lock);
+          },
+          onTap3: () {
+            if (!mounted) return;
+            HapticFeedback.vibrate();
+            Navigator.of(context).pop(WallpaperTarget.both);
+          },
+        ),
+      );
+      if (!mounted) return;
+      switch (target) {
+        case WallpaperTarget.home:
+          await _setHomeWallPaper(imageFile.path);
+        case WallpaperTarget.lock:
+          await _setLockWallPaper(imageFile.path);
+        case WallpaperTarget.both:
+          await _setBothWallPaper(imageFile.path);
+        case null:
+          return;
+      }
+    } finally {
+      await _deleteEditedFile(imageFile);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Edit Wallpaper", style: theme.textTheme.displaySmall),
-        leading: IconButton(
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          icon: const Icon(JamIcons.close),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+    return PopScope(
+      canPop: !_busy,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Edit Wallpaper", style: theme.textTheme.displaySmall),
+          leading: IconButton(
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            icon: const Icon(JamIcons.close),
+            onPressed: _busy
+                ? null
+                : () {
+                    Navigator.pop(context);
+                  },
+          ),
+          backgroundColor: theme.primaryColor,
+          actions: <Widget>[
+            IconButton(
+              tooltip: 'Reset',
+              icon: const Icon(JamIcons.refresh),
+              onPressed: _isEdited && !_busy ? _reset : null,
+            ),
+            if (_busy)
+              Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: theme.colorScheme.error),
+                ),
+              )
+            else
+              IconButton(
+                tooltip: 'Download',
+                icon: const Icon(JamIcons.download),
+                onPressed: !_editorReady
+                    ? null
+                    : () => unawaited(
+                        _startActionWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download'),
+                      ),
+              ),
+            if (!hideSetWallpaperUi)
+              IconButton(
+                tooltip: 'Set as wallpaper',
+                icon: const Icon(JamIcons.check),
+                onPressed: !_editorReady || _busy
+                    ? null
+                    : () =>
+                          unawaited(_startActionWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+              ),
+          ],
         ),
         backgroundColor: theme.primaryColor,
-        actions: <Widget>[
-          IconButton(tooltip: 'Reset', icon: const Icon(JamIcons.refresh), onPressed: _isEdited ? _reset : null),
-          if (_busy)
-            Center(
-              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: theme.colorScheme.error)),
-            )
-          else
-            IconButton(
-              tooltip: 'Download',
-              icon: const Icon(JamIcons.download),
-              onPressed: () =>
-                  unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
-            ),
-          if (!hideSetWallpaperUi)
-            IconButton(
-              tooltip: 'Set as wallpaper',
-              icon: const Icon(JamIcons.check),
-              onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
-            ),
-        ],
+        body: _loadFailed
+            ? Center(child: Text("Couldn't open this wallpaper.", style: theme.textTheme.bodyMedium))
+            : Column(
+                children: [
+                  Expanded(child: _buildPreview(theme)),
+                  IgnorePointer(ignoring: _busy, child: _buildBottomPanel(theme)),
+                ],
+              ),
       ),
-      backgroundColor: theme.primaryColor,
-      body: _loadFailed
-          ? Center(child: Text("Couldn't open this wallpaper.", style: theme.textTheme.bodyMedium))
-          : Column(
-              children: [
-                Expanded(child: _buildPreview(theme)),
-                _buildBottomPanel(theme),
-              ],
-            ),
     );
   }
 
@@ -557,6 +634,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final double shortSide = constraints.biggest.shortestSide;
+                      final double pixelShortSide = shortSide * dpr;
+                      if (_previewPixelShortSide != pixelShortSide) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && _previewPixelShortSide != pixelShortSide) {
+                            setState(() => _previewPixelShortSide = pixelShortSide);
+                          }
+                        });
+                      }
                       final ui.ImageFilter? filter = _comparing
                           ? null
                           : buildEditFilter(_stack, _adjustments, shortSide);
@@ -565,6 +650,27 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                         fit: BoxFit.cover,
                         cacheWidth: (constraints.maxWidth * dpr).round(),
                         gaplessPlayback: true,
+                        frameBuilder: (context, child, frame, synchronous) {
+                          if (frame != null && !_previewLoaded) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted && !_previewLoaded) setState(() => _previewLoaded = true);
+                            });
+                          }
+                          return child;
+                        },
+                        errorBuilder: (_, _, _) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted && !_loadFailed) {
+                              setState(() {
+                                _loadFailed = true;
+                                _previewLoaded = false;
+                              });
+                            }
+                          });
+                          return Center(
+                            child: Text("Couldn't open this wallpaper.", style: theme.textTheme.bodyMedium),
+                          );
+                        },
                       );
                       if (filter != null) {
                         image = ImageFiltered(imageFilter: filter, child: image);
@@ -696,7 +802,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     );
   }
 
-  Widget _thumb() => Image(image: _thumbProvider, fit: BoxFit.cover);
+  Widget _thumb() =>
+      Image(image: _thumbProvider, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink());
 
   Widget _buildTile(
     ThemeData theme, {

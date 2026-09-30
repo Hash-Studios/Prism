@@ -24,18 +24,35 @@ Future<bool> loadKernelEffects() async {
   }
 }
 
-ui.ImageFilter kernelImageFilter(KernelEffect effect) {
+ui.ImageFilter kernelImageFilter(KernelEffect effect, {double kernelScale = 1}) {
   final ui.FragmentShader shader = _convolveProgram!.fragmentShader();
   for (int i = 0; i < 9; i++) {
     shader.setFloat(2 + i, effect.kernel[i]);
   }
   shader.setFloat(11, effect.bias / 255);
+  shader.setFloat(12, kernelScale);
   return ui.ImageFilter.shader(shader);
+}
+
+double kernelScaleForExport(int sourceShortSide, double previewPixelShortSide) =>
+    sourceShortSide / previewPixelShortSide;
+
+Future<ui.Image> rasterizePicture(ui.Picture picture, int width, int height) async {
+  try {
+    return await picture.toImage(width, height);
+  } finally {
+    picture.dispose();
+  }
 }
 
 /// Builds one GPU filter for the stack, applied in selection order, then the sliders, then blur.
 /// [shortSide] is the short side of the drawn image in the filter's pixel space.
-ui.ImageFilter? buildEditFilter(List<WallpaperFilter> stack, WallpaperAdjustments adjustments, double shortSide) {
+ui.ImageFilter? buildEditFilter(
+  List<WallpaperFilter> stack,
+  WallpaperAdjustments adjustments,
+  double shortSide, {
+  double kernelScale = 1,
+}) {
   ui.ImageFilter? filter;
   ColorMatrix? pending;
 
@@ -52,7 +69,7 @@ ui.ImageFilter? buildEditFilter(List<WallpaperFilter> stack, WallpaperAdjustment
         pending = pending == null ? item.matrix : composeMatrices(pending!, item.matrix);
       case KernelEffect():
         flush();
-        then(kernelImageFilter(item));
+        then(kernelImageFilter(item, kernelScale: kernelScale));
     }
   }
   pending = pending == null ? adjustments.matrix : composeMatrices(pending!, adjustments.matrix);
@@ -68,11 +85,14 @@ ui.ImageFilter? buildEditFilter(List<WallpaperFilter> stack, WallpaperAdjustment
 Future<Uint8List> renderEditedPng(
   ui.Image source,
   List<WallpaperFilter> stack,
-  WallpaperAdjustments adjustments,
-) async {
+  WallpaperAdjustments adjustments, {
+  double? previewPixelShortSide,
+}) async {
   final int width = source.width;
   final int height = source.height;
-  final ui.ImageFilter? filter = buildEditFilter(stack, adjustments, math.min(width, height).toDouble());
+  final int shortSide = math.min(width, height);
+  final double kernelScale = previewPixelShortSide == null ? 1 : kernelScaleForExport(shortSide, previewPixelShortSide);
+  final ui.ImageFilter? filter = buildEditFilter(stack, adjustments, shortSide.toDouble(), kernelScale: kernelScale);
   final ui.PictureRecorder recorder = ui.PictureRecorder();
   final Canvas canvas = Canvas(recorder);
   final Rect bounds = Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
@@ -80,8 +100,7 @@ Future<Uint8List> renderEditedPng(
   canvas.drawImage(source, Offset.zero, Paint()..filterQuality = FilterQuality.high);
   if (filter != null) canvas.restore();
   final ui.Picture picture = recorder.endRecording();
-  final ui.Image rendered = await picture.toImage(width, height);
-  picture.dispose();
+  final ui.Image rendered = await rasterizePicture(picture, width, height);
   try {
     final ByteData? data = await rendered.toByteData(format: ui.ImageByteFormat.png);
     if (data == null) throw StateError('PNG encode returned null');

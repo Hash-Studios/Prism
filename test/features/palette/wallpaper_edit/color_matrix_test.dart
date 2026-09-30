@@ -35,6 +35,20 @@ void main() {
         }
       });
     }
+
+    test('affine formulas remain correct at channel boundaries before clamping', () {
+      const List<Rgb> boundaryColors = [
+        [0, 0, 0],
+        [255, 255, 255],
+        [255, 0, 0],
+        [0, 255, 255],
+      ];
+      for (final (List<double>, Step) op in ops.values) {
+        for (final Rgb c in boundaryColors) {
+          expectClose(applyMatrix(op.$1, c), op.$2(c), 1e-6);
+        }
+      }
+    });
   });
 
   group('composeMatrices', () {
