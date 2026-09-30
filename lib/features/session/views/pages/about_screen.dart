@@ -106,7 +106,7 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              "A feature-rich wallpaper and setup manager.",
+              "A feature-rich wallpaper manager.",
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,

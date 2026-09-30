@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
+import {findUserByEmail} from "./common";
 
 export interface NotificationData extends Record<string, string> {
   route: string;
@@ -15,7 +16,7 @@ export interface NotificationPayload {
   modifier: string;
   channelId: string;
   /** FCM delivery target. Omit for in-app-only (no push). */
-  fcmTarget?: { topic: string } | { token: string };
+  fcmTarget?: { topic: string } | { token: string } | { condition: string };
   /** If true, only send FCM push; do not write an in-app notification doc.
    *  Use for e.g. follower broadcasts where one doc per recipient would not scale. */
   pushOnly?: boolean;
@@ -71,7 +72,33 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
     return;
   }
 
-  const message: admin.messaging.Message = {
+  const message = fcmMessage({...payload, fcmTarget: payload.fcmTarget});
+
+  try {
+    if ("topic" in payload.fcmTarget && payload.modifier.includes("@")) {
+      const personalEmailTopic = payload.fcmTarget.topic === emailToTopic(payload.modifier);
+      if (!payload.pushOnly || personalEmailTopic) {
+        const user = await findUserByEmail(payload.modifier);
+        if (isLoggedOut(user?.data())) return;
+      }
+    }
+
+    const messageId = await messaging.send(message);
+    logger.info("FCM push sent.", {
+      messageId,
+      route: payload.data.route,
+      target: payload.fcmTarget,
+    });
+  } catch (err) {
+    logger.error("Failed to send FCM push.", {err, route: payload.data.route});
+  }
+}
+
+/** Builds the FCM message for a payload that has a delivery target. */
+export function fcmMessage(
+  payload: NotificationPayload & {fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>},
+): admin.messaging.Message {
+  return {
     notification: {
       title: payload.title,
       body: payload.body,
@@ -99,21 +126,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
         },
       },
     },
-    ...("topic" in payload.fcmTarget ?
-      {topic: payload.fcmTarget.topic} :
-      {token: payload.fcmTarget.token}),
+    ...payload.fcmTarget,
   };
-
-  try {
-    const messageId = await messaging.send(message);
-    logger.info("FCM push sent.", {
-      messageId,
-      route: payload.data.route,
-      target: payload.fcmTarget,
-    });
-  } catch (err) {
-    logger.error("Failed to send FCM push.", {err, route: payload.data.route});
-  }
 }
 
 /**
@@ -130,6 +144,10 @@ export async function sendToUidAndEmailTopics(
   if (uidTopic) {
     await sendNotification({...payload, fcmTarget: {topic: emailTopic}, pushOnly: true});
   }
+}
+
+export function isLoggedOut(user: {loggedIn?: unknown} | undefined): boolean {
+  return user?.loggedIn === false;
 }
 
 const INVALID_TOPIC_CHARS = /[^a-zA-Z0-9\-_.~%]/g;

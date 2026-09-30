@@ -16,7 +16,7 @@ subprojects {
 String inferNamespace(Project project) {
     def manifestFile = project.file("src/main/AndroidManifest.xml")
     if (manifestFile.exists()) {
-        def manifest = new XmlSlurper(false, false).parse(manifestFile)
+        def manifest = new groovy.xml.XmlSlurper(false, false).parse(manifestFile)
         def pkg = manifest.@package?.text()
         if (pkg != null && !pkg.trim().isEmpty()) {
             return pkg
@@ -37,10 +37,28 @@ subprojects { subproject ->
                 return
             }
 
+            // Some plugins skip kotlin-android on AGP 9 (they expect built-in Kotlin), but
+            // android.builtInKotlin=false is required by other plugins, so apply it here.
+            if (pluginId == "com.android.library" &&
+                subproject.file("src/main/kotlin").exists()) {
+                subproject.pluginManager.apply("org.jetbrains.kotlin.android")
+                subproject.extensions.getByName("kotlin").compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            }
+
             if (androidExt.hasProperty("buildFeatures") &&
                 androidExt.buildFeatures != null &&
                 androidExt.buildFeatures.hasProperty("buildConfig")) {
                 androidExt.buildFeatures.buildConfig = true
+            }
+
+            // AGP 9 fails the AAR metadata check for libraries compiled below their deps' minimum.
+            if (pluginId == "com.android.library") {
+                subproject.extensions.getByName("androidComponents").finalizeDsl { ext ->
+                    def sdk = ext.compileSdk
+                    if (sdk != null && sdk < 36) {
+                        ext.compileSdk = 36
+                    }
+                }
             }
 
             if (androidExt.hasProperty("namespace")) {

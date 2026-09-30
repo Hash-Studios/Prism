@@ -31,6 +31,8 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/router/pending_deep_link_queue.dart';
+import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -40,13 +42,13 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
-import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
-import 'package:Prism/features/setups/setups.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -246,24 +248,25 @@ Future<void> main() async {
 
       runApp(
         LogToastOverlay(
-          child: RestartWidget(
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
-                BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
-                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
-                BlocProvider<StartupBloc>(
-                  create: (_) =>
-                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
-                ),
-                BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
-                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
-              ],
-              child: _MyApp(),
+          child: BlocProvider<AutoRotateBloc>(
+            create: (_) => getIt<AutoRotateBloc>(),
+            child: RestartWidget(
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                  BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
+                  BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
+                  BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                  BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                  BlocProvider<StartupBloc>(
+                    create: (_) =>
+                        getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                  ),
+                  BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
+                  BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+                ],
+                child: AutoRotateSessionListener(child: _MyApp()),
+              ),
             ),
           ),
         ),
@@ -428,10 +431,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
   final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
-  final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
+  final PendingDeepLinkQueue _pendingDeepLinks = PendingDeepLinkQueue();
   bool _bootstrapCompleted = false;
   static bool _launchLinkHandled = false;
-  bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
@@ -624,7 +626,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _processPendingDeepLinks() async {
-    if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
+    if (!_bootstrapCompleted || _pendingDeepLinks.isEmpty) {
       return;
     }
     if (_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name) {
@@ -633,16 +635,15 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       });
       return;
     }
-    _processingPendingDeepLinks = true;
-    try {
-      final List<DeepLinkActionEntity> queued = List<DeepLinkActionEntity>.from(_pendingDeepLinks);
-      _pendingDeepLinks.clear();
-      for (final DeepLinkActionEntity action in queued) {
-        await _handleDeepLinkIntent(action);
-      }
-    } finally {
-      _processingPendingDeepLinks = false;
-    }
+    await _pendingDeepLinks.drain(
+      _handleDeepLinkIntent,
+      onError: (action, error, stackTrace) => logger.w(
+        'Deep link navigation failed.',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{'uri': action.rawUri},
+      ),
+    );
   }
 
   Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
@@ -669,7 +670,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           ),
         );
       case SetupLinkIntent():
-        _appRouter.push(ShareSetupViewRoute(setupName: action.setupName));
+        // Setups were removed; old shared setup links open Home.
+        _appRouter.navigate(const HomeTabRoute());
+        toasts.error('Home screen setups are no longer available.');
         unawaited(
           analytics.track(
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),
@@ -798,9 +801,15 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
   }
 
+  bool get _pastStartup => mounted && _bootstrapCompleted && !isStartingUp(_appRouter);
+
   /// Routes a tapped push notification to the correct screen based on
   /// the `route` field in the notification's data payload.
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
+    // A cold-launch tap arrives before startup ends, and the splash would replace its route. Wait, like deep links do.
+    final bool canRoute = await waitForPushTapStartup(isMounted: () => mounted, isReady: () => _pastStartup);
+    if (!canRoute) return;
+
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();
     final String rawUrl = (data['url']?.toString() ?? '').trim();
@@ -814,6 +823,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       final Uri? parsed = Uri.tryParse(rawUrl);
       if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
         final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
+        if (!mounted) return;
         if (deepLinkRoute != null) {
           _appRouter.navigate(deepLinkRoute);
           return;
@@ -822,6 +832,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
 
     final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
+    if (!mounted) return;
     if (mappedRoute != null) {
       _appRouter.navigate(mappedRoute);
       return;
@@ -834,16 +845,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     final bool firebaseReady = await FirebaseInit.readyFuture;
     if (!firebaseReady) return;
 
-    // Foreground: show a heads-up local notification + sync the inbox.
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      unawaited(localNotification.showPushNotification(message));
-      unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
-    });
-
-    // Background / terminated → foreground: user tapped the notification.
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      unawaited(_handlePushTap(message.data));
-    });
+    // Foreground messages and taps on background pushes. It calls the callbacks set in initState.
+    localNotification.listenForPushMessages();
 
     // Launched from terminated state by tapping a notification.
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
@@ -859,12 +862,16 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
-    localNotification.router = _appRouter;
+    localNotification
+      ..router = _appRouter
+      ..onPushTap = _handlePushTap
+      ..onForegroundPush = () =>
+          unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(_restoreLoginStatus());
-    unawaited(localNotification.fetchNotificationData(context));
+    unawaited(localNotification.fetchNotificationData());
     unawaited(_listenForPushMessages());
   }
 

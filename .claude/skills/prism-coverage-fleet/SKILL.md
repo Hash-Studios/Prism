@@ -1,6 +1,6 @@
 ---
 name: prism-coverage-fleet
-description: Drive one or more Prism app areas (lib/features/<name>, or a top-level lib/ folder like lib/core, lib/data, lib/auth) to a target line-coverage via a fleet of parallel per-area agents, each working in its own git worktree, then reconcile all their commits into ONE clean branch + PR against master on Hash-Studios/Prism with a per-area coverage delta table. Use when the user asks to "get lib/features/setups to 100% coverage", "raise coverage across the app", "coverage sweep", "bring core to full line coverage", or names several areas and a coverage goal. NOT for a single quick test (just write it), and not for fixing a bug that happens to lack a test (root-cause the bug directly).
+description: Drive one or more Prism app areas (lib/features/<name>, or a top-level lib/ folder like lib/core, lib/data, lib/auth) to a target line-coverage via a fleet of parallel per-area agents, each working in its own git worktree, then reconcile all their commits into ONE clean branch + PR against master on Hash-Studios/Prism with a per-area coverage delta table. Use when the user asks to "get lib/features/wallpaper_upload to 100% coverage", "raise coverage across the app", "coverage sweep", "bring core to full line coverage", or names several areas and a coverage goal. NOT for a single quick test (just write it), and not for fixing a bug that happens to lack a test (root-cause the bug directly).
 ---
 
 # Prism Coverage Fleet
@@ -32,13 +32,13 @@ per-area Python snippet in Phase 1 already does this filtering; use it (with
 
 ## Inputs
 
-- **Areas**: an explicit list (`lib/features/setups lib/features/wall_of_the_day`),
+- **Areas**: an explicit list (`lib/features/wallpaper_upload lib/features/wall_of_the_day`),
   `all` (every `lib/features/<name>` directory plus one area for the remaining
   top-level `lib/` folders (`lib/core`, `lib/data`, `lib/auth`, `lib/analytics`,
   `lib/theme`, `lib/notifications`, `lib/global`, `lib/logger`); read `ls
   lib/features` and `ls lib`, don't hardcode the list), or a single
   `lib/features/<name>` / `lib/<top-level>` path. Tests for an area live under the
-  mirrored path in `test/` (e.g. `lib/features/setups` → `test/features/setups`,
+  mirrored path in `test/` (e.g. `lib/features/wallpaper_upload` → `test/features/wallpaper_upload`,
   `lib/core/coins` → `test/core/coins`).
 - **Target**: line-coverage percent, default **100**. Anything below target that
   the agent can prove genuinely untestable (platform-channel glue, `Platform.isIOS`
@@ -59,7 +59,7 @@ fvm flutter test --coverage --no-pub test/<mirrored-area-path>
 # Line coverage from lcov, generated files excluded, for just this area's SF: records:
 python3 - <<'PY'
 import re
-AREA = 'lib/features/setups'  # ← edit this; must match SF: paths' prefix
+AREA = 'lib/features/wallpaper_upload'  # ← edit this; must match SF: paths' prefix
 hit = total = 0
 skip = False
 with open('coverage/lcov.info') as f:
@@ -89,8 +89,8 @@ git fetch origin master
 git worktree add .claude/worktrees/coverage-<area-slug> -b coverage/<area-slug> origin/master
 ```
 
-Use a filesystem-safe slug for `<area-slug>` (e.g. `lib/features/setups` →
-`features-setups`, `lib/core/coins` → `core-coins`).
+Use a filesystem-safe slug for `<area-slug>` (e.g. `lib/features/wallpaper_upload` →
+`features-wallpaper_upload`, `lib/core/coins` → `core-coins`).
 
 Cap at **3 concurrent** agents (each runs its own Flutter toolchain via `fvm`;
 more thrashes the machine). Each agent's brief (via the `Agent` tool,
@@ -165,7 +165,7 @@ honestly if any worktree is dirty. Never force-remove.
 ```
 Coverage fleet, <date>
 area                        baseline   final   tests added
-lib/features/setups            82.4%   100%    +37
+lib/features/wallpaper_upload            82.4%   100%    +37
 lib/core/coins                 91.0%   100%    +22
 ...
 Excluded (justified): <area> <file:lines> (<why>)

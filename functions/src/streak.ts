@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {sendNotification} from "./notificationHelper";
+import {isLoggedOut, sendNotification} from "./notificationHelper";
 import {coinTransactionDoc, db, int, REGION, str} from "./common";
 
 const USERS_COLLECTION = "usersv2";
@@ -327,13 +327,16 @@ export const sendStreakReminders = onSchedule(
         }
 
         const nextReminderTs = nextReminderAfterTodayClaim(todayLocalKey, offset);
-        const fcmToken = claimedToday || alreadySentToday || userEmail.length === 0 ?
-          "" :
-          await fcmTokenFor(userDoc.ref, userData);
+        const loggedOut = isLoggedOut(userData);
+        const retryAfterLogin = loggedOut && !claimedToday && !alreadySentToday && userEmail.length > 0;
+        const noReminder = claimedToday || alreadySentToday || userEmail.length === 0 || loggedOut;
+        const fcmToken = noReminder ? "" : await fcmTokenFor(userDoc.ref, userData);
 
-        if (claimedToday || alreadySentToday || userEmail.length === 0 || fcmToken.length === 0) {
+        if (noReminder || fcmToken.length === 0) {
           await userDoc.ref.update({
-            "coinState.streakReminderNextAtUtc": nextReminderTs,
+            "coinState.streakReminderNextAtUtc": retryAfterLogin ?
+              admin.firestore.Timestamp.fromMillis(nowTs.toMillis() + 15 * 60_000) :
+              nextReminderTs,
           });
           skipped += 1;
           continue;

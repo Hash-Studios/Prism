@@ -101,7 +101,6 @@ enums:
       - edit_profile_tapped
       - open_drawer_tapped
       - drawer_fav_walls_tapped
-      - drawer_fav_setups_tapped
       - drawer_downloads_tapped
       - drawer_share_prism_tapped
       - drawer_logout_tapped
@@ -201,7 +200,6 @@ enums:
     values:
       - wallpaper
       - user
-      - setup
       - refer
   - name: analytics_surface
     dart_type: AnalyticsSurfaceValue
@@ -224,7 +222,6 @@ enums:
       - home_color_grid
       - home_collections_view_grid
       - favourite_walls_grid
-      - favourite_setups_grid
   - name: scroll_list_name
     dart_type: ScrollListNameValue
     values:
@@ -234,7 +231,6 @@ enums:
       - color_grid
       - collections_view_grid
       - favourite_walls_grid
-      - favourite_setups_grid
   - name: scroll_depth_percent
     dart_type: ScrollDepthPercentValue
     values:
@@ -254,7 +250,6 @@ enums:
       - external
 
 events:
-  - id: report_setup
   - id: content_report_submit
     fields:
       - name: content_type
@@ -277,16 +272,6 @@ events:
         key: result
         type: string
         required: false
-  - id: setup_fav_status_changed
-    fields:
-      - name: setup_id
-        key: id
-        type: string
-  - id: download_own_setup
-    fields:
-      - name: link
-        key: link
-        type: string
   - id: download_own_wall
     fields:
       - name: link
@@ -412,14 +397,6 @@ events:
         key: placement
         type: string
   - id: subscription_trigger_after_ad_watch_3
-    fields:
-      - name: source
-        key: source
-        type: string
-      - name: placement
-        key: placement
-        type: string
-  - id: subscription_trigger_setup_create_block
     fields:
       - name: source
         key: source
@@ -677,22 +654,6 @@ events:
         key: source_tag
         type: string
   - id: collections_checked
-  - id: edit_setup
-    fields:
-      - name: setup_id
-        key: id
-        type: string
-      - name: link
-        key: link
-        type: string
-  - id: upload_setup
-    fields:
-      - name: setup_id
-        key: id
-        type: string
-      - name: link
-        key: link
-        type: string
   - id: fav_status_changed
     fields:
       - name: wall_id
@@ -933,6 +894,22 @@ events:
       - name: wall_id
         key: wall_id
         type: string
+  - id: auto_rotate_enabled
+    fields:
+      - name: interval_minutes
+        key: interval_minutes
+        type: int
+      - name: target
+        key: target
+        type: enum
+        enum: WallpaperTarget
+      - name: shuffle
+        key: shuffle
+        type: bool
+      - name: wallpaper_count
+        key: wallpaper_count
+        type: int
+  - id: auto_rotate_disabled
   - id: nav_tab_selected
     fields:
       - name: from_tab

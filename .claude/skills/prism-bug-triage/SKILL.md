@@ -75,7 +75,7 @@ title, tags, and code reading, mark it ambiguous rather than guessing.
 Merge signals that are the same root cause: a GitHub issue describing a crash and a Sentry issue
 recording it are ONE bug (keep both references: the GitHub reporter gets the confirmation ask,
 the Sentry issue gets resolved). Cluster by feature area (feed, wallpaper apply, coins/premium,
-notifications, onboarding, setups, web) so two hunts don't independently rediscover the same
+notifications, onboarding, web) so two hunts don't independently rediscover the same
 underlying defect. Plain reasoning, no agents needed here.
 
 ### 3. Rank by impact

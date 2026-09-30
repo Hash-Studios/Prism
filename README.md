@@ -1,6 +1,6 @@
 # <div align="center"><img src="android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" alt="icon" width=30> Prism</div>
 
-<div align="center">Prism is a beautiful open-source wallpapers and home screen setups app for Android and iOS. It is built with Dart on top of Google's Flutter Framework.
+<div align="center">Prism is a beautiful open-source wallpapers app for Android and iOS. It is built with Dart on top of Google's Flutter Framework.
 
 
 ![flutter](https://img.shields.io/badge/Flutter-Framework-green?logo=flutter)
@@ -17,10 +17,10 @@
 </div>
 <a href='https://play.google.com/store/apps/details?id=com.hash.prism&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Prism UI Mockup' src='demo/Prism_Mockup.png'/></a>
 
-<b>Prism</b> brings you exclusive wallpapers & setups straight to your Android device.
-With unlimited downloads and favourites, you can be sure to never miss the best wallpapers & setups.
+<b>Prism</b> brings you exclusive wallpapers straight to your Android device.
+With unlimited downloads and favourites, you can be sure to never miss the best wallpapers.
 
-Our main goal is to create an unimaginable self-sustainable experience where people can share their walls and setups with the world, and everyone can like, download, and apply them.
+Our main goal is to create an unimaginable self-sustainable experience where people can share their walls with the world, and everyone can like, download, and apply them.
 
 <b>➡WALLPAPERS</b>
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
@@ -38,14 +38,6 @@ Our main goal is to create an unimaginable self-sustainable experience where peo
 - Preview the wallpaper with clock and app icons before applying
 - Set any wallpaper on the home screen, lock screen or both
 
-<b>➡SETUPS</b>
-- Best community made home screen setups
-- Unique browsing experience for viewing setups
-- High-quality setups uploaded weekly
-- Weekly giveaway contest for setups
-- Upload your setups for free!
-- Favourite & share the ones you like
-
 <b>➡COLLECTIONS</b>
 - Premium wallpaper collections made exclusively by hand!
 - Updated daily!
@@ -53,7 +45,7 @@ Our main goal is to create an unimaginable self-sustainable experience where peo
 - 30+ exclusive categories from WallHaven and Pexels
 
 <b>➡PROFILE</b>
-- Upload walls & setups!
+- Upload walls!
 - Create your wallpaper resume and get verified!
 - Follow other creators!
 - Promote your social media handles!
@@ -80,7 +72,6 @@ Now get access to more premium and exclusive stuff by buying Prism Premium.
 
 - Support development of the app
 - Be a part of exclusive giveaways
-- The ability to set and view details of setups (only 5 free setups can be applied in the free version)
 - The ability to use wallpaper filters
 - Get uploads reviewed instantly
 - Earn and spend Prism Coins (watch ads or complete daily streaks to earn; spend on downloads and AI generation)
@@ -91,9 +82,9 @@ Feel free to contact us for any issues, hash.studios.inc@gmail.com
 
 Join beta for the latest experimental builds and help us test the app, [https://play.google.com/apps/testing/com.hash.prism](https://play.google.com/apps/testing/com.hash.prism)
 
-Also, we regularly organize giveaways, share exclusive setups and wallpapers on Twitter, so follow us there [https://twitter.com/PrismWallpapers](https://twitter.com/PrismWallpapers)
+Also, we regularly organize giveaways, share exclusive wallpapers on Twitter, so follow us there [https://twitter.com/PrismWallpapers](https://twitter.com/PrismWallpapers)
 
-You can also report bugs, upload your setups/walls on our telegram channel
+You can also report bugs, upload your walls on our telegram channel
 [https://t.me/PrismWallpapers](https://t.me/PrismWallpapers)
 
 ## List of Contents
@@ -116,7 +107,6 @@ You can also report bugs, upload your setups/walls on our telegram channel
 - High-Quality Wallpapers from [WallHaven](https://wallhaven.cc/help/api) and [Pexels](https://www.pexels.com/api/)
 - Over 2000+ exclusive wallpapers with 5 color variants each
 - Community wallpapers uploaded by users all around the world
-- Homescreen setups — unique setups combining wallpapers, icon packs, and widgets
 - Exclusive collections updated daily with 30+ premium categories
 - 20+ wallpaper filters (Clarendon, Hudson, Mayfair, and more)
 - AI wallpaper generation with text prompts and style presets
@@ -126,10 +116,10 @@ You can also report bugs, upload your setups/walls on our telegram channel
 - Follow creators for the latest content
 - AMOLED Dark Mode supported
 - Optional Sign-in with Google or Apple
-- Each wallpaper/setup/creator has a unique deep link for easy sharing
+- Each wallpaper/creator has a unique deep link for easy sharing
 - Option to add Twitter/Instagram/links to your profile
 - Low internet usage with aggressive caching
-- Save favourite wallpapers and setups (synced to cloud)
+- Save favourite wallpapers (synced to cloud)
 - Set random wallpaper from downloaded ones via quick tile
 - Secure data storage on Google Firebase
 - Search wallpapers by keyword, color, or tags
@@ -168,17 +158,17 @@ Full changelog can be found [here](https://github.com/Hash-Studios/Prism/tree/ma
 | :-------------: | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
 |     Home     |    Search WallHaven   |    Search Pexels     |     Trending       |     Color Based     |
 
-| ![](demo/7.jpg) | ![](demo/8.jpg) | ![](demo/9.jpg) | ![](demo/11.jpg) | ![](demo/12.jpg) |
-| :-------------:  | :-------------:  | :-------------:  | :-------------:  | :-------------:  |
-|    Favourites    |    Downloads     |     Setups       |    Setups Info    |     Profile     |
+| ![](demo/7.jpg) | ![](demo/8.jpg) | ![](demo/12.jpg) |
+| :-------------:  | :-------------:  | :-------------:  |
+|    Favourites    |    Downloads     |     Profile     |
 
 | ![](demo/13.jpg) | ![](demo/14.jpg)| ![](demo/16.jpg)       | ![](demo/17.jpg)  | ![](demo/18.jpg) |
 | :-------------:  | :-------------: | :-------------:       | :-------------:  | :-------------:  |
 |  Upload Popup    |    Edit Wallpaper       |  Uploading Wallpaper    | Uploader's Profile   |     Scroll to Top Button       |
 
-| ![](demo/19.jpg) | ![](demo/20.jpg) | ![](demo/21.jpg)| ![](demo/23.jpg) | ![](demo/25.jpg) |
-| :-------------: | :-------------: | :-------------: | :-------------:  | :-------------:  |
-|     Categories     |     Collections    | Collection (Illustrations)  |    Setup Guidelines     |     Setup Upload       |
+| ![](demo/19.jpg) | ![](demo/20.jpg) | ![](demo/21.jpg)|
+| :-------------: | :-------------: | :-------------: |
+|     Categories     |     Collections    | Collection (Illustrations)  |
 
 | ![](demo/36.jpg) | ![](demo/38.jpg) | ![](demo/27.jpg)       | ![](demo/30.jpg)  | ![](demo/29.jpg)|
 | :-------------:  | :-------------:  | :-------------:       | :-------------:  | :-------------: |
