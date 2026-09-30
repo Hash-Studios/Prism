@@ -16,7 +16,6 @@ class NotificationPermissionPromptService {
   static final NotificationPermissionPromptService instance = NotificationPermissionPromptService._();
 
   static const String _promptedPrefKey = 'notificationPermissionPromptedV1';
-  static const String _wotdSubscribedPrefKey = 'subscribedToWotd';
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   /// Android reports denied until POST_NOTIFICATIONS is granted, even before the first ask.
@@ -85,9 +84,6 @@ class NotificationPermissionPromptService {
     final bool wantsWotd = _settings.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
     if (wantsWotd) {
       subscribedToWotd = await subscribeToTopicSafely(messaging, 'wall_of_the_day', sourceTag: '$sourceTag.wotd');
-      if (subscribedToWotd) {
-        await _settings.set(_wotdSubscribedPrefKey, true);
-      }
     }
 
     if (app_state.prismUser.loggedIn) {
@@ -115,14 +111,6 @@ class NotificationPermissionPromptService {
     return subscribedToWotd;
   }
 
-  AnalyticsReasonValue _reasonFromAuthorizationStatus(AuthorizationStatus status) {
-    switch (status) {
-      case AuthorizationStatus.denied:
-        return AnalyticsReasonValue.userCancelled;
-      case AuthorizationStatus.notDetermined:
-        return AnalyticsReasonValue.unknown;
-      default:
-        return AnalyticsReasonValue.unknown;
-    }
-  }
+  AnalyticsReasonValue _reasonFromAuthorizationStatus(AuthorizationStatus status) =>
+      status == AuthorizationStatus.denied ? AnalyticsReasonValue.userCancelled : AnalyticsReasonValue.unknown;
 }

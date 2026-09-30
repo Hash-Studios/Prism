@@ -53,4 +53,10 @@ class CoinPolicy {
   // Pro streak bonus: added on top of base daily reward
   static const int proStreakDailyBonus = 5;
   static const int proStreak7Bonus = 20;
+
+  /// Coins a streak claim on [day] pays, the same sum claimDailyStreak awards.
+  static int streakClaimRewardForDay(int day, {required bool isPro}) {
+    final int proBonus = !isPro ? 0 : (day >= 7 ? proStreak7Bonus : proStreakDailyBonus);
+    return streakTotalRewardForDay(day) + proBonus;
+  }
 }

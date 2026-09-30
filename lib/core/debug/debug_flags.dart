@@ -15,39 +15,55 @@ class DebugFlags extends ChangeNotifier {
 
   static final DebugFlags instance = DebugFlags._();
 
-  // ── Rendering (debug/profile builds only) ────────────────────────────────
+  static const List<String> _boolKeys = <String>[
+    'paintSize',
+    'repaintRainbow',
+    'paintBaselines',
+    'performanceOverlay',
+    'semanticsDebugger',
+    'logToasts',
+    'simulateNoInternet',
+  ];
 
-  bool _paintSizeEnabled = false;
-  bool get paintSizeEnabled => _paintSizeEnabled;
-  set paintSizeEnabled(bool v) {
-    if (_paintSizeEnabled == v) return;
-    _paintSizeEnabled = v;
-    debugPaintSizeEnabled = v;
-    _persist('paintSize', v);
+  final Map<String, bool> _flags = <String, bool>{};
+
+  bool _flag(String key) => _flags[key] ?? false;
+
+  void _setFlag(String key, bool v) {
+    if (_flag(key) == v) return;
+    _flags[key] = v;
+    _applyRendering();
+    _persist(key, v);
     notifyListeners();
   }
 
-  bool _repaintRainbow = false;
-  bool get repaintRainbow => _repaintRainbow;
-  set repaintRainbow(bool v) {
-    if (_repaintRainbow == v) return;
-    _repaintRainbow = v;
-    debugRepaintRainbowEnabled = v;
-    _persist('repaintRainbow', v);
-    notifyListeners();
+  /// Rendering flags only take effect in debug/profile builds.
+  void _applyRendering() {
+    debugPaintSizeEnabled = _flag('paintSize');
+    debugRepaintRainbowEnabled = _flag('repaintRainbow');
+    debugPaintBaselinesEnabled = _flag('paintBaselines');
   }
 
-  bool _paintBaselines = false;
-  bool get paintBaselines => _paintBaselines;
-  set paintBaselines(bool v) {
-    if (_paintBaselines == v) return;
-    _paintBaselines = v;
-    debugPaintBaselinesEnabled = v;
-    _persist('paintBaselines', v);
-    notifyListeners();
-  }
+  bool get paintSizeEnabled => _flag('paintSize');
+  set paintSizeEnabled(bool v) => _setFlag('paintSize', v);
 
-  // ── Animation speed ──────────────────────────────────────────────────────
+  bool get repaintRainbow => _flag('repaintRainbow');
+  set repaintRainbow(bool v) => _setFlag('repaintRainbow', v);
+
+  bool get paintBaselines => _flag('paintBaselines');
+  set paintBaselines(bool v) => _setFlag('paintBaselines', v);
+
+  bool get showPerformanceOverlay => _flag('performanceOverlay');
+  set showPerformanceOverlay(bool v) => _setFlag('performanceOverlay', v);
+
+  bool get showSemanticsDebugger => _flag('semanticsDebugger');
+  set showSemanticsDebugger(bool v) => _setFlag('semanticsDebugger', v);
+
+  bool get showLogToasts => _flag('logToasts');
+  set showLogToasts(bool v) => _setFlag('logToasts', v);
+
+  bool get simulateNoInternet => _flag('simulateNoInternet');
+  set simulateNoInternet(bool v) => _setFlag('simulateNoInternet', v);
 
   double _animationSpeed = 1.0;
   double get animationSpeed => _animationSpeed;
@@ -60,46 +76,6 @@ class DebugFlags extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── MaterialApp overlays ─────────────────────────────────────────────────
-
-  bool _showPerformanceOverlay = false;
-  bool get showPerformanceOverlay => _showPerformanceOverlay;
-  set showPerformanceOverlay(bool v) {
-    if (_showPerformanceOverlay == v) return;
-    _showPerformanceOverlay = v;
-    _persist('performanceOverlay', v);
-    notifyListeners();
-  }
-
-  bool _showSemanticsDebugger = false;
-  bool get showSemanticsDebugger => _showSemanticsDebugger;
-  set showSemanticsDebugger(bool v) {
-    if (_showSemanticsDebugger == v) return;
-    _showSemanticsDebugger = v;
-    _persist('semanticsDebugger', v);
-    notifyListeners();
-  }
-
-  // ── UX helpers ───────────────────────────────────────────────────────────
-
-  bool _showLogToasts = false;
-  bool get showLogToasts => _showLogToasts;
-  set showLogToasts(bool v) {
-    if (_showLogToasts == v) return;
-    _showLogToasts = v;
-    _persist('logToasts', v);
-    notifyListeners();
-  }
-
-  bool _simulateNoInternet = false;
-  bool get simulateNoInternet => _simulateNoInternet;
-  set simulateNoInternet(bool v) {
-    if (_simulateNoInternet == v) return;
-    _simulateNoInternet = v;
-    _persist('simulateNoInternet', v);
-    notifyListeners();
-  }
-
   // ── Init ─────────────────────────────────────────────────────────────────
 
   /// Load persisted flag values. Call after PersistenceBootstrap.initialize().
@@ -107,13 +83,9 @@ class DebugFlags extends ChangeNotifier {
     if (!PersistenceRuntime.isInitialized) return;
     final store = PersistenceRuntime.store;
 
-    _paintSizeEnabled = _readBool(store, 'paintSize');
-    _repaintRainbow = _readBool(store, 'repaintRainbow');
-    _paintBaselines = _readBool(store, 'paintBaselines');
-    _showPerformanceOverlay = _readBool(store, 'performanceOverlay');
-    _showSemanticsDebugger = _readBool(store, 'semanticsDebugger');
-    _showLogToasts = _readBool(store, 'logToasts');
-    _simulateNoInternet = _readBool(store, 'simulateNoInternet');
+    for (final String key in _boolKeys) {
+      _flags[key] = _readBool(store, key);
+    }
 
     final rawDilation = store.get('${_kPrefix}timeDilation');
     if (rawDilation is double) {
@@ -125,21 +97,15 @@ class DebugFlags extends ChangeNotifier {
     }
 
     // Apply loaded values to global Flutter debug variables immediately.
-    debugPaintSizeEnabled = _paintSizeEnabled;
-    debugRepaintRainbowEnabled = _repaintRainbow;
-    debugPaintBaselinesEnabled = _paintBaselines;
+    _applyRendering();
     scheduler.timeDilation = _animationSpeed;
   }
 
   void reset() {
-    paintSizeEnabled = false;
-    repaintRainbow = false;
-    paintBaselines = false;
+    for (final String key in _boolKeys) {
+      _setFlag(key, false);
+    }
     animationSpeed = 1.0;
-    showPerformanceOverlay = false;
-    showSemanticsDebugger = false;
-    showLogToasts = false;
-    simulateNoInternet = false;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

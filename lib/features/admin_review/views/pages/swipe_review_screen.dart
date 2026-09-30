@@ -1,15 +1,13 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
+import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:timeago/timeago.dart' as timeago;
 
 @RoutePage()
 class SwipeReviewScreen extends StatefulWidget {
@@ -32,12 +30,6 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   static const double _swipeThreshold = 100;
   static const double _velocityThreshold = 500;
 
-  static String? _uploadedAgo(FirestoreDocument doc) {
-    final DateTime? at = doc.createdAt;
-    if (at == null) return null;
-    return timeago.format(at.toLocal());
-  }
-
   @override
   void initState() {
     super.initState();
@@ -54,7 +46,9 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     super.dispose();
   }
 
-  double _maxDragX(double screenWidth) => screenWidth * 1.5;
+  static const double _offscreenFactor = 1.5;
+
+  double _maxDragX(double screenWidth) => screenWidth * _offscreenFactor;
 
   double get _displayX {
     if (_phase == _SwipePhase.animating && _xAnimation != null) {
@@ -112,39 +106,21 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 
   void _startDismissAnimation({required bool approve}) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final targetX = approve ? screenWidth * 1.5 : -screenWidth * 1.5;
-
-    _xAnimation = Tween<double>(
-      begin: _dragX,
-      end: targetX,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
-
-    setState(() {
-      _phase = _SwipePhase.animating;
-    });
-
-    _animationController.forward(from: 0).then((_) {
-      if (!mounted) return;
-      if (approve) {
-        _bloc.add(const ReviewBatchSwipeApproved());
-      } else {
-        _bloc.add(const ReviewBatchSwipeRejected());
-      }
-      setState(() {
-        _phase = _SwipePhase.idle;
-        _dragX = 0;
-        _xAnimation = null;
-      });
-      _animationController.reset();
-    });
+    final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
+    _startAnimation(
+      target: approve ? maxX : -maxX,
+      curve: Curves.easeOut,
+      onDone: () => _bloc.add(approve ? const ReviewBatchSwipeApproved() : const ReviewBatchSwipeRejected()),
+    );
   }
 
-  void _startSnapBackAnimation() {
+  void _startSnapBackAnimation() => _startAnimation(target: 0, curve: Curves.easeOutCubic);
+
+  void _startAnimation({required double target, required Curve curve, VoidCallback? onDone}) {
     _xAnimation = Tween<double>(
       begin: _dragX,
-      end: 0,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+      end: target,
+    ).animate(CurvedAnimation(parent: _animationController, curve: curve));
 
     setState(() {
       _phase = _SwipePhase.animating;
@@ -152,6 +128,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
 
     _animationController.forward(from: 0).then((_) {
       if (!mounted) return;
+      onDone?.call();
       setState(() {
         _phase = _SwipePhase.idle;
         _dragX = 0;
@@ -163,13 +140,6 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    if (!app_state.isAdminUser()) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Swipe Review')),
-        body: const Center(child: Text('You are not authorized to access this page.')),
-      );
-    }
-
     return BlocProvider.value(
       value: _bloc,
       child: Scaffold(
@@ -191,31 +161,35 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
             ),
           ],
         ),
-        body: BlocConsumer<ReviewBatchBloc, ReviewBatchState>(
-          listener: (context, state) {
-            if (state.status == ReviewBatchStatus.error && state.errorMessage != null) {
-              toasts.error(state.errorMessage!);
-            }
-            if (state.status == ReviewBatchStatus.batchComplete) {
-              toasts.codeSend('Batch complete! Loading next batch...');
-              _bloc.add(const ReviewBatchNextBatchRequested());
-            }
-          },
-          builder: (context, state) {
-            if (state.status == ReviewBatchStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        body: BlocListener<ReviewBatchBloc, ReviewBatchState>(
+          listenWhen: (previous, current) => current.undoCount > previous.undoCount,
+          listener: (context, state) => toasts.success('Undo successful'),
+          child: BlocConsumer<ReviewBatchBloc, ReviewBatchState>(
+            listener: (context, state) {
+              if (state.status == ReviewBatchStatus.error && state.errorMessage != null) {
+                toasts.error(state.errorMessage!);
+              }
+              if (state.status == ReviewBatchStatus.batchComplete) {
+                toasts.success('Batch complete! Loading next batch...');
+                _bloc.add(const ReviewBatchNextBatchRequested());
+              }
+            },
+            builder: (context, state) {
+              if (state.status == ReviewBatchStatus.loading) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (state.walls.isEmpty) {
-              return _buildEmptyState();
-            }
+              if (state.walls.isEmpty) {
+                return _buildEmptyState();
+              }
 
-            if (!state.hasMoreWalls && state.remainingInBatch == 0) {
-              return _buildBatchComplete(state);
-            }
+              if (!state.hasMoreWalls) {
+                return _buildBatchComplete(state);
+              }
 
-            return _buildSwipeArea(state);
-          },
+              return _buildSwipeArea(state);
+            },
+          ),
         ),
         bottomNavigationBar: BlocBuilder<ReviewBatchBloc, ReviewBatchState>(
           builder: (context, state) {
@@ -240,17 +214,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                 Positioned.fill(
                   child: Transform.scale(
                     scale: 0.9,
-                    child: SwipeWallpaperCard(
-                      imageUrl: state.walls[state.currentIndex + 1].wallpaperThumb.isNotEmpty
-                          ? state.walls[state.currentIndex + 1].wallpaperThumb
-                          : state.walls[state.currentIndex + 1].wallpaperUrl,
-                      title: state.walls[state.currentIndex + 1].data()['title']?.toString() ?? '',
-                      category: state.walls[state.currentIndex + 1].data()['category']?.toString() ?? 'General',
-                      authorName: state.walls[state.currentIndex + 1].by,
-                      authorPhoto: state.walls[state.currentIndex + 1].userPhoto,
-                      uploadedAgo: _uploadedAgo(state.walls[state.currentIndex + 1]),
-                      isTopCard: false,
-                    ),
+                    child: SwipeWallpaperCard.fromDocument(state.walls[state.currentIndex + 1], isTopCard: false),
                   ),
                 ),
               AnimatedBuilder(
@@ -266,16 +230,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                           offset: Offset(x, 0),
                           child: Transform.rotate(
                             angle: (x / 1000) * 0.3,
-                            child: SwipeWallpaperCard(
-                              imageUrl: currentWall.wallpaperThumb.isNotEmpty
-                                  ? currentWall.wallpaperThumb
-                                  : currentWall.wallpaperUrl,
-                              title: currentWall.data()['title']?.toString() ?? '',
-                              category: currentWall.data()['category']?.toString() ?? 'General',
-                              authorName: currentWall.by,
-                              authorPhoto: currentWall.userPhoto,
-                              uploadedAgo: _uploadedAgo(currentWall),
-                            ),
+                            child: SwipeWallpaperCard.fromDocument(currentWall),
                           ),
                         ),
                       ),
@@ -327,10 +282,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
               label: 'Undo',
               color: Colors.orange,
               enabled: state.canUndo,
-              onTap: () {
-                _bloc.add(const ReviewBatchUndoRequested());
-                toasts.codeSend('Undo successful');
-              },
+              onTap: () => _bloc.add(const ReviewBatchUndoRequested()),
             ),
             _ActionButton(
               icon: Icons.fullscreen,
@@ -416,29 +368,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   void _showFullImage(FirestoreDocument wall) {
     final url = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : wall.wallpaperThumb;
     if (url.isEmpty) return;
-
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
-          body: InteractiveViewer(
-            maxScale: 5,
-            child: Center(
-              child: CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.contain,
-                placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
-                errorWidget: (_, _, _) => const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    FullScreenImageView.show(context, url);
   }
 }
 

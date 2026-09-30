@@ -6,7 +6,6 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -16,6 +15,7 @@ class FirstWallpaperService {
 
   final CategoryFeedRepository _categoryFeedRepository;
   final WallOfTheDayRepository _wallOfTheDayRepository;
+  final Random _random = Random();
 
   Future<OnboardingWallpaperVm?> recommendForOnboarding(List<String> interests) async {
     if (interests.isNotEmpty) {
@@ -51,72 +51,27 @@ class FirstWallpaperService {
   OnboardingWallpaperVm? _pickRandomValidItem(List<FeedItemEntity> items, {required String sourceCategory}) {
     final valid = <OnboardingWallpaperVm>[];
     for (final item in items) {
-      final vm = item.when(
-        prism: (_, wall) {
-          if (wall.fullUrl.isEmpty) {
-            return null;
-          }
-          return OnboardingWallpaperVm(
-            fullUrl: wall.fullUrl,
-            thumbnailUrl: wall.thumbnailUrl,
-            title: wall.core.category ?? 'Wallpaper',
-            authorName: wall.core.authorName ?? '',
-            sourceCategory: sourceCategory,
-          );
-        },
-        wallhaven: (_, wall) {
-          if (wall.fullUrl.isEmpty) {
-            return null;
-          }
-          return OnboardingWallpaperVm(
-            fullUrl: wall.fullUrl,
-            thumbnailUrl: wall.thumbnailUrl,
-            title: 'Wallhaven',
-            authorName: '',
-            sourceCategory: sourceCategory,
-          );
-        },
-        pexels: (_, wall) {
-          if (wall.fullUrl.isEmpty) {
-            return null;
-          }
-          return OnboardingWallpaperVm(
-            fullUrl: wall.fullUrl,
-            thumbnailUrl: wall.thumbnailUrl,
-            title: 'Pexels',
-            authorName: wall.photographer ?? '',
-            sourceCategory: sourceCategory,
-          );
-        },
+      final (fullUrl, thumbnailUrl) = item.when(
+        prism: (_, wall) => (wall.fullUrl, wall.thumbnailUrl),
+        wallhaven: (_, wall) => (wall.fullUrl, wall.thumbnailUrl),
+        pexels: (_, wall) => (wall.fullUrl, wall.thumbnailUrl),
       );
-      if (vm != null) {
-        valid.add(vm);
-      }
+      if (fullUrl.isEmpty) continue;
+      valid.add(OnboardingWallpaperVm(fullUrl: fullUrl, thumbnailUrl: thumbnailUrl, sourceCategory: sourceCategory));
     }
     if (valid.isEmpty) return null;
-    return valid[Random().nextInt(valid.length)];
+    return valid[_random.nextInt(valid.length)];
   }
 
   Future<OnboardingWallpaperVm?> _fetchWotdVm() async {
-    try {
-      final result = await _wallOfTheDayRepository.fetchToday();
-      if (result.isSuccess && result.data != null) {
-        final wotd = result.data!;
-        if (wotd.url.isEmpty) {
-          return null;
-        }
-        return OnboardingWallpaperVm(
-          fullUrl: wotd.url,
-          thumbnailUrl: wotd.thumbnailUrl.isNotEmpty ? wotd.thumbnailUrl : wotd.url,
-          title: wotd.title.isNotEmpty ? wotd.title : 'Wall of the Day',
-          authorName: wotd.photographer,
-          sourceCategory: '',
-        );
-      }
-    } catch (e, st) {
-      logger.w('Failed to fetch fallback wallpaper of the day', error: e, stackTrace: st);
-    }
-    return null;
+    final result = await _wallOfTheDayRepository.fetchToday();
+    final wotd = result.data;
+    if (!result.isSuccess || wotd == null || wotd.url.isEmpty) return null;
+    return OnboardingWallpaperVm(
+      fullUrl: wotd.url,
+      thumbnailUrl: wotd.thumbnailUrl.isNotEmpty ? wotd.thumbnailUrl : wotd.url,
+      sourceCategory: '',
+    );
   }
 
   Future<bool> performAction(String fullUrl) async {

@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+source "$ROOT_DIR/tool/lib/search.sh"
 
 # Paths excluded from the dynamic-type check.
 # - lib/core/firestore/: raw Firestore boundary — dynamic is expected there.
@@ -15,7 +16,7 @@ check_pattern() {
   local pattern="$1"
   local title="$2"
   local matches
-  matches="$(rg -n "$pattern" lib test 2>/dev/null || true)"
+  matches="$(search "$pattern" lib test)"
   if [[ -z "$matches" ]]; then
     return
   fi
@@ -33,10 +34,10 @@ check_pattern() {
   done <<< "$matches"
 }
 
-check_pattern ': dynamic\b' ': dynamic'
+check_pattern ': dynamic($|[^A-Za-z0-9_])' ': dynamic'
 check_pattern 'List<dynamic>' 'List<dynamic>'
 check_pattern 'Map<dynamic, dynamic>' 'Map<dynamic, dynamic>'
-check_pattern ' as dynamic\b' 'as dynamic'
+check_pattern ' as dynamic($|[^A-Za-z0-9_])' 'as dynamic'
 
 if [[ $violations -gt 0 ]]; then
   echo "Total no-dynamic guard violations: $violations"

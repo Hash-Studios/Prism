@@ -1,14 +1,8 @@
-import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {emailToTopic, type NotificationData, sendNotification} from "./notificationHelper";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
+import {db, REGION} from "./common";
 
 interface ReportDoc {
   contentType?: string;
@@ -24,7 +18,7 @@ interface ReportDoc {
 export const onContentReportCreated = onDocumentCreated(
   {
     document: "contentReports/{reportId}",
-    region: "asia-south1",
+    region: REGION,
   },
   async (event) => {
     const data = event.data?.data() as ReportDoc | undefined;
@@ -65,8 +59,6 @@ export const onContentReportCreated = onDocumentCreated(
     const notificationData: NotificationData = isWallReport ?
       {
         route: "wall",
-        pageName: "",
-        url: "",
         wall_id: targetId,
         report_id: reportId,
         content_type: contentType,
@@ -76,8 +68,6 @@ export const onContentReportCreated = onDocumentCreated(
       } :
       {
         route: "content_report",
-        pageName: "",
-        url: "",
         report_id: reportId,
         content_type: contentType,
         target_doc_id: targetId,

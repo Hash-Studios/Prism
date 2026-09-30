@@ -8,12 +8,13 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
+import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -78,79 +79,30 @@ const double _kCollectionsTitleBlockHeight = 40;
 const double _kCollectionsTitleImageGap = 6;
 const double _kCollectionsGridChildAspectRatio = 0.56;
 
-class _CollectionTileSkeleton extends StatefulWidget {
-  const _CollectionTileSkeleton({required this.cellWidth, required this.base, required this.highlight});
+class _CollectionTileSkeleton extends StatelessWidget {
+  const _CollectionTileSkeleton({required this.cellWidth});
 
   final double cellWidth;
-  final Color base;
-  final Color highlight;
-
-  @override
-  State<_CollectionTileSkeleton> createState() => _CollectionTileSkeletonState();
-}
-
-class _CollectionTileSkeletonState extends State<_CollectionTileSkeleton> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late Animation<Color?> _shimmer;
-
-  void _attachColors() {
-    _shimmer = ColorTween(
-      begin: widget.base,
-      end: widget.highlight,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    _attachColors();
-    _controller.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CollectionTileSkeleton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.base != oldWidget.base || widget.highlight != oldWidget.highlight) {
-      _attachColors();
-      setState(() {});
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final Color fallback = Theme.of(context).colorScheme.surfaceContainer;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SizedBox(
-          height: _kCollectionsTitleBlockHeight,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: AnimatedBuilder(
-              animation: _shimmer,
-              builder: (BuildContext context, Widget? child) {
-                return Container(width: widget.cellWidth * 0.65, height: 13, color: _shimmer.value ?? fallback);
-              },
+    return PulsePlaceholder(
+      builder: (BuildContext context, Color color) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            SizedBox(
+              height: _kCollectionsTitleBlockHeight,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(width: cellWidth * 0.65, height: 13, color: color),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: _kCollectionsTitleImageGap),
-        Expanded(
-          child: AnimatedBuilder(
-            animation: _shimmer,
-            builder: (BuildContext context, Widget? child) {
-              return ColoredBox(color: _shimmer.value ?? fallback);
-            },
-          ),
-        ),
-      ],
+            const SizedBox(height: _kCollectionsTitleImageGap),
+            Expanded(child: ColoredBox(color: color)),
+          ],
+        );
+      },
     );
   }
 }
@@ -208,64 +160,24 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
 
     final _PremiumPreviewAction action =
-        await showModalBottomSheet<_PremiumPreviewAction>(
-          context: context,
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (sheetContext) {
-            final int currentBalance = CoinsService.instance.balanceNotifier.value;
-            final int missing = (CoinPolicy.premiumPreview24h - currentBalance).clamp(0, CoinPolicy.premiumPreview24h);
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(sheetContext).hintColor,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Premium Collection', style: Theme.of(sheetContext).textTheme.displaySmall),
-                  const SizedBox(height: 10),
-                  Text(
-                    missing > 0
-                        ? 'Unlock 24h preview for -10 coins. Need $missing more coins.'
-                        : 'Unlock this premium collection for 24 hours for -10 coins.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(sheetContext).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.unlockNow),
-                      child: const Text('Unlock 24h (-10)'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.watchAndUnlock),
-                      child: const Text('Watch Ad (+10) & Unlock'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.upgrade),
-                      child: const Text('Upgrade to Pro'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        await showCoinGateSheet<_PremiumPreviewAction>(
+          context,
+          title: 'Premium Collection',
+          cost: CoinPolicy.premiumPreview24h,
+          message: (missing) => missing > 0
+              ? 'Unlock 24h preview for -${CoinPolicy.premiumPreview24h} coins. Need $missing more coins.'
+              : 'Unlock this premium collection for 24 hours for -${CoinPolicy.premiumPreview24h} coins.',
+          options: const [
+            CoinGateOption(
+              label: 'Unlock 24h (-${CoinPolicy.premiumPreview24h})',
+              value: _PremiumPreviewAction.unlockNow,
+            ),
+            CoinGateOption(
+              label: 'Watch Ad (+${CoinPolicy.rewardedAd}) & Unlock',
+              value: _PremiumPreviewAction.watchAndUnlock,
+            ),
+            CoinGateOption(label: 'Upgrade to Pro', value: _PremiumPreviewAction.upgrade, outlined: true),
+          ],
         ) ??
         _PremiumPreviewAction.none;
 
@@ -282,7 +194,6 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       case _PremiumPreviewAction.upgrade:
         if (mounted) {
           await PaywallOrchestrator.instance.present(
-            context,
             placement: PaywallPlacement.lowBalance,
             source: 'premium_preview_upgrade',
           );
@@ -332,7 +243,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           coinsSpent: CoinPolicy.premiumPreview24h,
         ),
       );
-      toasts.codeSend('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
+      toasts.success('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
     }
     _openCollection(collectionName);
   }
@@ -344,7 +255,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         sourceTag: 'coins.preview.watch_and_unlock.collections_grid',
       ),
     );
-    final bool watched = await _watchRewardedAd();
+    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
@@ -359,10 +270,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         return;
       }
       if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-          context,
-          source: 'premium_preview_watch_ad',
-        );
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'premium_preview_watch_ad');
       }
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(
@@ -379,92 +287,43 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     );
   }
 
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _watchRewardedAd() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      return false;
-    }
-    bool watchRequested = false;
-    try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      return result.shouldUnlockDownload;
-    } catch (_) {
-      return false;
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
-    }
-  }
-
   Future<void> refreshList() async {
-    await c_data.getCollections();
+    try {
+      await c_data.getCollections();
+    } catch (error, stackTrace) {
+      logger.w('Failed to refresh collections.', error: error, stackTrace: stackTrace);
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Object?> rawCollections =
-        c_data.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
+    final List<Map<String, dynamic>> rawCollections = c_data.collections;
     final bool isLoading = rawCollections.isEmpty;
-
-    Map<String, dynamic> asMap(Object? raw) {
-      if (raw is Map<String, dynamic>) {
-        return raw;
-      }
-      if (raw is Map) {
-        return raw.cast<String, dynamic>();
-      }
-      return <String, dynamic>{};
-    }
 
     final List<_DiscoverTileData> discoverTiles = isLoading
         ? const <_DiscoverTileData>[]
         : <_DiscoverTileData>[
-            ...rawCollections.map((raw) {
-              final collection = asMap(raw);
-              return _DiscoverTileData(
+            ...rawCollections.map(
+              (collection) => _DiscoverTileData(
                 kind: _DiscoverTileKind.collection,
                 name: collection['name']?.toString() ?? '',
                 thumb1: collection['thumb1']?.toString() ?? '',
                 thumb2: collection['thumb2']?.toString() ?? '',
                 isPremium: collection['premium'] == true,
-              );
-            }),
-            ...context
-                .categoryChoiceList(listen: false)
-                .map(
-                  (choice) => _DiscoverTileData(
-                    kind: _DiscoverTileKind.category,
-                    name: choice.name?.trim() ?? '',
-                    thumb1: choice.image?.trim() ?? '',
-                    thumb2: choice.image2?.trim() ?? choice.image?.trim() ?? '',
-                    isPremium: false,
-                  ),
-                ),
+              ),
+            ),
+            ...context.watch<CategoryFeedBloc>().state.categories.map(
+              (category) => _DiscoverTileData(
+                kind: _DiscoverTileKind.category,
+                name: category.name.trim(),
+                thumb1: category.image.trim(),
+                thumb2: category.image2.trim(),
+                isPremium: false,
+              ),
+            ),
           ];
     final int itemCount = isLoading ? 8 : discoverTiles.length;
     const double gridSpacing = 8;
@@ -489,11 +348,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       if (loading) {
         final Widget tileBody = Material(
           color: Colors.transparent,
-          child: _CollectionTileSkeleton(
-            cellWidth: cellWidth,
-            base: scheme.surfaceContainer,
-            highlight: scheme.surfaceContainerHigh,
-          ),
+          child: _CollectionTileSkeleton(cellWidth: cellWidth),
         );
         return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
       }

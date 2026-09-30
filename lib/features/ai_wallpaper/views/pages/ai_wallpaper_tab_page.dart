@@ -12,6 +12,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
@@ -25,7 +26,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -39,6 +40,7 @@ abstract final class _AiGenSpace {
   static const double xl = 24;
 }
 
+@RoutePage(name: 'AiTabRoute')
 class AiWallpaperTabPage extends StatefulWidget {
   const AiWallpaperTabPage({super.key});
 
@@ -47,7 +49,7 @@ class AiWallpaperTabPage extends StatefulWidget {
 }
 
 class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
-  final AiGenerationRepositoryImpl _repository = AiGenerationRepositoryImpl();
+  final AiGenerationRepositoryImpl _repository = getIt<AiGenerationRepositoryImpl>();
   final Random _random = Random();
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _variationController = TextEditingController();
@@ -244,7 +246,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   String _buildRandomPrompt() {
-    final scenes = _scenePoolByStyle[_selectedStyle] ?? _scenePoolByStyle[AiStylePreset.abstract]!;
+    final scenes = _scenePoolByStyle[_selectedStyle]!;
     final scene = _pickRandom(scenes);
     final lighting = _pickRandom(_lightingPool);
     final mood = _pickRandom(_moodPool);
@@ -274,43 +276,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
     final int hash = app_state.prismUser.id.codeUnits.fold<int>(0, (prev, unit) => (prev + unit) % 100);
     return hash < percent;
-  }
-
-  String _targetSizeForDevice(BuildContext context) {
-    const int minShortEdge = 720;
-    const int maxLongEdge = 2048;
-    const double maxPixelBudget = 2.9 * 1000 * 1000;
-
-    final media = MediaQuery.of(context);
-    final double dpr = media.devicePixelRatio.clamp(1.0, 3.0);
-    final int rawW = (media.size.width * dpr).round().clamp(360, 4096);
-    final int rawH = (media.size.height * dpr).round().clamp(640, 4096);
-
-    final bool portrait = rawH >= rawW;
-    final int longRaw = portrait ? rawH : rawW;
-    final int shortRaw = portrait ? rawW : rawH;
-    final double aspect = longRaw / shortRaw;
-
-    int shortTarget = shortRaw.clamp(minShortEdge, maxLongEdge);
-    int longTarget = (shortTarget * aspect).round();
-    if (longTarget > maxLongEdge) {
-      longTarget = maxLongEdge;
-      shortTarget = (longTarget / aspect).round().clamp(minShortEdge, maxLongEdge);
-    }
-
-    int width = portrait ? shortTarget : longTarget;
-    int height = portrait ? longTarget : shortTarget;
-
-    final int pixels = width * height;
-    if (pixels > maxPixelBudget) {
-      final double scale = sqrt(maxPixelBudget / pixels);
-      width = (width * scale).round();
-      height = (height * scale).round();
-    }
-
-    width = ((width / 8).round() * 8).clamp(512, maxLongEdge);
-    height = ((height / 8).round() * 8).clamp(512, maxLongEdge);
-    return '${width}x$height';
   }
 
   bool _isAspectRatioMismatch({required AiGenerationRecord generated, required String targetSize}) {
@@ -361,51 +326,102 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
   }
 
-  Future<void> _generate({bool variation = false}) async {
-    if (_loadingGeneration) return;
+  bool _canStartGeneration() {
+    if (_loadingGeneration) return false;
     if (!_isLoggedIn) {
       toasts.error('Please sign in to generate wallpapers.');
-      return;
+      return false;
     }
     if (!_isRolloutEligible) {
       toasts.error('AI generation is currently rolling out. Please try again soon.');
-      return;
+      return false;
     }
+    return true;
+  }
 
-    final String prompt = variation ? _variationController.text.trim() : _promptController.text.trim();
-    if (!variation && prompt.isEmpty) {
+  Future<bool> _isOnlineForGeneration() async {
+    final bool online = await _hasNetworkOrUnknown();
+    if (!online) {
+      toasts.error('No connection. Connect to the internet, then try again.');
+    }
+    return online;
+  }
+
+  Future<void> _generate() async {
+    if (!_canStartGeneration()) return;
+
+    final String prompt = _promptController.text.trim();
+    if (prompt.isEmpty) {
       toasts.error('Add a description or tap a starting chip, then try again.');
       _promptFocus.requestFocus();
       return;
     }
-    if (variation && prompt.isEmpty) {
-      toasts.error('Say what you want different—colors, mood, details, and so on.');
-      return;
-    }
-    if (!variation && prompt.length > _maxPromptChars) {
+    if (prompt.length > _maxPromptChars) {
       toasts.error('Description is too long (max $_maxPromptChars characters).');
       return;
     }
-    if (variation && prompt.length > _maxVariationChars) {
+    if (!await _isOnlineForGeneration() || !mounted) return;
+
+    final String targetSize = aiTargetSize(
+      size: MediaQuery.sizeOf(context),
+      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
+    );
+    await _runGeneration(
+      request: (AiChargeMode mode, int coinsSpent) => _repository.generate(
+        prompt: prompt,
+        stylePreset: _selectedStyle,
+        qualityTier: _selectedQualityTier,
+        targetSize: targetSize,
+        chargeMode: mode,
+        coinsSpent: coinsSpent,
+      ),
+      successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
+          AiGenerateSuccessEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
+      onSuccess: (AiGenerationRecord generated) {
+        if (_isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
+          toasts.error('Crop may differ slightly on your device.');
+        }
+      },
+    );
+  }
+
+  Future<void> _generateVariation() async {
+    if (!_canStartGeneration()) return;
+
+    final String prompt = _variationController.text.trim();
+    if (prompt.isEmpty) {
+      toasts.error('Say what you want different—colors, mood, details, and so on.');
+      return;
+    }
+    if (prompt.length > _maxVariationChars) {
       toasts.error('That refinement is too long (max $_maxVariationChars characters).');
       return;
     }
-    if (variation && (_latest == null || !app_state.aiVariationsEnabled)) {
+    final AiGenerationRecord? latest = _latest;
+    if (latest == null || !app_state.aiVariationsEnabled) {
       toasts.error('Refinements are not available right now.');
       return;
     }
+    if (!await _isOnlineForGeneration() || !mounted) return;
 
-    final bool online = await _hasNetworkOrUnknown();
-    if (!online) {
-      toasts.error('No connection. Connect to the internet, then try again.');
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
+    await _runGeneration(
+      request: (AiChargeMode mode, int coinsSpent) => _repository.generateVariation(
+        generationId: latest.id,
+        chargeMode: mode,
+        coinsSpent: coinsSpent,
+        variationPrompt: prompt,
+      ),
+      successEvent: (AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) =>
+          AiVariationUsedEvent(provider: generated.provider, mode: mode, coinsSpent: coinsSpent),
+      onSuccess: (_) => _variationController.clear(),
+    );
+  }
 
-    final String? targetSize = variation ? null : _targetSizeForDevice(context);
-
+  Future<void> _runGeneration({
+    required Future<AiGenerationRecord> Function(AiChargeMode mode, int coinsSpent) request,
+    required AnalyticsEvent Function(AiGenerationRecord generated, AiChargeMode mode, int coinsSpent) successEvent,
+    required void Function(AiGenerationRecord generated) onSuccess,
+  }) async {
     setState(() => _loadingGeneration = true);
 
     final reservation = await CoinsService.instance.reserveForAiGeneration(
@@ -426,37 +442,17 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       AiGenerateStartedEvent(
         style: _selectedStyle.apiValue,
         quality: _selectedQualityTier.apiValue,
-        mode: aiChargeModeValueFromDomain(reservation.mode),
+        mode: reservation.mode,
       ),
     );
 
     try {
-      final AiGenerationRecord generated = variation
-          ? await _repository.generateVariation(
-              generationId: _latest!.id,
-              chargeMode: reservation.mode,
-              coinsSpent: reservation.coinsSpent,
-              variationPrompt: prompt,
-            )
-          : await _repository.generate(
-              prompt: prompt,
-              stylePreset: _selectedStyle,
-              qualityTier: _selectedQualityTier,
-              targetSize: targetSize!,
-              chargeMode: reservation.mode,
-              coinsSpent: reservation.coinsSpent,
-            );
+      final AiGenerationRecord generated = await request(reservation.mode, reservation.coinsSpent);
 
       CoinsService.instance.commitAiGenerationReservation(
         mode: reservation.mode,
         coinsSpent: reservation.coinsSpent,
         sourceTag: 'coins.commit.ai_screen',
-        reservationTransactionId: reservation.transactionId,
-        generationId: generated.id,
-        imageUrl: generated.watermarkedImageUrl,
-        thumbUrl: generated.watermarkedImageUrl,
-        prompt: generated.prompt,
-        stylePreset: generated.stylePreset.apiValue,
       );
 
       setState(() {
@@ -468,40 +464,16 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         HapticFeedback.lightImpact();
       }
 
-      if (variation) {
-        analytics.track(
-          AiVariationUsedEvent(
-            provider: generated.provider,
-            mode: aiChargeModeValueFromDomain(reservation.mode),
-            coinsSpent: reservation.coinsSpent,
-          ),
-        );
-      } else {
-        analytics.track(
-          AiGenerateSuccessEvent(
-            provider: generated.provider,
-            mode: aiChargeModeValueFromDomain(reservation.mode),
-            coinsSpent: reservation.coinsSpent,
-          ),
-        );
-        if (targetSize != null && _isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
-          toasts.error('Crop may differ slightly on your device.');
-        }
-      }
-      if (variation) {
-        _variationController.clear();
-      }
+      analytics.track(successEvent(generated, reservation.mode, reservation.coinsSpent));
+      onSuccess(generated);
     } catch (error, stackTrace) {
       logger.w('AI generation failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       await CoinsService.instance.rollbackAiGenerationReservation(
         reservation.mode,
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
-        coinsToRefund: _selectedQualityTier.coinCost,
       );
-      analytics.track(
-        AiGenerateFailedEvent(error: error.toString(), mode: aiChargeModeValueFromDomain(reservation.mode)),
-      );
+      analytics.track(AiGenerateFailedEvent(error: error.toString(), mode: reservation.mode));
       toasts.error(_toastForGenerateFailure(error));
     } finally {
       if (mounted) {
@@ -527,7 +499,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
       final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
-        toasts.codeSend(wallpaperSavedMessage);
+        toasts.success(wallpaperSavedMessage);
       } else {
         toasts.error(result.message ?? "Couldn't download! Please retry.");
       }
@@ -563,7 +535,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
     analytics.track(AiSubmitStartedEvent(generationId: record.id));
     try {
-      final metadata = await _repository.prefillSubmissionMetadata(generationId: record.id);
+      final AiSubmissionMetadata metadata = await _repository.prefillSubmissionMetadata(
+        generationId: record.id,
+        defaultTags: <String>[_selectedStyle.apiValue],
+      );
       final edited = await _showSubmissionEditor(metadata);
       if (edited == null) {
         return;
@@ -577,14 +552,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         record.watermarkedImageUrl,
         '${record.width}x${record.height}',
         'AI',
-        edited['title']?.toString(),
-        edited['category']?.toString(),
-        edited['description']?.toString(),
+        edited.title,
+        edited.category,
+        edited.description,
         false,
-        wallpaperTags: (edited['tags'] as List<Object?>? ?? const <Object?>[])
-            .map((Object? tag) => tag?.toString() ?? '')
-            .where((tag) => tag.isNotEmpty)
-            .toList(growable: false),
+        wallpaperTags: edited.tags,
         isAiGenerated: true,
         aiGenerationId: record.id,
         aiProvider: record.provider,
@@ -609,7 +581,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
       }
-      toasts.codeSend('Submitted for review.');
+      toasts.success('Submitted for review.');
     } catch (error, stackTrace) {
       logger.w('AI community submit failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       toasts.error(
@@ -628,18 +600,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return 'AI$suffix';
   }
 
-  // One-tap confirm submit sheet — auto-fills from prompt + style
-  Future<Map<String, dynamic>?> _showSubmissionEditor(Map<String, dynamic> metadata) async {
-    Map<String, dynamic>? output;
-    final title = (metadata['title'] ?? '').toString().trim();
-    final desc = (metadata['description'] ?? '').toString().trim();
-    final category = (metadata['category'] ?? _selectedStyle.label).toString().trim();
-    final existingTags = metadata['tags'] is List
-        ? (metadata['tags'] as List<Object?>)
-              .map((Object? item) => item?.toString().trim() ?? '')
-              .where((item) => item.isNotEmpty)
-              .toList(growable: false)
-        : <String>[_selectedStyle.apiValue];
+  Future<AiSubmissionMetadata?> _showSubmissionEditor(AiSubmissionMetadata metadata) async {
+    AiSubmissionMetadata? output;
+    final title = metadata.title;
+    final desc = metadata.description;
+    final category = metadata.category;
+    final existingTags = metadata.tags;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -725,12 +691,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                           .where((w) => w.length > 2),
                       ...existingTags,
                     ];
-                    output = <String, dynamic>{
-                      'title': title.isNotEmpty ? title : prompt.split(',').first.trim(),
-                      'description': desc.isNotEmpty ? desc : prompt,
-                      'category': category.isNotEmpty ? category : _selectedStyle.label,
-                      'tags': autoTags.toSet().toList(),
-                    };
+                    output = (
+                      title: title.isNotEmpty ? title : prompt.split(',').first.trim(),
+                      description: desc.isNotEmpty ? desc : prompt,
+                      category: category.isNotEmpty ? category : _selectedStyle.label,
+                      tags: autoTags.toSet().toList(),
+                    );
                     Navigator.of(ctx).pop();
                   },
                 ),
@@ -745,7 +711,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return output;
   }
 
-  // Variation / advanced options sheet
   void _showAdvancedSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -797,7 +762,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                           ? null
                           : () {
                               Navigator.of(ctx).pop();
-                              _generate(variation: true);
+                              _generateVariation();
                             },
                     ),
                   ),
@@ -809,8 +774,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       },
     );
   }
-
-  // ── UI builders ──────────────────────────────────────────────────────────
 
   Widget _buildQualitySelector() {
     final ThemeData theme = Theme.of(context);
@@ -1015,47 +978,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  Widget actionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool isPrimary = false,
-    String? semanticLabel,
-  }) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      label: semanticLabel ?? label,
-      child: Material(
-        color: isPrimary ? scheme.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isPrimary ? scheme.onPrimary : scheme.onSurface.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildActionRow(AiGenerationRecord current) {
     final bool canVary = app_state.aiVariationsEnabled && !_loadingGeneration;
     return Container(
@@ -1068,21 +990,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
           if (!hideSetWallpaperUi)
-            actionButton(
+            _ActionButton(
               icon: Icons.wallpaper_outlined,
               label: 'Set',
               semanticLabel: 'Set as wallpaper',
               onTap: () => _setWallpaper(current),
               isPrimary: true,
             ),
-          actionButton(
+          _ActionButton(
             icon: Icons.download_outlined,
             label: 'Save',
             semanticLabel: 'Save image to your device',
             onTap: () => _save(current),
           ),
           if (canVary)
-            actionButton(
+            _ActionButton(
               icon: Icons.auto_fix_high,
               label: 'Refine',
               semanticLabel: 'Refine this wallpaper with a follow-up description',
@@ -1155,9 +1077,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _buildPromptArea(bool loading) {
     final theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final List<String> scenes = (_scenePoolByStyle[_selectedStyle] ?? _scenePoolByStyle[AiStylePreset.abstract]!)
-        .take(3)
-        .toList();
+    final List<String> scenes = _scenePoolByStyle[_selectedStyle]!.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1452,6 +1372,58 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   },
                 ),
                 _buildHistoryStrip(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isPrimary = false,
+    this.semanticLabel,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isPrimary;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: semanticLabel ?? label,
+      child: Material(
+        color: isPrimary ? scheme.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isPrimary ? scheme.onPrimary : scheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
               ],
             ),
           ),

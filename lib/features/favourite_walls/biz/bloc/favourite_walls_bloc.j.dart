@@ -15,19 +15,16 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   FavouriteWallsBloc(
     this._fetchFavouriteWallsUseCase,
     this._toggleFavouriteWallUseCase,
-    this._removeFavouriteWallUseCase,
     this._clearFavouriteWallsUseCase,
   ) : super(FavouriteWallsState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_ToggleRequested>(_onToggleRequested);
-    on<_RemoveRequested>(_onRemoveRequested);
     on<_ClearRequested>(_onClearRequested);
   }
 
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
   final ToggleFavouriteWallUseCase _toggleFavouriteWallUseCase;
-  final RemoveFavouriteWallUseCase _removeFavouriteWallUseCase;
   final ClearFavouriteWallsUseCase _clearFavouriteWallsUseCase;
 
   bool _containsWall(String wallId) {
@@ -39,14 +36,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       ...state.items.where((item) => item.id != wall.id),
       wall,
     ];
-    next.sort((a, b) {
-      final DateTime? aDate = a.createdAt;
-      final DateTime? bDate = b.createdAt;
-      if (aDate == null && bDate == null) return 0;
-      if (aDate == null) return 1;
-      if (bDate == null) return -1;
-      return bDate.compareTo(aDate);
-    });
+    next.sort(compareByCreatedAtDesc);
     return next;
   }
 
@@ -107,25 +97,6 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
           items: isNowFavourite ? _upsertWall(event.wall) : _removeWall(event.wall.id),
-          failure: null,
-        ),
-      ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
-    );
-  }
-
-  Future<void> _onRemoveRequested(_RemoveRequested event, Emitter<FavouriteWallsState> emit) async {
-    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final result = await _removeFavouriteWallUseCase(
-      RemoveFavouriteWallParams(userId: state.userId, wallId: event.wallId),
-    );
-
-    result.fold(
-      onSuccess: (_) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: _removeWall(event.wallId),
           failure: null,
         ),
       ),

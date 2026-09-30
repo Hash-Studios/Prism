@@ -55,14 +55,13 @@ extension FavouriteWallsEventPatterns on FavouriteWallsEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _ToggleRequested value)?  toggleRequested,TResult Function( _RemoveRequested value)?  removeRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _ToggleRequested value)?  toggleRequested,TResult Function( _ClearRequested value)?  clearRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that);case _ClearRequested() when clearRequested != null:
+return toggleRequested(_that);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that);case _:
   return orElse();
 
@@ -81,14 +80,13 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _ToggleRequested value)  toggleRequested,required TResult Function( _RemoveRequested value)  removeRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _ToggleRequested value)  toggleRequested,required TResult Function( _ClearRequested value)  clearRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
 return refreshRequested(_that);case _ToggleRequested():
-return toggleRequested(_that);case _RemoveRequested():
-return removeRequested(_that);case _ClearRequested():
+return toggleRequested(_that);case _ClearRequested():
 return clearRequested(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -106,14 +104,13 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _ToggleRequested value)?  toggleRequested,TResult? Function( _RemoveRequested value)?  removeRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _ToggleRequested value)?  toggleRequested,TResult? Function( _ClearRequested value)?  clearRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that);case _ClearRequested() when clearRequested != null:
+return toggleRequested(_that);case _ClearRequested() when clearRequested != null:
 return clearRequested(_that);case _:
   return null;
 
@@ -131,13 +128,12 @@ return clearRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId)?  started,TResult Function()?  refreshRequested,TResult Function( FavouriteWallEntity wall)?  toggleRequested,TResult Function( String wallId)?  removeRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId)?  started,TResult Function()?  refreshRequested,TResult Function( FavouriteWallEntity wall)?  toggleRequested,TResult Function()?  clearRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that.wall);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that.wallId);case _ClearRequested() when clearRequested != null:
+return toggleRequested(_that.wall);case _ClearRequested() when clearRequested != null:
 return clearRequested();case _:
   return orElse();
 
@@ -156,13 +152,12 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId)  started,required TResult Function()  refreshRequested,required TResult Function( FavouriteWallEntity wall)  toggleRequested,required TResult Function( String wallId)  removeRequested,required TResult Function()  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId)  started,required TResult Function()  refreshRequested,required TResult Function( FavouriteWallEntity wall)  toggleRequested,required TResult Function()  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.userId);case _RefreshRequested():
 return refreshRequested();case _ToggleRequested():
-return toggleRequested(_that.wall);case _RemoveRequested():
-return removeRequested(_that.wallId);case _ClearRequested():
+return toggleRequested(_that.wall);case _ClearRequested():
 return clearRequested();case _:
   throw StateError('Unexpected subclass');
 
@@ -180,13 +175,12 @@ return clearRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId)?  started,TResult? Function()?  refreshRequested,TResult? Function( FavouriteWallEntity wall)?  toggleRequested,TResult? Function( String wallId)?  removeRequested,TResult? Function()?  clearRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId)?  started,TResult? Function()?  refreshRequested,TResult? Function( FavouriteWallEntity wall)?  toggleRequested,TResult? Function()?  clearRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _ToggleRequested() when toggleRequested != null:
-return toggleRequested(_that.wall);case _RemoveRequested() when removeRequested != null:
-return removeRequested(_that.wallId);case _ClearRequested() when clearRequested != null:
+return toggleRequested(_that.wall);case _ClearRequested() when clearRequested != null:
 return clearRequested();case _:
   return null;
 
@@ -353,72 +347,6 @@ class __$ToggleRequestedCopyWithImpl<$Res>
   return _then(_ToggleRequested(
 wall: null == wall ? _self.wall : wall // ignore: cast_nullable_to_non_nullable
 as FavouriteWallEntity,
-  ));
-}
-
-
-}
-
-/// @nodoc
-
-
-class _RemoveRequested implements FavouriteWallsEvent {
-  const _RemoveRequested({required this.wallId});
-  
-
- final  String wallId;
-
-/// Create a copy of FavouriteWallsEvent
-/// with the given fields replaced by the non-null parameter values.
-@JsonKey(includeFromJson: false, includeToJson: false)
-@pragma('vm:prefer-inline')
-_$RemoveRequestedCopyWith<_RemoveRequested> get copyWith => __$RemoveRequestedCopyWithImpl<_RemoveRequested>(this, _$identity);
-
-
-
-@override
-bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RemoveRequested&&(identical(other.wallId, wallId) || other.wallId == wallId));
-}
-
-
-@override
-int get hashCode => Object.hash(runtimeType,wallId);
-
-@override
-String toString() {
-  return 'FavouriteWallsEvent.removeRequested(wallId: $wallId)';
-}
-
-
-}
-
-/// @nodoc
-abstract mixin class _$RemoveRequestedCopyWith<$Res> implements $FavouriteWallsEventCopyWith<$Res> {
-  factory _$RemoveRequestedCopyWith(_RemoveRequested value, $Res Function(_RemoveRequested) _then) = __$RemoveRequestedCopyWithImpl;
-@useResult
-$Res call({
- String wallId
-});
-
-
-
-
-}
-/// @nodoc
-class __$RemoveRequestedCopyWithImpl<$Res>
-    implements _$RemoveRequestedCopyWith<$Res> {
-  __$RemoveRequestedCopyWithImpl(this._self, this._then);
-
-  final _RemoveRequested _self;
-  final $Res Function(_RemoveRequested) _then;
-
-/// Create a copy of FavouriteWallsEvent
-/// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? wallId = null,}) {
-  return _then(_RemoveRequested(
-wallId: null == wallId ? _self.wallId : wallId // ignore: cast_nullable_to_non_nullable
-as String,
   ));
 }
 

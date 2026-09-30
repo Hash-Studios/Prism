@@ -2,7 +2,7 @@ import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notif
 import 'package:intl/intl.dart';
 
 /// Key used to merge notifications that share the same trimmed title.
-String inAppNotificationGroupKey(String title) {
+String _groupKey(String title) {
   final t = title.trim();
   return t.isEmpty ? '__untitled__' : t;
 }
@@ -23,35 +23,28 @@ class InAppNotificationTitleGroup {
     final t = items.first.title.trim();
     return t.isEmpty ? 'Notification' : items.first.title;
   }
+
+  /// What kind of push this group holds, guessed from its title and body wording.
+  NotificationKind get kind {
+    final String title = displayTitle.toLowerCase();
+    final String body = items.first.body.toLowerCase();
+    if (title.contains('follow') || body.contains('following you') || body.contains('followed you')) {
+      return NotificationKind.follower;
+    }
+    if (body.contains('is now live') && body.contains(' by ')) {
+      return NotificationKind.wallLive;
+    }
+    if (title.contains('wall') && title.contains('approv')) {
+      return NotificationKind.wallApproved;
+    }
+    if (title.contains('wall of the day')) {
+      return NotificationKind.wallOfTheDay;
+    }
+    return NotificationKind.generic;
+  }
 }
 
-/// Heuristic: follower-style push (title or body wording).
-bool notificationGroupLooksLikeFollowers(InAppNotificationTitleGroup group) {
-  final String title = group.displayTitle.toLowerCase();
-  if (title.contains('follow')) {
-    return true;
-  }
-  final String body = group.items.first.body.toLowerCase();
-  return body.contains('following you') || body.contains('followed you');
-}
-
-bool _wallLiveBodyPattern(String body) {
-  final String b = body.toLowerCase();
-  return b.contains('is now live') && b.contains(' by ');
-}
-
-/// Wall approved / “is now live” setup notifications (distinct from generic merges).
-bool notificationGroupLooksLikeWallApprovedLive(InAppNotificationTitleGroup group) {
-  if (notificationGroupLooksLikeFollowers(group)) {
-    return false;
-  }
-  final String title = group.displayTitle.toLowerCase();
-  final String body = group.items.first.body;
-  if (_wallLiveBodyPattern(body)) {
-    return true;
-  }
-  return title.contains('wall') && title.contains('approv');
-}
+enum NotificationKind { follower, wallLive, wallApproved, wallOfTheDay, generic }
 
 /// Creator segment from `"Title" by Name is now live.` (best-effort).
 String? wallLiveCreatorNameFromBody(String body) {
@@ -63,20 +56,8 @@ String? wallLiveCreatorNameFromBody(String body) {
   return match?.group(1)?.trim();
 }
 
-/// Today’s Wall of the Day–style recurring title.
-bool notificationGroupLooksLikeWallOfTheDay(InAppNotificationTitleGroup group) {
-  if (notificationGroupLooksLikeFollowers(group)) {
-    return false;
-  }
-  final String title = group.displayTitle.toLowerCase();
-  return title.contains('wall of the day');
-}
-
 /// Every item shares the same body (e.g. repeated “Check it out”).
 bool notificationGroupHasUniformBody(InAppNotificationTitleGroup group) {
-  if (group.items.isEmpty) {
-    return true;
-  }
   final String first = group.items.first.body.trim();
   for (final InAppNotificationEntity e in group.items) {
     if (e.body.trim() != first) {
@@ -86,21 +67,40 @@ bool notificationGroupHasUniformBody(InAppNotificationTitleGroup group) {
   return first.isNotEmpty;
 }
 
+enum _RelativeDay { today, yesterday, thisYear, earlier }
+
+_RelativeDay _relativeDay(DateTime local, DateTime now) {
+  bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+  if (sameDay(local, now)) {
+    return _RelativeDay.today;
+  }
+  if (sameDay(local, now.subtract(const Duration(days: 1)))) {
+    return _RelativeDay.yesterday;
+  }
+  return local.year == now.year ? _RelativeDay.thisYear : _RelativeDay.earlier;
+}
+
 /// Short day label for WOTD child rows (avoids repeating identical body text).
-String wallOfTheDayRowDayLabel(DateTime createdAt) {
+String wallOfTheDayRowDayLabel(DateTime createdAt, {DateTime? now}) {
   final DateTime local = createdAt.toLocal();
-  final DateTime now = DateTime.now().toLocal();
-  if (local.year == now.year && local.month == now.month && local.day == now.day) {
-    return 'Today';
-  }
-  final DateTime yesterday = now.subtract(const Duration(days: 1));
-  if (local.year == yesterday.year && local.month == yesterday.month && local.day == yesterday.day) {
-    return 'Yesterday';
-  }
-  if (local.year == now.year) {
-    return DateFormat.MMMd().format(local);
-  }
-  return DateFormat.yMMMd().format(local);
+  return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
+    _RelativeDay.today => 'Today',
+    _RelativeDay.yesterday => 'Yesterday',
+    _RelativeDay.thisYear => DateFormat.MMMd().format(local),
+    _RelativeDay.earlier => DateFormat.yMMMd().format(local),
+  };
+}
+
+/// Time stamp on a notification row: `3:05 PM`, `Yesterday, 3:05 PM`, `Mar 4` or `Mar 4, 2024`.
+String notificationTimeLabel(DateTime createdAt, {DateTime? now}) {
+  final DateTime local = createdAt.toLocal();
+  final String time = DateFormat('h:mm a').format(local);
+  return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
+    _RelativeDay.today => time,
+    _RelativeDay.yesterday => 'Yesterday, $time',
+    _RelativeDay.thisYear => DateFormat.MMMd().format(local),
+    _RelativeDay.earlier => DateFormat.yMMMd().format(local),
+  };
 }
 
 /// Parses `"Name is now following you."` → display name; null if pattern unknown.
@@ -120,23 +120,13 @@ String? followerDisplayNameFromBody(String body) {
 String groupedListCountActionLine(InAppNotificationTitleGroup group, {required bool expanded}) {
   final int n = group.items.length;
   final String action = expanded ? 'Hide' : 'Show all';
-  if (notificationGroupLooksLikeFollowers(group)) {
-    final String label = n == 1 ? 'new follower' : 'new followers';
-    return '$n $label · $action';
-  }
-  if (notificationGroupLooksLikeWallApprovedLive(group)) {
-    if (_wallLiveBodyPattern(group.items.first.body)) {
-      final String label = n == 1 ? 'wall went live' : 'walls went live';
-      return '$n $label · $action';
-    }
-    final String label = n == 1 ? 'approval' : 'approvals';
-    return '$n $label · $action';
-  }
-  if (notificationGroupLooksLikeWallOfTheDay(group)) {
-    final String label = n == 1 ? 'daily pick' : 'daily picks';
-    return '$n $label · $action';
-  }
-  final String label = n == 1 ? 'notification' : 'notifications';
+  final String label = switch (group.kind) {
+    NotificationKind.follower => n == 1 ? 'new follower' : 'new followers',
+    NotificationKind.wallLive => n == 1 ? 'wall went live' : 'walls went live',
+    NotificationKind.wallApproved => n == 1 ? 'approval' : 'approvals',
+    NotificationKind.wallOfTheDay => n == 1 ? 'daily pick' : 'daily picks',
+    NotificationKind.generic => n == 1 ? 'notification' : 'notifications',
+  };
   return '$n $label · $action';
 }
 
@@ -150,27 +140,22 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group) {
     }
     return group.items.first.title.trim();
   }
-  if (notificationGroupLooksLikeFollowers(group)) {
-    final String? name = followerDisplayNameFromBody(firstBody);
-    if (name != null && name.isNotEmpty) {
-      if (n == 2) {
-        return '$name and 1 other followed you.';
+  switch (group.kind) {
+    case NotificationKind.follower:
+      final String? name = followerDisplayNameFromBody(firstBody);
+      if (name != null && name.isNotEmpty) {
+        return n == 2 ? '$name and 1 other followed you.' : '$name and ${n - 1} others followed you.';
       }
-      return '$name and ${n - 1} others followed you.';
-    }
-  }
-  if (notificationGroupLooksLikeWallApprovedLive(group)) {
-    final String? creator = wallLiveCreatorNameFromBody(firstBody);
-    if (creator != null && creator.isNotEmpty) {
-      if (n == 2) {
-        return 'From $creator and 1 other creator.';
+    case NotificationKind.wallLive || NotificationKind.wallApproved:
+      final String? creator = wallLiveCreatorNameFromBody(firstBody);
+      if (creator != null && creator.isNotEmpty) {
+        return n == 2 ? 'From $creator and 1 other creator.' : 'From $creator and ${n - 1} other creators.';
       }
-      return 'From $creator and ${n - 1} other creators.';
-    }
-    return 'Several creators—expand to see each wall.';
-  }
-  if (notificationGroupLooksLikeWallOfTheDay(group) && notificationGroupHasUniformBody(group)) {
-    return 'Each row is a different day; times are on the right.';
+      return 'Several creators—expand to see each wall.';
+    case NotificationKind.wallOfTheDay when notificationGroupHasUniformBody(group):
+      return 'Each row is a different day; times are on the right.';
+    case NotificationKind.wallOfTheDay || NotificationKind.generic:
+      break;
   }
   if (firstBody.isEmpty) {
     return '$n notifications in this group.';
@@ -186,14 +171,14 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group) {
 }
 
 /// Expects [sortedNewestFirst] (e.g. from repository). Returns groups sorted by
-/// each group’s newest [createdAt] (same order as before for ungrouped items).
+/// each group’s newest [createdAt].
 List<InAppNotificationTitleGroup> groupInAppNotificationsByTitle(List<InAppNotificationEntity> sortedNewestFirst) {
   if (sortedNewestFirst.isEmpty) {
     return const <InAppNotificationTitleGroup>[];
   }
   final map = <String, List<InAppNotificationEntity>>{};
   for (final InAppNotificationEntity n in sortedNewestFirst) {
-    map.putIfAbsent(inAppNotificationGroupKey(n.title), () => <InAppNotificationEntity>[]).add(n);
+    map.putIfAbsent(_groupKey(n.title), () => <InAppNotificationEntity>[]).add(n);
   }
   for (final List<InAppNotificationEntity> list in map.values) {
     list.sort((InAppNotificationEntity a, InAppNotificationEntity b) => b.createdAt.compareTo(a.createdAt));

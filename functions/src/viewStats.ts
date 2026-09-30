@@ -1,13 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {db, REGION} from "./common";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
-
-const REGION = "asia-south1";
 const WALLPAPER_STATS = "wallpaper_stats";
 const SETUP_STATS = "setup_stats";
 const MAX_ID_LEN = 128;

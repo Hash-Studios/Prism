@@ -1,4 +1,4 @@
-import 'package:cloud_functions/cloud_functions.dart' as cf;
+import 'package:Prism/core/constants/app_functions.dart';
 
 class GitHubContent {
   const GitHubContent({required this.downloadUrl, required this.path, required this.sha});
@@ -18,10 +18,6 @@ class GitHubContent {
 }
 
 class GitHubContentApi {
-  static const String _region = 'asia-south1';
-
-  cf.FirebaseFunctions get _functions => cf.FirebaseFunctions.instanceFor(region: _region);
-
   Future<GitHubContent> putFile({
     required String repo,
     required String path,
@@ -29,7 +25,7 @@ class GitHubContentApi {
     required String message,
     String? sha,
   }) async {
-    final result = await _functions.httpsCallable('githubPutFile').call(<String, dynamic>{
+    final result = await appFunctions.httpsCallable('githubPutFile').call(<String, dynamic>{
       'repo': repo,
       'path': path,
       'contentBase64': contentBase64,
@@ -45,7 +41,7 @@ class GitHubContentApi {
     required String sha,
     required String message,
   }) async {
-    await _functions.httpsCallable('githubDeleteFile').call(<String, dynamic>{
+    await appFunctions.httpsCallable('githubDeleteFile').call(<String, dynamic>{
       'repo': repo,
       'path': path,
       'sha': sha,

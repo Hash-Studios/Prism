@@ -25,6 +25,8 @@ sealed class FeedItemEntity with _$FeedItemEntity {
   String get thumbnailUrl =>
       when(prism: (_, w) => w.thumbnailUrl, wallhaven: (_, w) => w.thumbnailUrl, pexels: (_, w) => w.thumbnailUrl);
 
+  String get fullUrl => when(prism: (_, w) => w.fullUrl, wallhaven: (_, w) => w.fullUrl, pexels: (_, w) => w.fullUrl);
+
   /// What screen readers say for this wallpaper's tile.
   String get semanticLabel => wallpaperSemanticLabel(
     when(

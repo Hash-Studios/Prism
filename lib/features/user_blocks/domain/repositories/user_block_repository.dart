@@ -2,9 +2,6 @@ import 'package:Prism/core/utils/result.dart';
 
 /// Server-backed block list + callable mutations.
 abstract class UserBlockRepository {
-  /// Whether the first blocked-creator snapshot for the current session has loaded.
-  bool get hasLoadedBlockedCreatorEmails;
-
   /// Live blocked creator emails (lowercase), for UI and filtering.
   Stream<Set<String>> watchBlockedCreatorEmails();
 

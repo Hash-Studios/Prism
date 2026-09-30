@@ -9,7 +9,6 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -25,7 +24,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class DownloadButton extends StatefulWidget {
   const DownloadButton({
     required this.link,
-    required this.colorChanged,
     this.isPremiumContent = false,
     this.contentId,
     this.sourceContext,
@@ -33,7 +31,6 @@ class DownloadButton extends StatefulWidget {
   });
 
   final String? link;
-  final bool colorChanged;
   final bool isPremiumContent;
   final String? contentId;
   final String? sourceContext;
@@ -45,18 +42,12 @@ class DownloadButton extends StatefulWidget {
 enum _LowBalanceAction { none, downloadNow, watchAndDownload, upgrade }
 
 class _DownloadButtonState extends State<DownloadButton> {
-  late bool isLoading;
+  bool isLoading = false;
 
   CoinSpendAction get _downloadSpendAction =>
       widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
 
   int get _downloadCost => _downloadSpendAction.cost();
-
-  @override
-  void initState() {
-    super.initState();
-    isLoading = false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +173,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                               ? null
                               : () async {
                                   setDialogState(() => watchingAd = true);
-                                  final bool watched = await _watchRewardedAd();
+                                  final bool watched = await watchRewardedAd(context.read<AdsBloc>());
                                   if (mounted) {
                                     setDialogState(() => watchingAd = false);
                                   }
@@ -230,65 +221,22 @@ class _DownloadButtonState extends State<DownloadButton> {
     CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: requiredCoins);
 
     final _LowBalanceAction action =
-        await showModalBottomSheet<_LowBalanceAction>(
-          context: context,
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (sheetContext) {
-            final int balance = CoinsService.instance.balanceNotifier.value;
-            final int missing = (requiredCoins - balance).clamp(0, requiredCoins);
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(sheetContext).hintColor,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Low coin balance', style: Theme.of(sheetContext).textTheme.displaySmall),
-                  const SizedBox(height: 10),
-                  Text(
-                    missing > 0
-                        ? 'You need $missing more coins for this download.'
-                        : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(sheetContext).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  if (allowDownloadNow)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.downloadNow),
-                        child: Text('Download (-$requiredCoins)'),
-                      ),
-                    ),
-                  if (allowDownloadNow) const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.watchAndDownload),
-                      child: const Text('Watch & Download (+10)'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.upgrade),
-                      child: const Text('Upgrade to Pro'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        await showCoinGateSheet<_LowBalanceAction>(
+          context,
+          title: 'Low coin balance',
+          cost: requiredCoins,
+          message: (missing) => missing > 0
+              ? 'You need $missing more coins for this download.'
+              : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
+          options: [
+            if (allowDownloadNow)
+              CoinGateOption(label: 'Download (-$requiredCoins)', value: _LowBalanceAction.downloadNow),
+            const CoinGateOption(
+              label: 'Watch & Download (+${CoinPolicy.rewardedAd})',
+              value: _LowBalanceAction.watchAndDownload,
+            ),
+            const CoinGateOption(label: 'Upgrade to Pro', value: _LowBalanceAction.upgrade, outlined: true),
+          ],
         ) ??
         _LowBalanceAction.none;
 
@@ -309,7 +257,6 @@ class _DownloadButtonState extends State<DownloadButton> {
       case _LowBalanceAction.upgrade:
         if (mounted) {
           await PaywallOrchestrator.instance.present(
-            context,
             placement: PaywallPlacement.lowBalance,
             source: 'download_low_balance_upgrade',
           );
@@ -321,7 +268,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<void> _handleWatchAndDownload({required int requiredCoins}) async {
-    final bool watched = await _watchRewardedAd();
+    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
@@ -338,7 +285,6 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       if (mounted) {
         await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-          context,
           source: 'download_watch_and_download_rewarded_ad',
         );
       }
@@ -365,12 +311,13 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _attemptCoinSpendAndDownload({required String sourceTag, bool showNudgeOnInsufficient = true}) async {
+    final String contentId = widget.contentId?.trim() ?? '';
     CoinMutationResult spendResult;
     try {
       spendResult = await CoinsService.instance.spend(
         _downloadSpendAction,
         sourceTag: sourceTag,
-        reason: widget.contentId?.trim().isNotEmpty == true ? 'content_${widget.contentId!.trim()}' : null,
+        reason: contentId.isEmpty ? null : 'content_$contentId',
       );
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
@@ -402,54 +349,12 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: '$sourceTag.refund',
           reason: 'download_failed_refund',
         );
-        toasts.codeSend('Download failed. $_downloadCost coins refunded.');
+        toasts.success('Download failed. $_downloadCost coins refunded.');
       } catch (error, stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
       }
     }
     return downloaded;
-  }
-
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _watchRewardedAd() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      return false;
-    }
-    bool watchRequested = false;
-    try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      return result.shouldUnlockDownload;
-    } catch (_) {
-      return false;
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
-    }
   }
 
   Future<bool> _performDownload() async {
@@ -464,7 +369,6 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
 
     try {
-      logger.d(link);
       if (link.contains('com.hash.prism')) {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
@@ -494,7 +398,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: 'notifications.permission_after_download',
         );
       }
-      toasts.codeSend(wallpaperSavedMessage);
+      toasts.success(wallpaperSavedMessage);
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {

@@ -1,15 +1,9 @@
-import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {sendNotification, emailToTopic, userIdToTopic} from "./notificationHelper";
+import {sendNotification, sendToUidAndEmailTopics, emailToTopic, userIdToTopic} from "./notificationHelper";
 import {usernameLowerOf} from "./usernameLower";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
+import {db, findUserByEmail, REGION, str} from "./common";
 
 /**
  * Fires whenever a document in `usersv2` is updated.
@@ -28,7 +22,7 @@ const db = admin.firestore();
 export const onFollowCreated = onDocumentUpdated(
   {
     document: "usersv2/{userId}",
-    region: "asia-south1",
+    region: REGION,
   },
   async (event) => {
     const before = event.data?.before?.data();
@@ -64,16 +58,16 @@ export const onFollowCreated = onDocumentUpdated(
       return;
     }
 
-    const followedUserEmail: string = (after.email ?? "").toString().trim();
+    const followedUserEmail = str(after.email);
     if (!followedUserEmail) {
       return;
     }
 
     const followedUid = event.params.userId;
-    const pushEnabled = !(await _followerAlertsMuted(followedUid));
+    const pushEnabled = !(await followerAlertsMuted(followedUid));
 
     for (const followerEmail of newFollowerEmailsRaw) {
-      const followerUid = await _resolveUserIdByEmail(followerEmail);
+      const followerUid = await resolveUserIdByEmail(followerEmail);
       if (followerUid) {
         const blockSnap = await db
           .collection("usersv2")
@@ -90,44 +84,24 @@ export const onFollowCreated = onDocumentUpdated(
         }
       }
 
-      // Look up the follower's display name for a personalised message.
-      const followerUsername = await _resolveUsername(followerEmail);
-
-      const followedTopic = userIdToTopic(followedUid);
-      const collapseKey = followCollapseKey(followerEmail);
-
-      await sendNotification({
+      const followerUsername = await resolveUsername(followerEmail);
+      const payload = {
         title: "You have a new follower! 🎉",
         body: `${followerUsername} is now following you.`,
         data: {
           route: "follower",
           follower_email: followerEmail.trim(),
-          pageName: "",
-          url: _profileUrl(followerEmail),
+          url: profileUrl(followerEmail),
         },
         modifier: followedUserEmail,
         channelId: "followers",
-        // Push to the followed user's own topic (they subscribe on login),
-        // unless they turned Followers alerts off. The inbox entry is kept.
-        fcmTarget: pushEnabled ? {topic: followedTopic} : undefined,
-        collapseKey,
-      });
+        collapseKey: followCollapseKey(followerEmail),
+      };
+      // The inbox entry is kept when the user turned Followers alerts off.
       if (pushEnabled) {
-        await sendNotification({
-          title: "You have a new follower! 🎉",
-          body: `${followerUsername} is now following you.`,
-          data: {
-            route: "follower",
-            follower_email: followerEmail.trim(),
-            pageName: "",
-            url: _profileUrl(followerEmail),
-          },
-          modifier: followedUserEmail,
-          channelId: "followers",
-          fcmTarget: {topic: emailToTopic(followedUserEmail)},
-          pushOnly: true,
-          collapseKey,
-        });
+        await sendToUidAndEmailTopics(payload, userIdToTopic(followedUid), emailToTopic(followedUserEmail));
+      } else {
+        await sendNotification(payload);
       }
 
       logger.info("onFollowCreated: follow notification sent.", {
@@ -149,7 +123,7 @@ export function isFollowerAlertsOff(session: Record<string, unknown> | undefined
   return session?.followerAlerts === false;
 }
 
-async function _followerAlertsMuted(uid: string): Promise<boolean> {
+async function followerAlertsMuted(uid: string): Promise<boolean> {
   try {
     const snap = await db.doc(`usersv2/${uid}/private/session`).get();
     return isFollowerAlertsOff(snap.data());
@@ -160,53 +134,33 @@ async function _followerAlertsMuted(uid: string): Promise<boolean> {
 }
 
 /** Returns usersv2 document id (Firebase uid) for an email, or null. */
-async function _resolveUserIdByEmail(email: string): Promise<string | null> {
+async function resolveUserIdByEmail(email: string): Promise<string | null> {
   const trimmed = email.trim();
   if (!trimmed) {
     return null;
   }
   try {
-    const snap = await db.collection("usersv2").where("email", "==", trimmed).limit(1).get();
-    if (!snap.empty) {
-      return snap.docs[0].id;
-    }
-    const lower = trimmed.toLowerCase();
-    if (lower !== trimmed) {
-      const snapLo = await db.collection("usersv2").where("email", "==", lower).limit(1).get();
-      if (!snapLo.empty) {
-        return snapLo.docs[0].id;
-      }
-    }
+    return (await findUserByEmail(trimmed))?.id ?? null;
   } catch (err) {
     logger.warn("onFollowCreated: could not resolve follower uid.", {email: trimmed, err});
+    return null;
   }
-  return null;
 }
 
 /** Resolves a display username for a given email address.
  *  Falls back to the email prefix if the user doc cannot be found. */
-async function _resolveUsername(email: string): Promise<string> {
+async function resolveUsername(email: string): Promise<string> {
   try {
-    const snap = await db
-      .collection("usersv2")
-      .where("email", "==", email)
-      .limit(1)
-      .get();
-
-    if (!snap.empty) {
-      const data = snap.docs[0].data();
-      const name =
-        (data.username as string | undefined)?.trim() ||
-        (data.name as string | undefined)?.trim();
-      if (name) return name;
-    }
+    const data = (await findUserByEmail(email))?.data();
+    const name = str(data?.username) || str(data?.name);
+    if (name) return name;
   } catch (err) {
     logger.warn("onFollowCreated: could not resolve follower username.", {email, err});
   }
   return email.split("@")[0];
 }
 
-function _profileUrl(identifier: string): string {
+function profileUrl(identifier: string): string {
   const cleaned = identifier.trim();
   if (!cleaned) return "";
   return `https://prismwalls.com/user/${encodeURIComponent(cleaned)}`;

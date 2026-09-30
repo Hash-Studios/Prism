@@ -1,10 +1,9 @@
-import 'dart:convert';
-
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/data/feed_cache/paged_feed_cache.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/pexels_feed/data/dtos/pexels_dtos.dart';
 import 'package:Prism/features/pexels_feed/data/mappers/pexels_dto_mapper.dart';
@@ -15,44 +14,63 @@ import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: PexelsWallpaperRepository)
 class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
-  PexelsWallpaperRepositoryImpl(this._feedCacheLocal);
+  PexelsWallpaperRepositoryImpl(FeedCacheLocalDataSource feedCacheLocal)
+    : _cache = PagedFeedCache(feedCacheLocal, source: 'pexels');
 
-  final FeedCacheLocalDataSource _feedCacheLocal;
-  final Map<String, int> _pageNumbers = <String, int>{};
-  final Map<String, bool> _hasMoreMap = <String, bool>{};
+  final PagedFeedCache _cache;
 
   static const String _host = 'api.pexels.com';
   static const String _searchPath = '/v1/search';
   static const String _curatedPath = '/v1/curated';
   static const String _photosPath = '/v1/photos';
-  static const int _feedTtlHours = 6;
 
   @override
-  bool hasMoreForCategory(String categoryName) => _hasMoreMap[categoryName] ?? true;
+  bool hasMoreForCategory(String categoryName) => _cache.hasMore(categoryName);
 
   @override
-  Future<Result<List<PexelsWallpaper>>> fetchFeed({required String categoryName, required bool refresh}) async {
+  Future<Result<List<PexelsWallpaper>>> fetchFeed({required String categoryName, required bool refresh}) {
+    return _fetchPage(
+      categoryName,
+      refresh: refresh,
+      buildUri: (page) => categoryName == 'Curated'
+          ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
+          : _searchUri(query: categoryName, page: page),
+    );
+  }
+
+  @override
+  Future<Result<List<PexelsWallpaper>>> fetchColorFeed({required String hex, required bool refresh}) {
+    final String color = hex.trim().replaceFirst('#', '').toLowerCase();
+    if (!RegExp(r'^[0-9a-f]{6}$').hasMatch(color)) {
+      return Future<Result<List<PexelsWallpaper>>>.value(Result.error(ValidationFailure('Invalid color: $hex')));
+    }
+    return _fetchPage(
+      'color: $color',
+      refresh: refresh,
+      buildUri: (page) => _searchUri(query: 'wallpaper', page: page, color: '#$color'),
+    );
+  }
+
+  Uri _searchUri({required String query, required int page, String? color}) {
+    return Uri.https(_host, _searchPath, <String, String>{
+      'query': query,
+      'color': ?color,
+      'per_page': '80',
+      'page': page.toString(),
+    });
+  }
+
+  Future<Result<List<PexelsWallpaper>>> _fetchPage(
+    String categoryName, {
+    required bool refresh,
+    required Uri Function(int page) buildUri,
+  }) async {
     if (refresh) {
-      _pageNumbers[categoryName] = 1;
-      _hasMoreMap[categoryName] = true;
+      _cache.reset(categoryName);
     }
 
-    final int page = _pageNumbers[categoryName] ?? 1;
-    final bool isCurated = categoryName == 'Curated';
-    final String? colorHex = _parseColorCategory(categoryName);
-    final Uri uri = isCurated
-        ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
-        : Uri.https(_host, _searchPath, <String, String>{
-            'query': colorHex != null ? 'wallpaper' : categoryName,
-            if (colorHex != null) 'color': colorHex,
-            'per_page': '80',
-            'page': page.toString(),
-          });
-
-    logger.d(
-      '[PexelsWallpaperRepository] fetchFeed',
-      fields: <String, Object?>{'category': categoryName, 'page': page, 'refresh': refresh},
-    );
+    final int page = _cache.pageFor(categoryName);
+    final Uri uri = buildUri(page);
 
     try {
       final http.Response response = await http.get(
@@ -76,9 +94,13 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
       final List<PexelsWallpaper> walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
 
-      _pageNumbers[categoryName] = currentPage + 1;
-      _hasMoreMap[categoryName] = hasMore;
-      await _writeCache(categoryName: categoryName, payload: payload, nextPage: currentPage + 1, hasMore: hasMore);
+      await _cache.write(
+        categoryName,
+        scope: feedCacheSlug(categoryName),
+        payload: payload.toJson(),
+        nextPage: currentPage + 1,
+        hasMore: hasMore,
+      );
 
       logger.i(
         '[PexelsWallpaperRepository] fetchFeed success',
@@ -140,58 +162,10 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return Result.error(failure);
   }
 
-  Future<void> _writeCache({
-    required String categoryName,
-    required PexelsSearchResponseDto payload,
-    required int nextPage,
-    required bool hasMore,
-  }) {
-    return _feedCacheLocal.write(
-      source: 'pexels',
-      scope: _scope(categoryName),
-      ttlHours: _feedTtlHours,
-      payload: <String, Object?>{
-        'payload': jsonDecode(jsonEncode(payload.toJson())),
-        'nextPage': nextPage,
-        'hasMore': hasMore,
-      },
-    );
-  }
-
-  Future<List<PexelsWallpaper>?> _readCached({required String categoryName}) async {
-    final snapshot = await _feedCacheLocal.read(source: 'pexels', scope: _scope(categoryName));
-    if (snapshot == null || snapshot.payload is! Map) {
-      return null;
-    }
-
-    final map = toJsonMap(snapshot.payload);
-    final payloadMap = toJsonMap(map['payload']);
-    if (payloadMap.isEmpty) {
-      return null;
-    }
-
-    final payload = PexelsSearchResponseDto.fromJson(payloadMap);
-    final walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
-    if (walls.isEmpty) {
-      return null;
-    }
-
-    _pageNumbers[categoryName] = (map['nextPage'] as num?)?.toInt() ?? (_pageNumbers[categoryName] ?? 1);
-    _hasMoreMap[categoryName] = map['hasMore'] == true;
-    return walls;
-  }
-
-  String _scope(String categoryName) => categoryName.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
-
-  /// Parses "color: ff0000" style category into Pexels color param (hex without #).
-  /// Returns null if not a color search.
-  static String? _parseColorCategory(String categoryName) {
-    const String prefix = 'color: ';
-    if (!categoryName.startsWith(prefix)) return null;
-    final String hex = categoryName.substring(prefix.length).trim().replaceFirst(RegExp('^#'), '');
-    if (hex.length == 6 && RegExp(r'^[0-9a-fA-F]+$').hasMatch(hex)) {
-      return '#${hex.toLowerCase()}';
-    }
-    return null;
-  }
+  Future<List<PexelsWallpaper>?> _readCached({required String categoryName}) => _cache.read(
+    categoryName,
+    scope: feedCacheSlug(categoryName),
+    decode: (payload) =>
+        PexelsSearchResponseDto.fromJson(payload).photos.map((item) => item.toDomain()).toList(growable: false),
+  );
 }

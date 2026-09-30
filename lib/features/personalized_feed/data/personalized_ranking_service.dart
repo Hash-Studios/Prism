@@ -2,16 +2,10 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
 class PersonalizedRankingResult {
-  const PersonalizedRankingResult({
-    required this.items,
-    required this.usedKeys,
-    required this.sourceCounts,
-    this.discoveryCount = 0,
-  });
+  const PersonalizedRankingResult({required this.items, required this.usedKeys, this.discoveryCount = 0});
 
   final List<FeedItemEntity> items;
   final List<String> usedKeys;
-  final Map<WallpaperSource, int> sourceCounts;
 
   /// Number of items that came from the discovery (unfollowed creator) pool.
   final int discoveryCount;
@@ -88,16 +82,10 @@ class PersonalizedRankingService {
 
     selected.sort((a, b) => b.score.compareTo(a.score));
     final items = selected.map((e) => e.item).toList(growable: false);
-    final sourceCounts = <WallpaperSource, int>{
-      WallpaperSource.prism: items.where((e) => e.source == WallpaperSource.prism).length,
-      WallpaperSource.wallhaven: items.where((e) => e.source == WallpaperSource.wallhaven).length,
-      WallpaperSource.pexels: items.where((e) => e.source == WallpaperSource.pexels).length,
-    };
 
     return PersonalizedRankingResult(
       items: items,
       usedKeys: selected.map((e) => e.key).toList(growable: false),
-      sourceCounts: sourceCounts,
       discoveryCount: discoverySelectedKeys.length,
     );
   }

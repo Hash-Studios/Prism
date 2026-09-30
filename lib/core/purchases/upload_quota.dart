@@ -9,6 +9,8 @@ class UploadQuota {
   static const String _weeklyCountPrefKey = 'uploadsThisWeek';
   static SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
+  static String get storedWeekStart => _settings.get<String>(_weekStartPrefKey, defaultValue: '').trim();
+
   static DateTime _startOfWeek(DateTime now) {
     final DateTime local = now.toLocal();
     final int daysFromMonday = local.weekday - DateTime.monday;
@@ -19,8 +21,7 @@ class UploadQuota {
 
   static int _readCountForCurrentWeek(DateTime now) {
     final String currentWeekKey = _weekKey(now);
-    final String storedWeekKey = _settings.get<String>(_weekStartPrefKey, defaultValue: '').trim();
-    if (storedWeekKey != currentWeekKey) {
+    if (storedWeekStart != currentWeekKey) {
       _settings.set(_weekStartPrefKey, currentWeekKey);
       _settings.set(_weeklyCountPrefKey, 0);
       return 0;

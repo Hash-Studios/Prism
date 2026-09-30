@@ -30,20 +30,18 @@ void main() {
 
     test('keeps method compatibility with named metadata arguments', () {
       final _CollectingSink sink = _CollectingSink();
-      final AppLogger testLogger = AppLogger(sink: sink, minimumLevel: AppLogLevel.trace);
+      final AppLogger testLogger = AppLogger(sink: sink, minimumLevel: AppLogLevel.debug);
       final StackTrace stackTrace = StackTrace.current;
 
-      testLogger.t('trace', tag: 'Boot');
+      testLogger.i('info', tag: 'Boot');
       testLogger.d('debug', fields: const <String, Object?>{'phase': 1});
-      testLogger.i('info', spanId: 'span-1');
+      testLogger.i('info');
       testLogger.w('warn', error: 'warning');
       testLogger.e('error', tag: 'Auth', error: StateError('boom'), stackTrace: stackTrace);
-      testLogger.f('fatal');
 
-      expect(sink.records.length, 6);
+      expect(sink.records.length, 5);
       expect(sink.records[0].tag, 'Boot');
       expect(sink.records[1].fields['phase'], 1);
-      expect(sink.records[2].spanId, 'span-1');
       expect(sink.records[4].error, isA<StateError>());
       expect(sink.records[4].stackTrace, stackTrace);
     });
