@@ -6,9 +6,19 @@ import 'package:flutter/foundation.dart';
 
 class AnalyticsIdentitySync {
   /// Without [analytics], each sync resolves [AnalyticsRuntime.instance], which is swapped in after the first frame.
-  AnalyticsIdentitySync({AppAnalytics? analytics}) : _fixedAnalytics = analytics;
+  factory AnalyticsIdentitySync({AppAnalytics? analytics}) {
+    if (analytics == null) {
+      return _default;
+    }
+    return AnalyticsIdentitySync._(analytics);
+  }
+
+  AnalyticsIdentitySync._(this._fixedAnalytics);
+
+  static final AnalyticsIdentitySync _default = AnalyticsIdentitySync._(null);
 
   final AppAnalytics? _fixedAnalytics;
+  Future<void> _pending = Future<void>.value();
   _AnalyticsIdentityState? _lastAppliedState;
   AppAnalytics? _lastAppliedTo;
 
@@ -18,13 +28,20 @@ class AnalyticsIdentitySync {
     required String subscriptionTier,
     required bool isPremium,
     required String sourceTag,
-  }) async {
+  }) {
     final _AnalyticsIdentityState state = _AnalyticsIdentityState.fromRaw(
       loggedIn: loggedIn,
       userId: userId,
       subscriptionTier: subscriptionTier,
       isPremium: isPremium,
     );
+
+    final Future<void> operation = _pending.then((_) => _apply(state, sourceTag));
+    _pending = operation.catchError((Object _) {});
+    return operation;
+  }
+
+  Future<void> _apply(_AnalyticsIdentityState state, String sourceTag) async {
     final AppAnalytics analytics = _fixedAnalytics ?? AnalyticsRuntime.instance;
 
     if (_lastAppliedState == state && identical(_lastAppliedTo, analytics)) {

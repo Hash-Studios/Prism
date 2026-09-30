@@ -1,6 +1,9 @@
 import 'package:Prism/core/analytics/analytics_route_observer.dart';
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/fake_app_analytics.dart';
 
 void main() {
   testWidgets('emits screen transitions once per route change', (WidgetTester tester) async {
@@ -70,4 +73,39 @@ void main() {
 
     expect(screens.single, contains('MaterialPageRoute'));
   });
+
+  testWidgets('runtime observers route events to the current analytics instance', (WidgetTester tester) async {
+    addTearDown(AnalyticsRuntime.reset);
+    AnalyticsRuntime.reset();
+    final List<NavigatorObserver> observers = AnalyticsRuntime.buildNavigatorObservers();
+    final AnalyticsRouteObserver observer = observers.single as AnalyticsRouteObserver;
+    final _RecordingAnalytics firstRuntime = _RecordingAnalytics();
+    AnalyticsRuntime.instance = firstRuntime;
+
+    observer.didPush(
+      MaterialPageRoute<void>(builder: (_) => const SizedBox(), settings: const RouteSettings(name: '/first')),
+      null,
+    );
+    await tester.pump();
+
+    final _RecordingAnalytics secondRuntime = _RecordingAnalytics();
+    AnalyticsRuntime.instance = secondRuntime;
+    observer.didPush(
+      MaterialPageRoute<void>(builder: (_) => const SizedBox(), settings: const RouteSettings(name: '/second')),
+      null,
+    );
+    await tester.pump();
+
+    expect(firstRuntime.screenViews, <String>['/first']);
+    expect(secondRuntime.screenViews, <String>['/second']);
+  });
+}
+
+class _RecordingAnalytics extends FakeAppAnalytics {
+  final List<String> screenViews = <String>[];
+
+  @override
+  Future<void> logScreenView({required String screenName, String? screenClass, Map<String, Object?>? parameters}) async {
+    screenViews.add(screenName);
+  }
 }
