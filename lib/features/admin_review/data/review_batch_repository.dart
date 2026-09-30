@@ -1,3 +1,4 @@
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
@@ -37,7 +38,7 @@ class ReviewBatchRepository {
 
       if (category.isEmpty || category == 'General') {
         try {
-          await FirebaseFunctions.instanceFor(region: 'asia-south1')
+          await appFunctions
               .httpsCallable('categorizeWallpaper', options: HttpsCallableOptions(timeout: const Duration(seconds: 30)))
               .call(<String, dynamic>{'wallId': wall.id});
         } catch (e, st) {
