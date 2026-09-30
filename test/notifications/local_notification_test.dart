@@ -177,6 +177,50 @@ void main() {
       expect(router.topRoute.name, DashboardRoute.name);
     });
 
+    testWidgets('a cold downloads launch waits for startup before mounting the router', (tester) async {
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'getNotificationAppLaunchDetails') {
+          return <String, Object?>{'notificationLaunchedApp': true, 'notificationResponse': _response('downloaded')};
+        }
+        return true;
+      });
+      final router = StubAppRouter();
+      final notification = LocalNotification()..router = router;
+      var completed = false;
+      final Future<void> fetch = notification.fetchNotificationData().whenComplete(() => completed = true);
+      await tester.pump();
+
+      expect(completed, isFalse);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+      await tester.pumpAndSettle();
+      expect(router.topRoute.name, SplashWidgetRoute.name);
+
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(completed, isFalse);
+      expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
+
+      unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(completed, isFalse);
+      expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
+
+      unawaited(router.replaceAll([const SplashWidgetRoute()]));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(completed, isFalse);
+      expect(router.stackData.map((route) => route.name), isNot(contains(DownloadRoute.name)));
+
+      unawaited(router.replaceAll([const DashboardRoute()]));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+      await fetch;
+
+      expect(completed, isTrue);
+      expect(router.stackData.map((route) => route.name).toList(), <String>[DashboardRoute.name, DownloadRoute.name]);
+    });
+
     testWidgets('push messages reach only the latest app state, once', (tester) async {
       var shown = 0;
       messenger.setMockMethodCallHandler(_channel, (call) async {
