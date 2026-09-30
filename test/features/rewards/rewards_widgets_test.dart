@@ -301,4 +301,11 @@ void main() {
       expect(find.text('See Pro'), findsOneWidget);
     });
   }
+
+  testWidgets('freeze button sits at the right edge of the card at normal width', (tester) async {
+    await _pump(tester, ThemeData.dark(), FreezeCard(onEarnCoins: () {}));
+    final double cardRight = tester.getTopRight(find.byType(FreezeCard)).dx;
+    final double buttonRight = tester.getTopRight(find.byType(FilledButton)).dx;
+    expect(cardRight - buttonRight, lessThan(40));
+  });
 }
