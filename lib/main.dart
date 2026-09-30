@@ -654,7 +654,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           WallpaperDetailRoute(
             wallId: action.wallId,
             source: action.source,
-            wallpaperUrl: action.wallpaperUrl,
             thumbnailUrl: action.thumbnailUrl,
             analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
           ),

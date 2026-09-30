@@ -51,7 +51,6 @@ class _WotdCardContent extends StatelessWidget {
       WallpaperDetailRoute(
         wallId: entity.wallId,
         source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
-        wallpaperUrl: entity.url,
         thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
       ),
     );

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:equatable/equatable.dart';
@@ -13,32 +11,23 @@ sealed class WallpaperDetailEvent extends Equatable {
 }
 
 final class LoadFromEntity extends WallpaperDetailEvent {
-  const LoadFromEntity({required this.entity, this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen});
+  const LoadFromEntity({required this.entity});
 
   final WallpaperDetailEntity entity;
-  final AnalyticsSurfaceValue analyticsSurface;
 
   @override
-  List<Object?> get props => [entity, analyticsSurface];
+  List<Object?> get props => [entity];
 }
 
 final class LoadFromId extends WallpaperDetailEvent {
-  const LoadFromId({
-    required this.wallId,
-    required this.source,
-    this.wallpaperUrl,
-    this.thumbnailUrl,
-    this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
-  });
+  const LoadFromId({required this.wallId, required this.source, this.thumbnailUrl});
 
   final String wallId;
   final WallpaperSource source;
-  final String? wallpaperUrl;
   final String? thumbnailUrl;
-  final AnalyticsSurfaceValue analyticsSurface;
 
   @override
-  List<Object?> get props => [wallId, source, wallpaperUrl, thumbnailUrl, analyticsSurface];
+  List<Object?> get props => [wallId, source, thumbnailUrl];
 }
 
 final class FetchViews extends WallpaperDetailEvent {
@@ -60,15 +49,6 @@ final class CycleAccentColor extends WallpaperDetailEvent {
 
 final class ResetAccentColor extends WallpaperDetailEvent {
   const ResetAccentColor();
-}
-
-final class CaptureScreenshot extends WallpaperDetailEvent {
-  const CaptureScreenshot({required this.imageBytes});
-
-  final Uint8List imageBytes;
-
-  @override
-  List<Object?> get props => [imageBytes];
 }
 
 final class OnPanelOpened extends WallpaperDetailEvent {

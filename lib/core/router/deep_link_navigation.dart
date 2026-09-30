@@ -34,7 +34,6 @@ class DeepLinkNavigation {
         return WallpaperDetailRoute(
           wallId: action.wallId,
           source: action.source,
-          wallpaperUrl: action.wallpaperUrl,
           thumbnailUrl: action.thumbnailUrl,
           analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
         );
