@@ -117,7 +117,6 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
               return Container(
                 decoration: BoxDecoration(
                   color: context.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(20),
                 ),
               );
             }
