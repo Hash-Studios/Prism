@@ -49,6 +49,7 @@ class _EditButtonState extends State<EditButton> {
       isLoading = true;
     });
     toasts.codeSend("Loading Wallpaper");
+    Directory? sessionDirectory;
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
@@ -60,25 +61,26 @@ class _EditButtonState extends State<EditButton> {
         }
         return;
       }
+      if (!mounted) return;
       final editDir = Directory('${(await getTemporaryDirectory()).path}/prism_edit');
       await editDir.create(recursive: true);
-      await for (final entity in editDir.list()) {
-        if (entity is File && entity.uri.pathSegments.last.startsWith('source_')) {
-          try {
-            await entity.delete();
-          } catch (_) {}
-        }
-      }
-      final file = File('${editDir.path}/source_${DateTime.now().millisecondsSinceEpoch}.img');
+      sessionDirectory = await editDir.createTemp('source_');
+      final file = File('${sessionDirectory.path}/source.img');
       await file.writeAsBytes(response.bodyBytes);
       if (!mounted) return;
       setState(() {
         isLoading = false;
       });
-      context.router.push(WallpaperFilterRoute(filePath: file.path));
+      await context.router.push(WallpaperFilterRoute(filePath: file.path));
     } catch (_) {
       if (mounted) {
         toasts.error('Could not load wallpaper for editing');
+      }
+    } finally {
+      try {
+        await sessionDirectory?.delete(recursive: true);
+      } catch (_) {}
+      if (mounted) {
         setState(() {
           isLoading = false;
         });

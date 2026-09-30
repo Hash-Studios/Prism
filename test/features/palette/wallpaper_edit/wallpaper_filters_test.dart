@@ -16,29 +16,50 @@ void main() {
     });
 
     for (final ColorPreset preset in colorPresets) {
-      test('${preset.name} matches photofilters', () {
+      test('${preset.name} matches the affine photofilters recipe', () {
         final List<Step>? steps = photofiltersRecipes[preset.name];
         expect(steps, isNotNull);
         for (final Rgb input in const [
+          [0.0, 0.0, 0.0],
+          [255.0, 255.0, 255.0],
+          [255.0, 0.0, 0.0],
+          [0.0, 255.0, 0.0],
+          [0.0, 0.0, 255.0],
           [90.0, 120.0, 140.0],
           [60.0, 100.0, 30.0],
           [150.0, 110.0, 90.0],
         ]) {
           Rgb ref = input;
-          bool clamped = false;
           for (final Step step in steps!) {
-            final Rgb raw = step(ref);
-            clamped = clamped || raw.any((v) => v < 0 || v > 255);
-            ref = [for (final double v in raw) v.roundToDouble().clamp(0, 255).toDouble()];
+            ref = step(ref);
           }
-          if (clamped) continue;
-          final Rgb got = [for (final double v in applyMatrix(preset.matrix, input)) v.clamp(0, 255).toDouble()];
+          final Rgb got = applyMatrix(preset.matrix, input);
           for (int i = 0; i < 3; i++) {
-            expect(got[i], closeTo(ref[i], 1.5 * steps.length), reason: '${preset.name} $input channel $i');
+            expect(got[i], closeTo(ref[i], 1e-6), reason: '${preset.name} $input channel $i');
           }
         }
       });
     }
+
+    test('Amaro composes affine steps and clamps only after the combined matrix', () {
+      const Rgb input = [255, 0, 0];
+      final List<double> matrixOutput = applyMatrix(
+        colorPresets.singleWhere((preset) => preset.name == 'Amaro').matrix,
+        input,
+      );
+      Rgb photofiltersOutput = input;
+      for (final Step step in photofiltersRecipes['Amaro']!) {
+        photofiltersOutput = [
+          for (final double channel in step(photofiltersOutput)) channel.roundToDouble().clamp(0, 255).toDouble(),
+        ];
+      }
+
+      // One 4x5 matrix cannot retain photofilters' intermediate per-step clamps.
+      expect(photofiltersOutput, [255, 38, 38]);
+      expect(matrixOutput[0].clamp(0, 255), 255);
+      expect(matrixOutput[1], closeTo(15.13415, 1e-5));
+      expect(matrixOutput[2], closeTo(15.13415, 1e-5));
+    });
   });
 
   test('kernelEffects', () {

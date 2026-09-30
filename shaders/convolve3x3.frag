@@ -7,6 +7,7 @@ uniform vec3 uRow0;
 uniform vec3 uRow1;
 uniform vec3 uRow2;
 uniform float uBias;
+uniform float uKernelScale;
 uniform sampler2D uTexture;
 
 out vec4 fragColor;
@@ -18,7 +19,13 @@ vec3 centre;
 // neighbours repeat the centre pixel, so the image border does not read as an edge.
 vec3 tap(float dx, float dy) {
   vec2 halfTexel = 0.5 / uSize;
-  vec4 texel = texture(uTexture, clamp(uv + vec2(dx, dy) / uSize, halfTexel, 1.0 - halfTexel));
+#ifdef IMPELLER_TARGET_OPENGLES
+  dy = -dy;
+#endif
+  vec4 texel = texture(
+    uTexture,
+    clamp(uv + vec2(dx, dy) * uKernelScale / uSize, halfTexel, 1.0 - halfTexel)
+  );
   return texel.a > 0.0 ? texel.rgb / texel.a : centre;
 }
 
