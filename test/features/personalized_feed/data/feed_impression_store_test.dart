@@ -54,11 +54,11 @@ void main() {
     expect(store.recentShows(now.add(const Duration(days: 16))), <String, int>{'a': 99});
   });
 
-  test('the 800-entry cap evicts the oldest hidden marker', () async {
+  test('a hidden wall survives 800 newer impressions', () async {
     await store.hide('hidden', now);
     await store.recordShown(<String>[for (int i = 0; i < 800; i++) 'k$i'], now.add(const Duration(minutes: 1)));
 
-    expect(store.recentShows(now.add(const Duration(minutes: 2))).containsKey('hidden'), isFalse);
+    expect(store.recentShows(now.add(const Duration(minutes: 2)))['hidden'], 99);
   });
 
   test('ignores invalid negative impression counts in stored JSON', () async {

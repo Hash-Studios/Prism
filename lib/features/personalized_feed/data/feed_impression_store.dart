@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:injectable/injectable.dart';
@@ -12,18 +13,21 @@ class FeedImpressionStore {
   final SettingsLocalDataSource _settingsLocal;
 
   static const String _key = 'personalized_feed_impressions_v1';
+  static const String _hiddenKey = 'personalized_feed_hidden_v1';
   static const int _cap = 800;
+  static const int _hiddenCap = 2000;
   static const Duration _window = Duration(days: 14);
 
-  /// Marks a hidden wallpaper while its impression entry is retained.
+  /// A hidden wallpaper counts as shown this often, which removes it from the feed.
   static const int hiddenShows = 99;
 
-  /// Recent show counts plus hidden markers that remain in the bounded store.
+  /// Key to times shown within the last 14 days. Hidden walls report [hiddenShows].
   Map<String, int> recentShows(DateTime now) {
     final DateTime cutoff = now.subtract(_window);
     return <String, int>{
       for (final MapEntry<String, _Impression> entry in _read().entries)
-        if (entry.value.count >= hiddenShows || entry.value.lastShown.isAfter(cutoff)) entry.key: entry.value.count,
+        if (entry.value.lastShown.isAfter(cutoff)) entry.key: entry.value.count,
+      for (final String key in _readHidden()) key: hiddenShows,
     };
   }
 
@@ -32,25 +36,32 @@ class FeedImpressionStore {
     final DateTime cutoff = now.subtract(_window);
     for (final String key in keys) {
       final _Impression? old = all.remove(key);
-      final int count;
-      if (old != null && old.count >= hiddenShows) {
-        count = hiddenShows;
-      } else if (old == null || old.lastShown.isBefore(cutoff)) {
-        count = 1;
-      } else if (old.count >= hiddenShows - 1) {
-        count = hiddenShows - 1;
-      } else {
-        count = old.count + 1;
-      }
+      final int count = old == null || old.lastShown.isBefore(cutoff) ? 1 : min(old.count + 1, hiddenShows - 1);
       all[key] = _Impression(count, now);
     }
     return _write(all);
   }
 
+  /// Hides are kept apart from impressions, so a busy feed never evicts them.
   Future<void> hide(String key, DateTime now) {
-    final Map<String, _Impression> all = _read()..remove(key);
-    all[key] = _Impression(hiddenShows, now);
-    return _write(all);
+    final List<String> hidden = _readHidden()
+      ..remove(key)
+      ..add(key);
+    final List<String> kept = hidden.length > _hiddenCap ? hidden.sublist(hidden.length - _hiddenCap) : hidden;
+    return _settingsLocal.set(_hiddenKey, json.encode(kept));
+  }
+
+  List<String> _readHidden() {
+    final String raw = _settingsLocal.get<String>(_hiddenKey, defaultValue: '');
+    if (raw.isEmpty) {
+      return <String>[];
+    }
+    try {
+      final Object? decoded = json.decode(raw);
+      return decoded is List ? decoded.whereType<String>().toList() : <String>[];
+    } catch (_) {
+      return <String>[];
+    }
   }
 
   Map<String, _Impression> _read() {
