@@ -12,6 +12,6 @@ abstract class ThemeModeState with _$ThemeModeState {
   factory ThemeModeState.initial() => const ThemeModeState(
     status: LoadStatus.initial,
     actionStatus: ActionStatus.idle,
-    mode: ThemeModeEntity(mode: 'Dark'),
+    mode: ThemeModeEntity(mode: ThemeMode.dark),
   );
 }

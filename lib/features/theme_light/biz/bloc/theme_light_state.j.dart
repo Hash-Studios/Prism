@@ -12,6 +12,6 @@ abstract class ThemeLightState with _$ThemeLightState {
   factory ThemeLightState.initial() => const ThemeLightState(
     status: LoadStatus.initial,
     actionStatus: ActionStatus.idle,
-    theme: ThemeLightEntity(themeId: 'kLFrost White', accentColorValue: 0xffe57697),
+    theme: ThemeLightEntity(themeId: prismDefaultLightThemeId, accentColorValue: prismDefaultAccentValue),
   );
 }

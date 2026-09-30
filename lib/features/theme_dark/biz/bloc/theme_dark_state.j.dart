@@ -12,6 +12,6 @@ abstract class ThemeDarkState with _$ThemeDarkState {
   factory ThemeDarkState.initial() => const ThemeDarkState(
     status: LoadStatus.initial,
     actionStatus: ActionStatus.idle,
-    theme: ThemeDarkEntity(themeId: 'kDMaterial Dark', accentColorValue: 0xffe57697),
+    theme: ThemeDarkEntity(themeId: prismDefaultDarkThemeId, accentColorValue: prismDefaultAccentValue),
   );
 }

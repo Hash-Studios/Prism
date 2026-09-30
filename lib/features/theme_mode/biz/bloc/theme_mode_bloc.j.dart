@@ -4,6 +4,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
 import 'package:Prism/features/theme_mode/domain/usecases/theme_mode_usecases.dart';
 import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 

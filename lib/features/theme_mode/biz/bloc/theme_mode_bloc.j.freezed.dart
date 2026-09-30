@@ -122,7 +122,7 @@ return modeChanged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( String mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function( ThemeMode mode)?  modeChanged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _ModeChanged() when modeChanged != null:
@@ -144,7 +144,7 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( String mode)  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function( ThemeMode mode)  modeChanged,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _ModeChanged():
@@ -165,7 +165,7 @@ return modeChanged(_that.mode);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( String mode)?  modeChanged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function( ThemeMode mode)?  modeChanged,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _ModeChanged() when modeChanged != null:
@@ -216,7 +216,7 @@ class _ModeChanged implements ThemeModeEvent {
   const _ModeChanged({required this.mode});
   
 
- final  String mode;
+ final  ThemeMode mode;
 
 /// Create a copy of ThemeModeEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -248,7 +248,7 @@ abstract mixin class _$ModeChangedCopyWith<$Res> implements $ThemeModeEventCopyW
   factory _$ModeChangedCopyWith(_ModeChanged value, $Res Function(_ModeChanged) _then) = __$ModeChangedCopyWithImpl;
 @useResult
 $Res call({
- String mode
+ ThemeMode mode
 });
 
 
@@ -268,7 +268,7 @@ class __$ModeChangedCopyWithImpl<$Res>
 @pragma('vm:prefer-inline') $Res call({Object? mode = null,}) {
   return _then(_ModeChanged(
 mode: null == mode ? _self.mode : mode // ignore: cast_nullable_to_non_nullable
-as String,
+as ThemeMode,
   ));
 }
 

@@ -33,6 +33,7 @@ abstract final class PrismFonts {
 /// Where a style must adapt to the active theme use the static helper methods
 /// (which accept a [BuildContext]). Purely structural styles that do not vary
 /// by theme are exposed as `const` values.
+// ignore: avoid_classes_with_only_static_members
 abstract final class PrismTextStyles {
   /// Brand wordmark ("prism") shown in the top app-bar.
   ///

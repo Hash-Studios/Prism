@@ -3,6 +3,7 @@ import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/theme_dark/domain/entities/theme_dark.dart';
 import 'package:Prism/features/theme_dark/domain/usecases/theme_dark_usecases.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
@@ -18,7 +19,6 @@ class ThemeDarkBloc extends Bloc<ThemeDarkEvent, ThemeDarkState> {
     on<_Started>(_onStarted);
     on<_ThemeChanged>(_onThemeChanged);
     on<_AccentChanged>(_onAccentChanged);
-    on<_Reloaded>(_onReloaded);
   }
 
   final LoadThemeDarkUseCase _loadThemeDarkUseCase;
@@ -59,10 +59,5 @@ class ThemeDarkBloc extends Bloc<ThemeDarkEvent, ThemeDarkState> {
       ),
       onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
-  }
-
-  Future<void> _onReloaded(_Reloaded event, Emitter<ThemeDarkState> emit) {
-    add(const ThemeDarkEvent.started());
-    return Future<void>.value();
   }
 }
