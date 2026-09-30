@@ -38,4 +38,13 @@ void main() {
     expect(readResource('values/styles.xml'), isNot(contains('@drawable/splash_icon_transparent')));
     expect(readResource('values-night/styles.xml'), isNot(contains('@drawable/splash_icon_transparent')));
   });
+  test('light launch themes use dark status bar icons; night themes keep light icons', () {
+    const String lightIcons = '<item name="android:windowLightStatusBar">true</item>';
+    for (final String qualifier in <String>['values', 'values-v31']) {
+      expect(readResource('$qualifier/styles.xml'), contains(lightIcons));
+    }
+    for (final String qualifier in <String>['values-night', 'values-night-v31']) {
+      expect(readResource('$qualifier/styles.xml'), isNot(contains(lightIcons)));
+    }
+  });
 }
