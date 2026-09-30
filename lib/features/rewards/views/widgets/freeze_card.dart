@@ -71,43 +71,47 @@ class FreezeCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text('Saves your streak if you miss a day. Used on its own.', style: PrismTextStyles.body(context)),
                 const SizedBox(height: 12),
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        for (int i = 0; i < CoinPolicy.maxStreakFreezes; i++) ...<Widget>[
-                          if (i > 0) const SizedBox(width: 8),
-                          _Slot(filled: i < held),
+                SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          for (int i = 0; i < CoinPolicy.maxStreakFreezes; i++) ...<Widget>[
+                            if (i > 0) const SizedBox(width: 8),
+                            _Slot(filled: i < held),
+                          ],
                         ],
-                      ],
-                    ),
-                    FilledButton.tonal(
-                      onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: cs.onSurface.withValues(alpha: 0.08),
-                        disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.05),
-                        foregroundColor: cs.onSurface,
-                        disabledForegroundColor: cs.onSurface.withValues(alpha: 0.4),
-                        minimumSize: const Size(0, 40),
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        shape: const StadiumBorder(),
-                        textStyle: PrismTextStyles.rowTitle(context),
                       ),
-                      child: full
-                          ? const Text('Full')
-                          : const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text('Get one · ${CoinPolicy.streakFreezeCost}'),
-                                SizedBox(width: 8),
-                                PrismCoinIcon(size: 16),
-                              ],
-                            ),
-                    ),
-                  ],
+                      FilledButton.tonal(
+                        onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+                          disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.05),
+                          foregroundColor: cs.onSurface,
+                          disabledForegroundColor: cs.onSurface.withValues(alpha: 0.4),
+                          minimumSize: const Size(0, 40),
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          shape: const StadiumBorder(),
+                          textStyle: PrismTextStyles.rowTitle(context),
+                        ),
+                        child: full
+                            ? const Text('Full')
+                            : const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Text('Get one · ${CoinPolicy.streakFreezeCost}'),
+                                  SizedBox(width: 8),
+                                  PrismCoinIcon(size: 16),
+                                ],
+                              ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
