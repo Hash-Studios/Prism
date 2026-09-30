@@ -382,6 +382,11 @@ export const processReferral = onCall(CALLABLE_OPTIONS, async (request: Callable
     const stats = statsSnap.data() ?? {};
     const skipReason = referralSkipReason(callerData.createdAt, inviterData.createdAt, stats, today, nowMs);
     if (skipReason) {
+      // Permanent skips mark the referral processed so old clients stop retrying it on every launch.
+      if (skipReason !== "referral_inviter_daily_limit") {
+        state.referralRewarded = true;
+        tx.update(callerRef, {coinState: state});
+      }
       result = {...result, previousBalance: previous, currentBalance: previous, reason: skipReason};
       return;
     }
