@@ -36,7 +36,7 @@ void main() {
   test('reward earned unlocks the download', () async {
     stubShow([Result.success(earned)]);
 
-    expect(await bloc.watchRewardedAd(), isTrue);
+    expect(await watchRewardedAd(bloc), isTrue);
     await pumpEventQueue();
     expect(bloc.state.actionStatus, ActionStatus.idle);
     expect(bloc.state.shouldUnlockDownload, isFalse);
@@ -45,14 +45,14 @@ void main() {
   test('a later dismissed ad does not unlock after an earlier reward', () async {
     stubShow([Result.success(earned), Result.success(AdsEntity.empty)]);
 
-    expect(await bloc.watchRewardedAd(), isTrue);
-    expect(await bloc.watchRewardedAd(), isFalse);
+    expect(await watchRewardedAd(bloc), isTrue);
+    expect(await watchRewardedAd(bloc), isFalse);
   });
 
   test('a failed show does not unlock', () async {
     stubShow([Result.error(const ValidationFailure('Rewarded ad is not loaded'))]);
 
-    expect(await bloc.watchRewardedAd(), isFalse);
+    expect(await watchRewardedAd(bloc), isFalse);
   });
 
   test('a failed load skips the show', () async {
@@ -61,7 +61,7 @@ void main() {
           Result.success(const AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: false, adFailed: true)),
     );
 
-    expect(await bloc.watchRewardedAd(), isFalse);
+    expect(await watchRewardedAd(bloc), isFalse);
     verifyNever(() => showUseCase(const NoParams()));
   });
 }
