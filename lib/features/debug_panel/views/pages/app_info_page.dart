@@ -39,7 +39,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
       final devicePlugin = DeviceInfoPlugin();
       final pkgInfo = await PackageInfo.fromPlatform();
 
-      // Device info
       if (Platform.isAndroid) {
         final info = await devicePlugin.androidInfo;
         _deviceInfo = {
@@ -67,7 +66,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
         };
       }
 
-      // Package info
       _packageInfo = {
         'App Name': pkgInfo.appName,
         'Package Name': pkgInfo.packageName,
@@ -76,7 +74,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
         'Build Signature': pkgInfo.buildSignature.isEmpty ? 'N/A' : pkgInfo.buildSignature,
       };
 
-      // Remote Config snapshot
       try {
         final rc = getIt<FirebaseRemoteConfig>();
         _remoteConfig = {};
@@ -169,7 +166,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
     return ListView(
       padding: const EdgeInsets.only(bottom: 32),
       children: [
-        // Copy All button
         Padding(
           padding: const EdgeInsets.all(12),
           child: FilledButton.icon(
