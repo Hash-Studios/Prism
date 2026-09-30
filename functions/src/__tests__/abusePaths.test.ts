@@ -1,0 +1,365 @@
+import assert from "node:assert/strict";
+import test, {type TestContext} from "node:test";
+import * as admin from "firebase-admin";
+import {db} from "../common";
+import {awardCoins, processReferral, referralSkipReason, spendCoins, unlockPremiumPreview} from "../coinsCallables";
+import {
+  base64DecodedBytes,
+  githubPutFile,
+  hasAllowedImageExtension,
+  isWallSubmissionUpload,
+  reserveUploadSlot,
+  weekStartUtc,
+} from "../githubContent";
+import {claimSyncSlot, syncSubscription} from "../syncSubscription";
+
+type Doc = Record<string, unknown>;
+
+/** In-memory Firestore: dotted update keys write nested maps. `walls` only answers the email lookup. */
+function fakeStore(t: TestContext, seed: Record<string, Doc>, walls: Doc[] = []) {
+  const store = new Map<string, Doc>(Object.entries(seed));
+  const snap = (path: string) => ({exists: store.has(path), data: () => store.get(path)});
+  const set = (path: string, data: Doc) => void store.set(path, {...data});
+  const update = (path: string, data: Doc) => {
+    const doc = {...(store.get(path) ?? {})} as Doc;
+    for (const [key, value] of Object.entries(data)) {
+      const parts = key.split(".");
+      let target = doc;
+      for (const part of parts.slice(0, -1)) {
+        target[part] = {...((target[part] as Doc) ?? {})};
+        target = target[part] as Doc;
+      }
+      target[parts[parts.length - 1]] = value;
+    }
+    store.set(path, doc);
+  };
+  const tx = {
+    get: async (ref: admin.firestore.DocumentReference) => snap(ref.path),
+    set: (ref: admin.firestore.DocumentReference, data: Doc) => set(ref.path, data),
+    update: (ref: admin.firestore.DocumentReference, data: Doc) => update(ref.path, data),
+  };
+  t.mock.method(db, "runTransaction", async (cb: (tx: unknown) => Promise<unknown>) => cb(tx));
+  const realCollection = db.collection.bind(db);
+  t.mock.method(db, "collection", (name: string) => {
+    if (name !== "walls") return realCollection(name);
+    return {
+      where: (_f: string, _op: string, email: string) => ({
+        limit: () => ({get: async () => ({empty: !walls.some((w) => w.email === email)})}),
+      }),
+    };
+  });
+  return store;
+}
+
+const NOW = Date.now();
+const DAY = 86_400_000;
+const iso = (ms: number) => new Date(ms).toISOString();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const run = (fn: {run: (r: any) => Promise<any>}, req: Record<string, unknown>) => fn.run(req);
+
+// Referral
+
+test("referralSkipReason: allows a new caller with an older inviter under the caps", () => {
+  assert.equal(referralSkipReason(iso(NOW - DAY), iso(NOW - 30 * DAY), {}, "2026-01-01", NOW), null);
+});
+
+test("referralSkipReason: rejects a caller older than 14 days or with no createdAt", () => {
+  assert.equal(referralSkipReason(iso(NOW - 15 * DAY), iso(NOW - 90 * DAY), {}, "d", NOW), "referral_caller_not_new");
+  assert.equal(referralSkipReason(undefined, iso(NOW - 90 * DAY), {}, "d", NOW), "referral_caller_not_new");
+});
+
+test("referralSkipReason: reads Timestamp-like createdAt values", () => {
+  const ts = (ms: number) => ({toMillis: () => ms});
+  assert.equal(referralSkipReason(ts(NOW - DAY), ts(NOW - 5 * DAY), {}, "d", NOW), null);
+});
+
+test("referralSkipReason: inviter must be older than the caller", () => {
+  assert.equal(referralSkipReason(iso(NOW - 2 * DAY), iso(NOW - DAY), {}, "d", NOW), "referral_inviter_not_older");
+  assert.equal(referralSkipReason(iso(NOW - 2 * DAY), undefined, {}, "d", NOW), "referral_inviter_not_older");
+});
+
+test("referralSkipReason: caps inviter rewards at 10 a day and 100 in total", () => {
+  const caller = iso(NOW - DAY);
+  const inviter = iso(NOW - 30 * DAY);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 9, total: 9}, "d", NOW), null);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 10, total: 10}, "d", NOW), "referral_inviter_daily_limit");
+  assert.equal(referralSkipReason(caller, inviter, {day: "old", count: 10, total: 50}, "d", NOW), null);
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 0, total: 100}, "d", NOW), "referral_inviter_lifetime_limit");
+});
+
+test("processReferral: pays both users once and counts it against the inviter", async (t) => {
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.changed, true);
+  assert.equal(store.get("usersv2/caller")?.coins, 100);
+  assert.equal(store.get("usersv2/inviter")?.coins, 105);
+  assert.equal(store.get("referralStats/inviter")?.total, 1);
+});
+
+test("processReferral: an old caller gets nothing and nobody is paid", async (t) => {
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - 60 * DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 400 * DAY)},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.changed, false);
+  assert.equal(result.reason, "referral_caller_not_new");
+  assert.equal(store.get("usersv2/caller")?.coins, 0);
+  assert.equal(store.get("usersv2/inviter")?.coins, 5);
+  assert.equal(store.has("referralStats/inviter"), false);
+});
+
+test("processReferral: a self referral is still rejected", async (t) => {
+  fakeStore(t, {});
+  await assert.rejects(() => run(processReferral, {auth: {uid: "a"}, data: {inviterUserId: "a"}}), {code: "invalid-argument"});
+});
+
+test("processReferral: the inviter's 11th reward of the day is skipped", async (t) => {
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
+    "referralStats/inviter": {day, count: 10, total: 10},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.reason, "referral_inviter_daily_limit");
+  assert.equal(store.get("usersv2/inviter")?.coins, 5);
+});
+
+// Refund
+
+function refundStore(t: TestContext, extra: Record<string, Doc> = {}) {
+  return fakeStore(t, {
+    "usersv2/u": {coins: 10},
+    "coinTransactions/tx1": {
+      userId: "u", type: "debit", status: "completed", action: "wallpaperDownload", delta: -5,
+      createdAt: admin.firestore.Timestamp.fromMillis(Date.now() - 60_000),
+    },
+    ...extra,
+  });
+}
+const refundReq = {auth: {uid: "u"}, data: {action: "refund", sourceTag: "t", transactionId: "tx1"}};
+
+test("awardCoins refund: credits once and counts it toward the daily cap", async (t) => {
+  const store = refundStore(t);
+  const result = await run(awardCoins, refundReq);
+  assert.equal(result.changed, true);
+  assert.equal(store.get("usersv2/u")?.coins, 15);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "refunded");
+  assert.equal(store.get(`coinRefundDaily/u_${new Date().toISOString().slice(0, 10)}`)?.count, 1);
+  await assert.rejects(() => run(awardCoins, refundReq), {code: "failed-precondition"});
+});
+
+test("awardCoins refund: the sixth refund of the day is skipped and the debit stays completed", async (t) => {
+  const day = new Date().toISOString().slice(0, 10);
+  const store = refundStore(t, {[`coinRefundDaily/u_${day}`]: {day, count: 5}});
+  const result = await run(awardCoins, refundReq);
+  assert.equal(result.changed, false);
+  assert.equal(result.reason, "refund_daily_limit");
+  assert.equal(store.get("usersv2/u")?.coins, 10);
+  assert.equal(store.get("coinTransactions/tx1")?.status, "completed");
+});
+
+// One-time awards
+
+test("awardCoins firstWallpaperUpload: skips when the caller has no wall", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 0}}, []);
+  const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
+  const skipped = await run(awardCoins, req);
+  assert.equal(skipped.reason, "first_upload_no_wall");
+  assert.equal(store.get("usersv2/u")?.coins, 0);
+});
+
+test("awardCoins firstWallpaperUpload: pays 50 when a wall by the caller exists", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 0}}, [{email: "a@b.c"}]);
+  const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
+  const paid = await run(awardCoins, req);
+  assert.equal(paid.delta, 50);
+  assert.equal(store.get("usersv2/u")?.coins, 50);
+});
+
+const completeProfile = {
+  coins: 0, profilePhoto: "https://x/p.png", username: "neo", bio: "hi", links: {twitter: "https://t/neo"},
+};
+const profileReq = {auth: {uid: "u"}, data: {action: "profileCompletion", sourceTag: "t"}};
+
+test("awardCoins profileCompletion: pays when photo, username, bio and a link are filled", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": completeProfile});
+  assert.equal((await run(awardCoins, profileReq)).delta, 25);
+  assert.equal(store.get("usersv2/u")?.coins, 25);
+});
+
+test("awardCoins profileCompletion: skips each missing field", async (t) => {
+  for (const patch of [{bio: " "}, {username: ""}, {links: {a: ""}}, {profilePhoto: ""}]) {
+    const store = fakeStore(t, {"usersv2/u": {...completeProfile, ...patch}});
+    const result = await run(awardCoins, profileReq);
+    assert.equal(result.reason, "profile_incomplete");
+    assert.equal(store.get("usersv2/u")?.coins, 0);
+  }
+});
+
+// Premium preview unlock
+
+const unlockReq = {auth: {uid: "u"}, data: {collectionKey: " Neon "}};
+
+test("unlockPremiumPreview: charges 10, writes the unlock and the ledger in one transaction", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 30}});
+  const result = await run(unlockPremiumPreview, unlockReq);
+  assert.equal(result.changed, true);
+  assert.equal(result.delta, -10);
+  assert.equal(store.get("usersv2/u")?.coins, 20);
+  const unlocks = (store.get("usersv2/u")?.coinState as Doc).premiumPreviewUnlocks as Record<string, number>;
+  assert.ok(unlocks.neon > Date.now() + 23 * 3_600_000);
+  const ledger = [...store.entries()].find(([k]) => k.startsWith("coinTransactions/"))?.[1];
+  assert.equal(ledger?.action, "premiumPreview24h");
+  assert.equal(ledger?.delta, -10);
+});
+
+test("unlockPremiumPreview: a second call while unlocked is free", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 30}});
+  await run(unlockPremiumPreview, unlockReq);
+  const again = await run(unlockPremiumPreview, unlockReq);
+  assert.equal(again.success, true);
+  assert.equal(again.changed, false);
+  assert.equal(again.reason, "premium_preview_already_unlocked");
+  assert.equal(store.get("usersv2/u")?.coins, 20);
+});
+
+test("unlockPremiumPreview: an expired unlock is charged again", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 30, coinState: {premiumPreviewUnlocks: {neon: Date.now() - 1}}}});
+  assert.equal((await run(unlockPremiumPreview, unlockReq)).changed, true);
+  assert.equal(store.get("usersv2/u")?.coins, 20);
+});
+
+test("unlockPremiumPreview: insufficient balance changes nothing", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 9}});
+  const result = await run(unlockPremiumPreview, unlockReq);
+  assert.equal(result.insufficientBalance, true);
+  assert.equal(result.success, false);
+  assert.equal(store.get("usersv2/u")?.coinState, undefined);
+  assert.equal(store.get("usersv2/u")?.coins, 9);
+});
+
+test("unlockPremiumPreview: premium users unlock without a charge", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 0, premium: true}});
+  const result = await run(unlockPremiumPreview, unlockReq);
+  assert.equal(result.bypassed, true);
+  assert.equal(result.changed, false);
+  assert.equal(store.get("usersv2/u")?.coins, 0);
+});
+
+test("unlockPremiumPreview: needs sign-in and a key", async (t) => {
+  fakeStore(t, {});
+  await assert.rejects(() => run(unlockPremiumPreview, {data: {collectionKey: "a"}}), {code: "unauthenticated"});
+  await assert.rejects(() => run(unlockPremiumPreview, {auth: {uid: "u"}, data: {}}), {code: "invalid-argument"});
+});
+
+test("spendCoins still works for the other spend actions", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 10}});
+  await run(spendCoins, {auth: {uid: "u"}, data: {action: "premiumFilter", sourceTag: "t"}});
+  assert.equal(store.get("usersv2/u")?.coins, 5);
+});
+
+// GitHub uploads
+
+test("hasAllowedImageExtension: allows jpg, jpeg, png, webp in any case and rejects the rest", () => {
+  for (const name of ["a.jpg", "dir/a.JPEG", "a.png", "x/y/a.WebP"]) assert.equal(hasAllowedImageExtension(name), true, name);
+  for (const name of ["a.gif", "a.svg", "a.html", "a.png.exe", "png", ".png", "dir.png/a", "a"]) {
+    assert.equal(hasAllowedImageExtension(name), false, name);
+  }
+});
+
+test("base64DecodedBytes: matches the decoded size", () => {
+  for (const n of [0, 1, 2, 3, 100, 1001]) {
+    assert.equal(base64DecodedBytes(Buffer.alloc(n, 1).toString("base64")), n);
+  }
+});
+
+test("weekStartUtc: returns the Monday of the week", () => {
+  assert.equal(weekStartUtc(Date.parse("2026-10-01T12:00:00Z")), "2026-09-28");
+  assert.equal(weekStartUtc(Date.parse("2026-10-04T23:59:00Z")), "2026-09-28");
+  assert.equal(weekStartUtc(Date.parse("2026-10-05T00:00:00Z")), "2026-10-05");
+});
+
+test("isWallSubmissionUpload: only thumb_ files in the walls repo count", () => {
+  const env = {GH_REPO_WALLS: "walls", GH_REPO_SETUPS: "setups"};
+  assert.equal(isWallSubmissionUpload("walls", "thumb_a.jpg", env), true);
+  assert.equal(isWallSubmissionUpload("walls", "a.jpg", env), false);
+  assert.equal(isWallSubmissionUpload("setups", "thumb_a.jpg", env), false);
+});
+
+function putReq(data: Record<string, unknown>) {
+  return {auth: {uid: "u"}, data: {repo: "walls", message: "m", contentBase64: "AAAA", path: "a.jpg", ...data}};
+}
+
+test("githubPutFile: rejects bad extensions and oversize files before touching Firestore", async (t) => {
+  process.env.GH_REPO_WALLS = "walls";
+  t.mock.method(db, "runTransaction", () => {
+    throw new Error("must not reserve a slot");
+  });
+  await assert.rejects(() => run(githubPutFile, putReq({path: "evil.html"})), {code: "invalid-argument"});
+  await assert.rejects(() => run(githubPutFile, putReq({path: "dir/evil.gif"})), {code: "invalid-argument"});
+  const big = Buffer.alloc(15 * 1024 * 1024 + 1).toString("base64");
+  await assert.rejects(() => run(githubPutFile, putReq({contentBase64: big})), {code: "invalid-argument"});
+});
+
+test("reserveUploadSlot: stops at 30 uploads a day", async (t) => {
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  fakeStore(t, {"githubUploadStats/u": {day, count: 29}});
+  await reserveUploadSlot("u", false, NOW);
+  await assert.rejects(() => reserveUploadSlot("u", false, NOW), {code: "resource-exhausted"});
+});
+
+test("reserveUploadSlot: the daily cap resets on a new day", async (t) => {
+  fakeStore(t, {"githubUploadStats/u": {day: "2000-01-01", count: 30}});
+  await reserveUploadSlot("u", false, NOW);
+});
+
+test("reserveUploadSlot: profile uploads never count toward the weekly wall quota", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {}});
+  for (let i = 0; i < 10; i++) assert.equal(await reserveUploadSlot("u", false, NOW), false);
+  assert.equal(store.get("githubUploadStats/u")?.weekCount, 0);
+});
+
+test("reserveUploadSlot: a free user gets 3 wall previews a week", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {premium: false}});
+  for (let i = 0; i < 3; i++) assert.equal(await reserveUploadSlot("u", true, NOW), true);
+  await assert.rejects(() => reserveUploadSlot("u", true, NOW), {code: "resource-exhausted"});
+  assert.equal(store.get("githubUploadStats/u")?.weekCount, 3);
+});
+
+test("reserveUploadSlot: the weekly quota resets on a new ISO week", async (t) => {
+  fakeStore(t, {"usersv2/u": {}, "githubUploadStats/u": {day: "x", count: 0, week: "2000-01-03", weekCount: 3}});
+  assert.equal(await reserveUploadSlot("u", true, NOW), true);
+});
+
+test("reserveUploadSlot: premium users are not limited weekly", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {premium: true}});
+  for (let i = 0; i < 5; i++) assert.equal(await reserveUploadSlot("u", true, NOW), false);
+  assert.equal(store.get("githubUploadStats/u")?.weekCount, 0);
+});
+
+// Subscription sync
+
+test("claimSyncSlot: blocks a second sync inside 30 seconds and allows it after", async (t) => {
+  fakeStore(t, {});
+  assert.equal(await claimSyncSlot("u", NOW), true);
+  assert.equal(await claimSyncSlot("u", NOW + 29_999), false);
+  assert.equal(await claimSyncSlot("u", NOW + 30_000), true);
+});
+
+test("syncSubscription: inside the cooldown returns the stored tier without calling RevenueCat", async (t) => {
+  fakeStore(t, {"subscriptionSync/u": {lastAt: Date.now()}});
+  t.mock.method(db, "collection", (name: string) => ({
+    doc: () => name === "subscriptionSync" ?
+      {path: "subscriptionSync/u"} :
+      {get: async () => ({data: () => ({premium: true, subscriptionTier: "pro"})})},
+  }));
+  t.mock.method(globalThis, "fetch", () => {
+    throw new Error("must not call RevenueCat");
+  });
+  assert.deepEqual(await run(syncSubscription, {auth: {uid: "u"}, data: {}}), {premium: true, subscriptionTier: "pro"});
+});
