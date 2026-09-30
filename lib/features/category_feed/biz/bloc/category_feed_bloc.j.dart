@@ -16,15 +16,6 @@ part 'category_feed_event.j.dart';
 part 'category_feed_state.j.dart';
 part 'category_feed_bloc.j.freezed.dart';
 
-/// Re-filters the on-screen items when the blocked-creators set changes. Hand-written, like
-/// PersonalizedFeedBloc's, so the freezed union needs no regeneration.
-// ignore: avoid_implementing_value_types
-class _BlockedCreatorsChanged implements CategoryFeedEvent {
-  const _BlockedCreatorsChanged(this.blocked);
-
-  final Set<String> blocked;
-}
-
 @injectable
 class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
   CategoryFeedBloc(this._loadCategoriesUseCase, this._fetchCategoryFeedUseCase, this._userBlockRepository)
@@ -38,7 +29,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
     _blockedCreatorsSub = _userBlockRepository
         .watchBlockedCreatorEmails()
         .skip(1)
-        .listen((blocked) => add(_BlockedCreatorsChanged(blocked)));
+        .listen((blocked) => add(CategoryFeedEvent.blockedCreatorsChanged(blocked: blocked)));
   }
 
   final LoadCategoriesUseCase _loadCategoriesUseCase;
@@ -97,9 +88,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
       ),
     );
 
-    final result = await _fetchCategoryFeedUseCase(
-      FetchCategoryFeedParams(category: event.category, refresh: event.refresh),
-    );
+    final result = await _fetchCategoryFeedUseCase(FetchCategoryFeedParams(category: event.category, refresh: true));
 
     result.fold(
       onSuccess: (page) => emit(

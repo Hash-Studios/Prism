@@ -9,11 +9,11 @@ class CollectionScreen extends StatefulWidget {
   const CollectionScreen({super.key});
 
   @override
-  _CollectionScreenState createState() => _CollectionScreenState();
+  State<CollectionScreen> createState() => _CollectionScreenState();
 }
 
 class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepAliveClientMixin {
-  late Future<List?> _collectionsFuture;
+  late Future<void> _collectionsFuture;
 
   @override
   bool get wantKeepAlive => true;
@@ -28,36 +28,30 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return FutureBuilder<List?>(
+    return FutureBuilder<void>(
       future: _collectionsFuture,
-      builder: (BuildContext context, AsyncSnapshot<List?> snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.waiting:
-            return Center(child: Loader());
-          case ConnectionState.none:
-            return Center(child: Loader());
-          default:
-            if (snapshot.hasError) {
-              return RefreshIndicator(
-                onRefresh: () async {
-                  setState(() {
-                    _collectionsFuture = getCollections();
-                  });
-                  await _collectionsFuture;
-                },
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Spacer(),
-                    Center(child: Text("Can't connect to the Servers!")),
-                    Spacer(),
-                  ],
-                ),
-              );
-            } else {
-              return CollectionsGrid();
-            }
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Center(child: Loader());
         }
+        if (snapshot.hasError) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _collectionsFuture = getCollections();
+              });
+              await _collectionsFuture;
+            },
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const <Widget>[
+                SizedBox(height: 200),
+                Center(child: Text("Can't connect to the Servers!")),
+              ],
+            ),
+          );
+        }
+        return CollectionsGrid();
       },
     );
   }

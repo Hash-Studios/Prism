@@ -13,7 +13,8 @@ import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
-import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
+import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -418,49 +419,42 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
   }
 
   Future<void> refreshList() async {
-    await c_data.getCollections();
+    try {
+      await c_data.getCollections();
+    } catch (error, stackTrace) {
+      logger.w('Failed to refresh collections.', error: error, stackTrace: stackTrace);
+    }
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Object?> rawCollections =
-        c_data.collections?.whereType<Object?>().toList(growable: false) ?? const <Object?>[];
+    final List<Map<String, dynamic>> rawCollections = c_data.collections;
     final bool isLoading = rawCollections.isEmpty;
-
-    Map<String, dynamic> asMap(Object? raw) {
-      if (raw is Map<String, dynamic>) {
-        return raw;
-      }
-      if (raw is Map) {
-        return raw.cast<String, dynamic>();
-      }
-      return <String, dynamic>{};
-    }
 
     final List<_DiscoverTileData> discoverTiles = isLoading
         ? const <_DiscoverTileData>[]
         : <_DiscoverTileData>[
-            ...rawCollections.map((raw) {
-              final collection = asMap(raw);
-              return _DiscoverTileData(
+            ...rawCollections.map(
+              (collection) => _DiscoverTileData(
                 kind: _DiscoverTileKind.collection,
                 name: collection['name']?.toString() ?? '',
                 thumb1: collection['thumb1']?.toString() ?? '',
                 thumb2: collection['thumb2']?.toString() ?? '',
                 isPremium: collection['premium'] == true,
-              );
-            }),
-            ...context
-                .categoryChoiceList(listen: false)
-                .map(
-                  (choice) => _DiscoverTileData(
-                    kind: _DiscoverTileKind.category,
-                    name: choice.name?.trim() ?? '',
-                    thumb1: choice.image?.trim() ?? '',
-                    thumb2: choice.image2?.trim() ?? choice.image?.trim() ?? '',
-                    isPremium: false,
-                  ),
-                ),
+              ),
+            ),
+            ...context.watch<CategoryFeedBloc>().state.categories.map(
+              (category) => _DiscoverTileData(
+                kind: _DiscoverTileKind.category,
+                name: category.name.trim(),
+                thumb1: category.image.trim(),
+                thumb2: category.image2.trim(),
+                isPremium: false,
+              ),
+            ),
           ];
     final int itemCount = isLoading ? 8 : discoverTiles.length;
     const double gridSpacing = 8;
