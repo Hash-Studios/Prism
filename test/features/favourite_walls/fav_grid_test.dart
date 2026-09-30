@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -12,7 +14,6 @@ import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_u
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -75,14 +76,16 @@ void main() {
     await tester.pump();
 
     expect(find.byType(LoadingCards), findsOneWidget);
-    expect(find.byType(SvgPicture), findsNothing);
+    expect(find.byType(GlintState), findsNothing);
 
     pending.complete(Result.success(const <FavouriteWallEntity>[]));
     await tester.pump();
     await tester.pump();
 
     expect(find.byType(LoadingCards), findsNothing);
-    expect(find.byType(SvgPicture), findsOneWidget);
+    expect(find.widgetWithText(GlintState, 'No favourites yet'), findsOneWidget);
+    expect(find.text('Tap the heart on a wallpaper to keep it here.'), findsOneWidget);
+    expect(find.text('Browse wallpapers'), findsOneWidget);
     verify(() => fetchUseCase(any())).called(1);
   });
 
@@ -97,6 +100,18 @@ void main() {
     await pumpGrid(tester);
 
     expect(find.byType(LoadingCards), findsNothing);
-    expect(find.byType(SvgPicture), findsOneWidget);
+    expect(find.byType(GlintState), findsOneWidget);
+  });
+
+  testWidgets('shows an error with a retry when the favourites fail to load', (tester) async {
+    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
+    createBloc();
+
+    await pumpGrid(tester);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.widgetWithText(GlintState, "Couldn't load your favourites"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
   });
 }

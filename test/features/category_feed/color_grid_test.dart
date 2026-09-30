@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/features/category_feed/views/widgets/color_grid.dart';
@@ -71,5 +73,35 @@ void main() {
 
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.byType(SeeMoreButton), findsNothing);
+    expect(find.widgetWithText(GlintState, 'No wallpapers for this colour'), findsOneWidget);
+  });
+
+  testWidgets('shows an error with a retry when the colour feed fails, then recovers', (tester) async {
+    var calls = 0;
+    when(() => repository.fetchColorFeed(hex: 'ff0000', refresh: true)).thenAnswer((_) async {
+      calls++;
+      return calls == 1
+          ? Result.error<List<PexelsWallpaper>>(const NetworkFailure('offline'))
+          : Result.success(<PexelsWallpaper>[_wallpaper('wallpaper-1')]);
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: ColorGrid(hexColor: 'ff0000')),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(GlintState, "Couldn't load wallpapers"), findsOneWidget);
+    expect(find.byType(SeeMoreButton), findsNothing);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byType(GlintState), findsNothing);
+    expect(find.byType(SeeMoreButton), findsOneWidget);
+    expect(calls, 2);
   });
 }

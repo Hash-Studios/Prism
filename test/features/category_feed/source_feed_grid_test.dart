@@ -1,7 +1,10 @@
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/source_feed_grid.dart';
@@ -39,7 +42,7 @@ void main() {
     );
   }
 
-  testWidgets('loading placeholders have square corners', (tester) async {
+  testWidgets('shows the skeleton grid while the feed loads', (tester) async {
     final bloc = _MockCategoryFeedBloc();
     when(() => bloc.state).thenReturn(CategoryFeedState.initial());
 
@@ -56,11 +59,53 @@ void main() {
       ),
     );
 
-    final skeleton = tester.widget<Container>(
-      find.descendant(of: find.byType(GridView), matching: find.byType(Container)).first,
+    expect(find.byType(LoadingCards), findsOneWidget);
+  });
+
+  testWidgets('shows an empty state with a refresh when a loaded feed has no wallpapers', (tester) async {
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial().copyWith(status: LoadStatus.success));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<CategoryFeedBloc>.value(
+          value: bloc,
+          child: const SourceFeedGrid<FeedItemEntity>(
+            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+            listName: ScrollListNameValue.wallpaperGrid,
+            sourceContextPrefix: 'test',
+          ),
+        ),
+      ),
     );
-    expect(skeleton.decoration, isA<BoxDecoration>());
-    expect((skeleton.decoration! as BoxDecoration).borderRadius, isNull);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(GlintState, 'No wallpapers here yet'), findsOneWidget);
+    await tester.tap(find.text('Refresh'));
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
+  });
+
+  testWidgets('shows an error with Try again when the feed failed and has no wallpapers', (tester) async {
+    final bloc = _MockCategoryFeedBloc();
+    when(() => bloc.state).thenReturn(CategoryFeedState.initial().copyWith(status: LoadStatus.failure));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<CategoryFeedBloc>.value(
+          value: bloc,
+          child: const SourceFeedGrid<FeedItemEntity>(
+            surface: AnalyticsSurfaceValue.homeWallpaperGrid,
+            listName: ScrollListNameValue.wallpaperGrid,
+            sourceContextPrefix: 'test',
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.widgetWithText(GlintState, "Couldn't load wallpapers"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const CategoryFeedEvent.refreshRequested())).called(1);
   });
 
   testWidgets('keeps the final wallpaper when the feed has no more pages', (tester) async {

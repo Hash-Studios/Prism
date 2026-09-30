@@ -7,13 +7,11 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -156,8 +154,11 @@ class _SearchGridState extends State<SearchGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final bool showSeeMore = _hasMore && _results.length >= 24;
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
+      color: cs.primary,
+      backgroundColor: cs.surfaceContainerHigh,
       key: refreshHomeKey,
       onRefresh: refreshList,
       child: NotificationListener<ScrollNotification>(
@@ -167,45 +168,27 @@ class _SearchGridState extends State<SearchGrid> {
           }
           return false;
         },
-        child: PulsePlaceholder(
-          builder: (context, _) => GridView.builder(
-            padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: _results.length + (_hasMore && _results.length >= 24 ? 1 : 0),
-            shrinkWrap: true,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-              childAspectRatio: 0.5,
-            ),
-            itemBuilder: (context, index) {
-              if (_hasMore && _results.length >= 24 && index == _results.length) {
-                return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _requestNextPage);
-              }
-
-              final FeedItemEntity wallpaper = _results[index];
-              return Semantics(
-                button: true,
-                label: wallpaperSemanticLabel(_authorName(wallpaper)),
-                child: ShakeOnce(
-                  controller: _shake,
-                  target: index,
-                  child: Stack(
-                    children: [
-                      PrismImageTile(url: wallpaper.thumbnailUrl, heroTag: prismHeroTag(this, index, wallpaper.id)),
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                          onTap: () => _openWallpaper(wallpaper, index),
-                          onLongPress: () => _shareWallpaper(wallpaper, index),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+        child: GridView.builder(
+          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
+          itemCount: _results.length + (showSeeMore ? 1 : 0),
+          gridDelegate: PrismWallGrid.delegate(context),
+          itemBuilder: (context, index) {
+            if (showSeeMore && index == _results.length) {
+              return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _requestNextPage);
+            }
+            final FeedItemEntity wallpaper = _results[index];
+            return ShakeOnce(
+              controller: _shake,
+              target: index,
+              child: PrismWallTile(
+                url: wallpaper.thumbnailUrl,
+                heroTag: prismHeroTag(this, index, wallpaper.id),
+                semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper)),
+                onTap: () => _openWallpaper(wallpaper, index),
+                onLongPress: () => _shareWallpaper(wallpaper, index),
+              ),
+            );
+          },
         ),
       ),
     );

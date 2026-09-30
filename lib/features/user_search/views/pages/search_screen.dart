@@ -1,13 +1,12 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
+import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_widget.dart';
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,22 +20,30 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final List<String> tags = [
-    'Art',
+  /// Most searched first. The order is fixed so the row is easy to scan.
+  static const List<String> tags = <String>[
+    'Anime',
     'Abstract',
+    'Nature',
+    'Space',
+    'Minimalism',
+    'Cars',
+    'Night',
+    'Mountains',
+    'Cyber',
+    'Landscapes',
+    'Art',
+    'Games',
+    'Fantasy',
+    'Flowers',
+    'Beach',
+    'Winter',
     'Patterns',
     'Geometry',
-    'Cyber',
-    'Cars',
     'Comics',
-    'Anime',
     'Illustrations',
-    'Games',
     'Street',
-    'Flowers',
     'Epic',
-    'Minimalism',
-    'Mountains',
     'Field',
     'Chocolate',
     'Train',
@@ -48,15 +55,11 @@ class _SearchScreenState extends State<SearchScreen> {
     'Stock',
     'Trees',
     'Planets',
-    'Space',
-    'Winter',
-    'Beach',
     'Ninja',
     'Summer',
     'Titan',
     'White',
     '8bit',
-    'Fantasy',
     'Fashion',
     'Fitness',
     'Fruits',
@@ -69,10 +72,7 @@ class _SearchScreenState extends State<SearchScreen> {
     'Industry',
     'Interiors',
     'Kids',
-    'Landscapes',
     'Macro',
-    'Nature',
-    'Night',
     'People',
     'Plants',
     'Portraits',
@@ -95,7 +95,10 @@ class _SearchScreenState extends State<SearchScreen> {
   ];
 
   final TextEditingController searchController = TextEditingController();
+  final FocusNode _focus = FocusNode();
+  final GlobalKey _fieldKey = GlobalKey();
   Future<WallpaperSearchPage>? _search;
+  String _submittedQuery = '';
   bool isSubmitted = false;
 
   int _queryWordCount(String query) {
@@ -119,115 +122,121 @@ class _SearchScreenState extends State<SearchScreen> {
   void _triggerSearch(String query) {
     setState(() {
       isSubmitted = true;
+      _submittedQuery = query;
       _search = getIt<WallpaperSearchService>().search(query);
     });
   }
 
   @override
-  void initState() {
-    tags.shuffle();
-    super.initState();
-  }
-
-  @override
   void dispose() {
     searchController.dispose();
+    _focus.dispose();
     super.dispose();
+  }
+
+  Widget _header() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const PrismHeader(title: 'Search', showBack: false),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.sm),
+          child: PrismSearchField(
+            key: _fieldKey,
+            controller: searchController,
+            focusNode: _focus,
+            hint: 'Search wallpapers',
+            onChanged: (text) {
+              if (text.trim().isEmpty && isSubmitted) {
+                setState(() => isSubmitted = false);
+              }
+            },
+            onSubmitted: (text) {
+              final String query = text.trim();
+              if (query.isEmpty) return;
+              _trackSearchSubmitted(query: query, fromSuggestion: false, sourceContext: 'search_textfield');
+              _triggerSearch(query);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _results(BuildContext context) {
+    return FutureBuilder<WallpaperSearchPage>(
+      future: _search,
+      builder: (context, snapshot) {
+        final WallpaperSearchPage? page = snapshot.data;
+        if (snapshot.hasError) {
+          return GlintState(
+            kind: GlintStateKind.error,
+            title: "Couldn't search wallpapers",
+            body: 'Check your connection and try again.',
+            actionLabel: 'Try again',
+            onAction: () => _triggerSearch(_submittedQuery),
+          );
+        }
+        if (page == null) {
+          return const LoadingCards();
+        }
+        if (page.results.isEmpty) {
+          return const GlintState(
+            kind: GlintStateKind.empty,
+            title: 'No wallpapers found',
+            body: 'Try a shorter or a different word.',
+          );
+        }
+        return SearchGrid(
+          key: ValueKey<Future<WallpaperSearchPage>?>(_search),
+          query: _submittedQuery,
+          provider: page.provider,
+          initialResults: page.results,
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final TextStyle? fieldStyle = theme.textTheme.headlineSmall?.copyWith(
-      fontFamily: 'Satoshi',
-      color: theme.colorScheme.secondary,
-    );
     return Scaffold(
-      backgroundColor: theme.primaryColor,
-      appBar: AppBar(
-        backgroundColor: theme.primaryColor,
-        elevation: 0,
-        surfaceTintColor: theme.primaryColor,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Row(
-          children: <Widget>[
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(4, 10, 4, 4),
-                child: Column(
-                  children: [
-                    TextField(
-                      cursorColor: theme.colorScheme.error,
-                      style: fieldStyle,
-                      controller: searchController,
-                      onChanged: (text) {
-                        if (text.trim().isEmpty && isSubmitted) {
-                          setState(() => isSubmitted = false);
-                        }
-                      },
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.only(left: 24, top: 12),
-                        border: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        hintText: 'Search...',
-                        hintStyle: fieldStyle,
-                        suffixIcon: Icon(JamIcons.search, color: theme.colorScheme.secondary),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(
+        bottom: false,
+        child: BlocProvider<SearchDiscoveryBloc>(
+          create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
+          child: isSubmitted
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    _header(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+                      child: Text(
+                        'Results for "$_submittedQuery"',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.caption(context),
                       ),
-                      onSubmitted: (tex) {
-                        final String query = tex.trim();
-                        if (query.isEmpty) return;
-                        _trackSearchSubmitted(query: query, fromSuggestion: false, sourceContext: 'search_textfield');
-                        _triggerSearch(query);
-                      },
                     ),
+                    Expanded(child: _results(context)),
                   ],
+                )
+              : SearchDiscoveryWidget(
+                  header: _header(),
+                  tags: tags,
+                  selectedTag: searchController.text,
+                  onTagPressed: (tag) {
+                    analytics.track(
+                      SearchTagSelectedEvent(provider: SearchProviderValue.wallhaven, tag: tag.toLowerCase()),
+                    );
+                    _trackSearchSubmitted(query: tag, fromSuggestion: true, sourceContext: 'search_tag');
+                    searchController.text = tag;
+                    _triggerSearch(tag);
+                  },
                 ),
-              ),
-            ),
-            const SizedBox(width: 6),
-          ],
         ),
       ),
-      body: isSubmitted
-          ? FutureBuilder<WallpaperSearchPage>(
-              future: _search,
-              builder: (context, snapshot) {
-                final WallpaperSearchPage? page = snapshot.data;
-                if (page == null) {
-                  return const LoadingCards();
-                }
-                if (page.results.isEmpty) {
-                  return GlintState(
-                    kind: GlintStateKind.empty,
-                    title: 'No wallpapers found for "${searchController.text}".',
-                  );
-                }
-                return SearchGrid(
-                  key: ValueKey<Future<WallpaperSearchPage>?>(_search),
-                  query: searchController.text,
-                  provider: page.provider,
-                  initialResults: page.results,
-                );
-              },
-            )
-          : BlocProvider<SearchDiscoveryBloc>(
-              create: (_) => getIt<SearchDiscoveryBloc>()..add(const SearchDiscoveryEvent.fetchRequested()),
-              child: SearchDiscoveryWidget(
-                tags: tags,
-                selectedTag: searchController.text,
-                onTagPressed: (tag) {
-                  analytics.track(
-                    SearchTagSelectedEvent(provider: SearchProviderValue.wallhaven, tag: tag.toLowerCase()),
-                  );
-                  _trackSearchSubmitted(query: tag, fromSuggestion: true, sourceContext: 'search_tag');
-                  searchController.text = tag;
-                  _triggerSearch(tag);
-                },
-              ),
-            ),
     );
   }
 }

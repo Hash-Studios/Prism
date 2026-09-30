@@ -6,14 +6,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,7 +20,7 @@ class UserSearch extends StatefulWidget {
   const UserSearch({super.key});
 
   @override
-  _UserSearchState createState() => _UserSearchState();
+  State<UserSearch> createState() => _UserSearchState();
 }
 
 class _UserSearchState extends State<UserSearch> {
@@ -38,56 +36,35 @@ class _UserSearchState extends State<UserSearch> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.only(top: 6.0),
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: Container(
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(500), color: Theme.of(context).hintColor),
-                child: TextField(
-                  cursorColor: Theme.of(context).colorScheme.error,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.only(left: 30, top: 15),
-                    border: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    hintText: "Search",
-                    hintStyle: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                    suffixIcon: Icon(JamIcons.search, color: Theme.of(context).colorScheme.secondary),
-                  ),
-                  onSubmitted: (tex) {
-                    if (tex.trim().isNotEmpty) {
-                      final String trimmed = tex.trim();
-                      analytics.track(
-                        UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: 'user_search_textfield'),
-                      );
-                      _bloc.add(UserSearchEvent.searchRequested(query: trimmed));
-                      return;
-                    }
+    // usersV2 reads require auth per firestore.rules; guests must sign in first.
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    return PrismPage(
+      title: 'Find creators',
+      headerBottom: loggedIn
+          ? Padding(
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.sm),
+              child: PrismSearchField(
+                controller: searchController,
+                hint: 'Search creators',
+                autofocus: true,
+                onChanged: (text) {
+                  if (text.trim().isEmpty) _bloc.add(const UserSearchEvent.cleared());
+                },
+                onSubmitted: (text) {
+                  final String trimmed = text.trim();
+                  if (trimmed.isEmpty) {
                     _bloc.add(const UserSearchEvent.cleared());
-                  },
-                ),
+                    return;
+                  }
+                  analytics.track(
+                    UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: 'user_search_textfield'),
+                  );
+                  _bloc.add(UserSearchEvent.searchRequested(query: trimmed));
+                },
               ),
-            ),
-          ),
-        ),
-      ),
-      // usersV2 reads require auth per firestore.rules; guests must sign in first.
-      body: app_state.prismUser.loggedIn
+            )
+          : null,
+      body: loggedIn
           ? BlocProvider.value(value: _bloc, child: const _UserSearchLoader())
           : const SignInPrompt(feature: 'creator search'),
     );
@@ -105,18 +82,23 @@ class _UserSearchLoader extends StatelessWidget {
           return const _SearchHint();
         }
         if (state.status == LoadStatus.loading) {
-          return const LoadingCards();
+          return PrismSkeleton.rows();
         }
         if (state.status == LoadStatus.failure) {
           return GlintState(
             kind: GlintStateKind.error,
             title: "Couldn't search creators",
+            body: 'Check your connection and try again.',
             actionLabel: 'Try again',
             onAction: () => context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: state.query)),
           );
         }
         if (state.users.isEmpty) {
-          return const _NoResults();
+          return const GlintState(
+            kind: GlintStateKind.empty,
+            title: 'No creators found',
+            body: 'Check the spelling or try another name.',
+          );
         }
         return _CreatorList(users: state.users, queryLength: state.query.trim().length);
       },
@@ -130,105 +112,51 @@ class _SearchHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(JamIcons.user_circle, size: 48, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3)),
-          const SizedBox(height: 12),
-          Text(
-            'Search for creators by name',
-            style: TextStyle(
-              fontFamily: 'Satoshi',
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Glint(mood: GlintMood.curious),
+            const SizedBox(height: PrismSpace.md),
+            Text('Search creators by name', style: PrismTextStyles.body(context)),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _NoResults extends StatelessWidget {
-  const _NoResults();
-
-  @override
-  Widget build(BuildContext context) {
-    return const GlintState(kind: GlintStateKind.empty, title: 'No creators found');
-  }
-}
-
 class _CreatorList extends StatelessWidget {
   const _CreatorList({required this.users, required this.queryLength});
+
   final List<UserSearchUser> users;
   final int queryLength;
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      padding: EdgeInsets.only(top: PrismSpace.xxs, bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md),
       itemCount: users.length,
-      itemBuilder: (context, index) => _CreatorCard(user: users[index], index: index, queryLength: queryLength),
+      itemBuilder: (context, index) => _CreatorRow(user: users[index], index: index, queryLength: queryLength),
     );
   }
 }
 
-class _CreatorCard extends StatelessWidget {
-  const _CreatorCard({required this.user, required this.index, required this.queryLength});
+class _CreatorRow extends StatelessWidget {
+  const _CreatorRow({required this.user, required this.index, required this.queryLength});
+
   final UserSearchUser user;
   final int index;
   final int queryLength;
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: CircleAvatar(
-        radius: 22,
-        foregroundImage: CachedNetworkImageProvider(user.profilePhoto),
-        backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-      ),
-      title: Text(
-        user.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontFamily: 'Proxima Nova',
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-      ),
-      subtitle: Text(
-        '@${user.username}',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontFamily: 'Proxima Nova',
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
-        ),
-      ),
-      trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            '${user.followerCount}',
-            style: TextStyle(
-              fontFamily: 'Proxima Nova',
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-          Text(
-            'followers',
-            style: TextStyle(
-              fontFamily: 'Proxima Nova',
-              fontSize: 11,
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
+    final String followers = '${user.followerCount} ${user.followerCount == 1 ? 'follower' : 'followers'}';
+    return PrismRow(
+      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
+      leading: PrismAvatar(url: user.profilePhoto, name: user.name),
+      title: user.name,
+      subtitle: '@${user.username} · $followers',
       onTap: () {
         analytics.track(
           UserSearchResultOpenedEvent(
