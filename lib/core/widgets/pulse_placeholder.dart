@@ -1,5 +1,4 @@
 import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:flutter/material.dart';
 
 /// Owns one shimmer controller for a whole skeleton area. [builder] runs once per rebuild of the parent, not per
@@ -36,9 +35,8 @@ class _PulsePlaceholderState extends State<PulsePlaceholder> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final (Color from, Color to) = context.isDarkMode
-        ? (Colors.white10, const Color(0x22FFFFFF))
-        : (Colors.black.withValues(alpha: .1), Colors.black.withValues(alpha: .14));
+    final Color ink = Theme.of(context).colorScheme.onSurface;
+    final (Color from, Color to) = (ink.withValues(alpha: 0.07), ink.withValues(alpha: 0.13));
     final Animation<Color?> color = ColorTween(
       begin: from,
       end: to,
@@ -72,7 +70,7 @@ class PulseFill extends StatelessWidget {
   Widget build(BuildContext context) {
     final _PulseScope? scope = context.dependOnInheritedWidgetOfExactType<_PulseScope>();
     if (scope == null) {
-      final Color rest = context.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: .1);
+      final Color rest = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.07);
       return DecoratedBox(
         decoration: BoxDecoration(color: rest, borderRadius: borderRadius),
       );

@@ -858,6 +858,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
     localNotification.router = _appRouter;
+    toasts.overlayResolver = () => _appRouter.navigatorKey.currentState?.overlay;
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
