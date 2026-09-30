@@ -1179,7 +1179,11 @@ class CoinsService {
 
   /// Applies a balance the server returned outside the coin callables, such as a badge reward.
   void applyServerBalance(int balance) {
-    if (!_canMutateCoins() || balance == app_state.prismUser.coins) return;
+    if (!_canMutateCoins()) return;
+    if (balance == app_state.prismUser.coins) {
+      balanceNotifier.value = balance;
+      return;
+    }
     _applyLocalBalance(balance, delta: balance - app_state.prismUser.coins);
   }
 

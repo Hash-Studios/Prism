@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_sheet.dart';
@@ -18,9 +16,7 @@ class BadgeCelebrateHost extends StatefulWidget {
 }
 
 class _BadgeCelebrateHostState extends State<BadgeCelebrateHost> with WidgetsBindingObserver {
-  static const Duration _retry = Duration(seconds: 1);
   late final BadgeRepository _repository = getIt<BadgeRepository>();
-  Timer? _retryTimer;
   bool _scheduled = false;
   bool _showing = false;
 
@@ -33,6 +29,13 @@ class _BadgeCelebrateHostState extends State<BadgeCelebrateHost> with WidgetsBin
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ModalRoute.of(context);
+    _schedule();
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _schedule();
   }
@@ -41,7 +44,6 @@ class _BadgeCelebrateHostState extends State<BadgeCelebrateHost> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _repository.unseen.removeListener(_schedule);
-    _retryTimer?.cancel();
     super.dispose();
   }
 
@@ -60,9 +62,6 @@ class _BadgeCelebrateHostState extends State<BadgeCelebrateHost> with WidgetsBin
     final bool resumed =
         (WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed) == AppLifecycleState.resumed;
     if (!current || !resumed) {
-      // Another sheet (the daily claim) or route is on top. Nothing tells us when it closes, so look again soon.
-      _retryTimer?.cancel();
-      _retryTimer = Timer(_retry, _schedule);
       return;
     }
     final EarnedBadge badge = _repository.unseen.value.first;

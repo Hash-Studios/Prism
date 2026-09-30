@@ -75,12 +75,11 @@ async function countUpTo(query: admin.firestore.Query, limit: number): Promise<n
 }
 
 async function gatherFacts(
-  uid: string, data: admin.firestore.DocumentData, owned: Set<string>, nowMs: number,
+  uid: string, data: admin.firestore.DocumentData, owned: Set<string>, nowMs: number, email: string,
 ): Promise<BadgeFacts> {
   const need = (...ids: string[]) => ids.some((id) => !owned.has(id));
   const state = data.coinState && typeof data.coinState === "object" ? data.coinState : {};
   const streakBest = Math.max(int(state.streakBest, 0), int(state.streakCount, 0));
-  const email = typeof data.email === "string" ? data.email.trim() : "";
   const [approvedWalls, aiSpends, favourites, createdMs] = await Promise.all([
     need("creator") && email ?
       countUpTo(db.collection("walls").where("email", "==", email).where("review", "==", true), 1) : 0,
@@ -111,37 +110,46 @@ export const checkBadges = onCall(
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to earn badges.");
+    const email = typeof request.auth?.token.email === "string" ? request.auth.token.email : "";
     const userRef = db.collection(USERS).doc(uid);
     const rateRef = db.collection("badgeCheckRate").doc(uid);
     const nowMs = Date.now();
-
-    const [userSnap, rateSnap] = await Promise.all([userRef.get(), rateRef.get()]);
-    if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const cooling = (snap: admin.firestore.DocumentSnapshot) => nowMs - int(snap.data()?.lastAt, 0) < COOLDOWN_MS;
-    const existing = userSnap.data() ?? {};
+    let existing: admin.firestore.DocumentData = {};
+    let isCooling = false;
+    await db.runTransaction(async (tx) => {
+      const [userTx, rateTx] = await Promise.all([tx.get(userRef), tx.get(rateRef)]);
+      if (!userTx.exists) throw new HttpsError("not-found", "User profile was not found.");
+      existing = userTx.data() ?? {};
+      isCooling = cooling(rateTx);
+      if (!isCooling) tx.set(rateRef, {lastAt: nowMs});
+    });
+
     const skip = () => ({
       newBadges: [] as {id: string; coins: number}[],
       badges: (Array.isArray(existing.badges) ? existing.badges : []) as Record<string, unknown>[],
       currentBalance: int(existing.coins, 0),
     });
-    if (cooling(rateSnap)) return skip();
+    if (isCooling) return skip();
 
-    const facts = await gatherFacts(uid, existing, ownedIds(existing.badges), nowMs);
-    const earned = evaluateBadges(facts);
+    const facts = await gatherFacts(uid, existing, ownedIds(existing.badges), nowMs, email);
 
     let response = skip();
     await db.runTransaction(async (tx) => {
-      const [userTx, rateTx] = await Promise.all([tx.get(userRef), tx.get(rateRef)]);
+      const userTx = await tx.get(userRef);
       if (!userTx.exists) throw new HttpsError("not-found", "User profile was not found.");
       const data = userTx.data() ?? {};
       const badges: Record<string, unknown>[] = Array.isArray(data.badges) ? [...data.badges] : [];
       const previous = int(data.coins, 0);
+      const state = data.coinState && typeof data.coinState === "object" ? data.coinState : {};
+      const streakBest = Math.max(int(state.streakBest, 0), int(state.streakCount, 0));
       response = {newBadges: [], badges, currentBalance: previous};
-      if (cooling(rateTx)) return;
 
       const owned = ownedIds(badges);
+      const accountAgeDays = facts.streakBest < 7 && streakBest >= 7 && !owned.has("prism_veteran") ?
+        Math.floor((nowMs - await badgeIo.accountCreatedMs(uid)) / DAY_MS) : facts.accountAgeDays;
+      const earned = evaluateBadges({...facts, streakBest, accountAgeDays});
       const fresh = BADGES.filter((b) => earned.includes(b.id) && !owned.has(b.id));
-      tx.set(rateRef, {lastAt: nowMs});
       if (fresh.length === 0) return;
 
       const at = admin.firestore.Timestamp.now();

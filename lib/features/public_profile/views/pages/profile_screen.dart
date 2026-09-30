@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -62,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return identifier == app_state.prismUser.email || identifier == app_state.prismUser.username;
   }
 
-  PublicProfileEntity get _ownProfile => PublicProfileEntity(
+  PublicProfileEntity _ownProfile({List<String>? badges}) => PublicProfileEntity(
     id: app_state.prismUser.id,
     name: app_state.prismUser.name,
     email: app_state.prismUser.email,
@@ -73,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     following: app_state.prismUser.following,
     links: app_state.prismUser.links,
     coverPhoto: app_state.prismUser.coverPhoto ?? '',
-    badges: app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
+    badges: badges ?? app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
   );
 
   @override
@@ -115,11 +117,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: _isOwnProfile
           ? Scaffold(
               key: _scaffoldKey,
-              body: _ProfileChild(
-                ownProfile: true,
-                parentScaffoldKey: _scaffoldKey,
-                onProfileEdited: () => setState(() {}),
-                profile: _ownProfile,
+              body: StreamBuilder<PublicProfileEntity?>(
+                stream: _profileStream,
+                builder: (context, snapshot) => _ProfileChild(
+                  ownProfile: true,
+                  parentScaffoldKey: _scaffoldKey,
+                  onProfileEdited: () => setState(() {}),
+                  profile: _ownProfile(
+                    badges: snapshot.data?.id == app_state.prismUser.id ? snapshot.data?.badges : null,
+                  ),
+                ),
               ),
               endDrawer: SizedBox(width: MediaQuery.of(context).size.width * 0.68, child: const ProfileDrawer()),
             )
@@ -320,6 +327,10 @@ class _ProfileChildState extends State<_ProfileChild> {
     final bool ownProfile = widget.ownProfile;
     final ScrollController? controller = ownProfile ? scrollController : null;
     final List<String> linkKeys = _profile.links.keys.toList(growable: false);
+    final int badgeCount = _profile.badges.toSet().where((id) => badgeInfo(id) != null).length;
+    final int badgesPerRow = math.max(1, ((MediaQuery.sizeOf(context).width - 24 + 8) / 40).floor());
+    final int badgeRows = (badgeCount / badgesPerRow).ceil();
+    final double badgeHeight = badgeRows == 0 ? 0 : 10 + badgeRows * 32 + (badgeRows - 1) * 8;
     // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
     final bool showBack = !ownProfile || Navigator.canPop(context);
     final Widget editButton = Padding(
@@ -414,8 +425,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                 backgroundColor: theme.primaryColor,
                 automaticallyImplyLeading: false,
                 expandedHeight: linkKeys.isEmpty
-                    ? MediaQuery.of(context).size.height * 0.4
-                    : MediaQuery.of(context).size.height * 0.46,
+                    ? MediaQuery.of(context).size.height * 0.4 + badgeHeight
+                    : MediaQuery.of(context).size.height * 0.46 + badgeHeight,
                 flexibleSpace: Stack(
                   children: [
                     FlexibleSpaceBar(
@@ -444,8 +455,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
                                 width: double.maxFinite,
                                 height: linkKeys.isEmpty
-                                    ? MediaQuery.of(context).size.height * 0.21 - 37
-                                    : MediaQuery.of(context).size.height * 0.27 - 37,
+                                    ? MediaQuery.of(context).size.height * 0.21 - 37 + badgeHeight
+                                    : MediaQuery.of(context).size.height * 0.27 - 37 + badgeHeight,
                                 child: Column(
                                   children: [
                                     SizedBox(
