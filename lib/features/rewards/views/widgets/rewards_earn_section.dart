@@ -9,6 +9,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -77,7 +78,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       const _EarnRow(
         icon: Icons.local_fire_department_rounded,
         title: 'Daily streak',
-        subtitle: 'Open Prism every day. +${CoinPolicy.streak7Bonus} each week.',
+        subtitle: 'Open Prism every day · +${CoinPolicy.streak7Bonus} each week',
         reward: '+${CoinPolicy.streakDay1To2Daily} to +${CoinPolicy.streakDay7Daily}',
       ),
       _EarnRow(
@@ -113,17 +114,17 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       ),
     ];
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(top: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Earn coins', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text('Earn coins', style: PrismTextStyles.sectionTitle(context)),
           const SizedBox(height: 12),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
+              color: scheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4), width: 0.5),
+              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
@@ -132,8 +133,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
                 child: Column(
                   children: <Widget>[
                     for (int i = 0; i < rows.length; i++) ...<Widget>[
-                      if (i > 0)
-                        Divider(height: 1, thickness: 0.5, color: scheme.outlineVariant.withValues(alpha: 0.4)),
+                      if (i > 0) Divider(height: 1, thickness: 1, color: scheme.onSurface.withValues(alpha: 0.08)),
                       rows[i],
                     ],
                   ],
@@ -169,11 +169,10 @@ class _EarnRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final TextTheme text = Theme.of(context).textTheme;
     final bool tappable = onTap != null && !done && !loading;
     final Widget trailing;
     if (done) {
-      trailing = Icon(Icons.check_rounded, size: 20, color: scheme.onSurface.withValues(alpha: 0.6));
+      trailing = Icon(Icons.check_rounded, size: 20, color: scheme.onSurface.withValues(alpha: 0.55));
     } else if (loading) {
       trailing = SizedBox(
         width: 20,
@@ -185,14 +184,17 @@ class _EarnRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(999)),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: scheme.onSurface.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(999),
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const PrismCoinIcon(size: 14),
                 const SizedBox(width: 5),
-                Text(reward, style: text.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
               ],
             ),
           ),
@@ -204,13 +206,16 @@ class _EarnRow extends StatelessWidget {
       );
     }
     final Widget content = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       child: Row(
         children: <Widget>[
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: scheme.onSurface.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Icon(icon, size: 18, color: scheme.onSurface),
           ),
           const SizedBox(width: 12),
@@ -218,11 +223,13 @@ class _EarnRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(title, style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                Text(title, style: PrismTextStyles.rowTitle(context)),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle,
-                  style: text.bodySmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6), height: 1.3),
+                  done ? 'Done' : subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.caption(context).copyWith(height: 1.3),
                 ),
               ],
             ),

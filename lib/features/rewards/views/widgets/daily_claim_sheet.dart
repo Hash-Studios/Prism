@@ -95,8 +95,6 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
     final StreakClaimResult r = widget.result;
     final bool small = MediaQuery.sizeOf(context).height < 700;
     final copy = _copy;
@@ -117,18 +115,10 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
           children: [
             glint,
             const SizedBox(height: 8),
-            Text(
-              copy.title,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
+            Text(copy.title, textAlign: TextAlign.center, style: PrismTextStyles.sheetHeadline(context)),
             if (copy.sub != null) ...[
               const SizedBox(height: 4),
-              Text(
-                copy.sub!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6)),
-              ),
+              Text(copy.sub!, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
             ],
             if (copy.showReward) ...[
               const SizedBox(height: 20),
@@ -141,27 +131,14 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
                     animation: _c,
                     builder: (context, _) {
                       final double t = const Interval(0.1, 0.6, curve: Curves.easeOutCubic).transform(_c.value);
-                      return Text(
-                        '+${(r.totalReward * t).round()}',
-                        style: TextStyle(
-                          fontFamily: PrismFonts.fraunces,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 44,
-                          height: 1,
-                          color: scheme.onSurface,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      );
+                      return Text('+${(r.totalReward * t).round()}', style: PrismTextStyles.numeral(context, 44));
                     },
                   ),
                 ],
               ),
               if (breakdown != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  breakdown,
-                  style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6)),
-                ),
+                Text(breakdown, style: PrismTextStyles.caption(context)),
               ],
             ],
             const SizedBox(height: 24),
@@ -169,12 +146,23 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Nice')),
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  shape: const StadiumBorder(),
+                  textStyle: PrismTextStyles.rowTitle(context),
+                ),
+                child: const Text('Nice'),
+              ),
             ),
             const SizedBox(height: 4),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text(r.streakBroken ? 'Get a freeze for next time' : 'See rewards'),
+              child: Text(
+                r.streakBroken ? 'Get a freeze for next time' : 'See rewards',
+                style: PrismTextStyles.rowTitle(context),
+              ),
             ),
           ],
         ),
@@ -214,7 +202,9 @@ class _CycleStrip extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: done ? Color.lerp(Colors.transparent, scheme.primary, t) : null,
-                        border: done && t >= 1 ? null : Border.all(color: scheme.outlineVariant, width: 1.5),
+                        border: done && t >= 1
+                            ? null
+                            : Border.all(color: scheme.onSurface.withValues(alpha: 0.12), width: 1.5),
                       ),
                       child: done && t > 0
                           ? Opacity(
@@ -226,12 +216,7 @@ class _CycleStrip extends StatelessWidget {
                   },
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  'Day $i',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6), fontSize: 10),
-                ),
+                Text('Day $i', style: PrismTextStyles.caption(context).copyWith(fontSize: 10)),
               ],
             ),
           ),

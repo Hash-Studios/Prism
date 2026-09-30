@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -41,9 +42,9 @@ Future<T?> showCoinGateSheet<T>(
             ),
             const SizedBox(height: 16),
             if (missing > 0) ...[const Glint(mood: GlintMood.worried, size: 72), const SizedBox(height: 8)],
-            Text(title, style: Theme.of(sheetContext).textTheme.displaySmall),
+            Text(title, style: PrismTextStyles.sheetHeadline(sheetContext)),
             const SizedBox(height: 10),
-            Text(message(missing), textAlign: TextAlign.center, style: Theme.of(sheetContext).textTheme.bodyMedium),
+            Text(message(missing), textAlign: TextAlign.center, style: PrismTextStyles.body(sheetContext)),
             const SizedBox(height: 16),
             for (final (int index, CoinGateOption<T> option) in options.indexed) ...[
               if (index > 0) const SizedBox(height: 8),

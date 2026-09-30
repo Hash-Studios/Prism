@@ -12,6 +12,7 @@ import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +64,51 @@ void main() {
     await tester.pump();
     expect(find.text('Streak freeze'), findsOneWidget);
     expect(firestore.dedupeWindowMs, 0);
+  });
+
+  testWidgets('activity shows 8 rows, then more after Show more', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = CoinsTestFirestore();
+    firestore.transactions = <Map<String, dynamic>>[
+      for (int i = 0; i < 12; i++)
+        <String, dynamic>{
+          'id': 'tx-$i',
+          'userId': 'user-1',
+          'action': 'streakFreeze',
+          'delta': -50,
+          'createdAt': DateTime.now(),
+        },
+    ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.binding.setSurfaceSize(const Size(400, 2400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.dark));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('-50'), findsNWidgets(8));
+    await tester.tap(find.text('Show more'));
+    await tester.pump();
+    expect(find.text('-50'), findsNWidgets(12));
+    expect(find.text('Show less'), findsOneWidget);
+  });
+
+  testWidgets('PrismTextStyles titles are not the legacy dark grey on a dark theme', (tester) async {
+    late TextStyle style;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+        home: Builder(
+          builder: (context) {
+            style = PrismTextStyles.cardTitle(context);
+            return Text('Streak freeze', style: style);
+          },
+        ),
+      ),
+    );
+    expect(style.color, isNot(const Color(0xFF2F2F2F)));
+    expect(style.color!.computeLuminance(), greaterThan(0.5));
   });
 
   for (final Brightness brightness in Brightness.values) {

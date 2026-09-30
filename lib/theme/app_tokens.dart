@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 /// Prefer [Theme.of(context).colorScheme] for surface/content colors that
 /// change with the active theme. Use [PrismColors] only for values that must
 /// remain constant across all themes — e.g. brand accents and overlay helpers.
+// ignore: avoid_classes_with_only_static_members
 abstract final class PrismColors {
   /// Brand pink — notification badge fill and primary accent in the default
   /// theme's color scheme.
@@ -17,6 +18,10 @@ abstract final class PrismColors {
   /// Foreground color on primary / app-bar surfaces.
   /// Always white so that content stays legible regardless of the active theme.
   static const Color onPrimary = Colors.white;
+
+  /// Green for coins gained (activity amounts). Differs by brightness for contrast.
+  static Color coinGain(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? const Color(0xFF7CF0C0) : const Color(0xFF1E9E6A);
 }
 
 /// Font family name constants.
@@ -35,6 +40,52 @@ abstract final class PrismFonts {
 /// by theme are exposed as `const` values.
 // ignore: avoid_classes_with_only_static_members
 abstract final class PrismTextStyles {
+  static TextStyle _base(BuildContext context, double size, FontWeight weight, {double alpha = 1, double? height}) {
+    return TextStyle(
+      fontFamily: PrismFonts.proximaNova,
+      fontSize: size,
+      fontWeight: weight,
+      height: height,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: alpha),
+      fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+    );
+  }
+
+  /// Page title (28 w700).
+  static TextStyle screenTitle(BuildContext context) => _base(context, 28, FontWeight.w700, height: 1.1);
+
+  /// Section heading (20 w700).
+  static TextStyle sectionTitle(BuildContext context) => _base(context, 20, FontWeight.w700);
+
+  /// Sheet headline (24 w700).
+  static TextStyle sheetHeadline(BuildContext context) => _base(context, 24, FontWeight.w700);
+
+  /// Card heading (16 w700).
+  static TextStyle cardTitle(BuildContext context) => _base(context, 16, FontWeight.w700);
+
+  /// Row and tile title (15 w600).
+  static TextStyle rowTitle(BuildContext context) => _base(context, 15, FontWeight.w600);
+
+  /// Body copy (14 w500, 70%).
+  static TextStyle body(BuildContext context) => _base(context, 14, FontWeight.w500, alpha: 0.7);
+
+  /// Small supporting text (12 w500, 55%).
+  static TextStyle caption(BuildContext context) => _base(context, 12, FontWeight.w500, alpha: 0.55);
+
+  /// Small label above a value (11 w700, tracked). The caller upper-cases the text.
+  static TextStyle eyebrow(BuildContext context) =>
+      _base(context, 11, FontWeight.w700, alpha: 0.55).copyWith(letterSpacing: 1.4);
+
+  /// Big number in Fraunces.
+  static TextStyle numeral(BuildContext context, double size) => TextStyle(
+    fontFamily: PrismFonts.fraunces,
+    fontSize: size,
+    fontWeight: FontWeight.w600,
+    height: 1.0,
+    color: Theme.of(context).colorScheme.onSurface,
+    fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+  );
+
   /// Brand wordmark ("prism") shown in the top app-bar.
   ///
   /// Uses the Fraunces variable font with the WONK axis set to maximum

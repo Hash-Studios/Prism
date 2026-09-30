@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/features/streak/streak_unlock.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,25 +44,21 @@ class _CollectionBody extends StatelessWidget {
         if (!loading && !failed && state.items.isEmpty) {
           return const SizedBox.shrink();
         }
-        final ThemeData theme = Theme.of(context);
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.only(top: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('Streak collection', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text('Streak collection', style: PrismTextStyles.sectionTitle(context)),
               const SizedBox(height: 4),
-              Text(
-                'Wallpapers you unlock by keeping your streak.',
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-              ),
+              Text('Wallpapers you unlock by keeping your streak.', style: PrismTextStyles.caption(context)),
               const SizedBox(height: 12),
               if (loading)
                 const _CollectionSkeleton()
               else if (failed)
                 Row(
                   children: <Widget>[
-                    Expanded(child: Text("Couldn't load the collection.", style: theme.textTheme.bodyMedium)),
+                    Expanded(child: Text("Couldn't load the collection.", style: PrismTextStyles.body(context))),
                     TextButton(
                       onPressed: () => context.read<StreakShopBloc>().add(const StreakShopLoaded()),
                       child: const Text('Try again'),
@@ -230,9 +227,7 @@ class _CollectionCard extends StatelessWidget {
                 _caption,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6), height: 1.25),
+                style: PrismTextStyles.caption(context).copyWith(height: 1.25),
               ),
             ],
           ),

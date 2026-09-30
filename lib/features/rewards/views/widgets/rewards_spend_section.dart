@@ -4,6 +4,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -68,7 +69,7 @@ class RewardsSpendSection extends StatelessWidget {
       ),
     ];
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(top: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -94,16 +95,15 @@ class RewardsSpendSection extends StatelessWidget {
       context: context,
       useSafeArea: true,
       builder: (sheetContext) {
-        final ThemeData theme = Theme.of(sheetContext);
         return Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              Text(title, style: PrismTextStyles.sheetHeadline(sheetContext)),
               const SizedBox(height: 8),
-              Text(body, style: theme.textTheme.bodyMedium?.copyWith(height: 1.4)),
+              Text(body, style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4)),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () {
@@ -136,7 +136,6 @@ class _SpendTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final TextTheme text = Theme.of(context).textTheme;
     return Semantics(
       button: onTap != null,
       label: '$label, $price coins',
@@ -144,54 +143,51 @@ class _SpendTile extends StatelessWidget {
       onTap: onTap,
       child: PressScale(
         child: Material(
-          color: scheme.surfaceContainerLow,
+          color: scheme.surfaceContainerHigh,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.4), width: 0.5),
+            side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.08)),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(10),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 104),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: scheme.onSurface.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, size: 20, color: scheme.onSurface),
                     ),
-                    child: Icon(icon, size: 18, color: scheme.onSurface),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: <Widget>[
-                      const PrismCoinIcon(size: 14),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          price,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.bodySmall?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.7),
-                            fontWeight: FontWeight.w600,
+                    const SizedBox(height: 12),
+                    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: <Widget>[
+                        const PrismCoinIcon(size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            price,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: PrismTextStyles.caption(
+                              context,
+                            ).copyWith(color: scheme.onSurface.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -208,6 +204,6 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700));
+    return Text(title, style: PrismTextStyles.sectionTitle(context));
   }
 }
