@@ -9,6 +9,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -227,10 +228,7 @@ class ProfileDrawer extends StatelessWidget {
                   return;
                 }
                 toasts.success('Log out Successful!');
-                final settingsLocal = getIt<SettingsLocalDataSource>();
-                await settingsLocal.set('onboarded_v2_new', false);
-                await settingsLocal.set('onboarding_v2_interests', '');
-                await settingsLocal.set('onboarding_v2_followed_creators', '');
+                await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
                 if (context.mounted) {
                   main.RestartWidget.restartApp(context);
                 }
