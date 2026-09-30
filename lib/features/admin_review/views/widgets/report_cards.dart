@@ -158,16 +158,24 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
                 filled: true,
                 onPressed: () => _openWallpaperDetail(context),
               ),
-              const Spacer(),
-              PrismButton(
-                label: 'Keep wallpaper',
-                variant: PrismButtonVariant.tonal,
-                size: PrismButtonSize.compact,
-                loading: _isKeeping,
-                onPressed: _keepWallpaper,
-              ),
               const SizedBox(width: PrismSpace.xs),
-              ModerationDangerButton(label: 'Remove', onPressed: _isKeeping ? null : _removeWallpaper),
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: PrismSpace.xs,
+                  runSpacing: PrismSpace.xs,
+                  children: <Widget>[
+                    PrismButton(
+                      label: 'Keep wallpaper',
+                      variant: PrismButtonVariant.tonal,
+                      size: PrismButtonSize.compact,
+                      loading: _isKeeping,
+                      onPressed: _keepWallpaper,
+                    ),
+                    ModerationDangerButton(label: 'Remove', onPressed: _isKeeping ? null : _removeWallpaper),
+                  ],
+                ),
+              ),
             ],
           ),
         ],

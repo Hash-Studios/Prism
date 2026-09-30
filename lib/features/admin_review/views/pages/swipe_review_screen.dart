@@ -370,6 +370,7 @@ class _ActionButton extends StatelessWidget {
       enabled: enabled,
       label: semanticLabel ?? label,
       excludeSemantics: true,
+      onTap: enabled ? onTap : null,
       child: PressScale(
         enabled: enabled,
         child: GestureDetector(

@@ -24,23 +24,24 @@ class UserProfileGrid extends StatelessWidget {
     final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
     return BlocBuilder<PublicProfileBloc, PublicProfileState>(
       builder: (context, state) {
-        if (state.status == LoadStatus.initial) {
+        if (state.status == LoadStatus.initial || (state.status == LoadStatus.loading && state.walls.isEmpty)) {
           return const SliverToBoxAdapter(child: LoadingCards());
         }
         final List<PublicProfileWallEntity> walls = state.walls;
+        final bool failed = state.status == LoadStatus.failure;
+        final Widget retryState = GlintState(
+          kind: GlintStateKind.error,
+          title: 'Could not load wallpapers',
+          body: 'Check your connection and try again.',
+          actionLabel: 'Try again',
+          onAction: () => bloc.add(const PublicProfileEvent.refreshRequested()),
+        );
         if (walls.isEmpty) {
-          final bool failed = state.status == LoadStatus.failure;
           return SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
               child: failed
-                  ? GlintState(
-                      kind: GlintStateKind.error,
-                      title: 'Could not load wallpapers',
-                      body: 'Check your connection and try again.',
-                      actionLabel: 'Try again',
-                      onAction: () => bloc.add(const PublicProfileEvent.refreshRequested()),
-                    )
+                  ? retryState
                   : GlintState(
                       kind: GlintStateKind.empty,
                       title: 'No wallpapers yet',
@@ -50,40 +51,51 @@ class UserProfileGrid extends StatelessWidget {
           );
         }
         final bool viewerPremium = app_state.prismUser.premium;
-        return SliverPadding(
-          padding: PrismWallGrid.padding,
-          sliver: SliverGrid.builder(
-            gridDelegate: PrismWallGrid.delegate(context),
-            itemCount: walls.length + (state.hasMoreWalls ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index == walls.length) {
-                return SeeMoreButton(
-                  seeMoreLoader: state.isFetchingMoreWalls,
-                  func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
-                );
-              }
-              final PublicProfileWallEntity wall = walls[index];
-              final String heroTag = prismHeroTag(bloc, index, wall.id);
-              final String thumb = normalizeWallpaperThumbnailUrl(wall.wallpaperThumb?.trim() ?? '');
-              final bool premiumWall = isPremiumWall(
-                app_state.premiumCollections,
-                wall.collections ?? const <String>[],
-              );
-              return PrismWallTile(
-                url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
-                heroTag: heroTag,
-                semanticLabel: wallpaperSemanticLabel(wall.by),
-                overlay: !viewerPremium && premiumWall ? const _PremiumMark() : null,
-                onTap: () => context.router.push(
-                  WallpaperDetailRoute(
-                    entity: wall.toFeedItem(),
-                    analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
-                    heroTag: heroTag,
-                  ),
+        return SliverMainAxisGroup(
+          slivers: <Widget>[
+            if (failed)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: PrismSpace.md),
+                  child: retryState,
                 ),
-              );
-            },
-          ),
+              ),
+            SliverPadding(
+              padding: PrismWallGrid.padding,
+              sliver: SliverGrid.builder(
+                gridDelegate: PrismWallGrid.delegate(context),
+                itemCount: walls.length + (state.hasMoreWalls ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == walls.length) {
+                    return SeeMoreButton(
+                      seeMoreLoader: state.isFetchingMoreWalls,
+                      func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                    );
+                  }
+                  final PublicProfileWallEntity wall = walls[index];
+                  final String heroTag = prismHeroTag(bloc, index, wall.id);
+                  final String thumb = normalizeWallpaperThumbnailUrl(wall.wallpaperThumb?.trim() ?? '');
+                  final bool premiumWall = isPremiumWall(
+                    app_state.premiumCollections,
+                    wall.collections ?? const <String>[],
+                  );
+                  return PrismWallTile(
+                    url: thumb.startsWith('http://') || thumb.startsWith('https://') ? thumb : '',
+                    heroTag: heroTag,
+                    semanticLabel: wallpaperSemanticLabel(wall.by),
+                    overlay: !viewerPremium && premiumWall ? const _PremiumMark() : null,
+                    onTap: () => context.router.push(
+                      WallpaperDetailRoute(
+                        entity: wall.toFeedItem(),
+                        analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
+                        heroTag: heroTag,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );

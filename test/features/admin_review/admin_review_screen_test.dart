@@ -174,6 +174,54 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('pending wallpaper actions fit a 320 logical-pixel screen at 2x text', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(640, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await tester.pumpWidget(
+      app(
+        AdminReviewScreen(repository: repository),
+        media: const MediaQueryData(size: Size(320, 800), textScaler: TextScaler.linear(2)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Approve'), findsOneWidget);
+    expect(find.text('Reject'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wall report actions fit a 320 logical-pixel screen at 2x text', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(640, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()
+      ..reportsList = const <FirestoreDocument>[
+        FirestoreDocument('report-a', <String, dynamic>{
+          'contentType': 'wall',
+          'reason': 'Spam',
+          'targetFirestoreDocId': 'wall-a',
+          'reporterUid': 'reporter-a',
+        }),
+      ];
+    await tester.pumpWidget(
+      app(
+        AdminReviewScreen(repository: repository),
+        media: const MediaQueryData(size: Size(320, 800), textScaler: TextScaler.linear(2)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reports (1)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Keep wallpaper'), findsOneWidget);
+    expect(find.text('Remove'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('wall report previews stay with their report after the stream reorders rows', (
     WidgetTester tester,
   ) async {

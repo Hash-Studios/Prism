@@ -3,7 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
@@ -64,14 +64,12 @@ class _CollectionBody extends StatelessWidget {
             if (loading)
               const _CollectionSkeleton()
             else if (failed)
-              GlintState(
-                kind: GlintStateKind.error,
+              PrismInlineState(
+                icon: Icons.cloud_off_rounded,
                 title: "Couldn't load the collection",
                 body: 'Check your connection and try again.',
                 actionLabel: 'Try again',
                 onAction: () => context.read<StreakShopBloc>().add(const StreakShopLoaded()),
-                glintSize: 56,
-                padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
               )
             else
               _CollectionGrid(items: state.items),

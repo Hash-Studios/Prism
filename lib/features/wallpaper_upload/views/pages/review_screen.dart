@@ -77,7 +77,7 @@ class _WallReviewState extends State<_WallReview> {
       builder: (context, pending) => StreamBuilder<List<FirestoreDocument>>(
         stream: _rejected,
         builder: (context, rejected) {
-          if (!_resolved(pending) || !_resolved(rejected)) return PrismSkeleton.cards(height: 152);
+          if (!_resolved(pending) && !_resolved(rejected)) return PrismSkeleton.cards(height: 152);
           if (pending.hasError && rejected.hasError) {
             return GlintState(
               kind: GlintStateKind.error,
@@ -132,7 +132,7 @@ class _WallReviewState extends State<_WallReview> {
     required String error,
     required bool first,
   }) {
-    if (!snapshot.hasError && docs.isEmpty) return const <Widget>[];
+    if (snapshot.hasData && docs.isEmpty) return const <Widget>[];
     return <Widget>[
       PrismSectionHeader(
         title: title,
@@ -151,6 +151,8 @@ class _WallReviewState extends State<_WallReview> {
             ),
           ],
         ),
+      if (!snapshot.hasData && !snapshot.hasError)
+        const PrismSkeleton(child: PrismBone(height: 152, radius: PrismRadius.lg)),
       for (final FirestoreDocument doc in docs)
         Padding(
           padding: const EdgeInsets.only(bottom: PrismSpace.sm),

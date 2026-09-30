@@ -47,6 +47,7 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
   );
   late final CurvedAnimation _curve = CurvedAnimation(parent: _controller, curve: PrismCurves.enter);
   Timer? _timer;
+  bool _dismissing = false;
 
   @override
   void initState() {
@@ -57,9 +58,18 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
     _timer = Timer(Duration(milliseconds: ms + widget.message.length * 20), _dismiss);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = context.motion(PrismDurations.base);
+    _controller.reverseDuration = context.motion(PrismDurations.fast);
+    if (context.reduceMotion) _controller.value = 1;
+  }
+
   Future<void> _dismiss() async {
     _timer?.cancel();
-    if (!mounted) return;
+    if (!mounted || _dismissing) return;
+    _dismissing = true;
     await _controller.reverse();
     widget.onDone();
   }

@@ -16,51 +16,63 @@ class CreatorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<String> previews = creator.previewUrls.take(3).toList();
     final String followers = '${formatCompactCount(creator.followerCount)} followers';
-    return PrismCard(
-      padding: const EdgeInsets.all(PrismSpace.md),
+    final Widget identity = Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              PrismAvatar(url: creator.photoUrl, name: creator.name),
-              const SizedBox(width: PrismSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    if (creator.name.isNotEmpty)
-                      Text(
-                        creator.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: PrismTextStyles.cardTitle(context),
-                      ),
-                    Text(followers, style: PrismTextStyles.caption(context)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: PrismSpace.sm),
-              PrismButton(
-                label: isSelected ? 'Following' : 'Follow',
-                icon: isSelected ? Icons.check_rounded : null,
-                variant: isSelected ? PrismButtonVariant.ghost : PrismButtonVariant.tonal,
-                size: PrismButtonSize.compact,
-                onPressed: onToggle,
-              ),
-            ],
-          ),
-          const SizedBox(height: PrismSpace.md),
-          Row(
-            children: <Widget>[
-              for (int i = 0; i < 3; i++) ...<Widget>[
-                if (i > 0) const SizedBox(width: PrismSpace.xs),
-                Expanded(child: _Thumb(url: i < previews.length ? previews[i] : null)),
-              ],
-            ],
-          ),
+          if (creator.name.isNotEmpty)
+            Text(creator.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.cardTitle(context)),
+          Text(followers, style: PrismTextStyles.caption(context)),
         ],
       ),
+    );
+    final Widget followButton = PrismButton(
+      label: isSelected ? 'Following' : 'Follow',
+      icon: isSelected ? Icons.check_rounded : null,
+      variant: isSelected ? PrismButtonVariant.ghost : PrismButtonVariant.tonal,
+      size: PrismButtonSize.compact,
+      onPressed: onToggle,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool stackButton = constraints.maxWidth < 320 || MediaQuery.textScalerOf(context).scale(14) >= 21;
+        return PrismCard(
+          padding: const EdgeInsets.all(PrismSpace.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (stackButton) ...<Widget>[
+                Row(
+                  children: <Widget>[
+                    PrismAvatar(url: creator.photoUrl, name: creator.name),
+                    const SizedBox(width: PrismSpace.sm),
+                    identity,
+                  ],
+                ),
+                Align(alignment: Alignment.centerRight, child: followButton),
+              ] else
+                Row(
+                  children: <Widget>[
+                    PrismAvatar(url: creator.photoUrl, name: creator.name),
+                    const SizedBox(width: PrismSpace.sm),
+                    identity,
+                    const SizedBox(width: PrismSpace.sm),
+                    followButton,
+                  ],
+                ),
+              const SizedBox(height: PrismSpace.md),
+              Row(
+                children: <Widget>[
+                  for (int i = 0; i < 3; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(width: PrismSpace.xs),
+                    Expanded(child: _Thumb(url: i < previews.length ? previews[i] : null)),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

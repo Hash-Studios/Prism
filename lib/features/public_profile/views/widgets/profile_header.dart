@@ -193,7 +193,7 @@ class ProfileHeader extends StatelessWidget {
                   _Stat(
                     value: formatCompactCount(profile.following.length),
                     label: 'Following',
-                    onTap: onOpenFollowing,
+                    onTap: ownProfile ? onOpenFollowing : null,
                   ),
                 ],
               ),
@@ -251,13 +251,13 @@ class _Stat extends StatelessWidget {
 
   final String value;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return PressScale(
       child: Semantics(
-        button: true,
+        button: onTap != null,
         label: label,
         value: value,
         excludeSemantics: true,

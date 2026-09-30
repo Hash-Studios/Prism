@@ -66,7 +66,7 @@ class PrismSheetBody extends StatelessWidget {
   /// Centres the Glint, title and message.
   final bool centered;
 
-  /// Lets [child] scroll when the sheet is tall. Use with `isScrollControlled: true`.
+  /// Allows dragging even when the sheet currently fits. Long sheets always scroll to keep actions reachable.
   final bool scrollable;
 
   /// Hide the drag handle on a sheet that cannot be dragged away.
@@ -113,33 +113,26 @@ class PrismSheetBody extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.only(
-          left: PrismSpace.page,
-          right: PrismSpace.page,
-          bottom: PrismSpace.md + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            if (showHandle) handle else const SizedBox(height: PrismSpace.xl),
-            if (scrollable)
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[head, ?content],
-                  ),
-                ),
-              )
-            else ...<Widget>[head, ?content],
-            if (actions.isNotEmpty) const SizedBox(height: PrismSpace.lg),
-            for (int i = 0; i < actions.length; i++) ...<Widget>[
-              if (i > 0) const SizedBox(height: PrismSpace.xs),
-              actions[i],
-            ],
-          ],
+        padding: EdgeInsets.only(bottom: PrismSpace.md + MediaQuery.viewInsetsOf(context).bottom),
+        child: SingleChildScrollView(
+          physics: scrollable ? const AlwaysScrollableScrollPhysics() : const ClampingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                if (showHandle) handle else const SizedBox(height: PrismSpace.xl),
+                head,
+                ?content,
+                if (actions.isNotEmpty) const SizedBox(height: PrismSpace.lg),
+                for (int i = 0; i < actions.length; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(height: PrismSpace.xs),
+                  actions[i],
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

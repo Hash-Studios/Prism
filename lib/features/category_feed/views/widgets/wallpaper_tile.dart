@@ -16,10 +16,10 @@ class WallpaperTile extends StatelessWidget {
   final FeedItemEntity item;
   final int index;
 
-  /// Kept for callers that still pass it. The shared tile decides the decode size.
+  /// Optional decode-height override in physical pixels.
   final int? memCacheHeight;
 
-  /// Kept for callers that still pass it. The shared grid decides the column count.
+  /// Legacy grid-column hint for callers that need a fixed decode size.
   final int? crossAxisCount;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
@@ -37,10 +37,15 @@ class WallpaperTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
+    final int? columns = crossAxisCount;
+    final int? decodeHeight =
+        memCacheHeight ??
+        (columns == null || columns <= 0 ? null : (MediaQuery.sizeOf(context).width / columns * 3).round());
     return PrismWallTile(
       url: item.thumbnailUrl,
       heroTag: heroTag,
       semanticLabel: item.semanticLabel,
+      memCacheHeight: decodeHeight,
       onTap: () {
         unawaited(
           analytics.track(

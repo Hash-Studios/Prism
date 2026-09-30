@@ -123,8 +123,15 @@ class CategorySection extends StatelessWidget {
         _hRow(
           height: _categoryHeight,
           count: categoryDefinitions.length,
-          builder: (context, index) =>
-              _CategoryCard(name: categoryDefinitions[index].name, image: categoryDefinitions[index].imageUrl),
+          builder: (context, index) {
+            final String name = categoryDefinitions[index].name;
+            return _CategoryCard(
+              name: name,
+              image: categoryDefinitions[index].imageUrl,
+              onTap: () =>
+                  context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(name)}')),
+            );
+          },
         ),
       ],
     );
@@ -132,10 +139,11 @@ class CategorySection extends StatelessWidget {
 }
 
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.name, required this.image});
+  const _CategoryCard({required this.name, required this.image, required this.onTap});
 
   final String name;
   final String image;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -147,10 +155,10 @@ class _CategoryCard extends StatelessWidget {
         button: true,
         label: 'Category, $name',
         excludeSemantics: true,
+        onTap: onTap,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () =>
-              context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(name)}')),
+          onTap: onTap,
           child: SizedBox(
             width: _categoryWidth,
             child: Stack(
@@ -242,6 +250,7 @@ class ColourSection extends StatelessWidget {
                   button: true,
                   label: '${swatch.name} wallpapers',
                   excludeSemantics: true,
+                  onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),

@@ -121,15 +121,20 @@ abstract final class PrismTextStyles {
   /// Row and tile title (15 w600).
   static TextStyle rowTitle(BuildContext context) => _base(context, 15, FontWeight.w600);
 
-  /// Body copy (14 w500, 70%).
-  static TextStyle body(BuildContext context) => _base(context, 14, FontWeight.w500, alpha: 0.7);
+  /// Body copy (14 w500, secondary text colour).
+  static TextStyle body(BuildContext context) =>
+      _base(context, 14, FontWeight.w500).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
-  /// Small supporting text (12 w500, 60%).
-  static TextStyle caption(BuildContext context) => _base(context, 12, FontWeight.w500, alpha: 0.6);
+  /// Small supporting text (12 w500, secondary text colour).
+  static TextStyle caption(BuildContext context) =>
+      _base(context, 12, FontWeight.w500).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
   /// Small label above a value (11 w700, tracked). The caller upper-cases the text.
-  static TextStyle eyebrow(BuildContext context) =>
-      _base(context, 11, FontWeight.w700, alpha: 0.6).copyWith(letterSpacing: 1.4);
+  static TextStyle eyebrow(BuildContext context) => _base(
+    context,
+    11,
+    FontWeight.w700,
+  ).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 1.4);
 
   /// Big number in Fraunces.
   static TextStyle numeral(BuildContext context, double size) => TextStyle(

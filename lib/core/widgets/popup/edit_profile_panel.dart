@@ -144,6 +144,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       (!usernameEdit && (pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit)) ||
       (usernameEdit && enabled && available != false);
 
+  bool get _hasUnsavedChanges => pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit;
+
   Future<void> _saveProfile() async {
     setState(() => isLoading = true);
     try {
@@ -287,7 +289,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     const double fieldGap = PrismSpace.md;
     return PopScope(
-      canPop: !_hasChanges || isLoading,
+      canPop: !_hasUnsavedChanges || isLoading,
       onPopInvokedWithResult: (bool didPop, Object? result) {
         if (!didPop) _confirmDiscard();
       },

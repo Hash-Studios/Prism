@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 
 Color _mix(Color over, double alpha, Color base) => Color.alphaBlend(over.withValues(alpha: alpha), base);
 
-const Color _ink = Color(0xFF141418);
-
 double _contrast(Color a, Color b) {
   final double la = a.computeLuminance();
   final double lb = b.computeLuminance();
@@ -14,7 +12,7 @@ double _contrast(Color a, Color b) {
 
 /// Dark ink or white, whichever has more contrast on [background].
 Color prismOnColor(Color background) =>
-    _contrast(_ink, background) >= _contrast(Colors.white, background) ? _ink : Colors.white;
+    _contrast(Colors.black, background) >= _contrast(Colors.white, background) ? Colors.black : Colors.white;
 
 /// [foreground] mixed into [background], starting at [start] and raised until it reaches 4.5:1 (or full strength).
 Color _readableMix(Color foreground, Color background, double start) {
@@ -36,7 +34,18 @@ ColorScheme prismColorScheme({
   final bool dark = brightness == Brightness.dark;
   final ColorScheme base = dark ? const ColorScheme.dark() : const ColorScheme.light();
   final Color onAccent = prismOnColor(accent);
-  final Color danger = dark ? const Color(0xFFFF6B6B) : const Color(0xFFC62828);
+  final Color highestSurface = _mix(foreground, 0.12, background);
+  final Color defaultDanger = dark ? const Color(0xFFFF6B6B) : const Color(0xFFC62828);
+  Color danger = defaultDanger;
+  for (double strength = 0; strength < 1; strength += 0.04) {
+    final Color candidate = Color.lerp(defaultDanger, foreground, strength)!;
+    if (_contrast(candidate, background) >= 4.5 &&
+        _contrast(candidate, highestSurface) >= 4.5 &&
+        _contrast(prismOnColor(candidate), candidate) >= 4.5) {
+      danger = candidate;
+      break;
+    }
+  }
   return base.copyWith(
     primary: accent,
     onPrimary: onAccent,
@@ -55,7 +64,7 @@ ColorScheme prismColorScheme({
     onErrorContainer: foreground,
     surface: background,
     onSurface: foreground,
-    onSurfaceVariant: _readableMix(foreground, background, 0.66),
+    onSurfaceVariant: _readableMix(foreground, highestSurface, 0.66),
     surfaceDim: background,
     surfaceBright: _mix(foreground, 0.12, background),
     surfaceContainerLowest: background,

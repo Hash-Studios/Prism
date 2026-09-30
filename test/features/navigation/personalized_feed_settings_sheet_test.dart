@@ -170,6 +170,7 @@ void main() {
     showToastsInTree(tester);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -197,6 +198,7 @@ void main() {
     );
     showToastsInTree(tester);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -249,6 +251,7 @@ void main() {
     );
     await tester.tap(find.bySemanticsLabel('Interest: Aesthetic, not selected'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pumpAndSettle();
 
@@ -337,6 +340,7 @@ void main() {
     await _settle(tester);
     await tester.tap(find.text('Clear'));
     await _settle(tester);
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await _settle(tester);
 
@@ -377,6 +381,7 @@ void main() {
     expect(tester.takeException(), isNull);
     final Finder save = find.widgetWithText(FilledButton, 'Save');
     expect(save, findsOneWidget);
+    await tester.ensureVisible(save);
     expect(tester.getRect(save).bottom, lessThanOrEqualTo(348));
     await tester.tap(save);
     await tester.pumpAndSettle();

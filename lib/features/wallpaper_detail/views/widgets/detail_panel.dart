@@ -52,12 +52,15 @@ class DetailPanel extends StatelessWidget {
   final VoidCallback onSet;
   final VoidCallback onFavourited;
 
-  static const double _handleZone = 28;
+  static const double _handleZone = 44;
   static const double _rowHeight = CircularMenuButton.size;
+
+  static double _scaledRowHeight(BuildContext context) =>
+      MediaQuery.textScalerOf(context).scale(_rowHeight).clamp(_rowHeight, double.infinity);
 
   /// Height of the collapsed panel, including the bottom safe area.
   static double collapsedHeight(BuildContext context) =>
-      _handleZone + _rowHeight + PrismSpace.sm + bottomPadding(context);
+      _handleZone + _scaledRowHeight(context) + PrismSpace.sm + bottomPadding(context);
 
   static double bottomPadding(BuildContext context) => max(MediaQuery.paddingOf(context).bottom, PrismSpace.md);
 
@@ -139,7 +142,7 @@ class DetailPanel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
       child: SizedBox(
-        height: _rowHeight,
+        height: _scaledRowHeight(context),
         child: Row(
           children: <Widget>[
             Expanded(
@@ -167,7 +170,7 @@ class DetailPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(width: PrismSpace.sm),
-            main,
+            Flexible(child: main),
             const SizedBox(width: PrismSpace.xs),
             FavouriteWallpaperButton(
               wall: FavouriteWallEntity.fromFeedItem(entity),

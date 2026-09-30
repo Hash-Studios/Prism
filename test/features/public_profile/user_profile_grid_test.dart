@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -61,6 +63,51 @@ void main() {
   testWidgets('shows an error with a retry that refreshes when the first load failed', (tester) async {
     await pumpGrid(tester, PublicProfileState.initial().copyWith(status: LoadStatus.failure));
 
+    expect(find.text('Could not load wallpapers'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
+  });
+
+  testWidgets('first loading state stays out of the empty state until a failed load can be retried', (tester) async {
+    final states = StreamController<PublicProfileState>();
+    addTearDown(states.close);
+    final PublicProfileState loading = PublicProfileState.initial().copyWith(status: LoadStatus.loading);
+    whenListen(bloc, states.stream, initialState: loading);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BlocProvider<PublicProfileBloc>.value(
+            value: bloc,
+            child: const CustomScrollView(slivers: <Widget>[UserProfileGrid()]),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(LoadingCards), findsOneWidget);
+    expect(find.text('No wallpapers yet'), findsNothing);
+
+    states.add(PublicProfileState.initial().copyWith(status: LoadStatus.failure));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Could not load wallpapers'), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);
+  });
+
+  testWidgets('a cached gallery keeps its retry when refresh fails', (tester) async {
+    await pumpGrid(
+      tester,
+      PublicProfileState.initial().copyWith(
+        status: LoadStatus.failure,
+        walls: <PublicProfileWallEntity>[
+          const PublicProfileWallEntity(id: 'cached', by: 'Ana', wallpaperUrl: 'https://example.com/cached.jpg'),
+        ],
+      ),
+    );
+
+    expect(find.byType(SliverGrid), findsOneWidget);
     expect(find.text('Could not load wallpapers'), findsOneWidget);
     await tester.tap(find.text('Try again'));
     verify(() => bloc.add(const PublicProfileEvent.refreshRequested())).called(1);

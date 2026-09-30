@@ -101,79 +101,90 @@ class _F0AuthPageState extends State<F0AuthPage> {
             ),
           ),
           SafeArea(
-            child: CustomScrollView(
-              slivers: <Widget>[
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const OnboardingStaggeredFade(delay: Duration.zero, child: _Wordmark()),
-                        const Spacer(),
-                        OnboardingStaggeredFade(
-                          delay: PrismDurations.stagger,
-                          child: Semantics(header: true, child: Text('Your screen, reimagined.', style: headline)),
-                        ),
-                        const SizedBox(height: PrismSpace.sm),
-                        OnboardingStaggeredFade(
-                          delay: PrismDurations.stagger * 2,
-                          child: Text('Millions of premium wallpapers from top artists.', style: body),
-                        ),
-                        const SizedBox(height: PrismSpace.xl),
-                        OnboardingStaggeredFade(
-                          delay: PrismDurations.stagger * 3,
-                          child: BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
-                            buildWhen: (prev, curr) => prev.isAuthLoading != curr.isAuthLoading,
-                            builder: (context, state) {
-                              final bool busy = state.isAuthLoading;
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: <Widget>[
-                                  if (ios) ...<Widget>[
-                                    OnboardingPrimaryButton(
-                                      label: 'Continue with Apple',
-                                      icon: Icons.apple,
-                                      loading: busy && _provider == _Provider.apple,
-                                      onPressed: busy ? null : () => _gated(widget.onApple, provider: _Provider.apple),
-                                    ),
-                                    const SizedBox(height: PrismSpace.sm),
-                                  ],
-                                  OnboardingPrimaryButton(
-                                    label: 'Continue with Google',
-                                    icon: JamIcons.google,
-                                    style: ios ? OnboardingButtonStyle.glass : OnboardingButtonStyle.solid,
-                                    loading: busy && _provider != _Provider.apple,
-                                    onPressed: busy ? null : () => _gated(widget.onGoogle, provider: _Provider.google),
-                                  ),
-                                  if (ios)
-                                    OnboardingTextButton(
-                                      label: 'Browse without an account',
-                                      onPressed: () => _gated(widget.onBrowse),
-                                    ),
-                                ],
-                              );
-                            },
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        PrismSpace.page,
+                        PrismSpace.md,
+                        PrismSpace.page,
+                        PrismSpace.md,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          const OnboardingStaggeredFade(delay: Duration.zero, child: _Wordmark()),
+                          const Spacer(),
+                          OnboardingStaggeredFade(
+                            delay: PrismDurations.stagger,
+                            child: Semantics(header: true, child: Text('Your screen, reimagined.', style: headline)),
                           ),
-                        ),
-                        const SizedBox(height: PrismSpace.xs),
-                        OnboardingStaggeredFade(
-                          delay: PrismDurations.stagger * 4,
-                          child: ShakeOnce(
-                            controller: _shake,
-                            child: OnboardingTermsRow(
-                              accepted: widget.termsAccepted,
-                              onChanged: widget.onTermsChanged,
-                              legalTap: widget.legalTap,
+                          const SizedBox(height: PrismSpace.sm),
+                          OnboardingStaggeredFade(
+                            delay: PrismDurations.stagger * 2,
+                            child: Text('Millions of premium wallpapers from top artists.', style: body),
+                          ),
+                          const SizedBox(height: PrismSpace.xl),
+                          OnboardingStaggeredFade(
+                            delay: PrismDurations.stagger * 3,
+                            child: BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
+                              buildWhen: (prev, curr) => prev.isAuthLoading != curr.isAuthLoading,
+                              builder: (context, state) {
+                                final bool busy = state.isAuthLoading;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: <Widget>[
+                                    if (ios) ...<Widget>[
+                                      OnboardingPrimaryButton(
+                                        label: 'Continue with Apple',
+                                        icon: Icons.apple,
+                                        loading: busy && _provider == _Provider.apple,
+                                        onPressed: busy
+                                            ? null
+                                            : () => _gated(widget.onApple, provider: _Provider.apple),
+                                      ),
+                                      const SizedBox(height: PrismSpace.sm),
+                                    ],
+                                    OnboardingPrimaryButton(
+                                      label: 'Continue with Google',
+                                      icon: JamIcons.google,
+                                      style: ios ? OnboardingButtonStyle.glass : OnboardingButtonStyle.solid,
+                                      loading: busy && _provider != _Provider.apple,
+                                      onPressed: busy
+                                          ? null
+                                          : () => _gated(widget.onGoogle, provider: _Provider.google),
+                                    ),
+                                    if (ios)
+                                      OnboardingTextButton(
+                                        label: 'Browse without an account',
+                                        onPressed: () => _gated(widget.onBrowse),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: PrismSpace.xs),
+                          OnboardingStaggeredFade(
+                            delay: PrismDurations.stagger * 4,
+                            child: ShakeOnce(
+                              controller: _shake,
+                              child: OnboardingTermsRow(
+                                accepted: widget.termsAccepted,
+                                onChanged: widget.onTermsChanged,
+                                legalTap: widget.legalTap,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -190,17 +201,19 @@ class _Wordmark extends StatelessWidget {
     return Semantics(
       label: 'Prism',
       child: ExcludeSemantics(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            SvgPicture.string(
-              prismVector,
-              height: 22,
-              colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-            ),
-            const SizedBox(width: PrismSpace.xs),
-            Text('prism', style: PrismTextStyles.brandName.copyWith(fontSize: 22)),
-          ],
+        child: MediaQuery.withNoTextScaling(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              SvgPicture.string(
+                prismVector,
+                height: 22,
+                colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              ),
+              const SizedBox(width: PrismSpace.xs),
+              Text('prism', style: PrismTextStyles.brandName.copyWith(fontSize: 22)),
+            ],
+          ),
         ),
       ),
     );

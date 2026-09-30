@@ -2,7 +2,7 @@ import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
@@ -81,23 +81,19 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
     final Widget body;
     if (_loading) {
       body = const _ActivitySkeleton();
-    } else if (_failed && _items.isEmpty) {
-      body = GlintState(
-        kind: GlintStateKind.error,
+    } else if (_failed) {
+      body = PrismInlineState(
+        icon: Icons.cloud_off_rounded,
         title: "Couldn't load activity.",
         body: 'Check your connection and try again.',
         actionLabel: 'Try again',
         onAction: _load,
-        glintSize: 56,
-        padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
       );
     } else if (_items.isEmpty) {
-      body = const GlintState(
-        kind: GlintStateKind.empty,
+      body = const PrismInlineState(
+        icon: Icons.receipt_long_rounded,
         title: 'No coin activity yet.',
         body: 'Watch a video or keep your streak to earn your first coins.',
-        glintSize: 56,
-        padding: EdgeInsets.symmetric(vertical: PrismSpace.md),
       );
     } else {
       final int shown = _expanded ? _items.length : _items.length.clamp(0, _kActivityCollapsed);

@@ -1,8 +1,55 @@
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+/// A quiet empty or error state for one section of a page that already shows Glint elsewhere.
+class PrismInlineState extends StatelessWidget {
+  const PrismInlineState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.body,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? body;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
+      child: Column(
+        children: <Widget>[
+          Icon(icon, size: 28, color: cs.onSurface.withValues(alpha: 0.45)),
+          const SizedBox(height: PrismSpace.xs),
+          Text(title, textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
+          if (body != null) ...<Widget>[
+            const SizedBox(height: PrismSpace.xxs),
+            Text(body!, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+          ],
+          if (actionLabel != null && onAction != null) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            PrismButton(
+              label: actionLabel!,
+              onPressed: onAction,
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 /// Meaning of a [PrismTag]'s colour.
 enum PrismTone { neutral, accent, success, warning, danger }
@@ -25,23 +72,24 @@ class PrismTag extends StatelessWidget {
       PrismTone.warning => PrismColors.warning,
       PrismTone.danger => cs.error,
     };
-    // Status colours are tuned for fills. For text, mix them toward the text colour so they stay readable.
-    final Color fg = tone == PrismTone.neutral
-        ? cs.onSurface.withValues(alpha: 0.8)
-        : Color.lerp(c, cs.onSurface, 0.25)!;
+    final Color fg = cs.onSurface;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
       decoration: BoxDecoration(
-        color: c.withValues(alpha: tone == PrismTone.neutral ? 0.08 : 0.16),
+        color: c.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (icon != null) ...<Widget>[Icon(icon, size: 12, color: fg), const SizedBox(width: 4)],
-          Text(
-            label,
-            style: PrismTextStyles.caption(context).copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: fg),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: PrismTextStyles.caption(context).copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: fg),
+            ),
           ),
         ],
       ),
@@ -115,7 +163,7 @@ class PrismSegmented<T> extends StatelessWidget {
     final int index = values.indexOf(selected).clamp(0, values.length - 1);
     final double x = values.length == 1 ? 0 : -1 + 2 * index / (values.length - 1);
     return Container(
-      height: 44,
+      constraints: const BoxConstraints(minHeight: 50),
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: cs.onSurface.withValues(alpha: 0.06),
@@ -123,15 +171,17 @@ class PrismSegmented<T> extends StatelessWidget {
       ),
       child: Stack(
         children: <Widget>[
-          AnimatedAlign(
-            alignment: Alignment(x, 0),
-            duration: context.motion(PrismDurations.base),
-            curve: PrismCurves.move,
-            child: FractionallySizedBox(
-              widthFactor: 1 / values.length,
-              heightFactor: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: cs.onSurface, borderRadius: BorderRadius.circular(PrismRadius.pill)),
+          Positioned.fill(
+            child: AnimatedAlign(
+              alignment: Alignment(x, 0),
+              duration: context.motion(PrismDurations.base),
+              curve: PrismCurves.move,
+              child: FractionallySizedBox(
+                widthFactor: 1 / values.length,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: cs.onSurface, borderRadius: BorderRadius.circular(PrismRadius.pill)),
+                ),
               ),
             ),
           ),
@@ -140,6 +190,7 @@ class PrismSegmented<T> extends StatelessWidget {
               for (final T value in values)
                 Expanded(
                   child: Semantics(
+                    container: true,
                     button: true,
                     selected: value == selected,
                     child: GestureDetector(
@@ -150,25 +201,28 @@ class PrismSegmented<T> extends StatelessWidget {
                               HapticFeedback.selectionClick();
                               onChanged!(value);
                             },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            if (iconOf?.call(value) != null) ...<Widget>[
-                              Icon(iconOf!(value), size: 16, color: value == selected ? cs.surface : cs.onSurface),
-                              const SizedBox(width: 6),
-                            ],
-                            Flexible(
-                              child: AnimatedDefaultTextStyle(
-                                duration: context.motion(PrismDurations.fast),
-                                style: PrismTextStyles.rowTitle(
-                                  context,
-                                ).copyWith(fontSize: 14, color: value == selected ? cs.surface : cs.onSurface),
-                                child: Text(labelOf(value), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              if (iconOf?.call(value) != null) ...<Widget>[
+                                Icon(iconOf!(value), size: 16, color: value == selected ? cs.surface : cs.onSurface),
+                                const SizedBox(width: 6),
+                              ],
+                              Flexible(
+                                child: AnimatedDefaultTextStyle(
+                                  duration: context.motion(PrismDurations.fast),
+                                  style: PrismTextStyles.rowTitle(
+                                    context,
+                                  ).copyWith(fontSize: 14, color: value == selected ? cs.surface : cs.onSurface),
+                                  child: Text(labelOf(value), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),

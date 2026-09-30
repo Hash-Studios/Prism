@@ -5,6 +5,7 @@ import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart
 import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:mocktail/mocktail.dart';
@@ -97,6 +98,26 @@ void main() {
     await tester.tap(find.text('Undo'), warnIfMissed: false);
     await tester.pump();
     verifyNever(() => bloc.add(any(that: isA<ReviewBatchUndoRequested>())));
+  });
+
+  testWidgets('bottom bar actions expose tap semantics only while enabled', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await pump(
+      tester,
+      ReviewBatchState(status: ReviewBatchStatus.loaded, walls: <FirestoreDocument>[_wall('a', 'Sunset')]),
+    );
+
+    final SemanticsNode skip = tester.getSemantics(find.bySemanticsLabel('Skip'));
+    expect(skip.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    tester.binding.performSemanticsAction(
+      SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: skip.id),
+    );
+    await tester.pump();
+    verify(() => bloc.add(any(that: isA<ReviewBatchSwipeSkipped>()))).called(1);
+
+    final SemanticsNode undo = tester.getSemantics(find.bySemanticsLabel('Undo'));
+    expect(undo.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+    semantics.dispose();
   });
 
   testWidgets('a swipe to the right approves and a swipe to the left rejects', (tester) async {

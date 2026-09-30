@@ -55,6 +55,17 @@ void main() {
     expect(saveEnabled(tester), isFalse);
   });
 
+  testWidgets('change cover photo has a 44-pixel hit target', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpPanel(tester);
+
+      expect(tester.getRect(find.bySemanticsLabel('Change cover photo')).height, 44);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('editing the name enables Save', (tester) async {
     await pumpPanel(tester);
 
@@ -62,6 +73,28 @@ void main() {
     await tester.pump();
 
     expect(saveEnabled(tester), isTrue);
+  });
+
+  testWidgets('dirty name still asks before leaving when username is invalid', (tester) async {
+    await pumpPanel(tester);
+
+    await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Me Again');
+    await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'short');
+    await tester.pumpAndSettle();
+
+    expect(saveEnabled(tester), isFalse);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsOneWidget);
+    expect(find.text('Edit profile'), findsOneWidget);
+
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsNothing);
+    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('open'), findsOneWidget);
   });
 
   testWidgets('a short username shows the rule as an error and keeps Save disabled', (tester) async {

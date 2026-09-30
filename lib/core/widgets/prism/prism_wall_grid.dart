@@ -42,6 +42,7 @@ class PrismWallTile extends StatelessWidget {
     this.semanticLabel = 'Wallpaper',
     this.overlay,
     this.borderRadius = PrismWallGrid.tileRadius,
+    this.memCacheHeight,
   });
 
   final String url;
@@ -54,6 +55,7 @@ class PrismWallTile extends StatelessWidget {
   /// content with [Align] or [Positioned].
   final Widget? overlay;
   final BorderRadius borderRadius;
+  final int? memCacheHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +74,7 @@ class PrismWallTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
-              PrismImageTile(url: url, heroTag: heroTag, borderRadius: borderRadius),
+              PrismImageTile(url: url, heroTag: heroTag, borderRadius: borderRadius, memCacheHeight: memCacheHeight),
               // A pure white or black hairline keeps dark images from melting into the page.
               IgnorePointer(
                 child: DecoratedBox(

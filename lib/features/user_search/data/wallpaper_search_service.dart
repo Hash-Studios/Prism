@@ -34,7 +34,7 @@ class WallpaperSearchService {
       );
     } catch (error, stackTrace) {
       logger.e('Pexels search failed.', error: error, stackTrace: stackTrace);
-      return (provider: SearchProviderValue.pexels, results: const <FeedItemEntity>[]);
+      rethrow;
     }
   }
 

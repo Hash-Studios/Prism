@@ -34,8 +34,8 @@ class PrismHeader extends StatelessWidget {
         PrismSpace.sm,
         PrismSpace.xs,
       ),
-      child: SizedBox(
-        height: 48,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
         child: Row(
           children: <Widget>[
             if (showBack) ...<Widget>[
@@ -105,23 +105,86 @@ class PrismPage extends StatefulWidget {
 
 class _PrismPageState extends State<PrismPage> {
   bool _scrolled = false;
+  TabController? _tabController;
+  List<bool> _tabScroll = <bool>[];
 
-  bool _onScroll(ScrollNotification n) {
-    if (n.metrics.axis != Axis.vertical || n.depth != 0) return false;
-    final bool scrolled = n.metrics.pixels > 2;
+  void _setTabController(TabController? controller, int length) {
+    if (identical(controller, _tabController) && _tabScroll.length == length) return;
+    _tabController?.removeListener(_onTabChanged);
+    _tabController = controller;
+    _tabScroll = List<bool>.filled(length, false);
+    controller?.addListener(_onTabChanged);
+  }
+
+  void _onTabChanged() {
+    final int index = _tabController!.index;
+    final bool scrolled = index < _tabScroll.length && _tabScroll[index];
+    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+  }
+
+  bool _onTabScroll(int index, ScrollMetrics metrics) {
+    if (metrics.axis != Axis.vertical) return false;
+    final bool scrolled = metrics.pixels > 2;
+    _tabScroll[index] = scrolled;
+    if (_tabController?.index == index && scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    return false;
+  }
+
+  bool _onScroll(ScrollMetrics metrics) {
+    if (metrics.axis != Axis.vertical) return false;
+    final bool scrolled = metrics.pixels > 2;
     if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
     return false;
+  }
+
+  Widget _buildBody() {
+    final Widget body = widget.body;
+    if (body is TabBarView) {
+      final TabController? controller = body.controller ?? DefaultTabController.maybeOf(context);
+      _setTabController(controller, body.children.length);
+      final int activeIndex = controller?.index ?? 0;
+      _scrolled = activeIndex < _tabScroll.length && _tabScroll[activeIndex];
+      return TabBarView(
+        key: body.key,
+        controller: body.controller,
+        physics: body.physics,
+        dragStartBehavior: body.dragStartBehavior,
+        viewportFraction: body.viewportFraction,
+        clipBehavior: body.clipBehavior,
+        children: <Widget>[
+          for (int index = 0; index < body.children.length; index++)
+            NotificationListener<ScrollMetricsNotification>(
+              onNotification: (n) => _onTabScroll(index, n.metrics),
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (n) => _onTabScroll(index, n.metrics),
+                child: body.children[index],
+              ),
+            ),
+        ],
+      );
+    }
+    _setTabController(null, 0);
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) => _onScroll(n.metrics),
+      child: NotificationListener<ScrollNotification>(onNotification: (n) => _onScroll(n.metrics), child: body),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController?.removeListener(_onTabChanged);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
+    final Widget body = _buildBody();
     return Scaffold(
       backgroundColor: cs.surface,
       resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
       bottomNavigationBar: widget.bottomBar == null
           ? null
-          // The keyboard inset keeps the action above the keyboard.
           : Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
               child: SafeArea(
@@ -146,9 +209,7 @@ class _PrismPageState extends State<PrismPage> {
               duration: context.motion(PrismDurations.fast),
               child: Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
             ),
-            Expanded(
-              child: NotificationListener<ScrollNotification>(onNotification: _onScroll, child: widget.body),
-            ),
+            Expanded(child: body),
           ],
         ),
       ),

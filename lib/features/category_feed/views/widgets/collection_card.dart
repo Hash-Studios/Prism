@@ -62,6 +62,7 @@ class CollectionCard extends StatelessWidget {
         button: true,
         label: data.semanticLabel,
         excludeSemantics: true,
+        onTap: onTap,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
