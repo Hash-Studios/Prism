@@ -12,18 +12,23 @@ import 'package:Prism/core/widgets/home/wallpapers/carousel_dots.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PersonalizedFeedScreen extends StatefulWidget {
-  const PersonalizedFeedScreen({super.key});
+  const PersonalizedFeedScreen({super.key, this.onTuneTap});
+
+  final VoidCallback? onTuneTap;
 
   @override
   State<PersonalizedFeedScreen> createState() => _PersonalizedFeedScreenState();
@@ -32,14 +37,31 @@ class PersonalizedFeedScreen extends StatefulWidget {
 class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with AutomaticKeepAliveClientMixin {
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
+  late final PersonalizedFeedBloc _bloc;
   final ScrollController _scrollController = ScrollController();
 
   @override
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    _bloc = getIt<PersonalizedFeedBloc>();
+    personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
+    _bloc.add(const PersonalizedFeedEvent.started());
+  }
+
+  void _onFeedSettingsChanged() {
+    if (mounted) {
+      _bloc.add(const PersonalizedFeedEvent.refreshRequested());
+    }
+  }
+
+  @override
   void dispose() {
+    personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
     _scrollController.dispose();
+    _bloc.close();
     super.dispose();
   }
 
@@ -57,11 +79,32 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
     }
   }
 
+  Future<void> _showTileActions(FeedItemEntity item) async {
+    HapticFeedback.mediumImpact();
+    final bool? lessLikeThis = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.visibility_off_outlined),
+          title: const Text('Show less like this'),
+          subtitle: const Text("You'll see fewer walls like this."),
+          onTap: () => Navigator.of(sheetContext).pop(true),
+        ),
+      ),
+    );
+    if (lessLikeThis != true || !mounted) {
+      return;
+    }
+    _bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(item));
+    toasts.success("Got it. You'll see fewer like this.");
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return BlocProvider(
-      create: (_) => getIt<PersonalizedFeedBloc>()..add(const PersonalizedFeedEvent.started()),
+    return BlocProvider.value(
+      value: _bloc,
       child: BlocBuilder<PersonalizedFeedBloc, PersonalizedFeedState>(
         buildWhen: (prev, curr) =>
             prev.status != curr.status ||
@@ -113,17 +156,36 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                 slivers: [
                   // Carousel: WallOfTheDay + banner + wallpaper previews
                   SliverToBoxAdapter(child: _FeedCarousel(previewWalls: previewWalls)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 16, end: 4),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('For you', style: PrismTextStyles.editorialTitle(context))),
+                          IconButton(
+                            onPressed: widget.onTuneTap,
+                            tooltip: 'Tune your feed',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.tune_rounded),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
                       childAspectRatio: PrismFeedLayout.gridTileAspectRatio,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => WallpaperTile(
-                        item: visibleItems[index],
-                        index: index,
-                        crossAxisCount: crossAxisCount,
-                        memCacheHeight: tileMemCacheHeight,
+                      (context, index) => GestureDetector(
+                        onLongPress: () => unawaited(_showTileActions(visibleItems[index])),
+                        child: WallpaperTile(
+                          item: visibleItems[index],
+                          index: index,
+                          crossAxisCount: crossAxisCount,
+                          memCacheHeight: tileMemCacheHeight,
+                        ),
                       ),
                       childCount: visibleItems.length,
                     ),

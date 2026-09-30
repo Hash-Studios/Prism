@@ -16,8 +16,14 @@ class SetWallpaperButton extends StatefulWidget {
 
   /// When true, may show the OS notification permission prompt once after a successful set (e.g. wallpaper detail).
   final bool promptNotificationPermissionOnSuccess;
+  final VoidCallback? onSet;
 
-  const SetWallpaperButton({super.key, required this.url, this.promptNotificationPermissionOnSuccess = false});
+  const SetWallpaperButton({
+    super.key,
+    required this.url,
+    this.promptNotificationPermissionOnSuccess = false,
+    this.onSet,
+  });
 
   @override
   _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
@@ -49,6 +55,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
       if (result) {
         analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success));
         toasts.success("Wallpaper set successfully!");
+        widget.onSet?.call();
         await _maybePromptNotificationPermission();
       } else {
         toasts.error("Something went wrong!");

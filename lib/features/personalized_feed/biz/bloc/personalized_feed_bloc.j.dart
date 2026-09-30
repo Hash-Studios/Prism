@@ -26,6 +26,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
+    on<_LessLikeThisRequested>(_onLessLikeThisRequested);
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
     // Blocking a creator removes their items from the on-screen feed instantly,
     // without waiting for the next fetch. skip(1) ignores the initial snapshot.
@@ -39,6 +40,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
   final PersonalizedFeedRepository _repository;
   final UserBlockRepository _userBlockRepository;
   StreamSubscription<Set<String>>? _blockedCreatorsSub;
+  int _loadVersion = 0;
 
   void _onBlockedCreatorsChanged(_BlockedCreatorsChanged event, Emitter<PersonalizedFeedState> emit) {
     if (event.blocked.isEmpty) {
@@ -56,22 +58,26 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     return super.close();
   }
 
-  Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
-    // Restore persisted seen keys so the feed shows wallpapers the user hasn't
-    // seen before, rather than re-serving the same top-ranked items each time.
-    List<String> persistedSeenKeys = const <String>[];
-    try {
-      persistedSeenKeys = await _repository.readPersistedSeenKeys();
-    } catch (e) {
-      logger.w('[PersonalizedFeed] failed to load persisted seen keys: $e');
-    }
-    await _load(emit, sourceContext: 'personalized_feed_initial', initialSeenKeys: persistedSeenKeys);
-  }
+  Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) =>
+      _load(emit, sourceContext: 'personalized_feed_initial');
 
-  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) async {
-    // Manual pull-to-refresh intentionally clears seen keys — the user wants a
-    // completely fresh set of content.
-    await _load(emit, sourceContext: 'personalized_feed_refresh');
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) =>
+      _load(emit, sourceContext: 'personalized_feed_refresh');
+
+  Future<void> _onLessLikeThisRequested(_LessLikeThisRequested event, Emitter<PersonalizedFeedState> emit) async {
+    final String key = PersonalizedRankingService.canonicalKey(event.item);
+    emit(
+      state.copyWith(
+        items: state.items
+            .where((item) => PersonalizedRankingService.canonicalKey(item) != key)
+            .toList(growable: false),
+      ),
+    );
+    try {
+      await _repository.lessLikeThis(event.item);
+    } catch (e) {
+      logger.w('[PersonalizedFeed] less-like-this failed: $e');
+    }
   }
 
   Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<PersonalizedFeedState> emit) async {
@@ -81,6 +87,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
     emit(state.copyWith(isFetchingMore: true, actionStatus: ActionStatus.inProgress, failure: null));
 
+    final int loadVersion = _loadVersion;
     final nextPage = state.page + 1;
     final loadMoreStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
@@ -92,6 +99,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
       ),
     );
     final loadMoreMs = (loadMoreStopwatch..stop()).elapsedMilliseconds;
+    if (loadVersion != _loadVersion || emit.isDone) return;
 
     result.fold(
       onSuccess: (page) {
@@ -137,18 +145,15 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     );
   }
 
-  Future<void> _load(
-    Emitter<PersonalizedFeedState> emit, {
-    required String sourceContext,
-    List<String> initialSeenKeys = const <String>[],
-  }) async {
+  Future<void> _load(Emitter<PersonalizedFeedState> emit, {required String sourceContext}) async {
+    final int loadVersion = ++_loadVersion;
     emit(
       state.copyWith(
         status: LoadStatus.loading,
         actionStatus: ActionStatus.inProgress,
         page: 1,
         items: const <FeedItemEntity>[],
-        seenKeys: initialSeenKeys,
+        seenKeys: const <String>[],
         hasMore: true,
         isFetchingMore: false,
         failure: null,
@@ -157,14 +162,15 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
     final initialStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
-      FetchPersonalizedFeedRequest(
+      const FetchPersonalizedFeedRequest(
         page: 1,
         refresh: true,
-        seenKeys: initialSeenKeys,
-        existingItems: const <FeedItemEntity>[],
+        seenKeys: <String>[],
+        existingItems: <FeedItemEntity>[],
       ),
     );
     final initialLoadMs = (initialStopwatch..stop()).elapsedMilliseconds;
+    if (loadVersion != _loadVersion || emit.isDone) return;
 
     result.fold(
       onSuccess: (page) {
