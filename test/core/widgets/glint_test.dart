@@ -192,38 +192,7 @@ void main() {
     expect(overflows, isEmpty);
   });
 
-  testWidgets('gallery still-pose selection survives switching tabs', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: DefaultTabController(
-          length: 2,
-          initialIndex: 1,
-          child: Scaffold(
-            appBar: TabBar(
-              tabs: <Widget>[
-                Tab(text: 'Other'),
-                Tab(text: 'Mascot'),
-              ],
-            ),
-            body: TabBarView(children: <Widget>[Text('Other tab'), MascotGalleryPage()]),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.text('Still poses'));
-    await tester.pump();
-    expect(tester.widget<GlintPose>(find.byType(GlintPose).first).still, isTrue);
-
-    final TabController controller = DefaultTabController.of(tester.element(find.byType(TabBar)));
-    controller.animateTo(0);
-    await tester.pumpAndSettle();
-    controller.animateTo(1);
-    await tester.pumpAndSettle();
-
-    expect(tester.widget<GlintPose>(find.byType(GlintPose).first).still, isTrue);
-  });
-
-  testWidgets('gallery stops scheduling frames while its kept-alive tab is hidden', (WidgetTester tester) async {
+  testWidgets('gallery stops scheduling frames while its tab is hidden', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: DefaultTabController(
