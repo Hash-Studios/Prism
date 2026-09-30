@@ -21,14 +21,14 @@ class _MockFetchPersonalizedFeedUseCase extends Mock implements FetchPersonalize
 
 class _MockPersonalizedFeedRepository extends Mock implements PersonalizedFeedRepository {}
 
-FeedItemEntity _prismItem(String id, {required String authorEmail}) {
+FeedItemEntity _prismItem(String id, {required String authorEmail, String? fullUrl}) {
   return FeedItemEntity.prism(
     id: id,
     wallpaper: PrismWallpaper(
       core: WallpaperCore(
         id: id,
         source: WallpaperSource.prism,
-        fullUrl: 'https://example.com/$id.jpg',
+        fullUrl: fullUrl ?? 'https://example.com/$id.jpg',
         thumbnailUrl: 'https://example.com/$id-thumb.jpg',
         authorEmail: authorEmail,
       ),
@@ -113,6 +113,31 @@ void main() {
     expect(bloc.state.items.map((e) => e.id), <String>['2']);
     verify(() => repository.lessLikeThis(item1)).called(1);
   });
+
+  for (final bool emptyUrl in <bool>[false, true]) {
+    test('less like this uses canonical identity with ${emptyUrl ? 'empty' : 'normalized'} URLs', () async {
+      final item = _prismItem('1', authorEmail: 'a@example.com', fullUrl: emptyUrl ? '' : 'https://example.com/1.jpg');
+      final selected = _prismItem(
+        '1',
+        authorEmail: 'a@example.com',
+        fullUrl: emptyUrl ? '' : ' HTTPS://EXAMPLE.COM/1.JPG ',
+      );
+      final kept = _prismItem('2', authorEmail: 'b@example.com', fullUrl: emptyUrl ? '' : null);
+      when(() => fetchUseCase(any())).thenAnswer(
+        (_) async => Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[item, kept], hasMore: false)),
+      );
+      final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+      addTearDown(bloc.close);
+
+      bloc.add(const PersonalizedFeedEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      expect(bloc.state.items.map((item) => item.id), <String>['1', '2']);
+      bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(selected));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.items.map((item) => item.id), <String>['2']);
+    });
+  }
 
   test('late initial response cannot replace a newer preference refresh', () async {
     final Completer<Result<PersonalizedFeedPage>> initial = Completer<Result<PersonalizedFeedPage>>();

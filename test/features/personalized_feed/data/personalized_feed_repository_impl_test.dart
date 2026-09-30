@@ -538,6 +538,50 @@ void main() {
     expect((cache.snapshot!.payload! as Map)['items'], hasLength(2));
   });
 
+  for (final String wallpaperKey in <String>['wall', 'wallpaper']) {
+    test('offline fallback reads the $wallpaperKey cache format from a merge parent', () async {
+      final cache = _MemoryFeedCache()
+        ..snapshot = FeedSnapshot(
+          cachedAtUtc: DateTime.now().toUtc(),
+          ttlHours: 2,
+          payload: <String, Object?>{
+            'items': <Object?>[
+              <String, Object?>{
+                'type': 'prism',
+                'id': 'cached',
+                wallpaperKey: <String, Object?>{
+                  'core': <String, Object?>{
+                    'id': 'cached',
+                    'source': 'prism',
+                    'fullUrl': 'https://example.com/cached.jpg',
+                    'thumbnailUrl': 'https://example.com/cached-thumb.jpg',
+                  },
+                  'tags': <String>['space'],
+                  'firestoreDocumentId': 'cached-doc',
+                },
+              },
+            ],
+          },
+        );
+      final repository = _repository(
+        firestore: _OfflineFirestore(),
+        wallhaven: _OfflineWallhaven(),
+        pexels: _OfflinePexels(),
+        cache: cache,
+        favourites: _CountingFavourites(),
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+      );
+
+      final result = await repository.fetch(_firstPage);
+
+      expect(_itemIds(result.data?.items ?? const <FeedItemEntity>[]), <String>['cached']);
+      final wall = (result.data!.items.single as PrismFeedItem).wallpaper;
+      expect(wall.fullUrl, 'https://example.com/cached.jpg');
+      expect(wall.tags, <String>['space']);
+      expect(wall.firestoreDocumentId, 'cached-doc');
+    });
+  }
+
   test('cache fallback stops paging after cached items are exhausted', () async {
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     final _OneWallFirestore firestore = _OneWallFirestore();
