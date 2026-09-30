@@ -137,6 +137,15 @@ export async function sendToUidAndEmailTopics(
   }
 }
 
+/**
+ * True when the user signed out on their last device. Their topics and stored
+ * token may still point at a device someone else now uses, so skip the push
+ * and keep only the in-app inbox entry.
+ */
+export function isLoggedOut(user: {loggedIn?: unknown} | undefined): boolean {
+  return user?.loggedIn === false;
+}
+
 const INVALID_TOPIC_CHARS = /[^a-zA-Z0-9\-_.~%]/g;
 
 /**
