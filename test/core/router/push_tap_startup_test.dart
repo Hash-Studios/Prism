@@ -1,5 +1,11 @@
+import 'dart:async';
+
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/push_tap_startup.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/stub_app_router.dart';
 
 void main() {
   testWidgets('routes immediately when startup is already done', (WidgetTester tester) async {
@@ -66,5 +72,24 @@ void main() {
 
     expect(await wait, isFalse);
     expect(completedAt!.difference(startedAt), const Duration(seconds: 30));
+  });
+
+  testWidgets('startup lasts through onboarding, which returns to the splash when it is done', (tester) async {
+    final router = StubAppRouter();
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router.config()));
+    await tester.pumpAndSettle();
+    expect(isStartingUp(router), isTrue);
+
+    unawaited(router.replaceAll([const OnboardingV2ShellRoute()]));
+    await tester.pumpAndSettle();
+    expect(isStartingUp(router), isTrue);
+
+    unawaited(router.replaceAll([const SplashWidgetRoute()]));
+    await tester.pumpAndSettle();
+    expect(isStartingUp(router), isTrue);
+
+    unawaited(router.replaceAll([const DashboardRoute()]));
+    await tester.pumpAndSettle();
+    expect(isStartingUp(router), isFalse);
   });
 }
