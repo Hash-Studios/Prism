@@ -78,11 +78,6 @@ import '../../features/onboarding_v2/src/domain/usecases/save_interests_usecase.
     as _i95;
 import '../../features/onboarding_v2/src/services/first_wallpaper_service.dart'
     as _i502;
-import '../../features/palette/data/repositories/palette_repository_impl.dart'
-    as _i401;
-import '../../features/palette/domain/bloc/wallpaper_detail_bloc.dart' as _i358;
-import '../../features/palette/domain/repositories/palette_repository.dart'
-    as _i1019;
 import '../../features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart'
     as _i872;
 import '../../features/personalized_feed/data/personalized_feed_repository_impl.dart'
@@ -156,6 +151,12 @@ import '../../features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repo
     as _i387;
 import '../../features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart'
     as _i604;
+import '../../features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart'
+    as _i618;
+import '../../features/wallpaper_detail/data/repositories/palette_repository_impl.dart'
+    as _i446;
+import '../../features/wallpaper_detail/domain/repositories/palette_repository.dart'
+    as _i652;
 import '../../features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart'
     as _i231;
 import '../content_reports/content_report_repository.dart' as _i177;
@@ -224,6 +225,9 @@ _i174.GetIt initGetIt(
     ),
   );
   gh.lazySingleton<_i1055.AdsRepository>(() => _i418.AdsRepositoryImpl());
+  gh.lazySingleton<_i652.PaletteRepository>(
+    () => _i446.PaletteRepositoryImpl(),
+  );
   gh.lazySingleton<_i231.RecordPrismWallpaperViewsUsecase>(
     () =>
         _i231.RecordPrismWallpaperViewsUsecase(gh<_i602.ViewStatsRepository>()),
@@ -235,9 +239,6 @@ _i174.GetIt initGetIt(
     () => _i387.WallhavenWallpaperRepositoryImpl(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
-  );
-  gh.lazySingleton<_i1019.PaletteRepository>(
-    () => _i401.PaletteRepositoryImpl(),
   );
   gh.lazySingleton<_i349.FirestoreClient>(
     () => appModule.firestoreClient(
@@ -430,6 +431,15 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
+  gh.factory<_i618.WallpaperDetailBloc>(
+    () => _i618.WallpaperDetailBloc(
+      gh<_i727.PrismWallpaperRepository>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i231.RecordPrismWallpaperViewsUsecase>(),
+      gh<_i652.PaletteRepository>(),
+    ),
+  );
   gh.lazySingleton<_i817.PublicProfileRepository>(
     () => _i769.PublicProfileRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -485,15 +495,6 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i456.StreakShopBloc>(
     () => _i456.StreakShopBloc(gh<_i727.PrismWallpaperRepository>()),
-  );
-  gh.factory<_i358.WallpaperDetailBloc>(
-    () => _i358.WallpaperDetailBloc(
-      gh<_i727.PrismWallpaperRepository>(),
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
-      gh<_i231.RecordPrismWallpaperViewsUsecase>(),
-      gh<_i1019.PaletteRepository>(),
-    ),
   );
   gh.lazySingleton<_i446.FetchPublicProfileWallsUseCase>(
     () => _i446.FetchPublicProfileWallsUseCase(

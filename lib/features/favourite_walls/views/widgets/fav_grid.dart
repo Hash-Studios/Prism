@@ -13,7 +13,7 @@ import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
