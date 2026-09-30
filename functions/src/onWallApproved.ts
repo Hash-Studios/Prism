@@ -2,7 +2,13 @@ import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {findUserByEmail, REGION, str} from "./common";
-import {sendNotification, sendToUidAndEmailTopics, emailToTopic, userIdToTopic} from "./notificationHelper";
+import {
+  emailToTopic,
+  isLoggedOut,
+  sendNotification,
+  sendToUidAndEmailTopics,
+  userIdToTopic,
+} from "./notificationHelper";
 
 /**
  * When a wall goes from review=false to review=true (approved), notifies the
@@ -38,20 +44,25 @@ export const onWallApproved = onDocumentUpdated(
       return;
     }
 
-    const artistUid = await resolveUserIdByEmail(artistEmail);
-    await sendToUidAndEmailTopics(
-      {
-        title: "Your wallpaper is live! 🎉",
-        body: `"${wallTitle}" has been approved and is now visible to everyone.`,
-        data: {route: "wall", wall_id: wallId},
-        imageUrl: wallThumb || undefined,
-        modifier: artistEmail,
-        channelId: "posts",
-        collapseKey: `wall_${wallId}`,
-      },
-      artistUid ? userIdToTopic(artistUid) : undefined,
-      emailToTopic(artistEmail),
-    );
+    const artist = await resolveUserByEmail(artistEmail);
+    const artistPayload = {
+      title: "Your wallpaper is live! 🎉",
+      body: `"${wallTitle}" has been approved and is now visible to everyone.`,
+      data: {route: "wall", wall_id: wallId},
+      imageUrl: wallThumb || undefined,
+      modifier: artistEmail,
+      channelId: "posts",
+      collapseKey: `wall_${wallId}`,
+    };
+    if (isLoggedOut(artist?.data())) {
+      await sendNotification(artistPayload);
+    } else {
+      await sendToUidAndEmailTopics(
+        artistPayload,
+        artist ? userIdToTopic(artist.id) : undefined,
+        emailToTopic(artistEmail),
+      );
+    }
 
     logger.info("onWallApproved: artist notification sent.", {wallId, artistEmail});
 
@@ -88,9 +99,9 @@ export const onWallApproved = onDocumentUpdated(
   },
 );
 
-async function resolveUserIdByEmail(email: string): Promise<string | null> {
+async function resolveUserByEmail(email: string): ReturnType<typeof findUserByEmail> {
   try {
-    return (await findUserByEmail(email))?.id ?? null;
+    return await findUserByEmail(email);
   } catch (err) {
     logger.warn("onWallApproved: could not resolve artist uid.", {email, err});
     return null;
