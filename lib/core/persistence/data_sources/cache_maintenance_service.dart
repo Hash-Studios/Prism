@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/core/persistence/data_sources/app_icons_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:injectable/injectable.dart';
@@ -44,7 +45,9 @@ class CacheMaintenanceService {
                       name.length >= 'filtered__pic.jpg'.length)) {
                 await entry.delete(recursive: entry is Directory);
               }
-            } catch (_) {}
+            } catch (error, stackTrace) {
+              logger.w('Could not delete editor scratch entry', tag: 'Cache', error: error, stackTrace: stackTrace);
+            }
           }
         }
       },
@@ -53,7 +56,9 @@ class CacheMaintenanceService {
     for (final step in steps) {
       try {
         await step();
-      } catch (_) {}
+      } catch (error, stackTrace) {
+        logger.w('A cache clear step failed', tag: 'Cache', error: error, stackTrace: stackTrace);
+      }
     }
   }
 }
