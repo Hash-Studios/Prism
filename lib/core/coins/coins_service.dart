@@ -944,7 +944,13 @@ class CoinsService {
       callableName: 'processReferral',
       inviterUserId: pendingInviter,
     );
-    if (result.changed || result.reason == 'referral_already_processed') {
+    if (result.changed ||
+        const <String>{
+          'referral_already_processed',
+          'referral_caller_not_new',
+          'referral_inviter_not_older',
+          'referral_inviter_lifetime_limit',
+        }.contains(result.reason)) {
       await clearPendingReferralInviterId();
     }
     return result;
