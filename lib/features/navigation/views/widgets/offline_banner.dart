@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 class ConnectivityWidget extends StatefulWidget {
@@ -8,17 +10,26 @@ class ConnectivityWidget extends StatefulWidget {
 }
 
 class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTickerProviderStateMixin {
-  late AnimationController animationController;
+  late final AnimationController _controller = AnimationController(
+    duration: const Duration(milliseconds: 500),
+    vsync: this,
+  );
+  late final Timer _showTimer;
+  late final Timer _hideTimer;
 
   @override
-  @mustCallSuper
   void initState() {
     super.initState();
-    animationController = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
-    Future.delayed(const Duration(seconds: 1)).then((value) {
-      animationController.forward();
-    });
-    Future.delayed(const Duration(seconds: 10)).then((value) => {animationController.reverse()});
+    _showTimer = Timer(const Duration(seconds: 1), _controller.forward);
+    _hideTimer = Timer(const Duration(seconds: 10), _controller.reverse);
+  }
+
+  @override
+  void dispose() {
+    _showTimer.cancel();
+    _hideTimer.cancel();
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -26,7 +37,7 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
     return Align(
       alignment: Alignment.bottomCenter,
       child: SlideTransition(
-        position: animationController.drive(
+        position: _controller.drive(
           Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero).chain(CurveTween(curve: Curves.fastOutSlowIn)),
         ),
         child: const _OfflineBanner(),

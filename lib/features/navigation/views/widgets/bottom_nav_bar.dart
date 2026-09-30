@@ -30,11 +30,6 @@ class _BottomBarState extends State<BottomBar> {
       barColor: Colors.transparent,
       borderRadius: BorderRadius.circular(500),
       controller: _bottomBarController,
-      iconTooltip: 'Scroll to top',
-      iconDecoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
-      icon: (width, height) => Icon(JamIcons.arrow_up, color: Colors.white, size: width),
-      iconWidth: 32,
-      iconHeight: 32,
       barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
       child: const Align(
         heightFactor: 1.0,

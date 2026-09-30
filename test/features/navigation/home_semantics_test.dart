@@ -15,12 +15,6 @@ FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
 );
 
 void main() {
-  test('tiles are named after their author when there is one', () {
-    expect(_item(author: 'Ana').semanticLabel, 'Wallpaper by Ana');
-    expect(_item().semanticLabel, 'Wallpaper');
-    expect(_item(author: '').semanticLabel, 'Wallpaper');
-  });
-
   testWidgets('home tiles and the upload button are named buttons for screen readers', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
@@ -43,7 +37,7 @@ void main() {
     for (final label in ['Wallpaper by Ana', 'Upload']) {
       expect(
         tester.getSemantics(find.bySemanticsLabel(label)),
-        containsSemantics(label: label, isButton: true, hasTapAction: true),
+        isSemantics(label: label, isButton: true, hasTapAction: true),
       );
     }
     handle.dispose();

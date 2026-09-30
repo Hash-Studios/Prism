@@ -41,7 +41,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         entrypoint: EntryPointValue.bottomNav,
       ),
     );
-    if (app_state.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+    if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
       toasts.codeSend('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
       if (mounted) {
         Navigator.of(context).pop();
@@ -144,7 +144,7 @@ class _PressScaleWrapperState extends State<_PressScaleWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final bool motion = !MediaQuery.of(context).disableAnimations;
+    final bool motion = !MediaQuery.disableAnimationsOf(context);
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => setState(() => _pressed = true),
