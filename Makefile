@@ -271,7 +271,7 @@ ensure-fvm:
 	@true
 else
 ensure-fvm:
-	@fvm --version >NUL 2>&1 || fvm --version >/dev/null 2>&1 || ( \
+	@fvm --version >/dev/null 2>&1 || ( \
 		echo fvm is not installed. && \
 		echo Install it first example: dart pub global activate fvm && \
 		exit 1 \

@@ -3,8 +3,7 @@
 # the runner. Install: make hooks
 #
 # Dart changes      -> format-check, env-guard, version-guard, analyze, find-unused-ci
-# functions/ change -> typecheck + node tests (built into a temp dir, so the
-#                      tracked functions/lib/ output is not rewritten)
+# functions/ change -> typecheck + node tests (built into a temp dir)
 # web/ change       -> tsc --noEmit
 #
 # PRE_PUSH_FULL=1 git push  also runs flutter test.
