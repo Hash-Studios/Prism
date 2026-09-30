@@ -11,19 +11,21 @@ class DeepLinkParser {
   static const Set<String> _shortCodeRoots = <String>{'l'};
 
   Uri transform(Uri uri) {
-    // auto_route decodes the path and query after this runs, so malformed escapes (for example %FF) throw there.
     try {
+      // prism://share/abc -> prism:///share/abc. Keep the raw path so escaped characters survive.
+      if (_isCustomScheme(uri) && uri.host.trim().isNotEmpty && !_isDomainHost(uri.host)) {
+        uri = uri.replace(host: '', path: '/${uri.host}${uri.path}');
+      } else if (uri.path.isEmpty) {
+        uri = uri.replace(path: '/');
+      }
+
+      // auto_route decodes the returned path and query, so validate after moving the custom-scheme host into the path.
       uri.pathSegments;
       uri.queryParameters;
+      return uri;
     } on FormatException {
       return Uri(path: '/not-found');
     }
-
-    // prism://share/abc -> prism:///share/abc. Keep the raw path so escaped characters survive.
-    if (_isCustomScheme(uri) && uri.host.trim().isNotEmpty && !_isDomainHost(uri.host)) {
-      return uri.replace(host: '', path: '/${uri.host}${uri.path}');
-    }
-    return uri.path.isEmpty ? uri.replace(path: '/') : uri;
   }
 
   DeepLinkActionEntity parse(Uri uri) {
