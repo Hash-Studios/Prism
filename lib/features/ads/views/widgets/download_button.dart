@@ -175,7 +175,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                               ? null
                               : () async {
                                   setDialogState(() => watchingAd = true);
-                                  final bool watched = await context.read<AdsBloc>().watchRewardedAd();
+                                  final bool watched = await watchRewardedAd(context.read<AdsBloc>());
                                   if (mounted) {
                                     setDialogState(() => watchingAd = false);
                                   }
@@ -313,7 +313,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<void> _handleWatchAndDownload({required int requiredCoins}) async {
-    final bool watched = await context.read<AdsBloc>().watchRewardedAd();
+    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
