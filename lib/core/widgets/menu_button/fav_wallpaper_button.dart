@@ -14,7 +14,8 @@ import 'package:flutter/material.dart';
 class FavouriteWallpaperButton extends StatefulWidget {
   final FavouriteWallEntity? wall;
   final bool trash;
-  const FavouriteWallpaperButton({required this.wall, required this.trash, super.key});
+  final VoidCallback? onFavourited;
+  const FavouriteWallpaperButton({required this.wall, required this.trash, this.onFavourited, super.key});
 
   @override
   _FavouriteWallpaperButtonState createState() => _FavouriteWallpaperButtonState();
@@ -41,7 +42,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       child: FavoriteIcon(
         tapTargetExtent: 53,
         valueChanged: () {
-          if (app_state.prismUser.loggedIn == false) {
+          if (!app_state.prismUser.loggedIn) {
             googleSignInPopUp(context, () {
               onFav(widget.wall);
             });
@@ -72,6 +73,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     context.favouriteWallsAdapter(listen: false).favCheck(wall).then((success) {
       if (success) {
         analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
+        if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
+          widget.onFavourited?.call();
+        }
       }
       if (mounted) {
         setState(() {

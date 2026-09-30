@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -90,7 +91,9 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
     try {
       final PackageInfo info = await PackageInfo.fromPlatform();
       appVersion = '${info.version}+${info.buildNumber}';
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      logger.w('Could not read app version for content report', error: error, stackTrace: stackTrace);
+    }
 
     final ContentReportRepository repo = getIt<ContentReportRepository>();
     final result = await repo.submitReport(
@@ -122,7 +125,7 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
           ContentReportSubmitEvent(contentType: widget.contentType, result: BinaryResultValue.success, reason: reason),
         );
         Navigator.of(context).pop();
-        toasts.codeSend('Report sent. Thank you.');
+        toasts.success('Report sent. Thank you.');
       },
     );
   }

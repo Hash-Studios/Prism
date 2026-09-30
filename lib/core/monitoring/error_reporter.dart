@@ -1,3 +1,4 @@
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 enum ErrorSeverity { debug, info, warning, error, fatal }
@@ -178,28 +179,4 @@ SentryLevel _toSentryLevel(ErrorSeverity severity) {
   }
 }
 
-Map<String, Object?> _normalizeMap(Map<String, Object?> source) {
-  final Map<String, Object?> normalized = <String, Object?>{};
-  for (final MapEntry<String, Object?> entry in source.entries) {
-    normalized[entry.key] = _normalizeValue(entry.value);
-  }
-  return normalized;
-}
-
-Object? _normalizeValue(Object? value) {
-  if (value == null || value is String || value is num || value is bool) {
-    return value;
-  }
-  if (value is DateTime) {
-    return value.toUtc().toIso8601String();
-  }
-  if (value is List) {
-    return value.map(_normalizeValue).toList(growable: false);
-  }
-  if (value is Map) {
-    return value.map<String, Object?>((key, value) {
-      return MapEntry(key.toString(), _normalizeValue(value));
-    });
-  }
-  return value.toString();
-}
+Map<String, Object?> _normalizeMap(Map<String, Object?> source) => toJsonSafe(source)! as Map<String, Object?>;

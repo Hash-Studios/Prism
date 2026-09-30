@@ -1,4 +1,5 @@
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -21,78 +22,41 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
     }
 
     try {
-      final rangeEnd = '$trimmed\uf8ff';
+      final results = await Future.wait([_prefixQuery('name', trimmed), _prefixQuery('username', trimmed)]);
 
-      final results = await Future.wait([
-        _firestoreClient.query<Map<String, dynamic>>(
-          FirestoreQuerySpec(
-            collection: FirebaseCollections.usersV2,
-            sourceTag: 'user_search.search_users_by_name',
-            filters: <FirestoreFilter>[
-              FirestoreFilter(field: 'name', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: trimmed),
-              FirestoreFilter(field: 'name', op: FirestoreFilterOp.isLessThanOrEqualTo, value: rangeEnd),
-            ],
-            limit: 20,
+      final users = <String, UserSearchUser>{};
+      for (final row in results.expand((rows) => rows)) {
+        users.putIfAbsent(
+          row.docId,
+          () => UserSearchUser(
+            id: row.doc.id.isEmpty ? row.docId : row.doc.id,
+            name: row.doc.name,
+            username: row.doc.username,
+            email: row.doc.email,
+            profilePhoto: row.doc.profilePhoto,
+            followerCount: row.doc.followers.length,
           ),
-          (data, docId) => <String, dynamic>{...data, '__docId': docId},
-        ),
-        _firestoreClient.query<Map<String, dynamic>>(
-          FirestoreQuerySpec(
-            collection: FirebaseCollections.usersV2,
-            sourceTag: 'user_search.search_users_by_username',
-            filters: <FirestoreFilter>[
-              FirestoreFilter(field: 'username', op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: trimmed),
-              FirestoreFilter(field: 'username', op: FirestoreFilterOp.isLessThanOrEqualTo, value: rangeEnd),
-            ],
-            limit: 20,
-          ),
-          (data, docId) => <String, dynamic>{...data, '__docId': docId},
-        ),
-      ]);
-
-      // Merge and deduplicate by doc ID
-      final seen = <String>{};
-      final merged = <Map<String, dynamic>>[];
-      for (final row in [...results[0], ...results[1]]) {
-        final id = (row['__docId'] ?? '').toString();
-        if (seen.add(id)) merged.add(row);
+        );
       }
 
-      final users = merged
-          .map((data) {
-            return UserSearchUser(
-              id: (data['id'] ?? data['__docId'] ?? '').toString(),
-              name: (data['name'] ?? '').toString(),
-              username: (data['username'] ?? '').toString(),
-              email: (data['email'] ?? '').toString(),
-              profilePhoto: (data['profilePhoto'] ?? '').toString(),
-              coverPhoto: data['coverPhoto']?.toString(),
-              bio: (data['bio'] ?? '').toString(),
-              links:
-                  (data['links'] as Map?)?.map((key, value) => MapEntry(key.toString(), value?.toString() ?? '')) ??
-                  const <String, String>{},
-              followers:
-                  (data['followers'] as List?)
-                      ?.whereType<Object?>()
-                      .map((Object? value) => value?.toString() ?? '')
-                      .where((value) => value.isNotEmpty)
-                      .toList(growable: false) ??
-                  const <String>[],
-              following:
-                  (data['following'] as List?)
-                      ?.whereType<Object?>()
-                      .map((Object? value) => value?.toString() ?? '')
-                      .where((value) => value.isNotEmpty)
-                      .toList(growable: false) ??
-                  const <String>[],
-              premium: (data['premium'] ?? false) as bool,
-            );
-          })
-          .toList(growable: false);
-
-      return Result.success(users);
+      return Result.success(users.values.toList(growable: false));
     } catch (error) {
       return Result.error(ServerFailure('Unable to search users: $error'));
     }
+  }
+
+  Future<List<({String docId, PublicUserDocDto doc})>> _prefixQuery(String field, String prefix) {
+    return _firestoreClient.query<({String docId, PublicUserDocDto doc})>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.usersV2,
+        sourceTag: 'user_search.search_users_by_$field',
+        filters: <FirestoreFilter>[
+          FirestoreFilter(field: field, op: FirestoreFilterOp.isGreaterThanOrEqualTo, value: prefix),
+          FirestoreFilter(field: field, op: FirestoreFilterOp.isLessThanOrEqualTo, value: '$prefix\uf8ff'),
+        ],
+        limit: 20,
+      ),
+      (data, docId) => (docId: docId, doc: PublicUserDocDto.fromJson(data)),
+    );
   }
 }

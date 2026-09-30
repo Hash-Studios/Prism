@@ -31,11 +31,11 @@ abstract class OnboardingStarterPackData with _$OnboardingStarterPackData {
 
   // ignore: sort_unnamed_constructors_first
   const factory OnboardingStarterPackData({
-    required List<OnboardingCreatorVm> creators,
-    required List<String> selectedEmails,
+    required List<OnboardingStarterCreatorEntity> creators,
+    required Set<String> selectedEmails,
   }) = _OnboardingStarterPackData;
 
-  factory OnboardingStarterPackData.initial() => const OnboardingStarterPackData(creators: [], selectedEmails: []);
+  factory OnboardingStarterPackData.initial() => const OnboardingStarterPackData(creators: [], selectedEmails: {});
 
   bool get canContinue => selectedEmails.length >= OnboardingV2Config.minFollows;
 }
@@ -56,11 +56,8 @@ abstract class OnboardingAiData with _$OnboardingAiData {
 
 @freezed
 abstract class OnboardingWallpaperData with _$OnboardingWallpaperData {
-  const factory OnboardingWallpaperData({
-    OnboardingWallpaperVm? wallpaper,
-    required FirstWallpaperStatus status,
-    int? elapsedMs,
-  }) = _OnboardingWallpaperData;
+  const factory OnboardingWallpaperData({OnboardingWallpaperVm? wallpaper, required FirstWallpaperStatus status}) =
+      _OnboardingWallpaperData;
 
   factory OnboardingWallpaperData.initial() => const OnboardingWallpaperData(status: FirstWallpaperStatus.idle);
 }
@@ -79,7 +76,6 @@ abstract class OnboardingV2State with _$OnboardingV2State {
     required bool skipInterests,
     required bool skipStarterPack,
     OnboardingV2NavRequest? navRequest,
-    Failure? failure,
   }) = _OnboardingV2State;
 
   factory OnboardingV2State.initial() => OnboardingV2State(

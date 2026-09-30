@@ -42,7 +42,7 @@ dependencies:
   flutter_bloc: ^8.1.6
   flutter_cache_manager: ^3.4.1
   flutter_displaymode: ^0.7.0
-  flutter_floating_bottom_bar: ^2.1.0
+  flutter_floating_bottom_bar: ^3.0.0
   flutter_image_compress: ^2.4.0
   flutter_local_notifications: ^20.1.0
   flutter_svg: ^2.2.3
@@ -53,13 +53,11 @@ dependencies:
   google_mobile_ads: ^7.0.0
   google_sign_in: ^7.2.0
   http: ^1.6.0
-  image: ^3.0.2
   image_editor: ^1.6.0
   image_picker: ^1.2.1
-  in_app_update: ^4.2.5
   injectable: ^2.5.1
   internet_connection_checker: ^3.0.1
-  intl: ^0.17.0
+  intl: ^0.20.2
   json_annotation: ^4.9.0
   liquid_glass_renderer: ^0.2.0-dev.4
   mixpanel_flutter: ^2.5.0
@@ -68,12 +66,10 @@ dependencies:
   path: ^1.8.3
   path_provider: ^2.0.1
   photo_view: ^0.15.0
-  photofilters: ^3.0.0
   purchases_flutter: ^9.12.0
   purchases_ui_flutter: ^9.12.0
   quick_actions: ^1.1.0
   rxdart: ^0.28.0
-  screenshot: ^3.0.0
   sentry_flutter: ^9.14.0
   share_plus: ^11.1.0
   shared_preferences: ^2.3.2
@@ -125,6 +121,9 @@ flutter:
   assets:
     - assets/images/
     - assets/sounds/
+
+  shaders:
+    - shaders/convolve3x3.frag
   # To add assets to your application, add an assets section, like this:
   # assets:
   #  - images/a_dot_burr.jpeg

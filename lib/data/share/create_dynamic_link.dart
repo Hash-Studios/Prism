@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/logger/logger.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 const String _shareDomain = 'prismwalls.com';
-const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
 
 class _CanonicalLinkBuilder {
   const _CanonicalLinkBuilder();
@@ -30,9 +30,8 @@ class _CanonicalLinkBuilder {
     return Uri.https(_shareDomain, '/user/${Uri.encodeComponent(identifier)}');
   }
 
-  Uri setup({required String index, required String name, required String thumbUrl}) {
+  Uri setup({required String name, required String thumbUrl}) {
     return Uri.https(_shareDomain, '/setup/${Uri.encodeComponent(name)}', <String, String>{
-      if (index.trim().isNotEmpty) 'index': index,
       if (thumbUrl.trim().isNotEmpty) 'thumbUrl': thumbUrl,
     });
   }
@@ -51,7 +50,7 @@ class _ShortLinkService {
     Map<String, dynamic>? payload,
     Map<String, dynamic>? preview,
   }) async {
-    final Uri endpoint = Uri.parse(_shortLinkApiUrl);
+    final Uri endpoint = Uri.parse(shortLinkApiUrl);
     try {
       final response = await http
           .post(
@@ -124,7 +123,6 @@ Future<String> _buildShareableLink({
     payload: payload,
     preview: preview,
   );
-  logger.d(resolved.toString());
   return resolved.toString();
 }
 
@@ -152,7 +150,7 @@ Future<String> createDynamicLink(String id, WallpaperSource source, String? url,
 
     await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
     _trackDynamicLinkCreateResult(shareType: ShareTypeValue.wallpaper, result: EventResultValue.success);
-    toasts.codeSend('Sharing link copied!');
+    toasts.success('Sharing link copied!');
     return link;
   } catch (error, stackTrace) {
     logger.e('Failed to create wallpaper dynamic link.', error: error, stackTrace: stackTrace);
@@ -205,13 +203,13 @@ Future<void> createUserDynamicLink(
   }
 }
 
-Future<void> createSetupDynamicLink(String index, String name, String thumbUrl, {BuildContext? context}) async {
+Future<void> createSetupDynamicLink(String name, String thumbUrl, {BuildContext? context}) async {
   try {
-    final Uri canonical = _canonicalLinkBuilder.setup(index: index, name: name, thumbUrl: thumbUrl);
+    final Uri canonical = _canonicalLinkBuilder.setup(name: name, thumbUrl: thumbUrl);
     final String link = await _buildShareableLink(
       type: 'setup',
       canonicalUri: canonical,
-      payload: <String, dynamic>{'index': index, 'name': name, 'thumbUrl': thumbUrl},
+      payload: <String, dynamic>{'name': name, 'thumbUrl': thumbUrl},
       preview: <String, dynamic>{
         'title': '$name - Prism',
         'description': 'Check out this setup shared from Prism.',

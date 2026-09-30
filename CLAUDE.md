@@ -81,7 +81,7 @@ Keep paths and commands exact. Use ASD-STE100 Simplified Technical English. Neve
 
 | Part | Path | Notes |
 |---|---|---|
-| App | `lib/`, `test/` | Flutter 3.41 pinned in `.fvmrc`, run through `fvm` |
+| App | `lib/`, `test/` | Flutter 3.47 pinned in `.fvmrc`, run through `fvm` |
 | Cloud Functions | `functions/` | TypeScript, Firebase Functions v2, region `asia-south1` |
 | Firestore | `firestore.rules`, `firestore.indexes.json`, `firebase.json` | project `prism-wallpapers` (`.firebaserc`) |
 | Website | `web/` | Next.js on Cloudflare (`wrangler.toml`) |
@@ -118,7 +118,7 @@ cd functions && npm ci && npm run build && node --test lib/__tests__/
 cd web && npm ci && npm run build
 ```
 
-`functions/lib/` is compiled output that is still tracked in git (16 files). Deploy rebuilds from `src/` (`firebase.json` predeploy). Do not commit build noise in `functions/lib/` with a source change unless the diff needs it.
+`functions/lib/` is compiled output and is ignored. Deploy rebuilds from `src/` (`firebase.json` predeploy).
 
 ### Secrets: Doppler
 

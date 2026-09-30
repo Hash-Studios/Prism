@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
@@ -22,22 +25,13 @@ class UserSearch extends StatefulWidget {
 }
 
 class _UserSearchState extends State<UserSearch> {
-  TextEditingController searchController = TextEditingController();
-  late bool isSubmitted;
-
-  @override
-  void initState() {
-    isSubmitted = false;
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
-    });
-  }
+  final TextEditingController searchController = TextEditingController();
+  final UserSearchBloc _bloc = getIt<UserSearchBloc>();
 
   @override
   void dispose() {
     searchController.dispose();
+    unawaited(_bloc.close());
     super.dispose();
   }
 
@@ -80,13 +74,10 @@ class _UserSearchState extends State<UserSearch> {
                       analytics.track(
                         UserSearchSubmittedEvent(queryLength: trimmed.length, sourceContext: 'user_search_textfield'),
                       );
-                      setState(() {
-                        isSubmitted = true;
-                      });
-                      context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: trimmed));
+                      _bloc.add(UserSearchEvent.searchRequested(query: trimmed));
                       return;
                     }
-                    context.read<UserSearchBloc>().add(const UserSearchEvent.cleared());
+                    _bloc.add(const UserSearchEvent.cleared());
                   },
                 ),
               ),
@@ -95,7 +86,9 @@ class _UserSearchState extends State<UserSearch> {
         ),
       ),
       // usersV2 reads require auth per firestore.rules; guests must sign in first.
-      body: app_state.prismUser.loggedIn ? const _UserSearchLoader() : const SignInPrompt(feature: 'creator search'),
+      body: app_state.prismUser.loggedIn
+          ? BlocProvider.value(value: _bloc, child: const _UserSearchLoader())
+          : const SignInPrompt(feature: 'creator search'),
     );
   }
 }
@@ -221,7 +214,7 @@ class _CreatorCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '${user.followers.length}',
+            '${user.followerCount}',
             style: TextStyle(
               fontFamily: 'Proxima Nova',
               fontWeight: FontWeight.bold,

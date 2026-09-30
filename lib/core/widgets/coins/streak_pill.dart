@@ -21,7 +21,7 @@ class StreakPill extends StatelessWidget {
         final int streakDay = status.streakDay.clamp(0, 7);
         final bool active = status.active;
         final int nextDay = active ? (streakDay >= 7 ? 1 : streakDay + 1) : 1;
-        final int nextReward = CoinPolicy.streakTotalRewardForDay(nextDay);
+        final int nextReward = CoinPolicy.streakClaimRewardForDay(nextDay, isPro: app_state.prismUser.premium);
         final String nextLabel = compact ? '+$nextReward' : 'Next +$nextReward';
         return Material(
           color: Colors.transparent,

@@ -1,91 +1,24 @@
 import 'package:flutter/material.dart';
 
 enum AiStylePreset {
-  anime,
-  minimal,
-  cyberpunk,
-  watercolor,
-  meshGradient,
-  abstract,
-  nature;
+  anime('anime', 'Anime', <Color>[Color(0xFFFF6B9D), Color(0xFF7C4DFF)]),
+  minimal('minimal', 'Minimal', <Color>[Color(0xFFE0E0E0), Color(0xFFFAFAFA)]),
+  cyberpunk('cyberpunk', 'Cyberpunk', <Color>[Color(0xFF00F5FF), Color(0xFF7C4DFF)]),
+  watercolor('watercolor', 'Watercolor', <Color>[Color(0xFFFFB6C1), Color(0xFFE6E6FA)]),
+  meshGradient('mesh gradient', 'Mesh Gradient', <Color>[Color(0xFFFF6B6B), Color(0xFF4ECDC4), Color(0xFFFFE66D)]),
+  abstract('abstract', 'Abstract', <Color>[Color(0xFFFF6B35), Color(0xFFD63031)]),
+  nature('nature', 'Nature', <Color>[Color(0xFF00B894), Color(0xFF00CEC9)]);
 
-  List<Color> get swatchColors {
-    switch (this) {
-      case AiStylePreset.anime:
-        return <Color>[const Color(0xFFFF6B9D), const Color(0xFF7C4DFF)];
-      case AiStylePreset.minimal:
-        return <Color>[const Color(0xFFE0E0E0), const Color(0xFFFAFAFA)];
-      case AiStylePreset.cyberpunk:
-        return <Color>[const Color(0xFF00F5FF), const Color(0xFF7C4DFF)];
-      case AiStylePreset.watercolor:
-        return <Color>[const Color(0xFFFFB6C1), const Color(0xFFE6E6FA)];
-      case AiStylePreset.meshGradient:
-        return <Color>[const Color(0xFFFF6B6B), const Color(0xFF4ECDC4), const Color(0xFFFFE66D)];
-      case AiStylePreset.abstract:
-        return <Color>[const Color(0xFFFF6B35), const Color(0xFFD63031)];
-      case AiStylePreset.nature:
-        return <Color>[const Color(0xFF00B894), const Color(0xFF00CEC9)];
-    }
-  }
+  const AiStylePreset(this.apiValue, this.label, this.swatchColors);
 
-  String get apiValue {
-    switch (this) {
-      case AiStylePreset.anime:
-        return 'anime';
-      case AiStylePreset.minimal:
-        return 'minimal';
-      case AiStylePreset.cyberpunk:
-        return 'cyberpunk';
-      case AiStylePreset.watercolor:
-        return 'watercolor';
-      case AiStylePreset.meshGradient:
-        return 'mesh gradient';
-      case AiStylePreset.abstract:
-        return 'abstract';
-      case AiStylePreset.nature:
-        return 'nature';
-    }
-  }
+  final String apiValue;
+  final String label;
+  final List<Color> swatchColors;
 
-  String get label {
-    switch (this) {
-      case AiStylePreset.anime:
-        return 'Anime';
-      case AiStylePreset.minimal:
-        return 'Minimal';
-      case AiStylePreset.cyberpunk:
-        return 'Cyberpunk';
-      case AiStylePreset.watercolor:
-        return 'Watercolor';
-      case AiStylePreset.meshGradient:
-        return 'Mesh Gradient';
-      case AiStylePreset.abstract:
-        return 'Abstract';
-      case AiStylePreset.nature:
-        return 'Nature';
-    }
-  }
+  static String _key(String value) => value.trim().toLowerCase().replaceAll(RegExp('[ _]'), '');
 
   static AiStylePreset fromApiValue(String value) {
-    final normalized = value.trim().toLowerCase();
-    switch (normalized) {
-      case 'anime':
-        return AiStylePreset.anime;
-      case 'minimal':
-        return AiStylePreset.minimal;
-      case 'cyberpunk':
-        return AiStylePreset.cyberpunk;
-      case 'watercolor':
-        return AiStylePreset.watercolor;
-      case 'mesh gradient':
-      case 'mesh_gradient':
-      case 'meshgradient':
-        return AiStylePreset.meshGradient;
-      case 'nature':
-        return AiStylePreset.nature;
-      case 'abstract':
-      default:
-        return AiStylePreset.abstract;
-    }
+    final String key = _key(value);
+    return values.firstWhere((preset) => _key(preset.apiValue) == key, orElse: () => abstract);
   }
 }

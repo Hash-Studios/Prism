@@ -1,12 +1,12 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/views/widgets/arrow_animation.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -61,6 +61,10 @@ class _SetupPageState extends State<_SetupPage> {
     final List<SetupEntity> setups = context.setupsAdapter().setups ?? const <SetupEntity>[];
     final bool hasSetups = setups.isNotEmpty;
     final int currentPage = hasSetups ? pageNumber.clamp(0, setups.length - 1) : 0;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final Color accentColor = context.isDarkMode && context.prismIsAmoledDark() && colorScheme.error == Colors.black
+        ? colorScheme.secondary
+        : colorScheme.error;
 
     return Stack(
       alignment: Alignment.topCenter,
@@ -87,7 +91,7 @@ class _SetupPageState extends State<_SetupPage> {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        hasSetups ? setups[currentPage].name.toString().toUpperCase() : "",
+                        hasSetups ? setups[currentPage].name.toUpperCase() : "",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.displayLarge!.copyWith(fontSize: 30),
@@ -107,7 +111,6 @@ class _SetupPageState extends State<_SetupPage> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting ||
                   snapshot.connectionState == ConnectionState.none) {
-                logger.d("snapshot none, waiting");
                 return Center(child: Loader());
               } else {
                 return SizedBox(
@@ -146,7 +149,7 @@ class _SetupPageState extends State<_SetupPage> {
                                     height: MediaQuery.of(context).size.height * 0.7,
                                     decoration: BoxDecoration(
                                       boxShadow: pageNumber == index
-                                          ? context.prismModeStyleForContext() == "Light"
+                                          ? !context.isDarkMode
                                                 ? [
                                                     BoxShadow(
                                                       color: Colors.black.withValues(alpha: .15),
@@ -199,13 +202,7 @@ class _SetupPageState extends State<_SetupPage> {
                                     height: MediaQuery.of(context).size.height * 0.7,
                                     child: Center(
                                       child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation(
-                                          context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                                              ? Theme.of(context).colorScheme.error == Colors.black
-                                                    ? Theme.of(context).colorScheme.secondary
-                                                    : Theme.of(context).colorScheme.error
-                                              : Theme.of(context).colorScheme.error,
-                                        ),
+                                        valueColor: AlwaysStoppedAnimation(accentColor),
                                         value: downloadProgress.progress,
                                       ),
                                     ),
@@ -243,14 +240,7 @@ class _SetupPageState extends State<_SetupPage> {
                   );
                   HapticFeedback.vibrate();
                 },
-                child: Icon(
-                  JamIcons.chevron_left,
-                  color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                      ? Theme.of(context).colorScheme.error == Colors.black
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.error
-                      : Theme.of(context).colorScheme.error,
-                ),
+                child: Icon(JamIcons.chevron_left, color: accentColor),
               ),
             ),
           ),
@@ -268,14 +258,7 @@ class _SetupPageState extends State<_SetupPage> {
                 );
                 HapticFeedback.vibrate();
               },
-              child: Icon(
-                JamIcons.chevron_right,
-                color: context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                    ? Theme.of(context).colorScheme.error == Colors.black
-                          ? Theme.of(context).colorScheme.secondary
-                          : Theme.of(context).colorScheme.error
-                    : Theme.of(context).colorScheme.error,
-              ),
+              child: Icon(JamIcons.chevron_right, color: accentColor),
             ),
           ),
       ],

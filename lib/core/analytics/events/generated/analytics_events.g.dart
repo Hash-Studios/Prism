@@ -4,24 +4,15 @@
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
+import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 
 class ReportSetupEvent extends AnalyticsEvent {
   const ReportSetupEvent();
 
   @override
   String get eventName => 'report_setup';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return const <String, Object?>{};
-  }
-}
-
-class ReportWallEvent extends AnalyticsEvent {
-  const ReportWallEvent();
-
-  @override
-  String get eventName => 'report_wall';
 
   @override
   Map<String, Object?> toWireParameters() {
@@ -109,7 +100,7 @@ class DownloadOwnWallEvent extends AnalyticsEvent {
 class SetWallEvent extends AnalyticsEvent {
   const SetWallEvent({required this.wallpaperTarget, required this.result});
 
-  final WallpaperTargetValue wallpaperTarget;
+  final WallpaperTarget wallpaperTarget;
   final BinaryResultValue result;
 
   @override
@@ -334,135 +325,6 @@ class SubscriptionTriggerUploadLimitBlockEvent extends AnalyticsEvent {
   }
 }
 
-class SubscriptionPackageSelectedEvent extends AnalyticsEvent {
-  const SubscriptionPackageSelectedEvent({
-    required this.source,
-    required this.productId,
-    required this.packageType,
-    required this.price,
-    required this.currency,
-  });
-
-  final String source;
-  final String productId;
-  final String packageType;
-  final num price;
-  final String currency;
-
-  @override
-  String get eventName => 'subscription_package_selected';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{
-      'source': source,
-      'product_id': productId,
-      'package_type': packageType,
-      'price': price,
-      'currency': currency,
-    };
-  }
-}
-
-class SubscriptionRestoreStartedEvent extends AnalyticsEvent {
-  const SubscriptionRestoreStartedEvent({required this.source});
-
-  final String source;
-
-  @override
-  String get eventName => 'subscription_restore_started';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source': source};
-  }
-}
-
-class SubscriptionRestoreResultEvent extends AnalyticsEvent {
-  const SubscriptionRestoreResultEvent({required this.source, required this.result, this.errorCode, this.errorMessage});
-
-  final String source;
-  final SubscriptionResultValue result;
-  final String? errorCode;
-  final String? errorMessage;
-
-  @override
-  String get eventName => 'subscription_restore_result';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{
-      'source': source,
-      'result': result.wireValue,
-      if (errorCode != null) 'error_code': errorCode!,
-      if (errorMessage != null) 'error_message': errorMessage!,
-    };
-  }
-}
-
-class SubscriptionPurchaseStartedEvent extends AnalyticsEvent {
-  const SubscriptionPurchaseStartedEvent({
-    required this.source,
-    required this.productId,
-    required this.packageType,
-    required this.price,
-    required this.currency,
-  });
-
-  final String source;
-  final String productId;
-  final String packageType;
-  final num price;
-  final String currency;
-
-  @override
-  String get eventName => 'subscription_purchase_started';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{
-      'source': source,
-      'product_id': productId,
-      'package_type': packageType,
-      'price': price,
-      'currency': currency,
-    };
-  }
-}
-
-class SubscriptionPurchaseResultEvent extends AnalyticsEvent {
-  const SubscriptionPurchaseResultEvent({
-    required this.source,
-    required this.productId,
-    required this.packageType,
-    required this.result,
-    this.errorCode,
-    this.errorMessage,
-  });
-
-  final String source;
-  final String productId;
-  final String packageType;
-  final SubscriptionResultValue result;
-  final String? errorCode;
-  final String? errorMessage;
-
-  @override
-  String get eventName => 'subscription_purchase_result';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{
-      'source': source,
-      'product_id': productId,
-      'package_type': packageType,
-      'result': result.wireValue,
-      if (errorCode != null) 'error_code': errorCode!,
-      if (errorMessage != null) 'error_message': errorMessage!,
-    };
-  }
-}
-
 class SubscriptionEntitlementRefreshEvent extends AnalyticsEvent {
   const SubscriptionEntitlementRefreshEvent({
     required this.result,
@@ -537,7 +399,7 @@ class AiChargeReservedEvent extends AnalyticsEvent {
     required this.sourceTag,
   });
 
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
   final int balance;
   final String sourceTag;
@@ -564,7 +426,7 @@ class AiChargeRolledBackEvent extends AnalyticsEvent {
     this.coinsRefunded,
   });
 
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int balance;
   final String sourceTag;
   final int? coinsRefunded;
@@ -591,7 +453,7 @@ class AiChargeCommittedEvent extends AnalyticsEvent {
     required this.sourceTag,
   });
 
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
   final int balance;
   final String sourceTag;
@@ -619,7 +481,7 @@ class CoinEarnedEvent extends AnalyticsEvent {
     this.reason,
   });
 
-  final CoinEarnActionValue action;
+  final CoinEarnAction action;
   final int amount;
   final int balance;
   final String sourceTag;
@@ -649,7 +511,7 @@ class CoinSpentEvent extends AnalyticsEvent {
     this.reason,
   });
 
-  final CoinSpendActionValue action;
+  final CoinSpendAction action;
   final int amount;
   final int balance;
   final String sourceTag;
@@ -734,7 +596,7 @@ class AiGenerateStartedEvent extends AnalyticsEvent {
 
   final String style;
   final String quality;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
 
   @override
   String get eventName => 'ai_generate_started';
@@ -749,7 +611,7 @@ class AiGenerateSuccessEvent extends AnalyticsEvent {
   const AiGenerateSuccessEvent({required this.provider, required this.mode, required this.coinsSpent});
 
   final String provider;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
 
   @override
@@ -765,7 +627,7 @@ class AiVariationUsedEvent extends AnalyticsEvent {
   const AiVariationUsedEvent({required this.provider, required this.mode, required this.coinsSpent});
 
   final String provider;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
   final int coinsSpent;
 
   @override
@@ -781,7 +643,7 @@ class AiGenerateFailedEvent extends AnalyticsEvent {
   const AiGenerateFailedEvent({required this.error, required this.mode});
 
   final String error;
-  final AiChargeModeValue mode;
+  final AiChargeMode mode;
 
   @override
   String get eventName => 'ai_generate_failed';
@@ -789,20 +651,6 @@ class AiGenerateFailedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'error': error, 'mode': mode.wireValue};
-  }
-}
-
-class AiShareTappedEvent extends AnalyticsEvent {
-  const AiShareTappedEvent({required this.generationId});
-
-  final String generationId;
-
-  @override
-  String get eventName => 'ai_share_tapped';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'generation_id': generationId};
   }
 }
 
@@ -877,18 +725,6 @@ class CoinPreviewWatchAndUnlockUsedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'collection': collection, 'source_tag': sourceTag};
-  }
-}
-
-class CategoriesCheckedEvent extends AnalyticsEvent {
-  const CategoriesCheckedEvent();
-
-  @override
-  String get eventName => 'categories_checked';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return const <String, Object?>{};
   }
 }
 
@@ -1031,21 +867,6 @@ class SearchSubmittedEvent extends AnalyticsEvent {
       'source_context': sourceContext,
       'from_suggestion': fromSuggestion ? 1 : 0,
     };
-  }
-}
-
-class SearchProviderChangedEvent extends AnalyticsEvent {
-  const SearchProviderChangedEvent({required this.fromProvider, required this.toProvider});
-
-  final SearchProviderValue fromProvider;
-  final SearchProviderValue toProvider;
-
-  @override
-  String get eventName => 'search_provider_changed';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'from_provider': fromProvider.wireValue, 'to_provider': toProvider.wireValue};
   }
 }
 
@@ -1250,55 +1071,6 @@ class NotificationActionBlockedEvent extends AnalyticsEvent {
   }
 }
 
-class OnboardingStepViewedEvent extends AnalyticsEvent {
-  const OnboardingStepViewedEvent({required this.step});
-
-  final int step;
-
-  @override
-  String get eventName => 'onboarding_step_viewed';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'step': step};
-  }
-}
-
-class OnboardingActionTappedEvent extends AnalyticsEvent {
-  const OnboardingActionTappedEvent({required this.step, required this.action});
-
-  final int step;
-  final AnalyticsActionValue action;
-
-  @override
-  String get eventName => 'onboarding_action_tapped';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'step': step, 'action': action.wireValue};
-  }
-}
-
-class OnboardingAuthResultEvent extends AnalyticsEvent {
-  const OnboardingAuthResultEvent({required this.method, required this.result, this.reason});
-
-  final AuthMethodValue method;
-  final EventResultValue result;
-  final AnalyticsReasonValue? reason;
-
-  @override
-  String get eventName => 'onboarding_auth_result';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{
-      'method': method.wireValue,
-      'result': result.wireValue,
-      if (reason != null) 'reason': reason!.wireValue,
-    };
-  }
-}
-
 class ProfileCompletenessNudgeViewedEvent extends AnalyticsEvent {
   const ProfileCompletenessNudgeViewedEvent({
     required this.sourceContext,
@@ -1340,34 +1112,6 @@ class ProfileCompletenessActionTappedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'source_context': sourceContext, 'action': action, 'progress_percent': progressPercent};
-  }
-}
-
-class TomorrowHookViewedEvent extends AnalyticsEvent {
-  const TomorrowHookViewedEvent({required this.sourceContext});
-
-  final String sourceContext;
-
-  @override
-  String get eventName => 'tomorrow_hook_viewed';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source_context': sourceContext};
-  }
-}
-
-class TomorrowHookActionTappedEvent extends AnalyticsEvent {
-  const TomorrowHookActionTappedEvent({required this.action});
-
-  final String action;
-
-  @override
-  String get eventName => 'tomorrow_hook_action_tapped';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'action': action};
   }
 }
 
@@ -1417,20 +1161,6 @@ class WotdOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'wall_id': wallId, 'source': source};
-  }
-}
-
-class WotdSetAsWallpaperEvent extends AnalyticsEvent {
-  const WotdSetAsWallpaperEvent({required this.wallId});
-
-  final String wallId;
-
-  @override
-  String get eventName => 'wotd_set_as_wallpaper';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'wall_id': wallId};
   }
 }
 
@@ -1828,18 +1558,6 @@ class OnboardingV2FirstWallpaperActionEvent extends AnalyticsEvent {
   }
 }
 
-class OnboardingV2PaywallTimerUnlockedEvent extends AnalyticsEvent {
-  const OnboardingV2PaywallTimerUnlockedEvent();
-
-  @override
-  String get eventName => 'onboarding_v2_paywall_timer_unlocked';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return const <String, Object?>{};
-  }
-}
-
 class OnboardingV2CompletedEvent extends AnalyticsEvent {
   const OnboardingV2CompletedEvent({required this.didPurchase, required this.totalElapsedMs});
 
@@ -1878,19 +1596,5 @@ class AppErrorEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'error_source': errorSource};
-  }
-}
-
-class QualityDailySnapshotEvent extends AnalyticsEvent {
-  const QualityDailySnapshotEvent({required this.crashFreeUsersPct});
-
-  final double crashFreeUsersPct;
-
-  @override
-  String get eventName => 'quality_daily_snapshot';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'crash_free_users_pct': crashFreeUsersPct};
   }
 }
