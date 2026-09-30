@@ -77,7 +77,7 @@ Keep paths and commands exact. Use ASD-STE100 Simplified Technical English. Neve
 
 ## What this repo is
 
-**Prism**: a Flutter wallpaper and home-screen setups app for Android and iOS (Hash Studios, `Hash-Studios/Prism`, default branch `master`). Users browse, favourite, download and set wallpapers, share setups, follow creators, earn and spend Prism Coins, buy Prism Premium, and generate AI wallpapers.
+**Prism**: a Flutter wallpaper app for Android and iOS (Hash Studios, `Hash-Studios/Prism`, default branch `master`). Users browse, favourite, download and set wallpapers, follow creators, earn and spend Prism Coins, buy Prism Premium, and generate AI wallpapers.
 
 | Part | Path | Notes |
 |---|---|---|

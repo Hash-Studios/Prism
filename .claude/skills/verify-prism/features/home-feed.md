@@ -6,7 +6,7 @@ Home is the first tab of the dashboard (route `/dashboard/home`, `HomeTabRoute`,
 
 - `bottom-nav` shows 4 tabs: `Home`, `Search`, `Streak`, `Collections` (`lib/features/navigation/views/widgets/prism_bottom_nav.dart`). There is no bottom-nav Profile tab; profile is reached from the top app bar.
 - `top-bar` shows `Feed settings`, `Open notifications`, and `Your profile` (`lib/features/navigation/views/widgets/prism_top_app_bar.dart`).
-- `fab` shows `Upload` (`lib/features/navigation/views/widgets/prism_fab.dart`), for uploading a wallpaper or setup.
+- `fab` shows `Upload` (`lib/features/navigation/views/widgets/prism_fab.dart`), for uploading a wallpaper.
 - `feed-settings` sheet (`personalized_feed_settings_bottom_sheet.dart`) offers `Balanced`, `Creators`, `Discovery` feed modes.
 - `wallpaper-grid` opens a wallpaper's detail screen on tap.
 
