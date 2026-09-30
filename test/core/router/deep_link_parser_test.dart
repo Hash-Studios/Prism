@@ -33,12 +33,9 @@ void main() {
     expect((action as UserLinkIntent).profileIdentifier, 'bob');
   });
 
-  test('parses canonical setup path', () {
-    final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/setup/minimal-desk'));
-
-    expect(action, isA<SetupLinkIntent>());
-    final SetupLinkIntent setup = action as SetupLinkIntent;
-    expect(setup.setupName, 'minimal-desk');
+  test('parses legacy setup links as a setup intent', () {
+    expect(parser.parse(Uri.parse('https://prismwalls.com/setup/minimal-desk')), isA<SetupLinkIntent>());
+    expect(parser.parse(Uri.parse('prism://share-setup?name=desk')), isA<SetupLinkIntent>());
   });
 
   test('parses legacy refer query link', () {

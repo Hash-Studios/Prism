@@ -40,11 +40,10 @@ Each feature file starts with an H1 and one paragraph. It then uses exactly four
 - [Onboarding and sign-in](./onboarding-signin.md): `/onboarding/v2`, Google/Apple OAuth, interests, starter pack, first wallpaper.
 - [Home feed](./home-feed.md): Prism/Wallhaven/Pexels tabs, feed settings, notifications bell, wallpaper grid.
 - [Wallpaper detail](./wallpaper-detail.md): download, set as wallpaper, favourite, share, report, edit.
-- [Setups](./setups.md): browse setups, upload a setup, review flow, favourite/share a setup.
 - [Search](./search.md): wallpaper search, user search, color search.
 - [Profile and edit profile](./profile.md): own profile, public profile, followers/following, edit profile.
 - [Coins and streak](./coins-streak.md): streak tab, coin balance, coin transactions, streak shop.
 - [AI wallpaper](./ai-wallpaper.md): AI generation tab, coin spend, download/set result.
 - [Notifications inbox](./notifications.md): in-app notification list, tap-through routing.
 - [Settings](./settings.md): themes, download quality, toggles, sign-out/delete account.
-- [Deep links](./deep-links.md): `prismwalls.com` share/user/setup/refer/short links, push notification routing.
+- [Deep links](./deep-links.md): `prismwalls.com` share/user/refer/short links, push notification routing.

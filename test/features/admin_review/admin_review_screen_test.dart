@@ -42,10 +42,6 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   }
 
   @override
-  Stream<List<FirestoreDocument>> watchPendingSetups() =>
-      Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
-
-  @override
   Stream<List<FirestoreDocument>> watchOpenContentReports() =>
       reportsStream ?? Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
 
@@ -119,6 +115,15 @@ void main() {
     expect(find.text('ID: wall-1'), findsOneWidget);
   });
 
+  testWidgets('pending wallpaper card shows its creator details', (WidgetTester tester) async {
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    expect(find.text('ID: wall-1'), findsOneWidget);
+    expect(find.text('By: Creator'), findsOneWidget);
+    expect(find.text('Email: creator@example.com'), findsOneWidget);
+  });
+
   testWidgets('wall report previews stay with their report after the stream reorders rows', (
     WidgetTester tester,
   ) async {
@@ -130,8 +135,6 @@ void main() {
     addTearDown(reports.close);
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..reportsStream = reports.stream;
     await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
-    await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
-    await tester.pump(const Duration(milliseconds: 600));
     await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
     await tester.pump(const Duration(milliseconds: 600));
     reports.add(const <FirestoreDocument>[
@@ -148,6 +151,9 @@ void main() {
     ]);
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Walls (1)'), findsOneWidget);
+    expect(find.text('Reports (2)'), findsOneWidget);
+    expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('wall — A'), findsOneWidget);
     expect(find.text('wall — B'), findsOneWidget);
     expect(firestore.requestedWallIds, containsAll(<String>['wall-a', 'wall-b']));
@@ -182,6 +188,9 @@ void main() {
     expectReportPreview('A', 'wall-a');
     expectReportPreview('B', 'wall-b');
     expect(firestore.requestedWallIds, containsAll(<String>['wall-a', 'wall-b']));
+    await tester.tap(find.text('Notifications'));
+    await tester.pumpAndSettle();
+    expect(find.text('Compose notification'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

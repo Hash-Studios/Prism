@@ -14,7 +14,6 @@ class Env {
 
   // GitHub
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
-  static const String ghRepoSetups = String.fromEnvironment('GH_REPO_SETUPS');
 
   // RevenueCat
   static const String rcApiKey = String.fromEnvironment('RC_API_KEY');
