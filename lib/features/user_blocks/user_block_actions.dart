@@ -71,7 +71,7 @@ Future<void> confirmAndBlockUser({
   final String targetNorm = targetEmail.trim().toLowerCase();
   final List<String> next = following.where((String e) => e.trim().toLowerCase() != targetNorm).toList(growable: false);
   if (next.length != following.length) {
-    await session.patchCurrentUser(following: next);
+    await session.updateFollowing(next);
   }
 
   toasts.codeSend('User blocked');

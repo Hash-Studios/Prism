@@ -1,18 +1,10 @@
 import 'dart:async';
 
-import 'package:Prism/auth/apple_auth.dart';
-import 'package:Prism/auth/badge_model.dart';
-import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
-import 'package:Prism/core/purchases/purchases_service.dart';
-import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/features/session/domain/entities/badge_entity.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
-import 'package:Prism/features/session/domain/entities/transaction_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:injectable/injectable.dart';
 
@@ -26,9 +18,6 @@ class SessionRepositoryImpl implements SessionRepository {
   final StreamController<PrismUsersV2> _currentUserController = StreamController<PrismUsersV2>.broadcast();
 
   late PrismUsersV2 _currentUser;
-
-  GoogleAuth get _gAuth => globalGoogleAuth;
-  AppleAuth get _appleAuth => globalAppleAuth;
 
   @override
   PrismUsersV2 get currentUser => _currentUser;
@@ -57,66 +46,17 @@ class SessionRepositoryImpl implements SessionRepository {
   SessionEntity _toEntity() {
     return SessionEntity(
       userId: _currentUser.id,
-      email: _currentUser.email,
-      name: _currentUser.name,
-      username: _currentUser.username,
-      profilePhoto: _currentUser.profilePhoto,
-      coverPhoto: _currentUser.coverPhoto ?? '',
-      bio: _currentUser.bio,
       loggedIn: _currentUser.loggedIn,
       premium: _currentUser.premium,
       subscriptionTier: _currentUser.subscriptionTier,
-      coins: _currentUser.coins,
-      links: <String, String>{for (final entry in _currentUser.links.entries) entry.key: entry.value},
-      followers: _currentUser.followers.whereType<String>().toList(growable: false),
-      following: _currentUser.following.whereType<String>().toList(growable: false),
-      badges: _currentUser.badges
-          .whereType<Badge>()
-          .map(
-            (b) => BadgeEntity(
-              id: b.id,
-              name: b.name,
-              description: b.description,
-              imageUrl: b.imageUrl,
-              color: b.color,
-              url: b.url,
-              awardedAt: b.awardedAt,
-            ),
-          )
-          .toList(growable: false),
-      transactions: _currentUser.transactions
-          .whereType<PrismTransaction>()
-          .map(
-            (t) => TransactionEntity(
-              id: t.id,
-              name: t.name,
-              description: t.description,
-              amount: t.amount,
-              credit: t.credit,
-              by: t.by,
-              processedAt: t.processedAt,
-            ),
-          )
-          .toList(growable: false),
-      subPrisms: _currentUser.subPrisms.whereType<String>().toList(growable: false),
-      uploadsWeekStart: _currentUser.uploadsWeekStart,
-      uploadsThisWeek: _currentUser.uploadsThisWeek,
     );
-  }
-
-  void _syncFromPrefs({bool emit = true}) {
-    _currentUser = _readStoredUser();
-    if (emit) {
-      _emitCurrentUser();
-    }
   }
 
   @override
   Future<Result<SessionEntity>> getSession() async {
     try {
-      // Avoid emitting current-user updates while handling SessionEvent.started(),
-      // otherwise SessionBloc's stream listener re-dispatches started in a loop.
-      _syncFromPrefs(emit: false);
+      // Read without emitting: an emit here would make SessionBloc's stream listener re-dispatch started in a loop.
+      _currentUser = _readStoredUser();
       return Result.success(_toEntity());
     } catch (error) {
       return Result.error(CacheFailure('Unable to read session: $error'));
@@ -124,58 +64,10 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   @override
-  Future<Result<SessionEntity>> signInWithGoogle() async {
-    try {
-      await _gAuth.signInWithGoogle();
-      _syncFromPrefs();
-      return Result.success(_toEntity());
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to sign in: $error'));
-    }
-  }
-
-  @override
-  Future<Result<SessionEntity>> signInWithApple() async {
-    try {
-      await _appleAuth.signInWithApple();
-      _syncFromPrefs();
-      return Result.success(_toEntity());
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to sign in with Apple: $error'));
-    }
-  }
-
-  @override
-  Future<Result<SessionEntity>> refreshPremium() async {
-    try {
-      if (_currentUser.loggedIn) {
-        await PurchasesService.instance.checkAndPersistPremium();
-      }
-      _syncFromPrefs();
-      return Result.success(_toEntity());
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to refresh premium: $error'));
-    }
-  }
-
-  @override
-  Future<Result<SessionEntity>> signOut() async {
-    try {
-      await _gAuth.signOutGoogle();
-      _syncFromPrefs();
-      return Result.success(_toEntity());
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to sign out: $error'));
-    }
-  }
-
-  @override
-  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user, {bool persist = true}) async {
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
     try {
       _currentUser = user;
-      if (persist) {
-        await _persistCurrentUser();
-      }
+      await _persistCurrentUser();
       _emitCurrentUser();
       return Result.success(_toEntity());
     } catch (error) {
@@ -184,84 +76,14 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   @override
-  Future<Result<SessionEntity>> patchCurrentUser({
-    String? id,
-    String? email,
-    String? username,
-    String? name,
-    String? bio,
-    String? profilePhoto,
-    String? coverPhoto,
-    bool? loggedIn,
-    bool? premium,
-    String? subscriptionTier,
-    int? coins,
-    Map<String, String>? links,
-    List<String>? followers,
-    List<String>? following,
-    List<BadgeEntity>? badges,
-    List<String>? subPrisms,
-    List<TransactionEntity>? transactions,
-    String? uploadsWeekStart,
-    int? uploadsThisWeek,
-    bool persist = true,
-  }) async {
+  Future<Result<SessionEntity>> updateFollowing(List<String> following) async {
     try {
-      if (id != null) _currentUser.id = id;
-      if (email != null) _currentUser.email = email;
-      if (username != null) _currentUser.username = username;
-      if (name != null) _currentUser.name = name;
-      if (bio != null) _currentUser.bio = bio;
-      if (profilePhoto != null) _currentUser.profilePhoto = profilePhoto;
-      if (coverPhoto != null) _currentUser.coverPhoto = coverPhoto;
-      if (loggedIn != null) _currentUser.loggedIn = loggedIn;
-      if (premium != null) _currentUser.premium = premium;
-      if (subscriptionTier != null) _currentUser.subscriptionTier = subscriptionTier;
-      if (coins != null) _currentUser.coins = coins;
-      if (links != null) _currentUser.links = links;
-      if (followers != null) _currentUser.followers = followers;
-      if (following != null) _currentUser.following = following;
-      if (badges != null) {
-        _currentUser.badges = badges
-            .map(
-              (b) => Badge(
-                id: b.id,
-                name: b.name,
-                description: b.description,
-                imageUrl: b.imageUrl,
-                color: b.color,
-                url: b.url,
-                awardedAt: b.awardedAt,
-              ),
-            )
-            .toList(growable: false);
-      }
-      if (subPrisms != null) _currentUser.subPrisms = subPrisms;
-      if (transactions != null) {
-        _currentUser.transactions = transactions
-            .map(
-              (t) => PrismTransaction(
-                id: t.id,
-                name: t.name,
-                description: t.description,
-                amount: t.amount,
-                credit: t.credit,
-                by: t.by,
-                processedAt: t.processedAt,
-              ),
-            )
-            .toList(growable: false);
-      }
-      if (uploadsWeekStart != null) _currentUser.uploadsWeekStart = uploadsWeekStart;
-      if (uploadsThisWeek != null) _currentUser.uploadsThisWeek = uploadsThisWeek;
-
-      if (persist) {
-        await _persistCurrentUser();
-      }
+      _currentUser.following = following;
+      await _persistCurrentUser();
       _emitCurrentUser();
       return Result.success(_toEntity());
     } catch (error) {
-      return Result.error(CacheFailure('Unable to patch session: $error'));
+      return Result.error(CacheFailure('Unable to update following: $error'));
     }
   }
 }
