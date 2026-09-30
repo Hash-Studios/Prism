@@ -103,7 +103,6 @@ export const onFollowCreated = onDocumentUpdated(
         channelId: "followers",
         collapseKey: followCollapseKey(followerEmail),
       };
-      // The inbox entry is kept when the user turned Followers alerts off or signed out.
       if (pushEnabled) {
         await sendToUidAndEmailTopics(payload, userIdToTopic(followedUid), emailToTopic(followedUserEmail));
       } else {

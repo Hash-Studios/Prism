@@ -327,12 +327,16 @@ export const sendStreakReminders = onSchedule(
         }
 
         const nextReminderTs = nextReminderAfterTodayClaim(todayLocalKey, offset);
-        const noReminder = claimedToday || alreadySentToday || userEmail.length === 0 || isLoggedOut(userData);
+        const loggedOut = isLoggedOut(userData);
+        const retryAfterLogin = loggedOut && !claimedToday && !alreadySentToday && userEmail.length > 0;
+        const noReminder = claimedToday || alreadySentToday || userEmail.length === 0 || loggedOut;
         const fcmToken = noReminder ? "" : await fcmTokenFor(userDoc.ref, userData);
 
         if (noReminder || fcmToken.length === 0) {
           await userDoc.ref.update({
-            "coinState.streakReminderNextAtUtc": nextReminderTs,
+            "coinState.streakReminderNextAtUtc": retryAfterLogin ?
+              admin.firestore.Timestamp.fromMillis(nowTs.toMillis() + 15 * 60_000) :
+              nextReminderTs,
           });
           skipped += 1;
           continue;
