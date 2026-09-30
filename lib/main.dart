@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/analytics_identity_sync.dart';
@@ -22,7 +21,8 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_config.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
-import 'package:Prism/core/persistence/prefs_compat.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -30,11 +30,11 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart' as launcher_compat;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -68,15 +68,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:http/http.dart' as http;
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:url_launcher/url_launcher.dart' as launcher;
 
-late PrefsCompat localPrefs;
-late bool optimisedWallpapers;
-int? categories;
-int? purity;
 late LocalNotification localNotification;
-const String _shortLinkResolveApiBase = 'https://prismwalls.com/api/links';
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
 
@@ -133,14 +128,6 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
   return fallback;
 }
 
-List<Future<void>> _normalizeThemePrefs() => <Future<void>>[
-  localPrefs.put('lightThemeID', localPrefs.get('lightThemeID', defaultValue: prismDefaultLightThemeId)?.toString()),
-  localPrefs.put('darkThemeID', localPrefs.get('darkThemeID', defaultValue: prismDefaultDarkThemeId)?.toString()),
-  localPrefs.put('themeMode', localPrefs.get('themeMode')?.toString() ?? 'Dark'),
-  localPrefs.put('lightAccent', _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: prismDefaultAccentValue)),
-  localPrefs.put('darkAccent', _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: prismDefaultAccentValue)),
-];
-
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
@@ -160,9 +147,7 @@ Future<void> main() async {
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
         logger.e('Uncaught platform error', tag: 'PlatformError', error: error, stackTrace: stackTrace);
-        try {
-          unawaited(analytics.track(const AppCrashFatalEvent()));
-        } catch (_) {}
+        unawaited(analytics.track(const AppCrashFatalEvent()));
         return true;
       };
       installFlutterFrameworkErrorHandler();
@@ -174,7 +159,10 @@ Future<void> main() async {
       // StartupRepositoryImpl.bootstrap() also awaits this future before accessing Remote Config.
       if (!skipFirebaseInit) {
         FirebaseInit.setFuture(
-          _initFirebase().then((_) => true).catchError((Object e, StackTrace s) {
+          Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).then((_) => true).catchError((
+            Object e,
+            StackTrace s,
+          ) {
             logger.w(
               'Firebase initialization failed; continuing without Firebase-backed startup features.',
               error: e,
@@ -222,25 +210,30 @@ Future<void> main() async {
         data: <String, Object?>{'stage': 'persistence_initialized'},
       );
       DebugFlags.instance.loadFromStore();
-      localPrefs = PrefsCompat.fromRuntime();
       logger.d("Persistence initialized");
 
-      // Read all prefs first, then batch writes in parallel.
-      final systemOverlayColorValue = _colorValueFromPrefs(localPrefs.get("systemOverlayColor"), fallback: 0xFFE57697);
-      optimisedWallpapers = localPrefs.get('optimisedWallpapers') == true;
-      categories = localPrefs.get('WHcategories') as int? ?? 100;
-      purity = localPrefs.get('WHpurity') as int? ?? 100;
+      // DI is not configured yet, so read the settings store directly.
+      final settings = SettingsLocalDataSource(PersistenceRuntime.store);
+      final themeMode = settings.get<String>('themeMode', defaultValue: 'Dark');
+      final categories = settings.get<int>('WHcategories', defaultValue: 100);
       // App Store review: no sketchy content on iOS, regardless of the stored pref.
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        purity = 100;
-      }
+      final purity = defaultTargetPlatform == TargetPlatform.iOS
+          ? 100
+          : settings.get<int>('WHpurity', defaultValue: 100);
 
+      // Accents saved by old builds are strings; rewrite them as ints so the theme repository can read them.
       await Future.wait(<Future<void>>[
-        localPrefs.put("systemOverlayColor", systemOverlayColorValue),
-        ..._normalizeThemePrefs(),
-        localPrefs.put('optimisedWallpapers', optimisedWallpapers),
-        localPrefs.put('WHcategories', categories == 100 ? 100 : 111),
-        localPrefs.put('WHpurity', purity == 100 ? 100 : 110),
+        settings.set(
+          'lightAccent',
+          _colorValueFromPrefs(settings.get<Object?>('lightAccent'), fallback: prismDefaultAccentValue),
+        ),
+        settings.set(
+          'darkAccent',
+          _colorValueFromPrefs(settings.get<Object?>('darkAccent'), fallback: prismDefaultAccentValue),
+        ),
+        settings.set('optimisedWallpapers', settings.get<bool>('optimisedWallpapers', defaultValue: false)),
+        settings.set('WHcategories', categories == 100 ? 100 : 111),
+        settings.set('WHpurity', purity == 100 ? 100 : 110),
       ]);
 
       configureDependencies();
@@ -248,9 +241,7 @@ Future<void> main() async {
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
       ]);
-      applyEdgeToEdgeOverlayStyle(
-        statusBarIconBrightness: localPrefs.get('themeMode') == 'Light' ? Brightness.dark : Brightness.light,
-      );
+      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: themeMode == 'Light' ? Brightness.dark : Brightness.light);
 
       await FirebaseInit.readyFuture;
 
@@ -291,15 +282,9 @@ Future<void> main() async {
     },
     (obj, stacktrace) {
       logger.e('Uncaught zone error', tag: 'ZoneError', error: obj, stackTrace: stacktrace);
-      try {
-        unawaited(analytics.track(const AppCrashFatalEvent()));
-      } catch (_) {}
+      unawaited(analytics.track(const AppCrashFatalEvent()));
     },
   );
-}
-
-Future<void> _initFirebase() async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 Future<void> _deferredStartup({required bool firebaseInitialized}) async {
@@ -377,7 +362,7 @@ Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) asy
       'sentry_replay_session_sample_rate': _sentryReplaySessionSampleRate,
       'sentry_replay_on_error_sample_rate': _sentryReplayOnErrorSampleRate,
       'mixpanel_enabled': mixpanelEnabled,
-      'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+      'mixpanel_token_present': Env.normalize(Env.mixpanelToken).isNotEmpty,
     },
   );
 
@@ -405,14 +390,14 @@ Future<AnalyticsProvider?> _buildMixpanelProvider({required bool enabled}) async
       'Mixpanel analytics disabled by configuration.',
       tag: 'Analytics',
       fields: <String, Object?>{
-        'mixpanel_enabled': _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase(),
-        'mixpanel_token_present': _normalizeDefineValue(Env.mixpanelToken).isNotEmpty,
+        'mixpanel_enabled': Env.normalize(Env.mixpanelEnabled).toLowerCase(),
+        'mixpanel_token_present': Env.normalize(Env.mixpanelToken).isNotEmpty,
       },
     );
     return null;
   }
 
-  final String token = _normalizeDefineValue(Env.mixpanelToken);
+  final String token = Env.normalize(Env.mixpanelToken);
   if (token.isEmpty) {
     logger.w('MIXPANEL_ENABLED is on but MIXPANEL_TOKEN is empty. Skipping Mixpanel provider.', tag: 'Analytics');
     return null;
@@ -432,23 +417,13 @@ Future<AnalyticsProvider?> _buildMixpanelProvider({required bool enabled}) async
 }
 
 bool _isMixpanelEnabled() {
-  final String rawValue = _normalizeDefineValue(Env.mixpanelEnabled).toLowerCase();
+  final String rawValue = Env.normalize(Env.mixpanelEnabled).toLowerCase();
   if (rawValue.isEmpty || rawValue == 'auto') {
-    return _normalizeDefineValue(Env.mixpanelToken).isNotEmpty;
+    return Env.normalize(Env.mixpanelToken).isNotEmpty;
   }
 
-  if (rawValue == '1' || rawValue == 'true' || rawValue == 'yes' || rawValue == 'on') {
-    return true;
-  }
-
-  if (rawValue == '0' || rawValue == 'false' || rawValue == 'no' || rawValue == 'off') {
-    return false;
-  }
-
-  return false;
+  return const <String>{'1', 'true', 'yes', 'on'}.contains(rawValue);
 }
-
-String _normalizeDefineValue(String rawValue) => Env.normalize(rawValue);
 
 class _MyApp extends StatefulWidget {
   @override
@@ -459,6 +434,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
   late final AnalyticsIdentitySync _analyticsIdentitySync;
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
+  final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
   final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
   final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
@@ -469,26 +445,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
 
-  Future<bool> getLoginStatus() async {
-    bool value = await app_state.gAuth.isSignedIn();
-    if (value) {
-      if (localPrefs.get("logouteveryoneaugust2021", defaultValue: false) == false) {
-        try {
-          await app_state.gAuth.signOutGoogle();
-        } catch (e, st) {
-          logger.w(
-            'Forced sign-out migration failed; continuing with signed-out state.',
-            tag: 'Auth',
-            error: e,
-            stackTrace: st,
-          );
-        }
-        await localPrefs.put("logouteveryoneaugust2021", true);
-        toasts.codeSend("Please login again, to enjoy the app!");
-        value = false;
-      }
-    } else if (!value) {
-      await localPrefs.put("logouteveryoneaugust2021", true);
+  Future<bool> _restoreLoginStatus() async {
+    final bool value = await app_state.gAuth.isSignedIn();
+    if (!value) {
       // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
       app_state.prismUser
         ..loggedIn = false
@@ -669,10 +628,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     };
   }
 
-  void _queueDeepLinkIntent(DeepLinkActionEntity action) {
-    _pendingDeepLinks.add(action);
-  }
-
   Future<void> _processPendingDeepLinks() async {
     if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
       return;
@@ -766,10 +721,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
   }
 
-  Future<Uri> _routerDeepLinkTransformer(Uri uri) async {
-    return _deepLinkParser.transform(uri);
-  }
-
   Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
     // RestartWidget rebuilds the router after logout and account deletion, and the platform still reports the link
     // the process was launched with. Replaying it would reopen that screen (or not-found) in the new session.
@@ -797,7 +748,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     );
 
     if (isKnown) {
-      _queueDeepLinkIntent(action);
+      _pendingDeepLinks.add(action);
       if (_bootstrapCompleted) {
         unawaited(_processPendingDeepLinks());
       }
@@ -809,7 +760,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
 
     if (platformDeepLink.uri.path.isNotEmpty && platformDeepLink.uri.path != '/') {
-      _queueDeepLinkIntent(action);
+      _pendingDeepLinks.add(action);
       if (_bootstrapCompleted) {
         unawaited(_processPendingDeepLinks());
       }
@@ -819,71 +770,38 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   Future<void> _resolveAndNavigateShortCode(String code) async {
     if (code.trim().isEmpty) {
-      analytics.track(
-        const DeepLinkResolvedEvent(
-          targetType: TargetTypeValue.shortCode,
-          result: EventResultValue.failure,
-          reason: AnalyticsReasonValue.emptyInput,
+      unawaited(
+        analytics.track(
+          const DeepLinkResolvedEvent(
+            targetType: TargetTypeValue.shortCode,
+            result: EventResultValue.failure,
+            reason: AnalyticsReasonValue.emptyInput,
+          ),
         ),
       );
       return;
     }
 
-    AnalyticsReasonValue failureReason = AnalyticsReasonValue.unknown;
-    final endpoint = Uri.parse('$_shortLinkResolveApiBase/$code');
-    try {
-      final response = await http
-          .get(endpoint, headers: const <String, String>{'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 6));
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(response.body);
-        if (decoded is Map<String, dynamic>) {
-          final canonicalRaw = decoded['canonical_url'];
-          if (canonicalRaw is String && canonicalRaw.isNotEmpty) {
-            final canonicalUri = Uri.tryParse(canonicalRaw);
-            if (canonicalUri != null) {
-              final DeepLinkActionEntity resolvedIntent = _deepLinkParser.parse(canonicalUri);
-              if (resolvedIntent is! UnknownIntent) {
-                analytics.track(
-                  const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
-                );
-                await _handleDeepLinkIntent(resolvedIntent);
-                return;
-              }
-              failureReason = AnalyticsReasonValue.missingData;
-            } else {
-              failureReason = AnalyticsReasonValue.missingData;
-            }
-          } else {
-            failureReason = AnalyticsReasonValue.missingData;
-          }
-        }
-      } else {
-        failureReason = AnalyticsReasonValue.error;
-        logger.w(
-          'Short-link resolve returned non-success status.',
-          fields: <String, Object?>{'status': response.statusCode, 'code': code, 'body': response.body},
+    switch (await _shortLinkResolver.resolve(code)) {
+      case ShortLinkResolved(:final action):
+        unawaited(
+          analytics.track(
+            const DeepLinkResolvedEvent(targetType: TargetTypeValue.shortCode, result: EventResultValue.success),
+          ),
         );
-      }
-    } catch (error, stackTrace) {
-      failureReason = AnalyticsReasonValue.error;
-      logger.w(
-        'Failed to resolve short code.',
-        error: error,
-        stackTrace: stackTrace,
-        fields: <String, Object?>{'code': code},
-      );
+        await _handleDeepLinkIntent(action);
+      case ShortLinkFailed(:final reason):
+        unawaited(
+          analytics.track(
+            DeepLinkResolvedEvent(
+              targetType: TargetTypeValue.shortCode,
+              result: EventResultValue.failure,
+              reason: reason,
+            ),
+          ),
+        );
+        await launcher.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
     }
-
-    analytics.track(
-      DeepLinkResolvedEvent(
-        targetType: TargetTypeValue.shortCode,
-        result: EventResultValue.failure,
-        reason: failureReason,
-      ),
-    );
-    await launcher_compat.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
   }
 
   /// Routes a tapped push notification to the correct screen based on
@@ -951,7 +869,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
-    unawaited(getLoginStatus());
+    unawaited(_restoreLoginStatus());
     unawaited(localNotification.fetchNotificationData(context));
     unawaited(_listenForPushMessages());
   }
@@ -1011,9 +929,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             if (state.status != LoadStatus.success || state.isObsoleteVersion) {
               return;
             }
-            if (!_bootstrapCompleted) {
-              _bootstrapCompleted = true;
-            }
+            _bootstrapCompleted = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               unawaited(_processPendingDeepLinks());
             });
@@ -1043,13 +959,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         builder: (context, _) => MaterialApp.router(
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
-            final double topInset = MediaQuery.paddingOf(context).top;
-            app_state.notchSize = topInset;
-            app_state.hasNotch = topInset > 24;
+            app_state.notchSize = MediaQuery.paddingOf(context).top;
             return child ?? const SizedBox.shrink();
           },
           routerConfig: _appRouter.config(
-            deepLinkTransformer: _routerDeepLinkTransformer,
+            deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
             deepLinkBuilder: _routerDeepLinkBuilder,
             navigatorObservers: () => [
               ...analytics.buildNavigatorObservers(),
@@ -1087,7 +1001,6 @@ class _RestartWidgetState extends State<RestartWidget> {
     setState(() {
       key = UniqueKey();
     });
-    unawaited(Future.wait(_normalizeThemePrefs()));
   }
 
   @override
