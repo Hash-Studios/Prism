@@ -1,8 +1,9 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
+import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class StorageViewerPage extends StatefulWidget {
   const StorageViewerPage({super.key});
@@ -54,7 +55,8 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
         _allKeys = keys;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      logger.w('Failed to load storage keys', tag: 'DebugPanel', error: e, stackTrace: st);
       setState(() => _loading = false);
     }
   }
@@ -74,9 +76,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
     await _store?.clearAll();
     await _loadKeys();
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('All storage cleared'), duration: Duration(seconds: 2)));
+      showDebugSnackBar(context, 'All storage cleared');
     }
   }
 
@@ -85,7 +85,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
     final valueStr = raw?.toString() ?? '';
     final ctrl = TextEditingController(text: valueStr);
 
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(key, style: const TextStyle(fontSize: 14, fontFamily: 'monospace')),
@@ -104,15 +104,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: '$key\n$valueStr'));
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)));
-            },
-            child: const Text('Copy'),
-          ),
+          TextButton(onPressed: () => copyToClipboard(context, '$key\n$valueStr'), child: const Text('Copy')),
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
@@ -124,7 +116,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
           ),
         ],
       ),
-    );
+    ).whenComplete(ctrl.dispose);
   }
 
   @override
@@ -140,19 +132,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _searchCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Filter keys...',
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => _searchCtrl.clear())
-                        : null,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                ),
+                child: DebugSearchField(controller: _searchCtrl, hintText: 'Filter keys...'),
               ),
               const SizedBox(width: 8),
               IconButton(tooltip: 'Refresh', icon: const Icon(Icons.refresh, size: 18), onPressed: _loadKeys),
@@ -192,7 +172,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
               Text('${filtered.length} keys', style: Theme.of(context).textTheme.bodySmall),
               const SizedBox(width: 8),
               Text(
-                'Backend: ${PersistenceRuntime.isInitialized ? PersistenceRuntime.backend.name : "unknown"}',
+                'Backend: ${PersistenceRuntime.isInitialized ? PersistenceRuntime.store.runtimeType : "unknown"}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade500),
               ),
             ],
@@ -238,12 +218,7 @@ class _StorageViewerPageState extends State<StorageViewerPage> with AutomaticKee
                       IconButton(
                         icon: const Icon(Icons.copy, size: 16),
                         tooltip: 'Copy value',
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: raw?.toString() ?? ''));
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)));
-                        },
+                        onPressed: () => copyToClipboard(context, raw?.toString() ?? ''),
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
