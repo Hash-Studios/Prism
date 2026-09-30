@@ -14,7 +14,16 @@ class AdminModerationRepository {
   static FirestoreDocument _toDocument(Map<String, dynamic> data, String id) => FirestoreDocument(id, data);
 
   Stream<List<FirestoreDocument>> watchPendingWalls() {
-    return _watchPending(FirebaseCollections.walls, 'admin_review.pending_walls', 'createdAt');
+    return _client.watchQuery<FirestoreDocument>(
+      const FirestoreQuerySpec(
+        collection: FirebaseCollections.walls,
+        sourceTag: 'admin_review.pending_walls',
+        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
+        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+        isStream: true,
+      ),
+      _toDocument,
+    );
   }
 
   Stream<List<FirestoreDocument>> watchOpenContentReports() {
@@ -24,21 +33,6 @@ class AdminModerationRepository {
         sourceTag: 'admin_review.content_reports_open',
         filters: <FirestoreFilter>[FirestoreFilter(field: 'status', op: FirestoreFilterOp.isEqualTo, value: 'open')],
         orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-        isStream: true,
-      ),
-      _toDocument,
-    );
-  }
-
-  Stream<List<FirestoreDocument>> _watchPending(String collection, String sourceTag, String orderField) {
-    return _client.watchQuery<FirestoreDocument>(
-      FirestoreQuerySpec(
-        collection: collection,
-        sourceTag: sourceTag,
-        filters: const <FirestoreFilter>[
-          FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false),
-        ],
-        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: orderField, descending: true)],
         isStream: true,
       ),
       _toDocument,
@@ -89,16 +83,40 @@ class AdminModerationRepository {
     }, sourceTag: 'admin_review.approve_wall');
   }
 
-  Future<void> rejectWall(FirestoreDocument wall, {required String reason}) {
-    return _reject(
-      wall,
-      reason: reason,
-      liveCollection: FirebaseCollections.walls,
-      rejectedCollection: FirebaseCollections.rejectedWalls,
-      title: 'Wallpaper Rejected',
-      imageUrl: wall.wallpaperThumb,
+  Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {
+    final Map<String, dynamic> payload = <String, dynamic>{
+      ...wall.data(),
+      'rejectionReason': reason,
+      'rejectedAt': DateTime.now().toUtc(),
+    };
+    await _client.runTransaction<void>(
+      (FirestoreTransaction transaction) async {
+        transaction.setDoc(FirebaseCollections.rejectedWalls, wall.id, payload);
+        transaction.deleteDoc(FirebaseCollections.walls, wall.id);
+      },
       sourceTag: 'admin_review.reject_wall',
+      collection: FirebaseCollections.walls,
+      docId: wall.id,
     );
+
+    final Map<String, dynamic>? notification = _notification(
+      email: wall.email,
+      title: 'Wallpaper Rejected',
+      body: reason,
+      imageUrl: wall.wallpaperThumb,
+    );
+    if (notification == null) {
+      return;
+    }
+    try {
+      await _client.addDoc(
+        FirebaseCollections.notifications,
+        notification,
+        sourceTag: 'admin_review.reject_wall.notify',
+      );
+    } catch (error, stackTrace) {
+      logger.w('Rejection notification failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
+    }
   }
 
   /// Puts a rejected wall back in review exactly as it was loaded and drops its rejection record.
@@ -121,46 +139,6 @@ class AdminModerationRepository {
       'collections': wall.collections,
       if (wall.payload['createdAt'] != null) 'createdAt': wall.payload['createdAt'],
     }, sourceTag: 'admin_review.undo_approve_wall');
-  }
-
-  Future<void> _reject(
-    FirestoreDocument doc, {
-    required String reason,
-    required String liveCollection,
-    required String rejectedCollection,
-    required String title,
-    required String imageUrl,
-    required String sourceTag,
-  }) async {
-    final Map<String, dynamic> payload = <String, dynamic>{
-      ...doc.data(),
-      'rejectionReason': reason,
-      'rejectedAt': DateTime.now().toUtc(),
-    };
-    await _client.runTransaction<void>(
-      (FirestoreTransaction transaction) async {
-        transaction.setDoc(rejectedCollection, doc.id, payload);
-        transaction.deleteDoc(liveCollection, doc.id);
-      },
-      sourceTag: sourceTag,
-      collection: liveCollection,
-      docId: doc.id,
-    );
-
-    final Map<String, dynamic>? notification = _notification(
-      email: doc.email,
-      title: title,
-      body: reason,
-      imageUrl: imageUrl,
-    );
-    if (notification == null) {
-      return;
-    }
-    try {
-      await _client.addDoc(FirebaseCollections.notifications, notification, sourceTag: '$sourceTag.notify');
-    } catch (error, stackTrace) {
-      logger.w('Rejection notification failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
-    }
   }
 
   static Map<String, dynamic>? _notification({

@@ -535,7 +535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: const SizedBox(
           width: 250,
           child: Text(
-            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers and setups will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
+            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
           ),
         ),
         actions: [
