@@ -110,6 +110,10 @@ test("processReferral: an old caller gets nothing and nobody is paid", async (t)
   assert.equal(store.get("usersv2/caller")?.coins, 0);
   assert.equal(store.get("usersv2/inviter")?.coins, 5);
   assert.equal(store.has("referralStats/inviter"), false);
+  // A permanent skip is marked processed, so a retry reports already processed.
+  const retry = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(retry.reason, "referral_already_processed");
+  assert.equal(store.get("usersv2/inviter")?.coins, 5);
 });
 
 test("processReferral: a self referral is still rejected", async (t) => {
@@ -127,6 +131,8 @@ test("processReferral: the inviter's 11th reward of the day is skipped", async (
   const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(result.reason, "referral_inviter_daily_limit");
   assert.equal(store.get("usersv2/inviter")?.coins, 5);
+  // A daily limit is temporary, so the caller can retry tomorrow.
+  assert.notEqual((store.get("usersv2/caller")?.coinState as {referralRewarded?: boolean} | undefined)?.referralRewarded, true);
 });
 
 // Refund
