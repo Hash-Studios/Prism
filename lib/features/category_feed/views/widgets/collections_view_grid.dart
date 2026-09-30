@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
@@ -45,13 +46,6 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
   String _wallString(Map<String, dynamic> wall, String key) => _wallValue(wall, key)?.toString() ?? '';
   WallpaperSource _wallSource(Map<String, dynamic> wall) =>
       WallpaperSourceX.fromWire(_wallString(wall, 'wallpaper_provider'));
-  bool _isValidRemoteUrl(String value) {
-    final Uri? uri = Uri.tryParse(value.trim());
-    if (uri == null) {
-      return false;
-    }
-    return (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
-  }
 
   Future<void> _loadMore() async {
     if (seeMoreLoader || !collectionHasMore) {
@@ -139,7 +133,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
             final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
             final WallpaperSource wallSource = _wallSource(wall);
             final bool validPayload =
-                wallId.trim().isNotEmpty && _isValidRemoteUrl(wallpaperThumb) && _isValidRemoteUrl(wallpaperUrl);
+                wallId.trim().isNotEmpty && isValidNetworkUrl(wallpaperThumb) && isValidNetworkUrl(wallpaperUrl);
             if (index == walls.length - 1 && collectionHasMore && walls.length >= 24) {
               return SeeMoreButton(
                 seeMoreLoader: seeMoreLoader,
