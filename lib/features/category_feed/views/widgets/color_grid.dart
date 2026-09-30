@@ -9,8 +9,10 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -18,7 +20,6 @@ import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -32,20 +33,9 @@ class ColorGrid extends StatefulWidget {
   State<ColorGrid> createState() => _ColorGridState();
 }
 
-class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMixin {
+class _ColorGridState extends State<ColorGrid> {
   final PexelsWallpaperRepository _repository = getIt<PexelsWallpaperRepository>();
-  late final AnimationController shakeController = AnimationController(
-    duration: const Duration(milliseconds: 300),
-    vsync: this,
-  );
-  late final Animation<double> offsetAnimation =
-      Tween(begin: 0.0, end: 8.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            shakeController.reverse();
-          }
-        });
-  int? longTapIndex;
+  final ShakeController _shake = ShakeController();
   final GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
@@ -64,7 +54,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
 
   @override
   void dispose() {
-    shakeController.dispose();
+    _shake.dispose();
     super.dispose();
   }
 
@@ -170,7 +160,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
           return false;
         },
         child: PulsePlaceholder(
-          builder: (context, placeholderColor) => GridView.builder(
+          builder: (context, _) => GridView.builder(
             padding: EdgeInsets.zero,
             itemCount: walls.isEmpty ? 24 : walls.length + (_hasMore ? 1 : 0),
             shrinkWrap: true,
@@ -180,7 +170,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
             ),
             itemBuilder: (context, index) {
               if (walls.isEmpty) {
-                return DecoratedBox(decoration: BoxDecoration(color: placeholderColor));
+                return const PulseFill();
               }
               if (_hasMore && index == walls.length) {
                 return SeeMoreButton(
@@ -204,65 +194,51 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
               return Semantics(
                 button: true,
                 label: wallpaperSemanticLabel(wall.core.authorName),
-                child: AnimatedBuilder(
-                  animation: offsetAnimation,
-                  builder: (buildContext, child) => Padding(
-                    padding: index == longTapIndex
-                        ? EdgeInsets.symmetric(vertical: offsetAnimation.value / 2, horizontal: offsetAnimation.value)
-                        : EdgeInsets.zero,
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: placeholderColor,
-                            image: DecorationImage(
-                              image: CachedNetworkImageProvider(wall.core.thumbnailUrl),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                            highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                            onTap: () {
-                              unawaited(
-                                analytics.track(
-                                  SurfaceActionTappedEvent(
-                                    surface: AnalyticsSurfaceValue.homeColorGrid,
-                                    action: AnalyticsActionValue.tileOpened,
-                                    sourceContext: 'home_color_grid_tile',
-                                    itemType: ItemTypeValue.wallpaper,
-                                    itemId: wall.id,
-                                    index: index,
-                                  ),
+                child: ShakeOnce(
+                  controller: _shake,
+                  target: index,
+                  child: Stack(
+                    children: [
+                      PrismImageTile(url: wall.core.thumbnailUrl, heroTag: prismHeroTag(this, index, wall.id)),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                          onTap: () {
+                            unawaited(
+                              analytics.track(
+                                SurfaceActionTappedEvent(
+                                  surface: AnalyticsSurfaceValue.homeColorGrid,
+                                  action: AnalyticsActionValue.tileOpened,
+                                  sourceContext: 'home_color_grid_tile',
+                                  itemType: ItemTypeValue.wallpaper,
+                                  itemId: wall.id,
+                                  index: index,
                                 ),
-                              );
-                              context.router.push(
-                                WallpaperDetailRoute(
-                                  entity: PexelsFeedItem(id: wall.id, wallpaper: wall),
-                                  analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
-                                ),
-                              );
-                            },
-                            onLongPress: () {
-                              setState(() {
-                                longTapIndex = index;
-                              });
-                              shakeController.forward(from: 0.0);
-                              HapticFeedback.vibrate();
-                              createDynamicLink(
-                                wall.id,
-                                WallpaperSource.pexels,
-                                wall.core.fullUrl,
-                                wall.core.thumbnailUrl,
-                              );
-                            },
-                          ),
+                              ),
+                            );
+                            context.router.push(
+                              WallpaperDetailRoute(
+                                entity: PexelsFeedItem(id: wall.id, wallpaper: wall),
+                                analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
+                                heroTag: prismHeroTag(this, index, wall.id),
+                              ),
+                            );
+                          },
+                          onLongPress: () {
+                            _shake.shake(index);
+                            HapticFeedback.vibrate();
+                            createDynamicLink(
+                              wall.id,
+                              WallpaperSource.pexels,
+                              wall.core.fullUrl,
+                              wall.core.thumbnailUrl,
+                            );
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );

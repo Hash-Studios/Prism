@@ -136,7 +136,7 @@ UI changes need proof on a real app run: iOS Simulator and Android emulator scre
 
 ### CI gate (`.github/workflows/ci.yml`)
 
-Jobs: `ci` (format, env guard, version guard, analyze, tests; the only required check on `master`), `functions-ci`, `web-ci`, `app_size`. `app_size` compares against a base build and has reported the same +16.8 MiB on unrelated PRs, so read its bucket deltas before trusting it. Codacy "action required" is not a gate.
+Jobs: `ci` (format, env guard, version guard, analyze, tests; the only required check on `master`), `functions-ci`, `rules-ci` (Firestore rules smoke test on the emulator), `web-ci`, `app_size`. `app_size` compares against a base build and has reported the same +16.8 MiB on unrelated PRs, so read its bucket deltas before trusting it. Codacy "action required" is not a gate.
 
 ---
 

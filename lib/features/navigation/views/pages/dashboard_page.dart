@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
+import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -66,7 +68,20 @@ class _DashboardPageState extends State<DashboardPage> {
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: overlayStyle,
         child: AutoTabsRouter(
-          routes: const [HomeTabRoute(), SearchTabRoute(), StreakTabRoute(), CollectionTabRoute()],
+          routes: const [HomeTabRoute(), SearchTabRoute(), RewardsTabRoute(), CollectionTabRoute()],
+          duration: PrismDurations.fast,
+          transitionBuilder: (context, child, animation) {
+            if (context.reduceMotion) return child;
+            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
+            return FadeTransition(
+              opacity: t,
+              child: AnimatedBuilder(
+                animation: t,
+                builder: (context, child) => Transform.translate(offset: Offset(0, 6 * (1 - t.value)), child: child),
+                child: child,
+              ),
+            );
+          },
           builder: (context, child) {
             final tabsRouter = AutoTabsRouter.of(context);
             return PopScope(
@@ -76,7 +91,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   tabsRouter.setActiveIndex(0);
                 }
               },
-              child: BottomBar(child: child),
+              child: DailyClaimSheetHost(
+                onSeeRewards: () => tabsRouter.setActiveIndex(2),
+                child: BottomBar(child: child),
+              ),
             );
           },
         ),

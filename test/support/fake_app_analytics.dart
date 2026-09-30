@@ -1,14 +1,10 @@
 import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/analytics_event.dart';
-import 'package:flutter/widgets.dart';
 
 class FakeAppAnalytics implements AppAnalytics {
   final List<AnalyticsEvent> events = <AnalyticsEvent>[];
   final List<String?> userIds = <String?>[];
   final List<MapEntry<String, String?>> userProperties = <MapEntry<String, String?>>[];
-
-  @override
-  List<NavigatorObserver> buildNavigatorObservers() => const <NavigatorObserver>[];
 
   @override
   Future<void> flush() async {}

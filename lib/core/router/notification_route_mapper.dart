@@ -63,7 +63,7 @@ class NotificationRouteMapper {
         }
         return const HomeTabRoute();
       case 'streak_reminder':
-        return const StreakTabRoute();
+        return const RewardsTabRoute();
       case 'follower':
         if (profileIdentifier.isNotEmpty) {
           return ProfileRoute(profileIdentifier: profileIdentifier);

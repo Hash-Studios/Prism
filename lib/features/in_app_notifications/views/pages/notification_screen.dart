@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
@@ -85,44 +87,16 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
 
         Widget body;
         if (initialLoading) {
-          body = Center(
-            child: Semantics(
-              label: 'Loading notifications',
-              child: CircularProgressIndicator(color: colorScheme.error),
-            ),
-          );
+          body = const GlintState(kind: GlintStateKind.loading, title: 'Loading notifications');
         } else if (state.status == LoadStatus.failure && notifications.isEmpty) {
-          body = Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "We couldn't load your notifications.",
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: colorScheme.secondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Check your connection and try again.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.secondary.withValues(alpha: 0.85)),
-                  ),
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () {
-                      context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.refreshRequested());
-                    },
-                    style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-                    child: const Text('Try again'),
-                  ),
-                ],
-              ),
-            ),
+          body = GlintState(
+            kind: GlintStateKind.error,
+            title: "We couldn't load your notifications.",
+            body: 'Check your connection and try again.',
+            actionLabel: 'Try again',
+            onAction: () {
+              context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.refreshRequested());
+            },
           );
         } else {
           body = Column(
@@ -159,31 +133,10 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                 ),
               Expanded(
                 child: notifications.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "You're all caught up",
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: colorScheme.secondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Giveaways, updates, and alerts from Prism will show up here.',
-                                textAlign: TextAlign.center,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.secondary.withValues(alpha: 0.85),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    ? const GlintState(
+                        kind: GlintStateKind.nothingNew,
+                        title: "You're all caught up",
+                        body: 'Giveaways, updates, and alerts from Prism will show up here.',
                       )
                     : ListView.builder(
                         itemCount: groups.length,
@@ -240,6 +193,12 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                     isScrollControlled: true,
                     backgroundColor: Theme.of(context).primaryColor,
                     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                    sheetAnimationStyle: AnimationStyle(
+                      duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+                      reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
+                      curve: PrismCurves.enter,
+                      reverseCurve: PrismCurves.exit,
+                    ),
                     builder: (_) => const NotificationSettingsSheet(),
                   );
                 },

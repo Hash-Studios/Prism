@@ -6,7 +6,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/review_tile_parts.dart';
 import 'package:Prism/logger/logger.dart';
@@ -113,7 +113,7 @@ class _WallReview extends StatelessWidget {
             builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
               if (snapshot.hasError) return const _ReviewMessage("Couldn't load your submissions.");
               if (!snapshot.hasData) {
-                return Center(child: Loader());
+                return const GlintState(kind: GlintStateKind.loading, title: 'Loading submissions');
               } else if (snapshot.data!.isEmpty) {
                 return const _ReviewMessage('No wallpapers waiting for review.');
               } else {

@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
@@ -49,18 +50,25 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
         builder: (BuildContext context, AsyncSnapshot<Result<List<BlockedUserListRow>>> snapshot) {
           final Result<List<BlockedUserListRow>>? result = snapshot.data;
           if (result == null) {
-            return const Center(child: CircularProgressIndicator());
+            return const GlintState(kind: GlintStateKind.loading, title: 'Loading blocked accounts');
           }
           if (result.isFailure) {
             return _Message(
-              text: 'Could not load blocked accounts.',
               onRefresh: _refresh,
-              action: TextButton(onPressed: _refresh, child: const Text('Retry')),
+              child: GlintState(
+                kind: GlintStateKind.error,
+                title: 'Could not load blocked accounts.',
+                actionLabel: 'Retry',
+                onAction: _refresh,
+              ),
             );
           }
           final List<BlockedUserListRow> rows = result.data ?? <BlockedUserListRow>[];
           if (rows.isEmpty) {
-            return _Message(text: 'No blocked accounts.', onRefresh: _refresh);
+            return _Message(
+              onRefresh: _refresh,
+              child: const GlintState(kind: GlintStateKind.empty, title: 'No blocked accounts.'),
+            );
           }
           return RefreshIndicator(
             onRefresh: _refresh,
@@ -102,11 +110,10 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
 }
 
 class _Message extends StatelessWidget {
-  const _Message({required this.text, required this.onRefresh, this.action});
+  const _Message({required this.onRefresh, required this.child});
 
-  final String text;
   final Future<void> Function() onRefresh;
-  final Widget? action;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -115,16 +122,8 @@ class _Message extends StatelessWidget {
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: <Widget>[
-          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8), fontSize: 15),
-            ),
-          ),
-          ?action,
+          SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+          child,
         ],
       ),
     );

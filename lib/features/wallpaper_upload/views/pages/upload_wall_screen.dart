@@ -5,7 +5,9 @@ import 'dart:typed_data';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/upload_id.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
@@ -323,6 +325,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
     if (!mounted || _leaving) return;
     final router = context.router;
+    showGlintToast(context);
     Navigator.pop(context);
     unawaited(router.push(const ReviewRoute()));
   }
@@ -440,18 +443,22 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (_isBusy)
-                                SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: colors.primary),
-                                )
-                              else
-                                Icon(
-                                  failure ? Icons.error_outline : Icons.check_circle_outline,
-                                  color: failure ? colors.error : colors.primary,
-                                  size: 24,
-                                ),
+                              AnimatedSwitcher(
+                                duration: context.motion(PrismDurations.fast),
+                                child: _isBusy
+                                    ? SizedBox(
+                                        key: const ValueKey<String>('busy'),
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.primary),
+                                      )
+                                    : Icon(
+                                        failure ? Icons.error_outline : Icons.check_circle_outline,
+                                        key: ValueKey<bool>(failure),
+                                        color: failure ? colors.error : colors.primary,
+                                        size: 24,
+                                      ),
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -507,12 +514,16 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                                   !_discarding && (_stage == _UploadStage.ready || _stage == _UploadStage.failedUpload)
                                   ? _submit
                                   : null,
-                              icon: _stage == _UploadStage.saving
-                                  ? const SizedBox.square(
-                                      dimension: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(JamIcons.check),
+                              icon: AnimatedSwitcher(
+                                duration: context.motion(PrismDurations.fast),
+                                child: _stage == _UploadStage.saving
+                                    ? const SizedBox.square(
+                                        key: ValueKey<bool>(true),
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(JamIcons.check, key: ValueKey<bool>(false)),
+                              ),
                               label: Text(
                                 _stage == _UploadStage.uploading
                                     ? 'Uploading…'

@@ -24,7 +24,8 @@ class FullScreenImageView extends StatelessWidget {
           child: CachedNetworkImage(
             imageUrl: imageUrl,
             fit: BoxFit.contain,
-            placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
+            placeholder: (_, _) =>
+                const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
             errorWidget: (_, _, _) => const Center(child: Icon(Icons.broken_image, color: Colors.white, size: 48)),
           ),
         ),
