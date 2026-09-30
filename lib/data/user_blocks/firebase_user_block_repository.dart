@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -21,7 +22,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
     _session.watchCurrentUser().listen(_handleSessionUser);
   }
 
-  static const String _region = 'asia-south1';
   static const Duration _timeout = Duration(seconds: 25);
   static const String _subcollection = 'blockedUsers';
 
@@ -33,8 +33,6 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
   Completer<Set<String>> _initialLoadCompleter = Completer<Set<String>>();
   bool _hasLoadedBlockedCreatorEmails = false;
   String? _activeUserId;
-
-  cf.FirebaseFunctions get _functions => cf.FirebaseFunctions.instanceFor(region: _region);
 
   @override
   Set<String> get cachedBlockedCreatorEmails => _blockedEmailsSubject.value;
@@ -102,7 +100,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       return Result.error(const ValidationFailure('Invalid user.'));
     }
     try {
-      final cf.HttpsCallable callable = _functions.httpsCallable(
+      final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'blockUser',
         options: cf.HttpsCallableOptions(timeout: _timeout),
       );
@@ -122,7 +120,7 @@ class FirebaseUserBlockRepository implements UserBlockRepository {
       return Result.error(const ValidationFailure('Invalid user.'));
     }
     try {
-      final cf.HttpsCallable callable = _functions.httpsCallable(
+      final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'unblockUser',
         options: cf.HttpsCallableOptions(timeout: _timeout),
       );
