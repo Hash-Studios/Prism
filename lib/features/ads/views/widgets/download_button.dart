@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
@@ -73,41 +74,51 @@ class _DownloadButtonState extends State<DownloadButton> {
       return;
     }
 
-    if (app_state.prismUser.premium) {
-      await _performDownload();
-      return;
+    if (mounted) {
+      setState(() => isLoading = true);
     }
-
-    if (!app_state.prismUser.loggedIn) {
-      await _showGuestAdGatePopup();
-      return;
-    }
-
-    final int balance = CoinsService.instance.balanceNotifier.value;
-    if (balance < CoinPolicy.lowBalanceNudgeThreshold) {
-      final bool handled = await _showLowBalanceNudge(
-        requiredCoins: _downloadCost,
-        allowDownloadNow: balance >= _downloadCost,
-        sourceTag: 'coins.download.low_balance_nudge',
-      );
-      if (handled) {
+    try {
+      if (app_state.prismUser.premium) {
+        await _performDownload();
         return;
       }
-    }
 
-    if (balance < _downloadCost) {
-      await _showLowBalanceNudge(
-        requiredCoins: _downloadCost,
-        allowDownloadNow: false,
-        sourceTag: 'coins.download.insufficient_balance_nudge',
-      );
-      return;
-    }
+      if (!app_state.prismUser.loggedIn) {
+        await _showGuestAdGatePopup();
+        return;
+      }
 
-    await _attemptCoinSpendAndDownload(sourceTag: 'coins.download.spend');
+      final int balance = CoinsService.instance.balanceNotifier.value;
+      if (balance < CoinPolicy.lowBalanceNudgeThreshold) {
+        final bool handled = await _showLowBalanceNudge(
+          requiredCoins: _downloadCost,
+          allowDownloadNow: balance >= _downloadCost,
+          sourceTag: 'coins.download.low_balance_nudge',
+        );
+        if (handled) {
+          return;
+        }
+      }
+
+      if (balance < _downloadCost) {
+        await _showLowBalanceNudge(
+          requiredCoins: _downloadCost,
+          allowDownloadNow: false,
+          sourceTag: 'coins.download.insufficient_balance_nudge',
+        );
+        return;
+      }
+
+      await _attemptCoinSpendAndDownload(sourceTag: 'coins.download.spend');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   Future<void> _showGuestAdGatePopup() async {
+    Future<bool>? pendingDownload;
     await showModal<void>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -176,9 +187,8 @@ class _DownloadButtonState extends State<DownloadButton> {
                               : () async {
                                   setDialogState(() => watchingAd = true);
                                   final bool watched = await watchRewardedAd(context.read<AdsBloc>());
-                                  if (mounted) {
-                                    setDialogState(() => watchingAd = false);
-                                  }
+                                  if (!context.mounted || !mounted) return;
+                                  setDialogState(() => watchingAd = false);
                                   if (!watched) {
                                     toasts.error('Ad was not completed.');
                                     return;
@@ -189,14 +199,24 @@ class _DownloadButtonState extends State<DownloadButton> {
                                   if (Navigator.of(dialogContext).canPop()) {
                                     Navigator.of(dialogContext).pop();
                                   }
-                                  await _performDownload();
+                                  pendingDownload = _performDownload();
+                                  await pendingDownload;
                                 },
-                          child: watchingAd
-                              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text(
-                                  'WATCH AD',
-                                  style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
-                                ),
+                          child: AnimatedSwitcher(
+                            duration: context.motion(PrismDurations.fast),
+                            child: watchingAd
+                                ? const SizedBox(
+                                    key: ValueKey<bool>(true),
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Text(
+                                    'WATCH AD',
+                                    key: const ValueKey<bool>(false),
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
+                                  ),
+                          ),
                         ),
                       ],
                     ),
@@ -209,6 +229,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         );
       },
     );
+    if (pendingDownload != null) await pendingDownload;
   }
 
   Future<bool> _showLowBalanceNudge({
@@ -313,11 +334,13 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _attemptCoinSpendAndDownload({required String sourceTag, bool showNudgeOnInsufficient = true}) async {
+    final CoinSpendAction spendAction = _downloadSpendAction;
+    final int spendCost = spendAction.cost();
     final String contentId = widget.contentId?.trim() ?? '';
     CoinMutationResult spendResult;
     try {
       spendResult = await CoinsService.instance.spend(
-        _downloadSpendAction,
+        spendAction,
         sourceTag: sourceTag,
         reason: contentId.isEmpty ? null : 'content_$contentId',
       );
@@ -329,9 +352,9 @@ class _DownloadButtonState extends State<DownloadButton> {
 
     if (!spendResult.success) {
       if (spendResult.insufficientBalance) {
-        if (showNudgeOnInsufficient) {
+        if (showNudgeOnInsufficient && mounted) {
           await _showLowBalanceNudge(
-            requiredCoins: _downloadCost,
+            requiredCoins: spendCost,
             allowDownloadNow: false,
             sourceTag: 'coins.download.insufficient_balance_nudge',
           );
@@ -345,15 +368,24 @@ class _DownloadButtonState extends State<DownloadButton> {
     final bool downloaded = await _performDownload();
     if (!downloaded && spendResult.changed) {
       try {
-        await CoinsService.instance.refundSpend(
-          _downloadSpendAction,
+        final CoinMutationResult refundResult = await CoinsService.instance.refundSpend(
+          spendAction,
           transactionId: spendResult.transactionId,
           sourceTag: '$sourceTag.refund',
           reason: 'download_failed_refund',
         );
-        toasts.success('Download failed. $_downloadCost coins refunded.');
+        if (refundResult.success && refundResult.changed) {
+          toasts.success('Download failed. ${refundResult.delta} coins refunded.');
+        } else {
+          CoinsService.instance.logCoinError(
+            sourceTag: '$sourceTag.refund',
+            error: StateError('Coin refund was not applied: ${refundResult.reason}'),
+          );
+          toasts.error('Download failed. Your refund could not be confirmed.');
+        }
       } catch (error, stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
+        toasts.error('Download failed. Your refund could not be confirmed.');
       }
     }
     return downloaded;
@@ -361,13 +393,12 @@ class _DownloadButtonState extends State<DownloadButton> {
 
   Future<bool> _performDownload() async {
     final String link = widget.link?.trim() ?? '';
+    final String? sourceContext = widget.sourceContext;
+    final bool premiumContent = widget.isPremiumContent;
+    final VoidCallback? onDownloaded = widget.onDownloaded;
     if (link.isEmpty) {
       toasts.error('No download link available.');
       return false;
-    }
-
-    if (mounted) {
-      setState(() => isLoading = true);
     }
 
     try {
@@ -386,27 +417,6 @@ class _DownloadButtonState extends State<DownloadButton> {
           return false;
         }
       }
-
-      analytics.track(
-        DownloadWallpaperEvent(
-          link: link,
-          sourceContext: (widget.sourceContext ?? '').trim().isEmpty ? null : widget.sourceContext,
-          premiumContent: widget.isPremiumContent,
-        ),
-      );
-      toasts.success(wallpaperSavedMessage);
-      widget.onDownloaded?.call();
-      if (mounted) {
-        try {
-          await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
-            context,
-            sourceTag: 'notifications.permission_after_download',
-          );
-        } catch (e, stackTrace) {
-          logger.w('Notification permission prompt after download failed', error: e, stackTrace: stackTrace);
-        }
-      }
-      return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
         logger.w('Download channel unavailable (native side not registered)', error: e);
@@ -415,14 +425,40 @@ class _DownloadButtonState extends State<DownloadButton> {
       }
       toasts.error("Couldn't download! Please retry.");
       return false;
-    } catch (e) {
-      logger.e('Unexpected download failure', error: e);
+    } catch (e, stackTrace) {
+      logger.e('Unexpected download failure', error: e, stackTrace: stackTrace);
       toasts.error('Something went wrong!');
       return false;
-    } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
+    }
+
+    try {
+      analytics.track(
+        DownloadWallpaperEvent(
+          link: link,
+          sourceContext: (sourceContext ?? '').trim().isEmpty ? null : sourceContext,
+          premiumContent: premiumContent,
+        ),
+      );
+    } catch (e, stackTrace) {
+      logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
+    }
+
+    try {
+      toasts.success(wallpaperSavedMessage);
+      onDownloaded?.call();
+    } catch (e, stackTrace) {
+      logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
+    }
+    if (mounted) {
+      try {
+        await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+          context,
+          sourceTag: 'notifications.permission_after_download',
+        );
+      } catch (e, stackTrace) {
+        logger.w('Notification permission prompt after download failed', error: e, stackTrace: stackTrace);
       }
     }
+    return true;
   }
 }

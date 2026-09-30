@@ -6,6 +6,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -183,7 +184,7 @@ class _TrendingList extends StatelessWidget {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final wall = items[index];
-          final thumbUrl = wall.thumbs?['original'] ?? wall.core.thumbnailUrl;
+          final thumbUrl = wall.thumbnailUrl;
           return Semantics(
             button: true,
             label: wallpaperSemanticLabel(wall.core.authorName),
@@ -219,11 +220,11 @@ class _TrendingSkeletonRow extends StatelessWidget {
     return SizedBox(
       height: itemHeight,
       child: PulsePlaceholder(
-        builder: (context, color) => ListView.builder(
+        builder: (context, _) => ListView.builder(
           padding: EdgeInsets.zero,
           scrollDirection: Axis.horizontal,
           itemCount: 6,
-          itemBuilder: (_, _) => Container(width: itemWidth, height: itemHeight, color: color),
+          itemBuilder: (_, _) => SizedBox(width: itemWidth, height: itemHeight, child: const PulseFill()),
         ),
       ),
     );
@@ -236,23 +237,13 @@ class _TrendingError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-          const SizedBox(width: 8),
-          Text(
-            'Could not load trending',
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-              fontFamily: 'Satoshi',
-              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-            ),
-          ),
-          const SizedBox(width: 8),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
-      ),
+    return GlintState(
+      kind: GlintStateKind.error,
+      title: 'Could not load trending',
+      actionLabel: 'Retry',
+      onAction: onRetry,
+      glintSize: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
     );
   }
 }

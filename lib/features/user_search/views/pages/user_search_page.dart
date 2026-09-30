@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
@@ -107,7 +108,12 @@ class _UserSearchLoader extends StatelessWidget {
           return const LoadingCards();
         }
         if (state.status == LoadStatus.failure) {
-          return const _SearchHint();
+          return GlintState(
+            kind: GlintStateKind.error,
+            title: "Couldn't search creators",
+            actionLabel: 'Try again',
+            onAction: () => context.read<UserSearchBloc>().add(UserSearchEvent.searchRequested(query: state.query)),
+          );
         }
         if (state.users.isEmpty) {
           return const _NoResults();
@@ -148,16 +154,7 @@ class _NoResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'No creators found',
-        style: TextStyle(
-          fontFamily: 'Satoshi',
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-        ),
-      ),
-    );
+    return const GlintState(kind: GlintStateKind.empty, title: 'No creators found');
   }
 }
 

@@ -15,7 +15,7 @@ before staging if you're unsure it slipped in.
 Most repos gitignore build output; Prism does not for `functions/lib`. If you edit
 `functions/src/*.ts` and forget to `npm run build`, your PR diff will show only the source
 change while the deployed-looking compiled JS in `functions/lib` still reflects the old
-behavior, and `functions-ci`'s `node --test lib/__tests__/*.test.js` will run against stale
+behavior, and the `functions` job's `node --test lib/__tests__/*.test.js` will run against stale
 code. Always rebuild after a functions edit and include the resulting `functions/lib/**` diff.
 
 ## A Cloud Functions fix is not live until deployed

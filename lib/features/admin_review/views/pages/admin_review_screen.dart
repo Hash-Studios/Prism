@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -29,27 +30,24 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   late TabController _controller;
   late final AdminModerationRepository _repository;
   late Stream<List<FirestoreDocument>> _pendingWallsStream;
-  late Stream<List<FirestoreDocument>> _pendingSetupsStream;
   late Stream<List<FirestoreDocument>> _openReportsStream;
-  late Stream<(int, int, int)> _pendingCountsStream;
+  late Stream<(int, int)> _pendingCountsStream;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.repository ?? getIt<AdminModerationRepository>();
-    _controller = TabController(length: 4, vsync: this);
+    _controller = TabController(length: 3, vsync: this);
     _subscribeStreams();
   }
 
   void _subscribeStreams() {
     _pendingWallsStream = _repository.watchPendingWalls();
-    _pendingSetupsStream = _repository.watchPendingSetups();
     _openReportsStream = _repository.watchOpenContentReports();
-    _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
+    _pendingCountsStream = Rx.combineLatest2<int, int, (int, int)>(
       _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
-      _repository.watchPendingSetups().map((List<FirestoreDocument> list) => list.length),
       _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
-      (int a, int b, int c) => (a, b, c),
+      (int a, int b) => (a, b),
     );
   }
 
@@ -65,15 +63,14 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<(int, int, int)>(
+    return StreamBuilder<(int, int)>(
       stream: _pendingCountsStream,
-      builder: (BuildContext context, AsyncSnapshot<(int, int, int)> countSnapshot) {
+      builder: (BuildContext context, AsyncSnapshot<(int, int)> countSnapshot) {
         final counts = countSnapshot.hasError || countSnapshot.connectionState == ConnectionState.waiting
             ? null
             : countSnapshot.data;
         final String wallsCount = counts?.$1.toString() ?? '—';
-        final String setupsCount = counts?.$2.toString() ?? '—';
-        final String reportsCount = counts?.$3.toString() ?? '—';
+        final String reportsCount = counts?.$2.toString() ?? '—';
         return Scaffold(
           appBar: AppBar(
             title: const Text('Admin Moderation'),
@@ -90,7 +87,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               controller: _controller,
               tabs: <Tab>[
                 Tab(text: 'Walls ($wallsCount)'),
-                Tab(text: 'Setups ($setupsCount)'),
                 Tab(text: 'Reports ($reportsCount)'),
                 const Tab(text: 'Notifications'),
               ],
@@ -98,7 +94,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           ),
           body: TabBarView(
             controller: _controller,
-            children: <Widget>[_buildWallTab(), _buildSetupTab(), _buildReportsTab(), const _NotificationSenderTab()],
+            children: <Widget>[_buildWallTab(), _buildReportsTab(), const _NotificationSenderTab()],
           ),
         );
       },
@@ -118,7 +114,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           doc: wall,
           previewUrl: previewUrl,
           fullUrl: wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl,
-          extraLines: const <String>[],
           approve: () async {
             await _repository.approveWall(wall);
             toasts.success('Wallpaper approved');
@@ -126,32 +121,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           reject: (String reason) async {
             await _repository.rejectWall(wall, reason: reason);
             toasts.error('Wallpaper rejected');
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildSetupTab() {
-    return _buildPendingTab(
-      stream: _pendingSetupsStream,
-      keyPrefix: 'setup',
-      emptyLabel: 'No pending setups',
-      errorLabel: 'Could not load pending setups.',
-      itemBuilder: (BuildContext context, FirestoreDocument setup) {
-        return _moderationCard(
-          context,
-          doc: setup,
-          previewUrl: setup.image,
-          fullUrl: setup.image,
-          extraLines: <String>['Name: ${setup.name.isNotEmpty ? setup.name : '-'}'],
-          approve: () async {
-            await _repository.approveSetup(setup);
-            toasts.success('Setup approved');
-          },
-          reject: (String reason) async {
-            await _repository.rejectSetup(setup, reason: reason);
-            toasts.error('Setup rejected');
           },
         );
       },
@@ -172,7 +141,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           return _buildStreamError(errorLabel);
         }
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)));
         }
         final List<FirestoreDocument> docs = snapshot.data!;
         if (docs.isEmpty) {
@@ -200,7 +169,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     required FirestoreDocument doc,
     required String previewUrl,
     required String fullUrl,
-    required List<String> extraLines,
     required Future<void> Function() approve,
     required Future<void> Function(String reason) reject,
   }) {
@@ -212,7 +180,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         Text('ID: ${doc.id}'),
         Text('By: ${doc.by.isNotEmpty ? doc.by : '-'}'),
         Text('Email: ${doc.email.isNotEmpty ? doc.email : '-'}'),
-        for (final String line in extraLines) Text(line),
         Text(
           createdAt != null ? 'Uploaded ${timeago.format(createdAt.toLocal())}' : 'Uploaded —',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -231,7 +198,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           return _buildStreamError('Could not load open reports.');
         }
         if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)));
         }
         final List<FirestoreDocument> reports = snapshot.data!;
         if (reports.isEmpty) {
@@ -413,9 +380,16 @@ class _RejectReasonDialogState extends State<_RejectReasonDialog> {
           TextButton(onPressed: _isSaving ? null : () => Navigator.of(context).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: _isSaving ? null : _submit,
-            child: _isSaving
-                ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(widget.confirmButtonLabel),
+            child: AnimatedSwitcher(
+              duration: context.motion(PrismDurations.fast),
+              child: _isSaving
+                  ? const SizedBox.square(
+                      key: ValueKey('loading'),
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(widget.confirmButtonLabel, key: const ValueKey('label')),
+            ),
           ),
         ],
       ),
@@ -691,9 +665,16 @@ class _ModerationCardState extends State<_ModerationCard> {
                 Expanded(
                   child: FilledButton(
                     onPressed: _isApproving || _isApproved ? null : _approve,
-                    child: _isApproving
-                        ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : Text(_isApproved ? 'Approved' : 'Approve'),
+                    child: AnimatedSwitcher(
+                      duration: context.motion(PrismDurations.fast),
+                      child: _isApproving
+                          ? const SizedBox.square(
+                              key: ValueKey('loading'),
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(_isApproved ? 'Approved' : 'Approve', key: const ValueKey('label')),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -897,12 +878,16 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: _isSending ? null : _send,
-              icon: _isSending
-                  ? const SizedBox.square(
-                      dimension: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.send),
+              icon: AnimatedSwitcher(
+                duration: context.motion(PrismDurations.fast),
+                child: _isSending
+                    ? const SizedBox.square(
+                        key: ValueKey('loading'),
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.send, key: ValueKey('icon')),
+              ),
               label: Text(_isSending ? 'Sending…' : 'Send notification'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),

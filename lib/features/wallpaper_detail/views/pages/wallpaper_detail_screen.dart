@@ -4,6 +4,7 @@ import 'dart:math' show min;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -11,9 +12,13 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
@@ -50,6 +55,7 @@ class WallpaperDetailScreen extends StatefulWidget {
     this.source,
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
+    this.heroTag,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -58,19 +64,22 @@ class WallpaperDetailScreen extends StatefulWidget {
   final String? thumbnailUrl;
   final AnalyticsSurfaceValue analyticsSurface;
 
+  /// Set when opened from a grid tile, so the tile image flies into this screen.
+  final String? heroTag;
+
   @override
   State<WallpaperDetailScreen> createState() => _WallpaperDetailScreenState();
 }
 
-class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with SingleTickerProviderStateMixin {
+class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   static const double _sheetHPad = 24.0;
   static const double _panelSideInset = 10.0;
   static const double _panelTopRadius = 20.0;
   static const double _chromePad = 8.0;
   static const double _minInteractiveTarget = 48.0;
 
-  late AnimationController shakeController;
-  late Animation<double> _offsetAnimation;
+  final ShakeController _shake = ShakeController();
+
   PanelController panelController = PanelController();
   bool _accentToastShown = false;
   bool _openRecorded = false;
@@ -83,10 +92,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
     unawaited(getIt<TasteSignalStore>().record(signal));
   }
-
-  /// Identity for the wallpaper currently shown; resets [_wallpaperImageShown] when it changes.
-  String? _wallpaperLoadIdentity;
-  bool _wallpaperImageShown = false;
 
   String _getSourceContext(WallpaperDetailState? blocState) {
     final source = blocState is WallpaperDetailLoaded ? blocState.entity.source : widget.source;
@@ -111,22 +116,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void _handlePanelOpened(BuildContext context, WallpaperDetailLoaded state) {
     context.read<WallpaperDetailBloc>().add(const OnPanelOpened());
     _trackAction(state, AnalyticsActionValue.panelOpened);
-  }
-
-  void _syncWallpaperIdentity(FeedItemEntity entity) {
-    final key = '${entity.id}|${entity.fullUrl}|${entity.thumbnailUrl}';
-    if (_wallpaperLoadIdentity != key) {
-      _wallpaperLoadIdentity = key;
-      _wallpaperImageShown = false;
-    }
-  }
-
-  void _scheduleWallpaperDisplayReady() {
-    if (_wallpaperImageShown) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _wallpaperImageShown) return;
-      setState(() => _wallpaperImageShown = true);
-    });
   }
 
   void _handlePanelClosed(BuildContext context, WallpaperDetailLoaded state) {
@@ -154,9 +143,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     context.read<WallpaperDetailBloc>().add(const ResetAccentColor());
     _trackAction(state, AnalyticsActionValue.paletteResetLongPressed);
     HapticFeedback.vibrate();
-    if (!MediaQuery.disableAnimationsOf(context)) {
-      shakeController.forward(from: 0.0);
-    }
+    _shake.shake();
   }
 
   void _handleColorSelected(BuildContext context, WallpaperDetailLoaded state, Color color) {
@@ -173,19 +160,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   @override
   void initState() {
     super.initState();
-    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    _offsetAnimation =
-        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) shakeController.reverse();
-          });
-
     _loadWallpaper(context);
   }
 
   @override
   void dispose() {
-    shakeController.dispose();
+    _shake.dispose();
     super.dispose();
   }
 
@@ -229,70 +209,55 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   Widget _buildLoadingState(WallpaperDetailState state) {
-    final thumbnailUrl = state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl;
-    final spinner = Center(
-      child: Semantics(label: 'Loading wallpaper', child: const CircularProgressIndicator()),
+    final String thumbnailUrl = normalizeWallpaperThumbnailUrl(
+      (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
     );
-
-    if (thumbnailUrl == null || thumbnailUrl.isEmpty) return Scaffold(body: spinner);
+    if (thumbnailUrl.isEmpty) {
+      return const Scaffold(
+        body: GlintState(kind: GlintStateKind.loading, title: 'Loading wallpaper'),
+      );
+    }
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          CachedNetworkImage(
-            imageUrl: thumbnailUrl,
-            fit: BoxFit.cover,
-            placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
-            errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
-          ),
-          spinner,
-        ],
+      body: _withHero(
+        CachedNetworkImage(
+          imageUrl: thumbnailUrl,
+          fit: BoxFit.cover,
+          fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+          fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
+          width: double.infinity,
+          height: double.infinity,
+          placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
+          errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
+        ),
       ),
     );
   }
 
+  Widget _withHero(Widget child) => widget.heroTag == null
+      ? child
+      : HeroMode(
+          enabled: !context.reduceMotion,
+          child: Hero(tag: widget.heroTag!, child: child),
+        );
+
   Widget _buildErrorState(WallpaperDetailError state) {
-    final scheme = Theme.of(context).colorScheme;
     final message = state.message.trim();
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Semantics(
-                label: 'Error',
-                child: Icon(Icons.error_outline, size: 64, color: scheme.error),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: GlintState(
+                kind: GlintStateKind.error,
+                title: "Couldn't load this wallpaper",
+                body: message.isEmpty ? 'Check your connection and try again.' : message,
+                actionLabel: 'Try again',
+                onAction: () => _loadWallpaper(context),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Something went wrong',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: scheme.onSurface),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Please try again later',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-              if (message.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                ),
-              ],
-              const SizedBox(height: 24),
-              FilledButton(onPressed: () => _loadWallpaper(context), child: const Text('Try again')),
-              const SizedBox(height: 4),
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
-            ],
-          ),
+            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Go back')),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
@@ -815,7 +780,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final entity = state.entity;
     final url = entity.fullUrl;
     final List<Widget> actions = <Widget>[
-      _SheetActionTapScale(
+      PressScale(
         child: DownloadButton(
           link: url,
           sourceContext: _getSourceContext(state),
@@ -823,24 +788,24 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ),
       ),
       if (!hideSetWallpaperUi)
-        _SheetActionTapScale(
+        PressScale(
           child: SetWallpaperButton(
             url: url,
             promptNotificationPermissionOnSuccess: true,
             onSet: () => _recordTaste(TasteAction.set, entity),
           ),
         ),
-      _SheetActionTapScale(
+      PressScale(
         child: FavouriteWallpaperButton(
           wall: FavouriteWallEntity.fromFeedItem(entity),
           trash: false,
           onFavourited: () => _recordTaste(TasteAction.favourite, entity),
         ),
       ),
-      _SheetActionTapScale(
+      PressScale(
         child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
       ),
-      _SheetActionTapScale(child: EditButton(url: entity.fullUrl)),
+      PressScale(child: EditButton(url: entity.fullUrl)),
     ];
     final String? reportWallDocId = switch (entity) {
       PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
@@ -849,7 +814,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     if (reportWallDocId != null && reportWallDocId.isNotEmpty) {
       actions.insert(
         actions.length - 1,
-        _SheetActionTapScale(
+        PressScale(
           child: CircularMenuButton(
             label: 'Report',
             isLoading: false,
@@ -874,15 +839,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildImageBody(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
     final entity = state.entity;
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final topPad = _topOverlayPadding(context);
-    _syncWallpaperIdentity(entity);
     return Stack(
       children: [
-        AnimatedBuilder(
-          animation: _offsetAnimation,
-          builder: (context, child) {
-            final t = reduceMotion ? 0.0 : _offsetAnimation.value;
+        ShakeOnce(
+          controller: _shake,
+          distance: 48,
+          builder: (context, t, _) {
             return Semantics(
               label: 'Wallpaper',
               hint: 'Tap to cycle accent color. Long press to reset. Swipe up for details.',
@@ -894,18 +857,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 onTap: () {
                   HapticFeedback.vibrate();
                   if (!paletteLoading) _handleAccentTap(context, state);
-                  if (!reduceMotion) shakeController.forward(from: 0.0);
+                  _shake.shake();
                 },
                 child: Container(
                   margin: EdgeInsets.symmetric(vertical: t * 1.25, horizontal: t / 2),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(t),
-                    child: _buildProgressiveWallpaperImage(
-                      context: context,
-                      entity: entity,
-                      state: state,
-                      paletteLoading: paletteLoading,
-                      onWallpaperDisplayReady: _scheduleWallpaperDisplayReady,
+                    child: _withHero(
+                      _buildProgressiveWallpaperImage(
+                        context: context,
+                        entity: entity,
+                        state: state,
+                        paletteLoading: paletteLoading,
+                      ),
                     ),
                   ),
                 ),
@@ -913,17 +877,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             );
           },
         ),
-        if (!_wallpaperImageShown)
-          Positioned.fill(
-            child: Center(
-              child: Semantics(
-                label: 'Loading wallpaper',
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
-                ),
-              ),
-            ),
-          ),
         Align(
           alignment: Alignment.topLeft,
           child: Padding(
@@ -950,10 +903,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 Navigator.push(
                   context,
                   PageRouteBuilder(
+                    transitionDuration: context.motion(const Duration(milliseconds: 200)),
+                    reverseTransitionDuration: context.motion(const Duration(milliseconds: 200)),
                     pageBuilder: (context, animation, secondaryAnimation) {
-                      animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                       return FadeTransition(
-                        opacity: animation,
+                        opacity: animation.drive(CurveTween(curve: Curves.easeOut)),
                         child: ClockOverlay(
                           colorChanged: state.colorChanged,
                           accent: state.accent,
@@ -976,14 +930,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
-  /// Thumbnail first, then the full image on top. The spinner lives outside this subtree;
-  /// [onWallpaperDisplayReady] fires when the full bitmap is shown or an error/empty state is final.
+  /// Thumbnail first, then the full image on top. The spinner lives outside this subtree.
   Widget _buildProgressiveWallpaperImage({
     required BuildContext context,
     required FeedItemEntity entity,
     required WallpaperDetailLoaded state,
     required bool paletteLoading,
-    VoidCallback? onWallpaperDisplayReady,
   }) {
     final String thumb = entity.thumbnailUrl.trim();
     final String full = entity.fullUrl.trim();
@@ -996,29 +948,28 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         children: [
           CachedNetworkImage(
             imageUrl: thumb,
+            fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+            fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
             placeholder: (context, url) => Container(color: Theme.of(context).primaryColor),
             errorWidget: (context, url, error) {
-              onWallpaperDisplayReady?.call();
               return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
             },
           ),
           CachedNetworkImage(
             imageUrl: full,
             fit: BoxFit.cover,
-            fadeInDuration: const Duration(milliseconds: 280),
+            fadeInDuration: context.motion(const Duration(milliseconds: 280)),
             fadeOutDuration: Duration.zero,
             imageBuilder: (context, imageProvider) {
-              onWallpaperDisplayReady?.call();
               return SizedBox.expand(
                 child: Image(image: imageProvider, fit: BoxFit.cover),
               );
             },
             progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
             errorWidget: (context, url, error) {
-              onWallpaperDisplayReady?.call();
               return const SizedBox.shrink();
             },
           ),
@@ -1027,22 +978,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     } else {
       final String url = full.isNotEmpty ? full : thumb;
       if (url.isEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          onWallpaperDisplayReady?.call();
-        });
         imageLayer = Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
       } else {
         imageLayer = CachedNetworkImage(
           imageUrl: url,
+          fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+          fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
           imageBuilder: (context, imageProvider) {
-            onWallpaperDisplayReady?.call();
             return SizedBox.expand(
               child: Image(image: imageProvider, fit: BoxFit.cover),
             );
           },
           progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
           errorWidget: (context, url, error) {
-            onWallpaperDisplayReady?.call();
             return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
           },
         );
@@ -1067,70 +1015,5 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final now = DateTime.now();
     if (now.difference(local).inDays < 7) return timeago.format(local);
     return DateFormat(local.year == now.year ? 'd MMM' : 'd MMM y').format(local);
-  }
-}
-
-/// Press feedback for the wallpaper sheet action row: scale only (no layout animation).
-/// Skips motion when [MediaQuery.disableAnimations] is true (e.g. reduce motion).
-class _SheetActionTapScale extends StatefulWidget {
-  const _SheetActionTapScale({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_SheetActionTapScale> createState() => _SheetActionTapScaleState();
-}
-
-class _SheetActionTapScaleState extends State<_SheetActionTapScale> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 110),
-      reverseDuration: const Duration(milliseconds: 85),
-    );
-    _scale = Tween<double>(
-      begin: 1,
-      end: 0.92,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic, reverseCurve: Curves.easeOutCubic));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _setPressed(bool pressed) {
-    if (!mounted) return;
-    if (MediaQuery.disableAnimationsOf(context)) return;
-    if (pressed) {
-      _controller.forward();
-    } else {
-      _controller.reverse();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _setPressed(true),
-      onPointerUp: (_) => _setPressed(false),
-      onPointerCancel: (_) => _setPressed(false),
-      child: AnimatedBuilder(
-        animation: _scale,
-        builder: (context, child) {
-          final s = reduceMotion ? 1.0 : _scale.value;
-          return Transform.scale(scale: s, filterQuality: FilterQuality.low, child: child);
-        },
-        child: widget.child,
-      ),
-    );
   }
 }

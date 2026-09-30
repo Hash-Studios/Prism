@@ -1,3 +1,5 @@
+import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:flutter/material.dart';
 
 /// Shared skeleton for the circular action buttons on the wallpaper detail menu:
@@ -43,7 +45,12 @@ class CircularMenuButton extends StatelessWidget {
           left: 0,
           height: 53,
           width: 53,
-          child: isLoading ? const CircularProgressIndicator() : Container(),
+          child: AnimatedSwitcher(
+            duration: context.motion(const Duration(milliseconds: 120)),
+            child: isLoading
+                ? const CircularProgressIndicator(key: ValueKey<bool>(true), strokeWidth: 2)
+                : const SizedBox.shrink(key: ValueKey<bool>(false)),
+          ),
         ),
       ],
     );
@@ -51,7 +58,12 @@ class CircularMenuButton extends StatelessWidget {
       button: true,
       label: label,
       selected: selected,
-      child: onTap == null ? button : GestureDetector(onTap: onTap, child: button),
+      child: onTap == null
+          ? button
+          : GestureDetector(
+              onTap: onTap,
+              child: PressScale(child: button),
+            ),
     );
   }
 }

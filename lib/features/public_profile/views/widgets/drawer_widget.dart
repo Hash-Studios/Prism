@@ -57,7 +57,7 @@ class ProfileDrawer extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                app_state.prismUser.premium ? 'Exclusive premium walls & setups!' : 'Exclusive wallpapers & setups!',
+                app_state.prismUser.premium ? 'Exclusive premium walls!' : 'Exclusive wallpapers!',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
@@ -163,19 +163,6 @@ class ProfileDrawer extends StatelessWidget {
                 );
                 Navigator.pop(context);
                 context.router.push(const FavouriteWallpaperRoute());
-              },
-            ),
-            _item(
-              icon: JamIcons.instant_picture,
-              text: 'Favourite Setups',
-              context: context,
-              onTap: () {
-                _trackDrawerAction(
-                  AnalyticsActionValue.drawerFavSetupsTapped,
-                  sourceContext: 'profile_drawer_fav_setups',
-                );
-                Navigator.pop(context);
-                context.router.push(const FavouriteSetupRoute());
               },
             ),
             _item(

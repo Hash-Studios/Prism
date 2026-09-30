@@ -6,6 +6,7 @@ import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -216,6 +218,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: Theme.of(context).primaryColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      sheetAnimationStyle: AnimationStyle(
+        duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+        reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
+        curve: PrismCurves.enter,
+        reverseCurve: PrismCurves.exit,
+      ),
       builder: (ctx) {
         return RadioGroup<_DownloadQuality>(
           groupValue: _downloadQuality,
@@ -305,6 +313,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle: const Text('Configure Android Quick Settings tiles', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const QuickTileSettingsRoute()),
+        ),
+        ListTile(
+          leading: const Icon(Icons.autorenew_rounded),
+          title: Text('Auto-rotate wallpapers', style: _titleStyle),
+          subtitle: const Text('Change your wallpaper on a timer', style: _subtitleStyle),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () {
+            if (app_state.prismUser.premium) {
+              context.router.push(const AutoRotateRoute());
+            } else {
+              PaywallOrchestrator.instance.presentOrRequireSignIn(
+                context,
+                placement: PaywallPlacement.autoRotate,
+                source: 'settings_auto_rotate',
+              );
+            }
+          },
         ),
       ],
     );
@@ -535,7 +560,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: const SizedBox(
           width: 250,
           child: Text(
-            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers and setups will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
+            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
           ),
         ),
         actions: [
@@ -553,12 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   width: MediaQuery.of(context).size.width * .7,
                   height: MediaQuery.of(context).size.height * .3,
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Deleting account...')],
-                    ),
-                  ),
+                  child: const GlintState(kind: GlintStateKind.loading, title: 'Deleting account...'),
                 ),
               );
               showDialog(barrierDismissible: false, context: context, builder: (_) => loaderDialog);
@@ -606,7 +626,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.instant_picture_f),
           title: Text('Buy Premium', style: _titleStyle),
-          subtitle: const Text('Get unlimited setups and filters.', style: _subtitleStyle),
+          subtitle: const Text('Get unlimited uploads and filters.', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);

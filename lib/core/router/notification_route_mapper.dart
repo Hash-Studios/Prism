@@ -2,7 +2,10 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 
 class NotificationRouteMapper {
@@ -42,6 +45,12 @@ class NotificationRouteMapper {
     required String profileIdentifier,
     required String sourceTag,
   }) async {
+    final Uri? routeUri = Uri.tryParse(route);
+    if (routeUri != null && const DeepLinkParser().parse(routeUri) is SetupLinkIntent) {
+      toasts.error('Home screen setups are no longer available.');
+      return const HomeTabRoute();
+    }
+
     switch (route) {
       case 'wall':
         return _mapWallRoute(wallId: wallId, sourceTag: sourceTag);
@@ -54,7 +63,7 @@ class NotificationRouteMapper {
         }
         return const HomeTabRoute();
       case 'streak_reminder':
-        return const StreakTabRoute();
+        return const RewardsTabRoute();
       case 'follower':
         if (profileIdentifier.isNotEmpty) {
           return ProfileRoute(profileIdentifier: profileIdentifier);
