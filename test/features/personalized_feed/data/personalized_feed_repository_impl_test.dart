@@ -22,6 +22,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_feed_repository_impl.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -98,6 +99,52 @@ class _OneWallFirestore extends Fake implements FirestoreClient {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) async => failUserDoc ? throw StateError('offline') : null;
+}
+
+class _PendingFreshFirestore extends Fake implements FirestoreClient {
+  final Completer<void> ready = Completer<void>();
+  final Completer<void> freshStarted = Completer<void>();
+  int _freshCalls = 0;
+
+  static const Map<String, dynamic> _oldWall = <String, dynamic>{
+    'wallpaper_url': 'https://example.com/wall.jpg',
+    'wallpaper_thumb': 'https://example.com/thumb.jpg',
+    'wallpaper_provider': 'prism',
+    'review': true,
+    'email': 'creator@example.com',
+    'createdAt': '2026-09-01T00:00:00Z',
+  };
+  static const Map<String, dynamic> _newWall = <String, dynamic>{
+    'wallpaper_url': 'https://example.com/new-wall.jpg',
+    'wallpaper_thumb': 'https://example.com/new-thumb.jpg',
+    'wallpaper_provider': 'prism',
+    'review': true,
+    'email': 'new-creator@example.com',
+    'createdAt': '2026-09-01T00:00:00Z',
+  };
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async {
+    if (spec.sourceTag != 'personalized.fresh') {
+      throw StateError('offline');
+    }
+    _freshCalls++;
+    if (_freshCalls == 1) {
+      freshStarted.complete();
+      await ready.future;
+      return <T>[map(_oldWall, 'old-wall')];
+    }
+    return <T>[map(_newWall, 'new-wall')];
+  }
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async => null;
 }
 
 class _OfflineFirestore extends Fake implements FirestoreClient {
@@ -255,6 +302,20 @@ class _PendingFavourites extends Fake implements FavouriteWallsRepository {
   }
 }
 
+class _PendingRecordTasteSignalStore extends TasteSignalStore {
+  _PendingRecordTasteSignalStore(super.settingsLocal);
+
+  final Completer<void> recordStarted = Completer<void>();
+  final Completer<void> resumeRecord = Completer<void>();
+
+  @override
+  Future<void> record(TasteSignal signal) async {
+    await super.record(signal);
+    recordStarted.complete();
+    await resumeRecord.future;
+  }
+}
+
 PrismUsersV2 _signedInUser() {
   final String now = DateTime.now().toUtc().toIso8601String();
   return PrismUsersV2(
@@ -319,6 +380,39 @@ void main() {
     expect(FeedImpressionStore(settings).recentShows(DateTime.now().toUtc()), <String, int>{
       'https://example.com/wall.jpg': 99,
     });
+  });
+
+  test('less-like-this does not hide a wall after sign-out clears its pending signal', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final _PendingRecordTasteSignalStore signals = _PendingRecordTasteSignalStore(settings);
+    final FeedImpressionStore impressions = FeedImpressionStore(settings);
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _EmptyFirestore(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+      tasteSignals: signals,
+      impressions: impressions,
+    );
+    app_state.prismUser = _signedInUser();
+    const WallhavenWallpaper wall = WallhavenWallpaper(
+      core: WallpaperCore(
+        id: 'wall',
+        source: WallpaperSource.wallhaven,
+        fullUrl: 'https://example.com/wall.jpg',
+        thumbnailUrl: 't',
+        category: 'general',
+      ),
+    );
+    final Future<void> pending = repository.lessLikeThis(const WallhavenFeedItem(id: 'wall', wallpaper: wall));
+    await signals.recordStarted.future;
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await signals.clear(allowReseed: true);
+    await impressions.clear();
+    signals.resumeRecord.complete();
+    await pending;
+
+    expect(impressions.recentShows(DateTime.now().toUtc()), isEmpty);
   });
 
   test('favourite seeding failure does not fail the feed', () async {
@@ -391,6 +485,57 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 20));
     expect(signals.isSeeded, isTrue);
     expect(signals.read(), isEmpty);
+  });
+
+  test('sign-out clear invalidates a pending favourite seed even when reseeding is allowed', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final TasteSignalStore signals = TasteSignalStore(settings);
+    final _PendingFavourites favourites = _PendingFavourites();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      favourites: favourites,
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      tasteSignals: signals,
+    );
+
+    await repository.fetch(_firstPage).timeout(const Duration(seconds: 2));
+    await signals.clear(allowReseed: true);
+    expect(signals.isSeeded, isFalse);
+
+    favourites.completer.complete(Result.success(<FavouriteWallEntity>[_favourite('old-user-favourite')]));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+
+    expect(signals.read(), isEmpty);
+    expect(signals.isSeeded, isFalse);
+  });
+
+  test('a feed request already in progress cannot restore impressions after sign-out clear', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final FeedImpressionStore impressions = FeedImpressionStore(settings);
+    final TasteSignalStore signals = TasteSignalStore(settings);
+    final _PendingFreshFirestore firestore = _PendingFreshFirestore();
+    app_state.prismUser = _signedInUser();
+    final PersonalizedFeedRepository repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: firestore,
+      settings: settings,
+      tasteSignals: signals,
+      impressions: impressions,
+    );
+    final Future<Result<PersonalizedFeedPage>> pending = repository.fetch(_firstPage);
+    await firestore.freshStarted.future;
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await signals.clear(allowReseed: true);
+    await impressions.clear();
+    final Result<PersonalizedFeedPage> newSessionResult = await repository.fetch(_firstPage);
+    firestore.ready.complete();
+    final Result<PersonalizedFeedPage> oldSessionResult = await pending;
+
+    expect(newSessionResult.data?.items.map((item) => item.id), <String>['new-wall']);
+    expect(oldSessionResult.isFailure, isTrue);
+    expect(impressions.recentShows(DateTime.now().toUtc()), hasLength(1));
   });
 
   test('existing items stay excluded after the seen-key window is trimmed', () async {
@@ -648,6 +793,7 @@ PersonalizedFeedRepository _repository({
   PexelsWallpaperRepository? pexels,
   FeedCacheLocalDataSource? cache,
   TasteSignalStore? tasteSignals,
+  FeedImpressionStore? impressions,
 }) {
   return PersonalizedFeedRepositoryImpl(
     firestore,
@@ -658,7 +804,7 @@ PersonalizedFeedRepository _repository({
     _EmptyBlocks(),
     favourites,
     tasteSignals ?? TasteSignalStore(settings),
-    FeedImpressionStore(settings),
+    impressions ?? FeedImpressionStore(settings),
   );
 }
 

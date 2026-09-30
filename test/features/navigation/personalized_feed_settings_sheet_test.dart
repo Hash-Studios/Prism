@@ -36,7 +36,7 @@ class _FailingClearStore extends TasteSignalStore {
   _FailingClearStore(super.settingsLocal);
 
   @override
-  Future<void> clear() async => throw StateError('disk full');
+  Future<void> clear({bool allowReseed = false}) async => throw StateError('disk full');
 }
 
 class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
