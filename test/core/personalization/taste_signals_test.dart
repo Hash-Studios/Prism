@@ -77,6 +77,21 @@ void main() {
     );
     expect(terms, ['nature', 'sky']);
   });
+
+  test('a tagless external wall learns the search terms the feed found it with', () {
+    const WallpaperCore core = WallpaperCore(
+      id: 'wh1',
+      source: WallpaperSource.wallhaven,
+      fullUrl: 'https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg',
+      thumbnailUrl: 't',
+      category: 'general',
+    );
+    expect(TasteSignal.forWallpaper(TasteAction.open, core).terms, isEmpty);
+
+    rememberFeedTerms('https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg', <String>['space']);
+
+    expect(TasteSignal.forWallpaper(TasteAction.open, core).terms, <String>['space']);
+  });
 }
 
 WallpaperCore _core({String? category}) =>

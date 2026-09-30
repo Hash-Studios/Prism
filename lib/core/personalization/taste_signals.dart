@@ -26,6 +26,25 @@ List<String> _normalizeTasteTerms(Iterable<String?> rawTerms) {
   return out.toList(growable: false);
 }
 
+final Map<String, List<String>> _feedTerms = <String, List<String>>{};
+const int _feedTermsCap = 500;
+
+/// Remembers terms the feed knew for a wall, such as the search query that
+/// found it. Wallhaven and Pexels search results carry no tags, so without
+/// this their signals would have nothing to learn from.
+// ponytail: in-memory only, so a cold start forgets them until the next feed load.
+void rememberFeedTerms(String fullUrl, List<String> terms) {
+  final String key = fullUrl.trim().toLowerCase();
+  if (key.isEmpty || terms.isEmpty) {
+    return;
+  }
+  _feedTerms.remove(key);
+  _feedTerms[key] = terms;
+  if (_feedTerms.length > _feedTermsCap) {
+    _feedTerms.remove(_feedTerms.keys.first);
+  }
+}
+
 /// Who made a wallpaper: the creator email for Prism walls, else the author name.
 String? tasteCreatorOf(WallpaperCore core) {
   final String creator = (core.authorEmail ?? core.authorName ?? '').trim().toLowerCase();
@@ -45,7 +64,10 @@ class TasteSignal {
     return TasteSignal(
       action: action,
       at: (at ?? DateTime.now()).toUtc(),
-      terms: tasteTermsOf(core, tags: tags, collections: collections),
+      terms: _normalizeTasteTerms(<String?>[
+        ...tasteTermsOf(core, tags: tags, collections: collections),
+        ...?_feedTerms[core.fullUrl.trim().toLowerCase()],
+      ]),
       creator: tasteCreatorOf(core),
     );
   }

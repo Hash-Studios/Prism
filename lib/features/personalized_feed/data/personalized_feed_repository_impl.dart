@@ -78,11 +78,16 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   Future<void> lessLikeThis(FeedItemEntity item) async {
     final DateTime now = DateTime.now().toUtc();
     await _tasteSignals.record(
-      TasteSignal(
-        action: TasteAction.lessLikeThis,
-        at: now,
-        terms: RankingCandidate.termsOf(item),
-        creator: tasteCreatorOf(item.wallpaperCore),
+      item.when(
+        prism: (_, wall) => TasteSignal.forWallpaper(
+          TasteAction.lessLikeThis,
+          wall.core,
+          tags: wall.tags,
+          collections: wall.collections,
+          at: now,
+        ),
+        wallhaven: (_, wall) => TasteSignal.forWallpaper(TasteAction.lessLikeThis, wall.core, tags: wall.tags, at: now),
+        pexels: (_, wall) => TasteSignal.forWallpaper(TasteAction.lessLikeThis, wall.core, at: now),
       ),
     );
     await _impressions.hide(PersonalizedRankingService.canonicalKey(item), now);
@@ -174,6 +179,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           .expand((pool) => pool)
           .where((c) => !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked))
           .toList(growable: false);
+      for (final RankingCandidate candidate in candidates) {
+        rememberFeedTerms(candidate.key, candidate.terms);
+      }
       if (successfulSources == 0) {
         throw StateError('Personalized feed sources failed without candidates');
       }
