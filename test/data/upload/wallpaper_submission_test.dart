@@ -148,7 +148,7 @@ void main() {
     } finally {
       if (firestore.saveGate case final gate? when !gate.isCompleted) gate.complete();
       if (local.quotaWriteGate case final gate? when !gate.isCompleted) gate.complete();
-      await submission.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+      await submission.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     }
 
     expect(result, _submitted);
@@ -285,8 +285,8 @@ void main() {
       secondResult = await second;
     } finally {
       if (firestore.saveGate case final gate? when !gate.isCompleted) gate.complete();
-      await first.then<void>((_) {}, onError: (Object _, StackTrace __) {});
-      await second.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+      await first.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+      await second.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     }
 
     expect(firstResult, _submitted);

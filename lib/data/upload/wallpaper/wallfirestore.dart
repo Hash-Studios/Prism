@@ -40,23 +40,26 @@ Future<WallSubmissionResult> createRecord(
     isPremium: isPremium,
     hasFreeQuota: () => UploadQuota.hasFreeUploadQuotaRemaining(now: currentTime()),
     consumeFreeQuota: () async {
-      await UploadQuota.incrementWeeklyUploads(now: currentTime());
-      user.uploadsWeekStart = UploadQuota.storedWeekStart;
-      user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek(now: currentTime());
-      final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
-      if (user.id.trim().isNotEmpty) {
-        unawaited(
-          firestoreClient
-              .updateDoc(FirebaseCollections.usersV2, user.id, {
-                'uploadsWeekStart': user.uploadsWeekStart,
-                'uploadsThisWeek': user.uploadsThisWeek,
-              }, sourceTag: 'upload.weekly_quota_sync')
-              .catchError((Object error, StackTrace stackTrace) {
-                logger.w('Could not sync weekly upload quota', tag: 'Upload', error: error, stackTrace: stackTrace);
-              }),
-        );
+      try {
+        await UploadQuota.incrementWeeklyUploads(now: currentTime());
+      } finally {
+        user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek(now: currentTime());
+        user.uploadsWeekStart = UploadQuota.storedWeekStart;
+        final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
+        if (user.id.trim().isNotEmpty) {
+          unawaited(
+            firestoreClient
+                .updateDoc(FirebaseCollections.usersV2, user.id, {
+                  'uploadsWeekStart': user.uploadsWeekStart,
+                  'uploadsThisWeek': user.uploadsThisWeek,
+                }, sourceTag: 'upload.weekly_quota_sync')
+                .catchError((Object error, StackTrace stackTrace) {
+                  logger.w('Could not sync weekly upload quota', tag: 'Upload', error: error, stackTrace: stackTrace);
+                }),
+          );
+        }
+        if (persistUser != null) await persistUser;
       }
-      if (persistUser != null) await persistUser;
     },
     firestoreClient: firestoreClient,
     record: {
