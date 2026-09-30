@@ -15,6 +15,37 @@ FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
 );
 
 void main() {
+  testWidgets('reduced motion disables tile Hero flights and image fades', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: SizedBox(width: 120, height: 200, child: WallpaperTile(item: _item(), index: 0)),
+          ),
+        ),
+      ),
+    );
+    expect(tester.widget<HeroMode>(find.byType(HeroMode)).enabled, isFalse);
+  });
+
+  testWidgets('the same wallpaper twice has distinct Hero tags', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: GridView.count(
+            crossAxisCount: 2,
+            children: [
+              WallpaperTile(item: _item(), index: 0),
+              WallpaperTile(item: _item(), index: 1),
+            ],
+          ),
+        ),
+      ),
+    );
+    final tags = tester.widgetList<Hero>(find.byType(Hero)).map((hero) => hero.tag).toSet();
+    expect(tags, hasLength(2));
+  });
   testWidgets('home tiles and the upload button are named buttons for screen readers', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(

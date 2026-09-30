@@ -66,6 +66,7 @@ export function refundableDelta(debit: admin.firestore.DocumentData | undefined,
   if (debit.userId !== callerUid) throw notRefundable();
   if (debit.type !== "debit") throw notRefundable();
   if (debit.status !== "completed") throw notRefundable();
+  if (debit.action === "streakFreeze") throw notRefundable();
   const createdAtMs = (debit.createdAt as admin.firestore.Timestamp | undefined)?.toMillis?.();
   if (typeof createdAtMs !== "number") throw notRefundable();
   if (nowMs - createdAtMs > REFUND_WINDOW_MS) throw notRefundable();
@@ -326,7 +327,7 @@ export const buyStreakFreeze = onCall({region: REGION, cors: true}, async (reque
   const userRef = db.collection(USERS).doc(callerUid);
   const txId = `ctx_streakFreeze_${callerUid}_${requestId}`;
   const txRef = db.collection(TRANSACTIONS).doc(txId);
-  let response = {
+  const emptyResponse = {
     success: false,
     changed: false,
     previousBalance: 0,
@@ -338,8 +339,10 @@ export const buyStreakFreeze = onCall({region: REGION, cors: true}, async (reque
     reason: "streak_freeze_purchase",
     transactionId: "",
   };
+  let response = emptyResponse;
 
   await db.runTransaction(async (tx) => {
+    response = {...emptyResponse};
     const snap = await tx.get(userRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const txSnap = await tx.get(txRef);

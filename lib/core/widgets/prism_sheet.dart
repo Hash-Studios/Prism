@@ -6,10 +6,11 @@ Future<T?> showPrismSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool isScrollControlled = false,
-  bool useSafeArea = true,
+  bool useSafeArea = false,
   bool isDismissible = true,
   bool enableDrag = true,
   Color? backgroundColor,
+  ShapeBorder? shape,
   bool showDragHandle = false,
   bool useRootNavigator = false,
 }) {
@@ -22,6 +23,7 @@ Future<T?> showPrismSheet<T>({
     isDismissible: isDismissible,
     enableDrag: enableDrag,
     backgroundColor: backgroundColor,
+    shape: shape,
     showDragHandle: showDragHandle,
     useRootNavigator: useRootNavigator,
     sheetAnimationStyle: AnimationStyle(

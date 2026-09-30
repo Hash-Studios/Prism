@@ -1,9 +1,14 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_host.dart';
 import 'package:Prism/features/rewards/views/widgets/daily_claim_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../support/coins_test_backend.dart';
 
 StreakClaimResult _r({
   int day = 3,
@@ -47,6 +52,7 @@ void _tall(WidgetTester tester) {
 final List<ThemeData> _themes = [ThemeData.light(), ThemeData.dark()];
 
 void main() {
+  final backend = CoinsTestBackend();
   tearDown(() => CoinsService.instance.consumeLastClaim());
 
   testWidgets('week-complete sheet does not overflow at 320x568 with text scale 1.3', (tester) async {
@@ -149,8 +155,32 @@ void main() {
     expect(called, isTrue);
   });
 
+  testWidgets('claim animation settles when reduce motion is enabled while running', (tester) async {
+    final reduce = ValueNotifier<bool>(false);
+    addTearDown(reduce.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder<bool>(
+          valueListenable: reduce,
+          builder: (context, reduced, _) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: reduced),
+            child: Scaffold(body: DailyClaimSheet(result: _r())),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('+8'), findsNothing);
+    reduce.value = true;
+    await tester.pump();
+    expect(find.text('+8'), findsOneWidget);
+  });
+
   testWidgets('host shows sheet once and consumes claim', (tester) async {
-    CoinsService.instance.lastClaimNotifier.value = _r();
+    _tall(tester);
+    await backend.install();
+    addTearDown(getIt.reset);
+    await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await tester.pumpWidget(
       _app(ThemeData.dark(), DailyClaimSheetHost(onSeeRewards: () {}, child: const Text('home'))),
     );
@@ -158,6 +188,72 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(CoinsService.instance.lastClaimNotifier.value, isNull);
     expect(find.text('Nice'), findsOneWidget);
+    await tester.tap(find.text('Nice'));
+    await tester.pump(const Duration(seconds: 1));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Nice'), findsNothing);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('guest and next account never see the previous account claim', (tester) async {
+    await backend.install();
+    addTearDown(getIt.reset);
+    await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await tester.pumpWidget(
+      _app(ThemeData.light(), DailyClaimSheetHost(onSeeRewards: () {}, child: const Text('home'))),
+    );
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Nice'), findsNothing);
+    expect(CoinsService.instance.lastClaimNotifier.value, isNull);
+
+    await backend.install();
+    await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-2'
+      ..loggedIn = true;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Nice'), findsNothing);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('covered route delays claim until pop and already-claimed never queues', (tester) async {
+    _tall(tester);
+    await backend.install();
+    addTearDown(getIt.reset);
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        home: DailyClaimSheetHost(
+          onSeeRewards: () {},
+          child: const Scaffold(body: Text('home')),
+        ),
+      ),
+    );
+    navigator.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('detail'))));
+    await tester.pumpAndSettle();
+    await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Nice'), findsNothing);
+    expect(CoinsService.instance.lastClaimNotifier.value, isNotNull);
+    navigator.currentState!.pop();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Nice'), findsOneWidget);
+    navigator.currentState!.pop();
+    await tester.pump(const Duration(seconds: 1));
+    backend.onCall = (_, _) async => <String, Object>{
+      ...CoinsTestBackend.claimPayload,
+      'claimed': false,
+      'alreadyClaimedToday': true,
+    };
+    await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Nice'), findsNothing);
+    app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
   testWidgets('coin gate shows Earn coins when short', (tester) async {

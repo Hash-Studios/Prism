@@ -23,6 +23,7 @@ Future<T?> showCoinGateSheet<T>(
   return showPrismSheet<T>(
     context: context,
     backgroundColor: Theme.of(context).primaryColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (sheetContext) {
       final int missing = (cost - CoinsService.instance.balanceNotifier.value).clamp(0, cost);
       return Padding(

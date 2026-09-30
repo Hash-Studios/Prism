@@ -13,6 +13,7 @@ Future<ProfileCompletenessNudgeAction?> showProfileCompletenessNudgeSheet(
     context: context,
     isDismissible: false,
     enableDrag: false,
+    useSafeArea: true,
     builder: (context) => _ProfileCompletenessNudgeSheet(status: status),
   );
 }

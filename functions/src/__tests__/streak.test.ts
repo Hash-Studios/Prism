@@ -1,13 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as admin from "firebase-admin";
+import {db} from "../common";
 
 import {
+  claimDailyStreak,
   dayGap,
   isStreakAlive,
   localDateKeyFromUtc,
   pickFcmToken,
   planStreakClaim,
   resolveTimezoneOffset,
+  sendStreakReminders,
   streakMilestone,
 } from "../streak";
 
@@ -35,6 +39,130 @@ const st = (o: Partial<Parameters<typeof planStreakClaim>[0]> = {}) => ({
 test("dayGap crosses month, year and leap boundaries", () => {
   assert.equal(dayGap("2024-02-28", "2024-03-01"), 2);
   assert.equal(dayGap("2025-12-31", "2026-01-01"), 1);
+});
+
+test("impossible and unparseable legacy dates reset without using freezes", () => {
+  for (const lastKey of ["garbage", "2026-02-30", "2026-00-01", "2026-01-00", "2026-13-01"]) {
+    assert.equal(Number.isNaN(dayGap(lastKey, "2026-03-03")), true);
+    assert.equal(isStreakAlive(lastKey, "2026-03-03", 2), false);
+    const plan = planStreakClaim(st({lastKey, freezes: 2}), "2026-03-03", false);
+    assert.equal(plan.count, 1);
+    assert.equal(plan.streakBroken, true);
+    assert.equal(plan.freezesUsed, 0);
+    assert.equal(plan.freezesLeft, 2);
+  }
+});
+
+test("a retried claim that another call already committed returns no reward", async (t) => {
+  const today = localDateKeyFromUtc(new Date(), 330);
+  const yesterday = localDateKeyFromUtc(new Date(Date.now() - 86_400_000), 330);
+  const attempts = [
+    {coins: 100, premium: true, coinState: {lastDailyClaimDate: yesterday, streakDay: 6, streakCount: 6}},
+    {coins: 175, premium: true, coinState: {lastDailyClaimDate: today, streakDay: 7, streakCount: 7}},
+  ];
+  const committedLedger: unknown[] = [];
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    for (let attempt = 0; attempt < attempts.length; attempt++) {
+      await callback({
+        get: async () => ({exists: true, data: () => attempts[attempt]}),
+        update: () => undefined,
+        set: (_ref: unknown, data: unknown) => {
+          if (attempt === attempts.length - 1) committedLedger.push(data);
+        },
+      } as unknown as admin.firestore.Transaction);
+    }
+  });
+  const result = await claimDailyStreak.run({
+    auth: {uid: "user-1"}, data: {timezoneOffsetMinutes: 330, reminderEnabled: false},
+  } as Parameters<typeof claimDailyStreak.run>[0]);
+  assert.equal(result.claimed, false);
+  assert.equal(result.alreadyClaimedToday, true);
+  assert.equal(result.totalReward, 0);
+  assert.equal(result.dailyReward, 0);
+  assert.equal(result.streakBonusReward, 0);
+  assert.equal(result.proBonusReward, 0);
+  assert.equal(result.milestone, null);
+  assert.equal(result.newBalance, 175);
+  assert.deepEqual(committedLedger, []);
+});
+
+test("claim validates supplied inputs before reading the user", async (t) => {
+  t.mock.method(db, "runTransaction", () => {
+    throw new Error("must not read Firestore");
+  });
+  for (const data of [
+    {timezoneOffsetMinutes: "330"}, {timezoneOffsetMinutes: 330.5},
+    {timezoneOffsetMinutes: -721}, {timezoneOffsetMinutes: 841}, {timezoneOffsetMinutes: null},
+    {reminderEnabled: "false"}, {reminderEnabled: 1}, {reminderEnabled: null},
+  ]) {
+    await assert.rejects(() => claimDailyStreak.run({
+      auth: {uid: "user-1"}, data,
+    } as unknown as Parameters<typeof claimDailyStreak.run>[0]), {code: "invalid-argument"});
+  }
+});
+
+for (const migrating of [false, true]) {
+  test(`client-written timezone cannot grant another reward${migrating ? " during legacy backfill" : ""}`, async (t) => {
+    const now = new Date();
+    const lastKey = localDateKeyFromUtc(now, -720);
+    let storedState: Record<string, unknown> = {};
+    t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+      await callback({
+        get: async () => ({exists: true, data: () => ({coins: 100, coinState: {
+          lastDailyClaimDate: lastKey,
+          streakDay: 3,
+          streakCount: 3,
+          streakTimezoneOffsetMinutes: 840,
+          ...(!migrating ? {streakClaimTimezoneOffsetMinutes: -720} : {}),
+          streakLastClaimServerAt: admin.firestore.Timestamp.fromDate(now),
+        }})}),
+        update: (_ref: unknown, data: {coinState: Record<string, unknown>}) => {
+          storedState = data.coinState;
+        },
+        set: () => {
+          throw new Error("must not grant coins");
+        },
+      } as unknown as admin.firestore.Transaction);
+    });
+    const result = await claimDailyStreak.run({
+      auth: {uid: "user-1"}, data: {timezoneOffsetMinutes: 840, reminderEnabled: false},
+    } as Parameters<typeof claimDailyStreak.run>[0]);
+    assert.equal(result.claimed, false);
+    assert.equal(result.totalReward, 0);
+    assert.equal(result.newBalance, 100);
+    assert.equal(result.timezoneOffsetMinutes, migrating ? 840 : -720);
+    assert.equal(storedState.streakClaimTimezoneOffsetMinutes, migrating ? 840 : -720);
+    assert.equal(storedState.lastDailyClaimDate, result.todayLocalKey);
+  });
+}
+
+test("reminders use the server-owned timezone after the client changes the legacy field", async (t) => {
+  const today = localDateKeyFromUtc(new Date(), -720);
+  const updates: Record<string, unknown>[] = [];
+  const userDoc = {
+    data: () => ({email: "", coinState: {
+      streakDay: 3,
+      streakCount: 3,
+      streakFreezes: 0,
+      lastDailyClaimDate: today,
+      streakTimezoneOffsetMinutes: 840,
+      streakClaimTimezoneOffsetMinutes: -720,
+    }}),
+    ref: {update: async (data: Record<string, unknown>) => updates.push(data)},
+  };
+  const query = {
+    where: () => query,
+    orderBy: () => query,
+    limit: () => query,
+    get: async () => ({empty: false, size: 1, docs: [userDoc]}),
+  };
+  t.mock.method(db, "collection", () => query);
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(updates.length, 1);
+  const next = updates[0]["coinState.streakReminderNextAtUtc"] as admin.firestore.Timestamp;
+  const localNext = new Date(next.toMillis() - 720 * 60_000);
+  assert.equal(localNext.getUTCHours(), 20);
+  assert.equal(dayGap(today, localDateKeyFromUtc(next.toDate(), -720)), 1);
 });
 
 test("local day key flips at the offset boundary", () => {
@@ -130,4 +258,15 @@ test("milestone only at 7, 30, 100, 365; week completes on cycle day 7", () => {
   const p = planStreakClaim(st({streakCount: 6, streakDay: 6}), "2026-01-02", false);
   assert.equal(p.cycleDay === 7, true);
   assert.equal(planStreakClaim(st(), "2026-01-02", false).cycleDay === 7, false);
+});
+
+test("planStreakClaim: a doc with no streak to protect never burns freezes", () => {
+  const plan = planStreakClaim(
+    st({lastKey: "2026-01-01", streakDay: 0, streakCount: 0, freezes: 2}),
+    "2026-01-03",
+    false,
+  );
+  assert.equal(plan.count, 1);
+  assert.equal(plan.freezesUsed, 0);
+  assert.equal(plan.freezesLeft, 2);
 });

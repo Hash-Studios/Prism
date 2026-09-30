@@ -16,8 +16,15 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
     reverseDuration: const Duration(milliseconds: 180),
     vsync: this,
   );
+  late final CurvedAnimation _curve = CurvedAnimation(
+    parent: _controller,
+    curve: PrismCurves.enter,
+    reverseCurve: PrismCurves.exit,
+  );
+  late final Animation<Offset> _position = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(_curve);
   late final Timer _showTimer;
   late final Timer _hideTimer;
+  bool _visible = false;
 
   @override
   void initState() {
@@ -28,6 +35,7 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
 
   void _move(bool show) {
     if (!mounted) return;
+    _visible = show;
     if (context.reduceMotion) {
       _controller.value = show ? 1 : 0;
     } else {
@@ -36,9 +44,16 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) _controller.value = _visible ? 1 : 0;
+  }
+
+  @override
   void dispose() {
     _showTimer.cancel();
     _hideTimer.cancel();
+    _curve.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -47,13 +62,7 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.0, 1.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: _controller, curve: PrismCurves.enter, reverseCurve: PrismCurves.exit)),
-        child: const _OfflineBanner(),
-      ),
+      child: SlideTransition(position: _position, child: const _OfflineBanner()),
     );
   }
 }

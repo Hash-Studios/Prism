@@ -44,6 +44,7 @@ interface ClaimDailyStreakResponse {
   totalReward: number;
   newBalance: number;
   todayLocalKey: string;
+  timezoneOffsetMinutes: number;
   nextReminderAtUtcMillis?: number;
 }
 
@@ -55,6 +56,7 @@ interface CoinState extends Record<string, unknown> {
   streakFreezes: number;
   streakReminderEnabled: boolean;
   streakTimezoneOffsetMinutes: number;
+  streakClaimTimezoneOffsetMinutes?: number;
   streakReminderLastSentDate: string;
   streakReminderNextAtUtc?: admin.firestore.Timestamp;
   streakLastClaimServerAt?: admin.firestore.Timestamp;
@@ -76,10 +78,18 @@ export const claimDailyStreak = onCall(
     const now = new Date();
     const nowTs = admin.firestore.Timestamp.fromDate(now);
 
-    const requestOffset = clampTimezoneOffset(
-      int(request.data?.timezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES),
-    );
-    const reminderEnabledRequest = asBool(request.data?.reminderEnabled, true);
+    const requestedOffset = request.data?.timezoneOffsetMinutes;
+    if (requestedOffset !== undefined &&
+        (typeof requestedOffset !== "number" || !Number.isInteger(requestedOffset) ||
+        requestedOffset < -720 || requestedOffset > 840)) {
+      throw new HttpsError("invalid-argument", "timezoneOffsetMinutes must be an integer between -720 and 840.");
+    }
+    const reminderEnabled = request.data?.reminderEnabled;
+    if (reminderEnabled !== undefined && typeof reminderEnabled !== "boolean") {
+      throw new HttpsError("invalid-argument", "reminderEnabled must be a boolean.");
+    }
+    const requestOffset = requestedOffset ?? DEFAULT_TZ_OFFSET_MINUTES;
+    const reminderEnabledRequest = reminderEnabled ?? true;
 
     const userRef = db.collection(USERS_COLLECTION).doc(uid);
 
@@ -98,9 +108,16 @@ export const claimDailyStreak = onCall(
     let totalReward = 0;
     let newBalance = 0;
     let todayLocalKey = "";
+    let effectiveTimezoneOffsetMinutes = requestOffset;
     let nextReminderAtUtcMillis: number | undefined;
 
     await db.runTransaction(async (tx) => {
+      claimed = false;
+      dailyReward = 0;
+      streakBonusReward = 0;
+      proBonusReward = 0;
+      totalReward = 0;
+      nextReminderAtUtcMillis = undefined;
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) {
         throw new HttpsError("not-found", "User profile was not found.");
@@ -111,13 +128,21 @@ export const claimDailyStreak = onCall(
       const rawCoinState = userData.coinState;
       const coinState = normalizeCoinState(rawCoinState);
 
-      const storedOffset = storedTimezoneOffset(rawCoinState);
+      const lockedOffset = storedTimezoneOffset(rawCoinState, "streakClaimTimezoneOffsetMinutes");
+      const storedOffset = lockedOffset ?? storedTimezoneOffset(rawCoinState);
       const effectiveOffset = resolveTimezoneOffset(storedOffset, requestOffset);
+      effectiveTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakTimezoneOffsetMinutes = effectiveOffset;
+      coinState.streakClaimTimezoneOffsetMinutes = effectiveOffset;
       coinState.streakReminderEnabled = reminderEnabledRequest;
 
       todayLocalKey = localDateKeyFromUtc(now, effectiveOffset);
-      const lastClaimDate = coinState.lastDailyClaimDate.trim();
+      let lastClaimDate = coinState.lastDailyClaimDate.trim();
+      // The legacy offset is client-writable. Rebase from the server timestamp when first locking it.
+      if (lockedOffset == null && coinState.streakLastClaimServerAt instanceof admin.firestore.Timestamp) {
+        lastClaimDate = localDateKeyFromUtc(coinState.streakLastClaimServerAt.toDate(), effectiveOffset);
+        coinState.lastDailyClaimDate = lastClaimDate;
+      }
       const plan = planStreakClaim(
         {
           lastKey: lastClaimDate,
@@ -236,6 +261,7 @@ export const claimDailyStreak = onCall(
       totalReward,
       newBalance,
       todayLocalKey,
+      timezoneOffsetMinutes: effectiveTimezoneOffsetMinutes,
       ...(nextReminderAtUtcMillis != null ? {nextReminderAtUtcMillis} : {}),
     };
   },
@@ -277,8 +303,9 @@ export const sendStreakReminders = onSchedule(
         const userEmail = str(userData.email).toLowerCase();
         const coinState = normalizeCoinState(userData.coinState);
 
-        const offset = clampTimezoneOffset(
-          int(coinState.streakTimezoneOffsetMinutes, DEFAULT_TZ_OFFSET_MINUTES),
+        const offset = resolveTimezoneOffset(
+          storedTimezoneOffset(userData.coinState, "streakClaimTimezoneOffsetMinutes"),
+          coinState.streakTimezoneOffsetMinutes,
         );
         const todayLocalKey = localDateKeyFromUtc(now, offset);
         const lastClaimDate = coinState.lastDailyClaimDate;
@@ -400,13 +427,13 @@ export function resolveTimezoneOffset(stored: number | undefined, requested: num
   return stored == null || !Number.isFinite(stored) ? requestedOffset : clampTimezoneOffset(stored);
 }
 
-function storedTimezoneOffset(raw: unknown): number | undefined {
+function storedTimezoneOffset(raw: unknown, field = "streakTimezoneOffsetMinutes"): number | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return undefined;
   }
-  const value = (raw as Record<string, unknown>).streakTimezoneOffsetMinutes;
+  const value = (raw as Record<string, unknown>)[field];
   if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim()) return Number(value);
+  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
   return undefined;
 }
 
@@ -517,7 +544,7 @@ export function planStreakClaim(state: StreakClaimState, todayKey: string, isPro
 
   let count = 1;
   let used = 0;
-  if (lastKey && Number.isFinite(gap) && gap <= 1 + freezes) {
+  if (prev > 0 && lastKey && Number.isFinite(gap) && gap <= 1 + freezes) {
     count = prev + 1;
     used = gap - 1;
   }
@@ -559,11 +586,14 @@ function parseDayKey(dayKey: string): { year: number; month: number; day: number
   if (!match) {
     return null;
   }
-  return {
-    year: Number.parseInt(match[1], 10),
-    month: Number.parseInt(match[2], 10),
-    day: Number.parseInt(match[3], 10),
-  };
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return null;
+  }
+  return {year, month, day};
 }
 
 function nextReminderAfterTodayClaim(

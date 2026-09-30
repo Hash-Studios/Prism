@@ -28,7 +28,8 @@ class PrismImageTile extends StatelessWidget {
             placeholder: (_, _) => PulseFill(borderRadius: borderRadius),
             errorWidget: (_, _, _) => PulseFill(borderRadius: borderRadius),
           );
+    tile = SizedBox.expand(child: tile);
     if (borderRadius != null) tile = ClipRRect(borderRadius: borderRadius!, child: tile);
-    return heroTag == null ? tile : Hero(tag: heroTag!, child: tile);
+    return heroTag == null || context.reduceMotion ? tile : Hero(tag: heroTag!, child: tile);
   }
 }

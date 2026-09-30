@@ -1348,7 +1348,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     if (!canPress) {
       onPressed = null;
     } else if (!hasCoins) {
-      onPressed = () => context.router.push(RewardsRoute(showBack: true));
+      onPressed = () => context.router.push(RewardsRoute());
     } else {
       onPressed = () => _generate();
     }

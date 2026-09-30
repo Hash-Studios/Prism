@@ -188,6 +188,7 @@ class _CollectionCard extends StatelessWidget {
       button: true,
       label: '$category, ${unlocked ? 'unlocked' : 'locked'}, $_caption',
       excludeSemantics: true,
+      onTap: () => _onTap(context),
       child: PressScale(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

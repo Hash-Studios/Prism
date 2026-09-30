@@ -1,6 +1,9 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -12,6 +15,8 @@ import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../../support/coins_test_backend.dart';
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
 
@@ -28,10 +33,36 @@ Widget _host(Widget child, Brightness brightness) => MaterialApp(
 
 void main() {
   tearDown(() async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
     CoinsService.instance.streakNotifier.value = StreakStatus.empty;
     CoinsService.instance.balanceNotifier.value = 0;
     CoinsService.instance.earnFlagsNotifier.value = CoinEarnFlags.empty;
     await getIt.reset();
+  });
+
+  testWidgets('activity refreshes fresh transactions after a balance mutation', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.light));
+    await tester.pump();
+    expect(find.text('No coin activity yet.'), findsOneWidget);
+    firestore.transactions = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'freeze-1',
+        'userId': 'user-1',
+        'action': 'streakFreeze',
+        'delta': -50,
+        'createdAt': DateTime.now(),
+      },
+    ];
+    CoinsService.instance.balanceNotifier.value = 50;
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Streak freeze'), findsOneWidget);
+    expect(firestore.dedupeWindowMs, 0);
   });
 
   for (final Brightness brightness in Brightness.values) {

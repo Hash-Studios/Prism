@@ -54,7 +54,7 @@ class _DailyClaimSheetHostState extends State<DailyClaimSheetHost> with WidgetsB
   }
 
   void _tryShow() {
-    final StreakClaimResult? result = _notifier.value;
+    final StreakClaimResult? result = CoinsService.instance.pendingClaimForCurrentUser;
     if (result == null) return;
     final bool current = ModalRoute.of(context)?.isCurrent ?? true;
     final bool resumed =

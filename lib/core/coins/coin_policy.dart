@@ -65,9 +65,14 @@ class CoinPolicy {
 
 /// Whole days from day key [a] to day key [b] (`yyyy-MM-dd`). Null when either key is invalid.
 int? dayKeyGap(String a, String b) {
+  final RegExp dayKey = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+  if (!dayKey.hasMatch(a.trim()) || !dayKey.hasMatch(b.trim())) return null;
   final DateTime? da = DateTime.tryParse(a.trim());
   final DateTime? db = DateTime.tryParse(b.trim());
-  if (da == null || db == null) {
+  if (da == null ||
+      db == null ||
+      da.toIso8601String().substring(0, 10) != a.trim() ||
+      db.toIso8601String().substring(0, 10) != b.trim()) {
     return null;
   }
   return DateTime.utc(db.year, db.month, db.day).difference(DateTime.utc(da.year, da.month, da.day)).inDays;

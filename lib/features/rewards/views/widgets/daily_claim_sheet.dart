@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 Future<void> showDailyClaimSheet(BuildContext context, StreakClaimResult result, {VoidCallback? onSeeRewards}) async {
   final bool? seeRewards = await showPrismSheet<bool>(
     context: context,
+    useSafeArea: true,
     isScrollControlled: true,
     showDragHandle: true,
     backgroundColor: Theme.of(context).colorScheme.surface,
@@ -35,13 +36,14 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _started = true;
+      _c.value = 1;
+      return;
+    }
     if (_started) return;
     _started = true;
-    if (context.reduceMotion) {
-      _c.value = 1;
-    } else {
-      _c.forward();
-    }
+    _c.forward();
   }
 
   @override

@@ -159,13 +159,14 @@ class _CycleStripState extends State<_CycleStrip> with SingleTickerProviderState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _started = true;
+      _controller.value = 1;
+      return;
+    }
     if (_started) return;
     _started = true;
-    if (context.reduceMotion) {
-      _controller.value = 1;
-    } else {
-      _controller.forward();
-    }
+    _controller.forward();
   }
 
   @override

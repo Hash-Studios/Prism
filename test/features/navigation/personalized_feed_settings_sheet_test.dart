@@ -220,6 +220,8 @@ void main() {
     );
     await tester.tap(find.text('Open settings'));
     await tester.pumpAndSettle();
+    final route = ModalRoute.of(tester.element(find.text('Tune your feed')))! as ModalBottomSheetRoute;
+    expect(route.useSafeArea, isTrue);
     await tester.ensureVisible(find.bySemanticsLabel('Interest: Nature, selected'));
     await tester.tap(find.bySemanticsLabel('Interest: Nature, selected'));
     await tester.pumpAndSettle();

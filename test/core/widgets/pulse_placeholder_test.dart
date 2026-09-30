@@ -41,6 +41,29 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
     expect(fillColor(tester), c0);
   });
+
+  testWidgets('stops scheduling frames while hidden and after disposal', (tester) async {
+    Widget host(bool enabled) => MaterialApp(
+      home: TickerMode(
+        enabled: enabled,
+        child: const PulsePlaceholder(builder: _fill),
+      ),
+    );
+    await tester.pumpWidget(host(true));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.hasScheduledFrame, isTrue);
+
+    await tester.pumpWidget(host(false));
+    final Color hiddenColor = fillColor(tester);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(fillColor(tester), hiddenColor);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Widget _fill(BuildContext context, Color color) => const SizedBox(width: 40, height: 40, child: PulseFill());

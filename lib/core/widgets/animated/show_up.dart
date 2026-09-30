@@ -47,6 +47,11 @@ class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerPr
     super.initState();
     _animController = AnimationController(vsync: this, duration: widget.duration ?? const Duration(milliseconds: 220));
     _curve = CurvedAnimation(parent: _animController, curve: PrismCurves.enter, reverseCurve: PrismCurves.exit);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _start();
   }
 
@@ -60,6 +65,10 @@ class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerPr
 
   void _start() {
     _timer?.cancel();
+    if (context.reduceMotion) {
+      _animController.value = widget.forward ? 1 : 0;
+      return;
+    }
     _timer = Timer(widget.delay ?? Duration.zero, () {
       if (!mounted) return;
       if (context.reduceMotion) {

@@ -42,6 +42,12 @@ class _PressScaleState extends State<PressScale> with SingleTickerProviderStateM
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) _controller.value = 0;
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
