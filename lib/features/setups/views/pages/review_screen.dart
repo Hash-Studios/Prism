@@ -11,6 +11,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_value.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/features/setups/views/widgets/rejection_feedback.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -194,7 +195,7 @@ class _WallTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: rejected ? 400 : 340,
+      height: rejected ? null : 340,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -440,22 +441,7 @@ class _WallTile extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (rejected)
-                    Row(
-                      children: [
-                        Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.7,
-                          child: Text(
-                            "The wallpaper didn't meet our expectations. Please try uploading a good quality wallpaper.",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                          ),
-                        ),
-                      ],
-                    ),
+                  if (rejected) RejectionFeedback(reason: wallpaper.data()['rejectionReason']?.toString()),
                 ],
               ),
             ),
@@ -636,7 +622,6 @@ class SetupTile extends StatelessWidget {
     final bool hasSecondWidget = wallpaper.widget2.isNotEmpty;
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: rejected ? (hasSecondWidget ? 460 : 430) : null,
       constraints: rejected
           ? null
           : BoxConstraints(minHeight: hasSecondWidget ? 420 : 390, maxHeight: hasSecondWidget ? 470 : 440),
@@ -994,22 +979,7 @@ class SetupTile extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (rejected)
-                    Row(
-                      children: [
-                        Icon(JamIcons.close, color: Theme.of(context).colorScheme.secondary),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.7,
-                          child: Text(
-                            "The setup didn't meet our expectations. Please try uploading another setup.",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                          ),
-                        ),
-                      ],
-                    ),
+                  if (rejected) RejectionFeedback(reason: wallpaper.data()['rejectionReason']?.toString()),
                 ],
               ),
             ),
