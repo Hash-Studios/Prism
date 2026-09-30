@@ -9,6 +9,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
+import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
@@ -109,10 +110,24 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     }
   }
 
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _handleGoogleSignIn() => _runSignIn(globalGoogleAuth.signInWithGoogle, _googleErrorMessage);
+
+  Future<void> _handleAppleSignIn() => _runSignIn(globalAppleAuth.signInWithApple, (_) => _genericSignInError);
+
+  static const String _genericSignInError = 'Something went wrong, please try again!';
+
+  String _googleErrorMessage(Object error) {
+    final String message = error.toString();
+    final bool isPlayServicesError =
+        defaultTargetPlatform == TargetPlatform.android &&
+        (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
+    return isPlayServicesError ? 'Google Play services on this device cannot sign in.' : _genericSignInError;
+  }
+
+  Future<void> _runSignIn(Future<SignInOutcome> Function() signIn, String Function(Object error) errorMessage) async {
     _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
     try {
-      final result = await globalGoogleAuth.signInWithGoogle();
+      final result = await signIn();
       if (!mounted) return;
       if (result == SignInOutcome.cancelled) {
         app_state.prismUser.loggedIn = false;
@@ -125,38 +140,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         _bloc.add(const OnboardingV2Event.authCompleted());
       }
     } catch (error) {
-      if (mounted) {
-        final String message = error.toString();
-        final bool isPlayServicesError =
-            defaultTargetPlatform == TargetPlatform.android &&
-            (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
-        toasts.error(
-          isPlayServicesError
-              ? 'Google Play services on this device cannot sign in.'
-              : 'Something went wrong, please try again!',
-        );
-      }
-      _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
-    }
-  }
-
-  Future<void> _handleAppleSignIn() async {
-    _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
-    try {
-      final result = await globalAppleAuth.signInWithApple();
-      if (!mounted) return;
-      if (result == SignInOutcome.cancelled) {
-        app_state.prismUser.loggedIn = false;
-        app_state.persistPrismUser();
-        toasts.error('Sign in cancelled.');
-        _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
-      } else {
-        app_state.prismUser.loggedIn = true;
-        app_state.persistPrismUser();
-        _bloc.add(const OnboardingV2Event.authCompleted());
-      }
-    } catch (_) {
-      if (mounted) toasts.error('Something went wrong, please try again!');
+      if (mounted) toasts.error(errorMessage(error));
       _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
   }
@@ -198,23 +182,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
 
   String _targetSizeForDevice() {
     if (!mounted) return '1080x1920';
-    const int minShortEdge = 720;
-    const int maxLongEdge = 2048;
     final media = MediaQuery.of(context);
-    final double dpr = media.devicePixelRatio.clamp(1.0, 3.0);
-    final int rawW = (media.size.width * dpr).round().clamp(360, 4096);
-    final int rawH = (media.size.height * dpr).round().clamp(640, 4096);
-    final bool portrait = rawH >= rawW;
-    final int longRaw = portrait ? rawH : rawW;
-    final int shortRaw = portrait ? rawW : rawH;
-    final double aspect = longRaw / shortRaw;
-    int shortTarget = shortRaw.clamp(minShortEdge, maxLongEdge);
-    int longTarget = (shortTarget * aspect).round();
-    if (longTarget > maxLongEdge) {
-      longTarget = maxLongEdge;
-      shortTarget = (longTarget / aspect).round().clamp(minShortEdge, maxLongEdge);
-    }
-    return portrait ? '${shortTarget}x$longTarget' : '${longTarget}x$shortTarget';
+    return aiTargetSize(size: media.size, devicePixelRatio: media.devicePixelRatio);
   }
 
   Widget _pageFor(OnboardingV2Step step) => KeyedSubtree(
