@@ -33,6 +33,12 @@ class PersistenceKeys {
   // Notification preferences
   static const String notifWotd = 'notif.wotd';
 
+  // Auto-rotate wallpapers (Android, Pro). Read through SettingsLocalDataSource.
+  static const String autoRotateEnabled = 'autoRotate.enabled';
+  static const String autoRotateIntervalMinutes = 'autoRotate.intervalMinutes';
+  static const String autoRotateTarget = 'autoRotate.target';
+  static const String autoRotateShuffle = 'autoRotate.shuffle';
+
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';
 
