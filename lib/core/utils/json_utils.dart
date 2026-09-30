@@ -22,6 +22,27 @@ Map<String, dynamic> toJsonMap(Object? value) {
   return <String, dynamic>{};
 }
 
+/// Converts [value] into something [jsonEncode] accepts: primitives pass through,
+/// dates become UTC ISO strings, enums their name, collections recurse, the rest [Object.toString].
+Object? toJsonSafe(Object? value) {
+  if (value == null || value is num || value is bool || value is String) {
+    return value;
+  }
+  if (value is DateTime) {
+    return value.toUtc().toIso8601String();
+  }
+  if (value is Enum) {
+    return value.name;
+  }
+  if (value is Iterable) {
+    return value.map(toJsonSafe).toList(growable: false);
+  }
+  if (value is Map) {
+    return value.map<String, Object?>((key, nested) => MapEntry(key.toString(), toJsonSafe(nested)));
+  }
+  return value.toString();
+}
+
 Map<String, dynamic> _toMap(Map map) {
   return map.map<String, dynamic>((key, value) {
     return MapEntry(key.toString(), _toJsonValue(value));
