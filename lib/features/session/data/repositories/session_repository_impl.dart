@@ -126,11 +126,7 @@ class SessionRepositoryImpl implements SessionRepository {
   @override
   Future<Result<SessionEntity>> signInWithGoogle() async {
     try {
-      final String result = await _gAuth.signInWithGoogle();
-      if (result == GoogleAuth.signInCancelledResult) {
-        _syncFromPrefs();
-        return Result.success(_toEntity());
-      }
+      await _gAuth.signInWithGoogle();
       _syncFromPrefs();
       return Result.success(_toEntity());
     } catch (error) {
@@ -141,11 +137,7 @@ class SessionRepositoryImpl implements SessionRepository {
   @override
   Future<Result<SessionEntity>> signInWithApple() async {
     try {
-      final String result = await _appleAuth.signInWithApple();
-      if (result == AppleAuth.signInCancelledResult) {
-        _syncFromPrefs();
-        return Result.success(_toEntity());
-      }
+      await _appleAuth.signInWithApple();
       _syncFromPrefs();
       return Result.success(_toEntity());
     } catch (error) {

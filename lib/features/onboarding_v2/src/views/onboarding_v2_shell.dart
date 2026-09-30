@@ -1,8 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:Prism/auth/apple_auth.dart';
-import 'package:Prism/auth/google_auth.dart';
+import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -125,7 +124,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     try {
       final result = await app_state.gAuth.signInWithGoogle();
       if (!mounted) return;
-      if (result == GoogleAuth.signInCancelledResult) {
+      if (result == SignInOutcome.cancelled) {
         app_state.prismUser.loggedIn = false;
         app_state.persistPrismUser();
         toasts.error('Sign in cancelled.');
@@ -156,7 +155,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
     try {
       final result = await globalAppleAuth.signInWithApple();
       if (!mounted) return;
-      if (result == AppleAuth.signInCancelledResult) {
+      if (result == SignInOutcome.cancelled) {
         app_state.prismUser.loggedIn = false;
         app_state.persistPrismUser();
         toasts.error('Sign in cancelled.');
