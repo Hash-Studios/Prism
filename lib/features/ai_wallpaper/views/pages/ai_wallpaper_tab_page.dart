@@ -608,7 +608,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return 'AI$suffix';
   }
 
-  // One-tap confirm submit sheet — auto-fills from prompt + style
   Future<AiSubmissionMetadata?> _showSubmissionEditor(AiSubmissionMetadata metadata) async {
     AiSubmissionMetadata? output;
     final title = metadata.title;
@@ -720,7 +719,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     return output;
   }
 
-  // Variation / advanced options sheet
   void _showAdvancedSheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -784,8 +782,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       },
     );
   }
-
-  // ── UI builders ──────────────────────────────────────────────────────────
 
   Widget _buildQualitySelector() {
     final ThemeData theme = Theme.of(context);
