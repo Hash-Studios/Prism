@@ -185,7 +185,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
         'followers': FirestoreSentinels.arrayUnion(<Object?>[currentUserEmail]),
       }, sourceTag: 'public_profile.follow.target_user');
-      return fetchProfile(email: targetUserEmail);
+      return await fetchProfile(email: targetUserEmail);
     } catch (error) {
       return Result.error(ServerFailure('Unable to follow user: $error'));
     }
@@ -205,7 +205,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
         'followers': FirestoreSentinels.arrayRemove(<Object?>[currentUserEmail]),
       }, sourceTag: 'public_profile.unfollow.target_user');
-      return fetchProfile(email: targetUserEmail);
+      return await fetchProfile(email: targetUserEmail);
     } catch (error) {
       return Result.error(ServerFailure('Unable to unfollow user: $error'));
     }
@@ -330,7 +330,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       final hasMore = end < unique.length;
 
       final result = await fetchUserSummaries(emails: pageEmails, currentUserEmail: currentUserEmail);
-      return result.fold(
+      return await result.fold(
         onSuccess: (summaries) => Result.success((items: summaries, hasMore: hasMore)),
         onFailure: (failure) => Result.error(failure),
       );
