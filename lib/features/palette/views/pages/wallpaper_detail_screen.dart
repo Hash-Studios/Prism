@@ -808,16 +808,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final url = entity.fullUrl;
     final List<Widget> actions = <Widget>[
       _SheetActionTapScale(
-        child: DownloadButton(colorChanged: state.colorChanged, link: url, sourceContext: _getSourceContext(state)),
+        child: DownloadButton(link: url, sourceContext: _getSourceContext(state)),
       ),
       if (!hideSetWallpaperUi)
-        _SheetActionTapScale(
-          child: SetWallpaperButton(
-            colorChanged: state.colorChanged,
-            url: url,
-            promptNotificationPermissionOnSuccess: true,
-          ),
-        ),
+        _SheetActionTapScale(child: SetWallpaperButton(url: url, promptNotificationPermissionOnSuccess: true)),
       _SheetActionTapScale(child: FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false)),
       _SheetActionTapScale(
         child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
