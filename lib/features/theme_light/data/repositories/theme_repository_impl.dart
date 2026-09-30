@@ -53,7 +53,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
       await _settingsLocal.set('lightThemeID', themeId);
       await _settingsLocal.set(
         'lightAccent',
-        prismLightThemes.byId(themeId)?.defaultAccentValue ?? prismDefaultAccentValue,
+        prismThemeById(prismLightThemes, themeId)?.defaultAccentValue ?? prismDefaultAccentValue,
       );
       return Result.success(_readLightTheme());
     } catch (error) {
@@ -86,7 +86,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
       await _settingsLocal.set('darkThemeID', themeId);
       await _settingsLocal.set(
         'darkAccent',
-        prismDarkThemes.byId(themeId)?.defaultAccentValue ?? prismDefaultAccentValue,
+        prismThemeById(prismDarkThemes, themeId)?.defaultAccentValue ?? prismDefaultAccentValue,
       );
       return Result.success(_readDarkTheme());
     } catch (error) {

@@ -21,11 +21,8 @@ class PrismThemeOption {
   final int defaultAccentValue;
 }
 
-extension PrismThemeOptionList on List<PrismThemeOption> {
-  PrismThemeOption? byId(String id) => where((option) => option.id == id).firstOrNull;
-
-  PrismThemeOption byIdOrDefault(String id) => byId(id) ?? first;
-}
+PrismThemeOption? prismThemeById(List<PrismThemeOption> options, String id) =>
+    options.where((option) => option.id == id).firstOrNull;
 
 final List<PrismThemeOption> prismLightThemes = <PrismThemeOption>[
   PrismThemeOption(id: prismDefaultLightThemeId, label: 'Frost White', theme: kLightTheme),

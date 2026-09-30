@@ -23,9 +23,8 @@ void main() {
     }
   });
 
-  test('byIdOrDefault falls back to the first theme', () {
-    expect(prismLightThemes.byIdOrDefault('missing').theme, kLightTheme);
-    expect(prismDarkThemes.byIdOrDefault('kDAMOLED').theme, kDarkTheme2);
-    expect(prismDarkThemes.byId('missing'), isNull);
+  test('prismThemeById finds an option or returns null', () {
+    expect(prismThemeById(prismDarkThemes, 'kDAMOLED')?.theme, kDarkTheme2);
+    expect(prismThemeById(prismDarkThemes, 'missing'), isNull);
   });
 }
