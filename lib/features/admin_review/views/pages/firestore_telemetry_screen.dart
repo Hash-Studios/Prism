@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/firestore/firestore_telemetry.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-
-const String _kTelemetryFileName = 'firestore_telemetry.ndjson';
 
 @RoutePage()
 class FirestoreTelemetryScreen extends StatefulWidget {
@@ -42,7 +40,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
     });
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$_kTelemetryFileName');
+      final file = File('${dir.path}/$firestoreTelemetryFileName');
       if (!file.existsSync()) {
         setState(() {
           _loading = false;
@@ -66,47 +64,22 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
         }
       }
 
-      final readOps = events.where((e) {
-        return e.operation == 'queryGet' || e.operation == 'docGet' || e.operation == 'streamSubscribe';
-      }).toList();
-      final writeOps = events.where((e) {
-        return e.operation == 'set' ||
-            e.operation == 'update' ||
-            e.operation == 'delete' ||
-            e.operation == 'add' ||
-            e.operation == 'transaction';
-      }).toList();
-
-      final docReads = readOps.fold<int>(0, (sum, e) => sum + (e.resultCount ?? 1));
-      final docWrites = writeOps.length;
+      final docReads = events.fold<int>(0, (sum, e) => sum + e.reads);
+      final docWrites = events.where((e) => e.isWrite).length;
 
       final byCollection = <String, _CollectionStats>{};
       for (final e in events) {
-        final c = e.collection;
-        final stats = byCollection.putIfAbsent(c, _CollectionStats.new);
+        final stats = byCollection.putIfAbsent(e.collection, _CollectionStats.new);
         stats.ops += 1;
-        final op = e.operation;
-        if (op == 'queryGet' || op == 'docGet' || op == 'streamSubscribe') {
-          stats.reads += e.resultCount ?? 1;
-        } else if (op == 'set' || op == 'update' || op == 'delete' || op == 'add' || op == 'transaction') {
+        stats.reads += e.reads;
+        if (e.isWrite) {
           stats.writes += 1;
         }
       }
       final byCollectionList = byCollection.entries.toList()..sort((a, b) => b.value.reads.compareTo(a.value.reads));
 
-      final byOp = <String, int>{};
-      for (final e in events) {
-        final op = e.operation;
-        byOp[op] = (byOp[op] ?? 0) + 1;
-      }
-      final byOpList = byOp.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-
-      final byTag = <String, int>{};
-      for (final e in events) {
-        final tag = e.sourceTag;
-        byTag[tag] = (byTag[tag] ?? 0) + 1;
-      }
-      final byTagList = byTag.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      final byOpList = _countBy(events, (e) => e.operation);
+      final byTagList = _countBy(events, (e) => e.sourceTag);
 
       setState(() {
         _rawContent = content;
@@ -132,18 +105,11 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
       return;
     }
     await Clipboard.setData(ClipboardData(text: _rawContent));
-    toasts.codeSend('Copied to clipboard. Paste elsewhere to analyze.');
+    toasts.success('Copied to clipboard. Paste elsewhere to analyze.');
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!app_state.isAdminUser()) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Firestore telemetry')),
-        body: const Center(child: Text('You are not authorized to access this page.')),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Firestore telemetry'),
@@ -205,66 +171,80 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
                         ),
                       ),
                     const SizedBox(height: 24),
-                    if (_byCollection.isNotEmpty) ...[
-                      Text('By collection', style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      Card(
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _byCollection.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, i) {
-                            final e = _byCollection[i];
-                            return ListTile(
-                              title: Text(e.key),
-                              subtitle: Text('${e.value.reads} reads, ${e.value.writes} writes, ${e.value.ops} ops'),
-                            );
-                          },
+                    Column(
+                      spacing: 16,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        _StatsCard(
+                          title: 'By collection',
+                          tiles: <Widget>[
+                            for (final e in _byCollection)
+                              ListTile(
+                                title: Text(e.key),
+                                subtitle: Text('${e.value.reads} reads, ${e.value.writes} writes, ${e.value.ops} ops'),
+                              ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (_byOperation.isNotEmpty) ...[
-                      Text('By operation', style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      Card(
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _byOperation.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, i) {
-                            final e = _byOperation[i];
-                            return ListTile(title: Text(e.key), trailing: Text('${e.value}'));
-                          },
+                        _StatsCard(
+                          title: 'By operation',
+                          tiles: <Widget>[
+                            for (final e in _byOperation) ListTile(title: Text(e.key), trailing: Text('${e.value}')),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (_bySourceTag.isNotEmpty) ...[
-                      Text('By source (top 15)', style: Theme.of(context).textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      Card(
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _bySourceTag.length > 15 ? 15 : _bySourceTag.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, i) {
-                            final e = _bySourceTag[i];
-                            return ListTile(
-                              title: Text(e.key, overflow: TextOverflow.ellipsis),
-                              trailing: Text('${e.value}'),
-                            );
-                          },
+                        _StatsCard(
+                          title: 'By source (top 15)',
+                          tiles: <Widget>[
+                            for (final e in _bySourceTag.take(15))
+                              ListTile(
+                                title: Text(e.key, overflow: TextOverflow.ellipsis),
+                                trailing: Text('${e.value}'),
+                              ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
+    );
+  }
+}
+
+List<MapEntry<String, int>> _countBy(List<_TelemetryEvent> events, String Function(_TelemetryEvent) key) {
+  final counts = <String, int>{};
+  for (final e in events) {
+    counts.update(key(e), (n) => n + 1, ifAbsent: () => 1);
+  }
+  return counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+}
+
+class _StatsCard extends StatelessWidget {
+  const _StatsCard({required this.title, required this.tiles});
+
+  final String title;
+  final List<Widget> tiles;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tiles.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Card(
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: tiles.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, i) => tiles[i],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -287,6 +267,10 @@ class _TelemetryEvent {
   final int? resultCount;
   final String collection;
   final String sourceTag;
+
+  FirestoreOperation? get _op => FirestoreOperation.values.asNameMap()[operation];
+  int get reads => (_op?.isRead ?? false) ? resultCount ?? 1 : 0;
+  bool get isWrite => _op?.isWrite ?? false;
 
   static _TelemetryEvent? tryParse(String line) {
     try {

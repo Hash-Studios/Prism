@@ -1,34 +1,17 @@
-import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {getAdminEmails} from "./adminConfig";
 import {sendNotification, emailToTopic} from "./notificationHelper";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
+import {findUserByEmail, REGION, str} from "./common";
 
 /**
- * Fires when a new wall document is created in the `walls` collection.
- *
- * Walls start with review=false (pending review).  This function notifies
- * admins so they can review the submission promptly.
- *
- * Admin recipient emails are read from `config/adminNotifications` in
- * Firestore (field: `emails: string[]`).  This replaces the old pattern of
- * hardcoded admin email prefixes in wallfirestore.dart.
- *
- * To configure admins, create or update this document in the Firebase console:
- *   Collection: config
- *   Document:   adminNotifications
- *   Field:      emails  (array of admin email addresses)
+ * Notifies the admins in `config/adminNotifications` when a premium user
+ * submits a wall (walls start with review=false).
  */
 export const onWallSubmitted = onDocumentCreated(
   {
     document: "walls/{wallId}",
-    region: "asia-south1",
+    region: REGION,
   },
   async (event) => {
     const data = event.data?.data();
@@ -37,18 +20,17 @@ export const onWallSubmitted = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
-    const artistName: string = (data.by ?? "").toString().trim() || "A user";
-    const artistEmail: string = (data.email ?? "").toString().trim();
-    const wallTitle: string = (data.title ?? "").toString().trim() || "Untitled";
-    const wallThumb: string = (data.wallpaper_thumb ?? "").toString().trim();
+    const artistName = str(data.by) || "A user";
+    const artistEmail = str(data.email);
+    const wallTitle = str(data.title) || "Untitled";
+    const wallThumb = str(data.wallpaper_thumb);
 
     let isPremium = true;
     if (artistEmail) {
       try {
-        const snap = await db.collection("usersv2").where("email", "==", artistEmail).limit(1).get();
-        const userSnap = snap.empty ? await db.collection("usersv2").where("email", "==", artistEmail.toLowerCase()).limit(1).get() : snap;
-        if (!userSnap.empty) {
-          isPremium = userSnap.docs[0].data().premium === true;
+        const user = await findUserByEmail(artistEmail);
+        if (user) {
+          isPremium = user.data().premium === true;
         }
       } catch (err) {
         logger.warn("onWallSubmitted: premium lookup failed; notifying for review.", {wallId, artistEmail, err});
@@ -67,12 +49,7 @@ export const onWallSubmitted = onDocumentCreated(
       await sendNotification({
         title: "New Premium Wall for review! 🎉",
         body: `New post by ${artistName} (${artistEmail}) is up for review.`,
-        data: {
-          route: "wall",
-          wall_id: wallId,
-          pageName: "",
-          url: "",
-        },
+        data: {route: "wall", wall_id: wallId},
         imageUrl: wallThumb || undefined,
         modifier: adminEmail,
         channelId: "posts",

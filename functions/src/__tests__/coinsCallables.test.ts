@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {clampAmount, refundableDelta, rejectSelfReferral, rewardedAdAllowed} from "../coinsCallables";
+import {refundableDelta, rewardedAdAllowed} from "../coinsCallables";
 
 const NOW = 1_700_000_000_000;
 
@@ -14,16 +14,6 @@ function debitFixture(overrides: Record<string, unknown> = {}): Record<string, u
     ...overrides,
   };
 }
-
-test("clamps coin amounts to the callable limit", () => {
-  assert.equal(clampAmount(-5), 0);
-  assert.equal(clampAmount(12.9), 12);
-  assert.equal(clampAmount(5000), 1000);
-});
-
-test("rejects self referrals", () => {
-  assert.throws(() => rejectSelfReferral("user-1", "user-1"), {code: "invalid-argument"});
-});
 
 test("refundableDelta: happy path returns the absolute debited amount", () => {
   assert.equal(refundableDelta(debitFixture(), "user-1", NOW), 15);

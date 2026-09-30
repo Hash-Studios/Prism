@@ -34,9 +34,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         return Result.success(<OnboardingStarterCreatorEntity>[]);
       }
 
-      // Parse curation list — only email + rank are required in Remote Config now.
-      // Legacy format (with embedded profile data) is also supported for backwards
-      // compatibility during the transition period.
+      // Remote Config only carries email + rank; profile data comes from Firestore.
       final curationEntries = decoded
           .whereType<Map<String, dynamic>>()
           .map(OnboardingStarterCreatorEntity.fromCurationMap)
@@ -47,7 +45,7 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         return Result.success(<OnboardingStarterCreatorEntity>[]);
       }
 
-      // Fetch profile + last 3 wallpapers for every creator in parallel.
+      // Fetch profile + latest wallpapers for every creator in parallel.
       final enriched = await Future.wait(curationEntries.map((entry) => _enrichCreator(entry)));
 
       return Result.success(enriched);
@@ -59,17 +57,13 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
   /// Fetches live profile data and the last 5 wallpapers for [entry] from Firestore.
   /// Gracefully falls back to the original (empty) entry values on any error.
   Future<OnboardingStarterCreatorEntity> _enrichCreator(OnboardingStarterCreatorEntity entry) async {
-    final results = await Future.wait([_fetchUserProfile(entry.email), _fetchPreviewUrls(entry.email)]);
-
-    final profile = results[0] as _CreatorProfile?;
-    final previewUrls = results[1]! as List<String>;
+    final (profile, previewUrls) = await (_fetchUserProfile(entry.email), _fetchPreviewUrls(entry.email)).wait;
 
     return OnboardingStarterCreatorEntity(
       userId: profile?.userId ?? entry.userId,
       email: entry.email,
       name: profile?.name ?? entry.name,
       photoUrl: profile?.photoUrl ?? entry.photoUrl,
-      bio: profile?.bio ?? entry.bio,
       followerCount: profile?.followerCount ?? entry.followerCount,
       previewUrls: previewUrls,
       rank: entry.rank,
@@ -90,10 +84,9 @@ class OnboardingV2RepositoryImpl implements OnboardingV2Repository {
         (data, docId) {
           final name = data['name']?.toString() ?? '';
           final photoUrl = data['profilePhoto']?.toString() ?? '';
-          final bio = data['bio']?.toString() ?? '';
           final rawFollowers = data['followers'];
           final followerCount = rawFollowers is List ? rawFollowers.length : 0;
-          return _CreatorProfile(userId: docId, name: name, photoUrl: photoUrl, bio: bio, followerCount: followerCount);
+          return _CreatorProfile(userId: docId, name: name, photoUrl: photoUrl, followerCount: followerCount);
         },
       );
       return rows.firstOrNull;
@@ -213,13 +206,11 @@ class _CreatorProfile {
     required this.userId,
     required this.name,
     required this.photoUrl,
-    required this.bio,
     required this.followerCount,
   });
 
   final String userId;
   final String name;
   final String photoUrl;
-  final String bio;
   final int followerCount;
 }

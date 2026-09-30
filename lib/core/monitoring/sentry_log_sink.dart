@@ -13,7 +13,7 @@ class SentryLogSink implements LogSink {
 
   @override
   void write(AppLogRecord record) {
-    if (record.level != AppLogLevel.error && record.level != AppLogLevel.fatal) {
+    if (record.level != AppLogLevel.error) {
       return;
     }
 
@@ -31,13 +31,10 @@ class SentryLogSink implements LogSink {
     }
     _recentEvents[dedupeKey] = now;
 
-    final ErrorSeverity severity = record.level == AppLogLevel.fatal ? ErrorSeverity.fatal : ErrorSeverity.error;
-
     final Map<String, Object?> extras = <String, Object?>{
       'sequence': record.sequence,
       'timestamp': record.timestamp.toUtc().toIso8601String(),
       if (record.fields.isNotEmpty) 'fields': record.fields,
-      if (record.spanId != null) 'span_id': record.spanId,
       if (record.tag != null) 'app_tag': record.tag,
       'log_level': record.level.name,
     };
@@ -47,14 +44,13 @@ class SentryLogSink implements LogSink {
         record.error!,
         stackTrace: record.stackTrace,
         message: record.message,
-        severity: severity,
         tag: record.tag,
         extras: extras,
       );
       return;
     }
 
-    reporter.captureMessage(record.message, severity: severity, tag: record.tag, extras: extras);
+    reporter.captureMessage(record.message, tag: record.tag, extras: extras);
   }
 
   void _cleanupOldEntries() {

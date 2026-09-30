@@ -7,10 +7,6 @@ import 'package:flutter/widgets.dart';
 abstract class AppAnalytics {
   Future<void> track(AnalyticsEvent event);
 
-  Future<void> logShare({required String contentType, required String itemId, required String method});
-
-  Future<void> logLogin({String? loginMethod});
-
   Future<void> setUserId(String? userId);
 
   Future<void> setUserProperty({required String name, String? value});
@@ -34,18 +30,6 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> track(AnalyticsEvent event) {
-    if (event is ShareAnalyticsEvent) {
-      return _provider.logShare(
-        contentType: _nonEmpty(event.contentType, fallback: 'unknown_content'),
-        itemId: _nonEmpty(event.itemId, fallback: 'unknown_item'),
-        method: _nonEmpty(event.method, fallback: 'unknown_method'),
-      );
-    }
-
-    if (event is LoginAnalyticsEvent) {
-      return _provider.logLogin(loginMethod: _nonEmptyOrNull(event.loginMethod));
-    }
-
     if (event is ScreenViewAnalyticsEvent) {
       return _provider.logScreenView(
         screenName: _normalizer.normalizeScreenName(event.screenName),
@@ -59,16 +43,6 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
       parameters: event.toWireParameters(),
     );
     return _provider.logEvent(name: normalized.name, parameters: normalized.parameters);
-  }
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) {
-    return track(ShareAnalyticsEvent(contentType: contentType, itemId: itemId, method: method));
-  }
-
-  @override
-  Future<void> logLogin({String? loginMethod}) {
-    return track(LoginAnalyticsEvent(loginMethod: loginMethod));
   }
 
   @override
@@ -100,14 +74,6 @@ class ProviderBackedAppAnalytics implements AppAnalytics {
     return <NavigatorObserver>[AnalyticsRouteObserver(onScreenView: logScreenView)];
   }
 
-  String _nonEmpty(String value, {required String fallback}) {
-    final String trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      return fallback;
-    }
-    return trimmed;
-  }
-
   String? _nonEmptyOrNull(String? value) {
     if (value == null) {
       return null;
@@ -130,9 +96,6 @@ class NoopAppAnalytics implements AppAnalytics {
   Future<void> track(AnalyticsEvent event) async {}
 
   @override
-  Future<void> logLogin({String? loginMethod}) async {}
-
-  @override
   Future<void> setUserId(String? userId) async {}
 
   @override
@@ -144,9 +107,6 @@ class NoopAppAnalytics implements AppAnalytics {
     String? screenClass,
     Map<String, Object?>? parameters,
   }) async {}
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
 
   @override
   Future<void> flush() async {}

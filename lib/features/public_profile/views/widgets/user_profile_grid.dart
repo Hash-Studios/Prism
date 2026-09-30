@@ -1,241 +1,124 @@
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/premium_wall_utils.dart';
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
-import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
-import 'package:Prism/features/public_profile/views/public_profile_bloc_adapter.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-class UserProfileGrid extends StatefulWidget {
-  final String? email;
-  const UserProfileGrid({this.email, super.key});
+class UserProfileGrid extends StatelessWidget {
+  const UserProfileGrid({super.key});
 
-  @override
-  _UserProfileGridState createState() => _UserProfileGridState();
-}
-
-class _UserProfileGridState extends State<UserProfileGrid> with SingleTickerProviderStateMixin {
-  AnimationController? _controller;
-  Animation<Color?>? animation;
-  GlobalKey<RefreshIndicatorState> refreshProfileKey = GlobalKey<RefreshIndicatorState>();
-  bool seeMoreLoader = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
-    _controller!.repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> refreshList() async {
-    refreshProfileKey.currentState?.show();
-    await context.publicProfileAdapter(listen: false).refreshProfile(widget.email);
-  }
-
-  Future<void> _loadMoreWalls() async {
-    if (seeMoreLoader) {
-      return;
-    }
-    setState(() {
-      seeMoreLoader = true;
-    });
-    try {
-      await context.publicProfileAdapter(listen: false).seeMoreUserProfileWalls(widget.email);
-    } finally {
-      if (mounted) {
-        setState(() {
-          seeMoreLoader = false;
-        });
-      }
-    }
+  Future<void> _refresh(PublicProfileBloc bloc) async {
+    bloc.add(const PublicProfileEvent.refreshRequested());
+    await bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
   }
 
   @override
   Widget build(BuildContext context) {
+    final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
     return RefreshIndicator(
       backgroundColor: Theme.of(context).primaryColor,
-      key: refreshProfileKey,
-      onRefresh: refreshList,
-      child: context.publicProfileAdapter().userProfileWalls != null
-          ? context.publicProfileAdapter().userProfileWalls!.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: <Widget>[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        child: context.prismModeStyleForContext() == "Dark"
-                            ? SvgPicture.string(
-                                postsDark
-                                    .replaceAll(
-                                      "181818",
-                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "E57697",
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                    )
-                                    .replaceAll(
-                                      "F0F0F0",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2E41",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "3F3D56",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2F2F",
-                                      Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                    ),
-                              )
-                            : SvgPicture.string(
-                                postsLight
-                                    .replaceAll(
-                                      "181818",
-                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "E57697",
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                    )
-                                    .replaceAll(
-                                      "F0F0F0",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2E41",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "3F3D56",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2F2F",
-                                      Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                    ),
-                              ),
+      onRefresh: () => _refresh(bloc),
+      child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
+        builder: (context, state) {
+          if (state.status == LoadStatus.initial) {
+            return const LoadingCards();
+          }
+          final List<PublicProfileWallEntity> walls = state.walls;
+          if (walls.isEmpty) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: <Widget>[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  child: SvgPicture.string(themedIllustration(context, dark: postsDark, light: postsLight)),
+                ),
+                const SizedBox(height: 12),
+              ],
+            );
+          }
+          return GridView.builder(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: walls.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
+              childAspectRatio: 0.5,
+            ),
+            itemBuilder: (context, index) {
+              if (index == walls.length - 1 && state.hasMoreWalls) {
+                return SeeMoreButton(
+                  seeMoreLoader: state.isFetchingMoreWalls,
+                  func: () => bloc.add(const PublicProfileEvent.fetchMoreWallsRequested()),
+                );
+              }
+              final tile = _PhotographerWallTile(wall: walls[index]);
+              return app_state.prismUser.premium
+                  ? tile
+                  : PremiumBanner(
+                      comparator: !isPremiumWall(
+                        app_state.premiumCollections,
+                        walls[index].collections ?? const <String>[],
                       ),
-                      const SizedBox(height: 12),
-                    ],
-                  )
-                : GridView.builder(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: context.publicProfileAdapter().userProfileWalls!.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-                      childAspectRatio: 0.5,
-                    ),
-                    itemBuilder: (context, index) {
-                      if (index == context.publicProfileAdapter(listen: false).userProfileWalls!.length - 1 &&
-                          context.publicProfileAdapter(listen: false).hasMoreWalls) {
-                        return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _loadMoreWalls);
-                      }
-                      return app_state.prismUser.premium != true
-                          ? PremiumBanner(
-                              comparator: !app_state.isPremiumWall(
-                                app_state.premiumCollections,
-                                context.publicProfileAdapter().userProfileWalls![index].collections ?? const <String>[],
-                              ),
-                              top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 68,
-                              left: MediaQuery.of(context).size.width / 2 - 53.5,
-                              right: null,
-                              bottom: null,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                bottomRight: Radius.circular(20),
-                              ),
-                              iconSize: 24,
-                              iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                              fit: StackFit.loose,
-                              clipBehavior: Clip.hardEdge,
-                              child: _PhotographerWallTile(animation: animation, index: index),
-                            )
-                          : _PhotographerWallTile(animation: animation, index: index);
-                    },
-                  )
-          : const LoadingCards(),
+                      top: (MediaQuery.of(context).size.width / 2) / 0.6225 - 68,
+                      left: MediaQuery.of(context).size.width / 2 - 53.5,
+                      right: null,
+                      bottom: null,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                      iconSize: 24,
+                      iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                      fit: StackFit.loose,
+                      clipBehavior: Clip.hardEdge,
+                      child: tile,
+                    );
+            },
+          );
+        },
+      ),
     );
   }
 }
 
 class _PhotographerWallTile extends StatelessWidget {
-  const _PhotographerWallTile({required this.animation, required this.index});
+  const _PhotographerWallTile({required this.wall});
 
-  final Animation<Color?>? animation;
-  final int index;
+  final PublicProfileWallEntity wall;
 
   @override
   Widget build(BuildContext context) {
-    final String imageUrl = context.publicProfileAdapter().userProfileWalls![index].wallpaperThumb?.trim() ?? '';
-    final bool hasValidImageUrl = imageUrl.startsWith("http://") || imageUrl.startsWith("https://");
-    final String? author = context.publicProfileAdapter().userProfileWalls![index].by;
+    final String imageUrl = wall.wallpaperThumb?.trim() ?? '';
+    final bool hasValidImageUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
     return Semantics(
       button: true,
-      label: wallpaperSemanticLabel(author),
+      label: wallpaperSemanticLabel(wall.by),
       child: Stack(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: animation!.value,
-              image: hasValidImageUrl
-                  ? DecorationImage(image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover)
-                  : null,
+          PulsePlaceholder(
+            builder: (context, color) => Container(
+              decoration: BoxDecoration(
+                color: color,
+                image: hasValidImageUrl
+                    ? DecorationImage(image: CachedNetworkImageProvider(imageUrl), fit: BoxFit.cover)
+                    : null,
+              ),
             ),
           ),
           Material(
@@ -243,16 +126,12 @@ class _PhotographerWallTile extends StatelessWidget {
             child: InkWell(
               splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-              onTap: () {
-                final list = context.publicProfileAdapter(listen: false).userProfileWalls;
-                if (list == null || list.isEmpty) {
-                  return;
-                }
-                final entity = WallpaperDetailEntityX.fromPublicProfileWall(list[index]);
-                context.router.push(
-                  WallpaperDetailRoute(entity: entity, analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView),
-                );
-              },
+              onTap: () => context.router.push(
+                WallpaperDetailRoute(
+                  entity: wall.toFeedItem(),
+                  analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
+                ),
+              ),
             ),
           ),
         ],

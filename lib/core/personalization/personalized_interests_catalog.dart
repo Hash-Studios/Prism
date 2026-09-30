@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class PersonalizedInterest {
@@ -40,7 +41,7 @@ class PersonalizedInterestsCatalog {
   }
 
   static List<String> selectedFromLocal(SettingsLocalDataSource settingsLocal) {
-    final raw = settingsLocal.get<String>('onboarding_v2_interests', defaultValue: '');
+    final raw = settingsLocal.get<String>(OnboardingV2Keys.selectedInterests, defaultValue: '');
     return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toSet().toList(growable: false);
   }
 

@@ -40,10 +40,6 @@ class FavoritesLocalDataSource {
     return _setupSet(_scope(userId)).contains(itemId);
   }
 
-  bool isAnyFavourite(String userId, String itemId) {
-    return isWallFavourite(userId, itemId) || isSetupFavourite(userId, itemId);
-  }
-
   Future<void> setWallFavourite(String userId, String itemId, bool value) async {
     final scope = _scope(userId);
     final ids = _wallSet(scope);
@@ -70,24 +66,8 @@ class FavoritesLocalDataSource {
     await _saveSetupSet(scope, ids);
   }
 
-  Future<void> clearWallFavourites(String userId, {List<String>? onlyIds}) async {
-    final scope = _scope(userId);
-    if (onlyIds != null && onlyIds.isNotEmpty) {
-      final ids = _wallSet(scope)..removeAll(onlyIds);
-      await _saveWallSet(scope, ids);
-      return;
-    }
-    await _store.delete(PersistenceKeys.favoritesWallSet(scope));
-  }
-
-  Future<void> clearSetupFavourites(String userId, {List<String>? onlyIds}) async {
-    final scope = _scope(userId);
-    if (onlyIds != null && onlyIds.isNotEmpty) {
-      final ids = _setupSet(scope)..removeAll(onlyIds);
-      await _saveSetupSet(scope, ids);
-      return;
-    }
-    await _store.delete(PersistenceKeys.favoritesSetupSet(scope));
+  Future<void> replaceSetupFavourites(String userId, Iterable<String> itemIds) {
+    return _saveSetupSet(_scope(userId), itemIds.where((id) => id.isNotEmpty).toSet());
   }
 
   Future<void> setSeeded(String userId, bool value) async {

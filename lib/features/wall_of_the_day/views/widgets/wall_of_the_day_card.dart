@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -32,13 +31,8 @@ class _WallOfTheDayCardState extends State<WallOfTheDayCard> {
   Widget build(BuildContext context) {
     return BlocBuilder<WotdBloc, WotdState>(
       builder: (context, state) {
-        if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
-          return const SizedBox.shrink();
-        }
-        if (state.status == LoadStatus.failure || state.entity == null) {
-          return const SizedBox.shrink();
-        }
-        final entity = state.entity!;
+        final entity = state.entity;
+        if (entity == null) return const SizedBox.shrink();
         _fireImpression(entity);
         return _WotdCardContent(entity: entity);
       },
@@ -57,7 +51,6 @@ class _WotdCardContent extends StatelessWidget {
       WallpaperDetailRoute(
         wallId: entity.wallId,
         source: entity.source == WallpaperSource.unknown ? WallpaperSource.prism : entity.source,
-        wallpaperUrl: entity.url,
         thumbnailUrl: entity.thumbnailUrl.isNotEmpty ? entity.thumbnailUrl : entity.url,
       ),
     );
@@ -73,7 +66,6 @@ class _WotdCardContent extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Background image
               CachedNetworkImage(
                 imageUrl: entity.thumbnailUrl,
                 fit: BoxFit.cover,
@@ -81,7 +73,6 @@ class _WotdCardContent extends StatelessWidget {
                 errorWidget: (_, _, _) => const SizedBox.shrink(),
               ),
 
-              // Centered text
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

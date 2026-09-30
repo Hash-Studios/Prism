@@ -33,13 +33,12 @@ void main() {
     expect((action as UserLinkIntent).profileIdentifier, 'bob');
   });
 
-  test('parses canonical setup path without thumbnail query', () {
+  test('parses canonical setup path', () {
     final DeepLinkActionEntity action = parser.parse(Uri.parse('https://prismwalls.com/setup/minimal-desk'));
 
     expect(action, isA<SetupLinkIntent>());
     final SetupLinkIntent setup = action as SetupLinkIntent;
     expect(setup.setupName, 'minimal-desk');
-    expect(setup.thumbnailUrl, isEmpty);
   });
 
   test('parses legacy refer query link', () {

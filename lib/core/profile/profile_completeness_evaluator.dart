@@ -3,27 +3,20 @@ import 'package:Prism/auth/user_model.dart';
 enum ProfileCompletenessStep { photo, username, bio, socialLink }
 
 class ProfileCompletenessStatus {
-  const ProfileCompletenessStatus({
-    required this.completedSteps,
-    required this.totalSteps,
-    required this.progress,
-    required this.percent,
-    required this.missingSteps,
-  });
+  const ProfileCompletenessStatus({required this.missingSteps});
 
-  final int completedSteps;
-  final int totalSteps;
-  final double progress;
-  final int percent;
   final List<ProfileCompletenessStep> missingSteps;
 
-  bool get isComplete => completedSteps >= totalSteps;
+  int get totalSteps => ProfileCompletenessStep.values.length;
+  int get completedSteps => totalSteps - missingSteps.length;
+  double get progress => completedSteps / totalSteps;
+  int get percent => completedSteps * 100 ~/ totalSteps;
+
+  bool get isComplete => missingSteps.isEmpty;
 }
 
 class ProfileCompletenessEvaluator {
   const ProfileCompletenessEvaluator._();
-
-  static const int _totalSteps = 4;
 
   static ProfileCompletenessStatus evaluate(PrismUsersV2 user, {required String defaultProfilePhotoUrl}) {
     final bool hasPhoto = _hasCompletedPhoto(user, defaultProfilePhotoUrl: defaultProfilePhotoUrl);
@@ -38,16 +31,7 @@ class ProfileCompletenessEvaluator {
       if (!hasSocialLink) ProfileCompletenessStep.socialLink,
     ];
 
-    final int completedSteps = _totalSteps - missingSteps.length;
-    final double progress = completedSteps / _totalSteps;
-
-    return ProfileCompletenessStatus(
-      completedSteps: completedSteps,
-      totalSteps: _totalSteps,
-      progress: progress,
-      percent: completedSteps * 25,
-      missingSteps: missingSteps,
-    );
+    return ProfileCompletenessStatus(missingSteps: missingSteps);
   }
 
   static bool _hasCompletedPhoto(PrismUsersV2 user, {required String defaultProfilePhotoUrl}) {
