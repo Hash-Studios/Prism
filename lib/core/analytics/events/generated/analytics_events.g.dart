@@ -1093,6 +1093,45 @@ class WotdOpenedFromPushEvent extends AnalyticsEvent {
   }
 }
 
+class AutoRotateEnabledEvent extends AnalyticsEvent {
+  const AutoRotateEnabledEvent({
+    required this.intervalMinutes,
+    required this.target,
+    required this.shuffle,
+    required this.wallpaperCount,
+  });
+
+  final int intervalMinutes;
+  final WallpaperTarget target;
+  final bool shuffle;
+  final int wallpaperCount;
+
+  @override
+  String get eventName => 'auto_rotate_enabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'interval_minutes': intervalMinutes,
+      'target': target.wireValue,
+      'shuffle': shuffle ? 1 : 0,
+      'wallpaper_count': wallpaperCount,
+    };
+  }
+}
+
+class AutoRotateDisabledEvent extends AnalyticsEvent {
+  const AutoRotateDisabledEvent();
+
+  @override
+  String get eventName => 'auto_rotate_disabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
 class NavTabSelectedEvent extends AnalyticsEvent {
   const NavTabSelectedEvent({required this.fromTab, required this.toTab});
 
