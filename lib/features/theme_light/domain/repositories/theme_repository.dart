@@ -2,6 +2,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/theme_dark/domain/entities/theme_dark.dart';
 import 'package:Prism/features/theme_light/domain/entities/theme_light.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
+import 'package:flutter/material.dart';
 
 abstract class ThemeRepository {
   Future<Result<ThemeLightEntity>> getLightTheme();
@@ -18,5 +19,5 @@ abstract class ThemeRepository {
 
   Future<Result<ThemeModeEntity>> getThemeMode();
 
-  Future<Result<ThemeModeEntity>> setThemeMode(String mode);
+  Future<Result<ThemeModeEntity>> setThemeMode(ThemeMode mode);
 }

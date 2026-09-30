@@ -2,6 +2,7 @@ import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/theme_light/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
+import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -17,7 +18,7 @@ class LoadThemeModeUseCase implements UseCase<ThemeModeEntity, NoParams> {
 class UpdateThemeModeParams {
   const UpdateThemeModeParams({required this.mode});
 
-  final String mode;
+  final ThemeMode mode;
 }
 
 @lazySingleton
