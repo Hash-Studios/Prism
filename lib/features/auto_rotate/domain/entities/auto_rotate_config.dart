@@ -37,15 +37,19 @@ class AutoRotateConfig {
 }
 
 class AutoRotateStatus {
-  const AutoRotateStatus({this.isRunning = false, this.nextRunEpochMs = 0});
+  const AutoRotateStatus({this.isRunning = false, this.nextRunEpochMs = 0, this.lastError});
 
   final bool isRunning;
   final int nextRunEpochMs;
+  final String? lastError;
 
   @override
   bool operator ==(Object other) =>
-      other is AutoRotateStatus && other.isRunning == isRunning && other.nextRunEpochMs == nextRunEpochMs;
+      other is AutoRotateStatus &&
+      other.isRunning == isRunning &&
+      other.nextRunEpochMs == nextRunEpochMs &&
+      other.lastError == lastError;
 
   @override
-  int get hashCode => Object.hash(isRunning, nextRunEpochMs);
+  int get hashCode => Object.hash(isRunning, nextRunEpochMs, lastError);
 }

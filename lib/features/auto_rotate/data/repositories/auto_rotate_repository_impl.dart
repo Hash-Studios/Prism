@@ -55,14 +55,19 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   }
 
   @override
-  Future<void> stop() async {
-    await aw.AsyncWallpaper.stopWallpaperRotation();
+  Future<bool> stop() async {
+    final aw.WallpaperResult result = await aw.AsyncWallpaper.stopWallpaperRotation();
+    return result.isSuccess;
   }
 
   @override
   Future<AutoRotateStatus> status() async {
     final aw.WallpaperRotationStatus status = await aw.AsyncWallpaper.getWallpaperRotationStatus();
-    return AutoRotateStatus(isRunning: status.isRunning, nextRunEpochMs: status.nextRunEpochMs);
+    return AutoRotateStatus(
+      isRunning: status.isRunning,
+      nextRunEpochMs: status.nextRunEpochMs,
+      lastError: status.lastError,
+    );
   }
 
   @override
