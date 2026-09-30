@@ -1331,10 +1331,10 @@ class WallpaperDetailRouteArgs {
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({
     Key? key,
-    Image? image,
-    Image? finalImage,
-    String? filename,
-    String? finalFilename,
+    required Image image,
+    required Image finalImage,
+    required String filename,
+    required String finalFilename,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperFilterRoute.name,
@@ -1353,9 +1353,7 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      final args = data.argsAs<WallpaperFilterRouteArgs>(
-        orElse: () => const WallpaperFilterRouteArgs(),
-      );
+      final args = data.argsAs<WallpaperFilterRouteArgs>();
       return WallpaperFilterScreen(
         key: args.key,
         image: args.image,
@@ -1370,21 +1368,21 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
 class WallpaperFilterRouteArgs {
   const WallpaperFilterRouteArgs({
     this.key,
-    this.image,
-    this.finalImage,
-    this.filename,
-    this.finalFilename,
+    required this.image,
+    required this.finalImage,
+    required this.filename,
+    required this.finalFilename,
   });
 
   final Key? key;
 
-  final Image? image;
+  final Image image;
 
-  final Image? finalImage;
+  final Image finalImage;
 
-  final String? filename;
+  final String filename;
 
-  final String? finalFilename;
+  final String finalFilename;
 
   @override
   String toString() {
