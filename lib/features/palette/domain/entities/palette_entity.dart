@@ -4,10 +4,4 @@ class PaletteEntity {
   final String imageUrl;
   final int dominantColorValue;
   final List<int> paletteColorValues;
-
-  static const PaletteEntity empty = PaletteEntity(
-    imageUrl: '',
-    dominantColorValue: 0xffe57697,
-    paletteColorValues: <int>[],
-  );
 }

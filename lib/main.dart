@@ -44,7 +44,6 @@ import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
-import 'package:Prism/features/palette/palette.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/setups/setups.dart';
@@ -252,8 +251,6 @@ Future<void> main() async {
             child: MultiBlocProvider(
               providers: [
                 BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                // PaletteBloc is an app-wide singleton: .value so a restart does not close it.
-                BlocProvider<PaletteBloc>.value(value: getIt<PaletteBloc>()),
                 BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                 BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
                 BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),

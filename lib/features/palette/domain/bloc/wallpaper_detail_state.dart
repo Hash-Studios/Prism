@@ -27,6 +27,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     required this.entity,
     this.views,
     this.viewsLoading = false,
+    this.paletteLoading = true,
     this.colors,
     this.accent,
     this.colorChanged = false,
@@ -38,7 +39,8 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final WallpaperDetailEntity entity;
   final String? views;
   final bool viewsLoading;
-  final List<Color?>? colors;
+  final bool paletteLoading;
+  final List<Color>? colors;
   final Color? accent;
   final bool colorChanged;
   final bool panelClosed;
@@ -49,7 +51,8 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     WallpaperDetailEntity? entity,
     String? views,
     bool? viewsLoading,
-    List<Color?>? colors,
+    bool? paletteLoading,
+    List<Color>? colors,
     Color? accent,
     bool? colorChanged,
     bool? panelClosed,
@@ -60,6 +63,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
       entity: entity ?? this.entity,
       views: views ?? this.views,
       viewsLoading: viewsLoading ?? this.viewsLoading,
+      paletteLoading: paletteLoading ?? this.paletteLoading,
       colors: colors ?? this.colors,
       accent: accent ?? this.accent,
       colorChanged: colorChanged ?? this.colorChanged,
@@ -74,6 +78,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     entity,
     views,
     viewsLoading,
+    paletteLoading,
     colors,
     accent,
     colorChanged,
