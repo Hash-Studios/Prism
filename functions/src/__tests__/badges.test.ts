@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
-import {BADGES, badgeIo, checkBadges, evaluateBadges, isProfileComplete, type BadgeFacts} from "../badges";
+import {AI_SPEND_SETTLE_MS, BADGES, badgeIo, checkBadges, evaluateBadges, isProfileComplete, settledCount, type BadgeFacts} from "../badges";
 
 const NONE: BadgeFacts = {
   streakBest: 0, approvedWalls: 0, aiSpends: 0, accountAgeDays: 0, favourites: 0, following: 0, profileComplete: false,
@@ -82,6 +82,7 @@ function fakeDb(
   counts: Record<string, number | ((filters: [string, unknown][]) => number)>,
   onTransactionRetry?: () => void,
   onCountQuery?: (collection: string, filters: [string, unknown][], limit: number | undefined) => void,
+  onGetQuery?: (collection: string, limit: number | undefined) => void,
 ) {
   const docRef = (path: string) => ({path, get: async () => snapOf(path)});
   const snapOf = (path: string) => {
@@ -101,6 +102,20 @@ function fakeDb(
       limit: (limit: number) => {
         queryLimit = limit;
         return query;
+      },
+      get: async () => {
+        // coinTransactions rows: counts.coinTransactions = settled rows, counts["coinTransactions:fresh"] = fresh rows.
+        onGetQuery?.(name, queryLimit);
+        const nowMs = Date.now();
+        const make = (n: number, ageMs: number) => Array.from({length: n}, () => ({
+          get: (field: string) => field === "createdAt" ?
+            admin.firestore.Timestamp.fromMillis(nowMs - ageMs) : undefined,
+        }));
+        const docs = [
+          ...make(Number(counts[name] ?? 0), AI_SPEND_SETTLE_MS + 1000),
+          ...make(Number(counts[`${name}:fresh`] ?? 0), 1000),
+        ];
+        return {docs: docs.slice(0, queryLimit ?? docs.length)};
       },
       count: () => ({get: async () => {
         onCountQuery?.(name, filters, queryLimit);
@@ -329,18 +344,18 @@ test("checkBadges: a badge earned during cooldown is awarded after the next elig
 
   const first = await call();
   assert.deepEqual(first.newBadges, []);
-  assert.equal(countQueries.length, 3);
+  assert.equal(countQueries.length, 2);
 
   store.user.coinState = {streakBest: 7};
   now += 30_000;
   const cooling = await call();
   assert.deepEqual(cooling.newBadges, []);
-  assert.equal(countQueries.length, 3);
+  assert.equal(countQueries.length, 2);
 
   now += 31_000;
   const eligible = await call();
   assert.deepEqual(eligible.newBadges, [{id: "week_warrior", coins: 25}]);
-  assert.equal(countQueries.length, 6);
+  assert.equal(countQueries.length, 4);
   assert.equal(store.user.coins, 35);
 });
 
@@ -388,16 +403,18 @@ test("checkBadges: aggregate counts are capped at each badge threshold", async (
   t.mock.method(Date, "now", () => now);
   t.mock.method(badgeIo, "accountCreatedMs", async () => now);
   const limits: [string, number | undefined][] = [];
+  const gets: [string, number | undefined][] = [];
   fakeDb(t, store, {"walls": 40, "coinTransactions": 40, "usersv2/u1/images": 100}, undefined,
-    (collection, _filters, limit) => limits.push([collection, limit]));
+    (collection, _filters, limit) => limits.push([collection, limit]),
+    (collection, limit) => gets.push([collection, limit]));
 
   await call();
 
   assert.deepEqual(limits.sort(([a], [b]) => a.localeCompare(b)), [
-    ["coinTransactions", 10],
     ["usersv2/u1/images", 50],
     ["walls", 1],
   ]);
+  assert.deepEqual(gets, [["coinTransactions", 40]]);
   assert.equal(store.user.coins, 115);
 });
 
@@ -430,7 +447,7 @@ test("checkBadges: concurrent first checks reserve cooldown before aggregating",
   const results = await Promise.all([call(), call()]);
 
   assert.deepEqual(results.flatMap((result) => result.newBadges), [{id: "week_warrior", coins: 25}]);
-  assert.deepEqual(countQueries.sort(), ["coinTransactions", "usersv2/u1/images", "walls"]);
+  assert.deepEqual(countQueries.sort(), ["usersv2/u1/images", "walls"]);
   assert.equal(store.user.coins, 35);
 });
 
@@ -459,4 +476,27 @@ test("checkBadges: a concurrent call that lost the race awards nothing", async (
   const result = await call();
   assert.deepEqual(result.newBadges, []);
   assert.deepEqual(store.user.badges, []);
+});
+
+test("AI spends count only once they are past the refund window", () => {
+  const now = 10 * AI_SPEND_SETTLE_MS;
+  const settled = now - AI_SPEND_SETTLE_MS;
+  const fresh = now - AI_SPEND_SETTLE_MS + 1;
+  assert.equal(settledCount([settled, settled - 5, fresh, Number.NaN], now), 2);
+});
+
+test("checkBadges: ai_artist needs 10 settled AI spends, fresh ones do not count", async (t) => {
+  const now = 1_700_000_000_000;
+  t.mock.method(Date, "now", () => now);
+  const run = async (counts: Record<string, number>) => {
+    const store = baseStore();
+    store.user.coinState = {streakBest: 0};
+    t.mock.restoreAll();
+    t.mock.method(Date, "now", () => now);
+    t.mock.method(badgeIo, "accountCreatedMs", async () => now);
+    fakeDb(t, store, counts);
+    return (await call()).newBadges.map((b) => b.id);
+  };
+  assert.ok(!(await run({"coinTransactions:fresh": 10})).includes("ai_artist"));
+  assert.ok((await run({"coinTransactions": 10})).includes("ai_artist"));
 });
