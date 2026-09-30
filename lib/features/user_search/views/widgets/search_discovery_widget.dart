@@ -3,11 +3,12 @@ import 'dart:math';
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -173,14 +174,13 @@ class _TrendingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = walls.length > 10 ? walls.sublist(0, 10) : walls;
+    final items = walls.take(10).toList(growable: false);
     return SizedBox(
       height: 185,
-      child: ListView.separated(
+      child: ListView.builder(
         padding: EdgeInsets.zero,
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox.shrink(),
         itemBuilder: (context, index) {
           final wall = items[index];
           final thumbUrl = wall.thumbs?['original'] ?? wall.core.thumbnailUrl;
@@ -209,59 +209,8 @@ class _TrendingList extends StatelessWidget {
   }
 }
 
-class _TrendingSkeletonRow extends StatefulWidget {
+class _TrendingSkeletonRow extends StatelessWidget {
   const _TrendingSkeletonRow();
-
-  @override
-  State<_TrendingSkeletonRow> createState() => _TrendingSkeletonRowState();
-}
-
-class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Color?> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    _animation =
-        (context.prismModeStyleForWindow(listen: false) == 'Dark'
-                ? TweenSequence<Color?>([
-                    TweenSequenceItem(
-                      tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                      weight: 1,
-                    ),
-                    TweenSequenceItem(
-                      tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                      weight: 1,
-                    ),
-                  ])
-                : TweenSequence<Color?>([
-                    TweenSequenceItem(
-                      tween: ColorTween(
-                        begin: Colors.black.withValues(alpha: .1),
-                        end: Colors.black.withValues(alpha: .14),
-                      ),
-                      weight: 1,
-                    ),
-                    TweenSequenceItem(
-                      tween: ColorTween(
-                        begin: Colors.black.withValues(alpha: .14),
-                        end: Colors.black.withValues(alpha: .1),
-                      ),
-                      weight: 1,
-                    ),
-                  ]))
-            .animate(_controller)
-          ..addListener(() => setState(() {}));
-    _controller.repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -269,12 +218,13 @@ class _TrendingSkeletonRowState extends State<_TrendingSkeletonRow> with SingleT
     final itemHeight = itemWidth * 2;
     return SizedBox(
       height: itemHeight,
-      child: ListView.separated(
-        padding: EdgeInsets.zero,
-        scrollDirection: Axis.horizontal,
-        itemCount: 6,
-        separatorBuilder: (_, _) => const SizedBox.shrink(),
-        itemBuilder: (_, _) => Container(width: itemWidth, height: itemHeight, color: _animation.value),
+      child: PulsePlaceholder(
+        builder: (context, color) => ListView.builder(
+          padding: EdgeInsets.zero,
+          scrollDirection: Axis.horizontal,
+          itemCount: 6,
+          itemBuilder: (_, _) => Container(width: itemWidth, height: itemHeight, color: color),
+        ),
       ),
     );
   }
@@ -319,11 +269,10 @@ class _CategorySection extends StatelessWidget {
         const SizedBox(height: 12),
         SizedBox(
           height: _cardWidth(context) * 2,
-          child: ListView.separated(
+          child: ListView.builder(
             padding: EdgeInsets.zero,
             scrollDirection: Axis.horizontal,
             itemCount: categoryDefinitions.length,
-            separatorBuilder: (_, _) => const SizedBox.shrink(),
             itemBuilder: (context, index) {
               final cat = categoryDefinitions[index];
               return Semantics(
@@ -381,24 +330,24 @@ class _CategorySection extends StatelessWidget {
 }
 
 class _ColorSwatch {
-  const _ColorSwatch({required this.name, required this.hex});
+  const _ColorSwatch({required this.name, required this.color});
   final String name;
-  final String hex;
+  final Color color;
 }
 
 const List<_ColorSwatch> _presetColors = [
-  _ColorSwatch(name: 'Red', hex: 'b71c1c'),
-  _ColorSwatch(name: 'Blue', hex: '1565c0'),
-  _ColorSwatch(name: 'Green', hex: '2e7d32'),
-  _ColorSwatch(name: 'Purple', hex: '6a1b9a'),
-  _ColorSwatch(name: 'Orange', hex: 'e65100'),
-  _ColorSwatch(name: 'Yellow', hex: 'f9a825'),
-  _ColorSwatch(name: 'Pink', hex: 'ad1457'),
-  _ColorSwatch(name: 'Teal', hex: '00695c'),
-  _ColorSwatch(name: 'White', hex: 'f5f5f5'),
-  _ColorSwatch(name: 'Black', hex: '212121'),
-  _ColorSwatch(name: 'Brown', hex: '4e342e'),
-  _ColorSwatch(name: 'Cyan', hex: '00838f'),
+  _ColorSwatch(name: 'Red', color: Color(0xFFb71c1c)),
+  _ColorSwatch(name: 'Blue', color: Color(0xFF1565c0)),
+  _ColorSwatch(name: 'Green', color: Color(0xFF2e7d32)),
+  _ColorSwatch(name: 'Purple', color: Color(0xFF6a1b9a)),
+  _ColorSwatch(name: 'Orange', color: Color(0xFFe65100)),
+  _ColorSwatch(name: 'Yellow', color: Color(0xFFf9a825)),
+  _ColorSwatch(name: 'Pink', color: Color(0xFFad1457)),
+  _ColorSwatch(name: 'Teal', color: Color(0xFF00695c)),
+  _ColorSwatch(name: 'White', color: Color(0xFFf5f5f5)),
+  _ColorSwatch(name: 'Black', color: Color(0xFF212121)),
+  _ColorSwatch(name: 'Brown', color: Color(0xFF4e342e)),
+  _ColorSwatch(name: 'Cyan', color: Color(0xFF00838f)),
 ];
 
 class _ColorSection extends StatelessWidget {
@@ -419,13 +368,12 @@ class _ColorSection extends StatelessWidget {
           itemCount: _presetColors.length,
           itemBuilder: (context, index) {
             final swatch = _presetColors[index];
-            final color = Color(int.parse('FF${swatch.hex}', radix: 16));
             return Semantics(
               button: true,
               label: swatch.name,
               child: GestureDetector(
-                onTap: () => context.router.push(ColorRoute(hexColor: swatch.hex)),
-                child: Container(decoration: BoxDecoration(color: color)),
+                onTap: () => context.router.push(ColorRoute(hexColor: swatch.color.rgbHex)),
+                child: Container(decoration: BoxDecoration(color: swatch.color)),
               ),
             );
           },
@@ -436,9 +384,9 @@ class _ColorSection extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label, this.icon});
+  const _SectionHeader({required this.label, required this.icon});
   final String label;
-  final IconData? icon;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -446,10 +394,8 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: Theme.of(context).colorScheme.secondary),
-            const SizedBox(width: 6),
-          ],
+          Icon(icon, size: 12, color: Theme.of(context).colorScheme.secondary),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
