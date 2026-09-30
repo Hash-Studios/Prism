@@ -8,6 +8,8 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
+import 'package:Prism/core/personalization/taste_profile.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/json_utils.dart';
@@ -16,7 +18,10 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
+import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
@@ -40,6 +45,9 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     this._wallhavenRepository,
     this._pexelsRepository,
     this._userBlockRepository,
+    this._favouriteWallsRepository,
+    this._tasteSignals,
+    this._impressions,
   );
 
   final FirestoreClient _firestoreClient;
@@ -48,127 +56,161 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final WallhavenWallpaperRepository _wallhavenRepository;
   final PexelsWallpaperRepository _pexelsRepository;
   final UserBlockRepository _userBlockRepository;
+  final FavouriteWallsRepository _favouriteWallsRepository;
+  final TasteSignalStore _tasteSignals;
+  final FeedImpressionStore _impressions;
   final PersonalizedRankingService _rankingService = const PersonalizedRankingService();
+  final Random _random = Random();
 
-  static const int _pageSize = 24;
   static const int _cacheTtlHours = 2;
 
-  /// Reused on `page > 1` to avoid Remote Config + Firestore user doc on every scroll page.
-  String? _feedBootstrapScope;
-  Map<String, dynamic>? _cachedUserDoc;
-  List<PersonalizedInterest>? _cachedCatalog;
-  List<String>? _cachedInterests;
-  List<String>? _cachedFollowing;
-  _SourceTargets? _cachedTargets;
+  /// Values the `onWallCategorize` Cloud Function writes to `walls.category`.
+  static const List<String> _wallCategories = <String>[
+    'Nature', 'Architecture', 'Cars', 'Anime', 'Space', 'Ocean', 'Flowers', 'Neon', 'Dark', 'Abstract', //
+    '3D Render', 'Minimal', 'Gradient', 'AI Art', 'Cyberpunk', 'Vintage', 'Landscape', 'Galaxy',
+  ];
 
-  void _clearFeedBootstrapCache() {
-    _feedBootstrapScope = null;
-    _cachedUserDoc = null;
-    _cachedCatalog = null;
-    _cachedInterests = null;
-    _cachedFollowing = null;
-    _cachedTargets = null;
-  }
+  /// Reused on `page > 1` to avoid Remote Config + Firestore user doc on every scroll page.
+  String? _bootstrapScope;
+  Future<void>? _tasteSeedInFlight;
+  List<PersonalizedInterest> _catalog = const <PersonalizedInterest>[];
+  List<String> _interests = const <String>[];
+  List<String> _following = const <String>[];
 
   @override
-  Future<List<String>> readPersistedSeenKeys() async {
-    final userId = app_state.prismUser.id.trim();
-    final cacheScope = userId.isEmpty ? 'guest' : userId.toLowerCase();
-    final cached = await _readCacheState(scope: cacheScope);
-    return cached.seenKeys;
+  Future<void> lessLikeThis(FeedItemEntity item) async {
+    final DateTime now = DateTime.now().toUtc();
+    await _tasteSignals.record(
+      item.when(
+        prism: (_, wall) => TasteSignal.forWallpaper(
+          TasteAction.lessLikeThis,
+          wall.core,
+          tags: wall.tags,
+          collections: wall.collections,
+          at: now,
+        ),
+        wallhaven: (_, wall) => TasteSignal.forWallpaper(TasteAction.lessLikeThis, wall.core, tags: wall.tags, at: now),
+        pexels: (_, wall) => TasteSignal.forWallpaper(TasteAction.lessLikeThis, wall.core, at: now),
+      ),
+    );
+    await _impressions.hide(PersonalizedRankingService.canonicalKey(item), now);
   }
 
   @override
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
-    final userId = app_state.prismUser.id.trim();
-    final isGuest = userId.isEmpty;
-    final cacheScope = isGuest ? 'guest' : userId.toLowerCase();
+    final String userId = app_state.prismUser.id.trim();
+    final bool isGuest = userId.isEmpty;
+    final String cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
     try {
-      if (request.refresh) {
-        _clearFeedBootstrapCache();
-      }
-
-      final bool useBootstrapCache =
-          !request.refresh &&
-          request.page > 1 &&
-          _feedBootstrapScope == cacheScope &&
-          _cachedCatalog != null &&
-          _cachedInterests != null &&
-          _cachedFollowing != null &&
-          _cachedTargets != null;
-
-      late final Map<String, dynamic> userDoc;
-      late final List<PersonalizedInterest> catalog;
-      late final List<String> interests;
-      late final List<String> following;
-      late final _SourceTargets targets;
-
-      if (useBootstrapCache) {
-        userDoc = _cachedUserDoc ?? const <String, dynamic>{};
-        catalog = _cachedCatalog!;
-        interests = _cachedInterests!;
-        following = _cachedFollowing!;
-        targets = _cachedTargets!;
-      } else {
-        userDoc = isGuest ? const <String, dynamic>{} : await _resolveUserDoc(userId: userId);
-        catalog = await PersonalizedInterestsCatalog.load(
+      if (request.refresh || _bootstrapScope != cacheScope) {
+        Map<String, dynamic> userDoc = const <String, dynamic>{};
+        if (!isGuest) {
+          try {
+            userDoc = await _resolveUserDoc(userId: userId);
+          } catch (error) {
+            logger.w('[PersonalizedFeed] user profile source failed: $error');
+          }
+        }
+        _catalog = await PersonalizedInterestsCatalog.load(
           remoteConfig: FirebaseRemoteConfig.instance,
           settingsLocal: _settingsLocal,
         );
-        interests = _resolveInterests(userDoc, catalog);
-        following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
-        targets = _resolveTargets();
-        _feedBootstrapScope = cacheScope;
-        _cachedUserDoc = userDoc;
-        _cachedCatalog = catalog;
-        _cachedInterests = interests;
-        _cachedFollowing = following;
-        _cachedTargets = targets;
+        _interests = _resolveInterests(userDoc, _catalog);
+        _following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
+        _bootstrapScope = cacheScope;
+        if (!isGuest) {
+          await _seedTasteFromFavourites(userId);
+        }
       }
 
-      final creatorFuture = _fetchCreatorItems(following: following, page: request.page);
-      final wallhavenFuture = _fetchWallhavenItems(interests: interests, catalog: catalog, refresh: request.refresh);
-      final pexelsFuture = _fetchPexelsItems(interests: interests, catalog: catalog, refresh: request.refresh);
-      final discoveryFuture = _fetchDiscoveryItems();
+      final DateTime now = DateTime.now().toUtc();
+      final TasteProfile profile = TasteProfile.build(
+        interests: _interests,
+        following: _following,
+        signals: _tasteSignals.read(),
+        now: now,
+      );
+      final FeedMix mix = FeedMix.parse(_settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
-      final results = await Future.wait<List<FeedItemEntity>>([
-        creatorFuture,
-        wallhavenFuture,
-        pexelsFuture,
-        discoveryFuture,
+      int successfulSources = 0;
+      int failedSources = 0;
+      final List<String> tasteCategories = _tasteCategories(profile);
+      final List<List<RankingCandidate>> pools = await Future.wait(<Future<List<RankingCandidate>>>[
+        _pool(
+          CandidatePool.following,
+          _fetchCreatorItems(following: _following, page: request.page),
+          onSuccess: _following.isEmpty ? null : () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _pool(
+          CandidatePool.fresh,
+          _fetchFreshItems(),
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _pool(
+          CandidatePool.gems,
+          _randomWallSlice(sourceTag: 'personalized.gems', limit: 30),
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _pool(
+          CandidatePool.taste,
+          _fetchTasteItems(tasteCategories),
+          onSuccess: tasteCategories.isEmpty ? null : () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _fetchExternal(
+          WallpaperSource.wallhaven,
+          refresh: request.refresh,
+          maxQueries: 3,
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
+        _fetchExternal(
+          WallpaperSource.pexels,
+          refresh: request.refresh,
+          maxQueries: 2,
+          onSuccess: () => successfulSources++,
+          onFailure: () => failedSources++,
+        ),
       ]);
 
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-      final List<FeedItemEntity> creatorItems = BlockedCreatorsFilter.filterFeedItems(results[0], blocked);
-      final wallhavenItems = results[1];
-      final pexelsItems = results[2];
-      final List<FeedItemEntity> discoveryItems = BlockedCreatorsFilter.filterFeedItems(results[3], blocked);
+      final List<RankingCandidate> candidates = pools
+          .expand((pool) => pool)
+          .where((c) => !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked))
+          .toList(growable: false);
+      for (final RankingCandidate candidate in candidates) {
+        rememberFeedTerms(candidate.key, candidate.terms);
+      }
+      if (successfulSources == 0) {
+        throw StateError('Personalized feed sources failed without candidates');
+      }
 
-      final ranking = _rankingService.rankAndMix(
-        creatorItems: creatorItems,
-        wallhavenItems: wallhavenItems,
-        pexelsItems: pexelsItems,
-        discoveryItems: discoveryItems,
-        blockedKeys: request.seenKeys.toSet(),
-        interests: interests.toSet(),
-        creatorTarget: targets.creator,
-        discoveryTarget: targets.discovery,
-        wallhavenTarget: targets.wallhaven,
-        pexelsTarget: targets.pexels,
+      final PersonalizedRankingResult ranking = _rankingService.rank(
+        candidates: candidates,
+        profile: profile,
+        recentShows: _impressions.recentShows(now),
+        excludedKeys: <String>{
+          ...request.seenKeys,
+          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
+        },
+        mix: mix,
+        random: _random,
+        now: now,
       );
+      if (failedSources > 0 && ranking.items.isEmpty) {
+        throw StateError('Personalized feed sources failed without ranked candidates');
+      }
+      await _impressions.recordShown(ranking.usedKeys, now);
 
-      final feedSeed = cacheScope.hashCode;
-      final feedItems = [...ranking.items]..shuffle(Random(feedSeed));
-
-      final hasMore = feedItems.length >= _pageSize;
-      final nextSeen = trimSeenKeys([...request.seenKeys, ...ranking.usedKeys]);
       final List<FeedItemEntity> merged = _mergeCachedAndNew(
         request.refresh ? const <FeedItemEntity>[] : request.existingItems,
-        feedItems,
+        ranking.items,
       );
-      final List<FeedItemEntity> mergedFiltered = BlockedCreatorsFilter.filterFeedItems(merged, blocked);
-      await _writeCacheState(scope: cacheScope, seenKeys: nextSeen, cachedItems: mergedFiltered);
+      await _writeCachedItems(scope: cacheScope, cachedItems: merged);
 
       logger.i(
         '[PersonalizedFeed] fetch success',
@@ -176,21 +218,107 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           'is_guest': isGuest,
           'refresh': request.refresh,
           'page': request.page,
-          'items': feedItems.length,
-          'source_discovery': ranking.discoveryCount,
+          'mix': mix.name,
+          'candidates': candidates.length,
+          'items': ranking.items.length,
         },
       );
 
-      return Result.success(PersonalizedFeedPage(items: feedItems, hasMore: hasMore, usedKeys: ranking.usedKeys));
+      return Result.success(
+        PersonalizedFeedPage(items: ranking.items, hasMore: ranking.items.isNotEmpty, usedKeys: ranking.usedKeys),
+      );
     } catch (error, stackTrace) {
       logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
-      final cachedState = await _readCacheState(scope: cacheScope);
-      if (cachedState.cachedItems.isNotEmpty) {
+      final List<FeedItemEntity> cachedItems = await _readCachedItems(scope: cacheScope);
+      if (cachedItems.isNotEmpty) {
+        final Set<String> excluded = <String>{
+          ...request.seenKeys,
+          ...request.existingItems.map(PersonalizedRankingService.canonicalKey),
+        };
+        final List<FeedItemEntity> unseenCachedItems = cachedItems
+            .where((item) => !excluded.contains(PersonalizedRankingService.canonicalKey(item)))
+            .toList(growable: false);
         return Result.success(
-          PersonalizedFeedPage(items: cachedState.cachedItems, hasMore: true, usedKeys: cachedState.seenKeys),
+          PersonalizedFeedPage(
+            items: unseenCachedItems,
+            hasMore: unseenCachedItems.isNotEmpty,
+            usedKeys: unseenCachedItems.map(PersonalizedRankingService.canonicalKey).toList(growable: false),
+          ),
         );
       }
       return Result.error(ServerFailure('Failed to fetch personalized feed: $error'));
+    }
+  }
+
+  /// One failing source must not empty the whole feed.
+  Future<List<RankingCandidate>> _pool(
+    CandidatePool pool,
+    Future<List<FeedItemEntity>> items, {
+    void Function()? onSuccess,
+    required void Function() onFailure,
+  }) async {
+    try {
+      final List<FeedItemEntity> result = await items;
+      onSuccess?.call();
+      return result.map((item) => RankingCandidate(item: item, pool: pool)).toList(growable: false);
+    } catch (error) {
+      logger.w('[PersonalizedFeed] ${pool.name} source failed: $error');
+      onFailure();
+      return const <RankingCandidate>[];
+    }
+  }
+
+  /// Existing users already told us their taste through favourites. Read them
+  /// once so the feed is personal from the first open after this update.
+  Future<void> _seedTasteFromFavourites(String userId) async {
+    if (_tasteSignals.isSeeded) {
+      return;
+    }
+    final Future<void> seeding = _tasteSeedInFlight ??= _loadTasteFromFavourites(userId);
+    try {
+      await seeding.timeout(const Duration(seconds: 1));
+    } catch (error) {
+      logger.w('[PersonalizedFeed] favourite taste seed failed: $error');
+    }
+  }
+
+  Future<void> _loadTasteFromFavourites(String userId) async {
+    try {
+      final Result<List<FavouriteWallEntity>> result = await _favouriteWallsRepository.fetchFavourites(userId: userId);
+      if (result.isFailure || _tasteSignals.isSeeded) {
+        return;
+      }
+      final DateTime now = DateTime.now().toUtc();
+      final List<TasteSignal> signals = <TasteSignal>[
+        for (final FavouriteWallEntity fav in result.data ?? const <FavouriteWallEntity>[])
+          ?switch (fav) {
+            PrismFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+              TasteAction.favourite,
+              wallpaper.core,
+              tags: wallpaper.tags,
+              collections: wallpaper.collections,
+              at: fav.createdAt ?? now,
+            ),
+            WallhavenFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+              TasteAction.favourite,
+              wallpaper.core,
+              tags: wallpaper.tags,
+              at: now,
+            ),
+            PexelsFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+              TasteAction.favourite,
+              wallpaper.core,
+              at: now,
+            ),
+            _ => null,
+          },
+      ];
+      await _tasteSignals.recordAll(signals);
+      await _tasteSignals.markSeeded();
+    } catch (error) {
+      logger.w('[PersonalizedFeed] favourite taste seed failed: $error');
+    } finally {
+      _tasteSeedInFlight = null;
     }
   }
 
@@ -281,68 +409,154 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return _dedupeByCanonicalKey(allRows);
   }
 
-  Future<List<FeedItemEntity>> _fetchWallhavenItems({
-    required List<String> interests,
-    required List<PersonalizedInterest> catalog,
-    required bool refresh,
+  /// Newest reviewed uploads, so rare new walls still surface. Fatigue sinks
+  /// them once seen.
+  Future<List<FeedItemEntity>> _fetchFreshItems() => _queryWalls(
+    const FirestoreQuerySpec(
+      collection: FirebaseCollections.walls,
+      sourceTag: 'personalized.fresh',
+      filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true)],
+      orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
+      limit: 24,
+      cachePolicy: FirestoreCachePolicy.memoryFirst,
+    ),
+  );
+
+  /// Walls from the taste's top categories, from a random point in each.
+  List<String> _tasteCategories(TasteProfile profile) => <String>{
+    for (final String term in profile.topTerms(6))
+      ?_wallCategories.where((c) => term.contains(c.toLowerCase()) || c.toLowerCase().contains(term)).firstOrNull,
+  }.toList()..shuffle(_random);
+
+  Future<List<FeedItemEntity>> _fetchTasteItems(List<String> categories) async {
+    final List<List<FeedItemEntity>> slices = await Future.wait(
+      categories
+          .take(2)
+          .map((category) => _randomWallSlice(sourceTag: 'personalized.taste', limit: 12, category: category)),
+    );
+    return slices.expand((slice) => slice).toList(growable: false);
+  }
+
+  /// A random window of the reviewed catalog: order by document id and start
+  /// after a random id. Old walls get the same chance as new ones.
+  Future<List<FeedItemEntity>> _randomWallSlice({
+    required String sourceTag,
+    required int limit,
+    String? category,
   }) async {
-    final active = _activeInterestsForSource(interests, catalog, WallpaperSource.wallhaven);
-    final results = await Future.wait(
-      active.map(
-        (interest) => _wallhavenRepository.fetchFeed(
-          categoryName: interest,
+    FirestoreQuerySpec spec(String? cursor, int take) => FirestoreQuerySpec(
+      collection: FirebaseCollections.walls,
+      sourceTag: sourceTag,
+      filters: <FirestoreFilter>[
+        const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+        if (category != null) FirestoreFilter(field: 'category', op: FirestoreFilterOp.isEqualTo, value: category),
+      ],
+      orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: firestoreDocumentIdField)],
+      startAfterFieldValues: cursor == null ? null : <Object?>[cursor],
+      limit: take,
+    );
+
+    final List<FeedItemEntity> first = await _queryWalls(spec(_randomDocId(), limit));
+    if (first.length >= limit) {
+      return first;
+    }
+    // Past the last id: wrap around to the start of the key space.
+    return <FeedItemEntity>[...first, ...await _queryWalls(spec(null, limit - first.length))];
+  }
+
+  String _randomDocId() {
+    const String alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    return String.fromCharCodes(List<int>.generate(20, (_) => alphabet.codeUnitAt(_random.nextInt(alphabet.length))));
+  }
+
+  Future<List<FeedItemEntity>> _queryWalls(FirestoreQuerySpec spec) async {
+    final List<PrismWallpaper> walls = await _firestoreClient.query<PrismWallpaper>(
+      spec,
+      (data, docId) => PrismWallDocDto.fromJson(data).toDomain(docId: docId),
+    );
+    return walls.map((wall) => PrismFeedItem(id: wall.id, wallpaper: wall)).toList(growable: false);
+  }
+
+  /// A few of the user's interests per page, each from a random start page,
+  /// so external walls change between opens.
+  Future<List<RankingCandidate>> _fetchExternal(
+    WallpaperSource source, {
+    required bool refresh,
+    required int maxQueries,
+    required void Function() onSuccess,
+    required void Function() onFailure,
+  }) async {
+    final Set<String> picked = _interests.map((e) => e.toLowerCase()).toSet();
+    List<PersonalizedInterest> entries = _catalog
+        .where((e) => e.supports(source) && picked.contains(e.name.toLowerCase()))
+        .toList();
+    if (entries.isEmpty) {
+      entries = _catalog.where((e) => e.supports(source)).toList();
+    }
+    entries.shuffle(_random);
+
+    final CandidatePool pool = source == WallpaperSource.wallhaven ? CandidatePool.wallhaven : CandidatePool.pexels;
+    int succeeded = 0;
+    final List<List<RankingCandidate>> results = await Future.wait(
+      entries.take(maxQueries).map((entry) async {
+        try {
+          final List<FeedItemEntity> items = await _fetchExternalPage(source, entry.query, refresh: refresh);
+          succeeded++;
+          return items
+              .map((item) => RankingCandidate(item: item, pool: pool, extraTerms: <String>[entry.name]))
+              .toList(growable: false);
+        } catch (error) {
+          logger.w('[PersonalizedFeed] ${source.name} "${entry.query}" failed: $error');
+          onFailure();
+          return const <RankingCandidate>[];
+        }
+      }),
+    );
+    if (succeeded > 0) {
+      onSuccess();
+    }
+    return results.expand((e) => e).toList(growable: false);
+  }
+
+  Future<List<FeedItemEntity>> _fetchExternalPage(WallpaperSource source, String query, {required bool refresh}) async {
+    Future<List<FeedItemEntity>> load(int startPage) async {
+      if (source == WallpaperSource.wallhaven) {
+        final result = await _wallhavenRepository.fetchFeed(
+          categoryName: query,
           refresh: refresh,
+          startPage: startPage,
+          paginationKey: 'personalized:$query',
           categories: _settingsLocal.get<int>('WHcategories', defaultValue: 100),
           purity: _settingsLocal.get<int>('WHpurity', defaultValue: 100),
-        ),
-      ),
-    );
-    return _seededShuffle([
-      for (final result in results)
-        for (final wall in result.data ?? const <WallhavenWallpaper>[]) WallhavenFeedItem(id: wall.id, wallpaper: wall),
-    ]);
-  }
+        );
+        if (result.isFailure) {
+          throw StateError('Wallhaven feed request failed');
+        }
+        return (result.data ?? const <WallhavenWallpaper>[])
+            .map((wall) => WallhavenFeedItem(id: wall.id, wallpaper: wall))
+            .toList(growable: false);
+      }
+      final result = await _pexelsRepository.fetchFeed(
+        categoryName: query,
+        refresh: refresh,
+        startPage: startPage,
+        paginationKey: 'personalized:$query',
+      );
+      if (result.isFailure) {
+        throw StateError('Pexels feed request failed');
+      }
+      return (result.data ?? const <PexelsWallpaper>[])
+          .map((wall) => PexelsFeedItem(id: wall.id, wallpaper: wall))
+          .toList(growable: false);
+    }
 
-  /// Fetches recent reviewed wallpapers from any Prism creator as a "discovery"
-  /// source that surfaces new creators to the user.
-  ///
-  /// Rather than filtering by category (which is unreliably populated — most
-  /// walls have category = "community"), we fetch the most recent reviewed
-  /// walls and rely on the ranking service's interest-hit scoring on the
-  /// `collections` and `tags` fields to surface relevant content.
-  ///
-  /// Requires a composite Firestore index on the `walls` collection:
-  ///   Fields: review (ASC), createdAt (DESC)
-  Future<List<FeedItemEntity>> _fetchDiscoveryItems() async {
-    // Fetch recent reviewed walls — no category filter so we get a broad pool.
-    // The ranking service scores them by interest-hit on collections/tags.
-    final rows = await _firestoreClient.query<_WallRow>(
-      const FirestoreQuerySpec(
-        collection: FirebaseCollections.walls,
-        sourceTag: 'personalized.discovery',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true)],
-        orderBy: <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
-        limit: 40,
-        cachePolicy: FirestoreCachePolicy.memoryFirst,
-      ),
-      _toWallRow,
-    );
-    return _dedupeByCanonicalKey(rows);
-  }
-
-  Future<List<FeedItemEntity>> _fetchPexelsItems({
-    required List<String> interests,
-    required List<PersonalizedInterest> catalog,
-    required bool refresh,
-  }) async {
-    final active = _activeInterestsForSource(interests, catalog, WallpaperSource.pexels);
-    final results = await Future.wait(
-      active.map((interest) => _pexelsRepository.fetchFeed(categoryName: interest, refresh: refresh)),
-    );
-    return _seededShuffle([
-      for (final result in results)
-        for (final wall in result.data ?? const <PexelsWallpaper>[]) PexelsFeedItem(id: wall.id, wallpaper: wall),
-    ]);
+    final int startPage = refresh ? 1 + _random.nextInt(4) : 1;
+    final List<FeedItemEntity> items = await load(startPage);
+    if (items.isEmpty && refresh && startPage > 1) {
+      // Small queries may have fewer pages than the random start.
+      return load(1);
+    }
+    return items;
   }
 
   _WallRow _toWallRow(Map<String, dynamic> data, String docId) => (docId: docId, dto: PrismWallDocDto.fromJson(data));
@@ -357,60 +571,6 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return dedupe.values.toList(growable: false);
   }
 
-  List<FeedItemEntity> _seededShuffle(List<FeedItemEntity> items) {
-    final seed = app_state.prismUser.id.isEmpty ? 0 : app_state.prismUser.id.hashCode;
-    return items..shuffle(Random(seed));
-  }
-
-  List<String> _activeInterestsForSource(
-    List<String> interests,
-    List<PersonalizedInterest> catalog,
-    WallpaperSource source,
-  ) {
-    final byName = <String, PersonalizedInterest>{for (final entry in catalog) entry.name.toLowerCase(): entry};
-    final matched = interests
-        .map((interest) => byName[interest.toLowerCase()])
-        .whereType<PersonalizedInterest>()
-        .where((entry) => entry.supports(source))
-        .map((entry) => entry.query)
-        .where((entry) => entry.isNotEmpty)
-        .toList(growable: false);
-    if (matched.isNotEmpty) {
-      return matched;
-    }
-
-    final fallbackFromCatalog = catalog
-        .where((entry) => entry.supports(source))
-        .map((entry) => entry.query)
-        .where((entry) => entry.isNotEmpty)
-        .toList(growable: false);
-    if (fallbackFromCatalog.isNotEmpty) {
-      return fallbackFromCatalog;
-    }
-
-    if (source == WallpaperSource.wallhaven) {
-      return const <String>['Popular', 'Landscape'];
-    }
-    return const <String>['Curated', 'Nature'];
-  }
-
-  _SourceTargets _resolveTargets() {
-    final mix = FeedMix.fromName(
-      _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: FeedMix.balanced.name).trim().toLowerCase(),
-    );
-    switch (mix) {
-      case FeedMix.creators:
-        // Creator-heavy: 14 following + 2 discovery + 4+4 external = 24
-        return const _SourceTargets(creator: 14, discovery: 2, wallhaven: 4, pexels: 4);
-      case FeedMix.discovery:
-        // Discovery-heavy: 6 following + 8 discovery + 5+5 external = 24
-        return const _SourceTargets(creator: 6, discovery: 8, wallhaven: 5, pexels: 5);
-      case FeedMix.balanced:
-        // Balanced: 10 following + 4 discovery + 5+5 external = 24
-        return const _SourceTargets(creator: 10, discovery: 4, wallhaven: 5, pexels: 5);
-    }
-  }
-
   List<FeedItemEntity> _mergeCachedAndNew(List<FeedItemEntity> cachedItems, List<FeedItemEntity> newItems) {
     final merged = <String, FeedItemEntity>{
       for (final item in cachedItems) PersonalizedRankingService.canonicalKey(item): item,
@@ -421,64 +581,40 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     return merged.values.toList(growable: false);
   }
 
-  Future<_CacheState> _readCacheState({required String scope}) async {
+  Future<List<FeedItemEntity>> _readCachedItems({required String scope}) async {
     final snapshot = await _feedCacheLocal.read(source: 'personalized', scope: scope);
     if (snapshot == null || snapshot.payload is! Map) {
-      return const _CacheState.empty();
+      return const <FeedItemEntity>[];
     }
-    final payload = toJsonMap(snapshot.payload);
-    final seen = _toStringList(payload['seenKeys']);
-    final rawItems = payload['items'];
+    final Object? rawItems = toJsonMap(snapshot.payload)['items'];
     if (rawItems is! List) {
-      return _CacheState(seenKeys: seen, cachedItems: const <FeedItemEntity>[]);
+      return const <FeedItemEntity>[];
     }
-
     final List<FeedItemEntity> items = rawItems
         .whereType<Map>()
         .map((entry) => decodeFeedItem(toJsonMap(entry)))
         .whereType<FeedItemEntity>()
         .toList(growable: false);
-
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    return _CacheState(seenKeys: seen, cachedItems: BlockedCreatorsFilter.filterFeedItems(items, blocked));
+    final Map<String, int> recentShows = _impressions.recentShows(DateTime.now().toUtc());
+    return BlockedCreatorsFilter.filterFeedItems(items, blocked)
+        .where(
+          (item) => (recentShows[PersonalizedRankingService.canonicalKey(item)] ?? 0) < FeedImpressionStore.hiddenShows,
+        )
+        .toList(growable: false);
   }
 
-  Future<void> _writeCacheState({
-    required String scope,
-    required List<String> seenKeys,
-    required List<FeedItemEntity> cachedItems,
-  }) {
+  Future<void> _writeCachedItems({required String scope, required List<FeedItemEntity> cachedItems}) {
     return _feedCacheLocal.write(
       source: 'personalized',
       scope: scope,
       ttlHours: _cacheTtlHours,
-      payload: <String, Object?>{
-        'seenKeys': seenKeys,
-        'items': cachedItems.map(encodeFeedItem).toList(growable: false),
-      },
+      payload: <String, Object?>{'items': cachedItems.map(encodeFeedItem).toList(growable: false)},
     );
   }
 }
 
 typedef _WallRow = ({String docId, PrismWallDocDto dto});
-
-class _CacheState {
-  const _CacheState({required this.seenKeys, required this.cachedItems});
-
-  const _CacheState.empty() : seenKeys = const <String>[], cachedItems = const <FeedItemEntity>[];
-
-  final List<String> seenKeys;
-  final List<FeedItemEntity> cachedItems;
-}
-
-class _SourceTargets {
-  const _SourceTargets({required this.creator, required this.discovery, required this.wallhaven, required this.pexels});
-
-  final int creator;
-  final int discovery;
-  final int wallhaven;
-  final int pexels;
-}
 
 List<String> _toStringList(Object? value) {
   if (value is! List) {

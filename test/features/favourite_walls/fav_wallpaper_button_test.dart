@@ -43,6 +43,7 @@ void main() {
   late _MockToggleFavouriteWallUseCase toggleUseCase;
   late _MockClearFavouriteWallsUseCase clearUseCase;
   late FakeAppAnalytics recordingAnalytics;
+  late FavoritesLocalDataSource favorites;
 
   setUp(() {
     fetchUseCase = _MockFetchFavouriteWallsUseCase();
@@ -55,7 +56,8 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user_1'
       ..loggedIn = true;
-    getIt.registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()));
+    favorites = FavoritesLocalDataSource(InMemoryLocalStore());
+    getIt.registerSingleton<FavoritesLocalDataSource>(favorites);
   });
 
   tearDown(() async {
@@ -64,19 +66,20 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> tapFavourite(WidgetTester tester, FavouriteWallsBloc bloc) async {
+  Future<void> tapFavourite(WidgetTester tester, FavouriteWallsBloc bloc, {VoidCallback? onFavourited}) async {
     await tester.pumpWidget(
       MaterialApp(
         home: BlocProvider<FavouriteWallsBloc>.value(
           value: bloc,
-          child: const Scaffold(
+          child: Scaffold(
             body: FavouriteWallpaperButton(
-              wall: LegacyFavouriteWall(
+              wall: const LegacyFavouriteWall(
                 id: 'wall_1',
                 source: WallpaperSource.prism,
                 legacyPayload: <String, Object?>{},
               ),
               trash: false,
+              onFavourited: onFavourited,
             ),
           ),
         ),
@@ -106,5 +109,44 @@ void main() {
     await tapFavourite(tester, bloc);
 
     expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>(), hasLength(1));
+  });
+
+  testWidgets('does not report a removal as a new favourite after loading remote favourites', (tester) async {
+    const wall = LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{});
+    when(() => fetchUseCase(any())).thenAnswer((_) async {
+      await favorites.replaceWallFavourites('user_1', const <String>['wall_1']);
+      return Result.success(<FavouriteWallEntity>[wall]);
+    });
+    var toggleSawFavourite = false;
+    when(() => toggleUseCase(any())).thenAnswer((invocation) async {
+      final params = invocation.positionalArguments.single as ToggleFavouriteWallParams;
+      toggleSawFavourite = params.currentlyFavourited;
+      await favorites.setWallFavourite('user_1', 'wall_1', false);
+      return Result.success(false);
+    });
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+    var callbackCount = 0;
+
+    await tapFavourite(tester, bloc, onFavourited: () => callbackCount++);
+
+    expect(favorites.isWallFavourite('user_1', 'wall_1'), isFalse);
+    expect(toggleSawFavourite, isTrue);
+    expect(callbackCount, 0);
+  });
+
+  testWidgets('reports a successful add as a new favourite', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async {
+      await favorites.setWallFavourite('user_1', 'wall_1', true);
+      return Result.success(true);
+    });
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
+    addTearDown(bloc.close);
+    var callbackCount = 0;
+
+    await tapFavourite(tester, bloc, onFavourited: () => callbackCount++);
+
+    expect(favorites.isWallFavourite('user_1', 'wall_1'), isTrue);
+    expect(callbackCount, 1);
   });
 }

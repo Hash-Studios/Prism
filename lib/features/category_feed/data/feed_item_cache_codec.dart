@@ -59,7 +59,7 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
 FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
   final String type = map['type']?.toString() ?? '';
   final String id = map['id']?.toString() ?? '';
-  final Map<String, dynamic> wallpaper = toJsonMap(map['wallpaper']);
+  final Map<String, dynamic> wallpaper = toJsonMap(map['wallpaper'] ?? map['wall']);
   if (type.isEmpty || id.isEmpty || wallpaper.isEmpty) {
     return null;
   }
