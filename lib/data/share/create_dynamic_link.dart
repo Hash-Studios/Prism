@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/logger/logger.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 const String _shareDomain = 'prismwalls.com';
-const String _shortLinkApiUrl = 'https://prismwalls.com/api/links';
 
 class _CanonicalLinkBuilder {
   const _CanonicalLinkBuilder();
@@ -50,7 +50,7 @@ class _ShortLinkService {
     Map<String, dynamic>? payload,
     Map<String, dynamic>? preview,
   }) async {
-    final Uri endpoint = Uri.parse(_shortLinkApiUrl);
+    final Uri endpoint = Uri.parse(shortLinkApiUrl);
     try {
       final response = await http
           .post(

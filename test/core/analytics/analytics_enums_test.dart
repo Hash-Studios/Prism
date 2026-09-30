@@ -88,7 +88,6 @@ void main() {
         'notification_settings_opened',
         'quick_action_follow_feed',
         'quick_action_collections',
-        'quick_action_ai_wallpapers',
         'quick_action_downloads',
         'quick_action_unknown',
         'back_tapped',
