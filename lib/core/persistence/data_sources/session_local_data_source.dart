@@ -36,4 +36,8 @@ class SessionLocalDataSource {
   Future<void> writeCurrentUser(PrismUsersV2 user) {
     return _store.set(PersistenceKeys.sessionCurrentUser, user.toJson());
   }
+
+  Future<void> clearCurrentUser() {
+    return _store.delete(PersistenceKeys.sessionCurrentUser);
+  }
 }
