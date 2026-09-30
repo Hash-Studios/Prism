@@ -1,4 +1,5 @@
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// BlocObserver that logs all BLoC/Cubit lifecycle events via the app logger.
@@ -11,22 +12,14 @@ class BlocDebugObserver extends BlocObserver {
   @override
   void onCreate(BlocBase<dynamic> bloc) {
     super.onCreate(bloc);
+    if (kReleaseMode) return;
     logger.d('Created ${bloc.runtimeType}', tag: _tag);
-  }
-
-  @override
-  void onEvent(Bloc<dynamic, dynamic> bloc, Object? event) {
-    super.onEvent(bloc, event);
-    logger.d(
-      '${bloc.runtimeType} ← ${event.runtimeType}',
-      tag: _tag,
-      fields: <String, Object?>{'bloc': bloc.runtimeType.toString(), 'event': event.toString()},
-    );
   }
 
   @override
   void onTransition(Bloc<dynamic, dynamic> bloc, Transition<dynamic, dynamic> transition) {
     super.onTransition(bloc, transition);
+    if (kReleaseMode) return;
     logger.d(
       '${bloc.runtimeType} state: ${transition.nextState.runtimeType}',
       tag: _tag,
@@ -35,20 +28,6 @@ class BlocDebugObserver extends BlocObserver {
         'event': transition.event.runtimeType.toString(),
         'from': transition.currentState.runtimeType.toString(),
         'to': transition.nextState.runtimeType.toString(),
-      },
-    );
-  }
-
-  @override
-  void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
-    super.onChange(bloc, change);
-    logger.d(
-      '${bloc.runtimeType} changed: ${change.nextState.runtimeType}',
-      tag: _tag,
-      fields: <String, Object?>{
-        'bloc': bloc.runtimeType.toString(),
-        'from': change.currentState.runtimeType.toString(),
-        'to': change.nextState.runtimeType.toString(),
       },
     );
   }
@@ -68,6 +47,7 @@ class BlocDebugObserver extends BlocObserver {
   @override
   void onClose(BlocBase<dynamic> bloc) {
     super.onClose(bloc);
+    if (kReleaseMode) return;
     logger.d('Closed ${bloc.runtimeType}', tag: _tag);
   }
 }

@@ -46,25 +46,6 @@ class ToggleFavouriteWallUseCase implements UseCase<bool, ToggleFavouriteWallPar
   }
 }
 
-class RemoveFavouriteWallParams {
-  const RemoveFavouriteWallParams({required this.userId, required this.wallId});
-
-  final String userId;
-  final String wallId;
-}
-
-@lazySingleton
-class RemoveFavouriteWallUseCase implements UseCase<bool, RemoveFavouriteWallParams> {
-  RemoveFavouriteWallUseCase(this._repository);
-
-  final FavouriteWallsRepository _repository;
-
-  @override
-  Future<Result<bool>> call(RemoveFavouriteWallParams params) {
-    return _repository.removeFavourite(userId: params.userId, wallId: params.wallId);
-  }
-}
-
 class ClearFavouriteWallsParams {
   const ClearFavouriteWallsParams({required this.userId, required this.wallIds});
 

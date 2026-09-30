@@ -37,50 +37,53 @@ class ShowUpTransition extends StatefulWidget {
 class _ShowUpTransitionState extends State<ShowUpTransition> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<Offset> _animOffset;
-
-  List<Offset> slideSides = const [
-    Offset(-0.35, 0.0), // LEFT
-    Offset(0.35, 0.0), // RIGHT
-    Offset(0.0, 0.35), // BOTTOM
-    Offset(0.0, -0.35), // TOP
-  ];
-  Offset? selectedSlide;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _animController = AnimationController(vsync: this, duration: widget.duration ?? const Duration(milliseconds: 400));
-    switch (widget.slideSide) {
-      case SlideFromSlide.left:
-        selectedSlide = slideSides[0];
-      case SlideFromSlide.right:
-        selectedSlide = slideSides[1];
-      case SlideFromSlide.bottom:
-        selectedSlide = slideSides[2];
-      case SlideFromSlide.top:
-        selectedSlide = slideSides[3];
-    }
+    final Offset begin = switch (widget.slideSide) {
+      SlideFromSlide.left => const Offset(-0.35, 0.0),
+      SlideFromSlide.right => const Offset(0.35, 0.0),
+      SlideFromSlide.bottom => const Offset(0.0, 0.35),
+      SlideFromSlide.top => const Offset(0.0, -0.35),
+    };
     _animOffset = Tween<Offset>(
-      begin: selectedSlide,
+      begin: begin,
       end: Offset.zero,
     ).animate(CurvedAnimation(curve: Curves.fastLinearToSlowEaseIn, parent: _animController));
+    _start();
+  }
+
+  @override
+  void didUpdateWidget(ShowUpTransition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.forward != widget.forward) {
+      _start();
+    }
+  }
+
+  void _start() {
+    _timer?.cancel();
+    _timer = Timer(widget.delay ?? Duration.zero, () {
+      if (widget.forward) {
+        _animController.forward();
+      } else {
+        _animController.reverse();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _animController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    Timer(widget.delay ?? Duration.zero, () {
-      if (widget.forward) {
-        if (mounted) _animController.forward();
-      } else {
-        if (mounted) _animController.reverse();
-      }
-    });
     return widget.forward
         ? FadeTransition(
             opacity: _animController,

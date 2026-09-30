@@ -67,11 +67,6 @@ class AnalyticsIdentitySync {
     );
   }
 
-  @visibleForTesting
-  void resetCache() {
-    _lastAppliedState = null;
-  }
-
   void _logIdentitySync({
     required String message,
     required String sourceTag,

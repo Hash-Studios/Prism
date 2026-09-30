@@ -49,8 +49,7 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Generate Firebase options stub for CI
-        run: |
-          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+        run: tool/write_firebase_options_stub.sh
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -123,10 +122,12 @@ jobs:
         if: steps.changes.outputs.app_size == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git checkout --force --detach "$BASE_SHA"
           flutter pub get
-          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          # The base commit may predate the stub script, so run the head copy.
+          bash <(git show "$HEAD_SHA:tool/write_firebase_options_stub.sh")
           mkdir -p build/size/base
           flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
           BASE_APK_PATH=""
@@ -151,7 +152,7 @@ jobs:
         run: |
           git checkout --force --detach "$HEAD_SHA"
           flutter pub get
-          printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('CI stub');\n}\n" > lib/firebase_options.dart
+          tool/write_firebase_options_stub.sh
           mkdir -p build/size/head
           flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/head/build.log
           HEAD_APK_PATH=""
@@ -227,10 +228,11 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: functions/package-lock.json
-      - name: Install, build, and test
+      - name: Install, build, lint, and test
         run: |
           npm ci
           npm run build
+          npm run lint
           node --test lib/__tests__/*.test.js
 
   web-ci:

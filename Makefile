@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -127,6 +127,9 @@ firestore-guard:
 no-dynamic-guard:
 	@./tool/no_dynamic_guard.sh
 
+rules-test: ## Run the Firestore rules smoke test on the emulator (needs Java)
+	@firebase emulators:exec --only firestore --project demo-prism "node tool/firestore_rules_smoke.mjs"
+
 no-shape-parse-guard:
 	@./tool/no_shape_parse_guard.sh
 
@@ -144,7 +147,7 @@ version-sync:
 	@python3 tool/sync_app_version.py
 
 version-guard:
-	@python3 tool/verify_version_sync.py
+	@python3 tool/sync_app_version.py --check
 
 file-gen: ensure-fvm
 	@$(DART) run build_runner build --delete-conflicting-outputs
@@ -223,7 +226,7 @@ gradle-reset:
 
 size-android: ensure-fvm
 	@mkdir -p build/size/local
-	@printf "import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;\n\nclass DefaultFirebaseOptions {\n  static FirebaseOptions get currentPlatform => throw UnsupportedError('Size analysis stub');\n}\n" > lib/firebase_options.dart
+	@./tool/write_firebase_options_stub.sh
 	@$(FLUTTER) build apk --release --target-platform=$(APP_SIZE_TARGET_PLATFORM) --obfuscate --split-debug-info=build/size/local/symbols --dart-define=SKIP_FIREBASE_INIT=true --analyze-size > build/size/local/build.log 2>&1
 	@cp build/app/outputs/flutter-apk/app-release.apk build/size/local/app-release.apk
 	@echo "APK + size analysis log written to build/size/local"
@@ -271,7 +274,7 @@ ensure-fvm:
 	@true
 else
 ensure-fvm:
-	@fvm --version >NUL 2>&1 || fvm --version >/dev/null 2>&1 || ( \
+	@fvm --version >/dev/null 2>&1 || ( \
 		echo fvm is not installed. && \
 		echo Install it first example: dart pub global activate fvm && \
 		exit 1 \
@@ -289,7 +292,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard find-unused-ci cloudflare-worker-check test
+ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check test
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
@@ -308,5 +311,6 @@ find-unused-html: ensure-fvm ## Find unused code + open HTML visual report
 	@$(DART) run tool/find_unused_code.dart --html
 
 find-unused-ci: ensure-fvm ## Fail if find-unused diverges from allowlist
-	@$(DART) run tool/find_unused_code.dart --json > /tmp/prism_find_unused_ci.json
-	@$(DART) run tool/validate_find_unused_allowlist.dart /tmp/prism_find_unused_ci.json tool/find_unused_allowlist.json
+	@report=$$(mktemp) && trap 'rm -f "$$report"' EXIT && \
+		$(DART) run tool/find_unused_code.dart --json > "$$report" && \
+		$(DART) run tool/validate_find_unused_allowlist.dart "$$report" tool/find_unused_allowlist.json

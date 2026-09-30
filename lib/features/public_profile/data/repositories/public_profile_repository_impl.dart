@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/dtos/public_user_doc_dto.dart';
-import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -13,8 +12,6 @@ import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
-import 'package:Prism/features/public_profile/domain/entities/public_profile_page.dart';
-import 'package:Prism/features/public_profile/domain/entities/public_profile_setup_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
@@ -28,67 +25,59 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   final FirestoreClient _firestoreClient;
   final UserBlockRepository _userBlockRepository;
   final Map<String, String> _wallCursorByEmail = <String, String>{};
-  final Map<String, String> _setupCursorByEmail = <String, String>{};
   static const int _profileReadDedupeMs = 30000;
   static const int _searchChunkSize = 30;
+  static const int _summariesPageSize = 20;
+  static const int _searchLimit = 5;
 
-  Future<_UserRow?> _findUser(String email) async {
-    final usersv2 = await _firestoreClient.query<_UserRow>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.usersV2,
-        sourceTag: 'public_profile.find_user_v2',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email)],
-        limit: 1,
-        cachePolicy: FirestoreCachePolicy.memoryFirst,
-        dedupeWindowMs: _profileReadDedupeMs,
-      ),
-      (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-    );
-    if (usersv2.isNotEmpty) {
-      return usersv2.first;
-    }
-    return null;
-  }
-
-  PublicProfileEntity _toEntity(PublicUserDocDto doc, String docId) {
-    return PublicProfileEntity(
-      id: doc.id.isNotEmpty ? doc.id : docId,
-      name: doc.name,
-      email: doc.email,
-      username: doc.username,
-      profilePhoto: doc.profilePhoto,
-      bio: doc.bio,
-      followers: doc.followers,
-      following: doc.following,
-      links: doc.links,
-      premium: doc.premium,
-      coverPhoto: doc.coverPhoto,
-    );
+  @override
+  Stream<PublicProfileEntity?> watchProfile(String identifier) {
+    final String value = identifier.trim();
+    return _firestoreClient
+        .watchQuery<_UserRow>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.usersV2,
+            sourceTag: 'profile.stream.v2',
+            filters: <FirestoreFilter>[
+              FirestoreFilter(
+                field: value.contains('@') ? 'email' : 'username',
+                op: FirestoreFilterOp.isEqualTo,
+                value: value,
+              ),
+            ],
+            limit: 1,
+            isStream: true,
+          ),
+          (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+        )
+        .map((rows) {
+          if (rows.isEmpty) {
+            return null;
+          }
+          final PublicUserDocDto doc = rows.first.doc;
+          return PublicProfileEntity(
+            id: rows.first.docId,
+            name: doc.name,
+            email: doc.email,
+            username: doc.username,
+            profilePhoto: doc.profilePhoto,
+            bio: doc.bio,
+            followers: doc.followers,
+            following: doc.following,
+            links: doc.links,
+            coverPhoto: doc.coverPhoto,
+          );
+        });
   }
 
   @override
-  Future<Result<PublicProfileEntity>> fetchProfile({required String email}) async {
-    try {
-      final row = await _findUser(email);
-      if (row == null) {
-        return Result.error(const ValidationFailure('Profile not found'));
-      }
-      return Result.success(_toEntity(row.doc, row.docId));
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to fetch profile: $error'));
-    }
-  }
-
-  @override
-  Future<Result<PublicProfilePage<PublicProfileWallEntity>>> fetchWalls({
+  Future<Result<({List<PublicProfileWallEntity> items, bool hasMore})>> fetchWalls({
     required String email,
     required bool refresh,
   }) async {
     final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
     if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
-      return Result.success(
-        const PublicProfilePage<PublicProfileWallEntity>(items: <PublicProfileWallEntity>[], hasMore: false),
-      );
+      return Result.success((items: const <PublicProfileWallEntity>[], hasMore: false));
     }
     try {
       final rows = await _firestoreClient.query<_WallRow>(
@@ -113,227 +102,131 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
 
       final items = rows.map((row) => _mapWall(row.doc, row.docId)).toList(growable: false);
 
-      return Result.success(
-        PublicProfilePage<PublicProfileWallEntity>(
-          items: items,
-          hasMore: rows.length == 12,
-          nextCursor: _wallCursorByEmail[email],
-        ),
-      );
+      return Result.success((items: items, hasMore: rows.length == 12));
     } catch (error) {
       return Result.error(ServerFailure('Unable to fetch profile walls: $error'));
     }
   }
 
   @override
-  Future<Result<PublicProfilePage<PublicProfileSetupEntity>>> fetchSetups({
-    required String email,
-    required bool refresh,
-  }) async {
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    if (BlockedCreatorsFilter.hidesCreatorEmail(email, blocked)) {
-      return Result.success(
-        const PublicProfilePage<PublicProfileSetupEntity>(items: <PublicProfileSetupEntity>[], hasMore: false),
-      );
-    }
-    try {
-      final rows = await _firestoreClient.query<_SetupRow>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.setups,
-          sourceTag: 'public_profile.fetch_setups',
-          filters: <FirestoreFilter>[
-            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-            FirestoreFilter(field: 'email', op: FirestoreFilterOp.isEqualTo, value: email),
-          ],
-          orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
-          limit: 8,
-          startAfterDocId: refresh ? null : _setupCursorByEmail[email],
-          cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
-          dedupeWindowMs: refresh ? 0 : _profileReadDedupeMs,
-        ),
-        (data, docId) => _SetupRow(docId: docId, doc: SetupDocDto.fromJson(data)),
-      );
-      if (rows.isNotEmpty) {
-        _setupCursorByEmail[email] = rows.last.docId;
-      }
-
-      final items = rows.map((row) => _mapSetup(row.doc, row.docId)).toList(growable: false);
-
-      return Result.success(
-        PublicProfilePage<PublicProfileSetupEntity>(
-          items: items,
-          hasMore: rows.length == 8,
-          nextCursor: _setupCursorByEmail[email],
-        ),
-      );
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to fetch profile setups: $error'));
-    }
+  Future<Result<void>> follow({
+    required String currentUserId,
+    required String currentUserEmail,
+    required String targetUserId,
+    required String targetUserEmail,
+  }) {
+    return _setFollowing(
+      follow: true,
+      currentUserId: currentUserId,
+      currentUserEmail: currentUserEmail,
+      targetUserId: targetUserId,
+      targetUserEmail: targetUserEmail,
+    );
   }
 
   @override
-  Future<Result<PublicProfileEntity>> follow({
+  Future<Result<void>> unfollow({
+    required String currentUserId,
+    required String currentUserEmail,
+    required String targetUserId,
+    required String targetUserEmail,
+  }) {
+    return _setFollowing(
+      follow: false,
+      currentUserId: currentUserId,
+      currentUserEmail: currentUserEmail,
+      targetUserId: targetUserId,
+      targetUserEmail: targetUserEmail,
+    );
+  }
+
+  Future<Result<void>> _setFollowing({
+    required bool follow,
     required String currentUserId,
     required String currentUserEmail,
     required String targetUserId,
     required String targetUserEmail,
   }) async {
+    final String verb = follow ? 'follow' : 'unfollow';
+    final Object Function(List<Object?>) change = follow
+        ? FirestoreSentinels.arrayUnion
+        : FirestoreSentinels.arrayRemove;
     try {
       await _firestoreClient.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
-        'following': FirestoreSentinels.arrayUnion(<Object?>[targetUserEmail]),
-      }, sourceTag: 'public_profile.follow.current_user');
+        'following': change(<Object?>[targetUserEmail]),
+      }, sourceTag: 'public_profile.$verb.current_user');
       await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
-        'followers': FirestoreSentinels.arrayUnion(<Object?>[currentUserEmail]),
-      }, sourceTag: 'public_profile.follow.target_user');
-      return await fetchProfile(email: targetUserEmail);
+        'followers': change(<Object?>[currentUserEmail]),
+      }, sourceTag: 'public_profile.$verb.target_user');
+      return Result.success<void>(null);
     } catch (error) {
-      return Result.error(ServerFailure('Unable to follow user: $error'));
+      return Result.error(ServerFailure('Unable to $verb user: $error'));
     }
   }
 
-  @override
-  Future<Result<PublicProfileEntity>> unfollow({
-    required String currentUserId,
-    required String currentUserEmail,
-    required String targetUserId,
-    required String targetUserEmail,
-  }) async {
-    try {
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, currentUserId, <String, dynamic>{
-        'following': FirestoreSentinels.arrayRemove(<Object?>[targetUserEmail]),
-      }, sourceTag: 'public_profile.unfollow.current_user');
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, targetUserId, <String, dynamic>{
-        'followers': FirestoreSentinels.arrayRemove(<Object?>[currentUserEmail]),
-      }, sourceTag: 'public_profile.unfollow.target_user');
-      return await fetchProfile(email: targetUserEmail);
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to unfollow user: $error'));
-    }
+  List<String> _uniqueEmails(List<String> emails) =>
+      emails.map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toSet().toList(growable: false);
+
+  UserSummaryEntity _toSummary(_UserRow row, Set<String> followingSet) {
+    final doc = row.doc;
+    final email = doc.email.trim();
+    return UserSummaryEntity(
+      id: doc.id.isNotEmpty ? doc.id : row.docId,
+      email: email,
+      name: doc.name,
+      username: doc.username,
+      profilePhoto: doc.profilePhoto,
+      isFollowedByCurrentUser: followingSet.contains(email.toLowerCase()),
+    );
   }
 
-  @override
-  Future<Result<PublicProfileEntity>> updateLinks({required String userId, required Map<String, String> links}) async {
-    try {
-      await _firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, <String, dynamic>{
-        'links': links,
-      }, sourceTag: 'public_profile.update_links');
-      final updated = await _firestoreClient.getById<_UserRow>(
-        FirebaseCollections.usersV2,
-        userId,
-        (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-        sourceTag: 'public_profile.update_links.read_back',
-      );
-      if (updated == null) {
-        return Result.error(const ValidationFailure('Profile not found'));
-      }
-      return Result.success(_toEntity(updated.doc, updated.docId));
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to update links: $error'));
-    }
-  }
-
-  @override
-  Future<Result<List<UserSummaryEntity>>> fetchUserSummaries({
-    required List<String> emails,
-    required String currentUserEmail,
-  }) async {
-    if (emails.isEmpty) {
-      return Result.success(const <UserSummaryEntity>[]);
-    }
-
-    try {
-      final unique = emails
-          .map((e) => e.trim().toLowerCase())
-          .where((e) => e.isNotEmpty)
-          .toSet()
-          .toList(growable: false);
-
-      // Firestore whereIn is limited to 10 items per query — chunk accordingly.
-      final List<List<String>> chunks = <List<String>>[];
-      for (int i = 0; i < unique.length; i += 10) {
-        chunks.add(unique.sublist(i, i + 10 < unique.length ? i + 10 : unique.length));
-      }
-
-      final futures = chunks.map((chunk) {
-        return _firestoreClient.query<_UserRow>(
-          FirestoreQuerySpec(
-            collection: FirebaseCollections.usersV2,
-            sourceTag: 'public_profile.fetch_user_summaries',
-            filters: <FirestoreFilter>[FirestoreFilter(field: 'email', op: FirestoreFilterOp.whereIn, value: chunk)],
-            limit: chunk.length,
-            cachePolicy: FirestoreCachePolicy.memoryFirst,
-            dedupeWindowMs: _profileReadDedupeMs,
-          ),
-          (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-        );
-      });
-
-      final chunkedResults = await Future.wait(futures);
-      final allRows = chunkedResults.expand((rows) => rows).toList(growable: false);
-
-      // Resolve the current user's following list from session state.
-      final Set<String> followingSet = app_state.prismUser.following.map((e) => e.trim().toLowerCase()).toSet();
-
-      final summaries = allRows
-          .map((row) {
-            final doc = row.doc;
-            final email = doc.email.trim();
-            return UserSummaryEntity(
-              id: doc.id.isNotEmpty ? doc.id : row.docId,
-              email: email,
-              name: doc.name,
-              username: doc.username,
-              profilePhoto: doc.profilePhoto,
-              isFollowedByCurrentUser: followingSet.contains(email.toLowerCase()),
-            );
-          })
-          .toList(growable: false);
-
-      // Preserve the original ordering of the input email list.
-      final Map<String, UserSummaryEntity> byEmail = <String, UserSummaryEntity>{
-        for (final s in summaries) s.email.toLowerCase(): s,
-      };
-      final ordered = unique
-          .map((e) => byEmail[e.trim().toLowerCase()])
-          .whereType<UserSummaryEntity>()
-          .toList(growable: false);
-
-      return Result.success(ordered);
-    } catch (error) {
-      return Result.error(ServerFailure('Unable to fetch user summaries: $error'));
-    }
-  }
+  Set<String> _currentUserFollowing() => app_state.prismUser.following.map((e) => e.trim().toLowerCase()).toSet();
 
   @override
   Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> fetchUserSummariesPage({
     required List<String> allEmails,
-    required String currentUserEmail,
-    int page = 0,
-    int pageSize = 20,
+    required int page,
   }) async {
-    if (allEmails.isEmpty) {
-      return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
-    }
-
     try {
-      final unique = allEmails
-          .map((e) => e.trim().toLowerCase())
-          .where((e) => e.isNotEmpty)
-          .toSet()
-          .toList(growable: false);
-      final start = page * pageSize;
+      final unique = _uniqueEmails(allEmails);
+      final start = page * _summariesPageSize;
       if (start >= unique.length) {
         return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
       }
-      final end = (start + pageSize).clamp(0, unique.length);
+      final end = math.min(start + _summariesPageSize, unique.length);
       final pageEmails = unique.sublist(start, end);
-      final hasMore = end < unique.length;
 
-      final result = await fetchUserSummaries(emails: pageEmails, currentUserEmail: currentUserEmail);
-      return await result.fold(
-        onSuccess: (summaries) => Result.success((items: summaries, hasMore: hasMore)),
-        onFailure: (failure) => Result.error(failure),
-      );
+      // Firestore whereIn is limited to 10 items per query, so chunk the page.
+      final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
+        for (int i = 0; i < pageEmails.length; i += 10)
+          _firestoreClient.query<_UserRow>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.usersV2,
+              sourceTag: 'public_profile.fetch_user_summaries',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(
+                  field: 'email',
+                  op: FirestoreFilterOp.whereIn,
+                  value: pageEmails.sublist(i, math.min(i + 10, pageEmails.length)),
+                ),
+              ],
+              limit: math.min(10, pageEmails.length - i),
+              cachePolicy: FirestoreCachePolicy.memoryFirst,
+              dedupeWindowMs: _profileReadDedupeMs,
+            ),
+            (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+          ),
+      ]);
+
+      final followingSet = _currentUserFollowing();
+      final Map<String, UserSummaryEntity> byEmail = <String, UserSummaryEntity>{
+        for (final row in chunkedResults.expand((rows) => rows))
+          row.doc.email.trim().toLowerCase(): _toSummary(row, followingSet),
+      };
+      // Preserve the original ordering of the input email list.
+      final ordered = pageEmails.map((e) => byEmail[e]).whereType<UserSummaryEntity>().toList(growable: false);
+
+      return Result.success((items: ordered, hasMore: end < unique.length));
     } catch (error) {
       return Result.error(ServerFailure('Unable to fetch user summaries page: $error'));
     }
@@ -343,8 +236,6 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   Future<Result<List<UserSummaryEntity>>> searchUsersByUsername({
     required String query,
     required List<String> scopeEmails,
-    required String currentUserEmail,
-    int limit = 5,
   }) async {
     final String q = query.trim().toLowerCase();
     if (q.isEmpty || scopeEmails.isEmpty) {
@@ -352,15 +243,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
 
     try {
-      final List<String> unique = scopeEmails
-          .map((e) => e.trim().toLowerCase())
-          .where((e) => e.isNotEmpty)
-          .toSet()
-          .toList(growable: false);
-      final Set<String> followingSet = app_state.prismUser.following.map((e) => e.trim().toLowerCase()).toSet();
+      final List<String> unique = _uniqueEmails(scopeEmails);
+      final Set<String> followingSet = _currentUserFollowing();
 
       // One scoped prefix query per 30 emails (the whereIn limit). Each chunk
-      // is ordered by usernameLower, so its top [limit] covers the overall top.
+      // is ordered by usernameLower, so its top [_searchLimit] covers the overall top.
       final List<List<_UserRow>> chunks = await Future.wait(<Future<List<_UserRow>>>[
         for (int i = 0; i < unique.length; i += _searchChunkSize)
           _firestoreClient.query<_UserRow>(
@@ -377,7 +264,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
                 FirestoreFilter(field: 'usernameLower', op: FirestoreFilterOp.isLessThan, value: '$q\uf8ff'),
               ],
               orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'usernameLower')],
-              limit: limit,
+              limit: _searchLimit,
             ),
             (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
           ),
@@ -385,54 +272,12 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
 
       final List<_UserRow> rows = chunks.expand((rows) => rows).toList()
         ..sort((a, b) => a.doc.username.toLowerCase().compareTo(b.doc.username.toLowerCase()));
-      final summaries = rows
-          .take(limit)
-          .map((row) {
-            final doc = row.doc;
-            final email = doc.email.trim();
-            return UserSummaryEntity(
-              id: doc.id.isNotEmpty ? doc.id : row.docId,
-              email: email,
-              name: doc.name,
-              username: doc.username,
-              profilePhoto: doc.profilePhoto,
-              isFollowedByCurrentUser: followingSet.contains(email.toLowerCase()),
-            );
-          })
-          .toList(growable: false);
-
-      return Result.success(summaries);
+      return Result.success(
+        rows.take(_searchLimit).map((row) => _toSummary(row, followingSet)).toList(growable: false),
+      );
     } catch (error) {
       return Result.error(ServerFailure('Unable to search users: $error'));
     }
-  }
-
-  PublicProfileSetupEntity _mapSetup(SetupDocDto dto, String docId) {
-    return PublicProfileSetupEntity(
-      id: dto.id.isNotEmpty ? dto.id : docId,
-      by: dto.by,
-      icon: dto.icon,
-      iconUrl: dto.iconUrl,
-      createdAt: dto.createdAt,
-      desc: dto.desc,
-      email: dto.email,
-      image: dto.image,
-      name: dto.name,
-      userPhoto: dto.userPhoto,
-      wallId: dto.wallId,
-      source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
-      wallpaperThumb: dto.wallpaperThumb,
-      wallpaperUrl: dto.wallpaperUrl,
-      widget: dto.widget,
-      widget2: dto.widget2,
-      widgetUrl: dto.widgetUrl,
-      widgetUrl2: dto.widgetUrl2,
-      link: dto.link,
-      review: dto.review,
-      resolution: dto.resolution,
-      size: dto.size,
-      firestoreDocumentId: docId,
-    );
   }
 
   PublicProfileWallEntity _mapWall(WallDocDto dto, String docId) {
@@ -458,13 +303,6 @@ class _UserRow {
 
   final String docId;
   final PublicUserDocDto doc;
-}
-
-class _SetupRow {
-  const _SetupRow({required this.docId, required this.doc});
-
-  final String docId;
-  final SetupDocDto doc;
 }
 
 class _WallRow {

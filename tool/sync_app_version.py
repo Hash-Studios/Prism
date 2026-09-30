@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""Sync lib/core/constants/app_constants.dart to the pubspec.yaml version.
+
+With --check, change nothing and exit 1 when they differ.
+"""
 
 import pathlib
 import re
@@ -16,6 +20,15 @@ def read_pubspec_version() -> tuple[str, str]:
     if not match:
         raise ValueError("Unable to parse version from pubspec.yaml")
     return match.group(1), match.group(2)
+
+
+def read_app_constants() -> tuple[str, str]:
+    text = APP_CONSTANTS.read_text(encoding="utf-8")
+    version_match = re.search(r"const String currentAppVersion = '([^']+)';", text)
+    build_match = re.search(r"const String currentAppVersionCode = '([^']+)';", text)
+    if not version_match or not build_match:
+        raise ValueError("Unable to parse app version constants")
+    return version_match.group(1), build_match.group(1)
 
 
 def sync_constants(version: str, build: str) -> bool:
@@ -37,10 +50,23 @@ def sync_constants(version: str, build: str) -> bool:
 
 
 def main() -> int:
+    check = "--check" in sys.argv[1:]
     try:
         version, build = read_pubspec_version()
-        changed = sync_constants(version, build)
-        if changed:
+        if check:
+            app_version, app_build = read_app_constants()
+            if (version, build) == (app_version, app_build):
+                print(f"Version sync OK: {version}+{build}")
+                return 0
+            print(
+                "Version mismatch detected:\n"
+                f"- pubspec.yaml: {version}+{build}\n"
+                f"- app_constants: {app_version}+{app_build}\n"
+                "Run: python3 tool/sync_app_version.py",
+                file=sys.stderr,
+            )
+            return 1
+        if sync_constants(version, build):
             print(f"Synced app version constants to {version}+{build}")
         else:
             print(f"App version constants already synced at {version}+{build}")

@@ -1,4 +1,3 @@
-import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
@@ -20,11 +19,11 @@ class WotdBloc extends Bloc<WotdEvent, WotdState> {
   final FetchWallOfTheDayUseCase _fetchWallOfTheDayUseCase;
 
   Future<void> _onStarted(_Started event, Emitter<WotdState> emit) async {
-    emit(state.copyWith(status: LoadStatus.loading, failure: null));
+    emit(state.copyWith(status: LoadStatus.loading));
     final result = await _fetchWallOfTheDayUseCase(const NoParams());
     result.fold(
-      onSuccess: (entity) => emit(state.copyWith(status: LoadStatus.success, entity: entity, failure: null)),
-      onFailure: (failure) => emit(state.copyWith(status: LoadStatus.failure, failure: failure)),
+      onSuccess: (entity) => emit(state.copyWith(status: LoadStatus.success, entity: entity)),
+      onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure)),
     );
   }
 }

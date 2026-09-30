@@ -48,7 +48,7 @@ class _EditButtonState extends State<EditButton> {
     setState(() {
       isLoading = true;
     });
-    toasts.codeSend("Loading Wallpaper");
+    toasts.success('Loading Wallpaper');
     Directory? sessionDirectory;
     try {
       final response = await http.get(Uri.parse(url));

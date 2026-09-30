@@ -12,11 +12,6 @@ class FirebaseAnalyticsProvider implements AnalyticsProvider {
   }
 
   @override
-  Future<void> logLogin({String? loginMethod}) {
-    return _analytics.logLogin(loginMethod: loginMethod);
-  }
-
-  @override
   Future<void> setUserId(String? userId) {
     return _analytics.setUserId(id: userId);
   }
@@ -37,11 +32,6 @@ class FirebaseAnalyticsProvider implements AnalyticsProvider {
       screenClass: screenClass,
       parameters: parameters.isEmpty ? null : parameters,
     );
-  }
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) {
-    return _analytics.logShare(contentType: contentType, itemId: itemId, method: method);
   }
 
   @override

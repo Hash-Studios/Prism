@@ -65,16 +65,8 @@ class OnboardingBackground extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// OnboardingStepBackground — step-aware animated background.
-//
-// Responsibilities:
-//   • Initial scale-reveal (1.18 → 1.0) on mount.
-//   • Blur sigma animation per step:
-//       auth → 0, interests → 40, starterPack → 70, firstWallpaper → 0.
-//   • Cross-fade between wallpaperPrimary and wallpaperFinal on the
-//     firstWallpaper step.
-// ---------------------------------------------------------------------------
+/// Step-aware animated background: a scale reveal on mount, a blur that changes per step, and a
+/// cross-fade to the personalised wallpaper on the first wallpaper step.
 class OnboardingStepBackground extends StatefulWidget {
   const OnboardingStepBackground({super.key, required this.step, this.wallpaperUrl});
 
@@ -163,7 +155,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: Listenable.merge([_revealAnim, _blurAnim]),
-      child: OnboardingBackground(assetPath: OnboardingAssets.wallpaperFinal, networkUrl: widget.wallpaperUrl),
+      child: OnboardingBackground(assetPath: OnboardingAssets.wallpaperPrimary, networkUrl: widget.wallpaperUrl),
       builder: (context, child) {
         final revealScale = _revealAnim.value;
         final sigma = _blurAnim.value;

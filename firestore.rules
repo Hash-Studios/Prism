@@ -35,14 +35,18 @@ service cloud.firestore {
       return hasAuthEmail() && email is string && email == authEmail();
     }
 
+    // A follow that is already in place (arrayUnion of a present email) is a no-op write; allow it so a
+    // batch of follows does not fail on one creator the user already follows.
     function canToggleFollowersOnly() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
       return hasAuthEmail()
-          && resource.data.followers is list
-          && request.resource.data.followers is list
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
-          && (resource.data.followers.hasAny([authEmail()]) != request.resource.data.followers.hasAny([authEmail()]))
-          && request.resource.data.followers.size()
-              == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1);
+          && affected.hasOnly(['followers'])
+          && (affected.size() == 0
+              || (resource.data.followers is list
+                  && request.resource.data.followers is list
+                  && (resource.data.followers.hasAny([authEmail()]) != request.resource.data.followers.hasAny([authEmail()]))
+                  && request.resource.data.followers.size()
+                      == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1)));
     }
 
     // New profiles start empty: coins, premium and coinState are server-owned.
@@ -93,9 +97,11 @@ service cloud.firestore {
     // Public feeds; unreviewed docs are owner/admin only.
     match /walls/{docId} {
       allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
-      allow create: if isSignedIn()
-          && isEmailOwner(request.resource.data.email)
-          && request.resource.data.review != true;
+      // Admins re-create a rejected wall when they undo the rejection.
+      allow create: if isConfiguredAdmin()
+          || (isSignedIn()
+              && isEmailOwner(request.resource.data.email)
+              && request.resource.data.review != true);
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)

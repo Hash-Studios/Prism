@@ -4,7 +4,21 @@ import 'dart:io';
 import 'package:Prism/logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
-enum FirestoreOperation { queryGet, docGet, streamSubscribe, set, update, delete, add, transaction }
+const String firestoreTelemetryFileName = 'firestore_telemetry.ndjson';
+
+enum FirestoreOperation {
+  queryGet,
+  docGet,
+  streamSubscribe,
+  set,
+  update,
+  delete,
+  add,
+  transaction;
+
+  bool get isRead => this == queryGet || this == docGet || this == streamSubscribe;
+  bool get isWrite => !isRead;
+}
 
 class FirestoreTelemetryEvent {
   const FirestoreTelemetryEvent({
@@ -64,8 +78,17 @@ class FirestoreConsoleTelemetrySink implements FirestoreTelemetrySink {
   }
 }
 
+/// Drops the older half of the NDJSON lines once the file passes [maxBytes].
+void trimTelemetryFile(File file, {int maxBytes = 1024 * 1024}) {
+  if (file.lengthSync() <= maxBytes) {
+    return;
+  }
+  final List<String> lines = file.readAsLinesSync();
+  file.writeAsStringSync('${lines.skip(lines.length ~/ 2).join('\n')}\n');
+}
+
 class FirestoreFileTelemetrySink implements FirestoreTelemetrySink {
-  FirestoreFileTelemetrySink({this.fileName = 'firestore_telemetry.ndjson'});
+  FirestoreFileTelemetrySink({this.fileName = firestoreTelemetryFileName});
 
   final String fileName;
   File? _file;
@@ -79,7 +102,9 @@ class FirestoreFileTelemetrySink implements FirestoreTelemetrySink {
     }
     final Directory dir = await getApplicationDocumentsDirectory();
     final File file = File('${dir.path}/$fileName');
-    if (!file.existsSync()) {
+    if (file.existsSync()) {
+      trimTelemetryFile(file);
+    } else {
       file.createSync(recursive: true);
     }
     _file = file;
