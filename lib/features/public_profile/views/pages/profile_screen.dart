@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -540,7 +541,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                             for (final String key in linkKeys.take(3))
                                               _LinkButton(
                                                 tooltip: key,
-                                                icon: linksIconData[key] ?? JamIcons.link,
+                                                icon: profileLinkIcon(key),
                                                 onPressed: () async {
                                                   _trackAction(
                                                     AnalyticsActionValue.actionChipTapped,
@@ -760,29 +761,3 @@ class _StatPill extends StatelessWidget {
     );
   }
 }
-
-Map<String, IconData> linksIconData = {
-  'github': JamIcons.github,
-  'twitter': JamIcons.twitter,
-  'instagram': JamIcons.instagram,
-  'email': JamIcons.inbox,
-  'telegram': JamIcons.paper_plane,
-  'dribbble': JamIcons.basketball,
-  'linkedin': JamIcons.linkedin,
-  'bio.link': JamIcons.world,
-  'patreon': JamIcons.patreon,
-  'trello': JamIcons.trello,
-  'reddit': JamIcons.reddit,
-  'behance': JamIcons.behance,
-  'deviantart': JamIcons.deviantart,
-  'gitlab': JamIcons.gitlab,
-  'medium': JamIcons.medium,
-  'paypal': JamIcons.paypal,
-  'spotify': JamIcons.spotify,
-  'twitch': JamIcons.twitch,
-  'unsplash': JamIcons.unsplash,
-  'youtube': JamIcons.youtube,
-  'linktree': JamIcons.tree_alt,
-  'buymeacoffee': JamIcons.coffee,
-  'custom link': JamIcons.link,
-};
