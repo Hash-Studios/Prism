@@ -123,7 +123,6 @@ Future<String> _buildShareableLink({
     payload: payload,
     preview: preview,
   );
-  logger.d(resolved.toString());
   return resolved.toString();
 }
 
