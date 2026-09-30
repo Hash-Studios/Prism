@@ -47,10 +47,10 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           if (outcome == SignInOutcome.cancelled) {
             app_state.prismUser.loggedIn = false;
             app_state.persistPrismUser();
-            toasts.codeSend('Sign in cancelled.');
+            toasts.success('Sign in cancelled.');
             return;
           }
-          toasts.codeSend('Login Successful!');
+          toasts.success('Login Successful!');
           app_state.prismUser.loggedIn = true;
           app_state.persistPrismUser();
           func();

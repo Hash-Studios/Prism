@@ -106,7 +106,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
       return;
     }
     await Clipboard.setData(ClipboardData(text: _rawContent));
-    toasts.codeSend('Copied to clipboard. Paste elsewhere to analyze.');
+    toasts.success('Copied to clipboard. Paste elsewhere to analyze.');
   }
 
   @override

@@ -4,11 +4,13 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/widgets.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 
-typedef LaunchMode = launcher.LaunchMode;
-
 const DeepLinkNavigation _deepLinkNavigation = DeepLinkNavigation();
 
-Future<bool> openPrismLink(BuildContext context, String url, {LaunchMode mode = LaunchMode.platformDefault}) async {
+Future<bool> openPrismLink(
+  BuildContext context,
+  String url, {
+  launcher.LaunchMode mode = launcher.LaunchMode.platformDefault,
+}) async {
   final Uri? parsed = Uri.tryParse(url.trim());
   if (parsed == null) {
     return false;
@@ -24,8 +26,4 @@ Future<bool> openPrismLink(BuildContext context, String url, {LaunchMode mode = 
   }
 
   return launcher.launchUrl(parsed, mode: mode);
-}
-
-Future<bool> launchUrl(Uri url, {LaunchMode mode = LaunchMode.platformDefault}) {
-  return launcher.launchUrl(url, mode: mode);
 }

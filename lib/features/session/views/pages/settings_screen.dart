@@ -14,6 +14,7 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -319,7 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () async {
             _trackSettingsAction(AnalyticsActionValue.clearCacheTapped);
             await _cacheMaintenance.clearTransientCache();
-            toasts.codeSend('Cleared cache!');
+            toasts.success('Cleared cache!');
           },
         ),
         ListTile(
@@ -342,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         logger.w('Clearing downloads failed.', error: e);
       }
       if (deleted) {
-        toasts.codeSend('Deleted all downloads!');
+        toasts.success('Deleted all downloads!');
       } else {
         toasts.error('No downloads found.');
       }
@@ -461,11 +462,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               : () async {
                   _trackSettingsAction(AnalyticsActionValue.restorePurchaseTapped);
                   setState(() => _restoring = true);
-                  toasts.codeSend('Restoring purchases…');
+                  toasts.success('Restoring purchases…');
                   try {
                     final bool premium = await PurchasesService.instance.restore();
                     premium
-                        ? toasts.codeSend('Purchases restored!')
+                        ? toasts.success('Purchases restored!')
                         : toasts.error('No purchases to restore for this account.');
                   } catch (e) {
                     toasts.error('Could not restore purchases. Please try again.');
@@ -487,14 +488,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onTap: () async {
             _trackSettingsAction(AnalyticsActionValue.logoutTapped);
             try {
-              final bool signedOut = await app_state.gAuth.signOutGoogle();
+              final bool signedOut = await globalGoogleAuth.signOutGoogle();
               _trackSettingsAuthResult(
                 action: AnalyticsActionValue.logoutTapped,
                 result: signedOut ? EventResultValue.success : EventResultValue.failure,
                 reason: signedOut ? null : AnalyticsReasonValue.error,
               );
               if (signedOut) {
-                toasts.codeSend('Log out Successful!');
+                toasts.success('Log out Successful!');
                 await resetOnboardingLocalState(_settingsLocal);
                 if (context.mounted) {
                   // ignore: use_build_context_synchronously

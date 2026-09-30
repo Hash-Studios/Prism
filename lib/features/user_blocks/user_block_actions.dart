@@ -27,7 +27,7 @@ Future<bool> unblockUserWithFeedback(BuildContext context, String targetUserId) 
     toasts.error(result.failure?.message ?? 'Could not unblock');
     return false;
   }
-  toasts.codeSend('User unblocked');
+  toasts.success('User unblocked');
   return true;
 }
 
@@ -84,5 +84,5 @@ Future<void> confirmAndBlockUser({
     await session.updateFollowing(next);
   }
 
-  toasts.codeSend('User blocked');
+  toasts.success('User blocked');
 }

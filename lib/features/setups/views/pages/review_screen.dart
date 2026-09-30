@@ -481,7 +481,7 @@ class SetupTile extends StatelessWidget {
                             const SizedBox(height: 8),
                             GestureDetector(
                               onTap: () {
-                                toasts.codeSend("${wallpaper.name} - ${wallpaper.desc}");
+                                toasts.success("${wallpaper.name} - ${wallpaper.desc}");
                               },
                               child: SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.3,
@@ -689,10 +689,10 @@ Future<void> _reviewDeleteDoc({
 }) async {
   try {
     await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
-    toasts.codeSend(successToast);
+    toasts.success(successToast);
   } on FirestoreError catch (e, st) {
     logger.e('review delete failed ($sourceTag)', error: e, stackTrace: st);
-    toasts.codeSend(
+    toasts.success(
       e.code == 'permission-denied'
           ? "Couldn't delete: permission denied. Check you're signed in with the same account you used to upload."
           : "Couldn't delete. Please try again.",

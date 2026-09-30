@@ -11,9 +11,7 @@ void _show(String msg, Color background, {ToastGravity gravity = ToastGravity.BO
   );
 }
 
-void success(String msg) => _show(msg, Colors.green[600]!);
-
-void codeSend(String msg) => _show(msg, Colors.green[400]!);
+void success(String msg) => _show(msg, Colors.green[400]!);
 
 void error(String msg) => _show(msg, Colors.red[400]!);
 

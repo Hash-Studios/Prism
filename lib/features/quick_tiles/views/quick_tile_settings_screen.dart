@@ -76,11 +76,11 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
         QuickTileConfigService.saveFavsTileConfig(target: _favsTarget),
       ]);
       if (!mounted) return;
-      toasts.codeSend('Quick tile settings saved!');
+      toasts.success('Quick tile settings saved!');
     } catch (e, stackTrace) {
       logger.e('Failed to save quick tile settings', error: e, stackTrace: stackTrace);
       if (!mounted) return;
-      toasts.codeSend('Failed to save settings');
+      toasts.success('Failed to save settings');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

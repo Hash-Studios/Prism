@@ -609,7 +609,7 @@ class _StreakShopGrid extends StatelessWidget {
                           } else {
                             req = "You haven't met the unlock requirements yet.";
                           }
-                          toasts.codeSend(req);
+                          toasts.success(req);
                         }
                       },
                     );

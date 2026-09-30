@@ -163,14 +163,14 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
         ),
         body: BlocListener<ReviewBatchBloc, ReviewBatchState>(
           listenWhen: (previous, current) => current.undoCount > previous.undoCount,
-          listener: (context, state) => toasts.codeSend('Undo successful'),
+          listener: (context, state) => toasts.success('Undo successful'),
           child: BlocConsumer<ReviewBatchBloc, ReviewBatchState>(
             listener: (context, state) {
               if (state.status == ReviewBatchStatus.error && state.errorMessage != null) {
                 toasts.error(state.errorMessage!);
               }
               if (state.status == ReviewBatchStatus.batchComplete) {
-                toasts.codeSend('Batch complete! Loading next batch...');
+                toasts.success('Batch complete! Loading next batch...');
                 _bloc.add(const ReviewBatchNextBatchRequested());
               }
             },

@@ -125,7 +125,7 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
           ContentReportSubmitEvent(contentType: widget.contentType, result: BinaryResultValue.success, reason: reason),
         );
         Navigator.of(context).pop();
-        toasts.codeSend('Report sent. Thank you.');
+        toasts.success('Report sent. Thank you.');
       },
     );
   }

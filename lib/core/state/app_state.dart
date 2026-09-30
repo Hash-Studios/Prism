@@ -1,12 +1,9 @@
 import 'dart:async';
 
-import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/state/auth_runtime.dart';
-import 'package:Prism/core/utils/premium_wall_utils.dart' as premium_wall_utils;
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -93,12 +90,6 @@ bool isAdminUser([String? email]) {
   final String target = (email ?? prismUser.email).trim().toLowerCase();
   return isAdminEmail(target);
 }
-
-bool isPremiumWall(List<String> premiumCollections, List<Object?> wallCollections) {
-  return premium_wall_utils.isPremiumWall(premiumCollections, wallCollections);
-}
-
-GoogleAuth get gAuth => globalGoogleAuth;
 
 Future<void> initializeRuntimeAppVersion() async {
   final PackageInfo info = await PackageInfo.fromPlatform();

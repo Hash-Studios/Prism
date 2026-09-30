@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -71,7 +72,7 @@ class UserProfileGrid extends StatelessWidget {
               return app_state.prismUser.premium
                   ? tile
                   : PremiumBanner(
-                      comparator: !app_state.isPremiumWall(
+                      comparator: !isPremiumWall(
                         app_state.premiumCollections,
                         walls[index].collections ?? const <String>[],
                       ),

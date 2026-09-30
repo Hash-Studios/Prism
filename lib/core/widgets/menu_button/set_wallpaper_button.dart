@@ -58,7 +58,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         analytics.track(
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
         );
-        toasts.codeSend("Wallpaper set successfully!");
+        toasts.success("Wallpaper set successfully!");
         await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
@@ -92,7 +92,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         analytics.track(
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
         );
-        toasts.codeSend("Wallpaper set successfully!");
+        toasts.success("Wallpaper set successfully!");
         await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
@@ -126,7 +126,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
         analytics.track(
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
         );
-        toasts.codeSend("Wallpaper set successfully!");
+        toasts.success("Wallpaper set successfully!");
         await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");

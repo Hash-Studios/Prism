@@ -221,7 +221,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     setState(() => isLoading = false);
     if (mounted) {
       Navigator.pop(context);
-      toasts.codeSend("Profile updated!");
+      toasts.success("Profile updated!");
     }
   }
 

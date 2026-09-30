@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/premium_wall_utils.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/home/wallpapers/carousel_dots.dart';
@@ -272,7 +273,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                     context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
                   },
                   child: PremiumBanner(
-                    comparator: !app_state.isPremiumWall(
+                    comparator: !isPremiumWall(
                       app_state.premiumCollections,
                       wall.wallpaper.collections ?? const <String>[],
                     ),

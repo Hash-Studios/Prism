@@ -7,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/app_tokens.dart';
@@ -221,11 +222,11 @@ class ProfileDrawer extends StatelessWidget {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
                 // Finish signing out before the restart, or the restarted app still sees the old
                 // session and stays on the splash screen. The restart closes this drawer.
-                if (!await app_state.gAuth.signOutGoogle()) {
+                if (!await globalGoogleAuth.signOutGoogle()) {
                   toasts.error('Could not log out. Please try again.');
                   return;
                 }
-                toasts.codeSend('Log out Successful!');
+                toasts.success('Log out Successful!');
                 final settingsLocal = getIt<SettingsLocalDataSource>();
                 await settingsLocal.set('onboarded_v2_new', false);
                 await settingsLocal.set('onboarding_v2_interests', '');

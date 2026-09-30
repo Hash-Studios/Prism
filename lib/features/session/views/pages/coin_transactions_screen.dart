@@ -213,7 +213,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
         if (mounted) {
           await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'coin_hub_rewarded_ad');
         }
-        toasts.codeSend('+${CoinPolicy.rewardedAd} coins');
+        toasts.success('+${CoinPolicy.rewardedAd} coins');
         return;
       }
       toasts.error('Ad was not completed.');

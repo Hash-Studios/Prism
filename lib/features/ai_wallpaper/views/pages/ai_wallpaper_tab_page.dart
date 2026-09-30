@@ -507,7 +507,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
       final result = await PrismMediaHostApi().enqueueDownload(request);
       if (result.success) {
-        toasts.codeSend(wallpaperSavedMessage);
+        toasts.success(wallpaperSavedMessage);
       } else {
         toasts.error(result.message ?? "Couldn't download! Please retry.");
       }
@@ -589,7 +589,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
       }
-      toasts.codeSend('Submitted for review.');
+      toasts.success('Submitted for review.');
     } catch (error, stackTrace) {
       logger.w('AI community submit failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       toasts.error(
