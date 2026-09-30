@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -123,12 +124,12 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
+                    duration: context.motion(PrismDurations.fast),
                     child: _isLoading
                         ? SizedBox(
                             key: const ValueKey('loading'),
-                            width: 14,
-                            height: 14,
+                            width: 16,
+                            height: 16,
                             child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.onPrimary),
                           )
                         : const Text('Finish', key: ValueKey('label')),

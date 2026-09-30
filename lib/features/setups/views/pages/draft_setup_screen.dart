@@ -3,7 +3,7 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/setups/views/pages/review_screen.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +40,7 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
         ),
         builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: Loader());
+            return const GlintState(kind: GlintStateKind.loading, title: 'Loading drafts');
           } else {
             if (snapshot.data!.isNotEmpty) {
               return ListView.builder(
@@ -48,13 +48,11 @@ class _DraftSetupScreenState extends State<DraftSetupScreen> {
                 itemBuilder: (context, index) => SetupTile(snapshot.data![index], true),
               );
             } else {
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
+              return const GlintState(
+                kind: GlintStateKind.empty,
+                title: 'No drafts yet',
+                body:
                     "Your saved setup drafts show up here. Simply click the Save button when uploading a setup to save the draft.",
-                  ),
-                ),
               );
             }
           }

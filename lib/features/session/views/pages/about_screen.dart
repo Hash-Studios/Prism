@@ -7,7 +7,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -31,7 +31,7 @@ class _AboutScreenState extends State<AboutScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   int _versionTapCount = 0;
 
-  late final Future<List<Contributor>> _contributors = _fetchContributors();
+  late Future<List<Contributor>> _contributors = _fetchContributors();
 
   String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS ? appStoreUrl : playStoreUrl;
 
@@ -147,7 +147,10 @@ class _AboutScreenState extends State<AboutScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
-                  return SizedBox(height: 250, child: Center(child: Loader()));
+                  return const SizedBox(
+                    height: 250,
+                    child: GlintState(kind: GlintStateKind.loading, title: 'Loading the team'),
+                  );
                 } else if (snapshot.hasError) {
                   _contentLoadTracker.failure(
                     reason: AnalyticsReasonValue.error,
@@ -163,7 +166,15 @@ class _AboutScreenState extends State<AboutScreen> {
                       );
                     },
                   );
-                  return SizedBox(height: 250, child: Center(child: Loader()));
+                  return SizedBox(
+                    height: 250,
+                    child: GlintState(
+                      kind: GlintStateKind.error,
+                      title: "Couldn't load the team",
+                      actionLabel: 'Try again',
+                      onAction: () => setState(() => _contributors = _fetchContributors()),
+                    ),
+                  );
                 } else {
                   _contentLoadTracker.success(
                     itemCount: snapshot.data?.length ?? 0,

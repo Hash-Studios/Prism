@@ -11,7 +11,7 @@ export {submitContentReport} from "./submitContentReport";
 export {onContentReportCreated} from "./onContentReportCreated";
 export {blockUser, unblockUser} from "./userBlockCallables";
 export {githubPutFile, githubDeleteFile} from "./githubContent";
-export {awardCoins, spendCoins, processReferral} from "./coinsCallables";
+export {awardCoins, spendCoins, processReferral, buyStreakFreeze} from "./coinsCallables";
 export {deleteAccount} from "./deleteAccount";
 export {syncSubscription} from "./syncSubscription";
 

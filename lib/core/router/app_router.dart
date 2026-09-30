@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -28,14 +29,13 @@ import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
-import 'package:Prism/features/navigation/views/pages/streak_tab_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/features/public_profile/views/pages/followers_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
+import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
-import 'package:Prism/features/session/views/pages/coin_transactions_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/features/setups/views/pages/draft_setup_screen.dart';
@@ -49,7 +49,6 @@ import 'package:Prism/features/setups/views/pages/share_setup_view_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_setup_screen.dart';
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
-import 'package:Prism/features/streak/views/pages/streak_page.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
@@ -61,6 +60,7 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_scr
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 part 'app_router.gr.dart';
 
@@ -70,6 +70,28 @@ class AppRouter extends RootStackRouter {
 
   final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
+
+  /// iOS keeps the Cupertino slide so the edge back-swipe works (a custom route has no back gesture). Android fades
+  /// in and slides 24px from the right.
+  @override
+  RouteType get defaultRouteType => defaultTargetPlatform == TargetPlatform.iOS
+      ? const RouteType.adaptive()
+      : RouteType.custom(
+          duration: PrismDurations.base,
+          reverseDuration: const Duration(milliseconds: 200),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            if (context.reduceMotion) return child;
+            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
+            return FadeTransition(
+              opacity: t,
+              child: AnimatedBuilder(
+                animation: t,
+                builder: (context, child) => Transform.translate(offset: Offset(24 * (1 - t.value), 0), child: child),
+                child: child,
+              ),
+            );
+          },
+        );
 
   @override
   List<AutoRoute> get routes => [
@@ -101,8 +123,9 @@ class AppRouter extends RootStackRouter {
           page: SetupsTabRoute.page,
           children: [AutoRoute(path: '', page: SetupRoute.page)],
         ),
-        // Streak tab
-        AutoRoute(path: 'streak', page: StreakTabRoute.page),
+        // Rewards tab (was Streak)
+        AutoRoute(path: 'rewards', page: RewardsTabRoute.page),
+        RedirectRoute(path: 'streak', redirectTo: 'rewards'),
         // Collection tab
         AutoRoute(path: 'collection', page: CollectionTabRoute.page),
       ],
@@ -135,7 +158,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/draft-setup', page: DraftSetupRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/coin-transactions', page: CoinTransactionsRoute.page),
+    RedirectRoute(path: '/coin-transactions', redirectTo: '/rewards'),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
     AutoRoute(path: '/notifications', page: NotificationRoute.page),
     AutoRoute(path: '/color', page: ColorRoute.page),
@@ -149,7 +172,8 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
     AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
-    AutoRoute(path: '/streak', page: StreakRoute.page),
+    AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),
   ];

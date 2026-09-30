@@ -1,4 +1,3 @@
-import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,8 +62,9 @@ void main() {
 
   testWidgets('shows the loader instead of the label while loading', (WidgetTester tester) async {
     await pumpButton(tester, () {}, loading: true);
+    await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.byType(Loader), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('See more'), findsNothing);
   });
 

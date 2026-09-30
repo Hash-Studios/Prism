@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -37,6 +39,7 @@ class WallpaperTile extends StatelessWidget {
     final columns = crossAxisCount ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width);
     final width = (MediaQuery.sizeOf(context).width / columns).toInt();
     final height = memCacheHeight ?? (width * 2 * 1.5).toInt();
+    final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
     return Semantics(
       button: true,
       label: item.semanticLabel,
@@ -58,15 +61,23 @@ class WallpaperTile extends StatelessWidget {
                 ),
               ),
             );
-            context.router.push(WallpaperDetailRoute(entity: item));
+            context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
           },
-          child: CachedNetworkImage(
-            imageUrl: item.thumbnailUrl,
-            fit: BoxFit.cover,
-            fadeInDuration: Duration.zero,
-            memCacheHeight: height,
-            placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-            errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+          child: HeroMode(
+            enabled: !context.reduceMotion,
+            child: Hero(
+              tag: heroTag,
+              child: CachedNetworkImage(
+                imageUrl: item.thumbnailUrl,
+                fit: BoxFit.cover,
+                fadeInDuration: context.motion(const Duration(milliseconds: 180)),
+                fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
+                fadeInCurve: Curves.easeOut,
+                memCacheHeight: height,
+                placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+                errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
+              ),
+            ),
           ),
         ),
       ),

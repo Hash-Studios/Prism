@@ -1,13 +1,26 @@
+import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/analytics/events/analytics_user_properties.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 
 class AnalyticsIdentitySync {
-  AnalyticsIdentitySync({required AppAnalytics analytics}) : _analytics = analytics;
+  /// Without [analytics], each sync resolves [AnalyticsRuntime.instance], which is swapped in after the first frame.
+  factory AnalyticsIdentitySync({AppAnalytics? analytics}) {
+    if (analytics == null) {
+      return _default;
+    }
+    return AnalyticsIdentitySync._(analytics);
+  }
 
-  final AppAnalytics _analytics;
+  AnalyticsIdentitySync._(this._fixedAnalytics);
+
+  static final AnalyticsIdentitySync _default = AnalyticsIdentitySync._(null);
+
+  final AppAnalytics? _fixedAnalytics;
+  Future<void> _pending = Future<void>.value();
   _AnalyticsIdentityState? _lastAppliedState;
+  AppAnalytics? _lastAppliedTo;
 
   Future<void> sync({
     required bool loggedIn,
@@ -15,7 +28,7 @@ class AnalyticsIdentitySync {
     required String subscriptionTier,
     required bool isPremium,
     required String sourceTag,
-  }) async {
+  }) {
     final _AnalyticsIdentityState state = _AnalyticsIdentityState.fromRaw(
       loggedIn: loggedIn,
       userId: userId,
@@ -23,7 +36,15 @@ class AnalyticsIdentitySync {
       isPremium: isPremium,
     );
 
-    if (_lastAppliedState == state) {
+    final Future<void> operation = _pending.then((_) => _apply(state, sourceTag));
+    _pending = operation.catchError((Object _) {});
+    return operation;
+  }
+
+  Future<void> _apply(_AnalyticsIdentityState state, String sourceTag) async {
+    final AppAnalytics analytics = _fixedAnalytics ?? AnalyticsRuntime.instance;
+
+    if (_lastAppliedState == state && identical(_lastAppliedTo, analytics)) {
       _logIdentitySync(
         message: 'Analytics identity sync skipped; state unchanged.',
         sourceTag: sourceTag,
@@ -34,11 +55,12 @@ class AnalyticsIdentitySync {
     }
 
     if (!state.isIdentified) {
-      await _analytics.setUserId(null);
-      await _analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
-      await _analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
-      await _analytics.setUserProperty(name: AnalyticsUserProperty.loggedIn.wireName, value: '0');
+      await analytics.setUserId(null);
+      await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
+      await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
+      await analytics.setUserProperty(name: AnalyticsUserProperty.loggedIn.wireName, value: '0');
       _lastAppliedState = state;
+      _lastAppliedTo = analytics;
       _logIdentitySync(
         message: 'Analytics identity reset applied.',
         sourceTag: sourceTag,
@@ -48,17 +70,15 @@ class AnalyticsIdentitySync {
       return;
     }
 
-    await _analytics.setUserId(state.userId);
-    await _analytics.setUserProperty(
+    await analytics.setUserId(state.userId);
+    await analytics.setUserProperty(
       name: AnalyticsUserProperty.subscriptionTier.wireName,
       value: state.subscriptionTier,
     );
-    await _analytics.setUserProperty(
-      name: AnalyticsUserProperty.isPremium.wireName,
-      value: state.isPremium ? '1' : '0',
-    );
-    await _analytics.setUserProperty(name: AnalyticsUserProperty.loggedIn.wireName, value: '1');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: state.isPremium ? '1' : '0');
+    await analytics.setUserProperty(name: AnalyticsUserProperty.loggedIn.wireName, value: '1');
     _lastAppliedState = state;
+    _lastAppliedTo = analytics;
     _logIdentitySync(
       message: 'Analytics identity identify applied.',
       sourceTag: sourceTag,

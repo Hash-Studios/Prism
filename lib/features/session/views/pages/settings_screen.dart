@@ -6,6 +6,7 @@ import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/cache_maintenance_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -216,6 +218,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: Theme.of(context).primaryColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      sheetAnimationStyle: AnimationStyle(
+        duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+        reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
+        curve: PrismCurves.enter,
+        reverseCurve: PrismCurves.exit,
+      ),
       builder: (ctx) {
         return RadioGroup<_DownloadQuality>(
           groupValue: _downloadQuality,
@@ -570,12 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   width: MediaQuery.of(context).size.width * .7,
                   height: MediaQuery.of(context).size.height * .3,
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [CircularProgressIndicator(), SizedBox(height: 16), Text('Deleting account...')],
-                    ),
-                  ),
+                  child: const GlintState(kind: GlintStateKind.loading, title: 'Deleting account...'),
                 ),
               );
               showDialog(barrierDismissible: false, context: context, builder: (_) => loaderDialog);
