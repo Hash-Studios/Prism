@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -27,16 +28,6 @@ final Map<String, DateTime> _lastSyncEndedAtByKey = <String, DateTime>{};
 void clearInAppNotificationSyncGateAll() {
   _syncInFlightByKey.clear();
   _lastSyncEndedAtByKey.clear();
-}
-
-Map<String, dynamic> _asMap(Object? raw) {
-  if (raw is Map<String, dynamic>) {
-    return raw;
-  }
-  if (raw is Map) {
-    return raw.map((key, value) => MapEntry(key.toString(), value));
-  }
-  return <String, dynamic>{};
 }
 
 String _notificationAudienceTag() => app_state.prismUser.premium ? 'premium' : 'free';
@@ -148,8 +139,8 @@ DateTime _createdAtFrom(Object? value) {
 }
 
 InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
-  final Map<String, dynamic> data = _asMap(raw['data']);
-  final Map<String, dynamic> notification = _asMap(raw['notification']);
+  final Map<String, dynamic> data = toJsonMap(raw['data']);
+  final Map<String, dynamic> notification = toJsonMap(raw['notification']);
   final DateTime createdAt = _createdAtFrom(raw['createdAt']).toUtc();
   final String title = notification['title']?.toString() ?? '';
   final String body = notification['body']?.toString() ?? '';
@@ -232,7 +223,7 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async 
         sinceUtc: nowUtc.subtract(const Duration(days: 30)),
         sourceTag: force ? 'notifications.force_backfill' : 'notifications.last_month',
       );
-      final entities = _filterBlockedActors(snap.map(_asMap).map(_toEntity).toList(growable: false), blocked);
+      final entities = _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked);
       await _replaceAllPreservingReadState(notificationsLocal, entities);
       await notificationsLocal.setLastFetchAtUtc(nowUtc);
       return true;
@@ -243,7 +234,7 @@ Future<bool> _syncInAppNotificationsFromRemoteBody({required bool force}) async 
       sourceTag: 'notifications.latest',
       cachePolicy: FirestoreCachePolicy.memoryFirst,
     );
-    final entities = _filterBlockedActors(snap.map(_asMap).map(_toEntity).toList(growable: false), blocked);
+    final entities = _filterBlockedActors(snap.map(toJsonMap).map(_toEntity).toList(growable: false), blocked);
     if (entities.isNotEmpty) {
       await notificationsLocal.upsertAll(entities);
     }
