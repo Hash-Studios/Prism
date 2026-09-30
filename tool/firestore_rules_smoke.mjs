@@ -29,7 +29,9 @@ const cases = [
   ['owner sets own tier', () => req('PATCH', 'usersv2/b', { subscriptionTier: { stringValue: 'pro' } }, Bu, ['subscriptionTier']), 403],
   ['owner sets a coin award flag', () => req('PATCH', 'usersv2/b', coinState({ profileCompletionRewarded: { booleanValue: true } }), Bu, ['coinState.profileCompletionRewarded']), 403],
   ['owner toggles streak reminder', () => req('PATCH', 'usersv2/b', coinState({ streakReminderEnabled: { booleanValue: false } }), Bu, ['coinState.streakReminderEnabled']), 200],
-  ['user writes a coin ledger entry', () => req('PATCH', 'usersv2/b/coinTransactions/t1', { delta: { integerValue: '500' } }, Bu), 403],
+  ['user writes a coin ledger entry', () => req('PATCH', 'coinTransactions/t1', {
+    userId: { stringValue: 'b' }, delta: { integerValue: '500' },
+  }, Bu), 403],
   ['user creates own unreviewed wall', () => req('PATCH', 'walls/w3', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false } }, Bu), 200],
 ];
 await seed();
