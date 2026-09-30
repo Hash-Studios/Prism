@@ -242,7 +242,8 @@ jobs:
         run: |
           git checkout --force --detach "$HEAD_SHA"
           cp tool/build_size_apk.sh "$RUNNER_TEMP/"
-          echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$("$RUNNER_TEMP/build_size_apk.sh" --key "$BASE_SHA")" >> "$GITHUB_OUTPUT"
+          key=$("$RUNNER_TEMP/build_size_apk.sh" --key "$BASE_SHA")
+          echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$key" >> "$GITHUB_OUTPUT"
 
       # Written by app_size_base when the base commit merged.
       - name: Restore the base APK
@@ -308,19 +309,39 @@ jobs:
           cat build/size/report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload app size artifacts
-        if: always()
+        if: ${{ always() && !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: app-size-report
           path: build/size
 
       - name: Upsert app-size PR comment
-        if: always()
+        if: ${{ always() && !cancelled() && hashFiles('build/size/report.md') != '' }}
         continue-on-error: true
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: app-size-report
           path: build/size/report.md
+
+  # Replaces an app-size comment from an earlier push, so it does not go stale.
+  app_size_skipped:
+    name: Android app size skipped
+    needs: changes
+    if: needs.changes.outputs.app_size != 'true' && needs.changes.outputs.workflow != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Upsert skipped app-size PR comment
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: app-size-report
+          message: |
+            ## Android App Size Report
+
+            Skipped: no app-size relevant files changed in this PR.
 
   app_size_base:
     name: Android app size (master baseline)
@@ -333,7 +354,9 @@ jobs:
 
       - name: Compute the APK cache key
         id: apk
-        run: echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$(tool/build_size_apk.sh --key HEAD)" >> "$GITHUB_OUTPUT"
+        run: |
+          key=$(tool/build_size_apk.sh --key HEAD)
+          echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$key" >> "$GITHUB_OUTPUT"
 
       - name: Check for a cached APK
         id: cached
@@ -390,9 +413,9 @@ jobs:
   ci:
     name: ci
     needs: [changes, flutter, functions, web, rules]
-    # No green check when the suite never ran (draft PR, push), and no red X
-    # on a run that a newer push cancelled.
-    if: ${{ !cancelled() && needs.changes.result != 'skipped' }}
+    # `always()` so a cancelled or failed job reports red. A skipped required
+    # check counts as passed, so `ci` must never skip on a non-draft PR.
+    if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
