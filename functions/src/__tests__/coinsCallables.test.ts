@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {refundableDelta, rewardedAdAllowed} from "../coinsCallables";
+import {isValidRequestId, planFreezePurchase, refundableDelta, rewardedAdAllowed} from "../coinsCallables";
 
 const NOW = 1_700_000_000_000;
 
@@ -63,4 +63,39 @@ test("rewardedAdAllowed: allows a claim 21s after the last one", () => {
 
 test("rewardedAdAllowed: allows the first claim with no prior state", () => {
   assert.equal(rewardedAdAllowed({}, NOW), true);
+});
+
+test("planFreezePurchase: debits 50 and adds a freeze", () => {
+  assert.deepEqual(planFreezePurchase(120, 0), {current: 70, freezes: 1});
+});
+
+test("planFreezePurchase: rejects a balance of 49", () => {
+  assert.deepEqual(planFreezePurchase(49, 0), {insufficientBalance: true});
+});
+
+test("planFreezePurchase: rejects at the cap even with a high balance", () => {
+  assert.deepEqual(planFreezePurchase(10_000, 2), {atCap: true});
+});
+
+test("planFreezePurchase: has no premium input, so premium users still pay", () => {
+  assert.equal(planFreezePurchase.length, 2);
+  assert.deepEqual(planFreezePurchase(50, 1), {current: 0, freezes: 2});
+});
+
+test("planFreezePurchase: a second purchase on the post-first state at cap is rejected", () => {
+  const first = planFreezePurchase(200, 1);
+  assert.deepEqual(first, {current: 150, freezes: 2});
+  if (!("current" in first)) throw new Error("expected success");
+  assert.deepEqual(planFreezePurchase(first.current, first.freezes), {atCap: true});
+});
+
+test("isValidRequestId: rejects empty, oversize and bad characters", () => {
+  assert.equal(isValidRequestId(""), false);
+  assert.equal(isValidRequestId("short"), false);
+  assert.equal(isValidRequestId("a".repeat(65)), false);
+  assert.equal(isValidRequestId("has space 123"), false);
+  assert.equal(isValidRequestId("bad/char_12345"), false);
+  assert.equal(isValidRequestId(12345678), false);
+  assert.equal(isValidRequestId("abc-DEF_1234"), true);
+  assert.equal(isValidRequestId("a".repeat(64)), true);
 });
