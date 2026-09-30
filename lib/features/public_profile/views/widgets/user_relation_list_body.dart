@@ -2,13 +2,11 @@ import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -50,9 +48,13 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
 
   String get _title => _isFollowers ? 'Followers' : 'Following';
 
-  String get _emptySourceText => _isFollowers ? 'No followers yet.' : "You're not following anyone yet.";
+  String get _emptyTitle => _isFollowers ? 'No followers yet' : 'Not following anyone yet';
 
-  String get _emptyLoadFailedText => _isFollowers ? 'Could not load followers.' : 'Could not load following list.';
+  String get _emptyBody => _isFollowers
+      ? 'People who follow this account will show up here.'
+      : 'Accounts followed from here will show up here.';
+
+  String get _loadFailedTitle => _isFollowers ? 'Could not load followers' : 'Could not load following';
 
   void _maybeAutoLoadMore(PublicProfileState state) {
     final RelationList list = _list(state);
@@ -129,62 +131,54 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   Widget build(BuildContext context) {
     return BlocProvider<PublicProfileBloc>.value(
       value: _bloc,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).primaryColor,
-        appBar: PreferredSize(
-          preferredSize: const Size(double.infinity, 55),
-          child: HeadingChipBar(current: _title),
-        ),
-        body: Column(
-          children: [
-            _SearchBar(controller: _searchController),
-            Expanded(
-              child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
-                buildWhen: (prev, curr) => _list(prev) != _list(curr),
-                builder: (context, state) {
-                  final list = _list(state);
-                  // Search mode.
-                  if (_isSearchActive) {
-                    if (list.isSearching) {
-                      return const GlintState(kind: GlintStateKind.loading, title: 'Searching');
-                    }
-                    final results = list.searchResults ?? const <UserSummaryEntity>[];
-                    if (results.isEmpty) {
-                      return const GlintState(kind: GlintStateKind.empty, title: 'No results found.');
-                    }
-                    return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
-                  }
+      child: PrismPage(
+        title: _title,
+        headerBottom: _SearchField(controller: _searchController),
+        body: BlocBuilder<PublicProfileBloc, PublicProfileState>(
+          buildWhen: (prev, curr) => _list(prev) != _list(curr),
+          builder: (context, state) {
+            final list = _list(state);
+            // Search mode.
+            if (_isSearchActive) {
+              if (list.isSearching) {
+                return PrismSkeleton.rows(rows: 5);
+              }
+              final results = list.searchResults ?? const <UserSummaryEntity>[];
+              if (results.isEmpty) {
+                return GlintState(
+                  kind: GlintStateKind.empty,
+                  title: 'No results',
+                  body: 'Nobody matches "${_searchController.text.trim()}". Try a different username.',
+                );
+              }
+              return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
+            }
 
-                  // Paginated mode.
-                  final summaries = list.summaries;
-                  if (list.isFetching && summaries.isEmpty) {
-                    return GlintState(
-                      kind: GlintStateKind.loading,
-                      title: _isFollowers ? 'Loading followers' : 'Loading following',
-                    );
-                  }
-                  if (summaries.isEmpty) {
-                    if (widget.emails.isEmpty) {
-                      return GlintState(kind: GlintStateKind.empty, title: _emptySourceText);
-                    }
-                    return GlintState(
-                      kind: GlintStateKind.error,
-                      title: _emptyLoadFailedText,
-                      actionLabel: 'Try again',
-                      onAction: () => _bloc.add(_fetchPageEvent(0)),
-                    );
-                  }
-                  _maybeAutoLoadMore(state);
-                  return _UserList(
-                    users: summaries,
-                    scrollController: _scrollController,
-                    hasMore: list.hasMore,
-                    isLoading: list.isFetching,
-                  );
-                },
-              ),
-            ),
-          ],
+            // Paginated mode.
+            final summaries = list.summaries;
+            if (list.isFetching && summaries.isEmpty) {
+              return PrismSkeleton.rows();
+            }
+            if (summaries.isEmpty) {
+              if (widget.emails.isEmpty) {
+                return GlintState(kind: GlintStateKind.empty, title: _emptyTitle, body: _emptyBody);
+              }
+              return GlintState(
+                kind: GlintStateKind.error,
+                title: _loadFailedTitle,
+                body: 'Check your connection and try again.',
+                actionLabel: 'Try again',
+                onAction: () => _bloc.add(_fetchPageEvent(0)),
+              );
+            }
+            _maybeAutoLoadMore(state);
+            return _UserList(
+              users: summaries,
+              scrollController: _scrollController,
+              hasMore: list.hasMore,
+              isLoading: list.isFetching,
+            );
+          },
         ),
       ),
     );
@@ -210,14 +204,22 @@ class _UserList extends StatelessWidget {
     final itemCount = users.length + (hasMore || isLoading ? 1 : 0);
     return ListView.separated(
       controller: scrollController,
+      padding: EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom),
       itemCount: itemCount,
-      separatorBuilder: (_, _) =>
-          Divider(height: 1, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08), indent: 72),
+      separatorBuilder: (_, _) => const SizedBox(height: PrismSpace.xxs),
       itemBuilder: (context, index) {
         if (index >= users.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+          return const PrismSkeleton(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
+              child: Row(
+                children: <Widget>[
+                  PrismBone.circle(size: 44),
+                  SizedBox(width: PrismSpace.sm),
+                  PrismBone(width: 140),
+                ],
+              ),
+            ),
           );
         }
         final user = users[index];
@@ -230,52 +232,47 @@ class _UserList extends StatelessWidget {
   }
 }
 
-class _SearchBar extends StatelessWidget {
-  const _SearchBar({required this.controller});
+/// A 48 high pill that filters the list by username.
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller});
 
   final TextEditingController controller;
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    const OutlineInputBorder none = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(PrismRadius.pill)),
+      borderSide: BorderSide.none,
+    );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: TextField(
-        controller: controller,
-        style: TextStyle(
-          fontFamily: PrismFonts.proximaNova,
-          color: Theme.of(context).colorScheme.secondary,
-          fontSize: 15,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Search by username…',
-          hintStyle: TextStyle(
-            fontFamily: PrismFonts.proximaNova,
-            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-            fontSize: 15,
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.xs),
+      child: SizedBox(
+        height: 48,
+        child: TextField(
+          controller: controller,
+          textInputAction: TextInputAction.search,
+          style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
+          cursorColor: cs.primary,
+          decoration: InputDecoration(
+            hintText: 'Search by username',
+            prefixIcon: const Icon(Icons.search_rounded, size: 22),
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (_, value, _) => value.text.isEmpty
+                  ? const SizedBox.shrink()
+                  : PrismIconButton(
+                      icon: Icons.close_rounded,
+                      tooltip: 'Clear search',
+                      iconSize: 20,
+                      onPressed: controller.clear,
+                    ),
+            ),
+            contentPadding: EdgeInsets.zero,
+            border: none,
+            enabledBorder: none,
+            focusedBorder: none.copyWith(borderSide: BorderSide(color: cs.primary, width: 1.5)),
           ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-            size: 20,
-          ),
-          suffixIcon: ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (_, value, _) {
-              if (value.text.isEmpty) return const SizedBox.shrink();
-              return IconButton(
-                icon: Icon(
-                  Icons.clear,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                ),
-                onPressed: controller.clear,
-              );
-            },
-          ),
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.06),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         ),
       ),
     );

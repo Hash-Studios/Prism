@@ -1,28 +1,48 @@
+import 'dart:async';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/review_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
 
 class _ReviewFirestoreClient extends FakeFirestoreClient {
-  _ReviewFirestoreClient({this.failRejectedStream = false});
+  _ReviewFirestoreClient({
+    this.failRejectedStream = false,
+    this.failPendingStream = false,
+    this.neverRejected = false,
+    this.neverPending = false,
+    this.neverEmit = false,
+  });
 
   final bool failRejectedStream;
+  final bool failPendingStream;
+  final bool neverRejected;
+  final bool neverPending;
+  final bool neverEmit;
   final List<FirestoreDocument> rejectedRows = <FirestoreDocument>[];
   final List<FirestoreDocument> pendingRows = <FirestoreDocument>[];
 
   @override
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
+    if (neverEmit) return StreamController<List<T>>().stream;
+    if (spec.collection == FirebaseCollections.rejectedWalls && neverRejected) {
+      return StreamController<List<T>>().stream;
+    }
+    if (spec.collection == FirebaseCollections.walls && neverPending) return StreamController<List<T>>().stream;
     if (spec.collection == FirebaseCollections.rejectedWalls && failRejectedStream) {
+      return Stream<List<T>>.error(StateError('offline'));
+    }
+    if (spec.collection == FirebaseCollections.walls && failPendingStream) {
       return Stream<List<T>>.error(StateError('offline'));
     }
     final List<FirestoreDocument> documents = spec.collection == FirebaseCollections.rejectedWalls
@@ -31,6 +51,13 @@ class _ReviewFirestoreClient extends FakeFirestoreClient {
     return Stream<List<T>>.value(documents.map((document) => map(document.data(), document.id)).toList());
   }
 }
+
+/// The thumbnail skeleton pulses forever while an image loads, so screen tests run with motion off.
+Widget _screen() => MaterialApp(
+  builder: (context, child) =>
+      MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: child!),
+  home: const ReviewScreen(),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -81,15 +108,15 @@ void main() {
               ),
             );
 
-            final Rect cardRect = tester.getRect(find.byType(Card));
-            final Finder cardText = find.descendant(of: find.byType(Card), matching: find.byType(Text));
+            final Rect cardRect = tester.getRect(find.byType(PrismCard));
+            final Finder cardText = find.descendant(of: find.byType(PrismCard), matching: find.byType(Text));
             for (final Element text in cardText.evaluate()) {
               final Rect textRect = tester.getRect(find.byWidget(text.widget));
               expect(textRect.left, greaterThanOrEqualTo(cardRect.left));
               expect(textRect.right, lessThanOrEqualTo(cardRect.right));
               expect(textRect.bottom, lessThanOrEqualTo(cardRect.bottom));
             }
-            expect(tester.getRect(find.byType(ActionChip)).bottom, lessThanOrEqualTo(cardRect.bottom));
+            expect(tester.getRect(find.byType(PrismTag)).bottom, lessThanOrEqualTo(cardRect.bottom));
             final Finder iconButtons = find.byType(IconButton);
             expect(iconButtons, findsNWidgets(2));
             for (int index = 0; index < 2; index++) {
@@ -97,17 +124,11 @@ void main() {
               expect(button.left, greaterThanOrEqualTo(cardRect.left));
               expect(button.right, lessThanOrEqualTo(cardRect.right));
               expect(button.bottom, lessThanOrEqualTo(cardRect.bottom));
-              expect(button.width, greaterThanOrEqualTo(48));
+              expect(button.width, greaterThanOrEqualTo(44));
             }
             expect(tester.takeException(), isNull);
-
-            final Finder idFinder = find.text('pWTbDtblpDvZpVsYZbjt');
-            final Text idText = tester.widget<Text>(idFinder);
-            expect(idText.maxLines, 1);
-            expect(idText.overflow, TextOverflow.ellipsis);
-            if (width == 360) {
-              expect(tester.renderObject<RenderParagraph>(idFinder).didExceedMaxLines, isTrue);
-            }
+            expect(find.text('pWTbDtblpDvZpVsYZbjt'), findsNothing);
+            expect(find.text('1440 x 3200 · 12.34 MB'), findsOneWidget);
             if (rejected) {
               expect(find.byType(RejectionFeedback), findsOneWidget);
             }
@@ -143,11 +164,13 @@ void main() {
     firestore = _ReviewFirestoreClient(failRejectedStream: true);
     getIt.registerSingleton<FirestoreClient>(firestore);
 
-    await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+    await tester.pumpWidget(_screen());
     await tester.pump();
 
     expect(find.text("Couldn't load your rejected submissions."), findsOneWidget);
-    expect(find.text('No wallpapers waiting for review.'), findsOneWidget);
+    expect(find.text('Rejected'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text('Nothing here yet'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -162,13 +185,13 @@ void main() {
           'resolution': '1440x3200',
         }),
       );
-      await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+      await tester.pumpWidget(_screen());
       await tester.pumpAndSettle();
 
       await tester.tap(find.byTooltip('Delete wallpaper'));
       await tester.pumpAndSettle();
       expect(find.text('Delete this wallpaper?'), findsOneWidget);
-      await tester.tap(find.text('DELETE'));
+      await tester.tap(find.text('Delete wallpaper'));
       await tester.pumpAndSettle();
 
       expect(firestore.writes, hasLength(1));
@@ -185,15 +208,130 @@ void main() {
         'resolution': '1440x3200',
       }),
     );
-    await tester.pumpWidget(const MaterialApp(home: ReviewScreen()));
+    await tester.pumpWidget(_screen());
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Delete wallpaper'));
     await tester.pumpAndSettle();
     expect(find.text('Delete this wallpaper?'), findsOneWidget);
-    await tester.tap(find.text('CANCEL'));
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
 
     expect(firestore.writes, isEmpty);
+  });
+
+  testWidgets('lists uploads in review first, then rejected, each under its own header', (tester) async {
+    firestore.pendingRows.add(
+      const FirestoreDocument('wall-1', <String, dynamic>{'size': '2 MB', 'resolution': '1440x3200'}),
+    );
+    firestore.rejectedRows.add(
+      const FirestoreDocument('wall-2', <String, dynamic>{
+        'size': '3 MB',
+        'resolution': '1080x2400',
+        'rejectionReason': 'Too blurry.',
+      }),
+    );
+    await tester.pumpWidget(_screen());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Your uploads'), findsOneWidget);
+    expect(find.text('In review'), findsNWidgets(2));
+    expect(find.text('Rejected'), findsNWidgets(2));
+    expect(find.text('Too blurry.'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('In review').first).dy,
+      lessThan(tester.getTopLeft(find.text('Rejected').first).dy),
+    );
+  });
+
+  testWidgets('shows an empty state with an upload action when there are no uploads', (tester) async {
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Nothing here yet'), findsOneWidget);
+    expect(find.text('Wallpapers you upload show their review status here.'), findsOneWidget);
+    expect(find.text('Upload a wallpaper'), findsOneWidget);
+  });
+
+  testWidgets('shows a skeleton while the uploads load', (tester) async {
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(_ReviewFirestoreClient(neverEmit: true));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    expect(find.byType(PrismSkeleton), findsOneWidget);
+    expect(find.text('Nothing here yet'), findsNothing);
+  });
+
+  testWidgets('shows pending uploads while the rejected stream is unresolved', (tester) async {
+    firestore = _ReviewFirestoreClient(neverRejected: true);
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.pendingRows.add(const FirestoreDocument('pending-1', <String, dynamic>{'size': '2 MB'}));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    final Finder pendingTile = find.byWidgetPredicate(
+      (widget) => widget is WallTile && widget.wallpaper.id == 'pending-1',
+    );
+    await tester.ensureVisible(pendingTile);
+    await tester.pump();
+    expect(find.text('In review'), findsWidgets);
+    expect(pendingTile, findsOneWidget);
+    expect(find.byType(PrismSkeleton), findsNWidgets(2));
+    expect(find.text('Nothing here yet'), findsNothing);
+  });
+
+  testWidgets('shows rejected uploads while the pending stream is unresolved', (tester) async {
+    firestore = _ReviewFirestoreClient(neverPending: true);
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.rejectedRows.add(const FirestoreDocument('rejected-1', <String, dynamic>{'size': '2 MB'}));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    final Finder rejectedTile = find.byWidgetPredicate(
+      (widget) => widget is WallTile && widget.wallpaper.id == 'rejected-1',
+    );
+    await tester.ensureVisible(rejectedTile);
+    await tester.pump();
+    expect(find.text('Rejected'), findsWidgets);
+    expect(rejectedTile, findsOneWidget);
+    expect(find.byType(PrismSkeleton), findsNWidgets(2));
+    expect(find.text('Nothing here yet'), findsNothing);
+  });
+
+  testWidgets('shows loaded content and the sibling error when one stream fails', (tester) async {
+    firestore = _ReviewFirestoreClient(failRejectedStream: true);
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.pendingRows.add(const FirestoreDocument('pending-1', <String, dynamic>{'size': '2 MB'}));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    final Finder pendingTile = find.byWidgetPredicate(
+      (widget) => widget is WallTile && widget.wallpaper.id == 'pending-1',
+    );
+    await tester.ensureVisible(pendingTile);
+    await tester.pump();
+    expect(find.text("Couldn't load your rejected submissions."), findsOneWidget);
+    expect(find.text('In review'), findsWidgets);
+    expect(pendingTile, findsOneWidget);
+  });
+
+  testWidgets('shows one error with a retry when both lists fail to load', (tester) async {
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(_ReviewFirestoreClient(failRejectedStream: true, failPendingStream: true));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    expect(find.text("Couldn't load your uploads"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
   });
 }

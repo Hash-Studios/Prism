@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -58,7 +59,7 @@ void main() {
     });
   }
 
-  testWidgets('a finished empty collection shows no tile or See more button', (tester) async {
+  testWidgets('a finished empty collection shows the empty state, no tile and no See more button', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     anyCollectionWalls = <Map<String, dynamic>>[];
@@ -70,11 +71,14 @@ void main() {
 
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
 
-    expect(tester.widget<GridView>(find.byType(GridView)).childrenDelegate.estimatedChildCount, 0);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(GridView), findsNothing);
+    expect(find.widgetWithText(GlintState, 'Nothing in this collection yet'), findsOneWidget);
     expect(find.text('See more'), findsNothing);
   });
 
-  testWidgets('malformed collection placeholders have square corners', (tester) async {
+  testWidgets('malformed collection placeholders use the shared tile radius', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     anyCollectionWalls = <Map<String, dynamic>>[
@@ -91,11 +95,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
     await tester.pump(const Duration(milliseconds: 16));
 
-    final tile = tester.widget<Container>(
-      find.ancestor(of: find.byIcon(Icons.broken_image_outlined), matching: find.byType(Container)).first,
+    final tile = tester.widget<DecoratedBox>(
+      find.ancestor(of: find.byIcon(Icons.broken_image_outlined), matching: find.byType(DecoratedBox)).first,
     );
     expect(tile.decoration, isA<BoxDecoration>());
-    expect((tile.decoration! as BoxDecoration).borderRadius, isNull);
+    expect((tile.decoration as BoxDecoration).borderRadius, PrismWallGrid.tileRadius);
   });
 
   testWidgets('does not replace the 24th collection item with See more', (tester) async {
@@ -121,7 +125,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('clips tile ink and preserves the long-press shrink and reverse animation', (tester) async {
+  testWidgets('keeps the long-press shrink and reverse animation on a rounded tile', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
     final originalHttpOverrides = HttpOverrides.current;
@@ -153,31 +157,24 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
     await tester.pump(const Duration(milliseconds: 16));
 
-    final inkWellFinder = find.byType(InkWell);
-    final tileClipFinder = find.ancestor(of: inkWellFinder, matching: find.byType(ClipRect)).first;
-    final tileSemanticsFinder = find.ancestor(of: inkWellFinder, matching: find.byType(Semantics)).first;
-    final Size restingSize = tester.getSize(inkWellFinder);
-    expect(tester.widget<ClipRect>(tileClipFinder).clipBehavior, Clip.hardEdge);
-    expect(tester.getSize(tileClipFinder), restingSize);
-    final PrismImageTile image = tester.widget<PrismImageTile>(
-      find.descendant(of: tileSemanticsFinder, matching: find.byType(PrismImageTile)),
-    );
-    expect(image.borderRadius, isNull);
+    final tileFinder = find.byType(PrismWallTile);
+    final Size restingSize = tester.getSize(tileFinder);
+    expect(tester.widget<PrismWallTile>(tileFinder).borderRadius, PrismWallGrid.tileRadius);
 
-    final gesture = await tester.startGesture(tester.getCenter(inkWellFinder));
+    final gesture = await tester.startGesture(tester.getCenter(tileFinder));
     await tester.pump(const Duration(milliseconds: 80));
     await gesture.cancel();
     await tester.pump();
 
-    tester.widget<InkWell>(inkWellFinder).onLongPress!();
+    tester.widget<PrismWallTile>(tileFinder).onLongPress!();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 120));
 
-    final Size pressedSize = tester.getSize(inkWellFinder);
+    final Size pressedSize = tester.getSize(tileFinder);
     expect(pressedSize.width, closeTo(restingSize.width - 16, 0.1));
     expect(pressedSize.height, closeTo(restingSize.height - 8, 0.1));
 
     await tester.pump(const Duration(milliseconds: 400));
-    expect(tester.getSize(inkWellFinder), restingSize);
+    expect(tester.getSize(tileFinder), restingSize);
   });
 }

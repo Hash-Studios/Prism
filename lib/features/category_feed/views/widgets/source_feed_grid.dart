@@ -4,12 +4,12 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,14 +21,12 @@ class SourceFeedGrid<T extends FeedItemEntity> extends StatefulWidget {
     required this.surface,
     required this.listName,
     required this.sourceContextPrefix,
-    this.physics,
     this.itemWrapper,
   });
 
   final AnalyticsSurfaceValue surface;
   final ScrollListNameValue listName;
   final String sourceContextPrefix;
-  final ScrollPhysics? physics;
   final Widget Function(BuildContext context, T item, Widget tile)? itemWrapper;
 
   @override
@@ -77,8 +75,22 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
       );
     }
 
+    if (walls.isEmpty) {
+      if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) return const LoadingCards();
+      final bool failed = state.status == LoadStatus.failure;
+      return GlintState(
+        kind: failed ? GlintStateKind.error : GlintStateKind.empty,
+        title: failed ? "Couldn't load wallpapers" : 'No wallpapers here yet',
+        body: failed ? 'Check your connection and try again.' : 'New ones land often. Check back soon.',
+        actionLabel: failed ? 'Try again' : 'Refresh',
+        onAction: () => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested()),
+      );
+    }
+
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
+      color: cs.primary,
+      backgroundColor: cs.surfaceContainerHigh,
       key: refreshHomeKey,
       onRefresh: refreshList,
       child: NotificationListener<ScrollNotification>(
@@ -104,22 +116,13 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
           return false;
         },
         child: GridView.builder(
-          physics: widget.physics,
-          padding: EdgeInsets.zero,
-          itemCount: walls.isEmpty ? 20 : walls.length + (state.hasMore ? 1 : 0),
-          shrinkWrap: true,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-            childAspectRatio: 0.5,
+          padding: PrismWallGrid.padding.copyWith(
+            top: PrismSpace.xxs,
+            bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
           ),
+          itemCount: walls.length + (state.hasMore ? 1 : 0),
+          gridDelegate: PrismWallGrid.delegate(context),
           itemBuilder: (context, index) {
-            if (walls.isEmpty) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: context.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: .1),
-                ),
-              );
-            }
             if (index == walls.length) {
               return SeeMoreButton(
                 seeMoreLoader: state.isFetchingMore,

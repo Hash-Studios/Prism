@@ -38,9 +38,8 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       label: 'Favourite',
       selected: isFavorite,
       isLoading: isLoading,
-      padding: EdgeInsets.zero,
       child: FavoriteIcon(
-        tapTargetExtent: 53,
+        tapTargetExtent: CircularMenuButton.size,
         valueChanged: () {
           if (!app_state.prismUser.loggedIn) {
             googleSignInPopUp(context, () {
@@ -53,8 +52,8 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
             Navigator.pop(context);
           }
         },
-        iconColor: Theme.of(context).colorScheme.secondary,
-        iconSize: 30,
+        iconColor: isFavorite ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
+        iconSize: 32,
         isFavorite: isFavorite,
       ),
     );

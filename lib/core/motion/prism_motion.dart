@@ -14,20 +14,27 @@ abstract final class PrismDurations {
   /// Larger surfaces and emphasis: sheets, hero moves, big reveals.
   static const Duration slow = Duration(milliseconds: 320);
 
+  /// Gap between items that enter one after another.
+  static const Duration stagger = Duration(milliseconds: 40);
+
   /// One loop of a loading shimmer.
   static const Duration shimmer = Duration(milliseconds: 1400);
 }
 
-/// Shared easing curves.
+/// Shared easing curves. All of them start fast: the first frames are what the user watches.
 abstract final class PrismCurves {
-  /// Things that appear or arrive. Starts fast, ends soft.
-  static const Curve enter = Curves.easeOutCubic;
+  /// Things that appear or arrive. A strong ease-out.
+  static const Curve enter = Cubic(0.23, 1, 0.32, 1);
 
-  /// Things that leave or press down. Starts soft, ends fast.
-  static const Curve exit = Curves.easeInCubic;
+  /// Things that leave, and press feedback. Also an ease-out, so nothing starts slow. Pair it with a shorter
+  /// duration than the matching entrance.
+  static const Curve exit = Cubic(0.23, 1, 0.32, 1);
 
   /// Things that move from one place to another on screen.
-  static const Curve move = Curves.easeInOutCubic;
+  static const Curve move = Cubic(0.77, 0, 0.175, 1);
+
+  /// Bottom sheets and drawers.
+  static const Curve sheet = Cubic(0.32, 0.72, 0, 1);
 
   /// A small overshoot for playful pops (badges, success ticks). Use sparingly.
   static const Curve pop = Cubic(.34, 1.56, .64, 1);

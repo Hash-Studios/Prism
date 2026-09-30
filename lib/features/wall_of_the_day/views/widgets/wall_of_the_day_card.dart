@@ -4,9 +4,12 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism/prism_bits.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/feed_hero_card.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -58,50 +61,20 @@ class _WotdCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      child: GestureDetector(
-        onTap: () => _openWallpaper(context),
-        child: SizedBox.expand(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              PrismImageTile(url: entity.thumbnailUrl, fallbackUrl: entity.url),
-
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'wall of the day',
-                      style: TextStyle(
-                        fontFamily: 'Fraunces',
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    if (entity.photographer.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'by ${entity.photographer}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'Fraunces',
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String photographer = entity.photographer.trim();
+    return FeedHeroCard(
+      image: PrismImageTile(url: entity.thumbnailUrl, fallbackUrl: entity.url),
+      semanticLabel: photographer.isEmpty ? 'Wall of the day' : 'Wall of the day by $photographer',
+      title: photographer.isEmpty ? null : 'by $photographer',
+      tag: ClipRRect(
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+        child: ColoredBox(
+          color: cs.surfaceContainerHigh,
+          child: const PrismTag(label: 'Wall of the day'),
         ),
       ),
+      onTap: () => _openWallpaper(context),
     );
   }
 }

@@ -53,17 +53,28 @@ class _PrismImageTileState extends State<PrismImageTile> {
     }
   }
 
-  Widget _image(BuildContext context, String url, {String? fallback}) => CachedNetworkImage(
+  /// Decodes at the tile's own size so a grid does not hold full wallpapers in memory.
+  int? _decodeHeight(BuildContext context, BoxConstraints constraints) =>
+      widget.memCacheHeight ??
+      (constraints.hasBoundedHeight
+          ? (constraints.maxHeight * MediaQuery.devicePixelRatioOf(context)).round().clamp(1, 4096)
+          : null);
+
+  Widget _image(BuildContext context, String url, {String? fallback}) => LayoutBuilder(
+    builder: (context, constraints) => _network(context, url, _decodeHeight(context, constraints), fallback: fallback),
+  );
+
+  Widget _network(BuildContext context, String url, int? decodeHeight, {String? fallback}) => CachedNetworkImage(
     key: ValueKey((url, _attempt)),
     imageUrl: url,
     fit: BoxFit.cover,
-    fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-    fadeInCurve: Curves.easeOut,
-    fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-    memCacheHeight: widget.memCacheHeight,
+    fadeInDuration: context.motion(PrismDurations.fast),
+    fadeInCurve: PrismCurves.enter,
+    fadeOutDuration: context.motion(PrismDurations.fast),
+    memCacheHeight: decodeHeight,
     placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
     errorWidget: (context, _, _) => fallback != null && fallback.isNotEmpty && fallback != url
-        ? _image(context, fallback)
+        ? _network(context, fallback, decodeHeight)
         : widget.fallbackUrl == null
         ? PulseFill(borderRadius: widget.borderRadius)
         : ColoredBox(
@@ -74,6 +85,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
                 tooltip: 'Retry image',
                 onPressed: _retrying ? null : _retry,
                 icon: const Icon(Icons.refresh_rounded),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/rewards/views/widgets/balance_card.dart';
 import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
@@ -72,14 +73,48 @@ void main() {
       ),
     );
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-    expect(find.byType(BackButton), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Sign in to use rewards'), findsOneWidget);
+    expect(find.byTooltip('Back'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('open'), findsOneWidget);
     await tester.pumpWidget(const MaterialApp(home: RewardsTabPage()));
     await tester.pump();
-    expect(find.byType(BackButton), findsNothing);
+    expect(find.byTooltip('Back'), findsNothing);
+    expect(find.text('Rewards'), findsOneWidget);
+  });
+
+  testWidgets('signed-in rewards page shows the header pill and every section', (tester) async {
+    tester.view.physicalSize = const Size(400, 3200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'rewards-page-user'
+      ..loggedIn = true;
+    svc.balanceNotifier.value = 240;
+    getIt.registerFactory<StreakShopBloc>(() {
+      final _MockShopBloc shop = _MockShopBloc();
+      whenListen(
+        shop,
+        const Stream<StreakShopState>.empty(),
+        initialState: const StreakShopState(status: StreakShopStatus.success),
+      );
+      return shop;
+    });
+    getIt.registerSingleton<FirestoreClient>(CoinsTestFirestore());
+    await tester.pumpWidget(MaterialApp(theme: kDarkTheme, home: const RewardsPage(showBack: false)));
+    await tester.pump();
+    await tester.pump();
+    expect(find.bySemanticsLabel('240 Prism coins'), findsWidgets);
+    expect(find.byType(CoinBalancePill), findsOneWidget);
+    expect(find.text('Use your coins'), findsOneWidget);
+    expect(find.text('Earn coins'), findsOneWidget);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('No coin activity yet.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   for (final Brightness brightness in Brightness.values) {

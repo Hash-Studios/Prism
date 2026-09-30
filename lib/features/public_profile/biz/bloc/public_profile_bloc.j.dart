@@ -74,13 +74,16 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
       FetchPublicProfileWallsParams(email: state.email, refresh: refresh),
     );
 
-    emit(
-      state.copyWith(
-        status: LoadStatus.success,
-        walls: wallsResult.data?.items ?? state.walls,
-        hasMoreWalls: wallsResult.data?.hasMore ?? state.hasMoreWalls,
-        isFetchingMoreWalls: false,
+    wallsResult.fold(
+      onSuccess: (walls) => emit(
+        state.copyWith(
+          status: LoadStatus.success,
+          walls: walls.items,
+          hasMoreWalls: walls.hasMore,
+          isFetchingMoreWalls: false,
+        ),
       ),
+      onFailure: (_) => emit(state.copyWith(status: LoadStatus.failure, isFetchingMoreWalls: false)),
     );
   }
 

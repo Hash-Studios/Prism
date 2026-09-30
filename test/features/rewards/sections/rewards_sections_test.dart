@@ -3,6 +3,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -16,10 +17,24 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
 
 class _MockShopBloc extends MockBloc<StreakShopEvent, StreakShopState> implements StreakShopBloc {}
+
+class _FailNextCoinsTestFirestore extends CoinsTestFirestore {
+  bool failNextQuery = false;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) {
+    if (failNextQuery) {
+      failNextQuery = false;
+      return Future<List<T>>.error(StateError('Transaction refresh failed'));
+    }
+    return super.query<T>(spec, map);
+  }
+}
 
 PrismWallpaper _wall(String id, {int? days, int? cost}) => PrismWallpaper(
   core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
@@ -140,6 +155,90 @@ void main() {
     await tester.pump();
 
     expect(tester.widget<Text>(find.text('+10')).style?.color, tertiary);
+  });
+
+  testWidgets('activity keeps its rows while a balance change refreshes them', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = CoinsTestFirestore()
+      ..transactions = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'tx-1',
+          'userId': 'user-1',
+          'action': 'streakFreeze',
+          'delta': -50,
+          'createdAt': DateTime.now(),
+        },
+      ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.light));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('-50'), findsOneWidget);
+
+    CoinsService.instance.balanceNotifier.value = 10;
+    await tester.pump();
+    expect(find.text('-50'), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading'), findsNothing);
+    await tester.pump();
+  });
+
+  testWidgets('activity shows retry after a failed balance refresh and reloads on retry', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = _FailNextCoinsTestFirestore()
+      ..transactions = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'tx-1',
+          'userId': 'user-1',
+          'action': 'streakFreeze',
+          'delta': -50,
+          'createdAt': DateTime.now(),
+        },
+      ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.light));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Streak freeze'), findsOneWidget);
+
+    firestore.failNextQuery = true;
+    CoinsService.instance.balanceNotifier.value = 10;
+    await tester.pump();
+    await tester.pump();
+    expect(find.text("Couldn't load activity."), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+
+    firestore.transactions = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'tx-2',
+        'userId': 'user-1',
+        'action': 'retrySuccess',
+        'delta': 5,
+        'createdAt': DateTime.now(),
+      },
+    ];
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Retry success'), findsOneWidget);
+  });
+
+  testWidgets('collection section shows a retry when it fails to load', (tester) async {
+    final _MockShopBloc bloc = _MockShopBloc();
+    whenListen(
+      bloc,
+      const Stream<StreakShopState>.empty(),
+      initialState: const StreakShopState(status: StreakShopStatus.failure),
+    );
+    getIt.registerFactory<StreakShopBloc>(() => bloc);
+    await tester.pumpWidget(_host(const RewardsCollectionSection(), Brightness.dark));
+    await tester.pump();
+    expect(find.text("Couldn't load the collection"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const StreakShopLoaded())).called(greaterThanOrEqualTo(1));
   });
 
   for (final Brightness brightness in Brightness.values) {

@@ -4,8 +4,10 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/core/widgets/prism/prism_row.dart';
+import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
@@ -56,12 +58,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   void _openUploadSheet() {
-    showPrismSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).primaryColor,
-      builder: (_) => const UploadBottomPanel(),
-    );
+    showPrismSheet<void>(context: context, isScrollControlled: true, builder: (_) => const UploadBottomPanel());
   }
 
   @override
@@ -73,18 +70,17 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   Widget _buildRows(BuildContext context, CoinEarnFlags flags) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     final List<Widget> rows = <Widget>[
       const _EarnRow(
         icon: Icons.local_fire_department_rounded,
         title: 'Daily streak',
-        subtitle: 'Open Prism every day · +${CoinPolicy.streak7Bonus} each week',
+        subtitle: 'Open Prism every day. +${CoinPolicy.streak7Bonus} each week.',
         reward: '+${CoinPolicy.streakDay1To2Daily} to +${CoinPolicy.streakDay7Daily}',
       ),
       _EarnRow(
         icon: Icons.play_circle_outline_rounded,
         title: 'Watch a video',
-        subtitle: 'Up to 20 a day',
+        subtitle: _loadingReward ? 'Loading a video' : 'Up to 20 a day',
         reward: '+${CoinPolicy.rewardedAd}',
         loading: _loadingReward,
         onTap: _onWatchAdTapped,
@@ -92,7 +88,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       _EarnRow(
         icon: Icons.group_add_outlined,
         title: 'Invite a friend',
-        subtitle: 'You both get ${CoinPolicy.referral}',
+        subtitle: 'You both get ${CoinPolicy.referral} coins',
         reward: '+${CoinPolicy.referral}',
         onTap: () => context.router.root.push(const SharePrismRoute()),
       ),
@@ -113,36 +109,15 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
         onTap: () => context.router.root.push(const EditProfilePanelRoute()),
       ),
     ];
-    return Padding(
-      padding: const EdgeInsets.only(top: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text('Earn coins', style: PrismTextStyles.sectionTitle(context)),
-          const SizedBox(height: 12),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Material(
-                type: MaterialType.transparency,
-                child: Column(
-                  children: <Widget>[
-                    for (int i = 0; i < rows.length; i++) ...<Widget>[
-                      if (i > 0) Divider(height: 1, thickness: 1, color: scheme.onSurface.withValues(alpha: 0.08)),
-                      rows[i],
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const PrismSectionHeader(
+          title: 'Earn coins',
+          padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
+        ),
+        PrismGroup(children: rows),
+      ],
     );
   }
 }
@@ -168,88 +143,52 @@ class _EarnRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool tappable = onTap != null && !done && !loading;
     final Widget trailing;
     if (done) {
-      trailing = Icon(Icons.check_rounded, size: 20, color: scheme.onSurface.withValues(alpha: 0.55));
+      trailing = const Icon(Icons.check_rounded, key: ValueKey<String>('done'), size: 22, color: PrismColors.success);
     } else if (loading) {
-      trailing = SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: scheme.primary),
+      trailing = SizedBox.square(
+        key: const ValueKey<String>('loading'),
+        dimension: 20,
+        child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
       );
     } else {
-      trailing = Row(
+      trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward);
+    }
+    return PrismRow(
+      icon: icon,
+      title: title,
+      subtitle: done ? 'Done' : subtitle,
+      trailing: AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
+      showChevron: tappable,
+      onTap: tappable ? onTap : null,
+    );
+  }
+}
+
+class _RewardPill extends StatelessWidget {
+  const _RewardPill({super.key, required this.reward});
+
+  final String reward;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm - 2, vertical: PrismSpace.xxs),
+      decoration: BoxDecoration(
+        color: cs.onSurface.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+      ),
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: scheme.onSurface.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                const PrismCoinIcon(size: 14),
-                const SizedBox(width: 5),
-                Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-          if (onTap != null) ...<Widget>[
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right_rounded, size: 20, color: scheme.onSurface.withValues(alpha: 0.45)),
-          ],
+          const PrismCoinIcon(size: 14),
+          const SizedBox(width: 5),
+          Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
         ],
-      );
-    }
-    final Widget content = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: scheme.onSurface.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: scheme.onSurface),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(title, style: PrismTextStyles.rowTitle(context)),
-                const SizedBox(height: 2),
-                Text(
-                  done ? 'Done' : subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: PrismTextStyles.caption(context).copyWith(height: 1.3),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          AnimatedSwitcher(duration: context.motion(PrismDurations.fast), child: trailing),
-        ],
-      ),
-    );
-    return Semantics(
-      button: tappable,
-      container: true,
-      child: Opacity(
-        opacity: done ? 0.55 : 1,
-        child: tappable
-            ? PressScale(
-                scale: 0.98,
-                child: InkWell(onTap: onTap, child: content),
-              )
-            : content,
       ),
     );
   }

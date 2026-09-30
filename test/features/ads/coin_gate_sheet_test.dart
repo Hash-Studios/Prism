@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/views/widgets/coin_gate_sheet.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +41,9 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
     final route = ModalRoute.of(tester.element(find.text('Choose an option')))! as ModalBottomSheetRoute;
-    expect(route.useSafeArea, isFalse);
-    expect(route.shape, const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))));
+    expect(route.isScrollControlled, isTrue);
+    expect(route.backgroundColor, isNull, reason: 'the sheet takes its fill from the theme');
+    expect(find.text('You have 0 coins'), findsOneWidget);
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
     expect(answer, 'download');
@@ -94,11 +96,7 @@ void main() {
           .text
           .style!
           .color!;
-      final ModalBottomSheetRoute route =
-          ModalRoute.of(tester.element(find.text('Choose one of these options to keep going with your download.')))!
-              as ModalBottomSheetRoute;
-      expect(route.backgroundColor, theme.colorScheme.surface);
-      expect(_contrastRatio(messageColor, route.backgroundColor!), greaterThanOrEqualTo(3));
+      expect(_contrastRatio(messageColor, theme.colorScheme.surfaceContainerLow), greaterThanOrEqualTo(3));
       await tester.ensureVisible(find.text('Cancel and return'));
       await tester.pump();
       expect(tester.takeException(), isNull);
@@ -139,13 +137,46 @@ void main() {
 
       final Color filledForeground = tester.renderObject<RenderParagraph>(find.text('Continue')).text.style!.color!;
       final Color outlinedForeground = tester.renderObject<RenderParagraph>(find.text('Cancel')).text.style!.color!;
-      final ModalBottomSheetRoute route = ModalRoute.of(tester.element(find.text('Cancel')))! as ModalBottomSheetRoute;
       expect(_contrastRatio(filledForeground, theme.colorScheme.primary), greaterThanOrEqualTo(3));
-      expect(route.backgroundColor, theme.colorScheme.surface);
-      expect(_contrastRatio(outlinedForeground, route.backgroundColor!), greaterThanOrEqualTo(3));
+      expect(_contrastRatio(outlinedForeground, theme.colorScheme.surfaceContainerLow), greaterThanOrEqualTo(3));
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
     }
+  });
+  testWidgets('the first option is the accent button and the others are tonal', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: kLightTheme3,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showCoinGateSheet<String>(
+                context,
+                title: 'Download',
+                cost: 20,
+                message: (missing) => 'You need $missing more coins.',
+                options: const [
+                  CoinGateOption(label: 'Watch an ad', value: 'watch'),
+                  CoinGateOption(label: 'Upgrade to Pro', value: 'pro', outlined: true),
+                ],
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    PrismButtonVariant variantOf(String label) =>
+        tester.widget<PrismButton>(find.widgetWithText(PrismButton, label)).variant;
+    expect(variantOf('Watch an ad'), PrismButtonVariant.primary);
+    expect(variantOf('Upgrade to Pro'), PrismButtonVariant.tonal);
+    expect(variantOf('Earn coins'), PrismButtonVariant.ghost);
+    expect(find.text('20'), findsOneWidget, reason: 'the cost is shown as a number');
+    expect(find.byType(Glint), findsOneWidget);
   });
 }
 

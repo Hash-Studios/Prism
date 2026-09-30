@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 class FavoriteIcon extends StatefulWidget {
   const FavoriteIcon({
     this.iconSize = 60.0,
-    this.iconColor = Colors.red,
+    this.iconColor,
     this.isFavorite = false,
     required this.valueChanged,
 
@@ -18,7 +18,9 @@ class FavoriteIcon extends StatefulWidget {
   });
 
   final double iconSize;
-  final Color iconColor;
+
+  /// Defaults to the theme's error red.
+  final Color? iconColor;
   final bool isFavorite;
   final VoidCallback valueChanged;
   final double? tapTargetExtent;
@@ -81,7 +83,7 @@ class _FavoriteIconState extends State<FavoriteIcon> with SingleTickerProviderSt
             scale: _scale,
             child: Icon(
               widget.isFavorite ? JamIcons.heart_f : JamIcons.heart,
-              color: widget.iconColor,
+              color: widget.iconColor ?? Theme.of(context).colorScheme.error,
               // Rests at 70% of iconSize; the pop grows it from there.
               size: _maxIconSize * 0.7,
             ),

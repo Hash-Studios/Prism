@@ -94,17 +94,69 @@ void main() {
   );
 
   blocTest<PublicProfileBloc, PublicProfileState>(
-    'a failed wall load still ends loading, with an empty grid',
+    'a failed first refresh keeps cached walls and a retry loads new walls',
     build: () {
-      when(() => walls(any())).thenAnswer((_) async => Result.error<_Walls>(const ServerFailure('boom')));
+      final results = <Result<_Walls>>[
+        Result.error<_Walls>(const ServerFailure('boom')),
+        Result.success<_Walls>((items: [_wall('w2')], hasMore: false)),
+      ];
+      when(() => walls(any())).thenAnswer((_) async => results.removeAt(0));
       return buildBloc();
     },
-    act: (bloc) => bloc.add(const PublicProfileEvent.started(email: 'a@x.com')),
+    seed: () => loading.copyWith(status: LoadStatus.success, walls: [_wall('cached')]),
+    act: (bloc) async {
+      bloc.add(const PublicProfileEvent.refreshRequested());
+      await pumpEventQueue();
+      bloc.add(const PublicProfileEvent.refreshRequested());
+    },
+    expect: () => <Matcher>[
+      isA<PublicProfileState>().having((s) => s.status, 'status', LoadStatus.loading).having(
+        (s) => s.walls.map((w) => w.id),
+        'cached walls while loading',
+        <String>['cached'],
+      ),
+      isA<PublicProfileState>().having((s) => s.status, 'status', LoadStatus.failure).having(
+        (s) => s.walls.map((w) => w.id),
+        'cached walls after failure',
+        <String>['cached'],
+      ),
+      isA<PublicProfileState>().having((s) => s.status, 'status', LoadStatus.loading).having(
+        (s) => s.walls.map((w) => w.id),
+        'cached walls during retry',
+        <String>['cached'],
+      ),
+      isA<PublicProfileState>().having((s) => s.status, 'status', LoadStatus.success).having(
+        (s) => s.walls.map((w) => w.id),
+        'retried walls',
+        <String>['w2'],
+      ),
+    ],
+  );
+
+  blocTest<PublicProfileBloc, PublicProfileState>(
+    'a failed initial wall load reports failure, then retry succeeds',
+    build: () {
+      final results = <Result<_Walls>>[
+        Result.error<_Walls>(const ServerFailure('boom')),
+        Result.success<_Walls>((items: [_wall('w1')], hasMore: false)),
+      ];
+      when(() => walls(any())).thenAnswer((_) async => results.removeAt(0));
+      return buildBloc();
+    },
+    act: (bloc) async {
+      bloc.add(const PublicProfileEvent.started(email: 'a@x.com'));
+      await pumpEventQueue();
+      bloc.add(const PublicProfileEvent.refreshRequested());
+    },
     expect: () => <Matcher>[
       equals(loading),
-      isA<PublicProfileState>()
-          .having((s) => s.status, 'status', LoadStatus.success)
-          .having((s) => s.walls, 'walls', isEmpty),
+      isA<PublicProfileState>().having((s) => s.status, 'status', LoadStatus.failure),
+      equals(loading),
+      isA<PublicProfileState>().having((s) => s.status, 'status', LoadStatus.success).having(
+        (s) => s.walls.map((w) => w.id),
+        'retried walls',
+        <String>['w1'],
+      ),
     ],
   );
 

@@ -258,4 +258,26 @@ void main() {
 
     verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.started(favouriteUrls: <String>[], isPro: false)));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('shows the controls page with its sections', (tester) async {
+    when(() => autoRotateBloc.state).thenReturn(
+      AutoRotateState.initial().copyWith(
+        loaded: true,
+        isPro: true,
+        favouriteCount: 3,
+        config: const AutoRotateConfig(enabled: true),
+      ),
+    );
+
+    await pumpScreen(tester);
+    await tester.pump();
+
+    expect(find.text('Auto-rotate wallpapers'), findsOneWidget);
+    expect(find.text('3 favourites in the mix'), findsOneWidget);
+    expect(find.text('Every hour'), findsOneWidget);
+    expect(find.text('Home screen'), findsOneWidget);
+    expect(find.text('Shuffle'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Change now'), 200);
+    expect(find.text('Change now'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

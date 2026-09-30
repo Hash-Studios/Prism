@@ -99,16 +99,13 @@ void main() {
     expect(page.results.map((wallpaper) => wallpaper.id), <String>['p1']);
   });
 
-  test('search returns an empty page when both providers fail', () async {
+  test('search throws when both providers fail', () async {
     final service = _service(
       wallhaven: Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
       pexels: Result.error<List<PexelsWallpaper>>(const ServerFailure('500')),
     );
 
-    final page = await service.search('mountain');
-
-    expect(page.provider, SearchProviderValue.pexels);
-    expect(page.results, isEmpty);
+    await expectLater(service.search('mountain'), throwsException);
   });
 
   test('search returns an empty list when Wallhaven finds nothing', () async {

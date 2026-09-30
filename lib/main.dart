@@ -867,6 +867,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       ..onPushTap = _handlePushTap
       ..onForegroundPush = () =>
           unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
+    toasts.overlayResolver = () => _appRouter.navigatorKey.currentState?.overlay;
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());

@@ -1,7 +1,12 @@
-import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/theme/app_tokens.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// One category in the interests grid: an image with its name bottom-left on a scrim. Selected tiles get a 2 point
+/// accent border, a tick and a slight shrink.
 class InterestCategoryTile extends StatelessWidget {
   const InterestCategoryTile({
     super.key,
@@ -18,79 +23,98 @@ class InterestCategoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
-    const selectedTileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
-    final accent = Theme.of(context).colorScheme.primary;
-    return AnimatedContainer(
-      duration: OnboardingMotion.short,
-      curve: OnboardingMotion.emphasized,
-      decoration: BoxDecoration(
-        color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
-        borderRadius: tileRadius,
-        border: isSelected ? Border.all(color: accent, width: 2) : null,
-      ),
-      child: Material(
-        color: OnboardingColors.transparent,
-        borderRadius: tileRadius,
-        child: InkWell(
-          borderRadius: tileRadius,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onTap();
-          },
-          child: ClipRRect(
-            borderRadius: isSelected ? selectedTileRadius : tileRadius,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (imageUrl != null)
-                  Image.network(imageUrl!, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink()),
-                AnimatedContainer(
-                  duration: OnboardingMotion.short,
-                  curve: OnboardingMotion.emphasized,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? OnboardingColors.selectionOverlay.withValues(alpha: OnboardingOpacity.selectionOverlay)
-                        : OnboardingColors.transparent,
-                  ),
-                ),
-                Positioned(
-                  left: 8,
-                  right: 8,
-                  bottom: 8,
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontFamily: OnboardingTypography.sans,
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: AnimatedOpacity(
-                    duration: OnboardingMotion.short,
-                    opacity: isSelected ? 1.0 : 0.0,
-                    child: AnimatedScale(
-                      duration: OnboardingMotion.short,
-                      curve: OnboardingMotion.emphasized,
-                      scale: isSelected ? 1.0 : 0.5,
-                      child: Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
-                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 14),
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final BorderRadius radius = BorderRadius.circular(PrismRadius.sm);
+    final Widget placeholder = ColoredBox(color: cs.surfaceContainerHigh);
+    final String? url = imageUrl;
+    void select() {
+      HapticFeedback.selectionClick();
+      onTap();
+    }
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: name,
+      onTap: select,
+      child: ExcludeSemantics(
+        child: PressScale(
+          child: AnimatedScale(
+            scale: isSelected ? 0.96 : 1,
+            duration: context.motion(PrismDurations.fast),
+            curve: PrismCurves.enter,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: select,
+              child: ClipRRect(
+                borderRadius: radius,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    if (url == null || url.isEmpty)
+                      placeholder
+                    else
+                      CachedNetworkImage(
+                        imageUrl: url,
+                        fit: BoxFit.cover,
+                        fadeInDuration: context.motion(PrismDurations.fast),
+                        placeholder: (_, _) => placeholder,
+                        errorWidget: (_, _, _) => placeholder,
+                      ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.center,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+                        ),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      left: PrismSpace.xs,
+                      right: PrismSpace.xs,
+                      bottom: PrismSpace.xs,
+                      child: Text(
+                        name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.rowTitle(
+                          context,
+                        ).copyWith(fontSize: 13, color: Colors.white, height: 1.2),
+                      ),
+                    ),
+                    Positioned(
+                      top: PrismSpace.xs,
+                      right: PrismSpace.xs,
+                      child: AnimatedOpacity(
+                        duration: context.motion(PrismDurations.fast),
+                        opacity: isSelected ? 1 : 0,
+                        child: AnimatedScale(
+                          duration: context.motion(PrismDurations.fast),
+                          curve: PrismCurves.pop,
+                          scale: isSelected ? 1 : 0.8,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                            child: Icon(Icons.check_rounded, color: cs.onPrimary, size: 15),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IgnorePointer(
+                      child: AnimatedContainer(
+                        duration: context.motion(PrismDurations.fast),
+                        curve: PrismCurves.enter,
+                        decoration: BoxDecoration(
+                          borderRadius: radius,
+                          border: Border.all(color: isSelected ? cs.primary : Colors.transparent, width: 2),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

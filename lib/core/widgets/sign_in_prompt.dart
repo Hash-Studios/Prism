@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:flutter/material.dart';
@@ -14,27 +15,12 @@ class SignInPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.lock_outline, size: 40, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-            const SizedBox(height: 12),
-            Text(
-              'Sign in to use $feature',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.secondary),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => googleSignInPopUp(context, () => main.RestartWidget.restartApp(context)),
-              child: const Text('Sign in'),
-            ),
-          ],
-        ),
-      ),
+    return GlintState(
+      kind: GlintStateKind.empty,
+      title: 'Sign in to use $feature',
+      body: 'Your account keeps your coins, favourites and uploads in one place.',
+      actionLabel: 'Sign in',
+      onAction: () => googleSignInPopUp(context, () => main.RestartWidget.restartApp(context)),
     );
   }
 }

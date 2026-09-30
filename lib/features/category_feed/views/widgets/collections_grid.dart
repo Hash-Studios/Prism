@@ -5,110 +5,35 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
-import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
+import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/collection_card.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CollectionsGrid extends StatefulWidget {
+  const CollectionsGrid({super.key, this.header});
+
+  /// Scrolls with the cards. The collections tab puts its title here.
+  final Widget? header;
+
   @override
-  _CollectionsGridState createState() => _CollectionsGridState();
+  State<CollectionsGrid> createState() => _CollectionsGridState();
 }
 
 enum _PremiumPreviewAction { none, unlockNow, watchAndUnlock, upgrade }
 
-enum _DiscoverTileKind { collection, category }
-
-final class _DiscoverTileData {
-  const _DiscoverTileData({
-    required this.kind,
-    required this.name,
-    required this.thumb1,
-    required this.thumb2,
-    required this.isPremium,
-  });
-
-  final _DiscoverTileKind kind;
-  final String name;
-  final String thumb1;
-  final String thumb2;
-  final bool isPremium;
-}
-
-String _discoverTileSemanticLabel(_DiscoverTileData tile) {
-  final String trimmed = tile.name.trim();
-  if (tile.kind == _DiscoverTileKind.category) {
-    if (trimmed.isEmpty) {
-      return 'Category';
-    }
-    return 'Category, $trimmed';
-  }
-  if (trimmed.isEmpty) {
-    return tile.isPremium ? 'Premium collection' : 'Collection';
-  }
-  if (tile.isPremium) {
-    return 'Premium collection, $trimmed';
-  }
-  return 'Collection, $trimmed';
-}
-
-/// Decodes network thumbs near on-screen size to reduce memory and GPU upload cost.
-ImageProvider? _resizeCachedThumb(BuildContext context, String url, double logicalW, double logicalH) {
-  final String trimmed = url.trim();
-  if (trimmed.isEmpty) {
-    return null;
-  }
-  final double dpr = MediaQuery.devicePixelRatioOf(context);
-  final int w = (logicalW * dpr).round().clamp(1, 4096);
-  final int h = (logicalH * dpr).round().clamp(1, 4096);
-  return ResizeImage(CachedNetworkImageProvider(trimmed), width: w, height: h);
-}
-
-const double _kCollectionsTitleBlockHeight = 40;
-const double _kCollectionsTitleImageGap = 6;
-const double _kCollectionsGridChildAspectRatio = 0.56;
-
-class _CollectionTileSkeleton extends StatelessWidget {
-  const _CollectionTileSkeleton({required this.cellWidth});
-
-  final double cellWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    return PulsePlaceholder(
-      builder: (BuildContext context, Color _) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            SizedBox(
-              height: _kCollectionsTitleBlockHeight,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SizedBox(width: cellWidth * 0.65, height: 13, child: const PulseFill()),
-              ),
-            ),
-            const SizedBox(height: _kCollectionsTitleImageGap),
-            const Expanded(child: PulseFill()),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderStateMixin {
+class _CollectionsGridState extends State<CollectionsGrid> {
   Future<void> _handleCollectionTap({required bool isPremium, required String collectionName}) async {
     final String normalizedCollectionName = collectionName.trim().toLowerCase();
     if (!isPremium) {
@@ -163,18 +88,18 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     final _PremiumPreviewAction action =
         await showCoinGateSheet<_PremiumPreviewAction>(
           context,
-          title: 'Premium Collection',
+          title: 'Premium collection',
           cost: CoinPolicy.premiumPreview24h,
           message: (missing) => missing > 0
-              ? 'Unlock 24h preview for -${CoinPolicy.premiumPreview24h} coins. Need $missing more coins.'
-              : 'Unlock this premium collection for 24 hours for -${CoinPolicy.premiumPreview24h} coins.',
+              ? 'A 24 hour preview costs ${CoinPolicy.premiumPreview24h} coins. You need $missing more.'
+              : 'Preview this premium collection for 24 hours for ${CoinPolicy.premiumPreview24h} coins.',
           options: const [
             CoinGateOption(
-              label: 'Unlock 24h (-${CoinPolicy.premiumPreview24h})',
+              label: 'Unlock for 24 hours (-${CoinPolicy.premiumPreview24h})',
               value: _PremiumPreviewAction.unlockNow,
             ),
             CoinGateOption(
-              label: 'Watch Ad (+${CoinPolicy.rewardedAd}) & Unlock',
+              label: 'Watch an ad (+${CoinPolicy.rewardedAd}) and unlock',
               value: _PremiumPreviewAction.watchAndUnlock,
             ),
             CoinGateOption(label: 'Upgrade to Pro', value: _PremiumPreviewAction.upgrade, outlined: true),
@@ -215,7 +140,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
       );
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-      toasts.error('Unable to unlock premium preview right now.');
+      toasts.error("Couldn't unlock the preview. Try again.");
       return;
     }
 
@@ -225,14 +150,14 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           1,
           CoinPolicy.premiumPreview24h,
         );
-        toasts.error('Need $missing more coins.');
+        toasts.error('You need $missing more coins.');
         await _showPremiumPreviewSheet(
           collectionName: collectionName,
           sourceTag: 'coins.preview.low_balance_nudge.collections_grid',
         );
         return;
       }
-      toasts.error('Unable to unlock premium preview right now.');
+      toasts.error("Couldn't unlock the preview. Try again.");
       return;
     }
 
@@ -244,7 +169,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           coinsSpent: CoinPolicy.premiumPreview24h,
         ),
       );
-      toasts.success('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
+      toasts.success('Preview unlocked for 24 hours (-${CoinPolicy.premiumPreview24h} coins).');
     }
     _openCollection(collectionName);
   }
@@ -258,7 +183,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     );
     final bool watched = await watchRewardedAd(context.read<AdsBloc>());
     if (!watched) {
-      toasts.error('Ad was not completed.');
+      toasts.error("The ad didn't finish.");
       return;
     }
     try {
@@ -267,7 +192,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         sourceTag: 'coins.preview.watch_and_unlock.rewarded_ad',
       );
       if (!credit.changed) {
-        toasts.error('Unable to credit coins right now.');
+        toasts.error("Couldn't add the coins. Try again.");
         return;
       }
       if (mounted) {
@@ -279,7 +204,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
         error: error,
         stackTrace: stackTrace,
       );
-      toasts.error('Unable to credit coins right now.');
+      toasts.error("Couldn't add the coins. Try again.");
       return;
     }
     await _attemptPreviewUnlockAndOpen(
@@ -299,157 +224,81 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
   }
 
+  void _onTapCard(CollectionCardData data) {
+    if (data.kind == CollectionCardKind.collection) {
+      unawaited(_handleCollectionTap(isPremium: data.isPremium, collectionName: data.name));
+      return;
+    }
+    context.router.push(CollectionViewRoute(collectionName: 'category:${Uri.encodeComponent(data.name)}'));
+  }
+
+  SliverPadding _cards(List<CollectionCardData> cards) {
+    return SliverPadding(
+      padding: collectionsGridPadding,
+      sliver: SliverGrid.builder(
+        gridDelegate: collectionsGridDelegate(context),
+        itemCount: cards.length,
+        itemBuilder: (context, index) => CollectionCard(data: cards[index], onTap: () => _onTapCard(cards[index])),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> rawCollections = c_data.collections;
-    final bool isLoading = rawCollections.isEmpty;
-
-    final List<_DiscoverTileData> discoverTiles = isLoading
-        ? const <_DiscoverTileData>[]
-        : <_DiscoverTileData>[
-            ...rawCollections.map(
-              (collection) => _DiscoverTileData(
-                kind: _DiscoverTileKind.collection,
-                name: collection['name']?.toString() ?? '',
-                thumb1: collection['thumb1']?.toString() ?? '',
-                thumb2: collection['thumb2']?.toString() ?? '',
-                isPremium: collection['premium'] == true,
-              ),
-            ),
-            ...context.watch<CategoryFeedBloc>().state.categories.map(
-              (category) => _DiscoverTileData(
-                kind: _DiscoverTileKind.category,
-                name: category.name.trim(),
-                thumb1: category.image.trim(),
-                thumb2: category.image2.trim(),
-                isPremium: false,
-              ),
-            ),
-          ];
-    final int itemCount = isLoading ? 8 : discoverTiles.length;
-    const double gridSpacing = 8;
-    const EdgeInsets gridPadding = EdgeInsets.fromLTRB(5, 4, 5, 4);
-
-    final ThemeData theme = Theme.of(context);
-    final double viewportW = MediaQuery.sizeOf(context).width;
-    // Cards up to ~260 pt wide: 2 columns on a phone, more on a tablet.
-    final int columns = (viewportW / 260).ceil().clamp(2, 6);
-    final double cellWidth = (viewportW - gridPadding.horizontal - gridSpacing * (columns - 1)) / columns;
-    final double cellHeight = cellWidth / _kCollectionsGridChildAspectRatio;
-    final double imageDecodeHeight = (cellHeight - _kCollectionsTitleBlockHeight - _kCollectionsTitleImageGap).clamp(
-      48.0,
-      4000.0,
-    );
-
-    Widget buildCollectionCard(_DiscoverTileData? tile) {
-      final bool loading = tile == null;
-      final bool isPremium = tile?.isPremium ?? false;
-      final ColorScheme scheme = Theme.of(context).colorScheme;
-
-      if (loading) {
-        final Widget tileBody = Material(
-          color: Colors.transparent,
-          child: _CollectionTileSkeleton(cellWidth: cellWidth),
-        );
-        return Semantics(label: 'Loading', enabled: false, excludeSemantics: true, child: tileBody);
-      }
-
-      final _DiscoverTileData data = tile;
-      final String rawThumb1 = data.thumb1.trim();
-      final String rawThumb2 = data.thumb2.trim();
-      final String thumbUrl = rawThumb1.isNotEmpty ? rawThumb1 : rawThumb2;
-      final ImageProvider? thumbImage = _resizeCachedThumb(context, thumbUrl, cellWidth, imageDecodeHeight);
-      final String trimmedName = data.name.trim();
-      final String displayTitle = trimmedName.isNotEmpty
-          ? trimmedName
-          : (data.kind == _DiscoverTileKind.category ? 'Category' : 'Collection');
-
-      void onTapTile() {
-        if (data.kind == _DiscoverTileKind.collection) {
-          unawaited(_handleCollectionTap(isPremium: isPremium, collectionName: data.name));
-          return;
-        }
-        final encodedName = Uri.encodeComponent(data.name);
-        context.router.push(CollectionViewRoute(collectionName: 'category:$encodedName'));
-      }
-
-      final Widget content = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          SizedBox(
-            height: _kCollectionsTitleBlockHeight,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                displayTitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface) ??
-                    TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: scheme.onSurface),
-              ),
-            ),
+    final List<CollectionCardData> collections = c_data.collections
+        .map(
+          (collection) => CollectionCardData(
+            kind: CollectionCardKind.collection,
+            name: collection['name']?.toString() ?? '',
+            thumbUrl: (collection['thumb1']?.toString() ?? '').trim().isNotEmpty
+                ? collection['thumb1'].toString()
+                : collection['thumb2']?.toString() ?? '',
+            isPremium: collection['premium'] == true,
           ),
-          const SizedBox(height: _kCollectionsTitleImageGap),
-          Expanded(
-            child: PremiumBanner(
-              comparator: !isPremium,
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: scheme.surfaceContainerHighest),
-                child: thumbImage == null
-                    ? const SizedBox.expand()
-                    : Image(
-                        image: thumbImage,
-                        fit: BoxFit.cover,
-                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) => wasSynchronouslyLoaded
-                            ? child
-                            : AnimatedOpacity(
-                                opacity: frame == null ? 0 : 1,
-                                duration: context.motion(const Duration(milliseconds: 180)),
-                                curve: Curves.easeOut,
-                                child: child,
-                              ),
-                      ),
-              ),
-            ),
+        )
+        .toList(growable: false);
+    final List<CollectionCardData> categories = context
+        .select<CategoryFeedBloc, List<CategoryEntity>>((bloc) => bloc.state.categories)
+        .map(
+          (category) => CollectionCardData(
+            kind: CollectionCardKind.category,
+            name: category.name.trim(),
+            thumbUrl: category.image.trim().isNotEmpty ? category.image.trim() : category.image2.trim(),
+            isPremium: false,
           ),
-        ],
-      );
-
-      final Widget tileBody = Material(
-        color: Colors.transparent,
-        child: InkWell(
-          splashColor: scheme.secondary.withValues(alpha: 0.3),
-          highlightColor: scheme.secondary.withValues(alpha: 0.1),
-          onTap: onTapTile,
-          child: content,
-        ),
-      );
-
-      return Semantics(button: true, label: _discoverTileSemanticLabel(data), excludeSemantics: true, child: tileBody);
-    }
+        )
+        .toList(growable: false);
 
     return RefreshIndicator(
       onRefresh: refreshList,
-      color: theme.colorScheme.primary,
-      backgroundColor: theme.primaryColor,
-      edgeOffset: MediaQuery.paddingOf(context).top,
-      child: GridView.builder(
-        padding: gridPadding,
-        itemCount: itemCount,
+      color: Theme.of(context).colorScheme.primary,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      child: CustomScrollView(
         physics: AlwaysScrollableScrollPhysics(parent: ScrollConfiguration.of(context).getScrollPhysics(context)),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: columns,
-          childAspectRatio: _kCollectionsGridChildAspectRatio,
-          mainAxisSpacing: gridSpacing,
-          crossAxisSpacing: gridSpacing,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          if (isLoading) {
-            return buildCollectionCard(null);
-          }
-          return buildCollectionCard(discoverTiles[index]);
-        },
+        slivers: <Widget>[
+          if (widget.header != null) SliverToBoxAdapter(child: widget.header),
+          if (collections.isEmpty && categories.isEmpty)
+            SliverFillRemaining(
+              child: GlintState(
+                kind: GlintStateKind.empty,
+                title: 'No collections yet',
+                body: 'Pull down to refresh, or check back soon.',
+                actionLabel: 'Refresh',
+                onAction: () => unawaited(refreshList()),
+              ),
+            ),
+          if (collections.isNotEmpty) _cards(collections),
+          if (categories.isNotEmpty) ...<Widget>[
+            const SliverToBoxAdapter(
+              child: PrismSectionHeader(
+                title: 'Categories',
+                padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
+              ),
+            ),
+            _cards(categories),
+          ],
+          const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+        ],
       ),
     );
   }

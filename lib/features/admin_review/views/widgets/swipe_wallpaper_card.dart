@@ -1,8 +1,10 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+/// One wallpaper in the swipe stack. The wallpaper fills the card; the title, category and creator sit on a scrim.
 class SwipeWallpaperCard extends StatelessWidget {
   final String imageUrl;
   final String title;
@@ -11,6 +13,9 @@ class SwipeWallpaperCard extends StatelessWidget {
   final String authorPhoto;
   final String? uploadedAgo;
   final bool isTopCard;
+
+  /// Space around the card. The stamp overlay uses the same margin so the two line up.
+  static const EdgeInsets margin = EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.xs);
 
   const SwipeWallpaperCard({
     super.key,
@@ -38,42 +43,32 @@ class SwipeWallpaperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final TextStyle onImage = PrismTextStyles.caption(context).copyWith(color: Colors.white);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
+    return Padding(
+      padding: margin,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(PrismRadius.lg),
         child: Stack(
           fit: StackFit.expand,
           children: [
             CachedNetworkImage(
               imageUrl: imageUrl,
               fit: BoxFit.cover,
-              placeholder: (context, url) => ColoredBox(
-                color: colorScheme.surfaceContainerHighest,
-                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
+              placeholder: (context, url) => const PrismSkeleton(child: PrismBone(height: double.infinity, radius: 0)),
               errorWidget: (context, url, error) => ColoredBox(
-                color: colorScheme.errorContainer,
-                child: Icon(Icons.broken_image, color: colorScheme.onErrorContainer, size: 48),
+                color: cs.surfaceContainerHighest,
+                child: Icon(Icons.broken_image_outlined, color: cs.onSurface.withValues(alpha: 0.5), size: 48),
               ),
             ),
-            Container(
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.8),
-                  ],
-                  stops: const [0.5, 0.7, 1.0],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.72)],
+                  stops: const [0.55, 1.0],
                 ),
               ),
             ),
@@ -82,65 +77,50 @@ class SwipeWallpaperCard extends StatelessWidget {
               left: 0,
               right: 0,
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(PrismSpace.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (category.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 5),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.black.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(PrismRadius.pill),
                         ),
-                        child: Text(
-                          category,
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
+                        child: Text(category, style: onImage.copyWith(fontWeight: FontWeight.w700)),
                       ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: PrismSpace.xs),
                     Text(
                       title.isNotEmpty ? title : 'Untitled',
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                      style: PrismTextStyles.sheetHeadline(context).copyWith(color: Colors.white),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: PrismSpace.sm),
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: authorPhoto.isNotEmpty ? CachedNetworkImageProvider(authorPhoto) : null,
-                          child: authorPhoto.isEmpty ? const Icon(Icons.person, size: 16) : null,
-                        ),
-                        const SizedBox(width: 8),
+                        PrismAvatar(url: authorPhoto, name: authorName, size: 32),
+                        const SizedBox(width: PrismSpace.xs),
                         Expanded(
                           child: Text(
                             authorName.isNotEmpty ? authorName : 'Anonymous',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14),
+                            style: PrismTextStyles.rowTitle(context).copyWith(color: Colors.white),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                     if (uploadedAgo != null && uploadedAgo!.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 6),
-                      Text(uploadedAgo!, style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 12)),
+                      const SizedBox(height: PrismSpace.xxs),
+                      Text(uploadedAgo!, style: onImage.copyWith(color: Colors.white.withValues(alpha: 0.8))),
                     ],
                   ],
                 ),
               ),
             ),
-            if (!isTopCard)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-              ),
+            if (!isTopCard) ColoredBox(color: Colors.black.withValues(alpha: 0.3)),
           ],
         ),
       ),
