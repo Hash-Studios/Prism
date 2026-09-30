@@ -3,6 +3,9 @@
 
 import 'dart:async';
 
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/app_analytics.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -51,6 +54,20 @@ class _FakeHttpsCallable extends HttpsCallablePlatform {
 
   @override
   Future<dynamic> call([dynamic parameters]) => (functions as _FakeFunctionsPlatform).onCall(name!, parameters);
+}
+
+class _RecordingAnalytics extends Fake implements AppAnalytics {
+  _RecordingAnalytics({this.throwOn});
+
+  final bool Function(AnalyticsEvent event)? throwOn;
+  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
+
+  @override
+  Future<void> track(AnalyticsEvent event) {
+    events.add(event);
+    if (throwOn?.call(event) ?? false) throw StateError('analytics failed');
+    return Future<void>.value();
+  }
 }
 
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
@@ -143,6 +160,7 @@ void main() {
   }
 
   tearDown(() async {
+    AnalyticsRuntime.reset();
     await getIt.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
@@ -284,5 +302,47 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(refundCalls, 0);
+  });
+
+  Future<int> generateAndCountRefunds(WidgetTester tester, Future<AiGenerationRecord> Function() generation) async {
+    var refundCalls = 0;
+    await setUpPage(tester, (name, parameters) async {
+      if (name == 'awardCoins') refundCalls++;
+      return <String, Object>{
+        'success': true,
+        'changed': true,
+        'currentBalance': 10,
+        'delta': -10,
+        'transactionId': 'reservation-1',
+      };
+    }, repository: _FakeAiGenerationRepository(_record(), generation: generation));
+    final Finder generate = find.textContaining('Generate  ·');
+    await tester.ensureVisible(generate);
+    await tester.tap(generate);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1400));
+    return refundCalls;
+  }
+
+  testWidgets('a failed generation is refunded exactly once', (tester) async {
+    final _RecordingAnalytics recorder = _RecordingAnalytics();
+    AnalyticsRuntime.instance = recorder;
+
+    final int refunds = await generateAndCountRefunds(tester, () async => throw StateError('provider failed'));
+
+    expect(refunds, 1);
+    expect(recorder.events.whereType<AiGenerateFailedEvent>(), hasLength(1));
+  });
+
+  testWidgets('a committed generation is not refunded when a follow-up step throws', (tester) async {
+    final _RecordingAnalytics recorder = _RecordingAnalytics(throwOn: (event) => event is AiGenerateSuccessEvent);
+    AnalyticsRuntime.instance = recorder;
+
+    final int refunds = await generateAndCountRefunds(tester, () async => _record(id: 'generated-1'));
+
+    expect(recorder.events.whereType<AiChargeCommittedEvent>(), hasLength(1));
+    expect(refunds, 0);
+    expect(recorder.events.whereType<AiGenerateFailedEvent>(), isEmpty);
   });
 }

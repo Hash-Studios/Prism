@@ -495,8 +495,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       ),
     );
 
+    bool generationSucceeded = false;
     try {
       final AiGenerationRecord generated = await request(reservation.mode, reservation.coinsSpent);
+      generationSucceeded = true;
 
       CoinsService.instance.commitAiGenerationReservation(
         mode: reservation.mode,
@@ -518,6 +520,15 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       analytics.track(successEvent(generated, reservation.mode, reservation.coinsSpent));
       if (mounted) onSuccess(generated);
     } catch (error, stackTrace) {
+      if (generationSucceeded) {
+        logger.w(
+          'AI generation succeeded but follow-up work failed',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        return;
+      }
       logger.w('AI generation failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       await CoinsService.instance.rollbackAiGenerationReservation(
         reservation.mode,
