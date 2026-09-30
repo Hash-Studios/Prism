@@ -7,7 +7,6 @@ import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/config.dart' as config;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -132,7 +131,7 @@ class _SecondarySplash extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width,
       height: MediaQuery.of(context).size.height,
-      color: darkModeOn ? config.Colors().mainDarkColor(1) : config.Colors().mainColor(1),
+      color: darkModeOn ? Colors.black : Colors.white,
       child: Center(
         child: Container(
           width: MediaQuery.of(context).size.width * 0.29074074074,
