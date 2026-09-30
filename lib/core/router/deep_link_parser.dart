@@ -11,14 +11,23 @@ class DeepLinkParser {
   static const Set<String> _shortCodeRoots = <String>{'l'};
 
   Uri transform(Uri uri) {
-    final List<String> segments = _segments(uri);
-    if (segments.isEmpty) {
-      return uri.path.isEmpty ? uri.replace(path: '/') : uri;
+    // prism://share/abc -> prism:///share/abc. Keep the raw path so escaped characters survive.
+    if (_isCustomScheme(uri) && uri.host.trim().isNotEmpty && !_isDomainHost(uri.host)) {
+      return uri.replace(host: '', path: '/${uri.host}${uri.path}');
     }
-    return uri.replace(path: '/${segments.join('/')}');
+    return uri.path.isEmpty ? uri.replace(path: '/') : uri;
   }
 
   DeepLinkActionEntity parse(Uri uri) {
+    try {
+      return _parse(uri);
+    } on FormatException {
+      // Malformed percent encoding (for example %FF) in the path or query.
+      return UnknownIntent(rawUri: uri.toString());
+    }
+  }
+
+  DeepLinkActionEntity _parse(Uri uri) {
     final List<String> segments = _segments(uri);
     if (segments.isEmpty) {
       return UnknownIntent(rawUri: uri.toString());
@@ -131,7 +140,7 @@ class DeepLinkParser {
     for (final String? value in values) {
       final String trimmed = value?.trim() ?? '';
       if (trimmed.isNotEmpty) {
-        return Uri.decodeComponent(trimmed);
+        return trimmed;
       }
     }
     return '';
