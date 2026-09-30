@@ -122,7 +122,7 @@ class FirstWallpaperService {
   Future<bool> performAction(String fullUrl) async {
     try {
       if (defaultTargetPlatform == TargetPlatform.android) {
-        return WallpaperService.setWallpaperFromSource(fullUrl, WallpaperTarget.both);
+        return await WallpaperService.setWallpaperFromSource(fullUrl, WallpaperTarget.both);
       } else {
         final result = await PrismMediaHostApi().saveMedia(
           SaveMediaRequest(link: fullUrl, isLocalFile: false, kind: SaveMediaKind.wallpaper),

@@ -161,7 +161,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       wallpaperPath = value.path;
       wallpaperSha = value.sha;
       // Left the screen while uploading: _onPop found nothing to delete, so clean up here.
-      if (!mounted) return deleteFile();
+      if (!mounted) return await deleteFile();
       final thumbValue = await github.putFile(
         repo: Env.normalize(Env.ghRepoWalls),
         message: "thumb_${path.basename(image.path)}",
@@ -171,7 +171,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       wallpaperThumb = thumbValue.downloadUrl;
       thumbPath = thumbValue.path;
       thumbSha = thumbValue.sha;
-      if (!mounted) return deleteFile();
+      if (!mounted) return await deleteFile();
       logger.d('File Uploaded');
       setState(() {
         isUploading = false;
