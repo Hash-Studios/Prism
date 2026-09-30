@@ -6,6 +6,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/setups/views/pages/upload_wall_screen.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -195,22 +196,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('stage title stays readable when a legacy theme hard-codes titleMedium', (tester) async {
+  testWidgets('stage title has readable contrast in every legacy theme', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
+    final themes = <ThemeData>[
+      kLightTheme,
+      kLightTheme2,
+      kLightTheme3,
+      kLightTheme4,
+      kDarkTheme,
+      kDarkTheme2,
+      kDarkTheme3,
+      kDarkTheme4,
+      kDarkTheme5,
+      kDarkTheme6,
+      kDarkTheme7,
+      kDarkTheme8,
+    ];
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(
-          colorScheme: const ColorScheme.dark(),
-          textTheme: const TextTheme(titleMedium: TextStyle(color: Colors.black)),
+    for (final theme in themes) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          themeAnimationDuration: Duration.zero,
+          home: UploadWallScreen(image: image, fromSetupRoute: false, prepareImageForTesting: () async {}),
         ),
-        home: UploadWallScreen(image: image, fromSetupRoute: false, prepareImageForTesting: () async {}),
-      ),
-    );
-    await pumpImagePreparation(tester);
+      );
+      await pumpImagePreparation(tester);
 
-    expect(tester.widget<Text>(find.text('Ready to submit')).style?.color, const ColorScheme.dark().onSurface);
+      final titleFinder = find.text('Ready to submit');
+      final effectiveTheme = Theme.of(tester.element(titleFinder));
+      final titleColor = tester.widget<Text>(titleFinder).style!.color!;
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      final scaffoldBackground = scaffold.backgroundColor ?? effectiveTheme.scaffoldBackgroundColor;
+      expect(_contrastRatio(titleColor, scaffoldBackground), greaterThanOrEqualTo(4.5));
+      expect(titleColor, effectiveTheme.colorScheme.onSurface);
+    }
   });
 
   testWidgets('shows a weekly quota result without retrying a save', (tester) async {
@@ -773,4 +794,12 @@ void main() {
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
   });
+}
+
+double _contrastRatio(Color foreground, Color background) {
+  final foregroundLuminance = foreground.computeLuminance();
+  final backgroundLuminance = background.computeLuminance();
+  final lighter = foregroundLuminance > backgroundLuminance ? foregroundLuminance : backgroundLuminance;
+  final darker = foregroundLuminance > backgroundLuminance ? backgroundLuminance : foregroundLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }

@@ -195,7 +195,7 @@ class WallTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: rejected ? null : 340,
+      constraints: rejected ? null : const BoxConstraints(minHeight: 340),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -378,7 +378,7 @@ class WallTile extends StatelessWidget {
                                       },
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  const SizedBox(width: 8),
                                   Container(
                                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                     child: IconButton(
