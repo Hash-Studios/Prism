@@ -8,24 +8,12 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
-
-enum FeedMix {
-  balanced('Balanced'),
-  creators('Creators'),
-  discovery('Discovery');
-
-  const FeedMix(this.label);
-
-  final String label;
-
-  static FeedMix fromName(String name) =>
-      FeedMix.values.firstWhere((FeedMix mix) => mix.name == name, orElse: () => FeedMix.balanced);
-}
 
 Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {VoidCallback? onPreferencesSaved}) async {
   final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();

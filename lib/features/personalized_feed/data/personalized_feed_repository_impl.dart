@@ -16,7 +16,9 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/data/feed_item_cache_codec.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/personalized_feed_page.dart';
 import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -230,7 +232,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       return remote;
     }
 
-    final localRaw = _settingsLocal.get<String>('onboarding_v2_interests', defaultValue: '');
+    final localRaw = _settingsLocal.get<String>(OnboardingV2Keys.selectedInterests, defaultValue: '');
     final local = localRaw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(growable: false);
     if (local.isNotEmpty) {
       return local;
@@ -393,15 +395,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   }
 
   _SourceTargets _resolveTargets() {
-    final mix = _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: 'balanced').trim().toLowerCase();
+    final mix = FeedMix.fromName(
+      _settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: FeedMix.balanced.name).trim().toLowerCase(),
+    );
     switch (mix) {
-      case 'creators':
+      case FeedMix.creators:
         // Creator-heavy: 14 following + 2 discovery + 4+4 external = 24
         return const _SourceTargets(creator: 14, discovery: 2, wallhaven: 4, pexels: 4);
-      case 'discovery':
+      case FeedMix.discovery:
         // Discovery-heavy: 6 following + 8 discovery + 5+5 external = 24
         return const _SourceTargets(creator: 6, discovery: 8, wallhaven: 5, pexels: 5);
-      default:
+      case FeedMix.balanced:
         // Balanced: 10 following + 4 discovery + 5+5 external = 24
         return const _SourceTargets(creator: 10, discovery: 4, wallhaven: 5, pexels: 5);
     }
