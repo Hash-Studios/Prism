@@ -795,9 +795,19 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
   }
 
+  bool get _pastStartup =>
+      mounted && _bootstrapCompleted && !(_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name);
+
   /// Routes a tapped push notification to the correct screen based on
   /// the `route` field in the notification's data payload.
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
+    // A cold-launch tap arrives before startup ends, and the splash would replace its route. Wait, like deep links do.
+    // ponytail: polls every 100 ms and gives up after 30 s (for example on the obsolete-version screen).
+    for (int i = 0; i < 300 && !_pastStartup; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    if (!_pastStartup) return;
+
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();
     final String rawUrl = (data['url']?.toString() ?? '').trim();
