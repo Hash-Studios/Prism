@@ -1,7 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/domain/usecases/setups_usecases.dart';
 import 'package:Prism/features/setups/views/widgets/setup_detail_view.dart';
@@ -29,7 +29,7 @@ class _ShareSetupViewScreenState extends State<ShareSetupViewScreen> {
         if (snapshot.connectionState != ConnectionState.done) {
           return Scaffold(
             backgroundColor: Theme.of(context).primaryColor,
-            body: Center(child: Loader()),
+            body: const GlintState(kind: GlintStateKind.loading, title: 'Loading setup'),
           );
         }
         final SetupEntity? setup = snapshot.data?.data;

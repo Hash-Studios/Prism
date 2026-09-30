@@ -27,7 +27,7 @@ class StreakPill extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(999),
-            onTap: () => context.router.push(const StreakRoute()),
+            onTap: () => context.router.push(RewardsRoute()),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 6 : 8),
               decoration: BoxDecoration(
@@ -44,7 +44,7 @@ class StreakPill extends StatelessWidget {
                   Icon(Icons.local_fire_department_rounded, size: compact ? 14 : 16, color: Colors.orangeAccent),
                   SizedBox(width: compact ? 4 : 6),
                   Text(
-                    '$streakDay',
+                    '${status.count}',
                     style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                       color: Theme.of(context).colorScheme.secondary,
                       fontWeight: FontWeight.w700,

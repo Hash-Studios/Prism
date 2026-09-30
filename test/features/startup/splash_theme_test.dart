@@ -120,6 +120,8 @@ void main() {
 
     states.add(StartupState.initial().copyWith(status: LoadStatus.loading));
     await tester.pump();
+    // The splash cross-fades between its states.
+    await tester.pump(const Duration(milliseconds: 400));
     expect(find.text("Prism couldn't start"), findsNothing);
     expect(splashColor(tester), const Color(0xFF202113));
   });

@@ -15,7 +15,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   static const List<_NavTabConfig> _tabs = <_NavTabConfig>[
     _NavTabConfig(label: 'Home', icon: JamIcons.home_f, value: NavTabValue.home),
     _NavTabConfig(label: 'Search', icon: JamIcons.search, value: NavTabValue.search),
-    _NavTabConfig(label: 'Streak', icon: JamIcons.flame_f, value: NavTabValue.streak),
+    _NavTabConfig(label: 'Rewards', icon: JamIcons.gift_f, value: NavTabValue.streak),
     _NavTabConfig(label: 'Collections', icon: JamIcons.grid_f, value: NavTabValue.collection),
   ];
 

@@ -1,4 +1,6 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/utils/format_utils.dart';
+import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -18,26 +20,28 @@ class CreatorCard extends StatelessWidget {
     const innerRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
     final accent = Theme.of(context).colorScheme.primary;
 
-    return AnimatedContainer(
-      duration: OnboardingMotion.short,
-      curve: OnboardingMotion.emphasized,
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
-        borderRadius: cardRadius,
-        border: isSelected ? Border.all(color: accent, width: 2) : null,
-      ),
-      child: Material(
-        color: OnboardingColors.transparent,
-        borderRadius: cardRadius,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            onToggle();
-          },
+    return PressScale(
+      child: AnimatedContainer(
+        duration: OnboardingMotion.short,
+        curve: OnboardingMotion.emphasized,
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
           borderRadius: cardRadius,
-          child: ClipRRect(
-            borderRadius: isSelected ? innerRadius : cardRadius,
-            child: _CardContent(creator: creator, isSelected: isSelected, accent: accent),
+          border: isSelected ? Border.all(color: accent, width: 2) : null,
+        ),
+        child: Material(
+          color: OnboardingColors.transparent,
+          borderRadius: cardRadius,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onToggle();
+            },
+            borderRadius: cardRadius,
+            child: ClipRRect(
+              borderRadius: isSelected ? innerRadius : cardRadius,
+              child: _CardContent(creator: creator, isSelected: isSelected, accent: accent),
+            ),
           ),
         ),
       ),
@@ -146,15 +150,15 @@ class _FollowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: OnboardingMotion.short,
-      curve: OnboardingMotion.emphasized,
+      duration: context.motion(const Duration(milliseconds: 180)),
+      curve: Curves.easeOut,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: isSelected ? accent : Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: AnimatedSwitcher(
-        duration: OnboardingMotion.short,
+        duration: context.motion(const Duration(milliseconds: 140)),
         child: Text(
           isSelected ? 'following' : 'follow',
           key: ValueKey(isSelected),

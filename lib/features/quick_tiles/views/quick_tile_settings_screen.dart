@@ -1,6 +1,8 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/data/categories/categories.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -109,21 +111,25 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
           if (!_loading)
             TextButton(
               onPressed: _saving ? null : _saveAll,
-              child: _saving
-                  ? SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: accentColor),
-                    )
-                  : Text(
-                      'Save',
-                      style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontFamily: _fontFamily),
-                    ),
+              child: AnimatedSwitcher(
+                duration: context.motion(PrismDurations.fast),
+                child: _saving
+                    ? SizedBox.square(
+                        key: const ValueKey('saving'),
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: accentColor),
+                      )
+                    : Text(
+                        'Save',
+                        key: const ValueKey('label'),
+                        style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontFamily: _fontFamily),
+                      ),
+              ),
             ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const GlintState(kind: GlintStateKind.loading, title: 'Loading quick tiles')
           : ListView(
               padding: const EdgeInsets.only(bottom: 32),
               children: [

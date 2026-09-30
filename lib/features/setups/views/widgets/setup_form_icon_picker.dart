@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/data/apps/app_icon.dart';
 import 'package:Prism/data/apps/apps_data.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,6 +11,12 @@ Future<void> showSetupIconPicker(BuildContext context, {required ValueChanged<Ap
     backgroundColor: Colors.transparent,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+    ),
+    sheetAnimationStyle: AnimationStyle(
+      duration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 260),
+      reverseDuration: context.reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
+      curve: PrismCurves.enter,
+      reverseCurve: PrismCurves.exit,
     ),
     builder: (context) => GestureDetector(
       onTap: () => Navigator.of(context).pop(),

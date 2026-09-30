@@ -88,18 +88,10 @@ void main() {
         ),
       );
 
-      final card = tester.widget<Container>(
-        find
-            .byWidgetPredicate(
-              (widget) =>
-                  widget is Container &&
-                  widget.decoration is BoxDecoration &&
-                  (widget.decoration! as BoxDecoration).image?.image is CachedNetworkImageProvider,
-            )
-            .first,
+      expect(
+        find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _originalUrl),
+        findsOneWidget,
       );
-      final image = (card.decoration! as BoxDecoration).image!.image as CachedNetworkImageProvider;
-      expect(image.url, _originalUrl);
     });
   }
 }

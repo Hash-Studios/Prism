@@ -1,7 +1,7 @@
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/theme_utils.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/views/setups_bloc_adapter.dart';
@@ -111,7 +111,7 @@ class _SetupPageState extends State<_SetupPage> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting ||
                   snapshot.connectionState == ConnectionState.none) {
-                return Center(child: Loader());
+                return const GlintState(kind: GlintStateKind.loading, title: 'Loading setups');
               } else {
                 return SizedBox(
                   width: MediaQuery.of(context).size.width,
@@ -128,7 +128,7 @@ class _SetupPageState extends State<_SetupPage> {
                     controller: widget.controller,
                     itemCount: hasSetups ? setups.length : 1,
                     itemBuilder: (context, index) => !hasSetups
-                        ? Loader()
+                        ? const GlintState(kind: GlintStateKind.loading, title: 'Loading setups')
                         : GestureDetector(
                             onTap: () {
                               context.router.push(SetupViewRoute(setupIndex: index));

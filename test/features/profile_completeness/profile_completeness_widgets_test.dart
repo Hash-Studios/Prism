@@ -78,6 +78,10 @@ void main() {
 
     expect(find.textContaining('75% complete'), findsOneWidget);
     expect(find.text('Add one social link'), findsOneWidget);
+    final route = ModalRoute.of(tester.element(find.text('Add one social link')))! as ModalBottomSheetRoute;
+    expect(route.useSafeArea, isTrue);
+    expect(route.isDismissible, isFalse);
+    expect(route.enableDrag, isFalse);
 
     await tester.tap(find.text('Complete now'));
     await tester.pumpAndSettle();
