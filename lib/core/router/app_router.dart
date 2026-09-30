@@ -14,6 +14,7 @@ import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_scre
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
@@ -145,6 +146,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
+    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
     AutoRoute(path: '/rewards', page: RewardsRoute.page),
     RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),

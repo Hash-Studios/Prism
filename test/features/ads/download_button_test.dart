@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -49,5 +51,44 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(callbackCount, 1);
+  });
+
+  testWidgets('download that finishes after leaving the page still shows the saved toast', (tester) async {
+    getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+    app_state.prismUser = app_constants.createGuestPrismUser()..premium = true;
+    const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final Completer<void> downloadFinished = Completer<void>();
+    final List<Object?> toastMessages = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (_) async {
+      await downloadFinished.future;
+      return <Object?>[OperationResult(success: true)];
+    });
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']);
+      return true;
+    });
+    addTearDown(() async {
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: DownloadButton(link: 'https://example.com/wall.jpg')),
+      ),
+    );
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    downloadFinished.complete();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(toastMessages, contains('Wall downloaded in Pictures/Prism!'));
   });
 }

@@ -30,6 +30,11 @@ import '../../features/ads/domain/repositories/ads_repository.dart' as _i1055;
 import '../../features/ads/domain/usecases/ads_usecases.dart' as _i321;
 import '../../features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart'
     as _i673;
+import '../../features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart' as _i408;
+import '../../features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart'
+    as _i948;
+import '../../features/auto_rotate/domain/repositories/auto_rotate_repository.dart'
+    as _i563;
 import '../../features/category_feed/biz/bloc/category_feed_bloc.j.dart'
     as _i195;
 import '../../features/category_feed/data/repositories/category_feed_repository_impl.dart'
@@ -258,6 +263,12 @@ _i174.GetIt initGetIt(
       gh<_i954.FeedCacheLocalDataSource>(),
       gh<_i1003.AppIconsLocalDataSource>(),
     ),
+  );
+  gh.lazySingleton<_i563.AutoRotateRepository>(
+    () => _i948.AutoRotateRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
+  );
+  gh.factory<_i408.AutoRotateBloc>(
+    () => _i408.AutoRotateBloc(gh<_i563.AutoRotateRepository>()),
   );
   gh.lazySingleton<_i321.CreateRewardedAdUseCase>(
     () => _i321.CreateRewardedAdUseCase(gh<_i1055.AdsRepository>()),

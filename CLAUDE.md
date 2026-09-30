@@ -77,7 +77,7 @@ Keep paths and commands exact. Use ASD-STE100 Simplified Technical English. Neve
 
 ## What this repo is
 
-**Prism**: a Flutter wallpaper and home-screen setups app for Android and iOS (Hash Studios, `Hash-Studios/Prism`, default branch `master`). Users browse, favourite, download and set wallpapers, share setups, follow creators, earn and spend Prism Coins, buy Prism Premium, and generate AI wallpapers.
+**Prism**: a Flutter wallpaper app for Android and iOS (Hash Studios, `Hash-Studios/Prism`, default branch `master`). Users browse, favourite, download and set wallpapers, follow creators, earn and spend Prism Coins, buy Prism Premium, and generate AI wallpapers.
 
 | Part | Path | Notes |
 |---|---|---|
@@ -136,7 +136,7 @@ UI changes need proof on a real app run: iOS Simulator and Android emulator scre
 
 ### CI gate (`.github/workflows/ci.yml`)
 
-Jobs: `ci` (format, env guard, version guard, analyze, tests; the only required check on `master`), `functions-ci`, `rules-ci` (Firestore rules smoke test on the emulator), `web-ci`, `app_size`. `app_size` compares against a base build and has reported the same +16.8 MiB on unrelated PRs, so read its bucket deltas before trusting it. Codacy "action required" is not a gate.
+PRs only; drafts skip, and a new push cancels the old run. `changes` path-filters the jobs: `flutter` (`make ci`: format, guards, analyze, tests), `functions`, `web`, `rules` (Firestore rules smoke test on the emulator), `app_size`. `ci` aggregates `flutter`, `functions`, `web` and `rules` and is the only required check on `master`; a skipped job counts as a pass. `app_size` is not required. It compares the head APK with the base APK that `app_size_base` builds and caches after each merge to `master`, which is the only job that runs on push. Codacy "action required" is not a gate.
 
 ---
 
