@@ -20,6 +20,8 @@ class DebugPanelPage extends StatelessWidget {
         headerBottom: Padding(
           padding: EdgeInsets.symmetric(horizontal: PrismSpace.xs),
           child: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: <Tab>[
               Tab(text: 'Logs'),
               Tab(text: 'Tools'),

@@ -198,6 +198,7 @@ class _ProfileChild extends StatefulWidget {
 }
 
 class _ProfileChildState extends State<_ProfileChild> {
+  bool _barScrolled = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey _wallsKey = GlobalKey();
 
@@ -357,83 +358,110 @@ class _ProfileChildState extends State<_ProfileChild> {
           RefreshIndicator(
             onRefresh: _refresh,
             edgeOffset: MediaQuery.paddingOf(context).top + PrismSpace.xxxl,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: <Widget>[
-                SliverToBoxAdapter(
-                  child: ProfileHeader(
-                    profile: _profile,
-                    ownProfile: ownProfile,
-                    following: following,
-                    isPro: ownProfile && app_state.prismUser.premium,
-                    onEdit: () => unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_edit_button')),
-                    onShare: _shareProfile,
-                    onToggleFollow: () => _toggleFollow(following: following),
-                    onOpenFollowers: () => context.router.push(FollowersRoute(followers: _profile.followers)),
-                    onOpenFollowing: () => context.router.push(FollowingListRoute(following: _profile.following)),
-                    onOpenPosts: _scrollToWalls,
-                    onOpenLink: _openLink,
-                  ),
-                ),
-                if (showCompleteness)
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (n) {
+                if (n.metrics.axis != Axis.vertical || n.depth != 0) return false;
+                final bool scrolled = n.metrics.pixels > 96;
+                if (scrolled != _barScrolled) setState(() => _barScrolled = scrolled);
+                return false;
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: <Widget>[
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, 0),
-                      child: ProfileCompletenessCard(
-                        status: completeness,
-                        onCompleteNow: () => _openEditProfilePanel(sourceContext: 'profile_completeness_card'),
-                      ),
+                    child: ProfileHeader(
+                      profile: _profile,
+                      ownProfile: ownProfile,
+                      following: following,
+                      isPro: ownProfile && app_state.prismUser.premium,
+                      onEdit: () => unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_edit_button')),
+                      onShare: _shareProfile,
+                      onToggleFollow: () => _toggleFollow(following: following),
+                      onOpenFollowers: () => context.router.push(FollowersRoute(followers: _profile.followers)),
+                      onOpenFollowing: () => context.router.push(FollowingListRoute(following: _profile.following)),
+                      onOpenPosts: _scrollToWalls,
+                      onOpenLink: _openLink,
                     ),
                   ),
-                SliverToBoxAdapter(
-                  key: _wallsKey,
-                  child: const PrismSectionHeader(
-                    title: 'Wallpapers',
-                    padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
+                  if (showCompleteness)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, 0),
+                        child: ProfileCompletenessCard(
+                          status: completeness,
+                          onCompleteNow: () => _openEditProfilePanel(sourceContext: 'profile_completeness_card'),
+                        ),
+                      ),
+                    ),
+                  SliverToBoxAdapter(
+                    key: _wallsKey,
+                    child: const PrismSectionHeader(
+                      title: 'Wallpapers',
+                      padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
+                    ),
                   ),
-                ),
-                UserProfileLoader(email: _profile.email, ownProfile: ownProfile),
-                SliverToBoxAdapter(child: SizedBox(height: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom)),
-              ],
+                  UserProfileLoader(email: _profile.email, ownProfile: ownProfile),
+                  SliverToBoxAdapter(child: SizedBox(height: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom)),
+                ],
+              ),
             ),
           ),
+          // The action row floats over the cover, then gains the page colour once the cover scrolls away.
           Positioned(
-            top: MediaQuery.paddingOf(context).top + PrismSpace.xxs,
-            left: PrismSpace.xs,
-            right: PrismSpace.xs,
-            child: Row(
-              children: <Widget>[
-                if (showBack)
-                  PrismIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    tooltip: 'Back',
-                    onImage: true,
-                    onPressed: () {
-                      _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
-                      Navigator.pop(context);
-                    },
-                  ),
-                const Spacer(),
-                if (ownProfile) ...<Widget>[
-                  PrismIconButton(
-                    icon: Icons.edit_rounded,
-                    tooltip: 'Edit profile',
-                    onImage: true,
-                    onPressed: () => unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit')),
-                  ),
-                  const SizedBox(width: PrismSpace.xs),
-                  PrismIconButton(
-                    icon: Icons.menu_rounded,
-                    tooltip: 'Menu',
-                    onImage: true,
-                    onPressed: () {
-                      _trackAction(AnalyticsActionValue.openDrawerTapped, sourceContext: 'profile_screen_header_menu');
-                      _scaffoldKey.currentState?.openEndDrawer();
-                    },
-                  ),
-                ] else
-                  ProfileOverflowMenu(onSelected: _onMenuSelected),
-              ],
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedContainer(
+              duration: context.motion(PrismDurations.fast),
+              padding: EdgeInsets.fromLTRB(
+                PrismSpace.xs,
+                MediaQuery.paddingOf(context).top + PrismSpace.xxs,
+                PrismSpace.xs,
+                PrismSpace.xxs,
+              ),
+              decoration: BoxDecoration(
+                color: _barScrolled ? cs.surface : cs.surface.withValues(alpha: 0),
+                border: Border(
+                  bottom: BorderSide(color: cs.onSurface.withValues(alpha: _barScrolled ? 0.08 : 0)),
+                ),
+              ),
+              child: Row(
+                children: <Widget>[
+                  if (showBack)
+                    PrismIconButton(
+                      icon: Icons.arrow_back_rounded,
+                      tooltip: 'Back',
+                      onImage: !_barScrolled,
+                      onPressed: () {
+                        _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
+                        Navigator.pop(context);
+                      },
+                    ),
+                  const Spacer(),
+                  if (ownProfile) ...<Widget>[
+                    PrismIconButton(
+                      icon: Icons.edit_rounded,
+                      tooltip: 'Edit profile',
+                      onImage: !_barScrolled,
+                      onPressed: () => unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit')),
+                    ),
+                    const SizedBox(width: PrismSpace.xs),
+                    PrismIconButton(
+                      icon: Icons.menu_rounded,
+                      tooltip: 'Menu',
+                      onImage: !_barScrolled,
+                      onPressed: () {
+                        _trackAction(
+                          AnalyticsActionValue.openDrawerTapped,
+                          sourceContext: 'profile_screen_header_menu',
+                        );
+                        _scaffoldKey.currentState?.openEndDrawer();
+                      },
+                    ),
+                  ] else
+                    ProfileOverflowMenu(onSelected: _onMenuSelected),
+                ],
+              ),
             ),
           ),
         ],
