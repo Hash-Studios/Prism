@@ -5,12 +5,14 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/setups/data/mappers/setup_doc_mapper.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/features/setups/domain/entities/setups_page.dart';
 import 'package:Prism/features/setups/domain/repositories/setups_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
 
 @LazySingleton(as: SetupsRepository)
@@ -21,6 +23,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
   final FeedCacheLocalDataSource _feedCacheLocal;
   final UserBlockRepository _userBlockRepository;
   String? _cursorDocId;
+  static const int _pageSize = 10;
   static const int _setupsReadDedupeMs = 30000;
   static const int _setupsCacheTtlHours = 3;
 
@@ -35,26 +38,26 @@ class SetupsRepositoryImpl implements SetupsRepository {
             FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
           ],
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'created_at', descending: true)],
-          limit: 10,
+          limit: _pageSize,
           startAfterDocId: refresh ? null : _cursorDocId,
           cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
           dedupeWindowMs: refresh ? 0 : _setupsReadDedupeMs,
         ),
-        (data, docId) => _SetupRow(docId: docId, doc: SetupDocDto.fromJson(data)),
+        (data, docId) => (docId: docId, doc: SetupDocDto.fromJson(data)),
       );
       if (rows.isNotEmpty) {
         _cursorDocId = rows.last.docId;
       }
 
-      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-      final items = rows
-          .map((row) => _mapSetup(row.doc, row.docId))
-          .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
-          .toList(growable: false);
-      final page = SetupsPage(items: items, hasMore: rows.length == 10, nextCursor: _cursorDocId);
+      final page = SetupsPage(
+        items: await _visibleItems(rows),
+        hasMore: rows.length == _pageSize,
+        nextCursor: _cursorDocId,
+      );
       await _writeCache(rows: rows, page: page);
       return Result.success(page);
     } catch (error) {
+      logger.w('fetchSetups failed, falling back to cache', error: error);
       final cached = await _readCached();
       if (cached != null) {
         return Result.success(cached);
@@ -84,7 +87,7 @@ class SetupsRepositoryImpl implements SetupsRepository {
       return null;
     }
 
-    final payload = _asMap(snapshot.payload);
+    final payload = toJsonMap(snapshot.payload);
     final rows = payload['rows'];
     if (rows is! List) {
       return null;
@@ -92,14 +95,14 @@ class SetupsRepositoryImpl implements SetupsRepository {
 
     final mappedRows = rows
         .whereType<Map>()
-        .map(_asMap)
+        .map(toJsonMap)
         .map((entry) {
           final String docId = entry['docId']?.toString() ?? '';
-          final Map<String, dynamic> docMap = _asMap(entry['doc']);
+          final Map<String, dynamic> docMap = toJsonMap(entry['doc']);
           if (docId.isEmpty || docMap.isEmpty) {
             return null;
           }
-          return _SetupRow(docId: docId, doc: SetupDocDto.fromJson(docMap));
+          return (docId: docId, doc: SetupDocDto.fromJson(docMap));
         })
         .whereType<_SetupRow>()
         .toList(growable: false);
@@ -108,57 +111,44 @@ class SetupsRepositoryImpl implements SetupsRepository {
       return null;
     }
 
-    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
-    final items = mappedRows
-        .map((row) => _mapSetup(row.doc, row.docId))
-        .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
-        .toList(growable: false);
     _cursorDocId = payload['nextCursor']?.toString();
-    return SetupsPage(items: items, hasMore: payload['hasMore'] == true, nextCursor: _cursorDocId);
-  }
-
-  SetupEntity _mapSetup(SetupDocDto dto, String docId) {
-    return SetupEntity(
-      id: dto.id.isNotEmpty ? dto.id : docId,
-      by: dto.by,
-      icon: dto.icon,
-      iconUrl: dto.iconUrl,
-      createdAt: dto.createdAt,
-      desc: dto.desc,
-      email: dto.email,
-      image: dto.image,
-      name: dto.name,
-      userPhoto: dto.userPhoto,
-      wallId: dto.wallId,
-      source: WallpaperSourceX.fromWire(dto.wallpaperProvider),
-      wallpaperThumb: dto.wallpaperThumb,
-      wallpaperUrl: dto.wallpaperUrl,
-      widget: dto.widget,
-      widget2: dto.widget2,
-      widgetUrl: dto.widgetUrl,
-      widgetUrl2: dto.widgetUrl2,
-      link: dto.link,
-      review: dto.review,
-      resolution: dto.resolution,
-      size: dto.size,
-      firestoreDocumentId: docId,
+    return SetupsPage(
+      items: await _visibleItems(mappedRows),
+      hasMore: payload['hasMore'] == true,
+      nextCursor: _cursorDocId,
     );
   }
-}
 
-Map<String, dynamic> _asMap(Object? value) {
-  if (value is Map<String, dynamic>) {
-    return value;
+  Future<List<SetupEntity>> _visibleItems(List<_SetupRow> rows) async {
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+    return rows
+        .map((row) => row.doc.toSetupEntity(row.docId))
+        .where((s) => !BlockedCreatorsFilter.hidesCreatorEmail(s.email, blocked))
+        .toList(growable: false);
   }
-  if (value is Map) {
-    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
+
+  @override
+  Future<Result<SetupEntity?>> fetchSetupByName(String name) async {
+    try {
+      final rows = await _firestoreClient.query<SetupEntity>(
+        FirestoreQuerySpec(
+          collection: FirebaseCollections.setups,
+          sourceTag: 'setups.lookup.byName',
+          // Rules only let non-owners read reviewed setups, so the query must say so.
+          filters: <FirestoreFilter>[
+            FirestoreFilter(field: 'name', op: FirestoreFilterOp.isEqualTo, value: name),
+            const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
+          ],
+          limit: 1,
+        ),
+        (data, docId) => SetupDocDto.fromJson(data).toSetupEntity(docId),
+      );
+      return Result.success(rows.isEmpty ? null : rows.first);
+    } catch (error) {
+      logger.w('fetchSetupByName failed', error: error);
+      return Result.error(ServerFailure('Failed to load setup: $error'));
+    }
   }
-  return <String, dynamic>{};
 }
 
-class _SetupRow {
-  const _SetupRow({required this.docId, required this.doc});
-
-  final String docId;
-  final SetupDocDto doc;
-}
+typedef _SetupRow = ({String docId, SetupDocDto doc});

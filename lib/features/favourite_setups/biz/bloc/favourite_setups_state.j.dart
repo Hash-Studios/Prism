@@ -6,7 +6,7 @@ abstract class FavouriteSetupsState with _$FavouriteSetupsState {
     required LoadStatus status,
     required ActionStatus actionStatus,
     required String userId,
-    required List<FavouriteSetupEntity> items,
+    required List<SetupEntity> items,
     Failure? failure,
   }) = _FavouriteSetupsState;
 
@@ -14,6 +14,6 @@ abstract class FavouriteSetupsState with _$FavouriteSetupsState {
     status: LoadStatus.initial,
     actionStatus: ActionStatus.idle,
     userId: '',
-    items: <FavouriteSetupEntity>[],
+    items: <SetupEntity>[],
   );
 }
