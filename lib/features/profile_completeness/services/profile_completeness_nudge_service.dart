@@ -15,9 +15,8 @@ typedef _ProfileCompletenessSheetLauncher =
 typedef _ProfileCompletenessEventTracker = Future<void> Function(AnalyticsEvent event);
 typedef _ProfileCompletenessOpenEditProfile = Future<void> Function(BuildContext context);
 
-typedef _ReadPrefValue = bool? Function(String key, {bool defaultValue});
+typedef _ReadPrefValue = bool Function(String key, {bool defaultValue});
 typedef _WritePrefValue = Future<void> Function(String key, bool value);
-typedef _IsPrefsOpen = bool Function();
 
 class ProfileCompletenessNudgeService {
   ProfileCompletenessNudgeService({
@@ -26,13 +25,11 @@ class ProfileCompletenessNudgeService {
     _ProfileCompletenessOpenEditProfile? openEditProfile,
     _ReadPrefValue? readPrefValue,
     _WritePrefValue? writePrefValue,
-    _IsPrefsOpen? isPrefsOpen,
   }) : _sheetLauncher = sheetLauncher ?? showProfileCompletenessNudgeSheet,
        _trackEvent = trackEvent ?? analytics.track,
        _openEditProfile = openEditProfile ?? _defaultOpenEditProfile,
        _readPrefValue = readPrefValue ?? _defaultReadPrefValue,
-       _writePrefValue = writePrefValue ?? _defaultWritePrefValue,
-       _isPrefsOpen = isPrefsOpen ?? _defaultIsPrefsOpen;
+       _writePrefValue = writePrefValue ?? _defaultWritePrefValue;
 
   static final ProfileCompletenessNudgeService instance = ProfileCompletenessNudgeService();
 
@@ -43,12 +40,8 @@ class ProfileCompletenessNudgeService {
   final _ProfileCompletenessOpenEditProfile _openEditProfile;
   final _ReadPrefValue _readPrefValue;
   final _WritePrefValue _writePrefValue;
-  final _IsPrefsOpen _isPrefsOpen;
 
   Future<void> maybeShowNudge(BuildContext context, {required String sourceContext}) async {
-    if (!_isPrefsOpen()) {
-      return;
-    }
     if (!app_state.prismUser.loggedIn) {
       return;
     }
@@ -71,7 +64,7 @@ class ProfileCompletenessNudgeService {
     }
 
     final String prefKey = shownPrefKeyForUser(userId);
-    final bool hasShown = _readPrefValue(prefKey, defaultValue: false) ?? false;
+    final bool hasShown = _readPrefValue(prefKey, defaultValue: false);
     if (hasShown) {
       return;
     }
@@ -119,9 +112,7 @@ class ProfileCompletenessNudgeService {
     }
   }
 
-  static bool _defaultIsPrefsOpen() => true;
-
-  static bool? _defaultReadPrefValue(String key, {bool defaultValue = false}) {
+  static bool _defaultReadPrefValue(String key, {bool defaultValue = false}) {
     return getIt<SettingsLocalDataSource>().get<bool>(key, defaultValue: defaultValue);
   }
 

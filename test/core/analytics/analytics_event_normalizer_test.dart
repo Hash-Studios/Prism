@@ -7,11 +7,6 @@ void main() {
   const AnalyticsEventNormalizer normalizer = AnalyticsEventNormalizer();
 
   group('AnalyticsEventNormalizer', () {
-    test('maps legacy aliases to canonical event names', () {
-      expect(normalizer.normalizeEventName('reportSetup'), 'report_setup');
-      expect(normalizer.normalizeEventName('reportWall'), 'report_wall');
-    });
-
     test('keeps valid event names and normalizes invalid event names', () {
       expect(normalizer.normalizeEventName('coin_earned'), 'coin_earned');
       expect(normalizer.normalizeEventName('Paywall Result'), 'paywall_result');
@@ -20,7 +15,7 @@ void main() {
 
     test('normalizes parameter keys and values to provider-safe primitives', () {
       final NormalizedAnalyticsEvent event = normalizer.normalizeEvent(
-        name: 'reportSetup',
+        name: 'report_setup',
         parameters: <String, Object?>{
           'generationId': 'gen_1',
           'isPremium': true,

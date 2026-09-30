@@ -1,12 +1,10 @@
-import 'dart:async';
-
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
-import 'package:Prism/features/category_feed/views/category_feed_bloc_adapter.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/pexels_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_grid.dart';
@@ -26,6 +24,8 @@ class CollectionViewScreen extends StatefulWidget {
 }
 
 class _CollectionViewScreenState extends State<CollectionViewScreen> {
+  late final Future<void> _collectionFuture = getCollectionWithName(widget.collectionName);
+
   bool get _isCategoryView => widget.collectionName.startsWith('category:');
 
   String get _decodedCategoryName {
@@ -41,19 +41,23 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
         if (!mounted) {
           return;
         }
-        final choices = context.categoryChoiceList(listen: false);
-        final selected = choices.firstWhere(
-          (choice) => (choice.name ?? '').trim().toLowerCase() == _decodedCategoryName.toLowerCase(),
-          orElse: () => choices.first,
+        final bloc = context.read<CategoryFeedBloc>();
+        final categories = bloc.state.categories;
+        if (categories.isEmpty) {
+          return;
+        }
+        final selected = categories.firstWhere(
+          (category) => category.name.trim().toLowerCase() == _decodedCategoryName.toLowerCase(),
+          orElse: () => categories.first,
         );
-        unawaited(context.categoryChangeWallpaperFuture(selected, 'r'));
+        bloc.add(CategoryFeedEvent.categorySelected(category: selected));
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _isCategoryView ? _decodedCategoryName.capitalize() : widget.collectionName.capitalize();
+    final title = (_isCategoryView ? _decodedCategoryName : widget.collectionName).inCaps;
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: PreferredSize(
@@ -65,10 +69,10 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
   }
 
   Widget _buildCollectionContent() {
-    return FutureBuilder(
-      future: getCollectionWithName(widget.collectionName),
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
-        if (snapshot.hasData) {
+    return FutureBuilder<void>(
+      future: _collectionFuture,
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
           return const CollectionViewGrid();
         }
         return const LoadingCards();
@@ -89,10 +93,7 @@ class _CategoryFeedContent extends StatelessWidget {
         }
         if (state.status == LoadStatus.failure) {
           return RefreshIndicator(
-            onRefresh: () async {
-              final choice = context.categorySelectedChoice(listen: false);
-              await context.categoryChangeWallpaperFuture(choice, 'r');
-            },
+            onRefresh: () async => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested()),
             child: const Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
@@ -110,21 +111,11 @@ class _CategoryFeedContent extends StatelessWidget {
           case WallpaperSource.pexels:
             return const PexelsGrid();
           case WallpaperSource.prism:
-            return const WallpaperGrid();
           case WallpaperSource.downloaded:
           case WallpaperSource.unknown:
             return const WallpaperGrid();
         }
       },
     );
-  }
-}
-
-extension _StringExtension on String {
-  String capitalize() {
-    if (isEmpty) {
-      return this;
-    }
-    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

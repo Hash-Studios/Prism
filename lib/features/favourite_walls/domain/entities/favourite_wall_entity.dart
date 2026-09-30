@@ -1,9 +1,16 @@
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
 sealed class FavouriteWallEntity {
   const FavouriteWallEntity({required this.id, required this.source});
+
+  factory FavouriteWallEntity.fromFeedItem(FeedItemEntity item) => item.when(
+    prism: (_, wallpaper) => PrismFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
+    wallhaven: (_, wallpaper) => WallhavenFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
+    pexels: (_, wallpaper) => PexelsFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
+  );
 
   final String id;
   final WallpaperSource source;
@@ -11,6 +18,18 @@ sealed class FavouriteWallEntity {
   String get thumbnailUrl;
   String get fullUrl;
   DateTime? get createdAt;
+
+  FeedItemEntity toFeedItem();
+}
+
+/// Newest first; entries without a date go last.
+int compareByCreatedAtDesc(FavouriteWallEntity a, FavouriteWallEntity b) {
+  final DateTime? aDate = a.createdAt;
+  final DateTime? bDate = b.createdAt;
+  if (aDate == null && bDate == null) return 0;
+  if (aDate == null) return 1;
+  if (bDate == null) return -1;
+  return bDate.compareTo(aDate);
 }
 
 final class PrismFavouriteWall extends FavouriteWallEntity {
@@ -26,6 +45,9 @@ final class PrismFavouriteWall extends FavouriteWallEntity {
 
   @override
   DateTime? get createdAt => wallpaper.core.createdAt;
+
+  @override
+  FeedItemEntity toFeedItem() => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper);
 }
 
 final class WallhavenFavouriteWall extends FavouriteWallEntity {
@@ -41,6 +63,9 @@ final class WallhavenFavouriteWall extends FavouriteWallEntity {
 
   @override
   DateTime? get createdAt => null;
+
+  @override
+  FeedItemEntity toFeedItem() => WallhavenFeedItem(id: wallpaper.id, wallpaper: wallpaper);
 }
 
 final class PexelsFavouriteWall extends FavouriteWallEntity {
@@ -56,6 +81,9 @@ final class PexelsFavouriteWall extends FavouriteWallEntity {
 
   @override
   DateTime? get createdAt => null;
+
+  @override
+  FeedItemEntity toFeedItem() => PexelsFeedItem(id: wallpaper.id, wallpaper: wallpaper);
 }
 
 /// Used when the existing Firestore doc cannot be resolved to a typed variant
@@ -73,4 +101,7 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
 
   @override
   DateTime? get createdAt => parseDateTime(legacyPayload['createdAt']);
+
+  @override
+  FeedItemEntity toFeedItem() => throw ArgumentError('Cannot open a LegacyFavouriteWall as a feed item');
 }

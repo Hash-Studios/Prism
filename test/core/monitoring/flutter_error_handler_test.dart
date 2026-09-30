@@ -5,14 +5,7 @@ import 'package:Prism/core/monitoring/flutter_error_handler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _RecordingAppAnalytics extends NoopAppAnalytics {
-  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
-
-  @override
-  Future<void> track(AnalyticsEvent event) async {
-    events.add(event);
-  }
-}
+import '../../support/fake_app_analytics.dart';
 
 void main() {
   late FlutterExceptionHandler? originalFlutterErrorHandler;
@@ -29,7 +22,7 @@ void main() {
   });
 
   test('installed framework handler reports a nonfatal typed error event', () {
-    final recorder = _RecordingAppAnalytics();
+    final recorder = FakeAppAnalytics();
     AnalyticsRuntime.instance = recorder;
     installFlutterFrameworkErrorHandler();
 

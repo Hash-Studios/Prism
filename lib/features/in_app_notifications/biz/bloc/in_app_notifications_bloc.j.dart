@@ -1,5 +1,6 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/in_app_notifications/domain/usecases/notifications_usecases.dart';
@@ -44,84 +45,40 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
   }
 
   Future<void> _onLocalReloadRequested(_LocalReloadRequested event, Emitter<InAppNotificationsState> emit) async {
-    final result = await _fetchNotificationsUseCase(const FetchNotificationsParams(syncRemote: false));
-    result.fold(
-      onSuccess: (items) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: items,
-          unreadCount: items.where((item) => !item.read).length,
-          failure: null,
-        ),
-      ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
-    );
+    _apply(await _fetchNotificationsUseCase(const FetchNotificationsParams(syncRemote: false)), emit);
   }
 
   Future<void> _fetch({required bool syncRemote, required Emitter<InAppNotificationsState> emit}) async {
     emit(state.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress, failure: null));
-
-    final result = await _fetchNotificationsUseCase(FetchNotificationsParams(syncRemote: syncRemote));
-
-    result.fold(
-      onSuccess: (items) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: items,
-          unreadCount: items.where((item) => !item.read).length,
-          failure: null,
-        ),
-      ),
-      onFailure: (failure) =>
-          emit(state.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure)),
-    );
+    _apply(await _fetchNotificationsUseCase(FetchNotificationsParams(syncRemote: syncRemote)), emit, failLoad: true);
   }
 
   Future<void> _onMarkReadRequested(_MarkReadRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-
-    final result = await _markNotificationAsReadUseCase(MarkNotificationAsReadParams(id: event.id));
-
-    result.fold(
-      onSuccess: (items) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: items,
-          unreadCount: items.where((item) => !item.read).length,
-          failure: null,
-        ),
-      ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
-    );
+    _apply(await _markNotificationAsReadUseCase(MarkNotificationAsReadParams(id: event.id)), emit);
   }
 
   Future<void> _onDeleteRequested(_DeleteRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-
-    final result = await _deleteNotificationUseCase(DeleteNotificationParams(id: event.id));
-
-    result.fold(
-      onSuccess: (items) => emit(
-        state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: items,
-          unreadCount: items.where((item) => !item.read).length,
-          failure: null,
-        ),
-      ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
-    );
+    _apply(await _deleteNotificationUseCase(DeleteNotificationParams(id: event.id)), emit);
   }
 
   Future<void> _onDeleteManyRequested(_DeleteManyRequested event, Emitter<InAppNotificationsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    _apply(await _deleteNotificationsByIdsUseCase(DeleteNotificationsByIdsParams(ids: event.ids)), emit);
+  }
 
-    final result = await _deleteNotificationsByIdsUseCase(DeleteNotificationsByIdsParams(ids: event.ids));
+  Future<void> _onClearRequested(_ClearRequested event, Emitter<InAppNotificationsState> emit) async {
+    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
+    _apply(await _clearNotificationsUseCase(const NoParams()), emit);
+  }
 
+  /// Publishes the new item list, or the failure. [failLoad] also marks the whole load as failed.
+  void _apply(
+    Result<List<InAppNotificationEntity>> result,
+    Emitter<InAppNotificationsState> emit, {
+    bool failLoad = false,
+  }) {
     result.fold(
       onSuccess: (items) => emit(
         state.copyWith(
@@ -132,26 +89,13 @@ class InAppNotificationsBloc extends Bloc<InAppNotificationsEvent, InAppNotifica
           failure: null,
         ),
       ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
-    );
-  }
-
-  Future<void> _onClearRequested(_ClearRequested event, Emitter<InAppNotificationsState> emit) async {
-    emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-
-    final result = await _clearNotificationsUseCase(const NoParams());
-
-    result.fold(
-      onSuccess: (items) => emit(
+      onFailure: (failure) => emit(
         state.copyWith(
-          status: LoadStatus.success,
-          actionStatus: ActionStatus.success,
-          items: items,
-          unreadCount: 0,
-          failure: null,
+          status: failLoad ? LoadStatus.failure : state.status,
+          actionStatus: ActionStatus.failure,
+          failure: failure,
         ),
       ),
-      onFailure: (failure) => emit(state.copyWith(actionStatus: ActionStatus.failure, failure: failure)),
     );
   }
 }

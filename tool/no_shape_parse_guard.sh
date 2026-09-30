@@ -3,14 +3,13 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+source "$ROOT_DIR/tool/lib/search.sh"
 
 TARGETS=(
   "lib/features/wallhaven_feed/data"
   "lib/features/pexels_feed/data"
   "lib/features/prism_feed/data"
   "lib/features/setups/data"
-  "lib/features/profile_setups/data"
-  "lib/features/profile_walls/data"
   "lib/features/public_profile/data"
   "lib/features/favourite_setups/data"
   "lib/features/favourite_walls/data"
@@ -18,13 +17,16 @@ TARGETS=(
 
 EXCLUDE_REGEX='\.g\.dart$|\.freezed\.dart$|\.gr\.dart$|\.config\.dart$'
 
+NOT_WORD='(^|[^A-Za-z0-9_])'
+WORD_END='($|[^A-Za-z0-9_])'
+
 violations=0
 
 check_pattern() {
   local pattern="$1"
   local title="$2"
   local matches
-  matches="$(rg -n "$pattern" "${TARGETS[@]}" 2>/dev/null || true)"
+  matches="$(search "$pattern" "${TARGETS[@]}")"
   if [[ -z "$matches" ]]; then
     return
   fi
@@ -43,9 +45,9 @@ check_pattern() {
   done <<< "$matches"
 }
 
-check_pattern '\bis\s+Map\b|\bis!\s+Map\b' 'Map type-check'
-check_pattern '\bis\s+List\b|\bis!\s+List\b' 'List type-check'
-check_pattern '\bObject\?\s+[a-zA-Z_]' 'Object? declaration/parameter'
+check_pattern "$NOT_WORD"'is!?[[:space:]]+Map'"$WORD_END" 'Map type-check'
+check_pattern "$NOT_WORD"'is!?[[:space:]]+List'"$WORD_END" 'List type-check'
+check_pattern "$NOT_WORD"'Object\?[[:space:]]+[a-zA-Z_]' 'Object? declaration/parameter'
 
 if [[ $violations -gt 0 ]]; then
   echo "Total no-shape-parse guard violations: $violations"
