@@ -172,7 +172,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
         child: PulsePlaceholder(
           builder: (context, placeholderColor) => GridView.builder(
             padding: EdgeInsets.zero,
-            itemCount: walls.isEmpty ? 24 : walls.length,
+            itemCount: walls.isEmpty ? 24 : walls.length + (_hasMore ? 1 : 0),
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
@@ -182,7 +182,7 @@ class _ColorGridState extends State<ColorGrid> with SingleTickerProviderStateMix
               if (walls.isEmpty) {
                 return DecoratedBox(decoration: BoxDecoration(color: placeholderColor));
               }
-              if (_hasMore && index == walls.length - 1) {
+              if (_hasMore && index == walls.length) {
                 return SeeMoreButton(
                   seeMoreLoader: seeMoreLoader,
                   func: () {
