@@ -58,6 +58,7 @@ jobs:
       flutter: ${{ steps.filter.outputs.flutter }}
       functions: ${{ steps.filter.outputs.functions }}
       web: ${{ steps.filter.outputs.web }}
+      rules: ${{ steps.filter.outputs.rules }}
       app_size: ${{ steps.filter.outputs.app_size }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
@@ -86,6 +87,10 @@ jobs:
               - 'functions/**'
             web:
               - 'web/**'
+            rules:
+              - 'firestore.rules'
+              - 'firebase.json'
+              - 'tool/firestore_rules_smoke.mjs'
             app_size:
               # The inputs of tool/build_size_apk.sh --key, plus the compare script.
               - 'lib/**'
@@ -184,6 +189,32 @@ jobs:
         run: |
           npm ci
           npx tsc --noEmit
+
+  rules:
+    name: Firestore rules verify
+    needs: changes
+    if: needs.changes.outputs.rules == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-15.15.0
+      - name: Firestore rules smoke test
+        run: npx --yes firebase-tools@15.15.0 emulators:exec --only firestore --project demo-prism "node tool/firestore_rules_smoke.mjs"
 
   # Not part of the required `ci` check, so the merge does not wait for two
   # APK builds. A size regression still shows as a red check and a PR comment.
@@ -358,7 +389,7 @@ jobs:
 
   ci:
     name: ci
-    needs: [changes, flutter, functions, web]
+    needs: [changes, flutter, functions, web, rules]
     # No green check when the suite never ran (draft PR, push), and no red X
     # on a run that a newer push cancelled.
     if: ${{ !cancelled() && needs.changes.result != 'skipped' }}
@@ -367,9 +398,9 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.functions.result }} ${{ needs.web.result }}
+          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }}
         run: |
-          echo "changes flutter functions web: $RESULTS"
+          echo "changes flutter functions web rules: $RESULTS"
           [ "${{ needs.changes.result }}" = success ] || { echo 'Detect changes failed.'; exit 1; }
           for r in $RESULTS; do
             case "$r" in

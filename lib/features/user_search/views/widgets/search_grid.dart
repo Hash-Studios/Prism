@@ -23,15 +23,6 @@ String? _authorName(FeedItemEntity wallpaper) => wallpaper.when(
   pexels: (_, wall) => wall.core.authorName,
 );
 
-String _thumbnailUrl(FeedItemEntity wallpaper) => wallpaper.when(
-  prism: (_, wall) => wall.thumbnailUrl,
-  wallhaven: (_, wall) {
-    final String thumb = wall.thumbs?['original'] ?? '';
-    return thumb.isNotEmpty && thumb != 'null' ? thumb : wall.fullUrl;
-  },
-  pexels: (_, wall) => wall.thumbnailUrl,
-);
-
 class SearchGrid extends StatefulWidget {
   const SearchGrid({super.key, required this.query, required this.provider, required this.initialResults});
 
@@ -215,7 +206,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
                           decoration: BoxDecoration(
                             color: placeholderColor,
                             image: DecorationImage(
-                              image: CachedNetworkImageProvider(_thumbnailUrl(wallpaper)),
+                              image: CachedNetworkImageProvider(wallpaper.thumbnailUrl),
                               fit: BoxFit.cover,
                             ),
                           ),
