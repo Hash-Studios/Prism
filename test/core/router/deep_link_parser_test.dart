@@ -79,4 +79,9 @@ void main() {
     expect(parser.parse(Uri.parse('https://prismwalls.com/l?code=%FF')), isA<UnknownIntent>());
     expect(parser.parse(Uri.parse('https://prismwalls.com/user/%FF')), isA<UnknownIntent>());
   });
+
+  test('the router transform sends malformed links to not-found before auto_route decodes them', () {
+    expect(parser.transform(Uri.parse('https://prismwalls.com/user/%FF')), Uri(path: '/not-found'));
+    expect(parser.transform(Uri.parse('https://prismwalls.com/l?code=%FF')), Uri(path: '/not-found'));
+  });
 }
