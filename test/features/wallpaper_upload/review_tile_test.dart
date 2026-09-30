@@ -44,4 +44,14 @@ void main() {
     await _pumpTile(tester, base, rejected: true);
     expect(find.text('REJECTED'), findsOneWidget);
   });
+
+  testWidgets('labels download and delete actions for screen reader users', (tester) async {
+    await _pumpTile(tester, base);
+
+    final Iterable<String?> tooltips = find
+        .byType(IconButton)
+        .evaluate()
+        .map((Element element) => (element.widget as IconButton).tooltip);
+    expect(tooltips, containsAll(<String?>['Download wallpaper', 'Delete wallpaper']));
+  });
 }

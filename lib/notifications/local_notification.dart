@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:Prism/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,6 +19,7 @@ class LocalNotification {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   AppRouter? router;
+  Future<void> Function(Map<String, dynamic>)? onPushTap;
   LocalNotification() {
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
       '@drawable/ic_notification',
@@ -29,6 +33,9 @@ class LocalNotification {
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         if (response.payload == 'downloaded') {
           router?.push(const DownloadRoute());
+        } else {
+          final Map<String, dynamic>? payload = _decodePushPayload(response.payload);
+          if (payload != null) unawaited(onPushTap?.call(payload));
         }
       },
     );
@@ -47,9 +54,24 @@ class LocalNotification {
     if (!context.mounted) {
       return;
     }
-    if (notificationAppLaunchDetails?.notificationResponse?.payload == "downloaded") {
+    final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
+    if (payload == 'downloaded') {
       context.router.push(const DownloadRoute());
+    } else {
+      final Map<String, dynamic>? pushPayload = _decodePushPayload(payload);
+      if (pushPayload != null) await onPushTap?.call(pushPayload);
     }
+  }
+
+  static Map<String, dynamic>? _decodePushPayload(String? payload) {
+    if (payload == null || payload.isEmpty || payload == 'downloadProgress') return null;
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } on FormatException {
+      // Older local notifications stored only the route string.
+    }
+    return <String, dynamic>{'route': payload};
   }
 
   Future<void> createNotificationChannel(String id, String name, String description, bool playSound) async {
@@ -128,7 +150,7 @@ class LocalNotification {
       title: notification.title,
       body: notification.body,
       notificationDetails: platformDetails,
-      payload: message.data['route']?.toString(),
+      payload: jsonEncode(message.data),
     );
   }
 

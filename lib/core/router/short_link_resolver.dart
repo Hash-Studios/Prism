@@ -5,7 +5,9 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart' as launcher;
 
 sealed class ShortLinkResult {
   const ShortLinkResult();
@@ -24,12 +26,29 @@ final class ShortLinkFailed extends ShortLinkResult {
 }
 
 class ShortLinkResolver {
-  ShortLinkResolver({http.Client? client, DeepLinkParser parser = const DeepLinkParser()})
-    : _client = client ?? http.Client(),
-      _parser = parser;
+  ShortLinkResolver({
+    http.Client? client,
+    DeepLinkParser parser = const DeepLinkParser(),
+    Future<bool> Function(launcher.LaunchMode)? supportsLaunchMode,
+    Future<bool> Function(Uri, {required launcher.LaunchMode mode})? launchUrl,
+  }) : _client = client ?? http.Client(),
+       _parser = parser,
+       _supportsLaunchMode = supportsLaunchMode ?? launcher.supportsLaunchMode,
+       _launchUrl = launchUrl ?? launcher.launchUrl;
 
   final http.Client _client;
   final DeepLinkParser _parser;
+  final Future<bool> Function(launcher.LaunchMode) _supportsLaunchMode;
+  final Future<bool> Function(Uri, {required launcher.LaunchMode mode}) _launchUrl;
+
+  Future<bool> openFallback(String code) async {
+    try {
+      if (!await _supportsLaunchMode(launcher.LaunchMode.inAppBrowserView)) return false;
+      return await _launchUrl(Uri.https('prismwalls.com', '/l/$code'), mode: launcher.LaunchMode.inAppBrowserView);
+    } on PlatformException {
+      return false;
+    }
+  }
 
   Future<ShortLinkResult> resolve(String code) async {
     try {
@@ -51,7 +70,9 @@ class ShortLinkResolver {
       if (canonicalUri == null) return const ShortLinkFailed(AnalyticsReasonValue.missingData);
 
       final action = _parser.parse(canonicalUri);
-      if (action is UnknownIntent) return const ShortLinkFailed(AnalyticsReasonValue.missingData);
+      if (action is UnknownIntent || action is ShortCodeIntent) {
+        return const ShortLinkFailed(AnalyticsReasonValue.missingData);
+      }
       return ShortLinkResolved(action);
     } catch (error, stackTrace) {
       logger.w(
