@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.2.0
+- Rewards brings your streak and coins together in one place
+- Your daily streak has no cap, and a streak freeze keeps it safe on days you miss
+- Prism Pro on Android can rotate your favourite wallpapers on a timer
+- Glint shows up when things load, go empty or go right
+- Smoother motion, and wallpapers fly from the grid into the detail screen
+- Notifications and shared links open the right screen more reliably
+- Downloads save and list more reliably on Android
+- Security and stability fixes
+
 ### v3.1.0
 - Your home feed learns what you love and ranks wallpapers on your device
 - Tune your feed shows what it has learned and lets you shape it
