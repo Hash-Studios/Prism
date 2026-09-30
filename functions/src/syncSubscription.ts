@@ -3,6 +3,8 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {db, REGION} from "./common";
 
 const USERS = "usersv2";
+const SYNC_STATE = "subscriptionSync";
+const SYNC_COOLDOWN_MS = 30_000;
 const revenueCatSecret = defineSecret("REVENUECAT_SECRET_KEY");
 
 // Mirrors PurchaseConstants.paidEntitlementKeys in lib/core/purchases/purchase_constants.dart.
@@ -39,11 +41,30 @@ export function subscriptionFromRevenueCat(json: unknown, nowMs: number): {premi
   return {premium: true, subscriptionTier: lifetime ? "lifetime" : "pro"};
 }
 
+/** Claims the per-user sync slot. False when the last sync was under 30 seconds ago. */
+export async function claimSyncSlot(callerUid: string, nowMs: number): Promise<boolean> {
+  const ref = db.collection(SYNC_STATE).doc(callerUid);
+  return db.runTransaction(async (tx) => {
+    const lastAt = (await tx.get(ref)).data()?.lastAt;
+    if (typeof lastAt === "number" && nowMs - lastAt < SYNC_COOLDOWN_MS) return false;
+    tx.set(ref, {lastAt: nowMs});
+    return true;
+  });
+}
+
 export const syncSubscription = onCall(
-  {region: REGION, cors: true, secrets: [revenueCatSecret]},
+  {region: REGION, cors: true, maxInstances: 10, secrets: [revenueCatSecret]},
   async (request: CallableRequest<unknown>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to sync your subscription.");
+
+    if (!await claimSyncSlot(callerUid, Date.now())) {
+      const stored = (await db.collection(USERS).doc(callerUid).get()).data() ?? {};
+      return {
+        premium: stored.premium === true,
+        subscriptionTier: typeof stored.subscriptionTier === "string" ? stored.subscriptionTier : "free",
+      };
+    }
 
     let json: unknown;
     try {
