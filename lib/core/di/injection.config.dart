@@ -30,6 +30,8 @@ import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
 import '../../features/ads/data/repositories/ads_repository_impl.dart' as _i418;
 import '../../features/ads/domain/repositories/ads_repository.dart' as _i1055;
 import '../../features/ads/domain/usecases/ads_usecases.dart' as _i321;
+import '../../features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart'
+    as _i673;
 import '../../features/category_feed/biz/bloc/category_feed_bloc.j.dart'
     as _i195;
 import '../../features/category_feed/data/repositories/category_feed_repository_impl.dart'
@@ -216,6 +218,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
     () => _i954.FeedCacheLocalDataSource(),
+  );
+  gh.lazySingleton<_i673.AiGenerationRepositoryImpl>(
+    () => _i673.AiGenerationRepositoryImpl(),
   );
   gh.lazySingleton<_i640.FavoritesLocalDataSource>(
     () => _i640.FavoritesLocalDataSource(gh<_i496.LocalStore>()),
