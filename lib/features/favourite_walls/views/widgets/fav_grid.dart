@@ -9,6 +9,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -16,7 +17,6 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -73,7 +73,11 @@ class _FavouriteGridState extends State<FavouriteGrid> {
       ),
     );
     context.router.push(
-      WallpaperDetailRoute(entity: wall.toFeedItem(), analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView),
+      WallpaperDetailRoute(
+        entity: wall.toFeedItem(),
+        analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
+        heroTag: prismHeroTag(this, index, wall.id),
+      ),
     );
   }
 
@@ -142,7 +146,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     return false;
                   },
                   child: PulsePlaceholder(
-                    builder: (context, placeholderColor) => GridView.builder(
+                    builder: (context, _) => GridView.builder(
                       shrinkWrap: true,
                       scrollCacheExtent: const ScrollCacheExtent.pixels(50000),
                       padding: EdgeInsets.zero,
@@ -156,14 +160,9 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                         label: wallpaperSemanticLabel(_favouriteWallAuthor(walls[index])),
                         child: Stack(
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: placeholderColor,
-                                image: DecorationImage(
-                                  image: CachedNetworkImageProvider(walls[index].thumbnailUrl),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                            PrismImageTile(
+                              url: walls[index].thumbnailUrl,
+                              heroTag: prismHeroTag(this, index, walls[index].id),
                             ),
                             Material(
                               color: Colors.transparent,

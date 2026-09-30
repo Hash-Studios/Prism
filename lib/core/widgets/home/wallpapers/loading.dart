@@ -9,7 +9,7 @@ class LoadingCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PulsePlaceholder(
-      builder: (context, color) => GridView.builder(
+      builder: (context, _) => GridView.builder(
         primary: false,
         padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
         itemCount: 24,
@@ -20,9 +20,7 @@ class LoadingCards extends StatelessWidget {
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
         ),
-        itemBuilder: (context, index) => DecoratedBox(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: color),
-        ),
+        itemBuilder: (context, index) => PulseFill(borderRadius: BorderRadius.circular(20)),
       ),
     );
   }

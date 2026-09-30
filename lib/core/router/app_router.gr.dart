@@ -1315,6 +1315,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     String? thumbnailUrl,
     AnalyticsSurfaceValue analyticsSurface =
         AnalyticsSurfaceValue.wallpaperScreen,
+    String? heroTag,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -1325,6 +1326,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            source: source,
            thumbnailUrl: thumbnailUrl,
            analyticsSurface: analyticsSurface,
+           heroTag: heroTag,
          ),
          initialChildren: children,
        );
@@ -1344,6 +1346,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
         source: args.source,
         thumbnailUrl: args.thumbnailUrl,
         analyticsSurface: args.analyticsSurface,
+        heroTag: args.heroTag,
       );
     },
   );
@@ -1357,6 +1360,7 @@ class WallpaperDetailRouteArgs {
     this.source,
     this.thumbnailUrl,
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
+    this.heroTag,
   });
 
   final Key? key;
@@ -1371,9 +1375,11 @@ class WallpaperDetailRouteArgs {
 
   final AnalyticsSurfaceValue analyticsSurface;
 
+  final String? heroTag;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag}';
   }
 
   @override
@@ -1385,7 +1391,8 @@ class WallpaperDetailRouteArgs {
         wallId == other.wallId &&
         source == other.source &&
         thumbnailUrl == other.thumbnailUrl &&
-        analyticsSurface == other.analyticsSurface;
+        analyticsSurface == other.analyticsSurface &&
+        heroTag == other.heroTag;
   }
 
   @override
@@ -1395,7 +1402,8 @@ class WallpaperDetailRouteArgs {
       wallId.hashCode ^
       source.hashCode ^
       thumbnailUrl.hashCode ^
-      analyticsSurface.hashCode;
+      analyticsSurface.hashCode ^
+      heroTag.hashCode;
 }
 
 /// generated route for
