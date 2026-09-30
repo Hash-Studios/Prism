@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -47,9 +49,11 @@ void main() {
     service.consumeLastClaim();
     service.balanceNotifier.value = 100;
     service.streakNotifier.value = StreakStatus.empty;
+    service.earnFlagsNotifier.value = CoinEarnFlags.empty;
   });
   tearDown(() async {
     service.consumeLastClaim();
+    service.earnFlagsNotifier.value = CoinEarnFlags.empty;
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
   });
@@ -64,6 +68,92 @@ void main() {
     expect(app_state.prismUser.coins, 0);
     expect(service.lastClaimNotifier.value, isNull);
     expect(service.streakNotifier.value.active, isFalse);
+  });
+
+  test('claim response is rejected when the captured user object changes account in place', () async {
+    final response = Completer<dynamic>();
+    backend.onCall = (_, _) => response.future;
+    final user = app_state.prismUser;
+    final claim = service.claimDailyLoginAndStreakIfEligible();
+    user.id = '${backend.userId}-other';
+    user.coins = 9;
+    response.complete(CoinsTestBackend.claimPayload);
+    await claim;
+    expect(user.coins, 9);
+    expect(service.lastClaimNotifier.value, isNull);
+  });
+
+  test('claim response survives a profile replacement for the same account', () async {
+    final response = Completer<dynamic>();
+    backend.onCall = (_, _) => response.future;
+    final claim = service.claimDailyLoginAndStreakIfEligible();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true;
+    response.complete(CoinsTestBackend.claimPayload);
+    await claim;
+    expect(service.pendingClaimForCurrentUser, isNotNull);
+  });
+
+  test('claim failure does not refresh streak after the account changes in place', () async {
+    final firestore = CoinsTestFirestore()
+      ..userData = <String, dynamic>{
+        'coinState': <String, Object>{'streakDay': 5, 'streakCount': 5, 'lastDailyClaimDate': '2026-09-30'},
+      };
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'unavailable', message: 'offline');
+    final user = app_state.prismUser;
+    final claim = service.claimDailyLoginAndStreakIfEligible();
+    user.id = '${backend.userId}-other';
+    user.coins = 9;
+    await claim;
+    expect(service.streakNotifier.value.count, 0);
+    expect(user.coins, 9);
+    expect(firestore.getByIdCalls, 0);
+  });
+
+  test('pending claim getter clears claims for an empty guest id', () async {
+    await service.claimDailyLoginAndStreakIfEligible();
+    expect(service.pendingClaimForCurrentUser, isNotNull);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = '${backend.userId}-other'
+      ..loggedIn = true;
+    expect(service.pendingClaimForCurrentUser, isNull);
+    app_state.prismUser = app_constants.createGuestPrismUser()..loggedIn = true;
+    expect(service.pendingClaimForCurrentUser, isNull);
+  });
+
+  test('claim sheet dedupe is retained per user and day when accounts alternate', () async {
+    backend.onCall = (_, _) async => <String, Object>{
+      'claimed': true,
+      'streakDay': 3,
+      'dailyReward': 8,
+      'totalReward': 8,
+      'newBalance': 108,
+      'todayLocalKey': '2026-09-30',
+    };
+    await service.claimDailyLoginAndStreakIfEligible();
+    service.consumeLastClaim();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = '${backend.userId}-other'
+      ..loggedIn = true;
+    await service.claimDailyLoginAndStreakIfEligible();
+    service.consumeLastClaim();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true;
+    await service.claimDailyLoginAndStreakIfEligible();
+    expect(service.lastClaimNotifier.value, isNull);
+  });
+
+  test('pending claim survives sign-out and sign-in to the same account', () async {
+    await service.claimDailyLoginAndStreakIfEligible();
+    expect(service.lastClaimNotifier.value, isNotNull);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true;
+    expect(service.pendingClaimForCurrentUser, isNotNull);
   });
 
   test('freeze retries replay the same request after a lost response', () async {
@@ -86,13 +176,80 @@ void main() {
     final purchase = service.buyStreakFreeze();
     await Future<void>.delayed(Duration.zero);
     app_state.prismUser = app_constants.createGuestPrismUser()
-      ..id = 'user-2'
+      ..id = '${backend.userId}-other'
       ..loggedIn = true
       ..coins = 9;
     response.complete(<String, Object>{'success': true, 'currentBalance': 50, 'delta': -50, 'streakFreezes': 1});
     await purchase;
     expect(app_state.prismUser.coins, 9);
     expect(service.streakNotifier.value.freezes, 0);
+  });
+
+  test('freeze response is rejected when the captured user object changes account in place', () async {
+    final response = Completer<dynamic>();
+    backend.onCall = (_, _) => response.future;
+    final user = app_state.prismUser;
+    final purchase = service.buyStreakFreeze();
+    await Future<void>.delayed(Duration.zero);
+    user.id = '${backend.userId}-other';
+    user.coins = 9;
+    response.complete(<String, Object>{'success': true, 'currentBalance': 50, 'delta': -50, 'streakFreezes': 1});
+    await purchase;
+    expect(user.coins, 9);
+    expect(service.streakNotifier.value.freezes, 0);
+  });
+
+  test('freeze response survives a profile replacement for the same account', () async {
+    final response = Completer<dynamic>();
+    backend.onCall = (_, _) => response.future;
+    final purchase = service.buyStreakFreeze();
+    await Future<void>.delayed(Duration.zero);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true
+      ..coins = 100;
+    response.complete(<String, Object>{'success': true, 'currentBalance': 50, 'delta': -50, 'streakFreezes': 1});
+    await purchase;
+    expect(app_state.prismUser.coins, 50);
+    expect(service.streakNotifier.value.freezes, 1);
+  });
+
+  test('freeze request persisted during an account switch is not sent', () async {
+    var calls = 0;
+    backend.onCall = (_, _) async {
+      calls++;
+      return <String, Object>{'success': true, 'currentBalance': 50, 'delta': -50, 'streakFreezes': 1};
+    };
+    final user = app_state.prismUser;
+    final purchase = service.buyStreakFreeze();
+    user.id = '${backend.userId}-other';
+    user.coins = 9;
+    final result = await purchase;
+    expect(result.message, 'session_changed');
+    expect(calls, 0);
+    expect(app_state.prismUser.coins, 9);
+  });
+
+  test('freeze pending request is not replayed for a different account', () async {
+    final settings = getIt<SettingsLocalDataSource>();
+    final requestIds = <String>[];
+    backend.onCall = (_, parameters) async {
+      requestIds.add(parameters['requestId'] as String);
+      if (requestIds.length == 1) {
+        throw FirebaseFunctionsException(code: 'unavailable', message: 'lost reply');
+      }
+      return <String, Object>{'success': true, 'currentBalance': 50, 'delta': -50, 'streakFreezes': 1};
+    };
+    await service.buyStreakFreeze();
+    expect(settings.get<String>('pendingStreakFreezeRequest.${backend.userId}'), requestIds.single);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = '${backend.userId}-other'
+      ..loggedIn = true
+      ..coins = 9;
+    await service.buyStreakFreeze();
+    expect(requestIds, hasLength(2));
+    expect(requestIds[1], isNot(requestIds[0]));
+    expect(settings.get<String>('pendingStreakFreezeRequest.${backend.userId}'), requestIds[0]);
   });
 
   test('zero-count legacy documents preserve their cycle streak', () async {
@@ -130,7 +287,7 @@ void main() {
     await service.buyStreakFreeze();
     final settings = getIt<SettingsLocalDataSource>();
     expect(settings.get<String>('pendingStreakFreezeRequest.${backend.userId}'), firstRequest);
-    app_state.prismUser.id = 'user-2';
+    app_state.prismUser.id = '${backend.userId}-other';
     backend.onCall = (_, _) async => throw FirebaseFunctionsException(code: 'not-found', message: 'missing');
     await service.buyStreakFreeze();
     app_state.prismUser.id = backend.userId;
@@ -204,12 +361,12 @@ void main() {
       final response = Completer<Map<String, dynamic>>();
       firestore.userResponse = response.future;
       app_state.prismUser = app_constants.createGuestPrismUser()
-        ..id = 'user-1'
+        ..id = '${backend.userId}-source'
         ..loggedIn = true
         ..coins = 100;
       final pending = refresh();
       app_state.prismUser = app_constants.createGuestPrismUser()
-        ..id = 'user-2'
+        ..id = '${backend.userId}-other'
         ..loggedIn = true
         ..coins = 9;
       response.complete(<String, dynamic>{
@@ -221,6 +378,256 @@ void main() {
       expect(service.earnFlagsNotifier.value, CoinEarnFlags.empty);
       expect(service.streakNotifier.value.count, 0);
     }
+  });
+
+  test('delayed refreshes reject an account change made on the captured user object', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    for (final refresh in <Future<Object?> Function()>[
+      service.bootstrapForCurrentUser,
+      service.refreshBalance,
+      service.refreshStreakStatus,
+    ]) {
+      final response = Completer<Map<String, dynamic>>();
+      firestore.userResponse = response.future;
+      final user = app_state.prismUser;
+      user.id = backend.userId;
+      user.loggedIn = true;
+      user.coins = 100;
+      service.streakNotifier.value = StreakStatus.empty;
+      service.earnFlagsNotifier.value = CoinEarnFlags.empty;
+      final pending = refresh();
+      user.id = '${backend.userId}-other';
+      user.coins = 9;
+      response.complete(<String, dynamic>{
+        'coins': 500,
+        'coinState': <String, Object>{'streakDay': 5, 'profileCompletionRewarded': true},
+      });
+      await pending;
+      expect(user.coins, 9);
+      expect(service.earnFlagsNotifier.value, CoinEarnFlags.empty);
+      expect(service.streakNotifier.value.count, 0);
+    }
+  });
+
+  test('all profile refreshes survive replacement by the same account', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final now = DateTime.now().toUtc();
+    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    var refreshIndex = 0;
+    for (final refresh in <Future<Object?> Function()>[
+      service.bootstrapForCurrentUser,
+      service.refreshBalance,
+      service.refreshStreakStatus,
+    ]) {
+      final response = Completer<Map<String, dynamic>>();
+      firestore.userResponse = response.future;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = backend.userId
+        ..loggedIn = true
+        ..coins = 100;
+      service.streakNotifier.value = StreakStatus.empty;
+      final pending = refresh();
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = backend.userId
+        ..loggedIn = true
+        ..coins = 100;
+      response.complete(<String, dynamic>{
+        'coins': 500,
+        'coinState': <String, Object>{
+          'streakDay': 5,
+          'streakCount': 5,
+          'lastDailyClaimDate': today,
+          'streakTimezoneOffsetMinutes': 0,
+          'firstWallpaperUploadRewarded': true,
+        },
+      });
+      await pending;
+      expect(app_state.prismUser.coins, refreshIndex < 2 ? 500 : 100);
+      expect(service.streakNotifier.value.count, 5);
+      expect(service.earnFlagsNotifier.value.firstUploadRewarded, isTrue);
+      refreshIndex++;
+    }
+  });
+
+  test('empty guest ids block every account-scoped coin request', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    var callableCount = 0;
+    backend.onCall = (_, _) async {
+      callableCount++;
+      return <String, Object>{'success': true, 'changed': true, 'currentBalance': 500, 'delta': 400};
+    };
+    app_state.prismUser = app_constants.createGuestPrismUser()..loggedIn = true;
+    final calls = <Future<dynamic> Function()>[
+      service.bootstrapForCurrentUser,
+      service.refreshBalance,
+      service.refreshStreakStatus,
+      service.claimDailyLoginAndStreakIfEligible,
+      service.buyStreakFreeze,
+      () => service.award(CoinEarnAction.dailyLogin),
+      () => service.spend(CoinSpendAction.wallpaperDownload),
+      service.maybeAwardFirstWallpaperUpload,
+    ];
+    for (final call in calls) {
+      await call();
+    }
+    expect(firestore.getByIdCalls, 0);
+    expect(callableCount, 0);
+    expect(app_state.prismUser.coins, 0);
+  });
+
+  test('award response is rejected after sign-out or account switch', () async {
+    for (final nextUser in <bool>[false, true]) {
+      final response = Completer<dynamic>();
+      backend.onCall = (_, _) => response.future;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = backend.userId
+        ..loggedIn = true
+        ..coins = 100;
+      final award = service.award(CoinEarnAction.dailyLogin);
+      if (nextUser) {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = '${backend.userId}-other'
+          ..loggedIn = true
+          ..coins = 9;
+      } else {
+        app_state.prismUser = app_constants.createGuestPrismUser();
+      }
+      response.complete(<String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 100,
+        'currentBalance': 500,
+        'delta': 400,
+      });
+      await award;
+      expect(app_state.prismUser.coins, nextUser ? 9 : 0);
+    }
+  });
+
+  test('award response survives a profile replacement for the same account', () async {
+    final response = Completer<dynamic>();
+    backend.onCall = (_, _) => response.future;
+    final award = service.award(CoinEarnAction.dailyLogin);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true
+      ..coins = 100;
+    response.complete(<String, Object>{
+      'success': true,
+      'changed': true,
+      'previousBalance': 100,
+      'currentBalance': 108,
+      'delta': 8,
+    });
+    await award;
+    expect(app_state.prismUser.coins, 108);
+  });
+
+  test('fixed award response cannot set earn flags after an account switch', () async {
+    final response = Completer<dynamic>();
+    backend.onCall = (_, _) => response.future;
+    final user = app_state.prismUser;
+    final award = service.maybeAwardFirstWallpaperUpload();
+    user.id = '${backend.userId}-other';
+    user.coins = 9;
+    response.complete(<String, Object>{
+      'success': true,
+      'changed': true,
+      'previousBalance': 100,
+      'currentBalance': 500,
+      'delta': 400,
+    });
+    await award;
+    expect(user.coins, 9);
+    expect(service.earnFlagsNotifier.value.firstUploadRewarded, isFalse);
+  });
+
+  test('fresh backend installs use distinct ids for claim dedupe isolation', () async {
+    final firstUserId = backend.userId;
+    await service.claimDailyLoginAndStreakIfEligible();
+    service.consumeLastClaim();
+    await backend.install();
+    expect(backend.userId, isNot(firstUserId));
+    await service.claimDailyLoginAndStreakIfEligible();
+    expect(service.lastClaimNotifier.value, isNotNull);
+  });
+
+  test('spend and refund responses are rejected after an account switch', () async {
+    for (final mutate in <Future<dynamic> Function()>[
+      () => service.spend(CoinSpendAction.wallpaperDownload),
+      () => service.reserveForAiGeneration(qualityTier: AiQualityTier.fast),
+      () => service.refundSpend(
+        CoinSpendAction.wallpaperDownload,
+        sourceTag: 'test.refund',
+        transactionId: 'prior-transaction',
+      ),
+    ]) {
+      final response = Completer<dynamic>();
+      backend.onCall = (_, _) => response.future;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = backend.userId
+        ..loggedIn = true
+        ..coins = 100;
+      final mutation = mutate();
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = '${backend.userId}-other'
+        ..loggedIn = true
+        ..coins = 9;
+      response.complete(<String, Object>{
+        'success': true,
+        'changed': true,
+        'previousBalance': 100,
+        'currentBalance': 500,
+        'delta': 400,
+      });
+      await mutation;
+      expect(app_state.prismUser.coins, 9);
+    }
+  });
+
+  test('premium preview unlock stops if the account changes during its access check', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final response = Completer<Map<String, dynamic>>();
+    firestore.userResponse = response.future;
+    var callableCount = 0;
+    backend.onCall = (_, _) async {
+      callableCount++;
+      return <String, Object>{'success': true, 'changed': false, 'currentBalance': 500, 'delta': 0};
+    };
+    final unlock = service.unlockPremiumPreview24hForCollection(collectionKey: 'featured');
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = '${backend.userId}-other'
+      ..loggedIn = true
+      ..coins = 9;
+    response.complete(<String, dynamic>{'coins': 100, 'coinState': <String, Object>{}});
+    await unlock;
+    expect(callableCount, 0);
+    expect(app_state.prismUser.coins, 9);
+  });
+
+  test('premium preview unlock continues after a same-account profile replacement', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final response = Completer<Map<String, dynamic>>();
+    firestore.userResponse = response.future;
+    var callableCount = 0;
+    backend.onCall = (_, _) async {
+      callableCount++;
+      return <String, Object>{'success': false, 'changed': false, 'currentBalance': 100, 'delta': 0};
+    };
+    final unlock = service.unlockPremiumPreview24hForCollection(collectionKey: 'featured');
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = backend.userId
+      ..loggedIn = true
+      ..coins = 100;
+    response.complete(<String, dynamic>{'coins': 100, 'coinState': <String, Object>{}});
+    await unlock;
+    expect(callableCount, 1);
+    expect(app_state.prismUser.coins, 100);
   });
 
   test('a profile reload for the same account keeps the refresh', () async {
