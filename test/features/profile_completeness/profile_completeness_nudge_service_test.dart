@@ -1,47 +1,11 @@
-import 'package:Prism/auth/badge_model.dart';
-import 'package:Prism/auth/transaction_model.dart';
-import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/profile_completeness/services/profile_completeness_nudge_service.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_nudge_sheet.dart';
-import 'package:flutter/material.dart' hide Badge;
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const String _defaultPhotoUrl =
-    'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
-
-PrismUsersV2 _user({
-  required String id,
-  required bool loggedIn,
-  bool premium = false,
-  String profilePhoto = _defaultPhotoUrl,
-  String username = '',
-  String bio = '',
-  Map<String, String>? links,
-}) {
-  final String now = DateTime.now().toUtc().toIso8601String();
-  return PrismUsersV2(
-    username: username,
-    email: 'user@example.com',
-    id: id,
-    createdAt: now,
-    premium: premium,
-    lastLoginAt: now,
-    links: links ?? const <String, String>{},
-    followers: const <String>[],
-    following: const <String>[],
-    profilePhoto: profilePhoto,
-    bio: bio,
-    loggedIn: loggedIn,
-    badges: <Badge>[],
-    subPrisms: const <String>[],
-    coins: 0,
-    transactions: <PrismTransaction>[],
-    name: '',
-    coverPhoto: '',
-  );
-}
+import '../../support/profile_user_fixture.dart';
 
 Future<BuildContext> _pumpContext(WidgetTester tester) async {
   late BuildContext captured;
@@ -58,133 +22,95 @@ Future<BuildContext> _pumpContext(WidgetTester tester) async {
   return captured;
 }
 
-void main() {
-  testWidgets('does not show modal for logged-out users', (tester) async {
-    app_state.prismUser = _user(id: 'logged_out_user', loggedIn: false);
-
-    int launchCount = 0;
-    final Map<String, dynamic> prefs = <String, dynamic>{};
-
-    final service = ProfileCompletenessNudgeService(
-      isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
+class _Harness {
+  _Harness({this.answer = ProfileCompletenessNudgeAction.notNow}) {
+    service = ProfileCompletenessNudgeService(
+      readPrefValue: (key, {defaultValue = false}) => prefs[key] ?? defaultValue,
       writePrefValue: (key, value) async => prefs[key] = value,
+      trackEvent: (event) async => events.add(event),
       sheetLauncher: (context, {required status}) async {
         launchCount += 1;
-        return ProfileCompletenessNudgeAction.notNow;
+        return answer;
       },
+      openEditProfile: (context) async => editOpened = true,
     );
+  }
 
-    final context = await _pumpContext(tester);
-    await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
+  final ProfileCompletenessNudgeAction answer;
+  final Map<String, bool> prefs = <String, bool>{};
+  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
+  int launchCount = 0;
+  bool editOpened = false;
+  late final ProfileCompletenessNudgeService service;
+}
 
-    expect(launchCount, 0);
+void main() {
+  testWidgets('does not show modal for logged-out users', (tester) async {
+    app_state.prismUser = profileUser(id: 'logged_out_user', loggedIn: false, premium: true);
+    final harness = _Harness();
+
+    await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
+
+    expect(harness.launchCount, 0);
+    expect(harness.events, isEmpty);
+  });
+
+  testWidgets('does not show modal for non-premium users', (tester) async {
+    app_state.prismUser = profileUser(id: 'free_user', username: 'creator_01');
+    final harness = _Harness();
+
+    await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
+
+    expect(harness.launchCount, 0);
   });
 
   testWidgets('does not show modal for already complete users', (tester) async {
-    app_state.prismUser = _user(
+    app_state.prismUser = profileUser(
       id: 'complete_user',
-      loggedIn: true,
+      premium: true,
       profilePhoto: 'https://example.com/photo.png',
       username: 'creator_01',
       bio: 'hello',
       links: const <String, String>{'github': 'https://github.com/creator'},
     );
+    final harness = _Harness();
 
-    int launchCount = 0;
-    final Map<String, dynamic> prefs = <String, dynamic>{};
+    await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
 
-    final service = ProfileCompletenessNudgeService(
-      isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
-      writePrefValue: (key, value) async => prefs[key] = value,
-      sheetLauncher: (context, {required status}) async {
-        launchCount += 1;
-        return ProfileCompletenessNudgeAction.notNow;
-      },
-    );
-
-    final context = await _pumpContext(tester);
-    await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
-
-    expect(launchCount, 0);
+    expect(harness.launchCount, 0);
   });
 
   testWidgets('shows once per user and persists shown flag', (tester) async {
-    app_state.prismUser = _user(id: 'incomplete_user', loggedIn: true, premium: true, username: 'creator_01');
-
-    int launchCount = 0;
-    final Map<String, dynamic> prefs = <String, dynamic>{};
-
-    final service = ProfileCompletenessNudgeService(
-      isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
-      writePrefValue: (key, value) async => prefs[key] = value,
-      sheetLauncher: (context, {required status}) async {
-        launchCount += 1;
-        return ProfileCompletenessNudgeAction.notNow;
-      },
-    );
+    app_state.prismUser = profileUser(id: 'incomplete_user', premium: true, username: 'creator_01');
+    final harness = _Harness();
 
     final context = await _pumpContext(tester);
-    await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
-    await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
+    await harness.service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
+    await harness.service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
 
-    final String key = service.shownPrefKeyForUser(app_state.prismUser.id);
-    expect(launchCount, 1);
-    expect(prefs[key], isTrue);
+    expect(harness.launchCount, 1);
+    expect(harness.prefs[harness.service.shownPrefKeyForUser('incomplete_user')], isTrue);
   });
 
-  testWidgets('incomplete users can be shown from onboarding and dashboard triggers', (tester) async {
-    final Map<String, dynamic> prefs = <String, dynamic>{};
-    final List<AnalyticsEvent> trackedEvents = <AnalyticsEvent>[];
-    int launchCount = 0;
+  testWidgets('tracks the view and the tapped action', (tester) async {
+    app_state.prismUser = profileUser(id: 'tracked_user', premium: true, username: 'creator_01');
+    final harness = _Harness();
 
-    final service = ProfileCompletenessNudgeService(
-      isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
-      writePrefValue: (key, value) async => prefs[key] = value,
-      trackEvent: (event) async => trackedEvents.add(event),
-      sheetLauncher: (context, {required status}) async {
-        launchCount += 1;
-        return ProfileCompletenessNudgeAction.notNow;
-      },
-    );
+    await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
 
-    final context = await _pumpContext(tester);
-
-    app_state.prismUser = _user(id: 'onboarding_user', loggedIn: true, premium: true, username: 'u1');
-    await service.maybeShowNudge(context, sourceContext: 'onboarding_done');
-
-    app_state.prismUser = _user(id: 'dashboard_user', loggedIn: true, premium: true, username: 'u2');
-    await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
-
-    expect(launchCount, 2);
-    expect(
-      trackedEvents.whereType<ProfileCompletenessNudgeViewedEvent>().map((e) => e.sourceContext),
-      containsAll(<String>['onboarding_done', 'dashboard_entry']),
-    );
+    final viewed = harness.events.whereType<ProfileCompletenessNudgeViewedEvent>().single;
+    expect((viewed.sourceContext, viewed.progressPercent, viewed.missingStepsCount), ('dashboard_entry', 25, 3));
+    final tapped = harness.events.whereType<ProfileCompletenessActionTappedEvent>().single;
+    expect((tapped.action, tapped.progressPercent), ('not_now', 25));
+    expect(harness.editOpened, isFalse);
   });
 
   testWidgets('complete-now action attempts to open edit profile route', (tester) async {
-    app_state.prismUser = _user(id: 'cta_user', loggedIn: true, premium: true, username: 'u1');
+    app_state.prismUser = profileUser(id: 'cta_user', premium: true, username: 'u1');
+    final harness = _Harness(answer: ProfileCompletenessNudgeAction.completeNow);
 
-    bool editOpened = false;
-    final Map<String, dynamic> prefs = <String, dynamic>{};
+    await harness.service.maybeShowNudge(await _pumpContext(tester), sourceContext: 'dashboard_entry');
 
-    final service = ProfileCompletenessNudgeService(
-      isPrefsOpen: () => true,
-      readPrefValue: (key, {defaultValue = false}) => prefs[key] as bool? ?? defaultValue,
-      writePrefValue: (key, value) async => prefs[key] = value,
-      sheetLauncher: (context, {required status}) async => ProfileCompletenessNudgeAction.completeNow,
-      openEditProfile: (context) async {
-        editOpened = true;
-      },
-    );
-
-    final context = await _pumpContext(tester);
-    await service.maybeShowNudge(context, sourceContext: 'dashboard_entry');
-
-    expect(editOpened, isTrue);
+    expect(harness.editOpened, isTrue);
   });
 }

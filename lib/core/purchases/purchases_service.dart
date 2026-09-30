@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -62,21 +63,26 @@ class PurchasesService {
     return androidKey.isNotEmpty ? androidKey : fallbackApiKey;
   }
 
+  Future<void> _configure(String userId) async {
+    if (kDebugMode) {
+      await Purchases.setLogLevel(LogLevel.debug);
+    }
+    final configuration = PurchasesConfiguration(_resolveApiKey());
+    if (userId.isNotEmpty) {
+      configuration.appUserID = userId;
+    }
+    await Purchases.configure(configuration);
+    _configured = true;
+    _configuredUserId = userId;
+  }
+
   /// Configures RevenueCat early in app startup (before runApp) so the singleton
-  /// is ready before any code—including RevenueCat UI internals—accesses it.
+  /// is ready before any code, including RevenueCat UI internals, accesses it.
   /// No-op if already configured or if API key is empty.
   Future<void> configureEarly() async {
-    if (_configured) return;
-    final String apiKey = _resolveApiKey();
-    if (apiKey.isEmpty) return;
+    if (_configured || _resolveApiKey().isEmpty) return;
     try {
-      if (kDebugMode) {
-        await Purchases.setLogLevel(LogLevel.debug);
-      }
-      final configuration = PurchasesConfiguration(apiKey);
-      await Purchases.configure(configuration);
-      _configured = true;
-      _configuredUserId = '';
+      await _configure('');
     } catch (error, stackTrace) {
       logger.w('RevenueCat early configure failed; will retry on first use.', error: error, stackTrace: stackTrace);
     }
@@ -86,16 +92,7 @@ class PurchasesService {
   Future<void> ensureConfigured(String userId) async {
     final targetUserId = userId.trim();
     if (!_configured) {
-      if (kDebugMode) {
-        await Purchases.setLogLevel(LogLevel.debug);
-      }
-      final configuration = PurchasesConfiguration(_resolveApiKey());
-      if (targetUserId.isNotEmpty) {
-        configuration.appUserID = targetUserId;
-      }
-      await Purchases.configure(configuration);
-      _configured = true;
-      _configuredUserId = targetUserId;
+      await _configure(targetUserId);
       return;
     }
     if (targetUserId.isNotEmpty && targetUserId != _configuredUserId) {
@@ -124,14 +121,6 @@ class PurchasesService {
       return true;
     }
     return _hasLegacyGrandfatheredAccess(key, entitlement);
-  }
-
-  bool _hasPaidAccessForKey(CustomerInfo info, String key) {
-    final entitlement = info.entitlements.all[key];
-    if (entitlement == null) {
-      return false;
-    }
-    return _hasPaidAccessForEntitlement(key, entitlement);
   }
 
   SubscriptionTier tierFromCustomerInfo(CustomerInfo info) {
@@ -165,18 +154,18 @@ class PurchasesService {
     }
     final DateTime now = DateTime.now();
     if (_lastPersistedPremium == isPremium &&
-        _lastPersistedTier == tier.value &&
+        _lastPersistedTier == tier.name &&
         _lastPersistSubscriptionTime != null &&
         now.difference(_lastPersistSubscriptionTime!) < _subscriptionPersistThrottle) {
       return;
     }
     try {
       // The server owns `premium`/`subscriptionTier`; it derives them itself, so this callable takes no payload.
-      await FirebaseFunctions.instanceFor(region: 'asia-south1')
+      await appFunctions
           .httpsCallable('syncSubscription', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)))
           .call<dynamic>();
       _lastPersistedPremium = isPremium;
-      _lastPersistedTier = tier.value;
+      _lastPersistedTier = tier.name;
       _lastPersistSubscriptionTime = now;
     } catch (error, stackTrace) {
       logger.w('Unable to persist subscription state to Firestore.', error: error, stackTrace: stackTrace);
@@ -184,7 +173,7 @@ class PurchasesService {
   }
 
   Future<void> _syncAnalyticsSubscriptionState({required bool isPremium, required SubscriptionTier tier}) async {
-    await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: tier.value);
+    await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: tier.name);
     await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: isPremium ? '1' : '0');
   }
 
@@ -207,7 +196,7 @@ class PurchasesService {
         source: context.source,
         productId: context.productId ?? 'unknown_product',
         packageType: context.packageType ?? 'unknown_package',
-        subscriptionTier: context.subscriptionTier ?? tier.value,
+        subscriptionTier: context.subscriptionTier ?? tier.name,
         price: context.price ?? 0,
         currency: context.currency ?? 'unknown_currency',
       ),
@@ -231,7 +220,7 @@ class PurchasesService {
       final bool isPremium = tier.isPaid;
 
       app_state.prismUser.premium = isPremium;
-      app_state.prismUser.subscriptionTier = tier.value;
+      app_state.prismUser.subscriptionTier = tier.name;
       app_state.persistPrismUser();
       await _persistSubscriptionStateToFirestore(isPremium: isPremium, tier: tier);
       await _syncAnalyticsSubscriptionState(isPremium: isPremium, tier: tier);
@@ -241,7 +230,7 @@ class PurchasesService {
       analytics.track(
         SubscriptionEntitlementRefreshEvent(
           result: SubscriptionEntitlementRefreshResultValue.success,
-          subscriptionTier: tier.value,
+          subscriptionTier: tier.name,
           isPremium: isPremium ? 1 : 0,
           activeEntitlements: info.entitlements.active.keys.join(','),
         ),
@@ -261,11 +250,6 @@ class PurchasesService {
       logger.d('checkAndPersistPremium failed: $e');
       return app_state.prismUser.premium;
     }
-  }
-
-  Future<CustomerInfo> purchase(Package package) async {
-    final result = await Purchases.purchase(PurchaseParams.package(package));
-    return result.customerInfo;
   }
 
   /// Restores store purchases and applies them to this account. Returns whether premium is now active.
@@ -313,9 +297,4 @@ class PurchasesService {
       rethrow;
     }
   }
-
-  /// Returns true if [info] grants premium access (prism_premium or prism_ultra).
-  bool isPremiumFromCustomerInfo(CustomerInfo info) => tierFromCustomerInfo(info).isPaid;
-
-  bool hasPaidEntitlement(CustomerInfo info, String key) => _hasPaidAccessForKey(info, key);
 }

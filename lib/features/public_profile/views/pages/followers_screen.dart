@@ -1,3 +1,4 @@
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_relation_list_body.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';

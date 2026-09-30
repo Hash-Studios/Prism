@@ -1,22 +1,19 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
-import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
+import 'package:Prism/env/env.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
-import 'package:Prism/notifications/topic_subscription.dart';
-import 'package:Prism/env/env.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// Thrown when the user selects a different Google account during re-authentication.
@@ -29,18 +26,9 @@ class WrongAccountException implements Exception {
 }
 
 class GoogleAuth {
-  static const String signInCancelledResult = 'signInWithGoogle canceled';
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn googleSignIn = GoogleSignIn.instance;
   bool _googleSignInInitialized = false;
-
-  String? name;
-  String? email;
-  String? imageUrl;
-  String errorMsg = "";
-  bool isLoggedIn = false;
-  bool isLoading = false;
 
   Future<void> _ensureGoogleSignInInitialized() async {
     if (_googleSignInInitialized) {
@@ -50,8 +38,7 @@ class GoogleAuth {
     _googleSignInInitialized = true;
   }
 
-  Future<String> signInWithGoogle() async {
-    isLoading = true;
+  Future<SignInOutcome> signInWithGoogle() async {
     logger.i('signInWithGoogle start', tag: 'GoogleAuth');
     try {
       await _ensureGoogleSignInInitialized();
@@ -75,78 +62,13 @@ class GoogleAuth {
       if (resolvedEmail.isEmpty) {
         throw StateError('Google sign-in returned user without email.');
       }
-      name = resolvedDisplayName;
-      email = resolvedEmail;
-
-      final Map<String, dynamic>? usersData = await getUsersData(user);
-      // User exists in database. Simply sign him in.
-      if (usersData != null) {
-        final doc = usersData;
-        app_state.prismUser = PrismUsersV2.fromMapWithUser(doc, user);
-        firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
-          'lastLoginAt': DateTime.now().toUtc().toIso8601String(),
-          'loggedIn': true,
-        }, sourceTag: 'auth.signin.update_last_login_existing');
-        logger.d('Existing user found, updating last login');
-      }
-      // User exists in none. Create new data in new db and sign him in.
-      else {
-        app_state.prismUser = PrismUsersV2(
-          name: resolvedDisplayName,
-          bio: "",
-          createdAt: DateTime.now().toUtc().toIso8601String(),
-          email: resolvedEmail,
-          username: sanitizeUsername(resolvedDisplayName),
-          followers: [],
-          following: [],
-          id: user.uid,
-          lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-          links: {},
-          premium: false,
-          loggedIn: true,
-          profilePhoto: resolvedPhotoUrl,
-          badges: [],
-          coins: 0,
-          subPrisms: [],
-          transactions: [],
-          coverPhoto: "",
-        );
-        firestoreClient.setDoc(
-          FirebaseCollections.usersV2,
-          app_state.prismUser.id,
-          app_state.prismUser.toJson(),
-          sourceTag: 'auth.signin.create_user',
-        );
-        logger.d('Creating new user record');
-      }
-
-      await app_state.persistPrismUser();
-      await analytics.setUserId(user.uid);
-      await analytics.setUserProperty(
-        name: AnalyticsUserProperty.subscriptionTier.wireName,
-        value: app_state.prismUser.subscriptionTier,
+      await completeSignIn(
+        user: user,
+        displayName: resolvedDisplayName,
+        email: resolvedEmail,
+        photoUrl: resolvedPhotoUrl,
+        sourceTagPrefix: 'auth.signin',
       );
-      await analytics.setUserProperty(
-        name: AnalyticsUserProperty.isPremium.wireName,
-        value: app_state.prismUser.premium ? '1' : '0',
-      );
-      final String? followersTopic = followersTopicFromEmail(resolvedEmail);
-      final String? userTopic = userTopicFromId(user.uid);
-      if (userTopic != null) {
-        await subscribeToTopicSafely(FirebaseMessaging.instance, userTopic, sourceTag: 'auth.signin.user_topic');
-      }
-      if (followersTopic != null) {
-        await subscribeToTopicSafely(
-          FirebaseMessaging.instance,
-          followersTopic,
-          sourceTag: 'auth.signin.followers_topic',
-        );
-      }
-      unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
-      FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
-      assert(!user.isAnonymous);
-      final User? currentUser = _auth.currentUser;
-      assert(currentUser != null && user.uid == currentUser.uid);
       await analytics.track(
         const AuthLoginResultEvent(
           method: AuthMethodValue.google,
@@ -154,21 +76,7 @@ class GoogleAuth {
           sourceContext: 'google_auth',
         ),
       );
-      unawaited(() async {
-        await PurchasesService.instance.checkAndPersistPremium();
-        await CoinsService.instance.bootstrapForCurrentUser();
-        await CoinsService.instance.refreshBalance();
-        await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
-        await CoinsService.instance.maybeAwardProDailyBonus();
-        await CoinsService.instance.processPendingReferralIfEligible();
-      }());
-      await syncSentryUserScope(
-        loggedIn: app_state.prismUser.loggedIn,
-        id: app_state.prismUser.id,
-        email: app_state.prismUser.email,
-        username: app_state.prismUser.username,
-      );
-      return 'signInWithGoogle succeeded: $user';
+      return SignInOutcome.signedIn;
     } catch (e, st) {
       if (_isSignInCancelled(e)) {
         await analytics.track(
@@ -180,7 +88,7 @@ class GoogleAuth {
           ),
         );
         logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
-        return signInCancelledResult;
+        return SignInOutcome.cancelled;
       }
       await analytics.track(
         const AuthLoginResultEvent(
@@ -192,8 +100,6 @@ class GoogleAuth {
       );
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
       rethrow;
-    } finally {
-      isLoading = false;
     }
   }
 
@@ -223,26 +129,7 @@ class GoogleAuth {
         stackTrace: st,
       );
     }
-    app_state.prismUser = PrismUsersV2(
-      name: "",
-      bio: "",
-      createdAt: DateTime.now().toUtc().toIso8601String(),
-      email: "",
-      username: "",
-      followers: [],
-      following: [],
-      id: "",
-      lastLoginAt: DateTime.now().toUtc().toIso8601String(),
-      links: {},
-      premium: false,
-      loggedIn: false,
-      profilePhoto: app_state.defaultProfilePhotoUrl,
-      badges: [],
-      coins: 0,
-      subPrisms: [],
-      transactions: [],
-      coverPhoto: "",
-    );
+    app_state.prismUser = createGuestPrismUser();
     // isSignedIn() reads FirebaseAuth.currentUser directly, so it must actually be cleared
     // here too. Used for Apple-signed-in users as well, not just Google.
     try {
@@ -316,29 +203,6 @@ class GoogleAuth {
       logger.e('Failed to check sign-in status', error: e, stackTrace: st);
       return false;
     }
-  }
-
-  Future<Map<String, dynamic>?> getUsersData(User? user) async {
-    if (user == null) {
-      return null;
-    }
-    final rows = await firestoreClient.query<Map<String, dynamic>>(
-      FirestoreQuerySpec(
-        collection: FirebaseCollections.usersV2,
-        sourceTag: 'auth.get_user_new',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'id', op: FirestoreFilterOp.isEqualTo, value: user.uid)],
-        limit: 1,
-      ),
-      (data, docId) => <String, dynamic>{...data, '__docId': docId},
-    );
-    if (rows.isEmpty) {
-      return null;
-    }
-    final String docId = rows.first['__docId']?.toString() ?? '';
-    if (docId.isEmpty) {
-      return null;
-    }
-    return rows.first;
   }
 
   String _resolvedDisplayName(User user) {

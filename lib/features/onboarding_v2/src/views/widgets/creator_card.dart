@@ -1,21 +1,22 @@
+import 'package:Prism/core/utils/format_utils.dart';
+import 'package:Prism/features/onboarding_v2/src/domain/entities/onboarding_starter_creator_entity.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
-import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_creator_vm.j.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class CreatorCard extends StatelessWidget {
-  const CreatorCard({super.key, required this.creator, required this.onToggle});
+  const CreatorCard({super.key, required this.creator, required this.isSelected, required this.onToggle});
 
-  final OnboardingCreatorVm? creator;
-  final VoidCallback? onToggle;
+  final OnboardingStarterCreatorEntity creator;
+  final bool isSelected;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
     const cardRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
     const innerRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
     final accent = Theme.of(context).colorScheme.primary;
-    final isSelected = creator?.isSelected ?? false;
 
     return AnimatedContainer(
       duration: OnboardingMotion.short,
@@ -29,16 +30,14 @@ class CreatorCard extends StatelessWidget {
         color: OnboardingColors.transparent,
         borderRadius: cardRadius,
         child: InkWell(
-          onTap: onToggle == null
-              ? null
-              : () {
-                  HapticFeedback.lightImpact();
-                  onToggle!();
-                },
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onToggle();
+          },
           borderRadius: cardRadius,
           child: ClipRRect(
             borderRadius: isSelected ? innerRadius : cardRadius,
-            child: creator == null ? const SizedBox.shrink() : _CardContent(creator: creator!, accent: accent),
+            child: _CardContent(creator: creator, isSelected: isSelected, accent: accent),
           ),
         ),
       ),
@@ -47,16 +46,11 @@ class CreatorCard extends StatelessWidget {
 }
 
 class _CardContent extends StatelessWidget {
-  const _CardContent({required this.creator, required this.accent});
+  const _CardContent({required this.creator, required this.isSelected, required this.accent});
 
-  final OnboardingCreatorVm creator;
+  final OnboardingStarterCreatorEntity creator;
+  final bool isSelected;
   final Color accent;
-
-  static String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return count.toString();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +59,10 @@ class _CardContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Top row: avatar + info + follow button ──
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
           child: Row(
             children: [
-              // Avatar
               CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.white.withValues(alpha: 0.15),
@@ -89,7 +81,6 @@ class _CardContent extends StatelessWidget {
               ),
               const SizedBox(width: 10),
 
-              // Name + followers
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +99,7 @@ class _CardContent extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     Text(
-                      '${_formatCount(creator.followerCount)} followers',
+                      '${formatCompactCount(creator.followerCount)} followers',
                       style: TextStyle(
                         fontFamily: OnboardingTypography.sans,
                         color: Colors.white.withValues(alpha: 0.55),
@@ -120,13 +111,11 @@ class _CardContent extends StatelessWidget {
               ),
               const SizedBox(width: 8),
 
-              // Follow / Following button
-              _FollowButton(isSelected: creator.isSelected, accent: accent),
+              _FollowButton(isSelected: isSelected, accent: accent),
             ],
           ),
         ),
 
-        // ── Bottom row: 3 preview wallpapers ──
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(6, 0, 12, 12),

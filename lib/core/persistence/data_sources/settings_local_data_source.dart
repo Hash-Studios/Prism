@@ -34,8 +34,4 @@ class SettingsLocalDataSource {
   Future<void> delete(String key) {
     return _store.delete(PersistenceKeys.settings(key));
   }
-
-  Future<void> clearAllSettings() {
-    return _store.clearPrefix(PersistenceKeys.settingsPrefix);
-  }
 }

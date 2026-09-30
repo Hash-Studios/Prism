@@ -1,42 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-void success(String msg) {
+void _show(String msg, Color background, {ToastGravity gravity = ToastGravity.BOTTOM, Color textColor = Colors.white}) {
   Fluttertoast.showToast(
     msg: msg,
     toastLength: Toast.LENGTH_LONG,
-    gravity: ToastGravity.BOTTOM,
-    textColor: Colors.white,
-    backgroundColor: Colors.green[600],
+    gravity: gravity,
+    textColor: textColor,
+    backgroundColor: background,
   );
 }
 
-void codeSend(String msg) {
-  Fluttertoast.showToast(
-    msg: msg,
-    toastLength: Toast.LENGTH_LONG,
-    gravity: ToastGravity.BOTTOM,
-    textColor: Colors.white,
-    backgroundColor: Colors.green[400],
-  );
-}
+void success(String msg) => _show(msg, Colors.green[400]!);
 
-void error(String msg) {
-  Fluttertoast.showToast(
-    msg: msg,
-    toastLength: Toast.LENGTH_LONG,
-    gravity: ToastGravity.BOTTOM,
-    textColor: Colors.white,
-    backgroundColor: Colors.red[400],
-  );
-}
+void error(String msg) => _show(msg, Colors.red[400]!);
 
-void color(Color color) {
-  Fluttertoast.showToast(
-    msg: "Color code copied to clipboard",
-    toastLength: Toast.LENGTH_LONG,
-    gravity: ToastGravity.CENTER,
-    textColor: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
-    backgroundColor: color,
-  );
-}
+void color(Color color) => _show(
+  'Color code copied to clipboard',
+  color,
+  gravity: ToastGravity.CENTER,
+  textColor: color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+);

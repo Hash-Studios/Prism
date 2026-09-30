@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
@@ -36,10 +37,8 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       _hasMore = true;
     }
 
-    logger.d('[PrismWallpaperRepository] fetchFeed', fields: <String, Object?>{'refresh': refresh});
-
     try {
-      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final List<_PrismRow> traversedRows = <_PrismRow>[];
       final List<PrismWallpaper> visibleWalls = <PrismWallpaper>[];
       String? nextCursor = refresh ? null : _lastDocId;
@@ -59,7 +58,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
             dedupeWindowMs: 1000,
             cachePolicy: refresh ? FirestoreCachePolicy.networkOnly : FirestoreCachePolicy.memoryFirst,
           ),
-          (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
+          (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
         );
         if (batch.isEmpty) {
           hasMoreSourceRows = false;
@@ -126,9 +125,9 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
           limit: 50,
           dedupeWindowMs: 1000,
         ),
-        (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
+        (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
-      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       final List<PrismWallpaper> walls = rows
           .map((row) => row.doc.toDomain(docId: row.docId))
           .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
@@ -162,7 +161,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
           ],
           limit: 1,
         ),
-        (data, docId) => _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(data)),
+        (data, docId) => (docId: docId, doc: PrismWallDocDto.fromJson(data)),
       );
       if (results.isEmpty) {
         // Wall of the Day notification links carry the Firestore doc id, not the `id` field.
@@ -170,7 +169,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return byDocId.data?.review == true ? byDocId : Result.success(null);
       }
       final PrismWallpaper wall = results.first.doc.toDomain(docId: results.first.docId);
-      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       if (BlockedCreatorsFilter.hidesCreatorEmail(wall.core.authorEmail, blocked)) {
         return Result.success(null);
       }
@@ -197,7 +196,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
         return Result.success(null);
       }
       final PrismWallpaper wallpaper = PrismWallDocDto.fromJson(data).toDomain(docId: documentId);
-      final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+      final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
       if (BlockedCreatorsFilter.hidesCreatorEmail(wallpaper.core.authorEmail, blocked)) {
         return Result.success(null);
       }
@@ -225,28 +224,18 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
 
   Future<List<PrismWallpaper>?> _readCached() async {
     final snapshot = await _feedCacheLocal.read(source: 'prism', scope: 'main');
-    if (snapshot == null || snapshot.payload is! Map) {
-      return null;
-    }
-
-    final payload = _asMap(snapshot.payload);
-    final rows = payload['rows'];
-    if (rows is! List) {
-      return null;
-    }
-
-    final mappedRows = rows
-        .whereType<Map>()
-        .map(_asMap)
+    final payload = toJsonMap(snapshot?.payload);
+    final mappedRows = ((payload['rows'] as List?) ?? const <Object?>[])
+        .map(toJsonMap)
         .map((entry) {
-          final doc = _asMap(entry['doc']);
+          final doc = toJsonMap(entry['doc']);
           final docId = entry['docId']?.toString() ?? '';
           if (docId.isEmpty || doc.isEmpty) {
             return null;
           }
-          return _PrismRow(docId: docId, doc: PrismWallDocDto.fromJson(doc));
+          return (docId: docId, doc: PrismWallDocDto.fromJson(doc));
         })
-        .whereType<_PrismRow>()
+        .nonNulls
         .toList(growable: false);
 
     if (mappedRows.isEmpty) {
@@ -259,31 +248,12 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
       _lastDocId = cachedLastDocId;
     }
 
-    final Set<String> blocked = await _blockedCreatorEmails(waitForInitialLoad: true);
+    final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
     return mappedRows
         .map((row) => row.doc.toDomain(docId: row.docId))
         .where((w) => !BlockedCreatorsFilter.hidesCreatorEmail(w.core.authorEmail, blocked))
         .toList(growable: false);
   }
-
-  Future<Set<String>> _blockedCreatorEmails({required bool waitForInitialLoad}) {
-    return _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: waitForInitialLoad);
-  }
 }
 
-Map<String, dynamic> _asMap(Object? value) {
-  if (value is Map<String, dynamic>) {
-    return value;
-  }
-  if (value is Map) {
-    return value.map<String, dynamic>((key, val) => MapEntry(key.toString(), val));
-  }
-  return <String, dynamic>{};
-}
-
-class _PrismRow {
-  const _PrismRow({required this.docId, required this.doc});
-
-  final String docId;
-  final PrismWallDocDto doc;
-}
+typedef _PrismRow = ({String docId, PrismWallDocDto doc});

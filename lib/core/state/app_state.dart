@@ -1,12 +1,9 @@
 import 'dart:async';
 
-import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/state/auth_runtime.dart';
-import 'package:Prism/core/utils/premium_wall_utils.dart' as premium_wall_utils;
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/startup/domain/entities/startup_config_entity.dart';
 import 'package:Prism/features/startup/domain/repositories/startup_repository.dart';
@@ -14,13 +11,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 export 'package:Prism/core/utils/string_extensions.dart';
 
-bool updateChecked = false;
-bool updateAvailable = false;
-Map versionInfo = <String, dynamic>{};
-bool updateAlerted = false;
-bool hasNotch = false;
 double? notchSize;
-bool tooltipShown = false;
 
 String _runtimeAppVersion = app_constants.currentAppVersion;
 String _runtimeAppVersionCode = app_constants.currentAppVersionCode;
@@ -77,14 +68,11 @@ StartupConfigEntity? get startupConfig {
 
 String get currentAppVersion => _runtimeAppVersion;
 String get currentAppVersionCode => _runtimeAppVersionCode;
-String get obsoleteAppVersion => startupConfig?.obsoleteAppVersion ?? app_constants.defaultObsoleteAppVersion;
 
 String get topImageLink => startupConfig?.topImageLink ?? app_constants.defaultTopImageLink;
 String get bannerText => startupConfig?.bannerText ?? app_constants.defaultBannerText;
 bool get bannerTextOn => startupConfig?.bannerTextOn ?? app_constants.defaultBannerTextOn;
 String get bannerURL => startupConfig?.bannerUrl ?? app_constants.defaultBannerUrl;
-
-bool get followersTab => startupConfig?.followersTab ?? true;
 
 bool get aiEnabled => startupConfig?.aiEnabled ?? app_constants.defaultAiEnabled;
 int get aiRolloutPercent => startupConfig?.aiRolloutPercent ?? app_constants.defaultAiRolloutPercent;
@@ -92,7 +80,6 @@ bool get aiSubmitEnabled => startupConfig?.aiSubmitEnabled ?? app_constants.defa
 bool get aiVariationsEnabled => startupConfig?.aiVariationsEnabled ?? app_constants.defaultAiVariationsEnabled;
 bool get useRcPaywalls => startupConfig?.useRcPaywalls ?? app_constants.defaultUseRcPaywalls;
 
-List<String> get topTitleText => List<String>.from(startupConfig?.topTitleText ?? app_constants.defaultTopTitleText);
 List<String> get premiumCollections =>
     List<String>.from(startupConfig?.premiumCollections ?? app_constants.defaultPremiumCollections);
 List<String> get verifiedUsers => List<String>.from(startupConfig?.verifiedUsers ?? app_constants.defaultVerifiedUsers);
@@ -103,12 +90,6 @@ bool isAdminUser([String? email]) {
   final String target = (email ?? prismUser.email).trim().toLowerCase();
   return isAdminEmail(target);
 }
-
-bool isPremiumWall(List<String> premiumCollections, List<Object?> wallCollections) {
-  return premium_wall_utils.isPremiumWall(premiumCollections, wallCollections);
-}
-
-GoogleAuth get gAuth => globalGoogleAuth;
 
 Future<void> initializeRuntimeAppVersion() async {
   final PackageInfo info = await PackageInfo.fromPlatform();

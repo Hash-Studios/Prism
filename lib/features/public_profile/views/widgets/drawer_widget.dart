@@ -7,8 +7,11 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -47,16 +50,14 @@ class ProfileDrawer extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                app_state.prismUser.premium == true ? 'Prism Pro' : 'Prism',
+                app_state.prismUser.premium ? 'Prism Pro' : 'Prism',
                 style: Theme.of(
                   context,
                 ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
               const SizedBox(height: 2),
               Text(
-                app_state.prismUser.premium == true
-                    ? 'Exclusive premium walls & setups!'
-                    : 'Exclusive wallpapers & setups!',
+                app_state.prismUser.premium ? 'Exclusive premium walls & setups!' : 'Exclusive wallpapers & setups!',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
@@ -95,9 +96,10 @@ class ProfileDrawer extends StatelessWidget {
       trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
       title: Text(
         text,
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall!.copyWith(fontFamily: 'Proxima Nova', color: Theme.of(context).colorScheme.secondary),
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+          fontFamily: PrismFonts.proximaNova,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
       ),
       onTap: onTap,
     );
@@ -221,15 +223,12 @@ class ProfileDrawer extends StatelessWidget {
                 _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
                 // Finish signing out before the restart, or the restarted app still sees the old
                 // session and stays on the splash screen. The restart closes this drawer.
-                if (!await app_state.gAuth.signOutGoogle()) {
+                if (!await globalGoogleAuth.signOutGoogle()) {
                   toasts.error('Could not log out. Please try again.');
                   return;
                 }
-                toasts.codeSend('Log out Successful!');
-                final settingsLocal = getIt<SettingsLocalDataSource>();
-                await settingsLocal.set('onboarded_v2_new', false);
-                await settingsLocal.set('onboarding_v2_interests', '');
-                await settingsLocal.set('onboarding_v2_followed_creators', '');
+                toasts.success('Log out Successful!');
+                await resetOnboardingLocalState(getIt<SettingsLocalDataSource>());
                 if (context.mounted) {
                   main.RestartWidget.restartApp(context);
                 }

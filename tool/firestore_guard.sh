@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+source "$ROOT_DIR/tool/lib/search.sh"
 
 ALLOWED_IMPORT_PATHS_REGEX='^lib/core/firestore/|^lib/core/di/injection_module\.dart$'
 
@@ -12,7 +13,7 @@ check_pattern() {
   local pattern="$1"
   local title="$2"
   local matches
-  matches="$(rg -n "$pattern" lib || true)"
+  matches="$(search "$pattern" lib)"
   if [[ -z "$matches" ]]; then
     return
   fi
@@ -33,8 +34,8 @@ check_pattern() {
 check_pattern "import 'package:cloud_firestore/cloud_firestore.dart';" "direct import"
 check_pattern "FirebaseFirestore.instance" "direct instance"
 check_pattern "\\.collection\\(" "raw collection call"
-check_pattern "collection:\\s*['\\\"]" "raw collection literal"
-check_pattern "firestoreClient\\.(getById|setDoc|updateDoc|deleteDoc|addDoc)\\(\\s*['\\\"]" "raw collection literal"
+check_pattern "collection:[[:space:]]*['\"]" "raw collection literal"
+check_pattern "firestoreClient\\.(getById|setDoc|updateDoc|deleteDoc|addDoc)\\([[:space:]]*['\"]" "raw collection literal"
 
 if [[ $violations -gt 0 ]]; then
   echo "Total Firestore guard violations: $violations"

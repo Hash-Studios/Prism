@@ -1,8 +1,6 @@
 class PersistenceKeys {
   const PersistenceKeys._();
 
-  static const int currentSchemaVersion = 3;
-
   static const String schemaVersion = 'schema.version';
   static const String schemaMigratedAtUtc = 'schema.migrated_at_utc';
 
@@ -25,10 +23,6 @@ class PersistenceKeys {
   static const String favoritesWallPrefix = 'favorites.walls.';
   static const String favoritesSetupPrefix = 'favorites.setups.';
   static const String favoritesSeededPrefix = 'favorites.seeded.';
-
-  static String favoriteWall(String userId, String itemId) => '$favoritesWallPrefix$userId.$itemId';
-
-  static String favoriteSetup(String userId, String itemId) => '$favoritesSetupPrefix$userId.$itemId';
 
   static String favoritesSeeded(String userId) => '$favoritesSeededPrefix$userId';
 

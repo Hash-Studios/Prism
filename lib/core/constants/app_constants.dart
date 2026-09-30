@@ -10,6 +10,10 @@ const String currentAppVersionCode = '336';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 const String defaultBannerText = 'Join our Telegram';
+const String appStoreUrl = 'https://apps.apple.com/app/id6670200846';
+const String playStoreUrl = 'https://play.google.com/store/apps/details?id=com.hash.prism';
+const String shortLinkApiUrl = 'https://prismwalls.com/api/links';
+
 const String defaultBannerUrl = 'https://t.me/PrismWallpapers';
 const bool defaultBannerTextOn = true;
 
@@ -20,7 +24,7 @@ const bool defaultAiVariationsEnabled = true;
 const bool defaultUseRcPaywalls = true;
 
 const bool defaultOnboardingV2Enabled = true;
-const List<Map<String, dynamic>> defaultOnboardingStarterPack = <Map<String, dynamic>>[];
+const String defaultOnboardingStarterPack = '[]';
 
 const String personalizedInterestsRemoteConfigKey = 'personalized_interests_v1';
 const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v1';
@@ -63,16 +67,13 @@ const String defaultPersonalizedInterestsJson = '''
   {"name":"Music","query":"music vinyl","imageUrl":"https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]}
 ]''';
 
-const List<String> defaultTopTitleText = <String>['TOP-RATED', 'BEST OF COMMUNITY', 'FAN-FAVOURITE', 'TRENDING'];
-
 const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'flat', 'mesh gradients', 'fluids'];
-
-const List<String> defaultVerifiedUsers = <String>['akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'];
 
 const Set<String> adminEmails = <String>{'akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'};
 
-const String defaultTopImageLink =
-    'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
+const List<String> defaultVerifiedUsers = <String>[...adminEmails];
+
+const String defaultTopImageLink = defaultProfilePhotoUrl;
 
 PrismUsersV2 createGuestPrismUser() {
   final now = DateTime.now().toUtc().toIso8601String();

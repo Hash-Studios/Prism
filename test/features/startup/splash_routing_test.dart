@@ -38,12 +38,14 @@ void main() {
     );
   });
 
-  test('v2Enabled=false never forces onboarding for a signed-out non-guest platform', () {
-    // Legacy/rollout guard: without v2 enabled, a signed-out user is still routed
-    // to onboarding only because they are not "signed in enough" — never onboarded.
+  test('a signed-in user who skipped onboarding sees it only when v2 is enabled', () {
     expect(
-      shouldShowOnboarding(isLoggedIn: false, isOnboarded: false, v2Enabled: false, guestBrowsingAllowed: false),
+      shouldShowOnboarding(isLoggedIn: true, isOnboarded: false, v2Enabled: true, guestBrowsingAllowed: false),
       isTrue,
+    );
+    expect(
+      shouldShowOnboarding(isLoggedIn: true, isOnboarded: false, v2Enabled: false, guestBrowsingAllowed: false),
+      isFalse,
     );
   });
 }
