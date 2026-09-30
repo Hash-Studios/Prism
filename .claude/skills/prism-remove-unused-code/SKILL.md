@@ -1,6 +1,6 @@
 ---
 name: prism-remove-unused-code
-description: Find and delete unused code (unreachable files, dead public symbols) from the Prism Flutter app, then refresh tool/find_unused_allowlist.json (and its notes file tool/find_unused_allowlist.md) so the codebase stops getting flagged. Use whenever the user asks to clean up, prune, tree-shake, dead-code-strip, or "remove unused code from" a Prism area (e.g. lib/features/setups, lib/core/analytics). Use it without asking when they ask to run the cleanup across "the whole app", "everything", or "all features"; in that case, dispatch one subagent per lib/features/<name> (and one for the shared lib/core, lib/data, etc. folders) and run them in parallel. Also fires on phrases like "what's dead in lib/features/X", "remove dead methods", "remove unused widgets", "delete unused API endpoints", or any variation implying finding-and-deleting code the static scan can prove is unreferenced. Do NOT use for general refactoring, for cleaning *generated* files (*.g.dart/*.freezed.dart/*.gr.dart), or when the user wants to investigate dead code without deleting (use `make find-unused-html` directly for that).
+description: Find and delete unused code (unreachable files, dead public symbols) from the Prism Flutter app, then refresh tool/find_unused_allowlist.json (and its notes file tool/find_unused_allowlist.md) so the codebase stops getting flagged. Use whenever the user asks to clean up, prune, tree-shake, dead-code-strip, or "remove unused code from" a Prism area (e.g. lib/features/wallpaper_upload, lib/core/analytics). Use it without asking when they ask to run the cleanup across "the whole app", "everything", or "all features"; in that case, dispatch one subagent per lib/features/<name> (and one for the shared lib/core, lib/data, etc. folders) and run them in parallel. Also fires on phrases like "what's dead in lib/features/X", "remove dead methods", "remove unused widgets", "delete unused API endpoints", or any variation implying finding-and-deleting code the static scan can prove is unreferenced. Do NOT use for general refactoring, for cleaning *generated* files (*.g.dart/*.freezed.dart/*.gr.dart), or when the user wants to investigate dead code without deleting (use `make find-unused-html` directly for that).
 ---
 
 # prism-remove-unused-code
@@ -53,7 +53,7 @@ who owns it.
 # Single-area workflow
 
 Replace `<area>` with the target path prefix throughout (e.g.
-`lib/features/setups` or `lib/core/analytics`). Working directory is the
+`lib/features/wallpaper_upload` or `lib/core/analytics`). Working directory is the
 repo root (`/Users/codenameakshay/Development/codenameakshay/Prism` or the
 worktree you were given).
 
@@ -68,7 +68,7 @@ straight to `jq`):
 fvm dart run tool/find_unused_code.dart --json > /tmp/prism_dead.json 2>&1
 python3 - <<'PY'
 import json
-AREA = '<area>'  # e.g. 'lib/features/setups'
+AREA = '<area>'  # e.g. 'lib/features/wallpaper_upload'
 with open('/tmp/prism_dead.json') as f:
     s = f.read()
 d = json.loads(s[s.find('{'):s.rfind('}') + 1])
