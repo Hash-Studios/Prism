@@ -31,16 +31,18 @@ Future<WallSubmissionResult> createRecord(
   String? aiOriginalImageUrl,
   String? aiPrompt,
   String? aiStylePreset,
+  DateTime Function()? now,
 }) async {
   final user = app_state.prismUser;
   final bool isPremium = user.premium;
+  final DateTime Function() currentTime = now ?? DateTime.now;
   final WallSubmissionResult result = await submitWallRecord(
     isPremium: isPremium,
-    hasFreeQuota: UploadQuota.hasFreeUploadQuotaRemaining,
+    hasFreeQuota: () => UploadQuota.hasFreeUploadQuotaRemaining(now: currentTime()),
     consumeFreeQuota: () async {
-      await UploadQuota.incrementWeeklyUploads();
+      await UploadQuota.incrementWeeklyUploads(now: currentTime());
       user.uploadsWeekStart = UploadQuota.storedWeekStart;
-      user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
+      user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek(now: currentTime());
       final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
       if (user.id.trim().isNotEmpty) {
         unawaited(
