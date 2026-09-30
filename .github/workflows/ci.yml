@@ -122,10 +122,12 @@ jobs:
         if: steps.changes.outputs.app_size == 'true'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git checkout --force --detach "$BASE_SHA"
           flutter pub get
-          tool/write_firebase_options_stub.sh
+          # The base commit may predate the stub script, so run the head copy.
+          bash <(git show "$HEAD_SHA:tool/write_firebase_options_stub.sh")
           mkdir -p build/size/base
           flutter build apk --"$APP_SIZE_BUILD_MODE" --target-platform="$APP_SIZE_TARGET_PLATFORM" --dart-define=SKIP_FIREBASE_INIT=true 2>&1 | tee build/size/base/build.log
           BASE_APK_PATH=""
