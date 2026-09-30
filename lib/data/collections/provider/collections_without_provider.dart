@@ -45,13 +45,14 @@ Future<void> seeMoreCollectionWithName() async {
 }
 
 Future<void> _loadCollectionPage({required String sourceTag, String? startAfterDocId}) async {
+  final String? name = _currentCollectionName;
   final rows = await firestoreClient.query<({String docId, Map<String, dynamic> data})>(
     FirestoreQuerySpec(
       collection: FirebaseCollections.walls,
       sourceTag: sourceTag,
       filters: <FirestoreFilter>[
         const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
-        FirestoreFilter(field: 'collections', op: FirestoreFilterOp.arrayContains, value: _currentCollectionName),
+        FirestoreFilter(field: 'collections', op: FirestoreFilterOp.arrayContains, value: name),
       ],
       orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
       startAfterDocId: startAfterDocId,
@@ -60,6 +61,8 @@ Future<void> _loadCollectionPage({required String sourceTag, String? startAfterD
     ),
     (data, docId) => (docId: docId, data: data),
   );
+  // The user opened another collection while this page loaded.
+  if (name != _currentCollectionName) return;
   collectionHasMore = rows.length == _pageSize;
   if (rows.isNotEmpty) {
     _lastCollectionCursorDocId = rows.last.docId;
