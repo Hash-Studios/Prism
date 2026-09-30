@@ -1,7 +1,13 @@
 import {createHash} from "node:crypto";
 import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {sendNotification, sendToUidAndEmailTopics, emailToTopic, userIdToTopic} from "./notificationHelper";
+import {
+  emailToTopic,
+  isLoggedOut,
+  sendNotification,
+  sendToUidAndEmailTopics,
+  userIdToTopic,
+} from "./notificationHelper";
 import {usernameLowerOf} from "./usernameLower";
 import {db, findUserByEmail, REGION, str} from "./common";
 
@@ -64,7 +70,7 @@ export const onFollowCreated = onDocumentUpdated(
     }
 
     const followedUid = event.params.userId;
-    const pushEnabled = !(await followerAlertsMuted(followedUid));
+    const pushEnabled = !isLoggedOut(after) && !(await followerAlertsMuted(followedUid));
 
     for (const followerEmail of newFollowerEmailsRaw) {
       const followerUid = await resolveUserIdByEmail(followerEmail);
@@ -97,7 +103,7 @@ export const onFollowCreated = onDocumentUpdated(
         channelId: "followers",
         collapseKey: followCollapseKey(followerEmail),
       };
-      // The inbox entry is kept when the user turned Followers alerts off.
+      // The inbox entry is kept when the user turned Followers alerts off or signed out.
       if (pushEnabled) {
         await sendToUidAndEmailTopics(payload, userIdToTopic(followedUid), emailToTopic(followedUserEmail));
       } else {

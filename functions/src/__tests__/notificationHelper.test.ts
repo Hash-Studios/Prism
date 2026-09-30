@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {emailToTopic, fcmMessage, userIdToTopic} from "../notificationHelper";
+import {emailToTopic, fcmMessage, isLoggedOut, userIdToTopic} from "../notificationHelper";
 
 test("notification topics match the names the app subscribes to", () => {
   assert.equal(emailToTopic("sam+one@example.com"), "samone");
@@ -19,4 +19,11 @@ test("fcmMessage puts a condition target on the message and no topic or token", 
   assert.equal("condition" in message && message.condition, "'a' in topics || 'b' in topics");
   assert.ok(!("topic" in message));
   assert.ok(!("token" in message));
+});
+
+test("only an explicit loggedIn false counts as signed out", () => {
+  assert.equal(isLoggedOut({loggedIn: false}), true);
+  assert.equal(isLoggedOut({loggedIn: true}), false);
+  assert.equal(isLoggedOut({}), false);
+  assert.equal(isLoggedOut(undefined), false);
 });
