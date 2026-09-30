@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -257,7 +258,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
 
                     // Layer 1: unique page content — fades between steps.
                     AnimatedSwitcher(
-                      duration: OnboardingMotion.normal,
+                      duration: context.motion(const Duration(milliseconds: 300)),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
                       transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
                       layoutBuilder: (currentChild, previousChildren) => Stack(
                         fit: StackFit.expand,

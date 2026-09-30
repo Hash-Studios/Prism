@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -98,23 +99,26 @@ class _SplashWidgetState extends State<SplashWidget> {
         }
       },
       builder: (context, state) {
+        final Widget content;
         if (state.status == LoadStatus.success && state.isObsoleteVersion) {
-          return OldVersion();
-        }
-        if (state.status == LoadStatus.failure) {
-          return _StartupFailure(
+          content = KeyedSubtree(key: const ValueKey<String>('old'), child: OldVersion());
+        } else if (state.status == LoadStatus.failure) {
+          content = _StartupFailure(
+            key: const ValueKey<String>('failure'),
             onRetry: () =>
                 context.read<StartupBloc>().add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
           );
+        } else {
+          content = const _SecondarySplash(key: ValueKey<String>('splash'));
         }
-        return const _SecondarySplash();
+        return AnimatedSwitcher(duration: context.motion(const Duration(milliseconds: 300)), child: content);
       },
     );
   }
 }
 
 class _SecondarySplash extends StatelessWidget {
-  const _SecondarySplash();
+  const _SecondarySplash({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +142,7 @@ class _SecondarySplash extends StatelessWidget {
 }
 
 class _StartupFailure extends StatelessWidget {
-  const _StartupFailure({required this.onRetry});
+  const _StartupFailure({super.key, required this.onRetry});
 
   final VoidCallback onRetry;
 

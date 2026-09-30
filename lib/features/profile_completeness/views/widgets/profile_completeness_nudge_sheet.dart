@@ -1,4 +1,5 @@
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -8,11 +9,10 @@ Future<ProfileCompletenessNudgeAction?> showProfileCompletenessNudgeSheet(
   BuildContext context, {
   required ProfileCompletenessStatus status,
 }) {
-  return showModalBottomSheet<ProfileCompletenessNudgeAction>(
+  return showPrismSheet<ProfileCompletenessNudgeAction>(
     context: context,
     isDismissible: false,
     enableDrag: false,
-    useSafeArea: true,
     builder: (context) => _ProfileCompletenessNudgeSheet(status: status),
   );
 }

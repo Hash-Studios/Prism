@@ -1,5 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
@@ -18,7 +19,19 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat();
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 5));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Spin only while the tab is visible (TickerMode) and motion is allowed.
+    final bool spin = TickerMode.valuesOf(context).enabled && !context.reduceMotion;
+    if (spin && !_rotationController.isAnimating) {
+      _rotationController.repeat();
+    } else if (!spin && _rotationController.isAnimating) {
+      _rotationController.stop();
+    }
   }
 
   @override
@@ -30,9 +43,15 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
   void _openUploadSheet() {
     if (!mounted) return;
     showModalBottomSheet<void>(
+      sheetAnimationStyle: AnimationStyle(
+        duration: context.motion(const Duration(milliseconds: 260)),
+        reverseDuration: context.motion(const Duration(milliseconds: 180)),
+        curve: PrismCurves.enter,
+        reverseCurve: PrismCurves.exit,
+      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       isScrollControlled: true,
       backgroundColor: Theme.of(context).primaryColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       context: context,
       builder: (context) => const UploadBottomPanel(),
     );
