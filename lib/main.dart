@@ -49,8 +49,6 @@ import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/setups/setups.dart';
 import 'package:Prism/features/startup/startup.dart';
-import 'package:Prism/features/theme_dark/theme_dark.dart';
-import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
@@ -262,11 +260,7 @@ Future<void> main() async {
                   create: (_) =>
                       getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
                 ),
-                BlocProvider<ThemeLightBloc>(
-                  create: (_) => getIt<ThemeLightBloc>()..add(const ThemeLightEvent.started()),
-                ),
-                BlocProvider<ThemeDarkBloc>(create: (_) => getIt<ThemeDarkBloc>()..add(const ThemeDarkEvent.started())),
-                BlocProvider<ThemeModeBloc>(create: (_) => getIt<ThemeModeBloc>()..add(const ThemeModeEvent.started())),
+                BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
                 BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
               ],
               child: _MyApp(),

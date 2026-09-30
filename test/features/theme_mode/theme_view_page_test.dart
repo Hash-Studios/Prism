@@ -1,9 +1,4 @@
-import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/features/theme_dark/theme_dark.dart';
-import 'package:Prism/features/theme_light/domain/entities/theme_light.dart';
-import 'package:Prism/features/theme_light/theme_light.dart';
-import 'package:Prism/features/theme_mode/domain/entities/theme_mode.dart';
+import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -11,45 +6,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-import '../../support/in_memory_local_store.dart';
-
-class _MockThemeLightBloc extends MockBloc<ThemeLightEvent, ThemeLightState> implements ThemeLightBloc {}
-
-class _MockThemeDarkBloc extends MockBloc<ThemeDarkEvent, ThemeDarkState> implements ThemeDarkBloc {}
-
-class _MockThemeModeBloc extends MockBloc<ThemeModeEvent, ThemeModeState> implements ThemeModeBloc {}
+class _MockThemeBloc extends MockBloc<ThemeEvent, ThemeState> implements ThemeBloc {}
 
 void main() {
-  late _MockThemeLightBloc lightBloc;
-  late _MockThemeDarkBloc darkBloc;
-  late _MockThemeModeBloc modeBloc;
-
-  setUpAll(() {
-    if (!getIt.isRegistered<SettingsLocalDataSource>()) {
-      getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
-    }
-  });
+  late _MockThemeBloc themeBloc;
 
   setUp(() {
-    lightBloc = _MockThemeLightBloc();
-    darkBloc = _MockThemeDarkBloc();
-    modeBloc = _MockThemeModeBloc();
-    when(() => lightBloc.state).thenReturn(ThemeLightState.initial());
-    when(() => darkBloc.state).thenReturn(ThemeDarkState.initial());
+    themeBloc = _MockThemeBloc();
+    when(() => themeBloc.state).thenReturn(ThemeState.initial());
   });
 
   Future<void> pumpPage(WidgetTester tester, ThemeMode mode) async {
     tester.view.physicalSize = const Size(1000, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    when(() => modeBloc.state).thenReturn(ThemeModeState.initial().copyWith(mode: ThemeModeEntity(mode: mode)));
+    when(() => themeBloc.state).thenReturn(themeBloc.state.copyWith(mode: mode));
     await tester.pumpWidget(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider<ThemeLightBloc>.value(value: lightBloc),
-          BlocProvider<ThemeDarkBloc>.value(value: darkBloc),
-          BlocProvider<ThemeModeBloc>.value(value: modeBloc),
-        ],
+      BlocProvider<ThemeBloc>.value(
+        value: themeBloc,
         child: MaterialApp(theme: ThemeData.light(), home: const ThemeView()),
       ),
     );
@@ -78,7 +52,7 @@ void main() {
 
     await tester.tap(find.text('Coffee'));
 
-    verify(() => lightBloc.add(const ThemeLightEvent.themeChanged(themeId: 'kLCoffee'))).called(1);
+    verify(() => themeBloc.add(const ThemeEvent.lightThemeChanged(themeId: 'kLCoffee'))).called(1);
   });
 
   testWidgets('the preference sheet changes the theme mode', (tester) async {
@@ -89,15 +63,13 @@ void main() {
     await tester.tap(find.text('Light').last);
     await tester.pumpAndSettle();
 
-    verify(() => modeBloc.add(const ThemeModeEvent.modeChanged(mode: ThemeMode.light))).called(1);
+    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.light))).called(1);
     expect(find.text('Theme Preference'), findsOneWidget);
   });
 
   testWidgets('the selected accent is derived from the bloc state', (tester) async {
-    when(() => lightBloc.state).thenReturn(
-      ThemeLightState.initial().copyWith(
-        theme: const ThemeLightEntity(themeId: 'kLRose', accentColorValue: 0xffff0000),
-      ),
+    when(() => themeBloc.state).thenReturn(
+      ThemeState.initial().copyWith(light: const ThemeSelection(themeId: 'kLRose', accentColorValue: 0xffff0000)),
     );
     await pumpPage(tester, ThemeMode.light);
 

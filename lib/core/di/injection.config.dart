@@ -127,19 +127,12 @@ import '../../features/startup/domain/repositories/startup_repository.dart'
 import '../../features/startup/domain/usecases/bootstrap_app_usecase.dart'
     as _i415;
 import '../../features/streak/bloc/streak_shop_bloc.dart' as _i456;
-import '../../features/theme_dark/biz/bloc/theme_dark_bloc.j.dart' as _i97;
-import '../../features/theme_dark/domain/usecases/theme_dark_usecases.dart'
-    as _i96;
-import '../../features/theme_light/biz/bloc/theme_light_bloc.j.dart' as _i716;
-import '../../features/theme_light/data/repositories/theme_repository_impl.dart'
-    as _i404;
-import '../../features/theme_light/domain/repositories/theme_repository.dart'
-    as _i425;
-import '../../features/theme_light/domain/usecases/theme_light_usecases.dart'
-    as _i518;
-import '../../features/theme_mode/biz/bloc/theme_mode_bloc.j.dart' as _i736;
-import '../../features/theme_mode/domain/usecases/theme_mode_usecases.dart'
-    as _i836;
+import '../../features/theme_mode/biz/bloc/theme_bloc.j.dart' as _i583;
+import '../../features/theme_mode/data/repositories/theme_repository_impl.dart'
+    as _i593;
+import '../../features/theme_mode/domain/repositories/theme_repository.dart'
+    as _i428;
+import '../../features/theme_mode/domain/usecases/theme_usecases.dart' as _i937;
 import '../../features/user_blocks/domain/repositories/user_block_repository.dart'
     as _i112;
 import '../../features/user_search/biz/bloc/search_discovery_bloc.j.dart'
@@ -261,6 +254,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
     () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
+  gh.lazySingleton<_i428.ThemeRepository>(
+    () => _i593.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
+  );
   gh.lazySingleton<_i366.NotificationsRepository>(
     () => _i1017.NotificationsRepositoryImpl(
       gh<_i290.NotificationsLocalDataSource>(),
@@ -304,8 +300,11 @@ _i174.GetIt initGetIt(
       gh<_i1073.SettingsLocalDataSource>(),
     ),
   );
-  gh.lazySingleton<_i425.ThemeRepository>(
-    () => _i404.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
+  gh.lazySingleton<_i937.LoadThemeUseCase>(
+    () => _i937.LoadThemeUseCase(gh<_i428.ThemeRepository>()),
+  );
+  gh.lazySingleton<_i937.UpdateThemeUseCase>(
+    () => _i937.UpdateThemeUseCase(gh<_i428.ThemeRepository>()),
   );
   gh.lazySingleton<_i491.ConnectivityService>(
     () => _i491.InternetConnectivityService(
@@ -375,6 +374,12 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
     ),
   );
+  gh.factory<_i583.ThemeBloc>(
+    () => _i583.ThemeBloc(
+      gh<_i937.LoadThemeUseCase>(),
+      gh<_i937.UpdateThemeUseCase>(),
+    ),
+  );
   gh.lazySingleton<_i474.FetchNotificationsUseCase>(
     () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()),
   );
@@ -418,30 +423,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i750.SearchUsersUseCase>(
     () => _i750.SearchUsersUseCase(gh<_i204.UserSearchRepository>()),
   );
-  gh.lazySingleton<_i96.LoadThemeDarkUseCase>(
-    () => _i96.LoadThemeDarkUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i96.UpdateThemeDarkUseCase>(
-    () => _i96.UpdateThemeDarkUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i96.UpdateThemeDarkAccentUseCase>(
-    () => _i96.UpdateThemeDarkAccentUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i518.LoadThemeLightUseCase>(
-    () => _i518.LoadThemeLightUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i518.UpdateThemeLightUseCase>(
-    () => _i518.UpdateThemeLightUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i518.UpdateThemeLightAccentUseCase>(
-    () => _i518.UpdateThemeLightAccentUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i836.LoadThemeModeUseCase>(
-    () => _i836.LoadThemeModeUseCase(gh<_i425.ThemeRepository>()),
-  );
-  gh.lazySingleton<_i836.UpdateThemeModeUseCase>(
-    () => _i836.UpdateThemeModeUseCase(gh<_i425.ThemeRepository>()),
-  );
   gh.lazySingleton<_i727.PrismWallpaperRepository>(
     () => _i759.PrismWallpaperRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -467,13 +448,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i95.SaveInterestsUseCase>(
     () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
   );
-  gh.factory<_i716.ThemeLightBloc>(
-    () => _i716.ThemeLightBloc(
-      gh<_i518.LoadThemeLightUseCase>(),
-      gh<_i518.UpdateThemeLightUseCase>(),
-      gh<_i518.UpdateThemeLightAccentUseCase>(),
-    ),
-  );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
     () => _i903.PersonalizedFeedRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -489,13 +463,6 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
       gh<_i954.FeedCacheLocalDataSource>(),
       gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.factory<_i97.ThemeDarkBloc>(
-    () => _i97.ThemeDarkBloc(
-      gh<_i96.LoadThemeDarkUseCase>(),
-      gh<_i96.UpdateThemeDarkUseCase>(),
-      gh<_i96.UpdateThemeDarkAccentUseCase>(),
     ),
   );
   gh.lazySingleton<_i563.CategoryFeedRepository>(
@@ -565,12 +532,6 @@ _i174.GetIt initGetIt(
     () => _i502.FirstWallpaperService(
       gh<_i563.CategoryFeedRepository>(),
       gh<_i489.WallOfTheDayRepository>(),
-    ),
-  );
-  gh.factory<_i736.ThemeModeBloc>(
-    () => _i736.ThemeModeBloc(
-      gh<_i836.LoadThemeModeUseCase>(),
-      gh<_i836.UpdateThemeModeUseCase>(),
     ),
   );
   gh.factory<_i717.PublicProfileBloc>(
