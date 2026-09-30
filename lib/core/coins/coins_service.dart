@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -82,9 +83,20 @@ class StreakStatus {
     required this.timezoneOffsetMinutes,
     required this.lastClaimDate,
     this.nextReminderAtUtc,
+    this.count = 0,
+    this.best = 0,
+    this.freezes = 0,
   });
 
+  /// Day inside the 7-day cycle (1..7).
   final int streakDay;
+
+  /// Uncapped streak length.
+  final int count;
+  final int best;
+
+  /// Held streak freezes (0..2).
+  final int freezes;
   final bool active;
   final bool claimedToday;
   final bool reminderEnabled;
@@ -109,8 +121,14 @@ class StreakStatus {
     int? timezoneOffsetMinutes,
     String? lastClaimDate,
     DateTime? nextReminderAtUtc,
+    int? count,
+    int? best,
+    int? freezes,
   }) {
     return StreakStatus(
+      count: count ?? this.count,
+      best: best ?? this.best,
+      freezes: freezes ?? this.freezes,
       streakDay: streakDay ?? this.streakDay,
       active: active ?? this.active,
       claimedToday: claimedToday ?? this.claimedToday,
@@ -120,6 +138,83 @@ class StreakStatus {
       nextReminderAtUtc: nextReminderAtUtc ?? this.nextReminderAtUtc,
     );
   }
+}
+
+class StreakClaimResult {
+  const StreakClaimResult({
+    required this.claimed,
+    required this.alreadyClaimedToday,
+    required this.streakDay,
+    required this.streakCount,
+    required this.previousStreakCount,
+    required this.streakBest,
+    required this.streakBroken,
+    required this.freezesUsed,
+    required this.freezesLeft,
+    required this.isWeekComplete,
+    required this.dailyReward,
+    required this.streakBonusReward,
+    required this.proBonusReward,
+    required this.totalReward,
+    required this.newBalance,
+    this.milestone,
+  });
+
+  /// Reads a claimDailyStreak payload. Fields an older backend does not send get safe defaults.
+  factory StreakClaimResult.fromPayload(Map<String, dynamic> payload) {
+    bool asBool(Object? v) => v is bool ? v : const <String>['true', '1'].contains(v?.toString().toLowerCase().trim());
+    final int cycleDay = min(7, max(0, parseIntOr(payload['streakDay'])));
+    final int count = payload['streakCount'] == null ? cycleDay : max(0, parseIntOr(payload['streakCount']));
+    return StreakClaimResult(
+      claimed: asBool(payload['claimed']),
+      alreadyClaimedToday: asBool(payload['alreadyClaimedToday']),
+      streakDay: cycleDay,
+      streakCount: count,
+      previousStreakCount: payload['previousStreakCount'] == null
+          ? max(0, count - 1)
+          : max(0, parseIntOr(payload['previousStreakCount'])),
+      streakBest: payload['streakBest'] == null ? count : max(count, parseIntOr(payload['streakBest'])),
+      streakBroken: asBool(payload['streakBroken']),
+      freezesUsed: max(0, parseIntOr(payload['freezesUsed'])),
+      freezesLeft: max(0, parseIntOr(payload['freezesLeft'])),
+      isWeekComplete: payload['isWeekComplete'] == null ? cycleDay == 7 : asBool(payload['isWeekComplete']),
+      milestone: payload['milestone'] == null ? null : parseIntOr(payload['milestone']),
+      dailyReward: parseIntOr(payload['dailyReward']),
+      streakBonusReward: parseIntOr(payload['streakBonusReward']),
+      proBonusReward: parseIntOr(payload['proBonusReward']),
+      totalReward: parseIntOr(payload['totalReward']),
+      newBalance: parseIntOr(payload['newBalance']),
+    );
+  }
+
+  final bool claimed;
+  final bool alreadyClaimedToday;
+  final int streakDay;
+  final int streakCount;
+  final int previousStreakCount;
+  final int streakBest;
+  final bool streakBroken;
+  final int freezesUsed;
+  final int freezesLeft;
+  final bool isWeekComplete;
+  final int? milestone;
+  final int dailyReward;
+  final int streakBonusReward;
+  final int proBonusReward;
+  final int totalReward;
+  final int newBalance;
+}
+
+enum StreakFreezeOutcome { success, insufficientBalance, atCap, unavailable, failed }
+
+class StreakFreezePurchase {
+  const StreakFreezePurchase(this.outcome, {this.freezes = 0, this.message = ''});
+
+  final StreakFreezeOutcome outcome;
+  final int freezes;
+  final String message;
+
+  bool get isSuccess => outcome == StreakFreezeOutcome.success;
 }
 
 class CoinsService {
@@ -138,6 +233,11 @@ class CoinsService {
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
+
+  /// Set only when a daily claim really paid out. The UI shows the daily sheet, then calls [consumeLastClaim].
+  final ValueNotifier<StreakClaimResult?> lastClaimNotifier = ValueNotifier<StreakClaimResult?>(null);
+
+  void consumeLastClaim() => lastClaimNotifier.value = null;
 
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
@@ -185,8 +285,10 @@ class CoinsService {
         final String todayLocalKey = _offsetDayKey(nowUtc, timezoneOffsetMinutes);
         final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
         final int streakDay = _clampStreakDay(parseIntOr(coinState['streakDay']));
+        final int count = parseInt(coinState['streakCount']) ?? streakDay;
         final bool active =
-            streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
+            count > 0 &&
+            isStreakAlive(lastClaimDate, todayLocalKey, _clampFreezes(parseIntOr(coinState['streakFreezes'])));
         // Rules only allow the client to write these specific coinState leaves, never the whole map.
         final Map<String, dynamic> updates = <String, dynamic>{
           '$_coinStateField.$_streakReminderEnabledField': enabled,
@@ -578,14 +680,13 @@ class CoinsService {
         'reminderEnabled': reminderEnabled,
       });
       final Map<String, dynamic> payload = toJsonMap(response.data);
-
-      final bool claimed = _asBool(payload['claimed']);
-      final bool alreadyClaimedToday = _asBool(payload['alreadyClaimedToday']);
-      final int streakDay = _clampStreakDay(parseIntOr(payload['streakDay']));
-      final int dailyReward = parseIntOr(payload['dailyReward']);
-      final int streakBonusReward = parseIntOr(payload['streakBonusReward']);
-      final int totalReward = parseIntOr(payload['totalReward']);
-      final int newBalance = parseIntOr(payload['newBalance']);
+      final StreakClaimResult result = StreakClaimResult.fromPayload(payload);
+      final bool claimed = result.claimed;
+      final int streakDay = result.streakDay;
+      final int dailyReward = result.dailyReward;
+      final int streakBonusReward = result.streakBonusReward;
+      final int totalReward = result.totalReward;
+      final int newBalance = result.newBalance;
       final String todayLocalKey = (payload['todayLocalKey']?.toString() ?? '').trim();
       final int? nextReminderAtUtcMillis = payload['nextReminderAtUtcMillis'] == null
           ? null
@@ -595,8 +696,11 @@ class CoinsService {
       _applyLocalBalance(newBalance, delta: delta);
       streakNotifier.value = StreakStatus(
         streakDay: streakDay,
-        active: streakDay > 0,
-        claimedToday: claimed || alreadyClaimedToday,
+        count: result.streakCount,
+        best: result.streakBest,
+        freezes: result.freezesLeft,
+        active: result.streakCount > 0,
+        claimedToday: claimed || result.alreadyClaimedToday,
         reminderEnabled: reminderEnabled,
         timezoneOffsetMinutes: timezoneOffsetMinutes,
         lastClaimDate: todayLocalKey,
@@ -604,6 +708,9 @@ class CoinsService {
             ? null
             : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
       );
+      if (claimed) {
+        lastClaimNotifier.value = result;
+      }
 
       if (claimed) {
         String dailyReason = 'daily_login';
@@ -644,6 +751,50 @@ class CoinsService {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'callable_failed');
     }
   }
+
+  Future<StreakFreezePurchase> buyStreakFreeze() async {
+    if (!_canMutateCoins()) {
+      return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'not_logged_in');
+    }
+    try {
+      final HttpsCallable callable = appFunctions.httpsCallable('buyStreakFreeze');
+      final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
+        'requestId': _newRequestId(),
+      });
+      final Map<String, dynamic> data = toJsonMap(response.data);
+      final int freezes = _clampFreezes(parseIntOr(data['streakFreezes']));
+      _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
+      streakNotifier.value = streakNotifier.value.copyWith(freezes: freezes);
+      if (_asBool(data['atCap'])) {
+        return StreakFreezePurchase(StreakFreezeOutcome.atCap, freezes: freezes);
+      }
+      if (_asBool(data['insufficientBalance'])) {
+        return StreakFreezePurchase(StreakFreezeOutcome.insufficientBalance, freezes: freezes);
+      }
+      if (_asBool(data['success'])) {
+        return StreakFreezePurchase(StreakFreezeOutcome.success, freezes: freezes);
+      }
+      return StreakFreezePurchase(
+        StreakFreezeOutcome.failed,
+        freezes: freezes,
+        message: data['reason']?.toString() ?? '',
+      );
+    } on FirebaseFunctionsException catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.buy_streak_freeze.callable', error: error, stackTrace: stackTrace);
+      if (error.code == 'not-found' || error.code == 'unimplemented') {
+        return StreakFreezePurchase(StreakFreezeOutcome.unavailable, message: error.code);
+      }
+      return StreakFreezePurchase(StreakFreezeOutcome.failed, message: error.message ?? error.code);
+    }
+  }
+
+  String _newRequestId() {
+    final Random random = Random.secure();
+    final String suffix = List<String>.generate(16, (_) => random.nextInt(36).toRadixString(36)).join();
+    return '${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}$suffix';
+  }
+
+  int _clampFreezes(int n) => n.clamp(0, CoinPolicy.maxStreakFreezes);
 
   Future<CoinMutationResult> maybeAwardProDailyBonus() {
     return _awardFixed(
@@ -865,11 +1016,16 @@ class CoinsService {
     final String todayLocalKey = _offsetDayKey(DateTime.now().toUtc(), timezoneOffsetMinutes);
     final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
     final int streakDay = _clampStreakDay(parseIntOr(coinState['streakDay']));
-    final bool active =
-        streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
+    final int count = parseInt(coinState['streakCount']) ?? streakDay;
+    final int best = max(count, parseInt(coinState['streakBest']) ?? count);
+    final int freezes = _clampFreezes(parseIntOr(coinState['streakFreezes']));
+    final bool active = count > 0 && isStreakAlive(lastClaimDate, todayLocalKey, freezes);
     final bool claimedToday = lastClaimDate == todayLocalKey;
     final StreakStatus status = StreakStatus(
       streakDay: active ? streakDay : 0,
+      count: active ? count : 0,
+      best: best,
+      freezes: freezes,
       active: active,
       claimedToday: claimedToday,
       reminderEnabled: _asBool(coinState[_streakReminderEnabledField] ?? _preferredStreakReminderEnabled()),
@@ -905,17 +1061,6 @@ class CoinsService {
 
   String _normalizeCollectionKey(String rawKey) {
     return rawKey.trim().toLowerCase();
-  }
-
-  bool _isPreviousDay(String previousDay, String currentDay) {
-    final DateTime? previous = DateTime.tryParse(previousDay);
-    final DateTime? current = DateTime.tryParse(currentDay);
-    if (previous == null || current == null) {
-      return false;
-    }
-    final DateTime previousUtcDate = DateTime.utc(previous.year, previous.month, previous.day);
-    final DateTime currentUtcDate = DateTime.utc(current.year, current.month, current.day);
-    return currentUtcDate.difference(previousUtcDate).inDays == 1;
   }
 
   void _applyLocalBalance(int newBalance, {required int delta}) {
