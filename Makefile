@@ -1,4 +1,4 @@
-.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
+.PHONY: setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -126,6 +126,9 @@ firestore-guard:
 
 no-dynamic-guard:
 	@./tool/no_dynamic_guard.sh
+
+rules-test: ## Run the Firestore rules smoke test on the emulator (needs Java)
+	@firebase emulators:exec --only firestore --project demo-prism "node tool/firestore_rules_smoke.mjs"
 
 no-shape-parse-guard:
 	@./tool/no_shape_parse_guard.sh

@@ -35,14 +35,18 @@ service cloud.firestore {
       return hasAuthEmail() && email is string && email == authEmail();
     }
 
+    // A follow that is already in place (arrayUnion of a present email) is a no-op write; allow it so a
+    // batch of follows does not fail on one creator the user already follows.
     function canToggleFollowersOnly() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
       return hasAuthEmail()
-          && resource.data.followers is list
-          && request.resource.data.followers is list
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers'])
-          && (resource.data.followers.hasAny([authEmail()]) != request.resource.data.followers.hasAny([authEmail()]))
-          && request.resource.data.followers.size()
-              == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1);
+          && affected.hasOnly(['followers'])
+          && (affected.size() == 0
+              || (resource.data.followers is list
+                  && request.resource.data.followers is list
+                  && (resource.data.followers.hasAny([authEmail()]) != request.resource.data.followers.hasAny([authEmail()]))
+                  && request.resource.data.followers.size()
+                      == resource.data.followers.size() + (request.resource.data.followers.hasAny([authEmail()]) ? 1 : -1)));
     }
 
     // New profiles start empty: coins, premium and coinState are server-owned.
