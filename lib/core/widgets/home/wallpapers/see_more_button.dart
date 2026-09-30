@@ -1,7 +1,7 @@
-import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:flutter/material.dart';
 
+/// "See more" at the end of a paged grid.
 class SeeMoreButton extends StatelessWidget {
   const SeeMoreButton({super.key, required this.seeMoreLoader, required this.func});
 
@@ -10,21 +10,13 @@ class SeeMoreButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialButton(
-      color: context.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: .1),
-      shape: const RoundedRectangleBorder(),
-      onPressed: () {
-        func();
-      },
-      child: AnimatedSwitcher(
-        duration: context.motion(PrismDurations.fast),
-        child: !seeMoreLoader
-            ? const Text("See more", key: ValueKey('label'))
-            : const SizedBox.square(
-                key: ValueKey('loading'),
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+    return Center(
+      child: PrismButton(
+        label: 'See more',
+        onPressed: func,
+        loading: seeMoreLoader,
+        variant: PrismButtonVariant.tonal,
+        size: PrismButtonSize.compact,
       ),
     );
   }

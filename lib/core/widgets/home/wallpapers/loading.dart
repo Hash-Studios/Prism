@@ -1,27 +1,31 @@
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:flutter/material.dart';
 
+/// Skeleton for a wallpaper grid. It uses the shared [PrismWallGrid] layout, so content lands where the skeleton was.
 class LoadingCards extends StatelessWidget {
-  const LoadingCards({super.key, this.childAspectRatio = 0.6625, this.borderRadius = BorderRadius.zero});
+  const LoadingCards({super.key, this.childAspectRatio, this.borderRadius = PrismWallGrid.tileRadius, this.columns});
 
-  final double childAspectRatio;
+  final double? childAspectRatio;
   final BorderRadius borderRadius;
+  final int? columns;
 
   @override
   Widget build(BuildContext context) {
-    return PulsePlaceholder(
-      builder: (context, _) => GridView.builder(
-        primary: false,
-        padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-        itemCount: 24,
-        shrinkWrap: true,
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-          childAspectRatio: childAspectRatio,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
+    return Semantics(
+      label: 'Loading',
+      child: ExcludeSemantics(
+        child: PulsePlaceholder(
+          builder: (context, _) => GridView.builder(
+            primary: false,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: PrismWallGrid.padding,
+            itemCount: 18,
+            shrinkWrap: true,
+            gridDelegate: PrismWallGrid.delegate(context, columns: columns, aspectRatio: childAspectRatio),
+            itemBuilder: (context, index) => PulseFill(borderRadius: borderRadius),
+          ),
         ),
-        itemBuilder: (context, index) => PulseFill(borderRadius: borderRadius),
       ),
     );
   }

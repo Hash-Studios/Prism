@@ -15,6 +15,12 @@ abstract final class PrismColors {
   /// Semi-transparent brand pink used as a glow shadow on the notification dot.
   static const Color notificationBadgeShadow = Color(0x80E57697);
 
+  /// Status: something went well (approved, saved, earned). Pair it with an icon or a label.
+  static const Color success = Color(0xFF2FBF71);
+
+  /// Status: needs attention (pending, streak at risk). Pair it with an icon or a label.
+  static const Color warning = Color(0xFFFFB454);
+
   /// Foreground color on primary / app-bar surfaces.
   /// Always white so that content stays legible regardless of the active theme.
   static const Color onPrimary = Colors.white;
