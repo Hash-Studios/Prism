@@ -1,6 +1,6 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/platform/share_service.dart';
+import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -14,7 +14,23 @@ class ShareButton extends StatefulWidget {
   final WallpaperSource source;
   final String? url;
   final String thumbUrl;
-  const ShareButton({required this.id, required this.source, required this.url, required this.thumbUrl, super.key});
+  final String? contextLine;
+  final Future<ShareFormatValue> Function(
+    BuildContext context, {
+    required String imageUrl,
+    required String link,
+    String? contextLine,
+  })
+  shareCard;
+  const ShareButton({
+    required this.id,
+    required this.source,
+    required this.url,
+    required this.thumbUrl,
+    this.contextLine,
+    this.shareCard = shareWallpaperCard,
+    super.key,
+  });
 
   @override
   _ShareButtonState createState() => _ShareButtonState();
@@ -51,12 +67,18 @@ class _ShareButtonState extends State<ShareButton> {
       final String link = await createDynamicLink(widget.id!, widget.source, widget.url, widget.thumbUrl);
       await Clipboard.setData(ClipboardData(text: link));
       if (!mounted) return;
-      await ShareService.shareText(text: '🔥Check this out ➜ $link', context: context);
+      final ShareFormatValue format = await widget.shareCard(
+        context,
+        imageUrl: widget.url ?? widget.thumbUrl,
+        link: link,
+        contextLine: widget.contextLine,
+      );
       analytics.track(
-        const InviteShareResultEvent(
+        InviteShareResultEvent(
           channel: ShareChannelValue.shareSheet,
           result: EventResultValue.success,
           sourceContext: 'wallpaper_screen',
+          format: format,
         ),
       );
     } catch (error, stackTrace) {
