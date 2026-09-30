@@ -10,6 +10,7 @@ import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
 import 'package:Prism/features/category_feed/views/pages/color_screen.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
@@ -48,7 +49,6 @@ import 'package:Prism/features/theme_mode/views/pages/theme_view_page.dart';
 import 'package:Prism/features/user_blocks/views/blocked_accounts_screen.dart';
 import 'package:Prism/features/user_search/views/pages/search_screen.dart';
 import 'package:Prism/features/user_search/views/pages/user_search_page.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_wallpaper_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';

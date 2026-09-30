@@ -18,11 +18,11 @@ import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -50,7 +50,7 @@ class WallpaperDetailScreen extends StatefulWidget {
     this.analyticsSurface = AnalyticsSurfaceValue.wallpaperScreen,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
-  final WallpaperDetailEntity? entity;
+  final FeedItemEntity? entity;
   final String? wallId;
   final WallpaperSource? source;
   final String? thumbnailUrl;
@@ -101,7 +101,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     _trackAction(state, AnalyticsActionValue.panelOpened);
   }
 
-  void _syncWallpaperIdentity(WallpaperDetailEntity entity) {
+  void _syncWallpaperIdentity(FeedItemEntity entity) {
     final key = '${entity.id}|${entity.fullUrl}|${entity.thumbnailUrl}';
     if (_wallpaperLoadIdentity != key) {
       _wallpaperLoadIdentity = key;
@@ -190,14 +190,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   double _topOverlayPadding(BuildContext context) {
     final inset = app_state.notchSize ?? MediaQuery.paddingOf(context).top;
     return inset + _chromePad;
-  }
-
-  FavouriteWallEntity _toFavouriteWall(WallpaperDetailEntity entity) {
-    return entity.when(
-      prism: (wallpaper) => PrismFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
-      wallhaven: (wallpaper) => WallhavenFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
-      pexels: (wallpaper) => PexelsFavouriteWall(id: wallpaper.id, wallpaper: wallpaper),
-    );
   }
 
   @override
@@ -509,11 +501,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
-  Widget _buildMetadataRow(BuildContext context, WallpaperDetailEntity entity, WallpaperDetailLoaded state) {
+  Widget _buildMetadataRow(BuildContext context, FeedItemEntity entity, WallpaperDetailLoaded state) {
     return entity.when(
-      prism: (wallpaper) => _buildPrismMetadata(context, wallpaper, state),
-      wallhaven: (wallpaper) => _buildWallhavenMetadata(context, wallpaper),
-      pexels: (wallpaper) => _buildPexelsMetadata(context, wallpaper),
+      prism: (_, wallpaper) => _buildPrismMetadata(context, wallpaper, state),
+      wallhaven: (_, wallpaper) => _buildWallhavenMetadata(context, wallpaper),
+      pexels: (_, wallpaper) => _buildPexelsMetadata(context, wallpaper),
     );
   }
 
@@ -812,14 +804,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       ),
       if (!hideSetWallpaperUi)
         _SheetActionTapScale(child: SetWallpaperButton(url: url, promptNotificationPermissionOnSuccess: true)),
-      _SheetActionTapScale(child: FavouriteWallpaperButton(wall: _toFavouriteWall(entity), trash: false)),
+      _SheetActionTapScale(
+        child: FavouriteWallpaperButton(wall: FavouriteWallEntity.fromFeedItem(entity), trash: false),
+      ),
       _SheetActionTapScale(
         child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),
       ),
       _SheetActionTapScale(child: EditButton(url: entity.fullUrl)),
     ];
     final String? reportWallDocId = switch (entity) {
-      PrismDetailEntity(:final wallpaper) => wallpaper.firestoreDocumentId,
+      PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId,
       _ => null,
     };
     if (reportWallDocId != null && reportWallDocId.isNotEmpty) {
@@ -956,7 +950,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// [onWallpaperDisplayReady] fires when the full bitmap is shown or an error/empty state is final.
   Widget _buildProgressiveWallpaperImage({
     required BuildContext context,
-    required WallpaperDetailEntity entity,
+    required FeedItemEntity entity,
     required WallpaperDetailLoaded state,
     required bool paletteLoading,
     VoidCallback? onWallpaperDisplayReady,

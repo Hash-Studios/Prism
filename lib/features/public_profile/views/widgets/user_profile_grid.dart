@@ -11,7 +11,6 @@ import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -129,7 +128,7 @@ class _PhotographerWallTile extends StatelessWidget {
               highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
               onTap: () => context.router.push(
                 WallpaperDetailRoute(
-                  entity: WallpaperDetailEntityX.fromPublicProfileWall(wall),
+                  entity: wall.toFeedItem(),
                   analyticsSurface: AnalyticsSurfaceValue.profileWallpaperView,
                 ),
               ),

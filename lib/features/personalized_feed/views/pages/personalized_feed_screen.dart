@@ -15,7 +15,6 @@ import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -270,7 +269,7 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                         ),
                       ),
                     );
-                    context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(wall)));
+                    context.router.push(WallpaperDetailRoute(entity: wall));
                   },
                   child: PremiumBanner(
                     comparator: !isPremiumWall(

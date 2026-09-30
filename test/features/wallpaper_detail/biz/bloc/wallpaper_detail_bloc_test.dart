@@ -5,6 +5,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
@@ -12,7 +13,6 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/palette_entity.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,7 +82,11 @@ void main() {
       ),
     );
 
-    bloc.add(const LoadFromEntity(entity: PrismDetailEntity(wallpaper: _wallpaper)));
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+      ),
+    );
     await settle();
 
     final state = bloc.state as WallpaperDetailLoaded;
@@ -95,7 +99,11 @@ void main() {
   test('a failed palette stops the loading flag and keeps the accent empty', () async {
     when(() => palette.generatePalette(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
 
-    bloc.add(const LoadFromEntity(entity: PrismDetailEntity(wallpaper: _wallpaper)));
+    bloc.add(
+      const LoadFromEntity(
+        entity: PrismFeedItem(id: 'abc', wallpaper: _wallpaper),
+      ),
+    );
     await settle();
 
     final state = bloc.state as WallpaperDetailLoaded;

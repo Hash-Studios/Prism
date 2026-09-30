@@ -216,8 +216,8 @@ return $default(_that.id,_that.by,_that.desc,_that.size,_that.resolution,_that.e
 /// @nodoc
 
 
-class _PublicProfileWallEntity implements PublicProfileWallEntity {
-  const _PublicProfileWallEntity({required this.id, this.by, this.desc, this.size, this.resolution, this.email, this.source, this.wallpaperThumb, required this.wallpaperUrl, final  List<String>? collections, this.createdAt, this.review = false}): _collections = collections;
+class _PublicProfileWallEntity extends PublicProfileWallEntity {
+  const _PublicProfileWallEntity({required this.id, this.by, this.desc, this.size, this.resolution, this.email, this.source, this.wallpaperThumb, required this.wallpaperUrl, final  List<String>? collections, this.createdAt, this.review = false}): _collections = collections,super._();
   
 
 @override final  String id;

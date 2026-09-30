@@ -5,7 +5,6 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -59,7 +58,7 @@ class WallpaperTile extends StatelessWidget {
                 ),
               ),
             );
-            context.router.push(WallpaperDetailRoute(entity: WallpaperDetailEntityX.fromFeedItem(item)));
+            context.router.push(WallpaperDetailRoute(entity: item));
           },
           child: CachedNetworkImage(
             imageUrl: item.thumbnailUrl,

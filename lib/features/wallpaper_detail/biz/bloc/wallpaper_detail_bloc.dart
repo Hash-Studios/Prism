@@ -2,12 +2,12 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/palette_repository.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_views_usecase.dart';
 import 'package:flutter/material.dart';
@@ -146,7 +146,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     emit(currentState.copyWith(panelScrollInProgress: false));
   }
 
-  Future<void> _loadPalette(WallpaperDetailEntity entity, Emitter<WallpaperDetailState> emit) async {
+  Future<void> _loadPalette(FeedItemEntity entity, Emitter<WallpaperDetailState> emit) async {
     final imageUrl = entity.thumbnailUrl;
     if (imageUrl.trim().isEmpty) return;
 
@@ -190,11 +190,8 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     return unique;
   }
 
-  Future<Result<WallpaperDetailEntity>> _fetchWallpaper({
-    required String wallId,
-    required WallpaperSource source,
-  }) async {
-    Result<WallpaperDetailEntity> wrap<W>(Result<W?> result, WallpaperDetailEntity Function(W wallpaper) toEntity) {
+  Future<Result<FeedItemEntity>> _fetchWallpaper({required String wallId, required WallpaperSource source}) async {
+    Result<FeedItemEntity> wrap<W>(Result<W?> result, FeedItemEntity Function(W wallpaper) toEntity) {
       return result.fold(
         onFailure: Result.error,
         onSuccess: (wallpaper) => wallpaper == null
@@ -206,30 +203,27 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     return switch (source) {
       WallpaperSource.prism => wrap(
         await _prismRepository.fetchById(wallId),
-        (wallpaper) => PrismDetailEntity(wallpaper: wallpaper),
+        (wallpaper) => PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
       ),
       WallpaperSource.wallhaven => wrap(
         await _wallhavenRepository.fetchById(wallId),
-        (wallpaper) => WallhavenDetailEntity(wallpaper: wallpaper),
+        (wallpaper) => WallhavenFeedItem(id: wallpaper.id, wallpaper: wallpaper),
       ),
       WallpaperSource.pexels => wrap(
         await _pexelsRepository.fetchById(wallId),
-        (wallpaper) => PexelsDetailEntity(wallpaper: wallpaper),
+        (wallpaper) => PexelsFeedItem(id: wallpaper.id, wallpaper: wallpaper),
       ),
       _ => Result.error(ValidationFailure('Unsupported source: $source')),
     };
   }
 
-  void _fetchAndUpdateViews(WallpaperDetailEntity entity) {
+  void _fetchAndUpdateViews(FeedItemEntity entity) {
     if (entity.source == WallpaperSource.prism) add(const FetchViews());
   }
 
   /// Search/list responses often omit `uploader`; single-wall API includes it.
-  Future<void> _enrichWallhavenFromFeedIfNeeded(
-    WallpaperDetailEntity entity,
-    Emitter<WallpaperDetailState> emit,
-  ) async {
-    if (entity is! WallhavenDetailEntity) {
+  Future<void> _enrichWallhavenFromFeedIfNeeded(FeedItemEntity entity, Emitter<WallpaperDetailState> emit) async {
+    if (entity is! WallhavenFeedItem) {
       return;
     }
     final String? author = entity.wallpaper.core.authorName;
@@ -255,7 +249,11 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         if (latest.entity.id != wallId || latest.entity.source != WallpaperSource.wallhaven) {
           return;
         }
-        emit(latest.copyWith(entity: WallhavenDetailEntity(wallpaper: wallpaper)));
+        emit(
+          latest.copyWith(
+            entity: WallhavenFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+          ),
+        );
       },
     );
   }
