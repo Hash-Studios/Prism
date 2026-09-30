@@ -92,7 +92,7 @@ class PrismList extends StatelessWidget {
           subtitle: 'Check out the changelog',
           onTap: () {
             _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_whats_new');
-            showChangelog(context, () {});
+            showChangelog(context);
           },
         ),
         _PrismListTile(
