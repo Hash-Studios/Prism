@@ -126,7 +126,7 @@ class _DebugToolsPageState extends State<DebugToolsPage> with AutomaticKeepAlive
             icon: Icons.admin_panel_settings_outlined,
             title: 'Admin Review',
             subtitle: 'Content moderation & push notification tool',
-            onTap: () => context.router.push(const AdminReviewRoute()),
+            onTap: () => context.router.push(AdminReviewRoute()),
           ),
           const DebugSectionHeader('Danger Zone'),
           _ActionTile(

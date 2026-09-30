@@ -27,6 +27,7 @@ class DownloadButton extends StatefulWidget {
     this.isPremiumContent = false,
     this.contentId,
     this.sourceContext,
+    this.onDownloaded,
     super.key,
   });
 
@@ -34,6 +35,7 @@ class DownloadButton extends StatefulWidget {
   final bool isPremiumContent;
   final String? contentId;
   final String? sourceContext;
+  final VoidCallback? onDownloaded;
 
   @override
   State<DownloadButton> createState() => _DownloadButtonState();
@@ -392,13 +394,18 @@ class _DownloadButtonState extends State<DownloadButton> {
           premiumContent: widget.isPremiumContent,
         ),
       );
-      if (mounted) {
-        await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
-          context,
-          sourceTag: 'notifications.permission_after_download',
-        );
-      }
       toasts.success(wallpaperSavedMessage);
+      widget.onDownloaded?.call();
+      if (mounted) {
+        try {
+          await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+            context,
+            sourceTag: 'notifications.permission_after_download',
+          );
+        } catch (e, stackTrace) {
+          logger.w('Notification permission prompt after download failed', error: e, stackTrace: stackTrace);
+        }
+      }
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
