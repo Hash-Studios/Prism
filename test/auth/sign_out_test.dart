@@ -225,6 +225,17 @@ void main() {
     expect(_log.indexOf('auth.signOut'), greaterThan(_log.indexOf('firestore.update usersv2/u1 {loggedIn: false}')));
   });
 
+  test('an offline logged-out write that never completes does not hang sign-out', () async {
+    GoogleAuth.signOutStepTimeout = const Duration(milliseconds: 50);
+    addTearDown(() => GoogleAuth.signOutStepTimeout = const Duration(seconds: 3));
+    app_state.prismUser = profileUser();
+    firestore.loggedOutWriteGate = Completer<void>(); // never completed, like an offline write
+
+    expect(await auth.signOutGoogle().timeout(const Duration(seconds: 2)), isTrue);
+    expect(_log, contains('auth.signOut'));
+    expect(app_state.prismUser.id, isEmpty);
+  });
+
   test('a failed logged-out write does not block sign-out', () async {
     app_state.prismUser = profileUser();
     getIt
