@@ -69,7 +69,44 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
     }
 
     override fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit) {
-        callback(Result.success(enqueueDownloadNow(request)))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // DownloadManager owns the MediaStore rows it creates, and Prism has no media read permission, so
+            // listDownloads could not see them. Writing through MediaStore makes Prism the owner.
+            runInBackground(callback, { createErrorResult("DOWNLOAD_FAILED", it.message) }) {
+                downloadToMediaStore(request)
+            }
+        } else {
+            callback(Result.success(enqueueDownloadNow(request)))
+        }
+    }
+
+    private fun downloadToMediaStore(request: DownloadRequest): OperationResult {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, request.filenameWithoutExtension + ".jpg")
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Prism/Downloads")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?: return createErrorResult("DOWNLOAD_FAILED", "Could not create the file")
+
+        var connection: HttpURLConnection? = null
+        return try {
+            connection = URL(request.link).openConnection() as HttpURLConnection
+            if (connection.responseCode !in 200..299) {
+                throw IOException("HTTP ${connection.responseCode}")
+            }
+            val output = resolver.openOutputStream(uri) ?: throw IOException("Could not open the file")
+            connection.inputStream.use { input -> output.use { input.copyTo(it) } }
+            resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+            createSuccessResult()
+        } catch (e: Exception) {
+            resolver.delete(uri, null, null)
+            createErrorResult("DOWNLOAD_FAILED", e.message)
+        } finally {
+            connection?.disconnect()
+        }
     }
 
     private fun enqueueDownloadNow(request: DownloadRequest): OperationResult {
