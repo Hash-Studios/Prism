@@ -12,8 +12,11 @@ void main() {
   late TasteSignalStore store;
 
   setUp(() {
+    clearRememberedFeedTerms();
     store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
   });
+
+  tearDown(clearRememberedFeedTerms);
 
   test('record then read round-trips action, terms and creator', () async {
     final DateTime at = DateTime.utc(2026, 1, 2, 3, 4, 5);
@@ -91,6 +94,55 @@ void main() {
     rememberFeedTerms('https://w.wallhaven.cc/full/ab/wallhaven-ab.jpg', <String>['space']);
 
     expect(TasteSignal.forWallpaper(TasteAction.open, core).terms, <String>['space']);
+  });
+
+  test('remembering another query for the same wall retains both terms', () {
+    final WallpaperCore core = _core();
+    rememberFeedTerms(' F ', <String>['Nature']);
+    rememberFeedTerms('f', <String>[' Space ']);
+
+    expect(TasteSignal.forWallpaper(TasteAction.lessLikeThis, core).terms, <String>['nature', 'space']);
+  });
+
+  test('clearing remembered terms isolates later signals', () {
+    rememberFeedTerms('f', <String>['space']);
+    expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, <String>['space']);
+
+    clearRememberedFeedTerms();
+
+    expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, isEmpty);
+  });
+
+  test('a wall without a full URL uses the ranker source and id fallback', () {
+    const WallpaperCore core = WallpaperCore(
+      id: ' AB ',
+      source: WallpaperSource.wallhaven,
+      fullUrl: ' ',
+      thumbnailUrl: 't',
+      category: 'general',
+    );
+    rememberFeedTerms('wallhaven:ab', <String>['space']);
+
+    expect(TasteSignal.forWallpaper(TasteAction.lessLikeThis, core).terms, <String>['space']);
+  });
+
+  test('using remembered terms keeps that wall in the 500-entry LRU cache', () {
+    rememberFeedTerms('f', <String>['space']);
+    for (int i = 0; i < 499; i++) {
+      rememberFeedTerms('https://example.com/$i', <String>['nature']);
+    }
+    expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, <String>['space']);
+
+    rememberFeedTerms('https://example.com/new', <String>['sky']);
+
+    expect(TasteSignal.forWallpaper(TasteAction.download, _core()).terms, <String>['space']);
+    const WallpaperCore evicted = WallpaperCore(
+      id: '0',
+      source: WallpaperSource.pexels,
+      fullUrl: 'https://example.com/0',
+      thumbnailUrl: 't',
+    );
+    expect(TasteSignal.forWallpaper(TasteAction.open, evicted).terms, isEmpty);
   });
 }
 

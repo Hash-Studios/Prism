@@ -282,10 +282,43 @@ PrismUsersV2 _signedInUser() {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(clearRememberedFeedTerms);
+  tearDown(clearRememberedFeedTerms);
+
   setUpAll(() async {
     setupFirebaseCoreMocks();
     await Firebase.initializeApp();
     FirebaseRemoteConfigPlatform.instance = _FakeFirebaseRemoteConfigPlatform();
+  });
+
+  test('less-like-this records remembered terms and hides a tagless external wall', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final TasteSignalStore signals = TasteSignalStore(settings);
+    final PersonalizedFeedRepository repository = _repository(
+      firestore: _EmptyFirestore(),
+      settings: settings,
+      favourites: _CountingFavourites(),
+      tasteSignals: signals,
+    );
+    const WallhavenWallpaper wall = WallhavenWallpaper(
+      core: WallpaperCore(
+        id: 'wall',
+        source: WallpaperSource.wallhaven,
+        fullUrl: ' HTTPS://EXAMPLE.COM/WALL.JPG ',
+        thumbnailUrl: 't',
+        category: 'general',
+      ),
+    );
+    rememberFeedTerms('https://example.com/wall.jpg', <String>['Space']);
+    rememberFeedTerms('https://example.com/wall.jpg', <String>['Sky']);
+
+    await repository.lessLikeThis(const WallhavenFeedItem(id: 'wall', wallpaper: wall));
+
+    expect(signals.read().single.action, TasteAction.lessLikeThis);
+    expect(signals.read().single.terms, <String>['space', 'sky']);
+    expect(FeedImpressionStore(settings).recentShows(DateTime.now().toUtc()), <String, int>{
+      'https://example.com/wall.jpg': 99,
+    });
   });
 
   test('favourite seeding failure does not fail the feed', () async {
