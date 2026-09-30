@@ -121,5 +121,25 @@ void main() {
       await notification.fetchNotificationData(tester.element(find.byType(SizedBox)));
       expect(received, hasLength(1));
     });
+
+    testWidgets('launch details are ignored when a notification did not launch the app', (tester) async {
+      messenger.setMockMethodCallHandler(_channel, (call) async {
+        if (call.method == 'getNotificationAppLaunchDetails') {
+          return <String, Object?>{
+            'notificationLaunchedApp': false,
+            'notificationResponse': _response('{"route":"wall_of_the_day","wall_id":"w1"}'),
+          };
+        }
+        return true;
+      });
+      final notification = LocalNotification();
+      final received = <Map<String, dynamic>>[];
+      notification.onPushTap = (data) async => received.add(data);
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+
+      await notification.fetchNotificationData(tester.element(find.byType(SizedBox)));
+
+      expect(received, isEmpty);
+    });
   });
 }

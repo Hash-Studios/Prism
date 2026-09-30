@@ -58,6 +58,7 @@ class LocalNotification {
     if (!context.mounted) {
       return;
     }
+    if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
     final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
     if (payload == 'downloaded') {
       context.router.push(const DownloadRoute());

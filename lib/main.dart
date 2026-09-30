@@ -629,7 +629,15 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       });
       return;
     }
-    await _pendingDeepLinks.drain(_handleDeepLinkIntent);
+    await _pendingDeepLinks.drain(
+      _handleDeepLinkIntent,
+      onError: (action, error, stackTrace) => logger.w(
+        'Deep link navigation failed.',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{'uri': action.rawUri},
+      ),
+    );
   }
 
   Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
