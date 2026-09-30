@@ -129,7 +129,7 @@ class _WallReviewState extends State<_WallReview> {
                 return Column(
                   children: List.generate(
                     snapshot.data!.length,
-                    (int index) => _WallTile(snapshot.data![index], rejected: true),
+                    (int index) => WallTile(snapshot.data![index], rejected: true),
                   ),
                 );
               }
@@ -159,7 +159,7 @@ class _WallReviewState extends State<_WallReview> {
                 return Column(
                   children: List.generate(
                     snapshot.data!.length,
-                    (int index) => _WallTile(snapshot.data![index], rejected: false),
+                    (int index) => WallTile(snapshot.data![index], rejected: false),
                   ),
                 );
               }
@@ -185,10 +185,10 @@ class _ReviewMessage extends StatelessWidget {
   }
 }
 
-class _WallTile extends StatelessWidget {
+class WallTile extends StatelessWidget {
   final FirestoreDocument wallpaper;
   final bool rejected;
-  _WallTile(this.wallpaper, {required this.rejected});
+  WallTile(this.wallpaper, {required this.rejected});
   final DateFormat formatter = DateFormat('d MMMM y, h:m a');
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
   @override
@@ -213,11 +213,13 @@ class _WallTile extends StatelessWidget {
                     children: [
                       Icon(JamIcons.clock, color: Theme.of(context).colorScheme.secondary),
                       const SizedBox(width: 8),
-                      Text(
-                        formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                      Flexible(
+                        child: Text(
+                          formatter.format(_toDateTime(wallpaper.createdAt).toLocal()),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                        ),
                       ),
                     ],
                   ),
@@ -248,195 +250,205 @@ class _WallTile extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 32),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  wallpaper.id,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  wallpaper.size,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  wallpaper.resolution,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (rejected)
-                              ActionChip(
-                                backgroundColor: Colors.red,
-                                avatar: const Icon(JamIcons.close, color: Colors.white),
-                                onPressed: () {},
-                                label: Text(
-                                  "REJECTED",
-                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
-                                ),
-                              )
-                            else
-                              ActionChip(
-                                backgroundColor: Colors.amber,
-                                avatar: const Icon(JamIcons.clock, color: Colors.black),
-                                onPressed: () {},
-                                label: Text(
-                                  "IN REVIEW",
-                                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black),
-                                ),
-                              ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.secondary,
-                                    shape: BoxShape.circle,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(JamIcons.id_card, color: Theme.of(context).colorScheme.secondary),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      wallpaper.id,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    ),
                                   ),
-                                  child: IconButton(
-                                    icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
-                                    onPressed: () async {
-                                      final link = wallpaper.wallpaperUrl;
-                                      logger.d(link);
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Icon(JamIcons.save, color: Theme.of(context).colorScheme.secondary),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      wallpaper.size,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Icon(JamIcons.set_square, color: Theme.of(context).colorScheme.secondary),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      wallpaper.resolution,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              if (rejected)
+                                ActionChip(
+                                  backgroundColor: Colors.red,
+                                  avatar: const Icon(JamIcons.close, color: Colors.white),
+                                  onPressed: () {},
+                                  label: Text(
+                                    "REJECTED",
+                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.white),
+                                  ),
+                                )
+                              else
+                                ActionChip(
+                                  backgroundColor: Colors.amber,
+                                  avatar: const Icon(JamIcons.clock, color: Colors.black),
+                                  onPressed: () {},
+                                  label: Text(
+                                    "IN REVIEW",
+                                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.black),
+                                  ),
+                                ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.secondary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: IconButton(
+                                      icon: Icon(JamIcons.download, color: Theme.of(context).primaryColor),
+                                      onPressed: () async {
+                                        final link = wallpaper.wallpaperUrl;
+                                        logger.d(link);
 
-                                      final androidInfo = await DeviceInfoPlugin().androidInfo;
-                                      final sdkInt = androidInfo.version.sdkInt;
-                                      logger.d('(SDK $sdkInt)');
-                                      toasts.codeSend("Starting Download");
-                                      main.localNotification.createDownloadNotification();
+                                        final androidInfo = await DeviceInfoPlugin().androidInfo;
+                                        final sdkInt = androidInfo.version.sdkInt;
+                                        logger.d('(SDK $sdkInt)');
+                                        toasts.codeSend("Starting Download");
+                                        main.localNotification.createDownloadNotification();
 
-                                      try {
-                                        final request = SaveMediaRequest(
-                                          link: link,
-                                          isLocalFile: false,
-                                          kind: SaveMediaKind.wallpaper,
-                                        );
-                                        final result = await _prismMediaApi.saveMedia(request);
-                                        if (result.success) {
-                                          analytics.track(DownloadOwnWallEvent(link: link));
-                                          toasts.codeSend("Wall Downloaded in Pictures/Prism!");
-                                        } else {
+                                        try {
+                                          final request = SaveMediaRequest(
+                                            link: link,
+                                            isLocalFile: false,
+                                            kind: SaveMediaKind.wallpaper,
+                                          );
+                                          final result = await _prismMediaApi.saveMedia(request);
+                                          if (result.success) {
+                                            analytics.track(DownloadOwnWallEvent(link: link));
+                                            toasts.codeSend("Wall Downloaded in Pictures/Prism!");
+                                          } else {
+                                            toasts.codeSend("Couldn't download! Please Retry!");
+                                          }
+                                        } on PlatformException catch (e) {
+                                          if (e.code != 'channel-error') {
+                                            logger.e(
+                                              rejected
+                                                  ? 'saveMedia failed for rejected wall download'
+                                                  : 'saveMedia failed for review wall download',
+                                              error: e,
+                                            );
+                                          }
                                           toasts.codeSend("Couldn't download! Please Retry!");
-                                        }
-                                      } on PlatformException catch (e) {
-                                        if (e.code != 'channel-error') {
+                                        } catch (e) {
                                           logger.e(
                                             rejected
-                                                ? 'saveMedia failed for rejected wall download'
-                                                : 'saveMedia failed for review wall download',
+                                                ? 'Unexpected saveMedia failure for rejected wall download'
+                                                : 'Unexpected saveMedia failure for review wall download',
                                             error: e,
                                           );
+                                          toasts.codeSend("Couldn't download! Please Retry!");
+                                        } finally {
+                                          main.localNotification.cancelDownloadNotification();
                                         }
-                                        toasts.codeSend("Couldn't download! Please Retry!");
-                                      } catch (e) {
-                                        logger.e(
-                                          rejected
-                                              ? 'Unexpected saveMedia failure for rejected wall download'
-                                              : 'Unexpected saveMedia failure for review wall download',
-                                          error: e,
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Container(
+                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                    child: IconButton(
+                                      icon: const Icon(JamIcons.trash, color: Colors.white),
+                                      onPressed: () {
+                                        final AlertDialog deleteWallPopUp = AlertDialog(
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          title: Text(
+                                            'Delete this wallpaper?',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                          ),
+                                          content: Text(
+                                            "This is permanent, and this action can't be undone!",
+                                            style: TextStyle(
+                                              fontFamily: "Proxima Nova",
+                                              fontWeight: FontWeight.normal,
+                                              fontSize: 14,
+                                              color: Theme.of(context).colorScheme.secondary,
+                                            ),
+                                          ),
+                                          actions: [
+                                            MaterialButton(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                              color: Theme.of(context).hintColor,
+                                              onPressed: () async {
+                                                Navigator.pop(context);
+                                                await _reviewDeleteDoc(
+                                                  collection: rejected
+                                                      ? FirebaseCollections.rejectedWalls
+                                                      : FirebaseCollections.walls,
+                                                  id: wallpaper.id,
+                                                  sourceTag: rejected
+                                                      ? 'review.rejectedWall.delete'
+                                                      : 'review.wall.delete',
+                                                  successToast: "Wallpaper successfully deleted from server!",
+                                                );
+                                              },
+                                              child: const Text(
+                                                'DELETE',
+                                                style: TextStyle(fontSize: 16.0, color: Colors.white),
+                                              ),
+                                            ),
+                                            MaterialButton(
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                                              color: Theme.of(context).colorScheme.error,
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: const Text(
+                                                'CANCEL',
+                                                style: TextStyle(fontSize: 16.0, color: Colors.white),
+                                              ),
+                                            ),
+                                          ],
+                                          backgroundColor: Theme.of(context).primaryColor,
+                                          actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
                                         );
-                                        toasts.codeSend("Couldn't download! Please Retry!");
-                                      } finally {
-                                        main.localNotification.cancelDownloadNotification();
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Container(
-                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                  child: IconButton(
-                                    icon: const Icon(JamIcons.trash, color: Colors.white),
-                                    onPressed: () {
-                                      final AlertDialog deleteWallPopUp = AlertDialog(
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        title: Text(
-                                          'Delete this wallpaper?',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 16,
-                                            color: Theme.of(context).colorScheme.secondary,
-                                          ),
-                                        ),
-                                        content: Text(
-                                          "This is permanent, and this action can't be undone!",
-                                          style: TextStyle(
-                                            fontFamily: "Proxima Nova",
-                                            fontWeight: FontWeight.normal,
-                                            fontSize: 14,
-                                            color: Theme.of(context).colorScheme.secondary,
-                                          ),
-                                        ),
-                                        actions: [
-                                          MaterialButton(
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            color: Theme.of(context).hintColor,
-                                            onPressed: () async {
-                                              Navigator.pop(context);
-                                              await _reviewDeleteDoc(
-                                                collection: rejected
-                                                    ? FirebaseCollections.rejectedWalls
-                                                    : FirebaseCollections.walls,
-                                                id: wallpaper.id,
-                                                sourceTag: rejected
-                                                    ? 'review.rejectedWall.delete'
-                                                    : 'review.wall.delete',
-                                                successToast: "Wallpaper successfully deleted from server!",
-                                              );
-                                            },
-                                            child: const Text(
-                                              'DELETE',
-                                              style: TextStyle(fontSize: 16.0, color: Colors.white),
-                                            ),
-                                          ),
-                                          MaterialButton(
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                            color: Theme.of(context).colorScheme.error,
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: const Text(
-                                              'CANCEL',
-                                              style: TextStyle(fontSize: 16.0, color: Colors.white),
-                                            ),
-                                          ),
-                                        ],
-                                        backgroundColor: Theme.of(context).primaryColor,
-                                        actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                                      );
 
-                                      showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
-                                    },
+                                        showModal(context: context, builder: (BuildContext context) => deleteWallPopUp);
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
