@@ -26,6 +26,8 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
     required bool refresh,
     int categories = 100,
     int purity = 100,
+    int startPage = 1,
+    String? paginationKey,
   }) async {
     lastCategories = categories;
     lastPurity = purity;
@@ -43,8 +45,12 @@ class _FakePexelsRepository implements PexelsWallpaperRepository {
   final Result<List<PexelsWallpaper>> result;
 
   @override
-  Future<Result<List<PexelsWallpaper>>> fetchFeed({required String categoryName, required bool refresh}) async =>
-      result;
+  Future<Result<List<PexelsWallpaper>>> fetchFeed({
+    required String categoryName,
+    required bool refresh,
+    int startPage = 1,
+    String? paginationKey,
+  }) async => result;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

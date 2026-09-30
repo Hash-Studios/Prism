@@ -64,7 +64,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     );
     final router = context.router;
     Navigator.pop(context);
-    router.push(const AiTabRoute());
+    router.push(AiTabRoute());
   }
 
   @override

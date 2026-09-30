@@ -638,7 +638,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: Text('Admin Moderation', style: _titleStyle),
           subtitle: const Text('Review and moderate submitted content', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => context.router.push(const AdminReviewRoute()),
+          onTap: () => context.router.push(AdminReviewRoute()),
         ),
         ListTile(
           leading: const Icon(JamIcons.file),

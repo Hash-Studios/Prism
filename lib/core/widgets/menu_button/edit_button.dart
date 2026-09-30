@@ -1,16 +1,12 @@
 import 'dart:io';
 
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/utils/safe_image_decode.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as imagelib;
-import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 class EditButton extends StatefulWidget {
@@ -53,52 +49,42 @@ class _EditButtonState extends State<EditButton> {
       isLoading = true;
     });
     toasts.success('Loading Wallpaper');
+    Directory? sessionDirectory;
     try {
       final response = await http.get(Uri.parse(url));
-      final documentDirectory = await getApplicationDocumentsDirectory();
-      final imagesDirectory = '${documentDirectory.path}/images';
-      await Directory(imagesDirectory).create(recursive: true);
-      final File fullFile = File('$imagesDirectory/pic.jpg');
-      final File thumbFile = File('$imagesDirectory/picThumb.jpg');
-      await fullFile.writeAsBytes(response.bodyBytes);
-      final List<int> thumbBytes = await compute<Uint8List, List<int>>(_resizeImage, response.bodyBytes);
-      await thumbFile.writeAsBytes(thumbBytes);
-      if (!mounted) return;
-      final thumbDecoded = decodeImageLenient(thumbBytes);
-      final fullDecoded = decodeImageLenient(response.bodyBytes);
-      if (thumbDecoded == null || fullDecoded == null) {
-        toasts.error('Could not open this image for editing');
-        setState(() {
-          isLoading = false;
-        });
+      if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+        toasts.error('Could not load wallpaper for editing');
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
         return;
       }
+      if (!mounted) return;
+      final editDir = Directory('${(await getTemporaryDirectory()).path}/prism_edit');
+      await editDir.create(recursive: true);
+      sessionDirectory = await editDir.createTemp('source_');
+      final file = File('${sessionDirectory.path}/source.img');
+      await file.writeAsBytes(response.bodyBytes);
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
-      context.router.push(
-        WallpaperFilterRoute(
-          image: thumbDecoded,
-          finalImage: fullDecoded,
-          filename: path.basename(thumbFile.path),
-          finalFilename: path.basename(fullFile.path),
-        ),
-      );
+      await context.router.push(WallpaperFilterRoute(filePath: file.path));
     } catch (_) {
       if (mounted) {
         toasts.error('Could not load wallpaper for editing');
+      }
+    } finally {
+      try {
+        await sessionDirectory?.delete(recursive: true);
+      } catch (_) {}
+      if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
     }
-  }
-
-  static List<int> _resizeImage(Uint8List bytes) {
-    final imagelib.Image? decoded = decodeImageLenient(bytes);
-    if (decoded == null) {
-      throw const FormatException('decodeImageLenient');
-    }
-    return imagelib.encodeJpg(imagelib.copyResize(decoded, width: 300));
   }
 }

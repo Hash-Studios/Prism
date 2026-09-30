@@ -36,7 +36,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
-  int _personalizedFeedVersion = 0;
 
   Future<void> _ensureDefaultTopicSubscriptions() async {
     if (!_settingsLocal.get<bool>('subscribedToRecommendations', defaultValue: false)) {
@@ -132,25 +131,18 @@ class _HomeTabPageState extends State<HomeTabPage> {
     unawaited(_ensureDefaultTopicSubscriptions());
   }
 
+  void _openFeedSettings() {
+    unawaited(openPersonalizedFeedSettingsBottomSheet(context));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
-      appBar: PrismTopAppBar(
-        onLogoTap: () => unawaited(
-          openPersonalizedFeedSettingsBottomSheet(
-            context,
-            onPreferencesSaved: () {
-              if (mounted) {
-                setState(() => _personalizedFeedVersion += 1);
-              }
-            },
-          ),
-        ),
-      ),
+      appBar: PrismTopAppBar(onLogoTap: _openFeedSettings),
       body: Stack(
         children: <Widget>[
-          PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
+          PersonalizedFeedScreen(onTuneTap: _openFeedSettings),
           if (!_isOnline) const ConnectivityWidget(),
         ],
       ),

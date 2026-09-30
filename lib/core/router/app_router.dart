@@ -6,9 +6,13 @@ import 'package:Prism/core/router/not_found_page.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/popup/edit_profile_panel.dart';
+import 'package:Prism/data/upload/github_content_api.dart' show GitHubContent;
+import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' show WallSubmissionResult;
+import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/firestore_telemetry_screen.dart';
 import 'package:Prism/features/admin_review/views/pages/swipe_review_screen.dart';
+import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
@@ -56,7 +60,6 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_scr
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' show Image;
 
 part 'app_router.gr.dart';
 
