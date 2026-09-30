@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:flutter/widgets.dart';
 
 class FakeAppAnalytics implements AppAnalytics {
+  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
   final List<String?> userIds = <String?>[];
   final List<MapEntry<String, String?>> userProperties = <MapEntry<String, String?>>[];
 
@@ -36,5 +37,7 @@ class FakeAppAnalytics implements AppAnalytics {
   }
 
   @override
-  Future<void> track(AnalyticsEvent event) async {}
+  Future<void> track(AnalyticsEvent event) async {
+    events.add(event);
+  }
 }

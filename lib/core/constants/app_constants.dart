@@ -10,6 +10,9 @@ const String currentAppVersionCode = '336';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 const String defaultBannerText = 'Join our Telegram';
+const String appStoreUrl = 'https://apps.apple.com/app/id6670200846';
+const String playStoreUrl = 'https://play.google.com/store/apps/details?id=com.hash.prism';
+
 const String defaultBannerUrl = 'https://t.me/PrismWallpapers';
 const bool defaultBannerTextOn = true;
 
