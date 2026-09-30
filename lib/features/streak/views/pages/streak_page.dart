@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
+import 'package:Prism/features/streak/streak_unlock.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +30,6 @@ const double _kSectionGap = 28;
 /// Space between major page regions (shop ↔ earn).
 const double _kMajorGap = 32;
 
-bool _streakMotionOn(BuildContext context) => !MediaQuery.of(context).disableAnimations;
-
 @RoutePage()
 class StreakPage extends StatefulWidget {
   const StreakPage({super.key});
@@ -40,13 +39,6 @@ class StreakPage extends StatefulWidget {
 }
 
 class _StreakPageState extends State<StreakPage> {
-  bool _isUnlocked(PrismWallpaper wallpaper, StreakStatus status, int balance) {
-    final streakOk =
-        (wallpaper.requiredStreakDays == null) || (status.active && status.streakDay >= wallpaper.requiredStreakDays!);
-    final coinOk = (wallpaper.streakShopCoinCost == null) || balance >= wallpaper.streakShopCoinCost!;
-    return streakOk || coinOk;
-  }
-
   @override
   Widget build(BuildContext context) {
     // Coin callables require auth; guests (iOS browse-without-account) need to sign in first.
@@ -101,10 +93,10 @@ class _StreakPageState extends State<StreakPage> {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: _kTightGap)),
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: _kPagePadding),
-                child: _StreakShopGrid(isUnlocked: _isUnlocked),
+                padding: EdgeInsets.symmetric(horizontal: _kPagePadding),
+                child: _StreakShopGrid(),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: _kMajorGap)),
@@ -128,8 +120,6 @@ class _StreakPageState extends State<StreakPage> {
     );
   }
 }
-
-// ── Hero Section ──────────────────────────────────────────────────────────────
 
 class _HeroSection extends StatelessWidget {
   @override
@@ -161,7 +151,7 @@ class _HeroSection extends StatelessWidget {
 
         final Color top = scheme.primaryContainer;
         final Color bottom = Color.lerp(scheme.primaryContainer, scheme.surface, 0.72)!;
-        final bool motion = _streakMotionOn(context);
+        final bool motion = !MediaQuery.disableAnimationsOf(context);
         final Widget heroChild = ClipRRect(
           borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
           child: Container(
@@ -248,8 +238,6 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-// ── Day Cards Row ─────────────────────────────────────────────────────────────
-
 class _DayCardsRow extends StatefulWidget {
   @override
   State<_DayCardsRow> createState() => _DayCardsRowState();
@@ -266,7 +254,7 @@ class _DayCardsRowState extends State<_DayCardsRow> with SingleTickerProviderSta
       if (!mounted) {
         return;
       }
-      if (_streakMotionOn(context)) {
+      if (!MediaQuery.disableAnimationsOf(context)) {
         _rowEntrance.forward();
       } else {
         _rowEntrance.value = 1;
@@ -381,8 +369,6 @@ class _DayCardsRowState extends State<_DayCardsRow> with SingleTickerProviderSta
   }
 }
 
-// ── Status Message ────────────────────────────────────────────────────────────
-
 class _StatusMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -408,13 +394,8 @@ class _StatusMessage extends StatelessWidget {
         return Semantics(
           container: true,
           label: message,
-          child: Container(
+          child: _OutlinedCard(
             padding: const EdgeInsets.symmetric(horizontal: _kPagePadding - 4, vertical: 12),
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4), width: 0.5),
-            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -441,8 +422,6 @@ class _StatusMessage extends StatelessWidget {
   }
 }
 
-// ── Section title ───────────────────────────────────────────────────────────────
-
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});
 
@@ -461,8 +440,6 @@ class _SectionTitle extends StatelessWidget {
     );
   }
 }
-
-// ── Streak shop loading (rotating copy, motion-aware) ─────────────────────────
 
 class _StreakShopLoading extends StatefulWidget {
   const _StreakShopLoading();
@@ -488,7 +465,7 @@ class _StreakShopLoadingState extends State<_StreakShopLoading> {
       if (!mounted) {
         return;
       }
-      if (MediaQuery.of(context).disableAnimations) {
+      if (MediaQuery.disableAnimationsOf(context)) {
         return;
       }
       _timer = Timer.periodic(const Duration(milliseconds: 2100), (_) {
@@ -508,7 +485,7 @@ class _StreakShopLoadingState extends State<_StreakShopLoading> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool motion = _streakMotionOn(context);
+    final bool motion = !MediaQuery.disableAnimationsOf(context);
     final String line = _lines[_i];
 
     return SizedBox(
@@ -542,12 +519,8 @@ class _StreakShopLoadingState extends State<_StreakShopLoading> {
   }
 }
 
-// ── Streak Shop Grid ──────────────────────────────────────────────────────────
-
 class _StreakShopGrid extends StatelessWidget {
-  const _StreakShopGrid({required this.isUnlocked});
-
-  final bool Function(PrismWallpaper, StreakStatus, int) isUnlocked;
+  const _StreakShopGrid();
 
   @override
   Widget build(BuildContext context) {
@@ -557,16 +530,8 @@ class _StreakShopGrid extends StatelessWidget {
           return const _StreakShopLoading();
         }
         if (state.status == StreakShopStatus.failure) {
-          return Container(
+          return _OutlinedCard(
             padding: const EdgeInsets.all(_kPagePadding),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
-                width: 0.5,
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
@@ -584,16 +549,8 @@ class _StreakShopGrid extends StatelessWidget {
           );
         }
         if (state.items.isEmpty) {
-          return Container(
+          return _OutlinedCard(
             padding: const EdgeInsets.all(_kPagePadding),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
-                width: 0.5,
-              ),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -634,7 +591,7 @@ class _StreakShopGrid extends StatelessWidget {
                   itemCount: state.items.length,
                   itemBuilder: (_, index) {
                     final w = state.items[index];
-                    final unlocked = isUnlocked(w, streakStatus, balance);
+                    final unlocked = w.isUnlockedFor(streakStatus, balance);
                     return _StreakCollectionCard(
                       wallpaper: w,
                       unlocked: unlocked,
@@ -666,8 +623,6 @@ class _StreakShopGrid extends StatelessWidget {
     );
   }
 }
-
-// ── Streak Collection Card ────────────────────────────────────────────────────
 
 class _StreakCollectionCard extends StatelessWidget {
   const _StreakCollectionCard({required this.wallpaper, required this.unlocked, required this.onTap});
@@ -815,8 +770,6 @@ class _StreakCollectionCard extends StatelessWidget {
   }
 }
 
-// ── Earn Methods List ─────────────────────────────────────────────────────────
-
 class _EarnMethodsList extends StatelessWidget {
   const _EarnMethodsList();
 
@@ -873,16 +826,9 @@ class _EarnItem extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap,
           behavior: HitTestBehavior.opaque,
-          child: Container(
+          child: _OutlinedCard(
             padding: const EdgeInsets.symmetric(horizontal: _kPagePadding - 4, vertical: 14),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
-                width: 0.5,
-              ),
-            ),
+            radius: 14,
             child: Row(
               children: <Widget>[
                 Container(
@@ -925,6 +871,28 @@ class _EarnItem extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _OutlinedCard extends StatelessWidget {
+  const _OutlinedCard({required this.padding, required this.child, this.radius = 12});
+
+  final EdgeInsets padding;
+  final double radius;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4), width: 0.5),
+      ),
+      child: child,
     );
   }
 }
