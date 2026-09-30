@@ -101,7 +101,7 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
               alignment: Alignment.bottomCenter,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: SetWallpaperButton(colorChanged: false, url: widget.file.path),
+                child: SetWallpaperButton(url: widget.file.path),
               ),
             ),
           Align(

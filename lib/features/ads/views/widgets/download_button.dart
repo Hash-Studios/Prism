@@ -24,7 +24,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class DownloadButton extends StatefulWidget {
   const DownloadButton({
     required this.link,
-    required this.colorChanged,
     this.isPremiumContent = false,
     this.contentId,
     this.sourceContext,
@@ -32,7 +31,6 @@ class DownloadButton extends StatefulWidget {
   });
 
   final String? link;
-  final bool colorChanged;
   final bool isPremiumContent;
   final String? contentId;
   final String? sourceContext;

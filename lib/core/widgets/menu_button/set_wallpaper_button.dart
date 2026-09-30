@@ -13,17 +13,11 @@ import 'package:flutter/services.dart';
 
 class SetWallpaperButton extends StatefulWidget {
   final String? url;
-  final bool colorChanged;
 
   /// When true, may show the OS notification permission prompt once after a successful set (e.g. wallpaper detail).
   final bool promptNotificationPermissionOnSuccess;
 
-  const SetWallpaperButton({
-    super.key,
-    required this.url,
-    required this.colorChanged,
-    this.promptNotificationPermissionOnSuccess = false,
-  });
+  const SetWallpaperButton({super.key, required this.url, this.promptNotificationPermissionOnSuccess = false});
 
   @override
   _SetWallpaperButtonState createState() => _SetWallpaperButtonState();
@@ -49,144 +43,51 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
     }
   }
 
-  Future<void> _setBothWallPaper() async {
-    bool? result;
+  Future<void> _setWallpaper(WallpaperTarget target, WallpaperTargetValue analyticsTarget) async {
     try {
-      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.both);
+      final bool result = await WallpaperService.setWallpaperFromSource(widget.url!, target);
       if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
-        );
+        analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.success));
         toasts.success("Wallpaper set successfully!");
         await _maybePromptNotificationPermission();
       } else {
-        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
     } catch (e) {
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
-      );
-      logger.d(e.toString());
+      analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.failure));
+      logger.e('Set wallpaper failed', error: e);
       toasts.error(_errorMessage(e));
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+    }
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
-  Future<void> _setLockWallPaper() async {
-    bool? result;
-    try {
-      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.lock);
-      if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
-        );
-        toasts.success("Wallpaper set successfully!");
-        await _maybePromptNotificationPermission();
-      } else {
-        logger.d("Failed");
-        toasts.error("Something went wrong!");
-      }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      logger.d(e.toString());
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
-      );
-      toasts.error(_errorMessage(e));
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _setHomeWallPaper() async {
-    bool? result;
-    try {
-      result = await WallpaperService.setWallpaperFromSource(widget.url!, WallpaperTarget.home);
-      if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
-        );
-        toasts.success("Wallpaper set successfully!");
-        await _maybePromptNotificationPermission();
-      } else {
-        logger.d("Failed");
-        toasts.error("Something went wrong!");
-      }
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      logger.d(e.toString());
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
-      );
-      toasts.error(_errorMessage(e));
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
+  void _onTargetSelected(WallpaperTarget target, WallpaperTargetValue analyticsTarget) {
+    HapticFeedback.vibrate();
+    Navigator.of(context).pop();
+    setState(() {
+      isLoading = true;
+    });
+    _setWallpaper(target, analyticsTarget);
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        isLoading
-            ? logger.d("")
-            : showModalBottomSheet(
-                isScrollControlled: true,
-                context: context,
-                builder: (context) => SetOptionsPanel(
-                  onTap1: () {
-                    HapticFeedback.vibrate();
-                    Navigator.of(context).pop();
-                    setState(() {
-                      isLoading = true;
-                    });
-                    _setHomeWallPaper();
-                  },
-                  onTap2: () {
-                    HapticFeedback.vibrate();
-                    Navigator.of(context).pop();
-                    setState(() {
-                      isLoading = true;
-                    });
-                    _setLockWallPaper();
-                  },
-                  onTap3: () {
-                    HapticFeedback.vibrate();
-                    Navigator.of(context).pop();
-                    setState(() {
-                      isLoading = true;
-                    });
-                    _setBothWallPaper();
-                  },
-                ),
-              );
+        if (isLoading) return;
+        showModalBottomSheet(
+          isScrollControlled: true,
+          context: context,
+          builder: (context) => SetOptionsPanel(
+            onTap1: () => _onTargetSelected(WallpaperTarget.home, WallpaperTargetValue.home),
+            onTap2: () => _onTargetSelected(WallpaperTarget.lock, WallpaperTargetValue.lock),
+            onTap3: () => _onTargetSelected(WallpaperTarget.both, WallpaperTargetValue.both),
+          ),
+        );
       },
       child: CircularMenuButton(
         label: 'Set as wallpaper',

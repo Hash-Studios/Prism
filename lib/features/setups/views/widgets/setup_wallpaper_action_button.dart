@@ -44,8 +44,8 @@ class SetupWallpaperActionButton extends StatelessWidget {
     final wallpaper = setup.wallpaperValue;
     if (!wallpaper.isEncoded && setup.wallId.isNotEmpty) {
       return switch (action) {
-        SetupWallpaperAction.download => DownloadButton(link: wallpaper.primaryUrl, colorChanged: false),
-        SetupWallpaperAction.setWallpaper => SetWallpaperButton(url: wallpaper.primaryUrl, colorChanged: false),
+        SetupWallpaperAction.download => DownloadButton(link: wallpaper.primaryUrl),
+        SetupWallpaperAction.setWallpaper => SetWallpaperButton(url: wallpaper.primaryUrl),
       };
     }
     final String link = wallpaper.isEncoded ? wallpaper.deepLinkUrl ?? wallpaper.primaryUrl : wallpaper.primaryUrl;
