@@ -136,6 +136,22 @@ class AiTabRouteArgs {
 }
 
 /// generated route for
+/// [AutoRotateScreen]
+class AutoRotateRoute extends PageRouteInfo<void> {
+  const AutoRotateRoute({List<PageRouteInfo>? children})
+    : super(AutoRotateRoute.name, initialChildren: children);
+
+  static const String name = 'AutoRotateRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const AutoRotateScreen();
+    },
+  );
+}
+
+/// generated route for
 /// [BlockedAccountsScreen]
 class BlockedAccountsRoute extends PageRouteInfo<void> {
   const BlockedAccountsRoute({List<PageRouteInfo>? children})
