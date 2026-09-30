@@ -1,13 +1,10 @@
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
-import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-
-final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
 
 Future<void> createRecord(
   String? id,
@@ -19,7 +16,7 @@ Future<void> createRecord(
   String? wallpaperTitle,
   String? wallpaperCategory,
   String? wallpaperDesc,
-  dynamic review, {
+  Object review, {
   List<String>? wallpaperTags,
   bool isAiGenerated = false,
   String? aiGenerationId,
@@ -35,7 +32,7 @@ Future<void> createRecord(
   }
   if (!app_state.prismUser.premium) {
     UploadQuota.incrementWeeklyUploads();
-    app_state.prismUser.uploadsWeekStart = _settingsLocal.get<String>('uploadsWeekStart', defaultValue: '').trim();
+    app_state.prismUser.uploadsWeekStart = UploadQuota.storedWeekStart;
     app_state.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
     app_state.persistPrismUser();
     if (app_state.prismUser.id.trim().isNotEmpty) {
@@ -71,138 +68,43 @@ Future<void> createRecord(
     if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
   }, sourceTag: 'upload.createWall');
   await CoinsService.instance.maybeAwardFirstWallpaperUpload();
-  if (app_state.prismUser.premium == true) {
+  if (app_state.prismUser.premium) {
     toasts.codeSend("Succesfully uploaded");
   } else {
     toasts.codeSend("Your wall is submitted, and is under review.");
   }
 }
 
-Future<void> createSetup(
-  String? id,
-  String? imageURL,
-  String? wallpaperProvider,
-  String? wallpaperThumb,
-  dynamic wallpaperUrl,
-  String iconName,
-  String iconURL,
-  String widgetName,
-  String widgetURL,
-  String widgetName2,
-  String widgetURL2,
-  String setupName,
-  String setupDesc,
-  String wallId,
-  bool? review,
-) async {
-  await firestoreClient.addDoc(FirebaseCollections.setups, {
-    'by': app_state.prismUser.name,
-    'email': app_state.prismUser.email,
-    'userPhoto': app_state.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': review,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId,
-  }, sourceTag: 'upload.createSetup');
+Map<String, dynamic> _setupPayload(SetupSubmission s) => {
+  'by': app_state.prismUser.name,
+  'email': app_state.prismUser.email,
+  'userPhoto': app_state.prismUser.profilePhoto,
+  ...s.toFirestore(),
+  'created_at': DateTime.now().toUtc(),
+};
+
+Future<void> createSetup(SetupSubmission setup) async {
+  await firestoreClient.addDoc(FirebaseCollections.setups, _setupPayload(setup), sourceTag: 'upload.createSetup');
   toasts.codeSend("Your setup is submitted, and is under review.");
 }
 
-Future<void> updateSetup(
-  String setupDocId,
-  String? id,
-  String? imageURL,
-  String? wallpaperProvider,
-  String? wallpaperThumb,
-  dynamic wallpaperUrl,
-  String iconName,
-  String iconURL,
-  String widgetName,
-  String widgetURL,
-  String widgetName2,
-  String widgetURL2,
-  String setupName,
-  String setupDesc,
-  String wallId,
-  bool? review,
-) async {
+Future<void> updateSetup(String setupDocId, SetupSubmission setup) async {
   await firestoreClient.setDoc(
     FirebaseCollections.setups,
     setupDocId,
-    {
-      'by': app_state.prismUser.name,
-      'email': app_state.prismUser.email,
-      'userPhoto': app_state.prismUser.profilePhoto,
-      'id': id,
-      'image': imageURL,
-      'wallpaper_provider': wallpaperProvider,
-      'wallpaper_thumb': wallpaperThumb,
-      'wallpaper_url': wallpaperUrl,
-      'icon': iconName,
-      'icon_url': iconURL,
-      'widget': widgetName,
-      'widget_url': widgetURL,
-      'widget2': widgetName2,
-      'widget_url2': widgetURL2,
-      'name': setupName,
-      'desc': setupDesc,
-      'review': review,
-      'created_at': DateTime.now().toUtc(),
-      'wall_id': wallId,
-    },
+    _setupPayload(setup),
     merge: true,
     sourceTag: 'upload.updateSetup',
   );
   toasts.codeSend("Your setup is edited, and is under review.");
 }
 
-Future<void> createDraftSetup(
-  String? id,
-  String? imageURL,
-  String? wallpaperProvider,
-  String? wallpaperThumb,
-  dynamic wallpaperUrl,
-  String? iconName,
-  String? iconURL,
-  String? widgetName,
-  String? widgetURL,
-  String? widgetName2,
-  String? widgetURL2,
-  String? setupName,
-  String? setupDesc,
-  String? wallId,
-) async {
-  await firestoreClient.setDoc(FirebaseCollections.draftSetups, id!, {
-    'by': app_state.prismUser.name,
-    'email': app_state.prismUser.email,
-    'userPhoto': app_state.prismUser.profilePhoto,
-    'id': id,
-    'image': imageURL,
-    'wallpaper_provider': wallpaperProvider,
-    'wallpaper_thumb': wallpaperThumb,
-    'wallpaper_url': wallpaperUrl,
-    'icon': iconName,
-    'icon_url': iconURL,
-    'widget': widgetName,
-    'widget_url': widgetURL,
-    'widget2': widgetName2,
-    'widget_url2': widgetURL2,
-    'name': setupName,
-    'desc': setupDesc,
-    'review': false,
-    'created_at': DateTime.now().toUtc(),
-    'wall_id': wallId,
-  }, sourceTag: 'upload.createDraftSetup');
+Future<void> createDraftSetup(SetupSubmission setup) async {
+  await firestoreClient.setDoc(
+    FirebaseCollections.draftSetups,
+    setup.id,
+    _setupPayload(setup),
+    sourceTag: 'upload.createDraftSetup',
+  );
   toasts.codeSend("Draft saved!");
 }
