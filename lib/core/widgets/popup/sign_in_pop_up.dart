@@ -46,8 +46,6 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           closeLoaderIfVisible();
           if (outcome == SignInOutcome.cancelled) {
-            app_state.prismUser.loggedIn = false;
-            app_state.persistPrismUser();
             toasts.success('Sign in cancelled.');
             return;
           }
@@ -62,8 +60,6 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
           }
           logger.d(e.toString());
           closeLoaderIfVisible();
-          app_state.prismUser.loggedIn = false;
-          app_state.persistPrismUser();
           toasts.error('Something went wrong, please try again!');
         });
   }

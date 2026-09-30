@@ -162,8 +162,10 @@ class TasteSignalStore {
 
   Future<void> markSeeded() => _settingsLocal.set(_seededKey, true);
 
-  Future<void> clear() async {
+  /// [allowReseed] lets the next user seed from their own favourites (sign-out).
+  /// Without it, a user who cleared their history is not re-learned from favourites.
+  Future<void> clear({bool allowReseed = false}) async {
     await _settingsLocal.delete(_key);
-    await _settingsLocal.set(_seededKey, true);
+    await _settingsLocal.set(_seededKey, !allowReseed);
   }
 }

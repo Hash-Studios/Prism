@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +28,7 @@ class AppleAuth {
 
   Future<SignInOutcome> signInWithApple() async {
     logger.i('signInWithApple start', tag: 'AppleAuth');
+    bool firebaseSignedIn = false;
     try {
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
@@ -44,6 +46,7 @@ class AppleAuth {
       );
 
       final UserCredential authResult = await _auth.signInWithCredential(oauthCredential);
+      firebaseSignedIn = true;
       final User? user = authResult.user;
 
       if (user == null) {
@@ -110,6 +113,10 @@ class AppleAuth {
         ),
       );
       logger.e('signInWithApple failed', tag: 'AppleAuth', error: e, stackTrace: st);
+      // Do not leave a Firebase session the app state does not know about.
+      if (firebaseSignedIn) {
+        await globalGoogleAuth.signOutGoogle();
+      }
       rethrow;
     }
   }
