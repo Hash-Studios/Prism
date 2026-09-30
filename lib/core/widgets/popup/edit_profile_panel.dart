@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/global/svg_assets.dart';
@@ -343,14 +344,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           )
                         : SvgPicture.string(
                             defaultHeader
-                                .replaceAll(
-                                  "#181818",
-                                  "#${theme.primaryColor.toARGB32().toRadixString(16).substring(2)}",
-                                )
-                                .replaceAll(
-                                  "#E77597",
-                                  "#${theme.colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
-                                ),
+                                .replaceAll("#181818", "#${theme.primaryColor.rgbHex}")
+                                .replaceAll("#E77597", "#${theme.colorScheme.error.rgbHex}"),
                             fit: BoxFit.cover,
                           )
                   : Image.file(_cover!, fit: BoxFit.cover),
