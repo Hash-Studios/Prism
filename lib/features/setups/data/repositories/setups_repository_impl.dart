@@ -83,19 +83,12 @@ class SetupsRepositoryImpl implements SetupsRepository {
 
   Future<SetupsPage?> _readCached() async {
     final snapshot = await _feedCacheLocal.read(source: 'setups', scope: 'main');
-    if (snapshot == null || snapshot.payload is! Map) {
+    if (snapshot == null) {
       return null;
     }
 
     final payload = toJsonMap(snapshot.payload);
-    final rows = payload['rows'];
-    if (rows is! List) {
-      return null;
-    }
-
-    final mappedRows = rows
-        .whereType<Map>()
-        .map(toJsonMap)
+    final mappedRows = toJsonMapList(payload['rows'])
         .map((entry) {
           final String docId = entry['docId']?.toString() ?? '';
           final Map<String, dynamic> docMap = toJsonMap(entry['doc']);

@@ -289,7 +289,7 @@ update-flutter: ensure-fvm
 	@$(FLUTTER) pub get
 	@echo "Pinned Flutter version updated to $(VERSION). Commit .fvmrc."
 
-ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard find-unused-ci cloudflare-worker-check test
+ci: get format-check env-guard secrets-guard version-guard analytics-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check test
 
 test: ensure-fvm
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
