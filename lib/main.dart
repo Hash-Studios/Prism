@@ -32,6 +32,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/pending_deep_link_queue.dart';
+import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -802,11 +803,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   /// the `route` field in the notification's data payload.
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
     // A cold-launch tap arrives before startup ends, and the splash would replace its route. Wait, like deep links do.
-    // ponytail: polls every 100 ms and gives up after 30 s (for example on the obsolete-version screen).
-    for (int i = 0; i < 300 && !_pastStartup; i++) {
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-    }
-    if (!_pastStartup) return;
+    final bool canRoute = await waitForPushTapStartup(isMounted: () => mounted, isReady: () => _pastStartup);
+    if (!canRoute) return;
 
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();

@@ -84,4 +84,12 @@ void main() {
     expect(parser.transform(Uri.parse('https://prismwalls.com/user/%FF')), Uri(path: '/not-found'));
     expect(parser.transform(Uri.parse('https://prismwalls.com/l?code=%FF')), Uri(path: '/not-found'));
   });
+
+  test('the router transform rejects a malformed custom-scheme host moved into the path', () {
+    final Uri transformed = parser.transform(Uri.parse('prism://%FF/alice'));
+
+    expect(transformed.pathSegments, <String>['not-found']);
+    expect(transformed.queryParameters, isEmpty);
+    expect(transformed, Uri(path: '/not-found'));
+  });
 }
