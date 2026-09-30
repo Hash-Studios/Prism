@@ -54,6 +54,7 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreRequested>(_onFetchMoreRequested);
+    on<_LessLikeThisRequested>(_onLessLikeThisRequested);
     on<_BlockedCreatorsChanged>(_onBlockedCreatorsChanged);
     // Blocking a creator removes their items from the on-screen feed instantly,
     // without waiting for the next fetch. skip(1) ignores the initial snapshot.
@@ -93,22 +94,28 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     return super.close();
   }
 
-  Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) async {
-    // Restore persisted seen keys so the feed shows wallpapers the user hasn't
-    // seen before, rather than re-serving the same top-ranked items each time.
-    List<String> persistedSeenKeys = const <String>[];
-    try {
-      persistedSeenKeys = await _repository.readPersistedSeenKeys();
-    } catch (e) {
-      logger.w('[PersonalizedFeed] failed to load persisted seen keys: $e');
-    }
-    await _load(emit, refresh: true, initialSeenKeys: persistedSeenKeys);
-  }
+  Future<void> _onStarted(_Started event, Emitter<PersonalizedFeedState> emit) => _load(emit, refresh: true);
 
-  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) async {
-    // Manual pull-to-refresh intentionally clears seen keys — the user wants a
-    // completely fresh set of content.
-    await _load(emit, refresh: true);
+  Future<void> _onRefreshRequested(_RefreshRequested event, Emitter<PersonalizedFeedState> emit) =>
+      _load(emit, refresh: true);
+
+  Future<void> _onLessLikeThisRequested(_LessLikeThisRequested event, Emitter<PersonalizedFeedState> emit) async {
+    final String key = _itemKey(event.item);
+    final List<FeedItemEntity> remaining = state.items.where((item) => _itemKey(item) != key).toList(growable: false);
+    final _SourceCounts counts = _resolveSourceCounts(remaining);
+    emit(
+      state.copyWith(
+        items: remaining,
+        sourcePrism: counts.prism,
+        sourceWallhaven: counts.wallhaven,
+        sourcePexels: counts.pexels,
+      ),
+    );
+    try {
+      await _repository.lessLikeThis(event.item);
+    } catch (e) {
+      logger.w('[PersonalizedFeed] less-like-this failed: $e');
+    }
   }
 
   Future<void> _onFetchMoreRequested(_FetchMoreRequested event, Emitter<PersonalizedFeedState> emit) async {
@@ -177,18 +184,14 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
     );
   }
 
-  Future<void> _load(
-    Emitter<PersonalizedFeedState> emit, {
-    required bool refresh,
-    List<String> initialSeenKeys = const <String>[],
-  }) async {
+  Future<void> _load(Emitter<PersonalizedFeedState> emit, {required bool refresh}) async {
     final baseState = refresh
         ? state.copyWith(
             status: LoadStatus.loading,
             actionStatus: ActionStatus.inProgress,
             page: 1,
             items: const <FeedItemEntity>[],
-            seenKeys: initialSeenKeys,
+            seenKeys: const <String>[],
             hasMore: true,
             isFetchingMore: false,
             failure: null,
@@ -198,11 +201,11 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
 
     final initialStopwatch = Stopwatch()..start();
     final result = await _fetchPersonalizedFeedUseCase(
-      FetchPersonalizedFeedRequest(
+      const FetchPersonalizedFeedRequest(
         page: 1,
         refresh: true,
-        seenKeys: initialSeenKeys,
-        existingItems: const <FeedItemEntity>[],
+        seenKeys: <String>[],
+        existingItems: <FeedItemEntity>[],
       ),
     );
     final initialLoadMs = _elapsedLoadMs(initialStopwatch);

@@ -149,6 +149,19 @@ class _HomeTabPageState extends State<HomeTabPage> {
     unawaited(_ensureDefaultTopicSubscriptions());
   }
 
+  void _openFeedSettings() {
+    unawaited(
+      openPersonalizedFeedSettingsBottomSheet(
+        context,
+        onPreferencesSaved: () {
+          if (mounted) {
+            setState(() => _personalizedFeedVersion += 1);
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isChangelogCheckPending) {
@@ -162,21 +175,10 @@ class _HomeTabPageState extends State<HomeTabPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
-      appBar: PrismTopAppBar(
-        onLogoTap: () => unawaited(
-          openPersonalizedFeedSettingsBottomSheet(
-            context,
-            onPreferencesSaved: () {
-              if (mounted) {
-                setState(() => _personalizedFeedVersion += 1);
-              }
-            },
-          ),
-        ),
-      ),
+      appBar: PrismTopAppBar(onLogoTap: _openFeedSettings),
       body: Stack(
         children: <Widget>[
-          PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
+          PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion), onTuneTap: _openFeedSettings),
           if (!result) const ConnectivityWidget() else Container(),
         ],
       ),

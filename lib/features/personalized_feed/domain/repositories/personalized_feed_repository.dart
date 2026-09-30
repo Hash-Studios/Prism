@@ -19,8 +19,6 @@ class FetchPersonalizedFeedRequest {
 abstract class PersonalizedFeedRepository {
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request);
 
-  /// Reads the persisted seen-item keys from the local cache without regard
-  /// to cache TTL, so they can be restored on cold start to avoid re-showing
-  /// wallpapers the user has already seen.
-  Future<List<String>> readPersistedSeenKeys();
+  /// Hides [item] for good and teaches the feed to show fewer like it.
+  Future<void> lessLikeThis(FeedItemEntity item);
 }

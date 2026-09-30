@@ -17,12 +17,14 @@ class SetWallpaperButton extends StatefulWidget {
 
   /// When true, may show the OS notification permission prompt once after a successful set (e.g. wallpaper detail).
   final bool promptNotificationPermissionOnSuccess;
+  final VoidCallback? onSet;
 
   const SetWallpaperButton({
     super.key,
     required this.url,
     required this.colorChanged,
     this.promptNotificationPermissionOnSuccess = false,
+    this.onSet,
   });
 
   @override
@@ -59,6 +61,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
         );
         toasts.codeSend("Wallpaper set successfully!");
+        widget.onSet?.call();
         await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
@@ -93,6 +96,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
         );
         toasts.codeSend("Wallpaper set successfully!");
+        widget.onSet?.call();
         await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");
@@ -127,6 +131,7 @@ class _SetWallpaperButtonState extends State<SetWallpaperButton> {
           const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
         );
         toasts.codeSend("Wallpaper set successfully!");
+        widget.onSet?.call();
         await _maybePromptNotificationPermission();
       } else {
         logger.d("Failed");

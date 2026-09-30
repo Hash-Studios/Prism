@@ -5,4 +5,5 @@ abstract class PersonalizedFeedEvent with _$PersonalizedFeedEvent {
   const factory PersonalizedFeedEvent.started() = _Started;
   const factory PersonalizedFeedEvent.refreshRequested() = _RefreshRequested;
   const factory PersonalizedFeedEvent.fetchMoreRequested() = _FetchMoreRequested;
+  const factory PersonalizedFeedEvent.lessLikeThisRequested(FeedItemEntity item) = _LessLikeThisRequested;
 }

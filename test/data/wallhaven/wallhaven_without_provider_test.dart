@@ -40,6 +40,7 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
     required bool refresh,
     int categories = 100,
     int purity = 100,
+    int startPage = 1,
   }) async => result;
 
   @override

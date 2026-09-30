@@ -26,6 +26,8 @@ class FirestoreFilter {
   Map<String, Object?> toJson() => <String, Object?>{'field': field, 'op': op.name, 'value': _jsonSafeValue(value)};
 }
 
+const String firestoreDocumentIdField = '__name__';
+
 class FirestoreOrderBy {
   const FirestoreOrderBy({required this.field, this.descending = false});
 

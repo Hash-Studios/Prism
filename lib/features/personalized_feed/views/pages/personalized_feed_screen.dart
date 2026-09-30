@@ -20,10 +20,13 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PersonalizedFeedScreen extends StatefulWidget {
-  const PersonalizedFeedScreen({super.key});
+  const PersonalizedFeedScreen({super.key, this.onTuneTap});
+
+  final VoidCallback? onTuneTap;
 
   @override
   State<PersonalizedFeedScreen> createState() => _PersonalizedFeedScreenState();
@@ -64,6 +67,29 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
     if (metrics.pixels >= metrics.maxScrollExtent - PrismFeedLayout.prefetchThreshold) {
       _bloc.add(const PersonalizedFeedEvent.fetchMoreRequested());
     }
+  }
+
+  Future<void> _showTileActions(FeedItemEntity item) async {
+    HapticFeedback.mediumImpact();
+    final bool? lessLikeThis = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.visibility_off_outlined),
+          title: const Text('Show less like this'),
+          subtitle: const Text("You'll see fewer walls like this."),
+          onTap: () => Navigator.of(sheetContext).pop(true),
+        ),
+      ),
+    );
+    if (lessLikeThis != true || !mounted) {
+      return;
+    }
+    _bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(item));
+    ScaffoldMessenger.maybeOf(
+      context,
+    )?.showSnackBar(const SnackBar(content: Text("Got it. You'll see fewer like this.")));
   }
 
   @override
@@ -123,17 +149,36 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
                 slivers: [
                   // Carousel: WallOfTheDay + banner + 4 wallpaper previews
                   SliverToBoxAdapter(child: _FeedCarousel(previewWalls: previewWalls)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 16, end: 4),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('For you', style: PrismTextStyles.editorialTitle(context))),
+                          IconButton(
+                            onPressed: widget.onTuneTap,
+                            tooltip: 'Tune your feed',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.tune_rounded),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
                       childAspectRatio: PrismFeedLayout.gridTileAspectRatio,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => WallpaperTile(
-                        item: visibleItems[index],
-                        index: index,
-                        crossAxisCount: crossAxisCount,
-                        memCacheHeight: tileMemCacheHeight,
+                      (context, index) => GestureDetector(
+                        onLongPress: () => unawaited(_showTileActions(visibleItems[index])),
+                        child: WallpaperTile(
+                          item: visibleItems[index],
+                          index: index,
+                          crossAxisCount: crossAxisCount,
+                          memCacheHeight: tileMemCacheHeight,
+                        ),
                       ),
                       childCount: visibleItems.length,
                     ),

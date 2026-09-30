@@ -7,6 +7,7 @@ abstract class WallhavenWallpaperRepository {
     required bool refresh,
     int categories,
     int purity,
+    int startPage = 1,
   });
 
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1});
