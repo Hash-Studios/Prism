@@ -161,7 +161,7 @@ Use the `prism-create-feature` skill to scaffold one. Older code in `lib/data/`,
 - **State:** `bloc` / `flutter_bloc` 8.x with `freezed` 3.x events and states.
 - **DI:** `get_it` + `injectable` (`lib/core/di/`, generated `injection.config.dart`). Regenerate with `make file-gen`.
 - **Routing:** `auto_route` 11 (`lib/core/router/app_router.dart`, generated `app_router.gr.dart`). Deep links: `deep_link_parser.dart` then `deep_link_navigation.dart`.
-- **Firestore:** go through `FirestoreClient` (`lib/core/firestore/`) with a `sourceTag` on every call. Permission-denied logs name the `sourceTag`. `make firestore-guard` reports raw `FirebaseFirestore` use. It is not in `make ci` yet because of existing violations.
+- **Firestore:** go through `FirestoreClient` (`lib/core/firestore/`) with a `sourceTag` on every call. Permission-denied logs name the `sourceTag`. `make firestore-guard` blocks raw `FirebaseFirestore` use.
 - **Coins, premium, uploads, account deletion:** server-owned. The client calls callables (`awardCoins`, `spendCoins`, `processReferral`, `syncSubscription`, `githubPutFile`, `githubDeleteFile`, `deleteAccount`). Firestore rules refuse direct client writes to `coins`, `premium`, `subscriptionTier`, `coinTransactions`, and coinState award flags.
 - **Analytics:** typed events in `lib/core/analytics/events/`. Regenerate the schema with `make analytics-gen`; CI runs `make analytics-check`.
 - **Monitoring:** Sentry (`sentry_flutter`), Mixpanel.

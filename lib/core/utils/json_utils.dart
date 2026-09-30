@@ -24,6 +24,13 @@ Map<String, dynamic> toJsonMap(Object? value) {
 
 /// Converts [value] into something [jsonEncode] accepts: primitives pass through,
 /// dates become UTC ISO strings, enums their name, collections recurse, the rest [Object.toString].
+/// The map entries of a JSON list, each as [Map<String, dynamic>]. Returns an
+/// empty list if value is not a List.
+List<Map<String, dynamic>> toJsonMapList(Object? value) {
+  if (value is! List) return const <Map<String, dynamic>>[];
+  return value.whereType<Map>().map(_toMap).toList(growable: false);
+}
+
 Object? toJsonSafe(Object? value) {
   if (value == null || value is num || value is bool || value is String) {
     return value;
