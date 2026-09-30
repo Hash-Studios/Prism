@@ -328,7 +328,7 @@ class _TeamMember extends StatelessWidget {
                 const SizedBox(height: PrismSpace.xs),
                 Text(
                   login,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: PrismTextStyles.rowTitle(context),
