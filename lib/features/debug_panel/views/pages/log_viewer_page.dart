@@ -95,12 +95,10 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
 
     return Column(
       children: [
-        // Search bar
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: DebugSearchField(controller: _searchCtrl, hintText: 'Search logs...'),
         ),
-        // Level chips
         SizedBox(
           height: 44,
           child: ListView(
@@ -149,7 +147,6 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
             ],
           ),
         ),
-        // Action bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
           child: Row(
@@ -194,7 +191,6 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
           ),
         ),
         const Divider(height: 1),
-        // Log list
         Expanded(
           child: filtered.isEmpty
               ? const Center(
@@ -306,7 +302,6 @@ class _LogDetailSheet extends StatelessWidget {
       maxChildSize: 0.95,
       builder: (context, scrollCtrl) => Column(
         children: [
-          // Handle
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             width: 36,

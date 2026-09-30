@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -111,13 +110,6 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!app_state.isAdminUser()) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Firestore telemetry')),
-        body: const Center(child: Text('You are not authorized to access this page.')),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Firestore telemetry'),
