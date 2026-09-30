@@ -807,7 +807,7 @@ class SearchRoute extends PageRouteInfo<void> {
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return SearchScreen();
+      return const SearchScreen();
     },
   );
 }
