@@ -12,12 +12,6 @@ ThemeData _withAccent(ThemeData baseTheme, int accentColorValue) {
   );
 }
 
-String _modeStyleLabel({required ThemeMode mode, required Brightness brightness}) => switch (mode) {
-  ThemeMode.light => 'Light',
-  ThemeMode.dark => 'Dark',
-  ThemeMode.system => brightness == Brightness.light ? 'Light' : 'Dark',
-};
-
 String _modeAbsoluteLabel(ThemeMode mode) => switch (mode) {
   ThemeMode.light => 'Light',
   ThemeMode.dark => 'Dark',
@@ -56,15 +50,6 @@ extension PrismThemeContextX on BuildContext {
   int prismDarkAccentValue({bool listen = true}) => _themeDarkBloc(listen).state.theme.accentColorValue;
 
   ThemeMode prismThemeMode({bool listen = true}) => _themeModeBloc(listen).state.mode.mode;
-
-  String prismModeStyle(Brightness brightness, {bool listen = true}) =>
-      _modeStyleLabel(mode: _themeModeBloc(listen).state.mode.mode, brightness: brightness);
-
-  String prismModeStyleForContext({bool listen = true}) =>
-      prismModeStyle(MediaQuery.of(this).platformBrightness, listen: listen);
-
-  String prismModeStyleForWindow({bool listen = true}) =>
-      prismModeStyle(WidgetsBinding.instance.platformDispatcher.platformBrightness, listen: listen);
 
   String prismModeAbs({bool listen = true}) => _modeAbsoluteLabel(_themeModeBloc(listen).state.mode.mode);
 

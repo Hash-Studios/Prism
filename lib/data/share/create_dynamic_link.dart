@@ -151,7 +151,7 @@ Future<String> createDynamicLink(String id, WallpaperSource source, String? url,
 
     await Clipboard.setData(ClipboardData(text: 'Hey check this out ➜ $link'));
     _trackDynamicLinkCreateResult(shareType: ShareTypeValue.wallpaper, result: EventResultValue.success);
-    toasts.codeSend('Sharing link copied!');
+    toasts.success('Sharing link copied!');
     return link;
   } catch (error, stackTrace) {
     logger.e('Failed to create wallpaper dynamic link.', error: error, stackTrace: stackTrace);

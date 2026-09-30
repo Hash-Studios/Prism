@@ -100,7 +100,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           extraLines: const <String>[],
           approve: () async {
             await _repository.approveWall(wall);
-            toasts.codeSend('Wallpaper approved');
+            toasts.success('Wallpaper approved');
           },
           reject: (String reason) async {
             await _repository.rejectWall(wall, reason: reason);
@@ -124,7 +124,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           extraLines: <String>['Name: ${setup.name.isNotEmpty ? setup.name : '-'}'],
           approve: () async {
             await _repository.approveSetup(setup);
-            toasts.codeSend('Setup approved');
+            toasts.success('Setup approved');
           },
           reject: (String reason) async {
             await _repository.rejectSetup(setup, reason: reason);
@@ -235,7 +235,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
                   onPressed: () async {
                     try {
                       await _repository.markContentReportReviewed(r.id);
-                      toasts.codeSend('Marked reviewed');
+                      toasts.success('Marked reviewed');
                     } catch (e, st) {
                       logger.e('mark report failed', tag: 'AdminReview', error: e, stackTrace: st);
                       toasts.error('Failed');
@@ -453,7 +453,7 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
                       try {
                         await widget.repository.markContentReportReviewed(widget.report.id, resolution: 'dismissed');
                         if (context.mounted) {
-                          toasts.codeSend('Marked as valid');
+                          toasts.success('Marked as valid');
                         }
                       } catch (e, st) {
                         logger.e('mark report dismissed failed', tag: 'AdminReview', error: e, stackTrace: st);
@@ -480,7 +480,7 @@ class _WallContentReportCardState extends State<_WallContentReportCard> {
                         );
                         if (context.mounted) {
                           if (removed) {
-                            toasts.codeSend('Wallpaper removed');
+                            toasts.success('Wallpaper removed');
                           } else {
                             toasts.error('Wallpaper was already gone; report closed');
                           }
@@ -777,7 +777,7 @@ class _NotificationSenderTabState extends State<_NotificationSenderTab> {
         'requestedAt': DateTime.now().millisecondsSinceEpoch,
       }, sourceTag: 'admin.send_notification');
       if (mounted) {
-        toasts.codeSend('Notification queued — Cloud Function will send it shortly');
+        toasts.success('Notification queued — Cloud Function will send it shortly');
         _titleController.clear();
         _bodyController.clear();
         _imageUrlController.clear();

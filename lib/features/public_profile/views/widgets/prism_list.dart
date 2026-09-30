@@ -4,7 +4,6 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -12,6 +11,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 typedef _ApiLink = ({IconData icon, String name, String url, LinkDestinationValue destination, String sourceContext});
 

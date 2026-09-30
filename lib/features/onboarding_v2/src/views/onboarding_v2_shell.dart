@@ -112,7 +112,7 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
   Future<void> _handleGoogleSignIn() async {
     _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: true));
     try {
-      final result = await app_state.gAuth.signInWithGoogle();
+      final result = await globalGoogleAuth.signInWithGoogle();
       if (!mounted) return;
       if (result == SignInOutcome.cancelled) {
         app_state.prismUser.loggedIn = false;

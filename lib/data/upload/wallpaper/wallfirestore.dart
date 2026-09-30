@@ -27,7 +27,7 @@ Future<void> createRecord(
   String? aiStylePreset,
 }) async {
   if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-    toasts.codeSend("Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.");
+    toasts.success("Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.");
     return;
   }
   if (!app_state.prismUser.premium) {
@@ -69,9 +69,9 @@ Future<void> createRecord(
   }, sourceTag: 'upload.createWall');
   await CoinsService.instance.maybeAwardFirstWallpaperUpload();
   if (app_state.prismUser.premium) {
-    toasts.codeSend("Succesfully uploaded");
+    toasts.success("Succesfully uploaded");
   } else {
-    toasts.codeSend("Your wall is submitted, and is under review.");
+    toasts.success("Your wall is submitted, and is under review.");
   }
 }
 
@@ -85,7 +85,7 @@ Map<String, dynamic> _setupPayload(SetupSubmission s) => {
 
 Future<void> createSetup(SetupSubmission setup) async {
   await firestoreClient.addDoc(FirebaseCollections.setups, _setupPayload(setup), sourceTag: 'upload.createSetup');
-  toasts.codeSend("Your setup is submitted, and is under review.");
+  toasts.success("Your setup is submitted, and is under review.");
 }
 
 Future<void> updateSetup(String setupDocId, SetupSubmission setup) async {
@@ -96,7 +96,7 @@ Future<void> updateSetup(String setupDocId, SetupSubmission setup) async {
     merge: true,
     sourceTag: 'upload.updateSetup',
   );
-  toasts.codeSend("Your setup is edited, and is under review.");
+  toasts.success("Your setup is edited, and is under review.");
 }
 
 Future<void> createDraftSetup(SetupSubmission setup) async {
@@ -106,5 +106,5 @@ Future<void> createDraftSetup(SetupSubmission setup) async {
     _setupPayload(setup),
     sourceTag: 'upload.createDraftSetup',
   );
-  toasts.codeSend("Draft saved!");
+  toasts.success("Draft saved!");
 }

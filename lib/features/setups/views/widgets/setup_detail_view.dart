@@ -182,7 +182,7 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
               placement: PaywallPlacement.mainUpsell,
               source: 'share_setup_view',
             );
-            toasts.codeSend('This is a premium wallpaper.');
+            toasts.success('This is a premium wallpaper.');
           },
           child: SetupActionCircle(
             padding: const EdgeInsets.all(17),

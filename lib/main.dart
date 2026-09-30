@@ -34,6 +34,7 @@ import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/notifications/notifications.dart';
@@ -440,7 +441,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   DateTime? _lastCoinSyncAt;
 
   Future<bool> _restoreLoginStatus() async {
-    final bool value = await app_state.gAuth.isSignedIn();
+    final bool value = await globalGoogleAuth.isSignedIn();
     if (!value) {
       // Ensure stale profile data from previous sessions cannot make the app behave as logged in.
       app_state.prismUser
@@ -691,7 +692,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         if (app_state.prismUser.loggedIn) {
           unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: action.inviterId));
         } else {
-          toasts.codeSend('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.');
+          toasts.success('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.');
         }
         unawaited(
           analytics.track(

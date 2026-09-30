@@ -394,7 +394,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: '$sourceTag.refund',
           reason: 'download_failed_refund',
         );
-        toasts.codeSend('Download failed. $_downloadCost coins refunded.');
+        toasts.success('Download failed. $_downloadCost coins refunded.');
       } catch (error, stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
       }
@@ -443,7 +443,7 @@ class _DownloadButtonState extends State<DownloadButton> {
           sourceTag: 'notifications.permission_after_download',
         );
       }
-      toasts.codeSend(wallpaperSavedMessage);
+      toasts.success(wallpaperSavedMessage);
       return true;
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {

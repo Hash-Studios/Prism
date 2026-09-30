@@ -42,7 +42,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
       ),
     );
     if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-      toasts.codeSend('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+      toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(

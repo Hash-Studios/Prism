@@ -72,24 +72,24 @@ class ReviewDownloadButton extends StatelessWidget {
   static final PrismMediaHostApi _prismMediaApi = PrismMediaHostApi();
 
   Future<void> _download() async {
-    toasts.codeSend("Starting Download");
+    toasts.success("Starting Download");
     if (showNotification) main.localNotification.createDownloadNotification();
     try {
       final result = await _prismMediaApi.saveMedia(SaveMediaRequest(link: link, isLocalFile: false, kind: kind));
       if (result.success) {
         analytics.track(event);
-        toasts.codeSend(successMessage);
+        toasts.success(successMessage);
       } else {
-        toasts.codeSend("Couldn't download! Please Retry!");
+        toasts.success("Couldn't download! Please Retry!");
       }
     } on PlatformException catch (e) {
       if (e.code != 'channel-error') {
         logger.e('saveMedia failed for $failLogSuffix', error: e);
       }
-      toasts.codeSend("Couldn't download! Please Retry!");
+      toasts.success("Couldn't download! Please Retry!");
     } catch (e) {
       logger.e('Unexpected saveMedia failure for $failLogSuffix', error: e);
-      toasts.codeSend("Couldn't download! Please Retry!");
+      toasts.success("Couldn't download! Please Retry!");
     } finally {
       if (showNotification) main.localNotification.cancelDownloadNotification();
     }

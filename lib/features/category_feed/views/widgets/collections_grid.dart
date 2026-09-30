@@ -332,7 +332,7 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
           coinsSpent: CoinPolicy.premiumPreview24h,
         ),
       );
-      toasts.codeSend('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
+      toasts.success('24h preview unlocked (-${CoinPolicy.premiumPreview24h} coins).');
     }
     _openCollection(collectionName);
   }

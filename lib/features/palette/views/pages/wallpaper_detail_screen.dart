@@ -9,7 +9,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
@@ -38,6 +37,7 @@ import 'package:intl/intl.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
 class WallpaperDetailScreen extends StatefulWidget {
@@ -133,7 +133,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     _trackAction(state, AnalyticsActionValue.paletteCycleTapped);
 
     if (!_accentToastShown) {
-      toasts.codeSend('Long press to reset');
+      toasts.success('Long press to reset');
       _accentToastShown = true;
     }
   }
@@ -766,7 +766,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     onTap: () async {
                       final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
                       if (!ok && context.mounted) {
-                        toasts.codeSend('Could not open profile');
+                        toasts.success('Could not open profile');
                       }
                     },
                     child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),

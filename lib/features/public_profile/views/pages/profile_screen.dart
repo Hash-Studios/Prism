@@ -10,7 +10,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
@@ -33,6 +32,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
 class ProfileScreen extends StatefulWidget {
@@ -286,7 +286,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     if (following) {
       toasts.error('Unfollowed ${_profile.name}!');
     } else {
-      toasts.codeSend('Followed ${_profile.name}!');
+      toasts.success('Followed ${_profile.name}!');
     }
   }
 

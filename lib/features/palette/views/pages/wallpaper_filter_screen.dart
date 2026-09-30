@@ -119,7 +119,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       final bool result = await WallpaperService.setWallpaperFromSource(path, target);
       if (result) {
         analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.success));
-        toasts.codeSend("Wallpaper set successfully!");
+        toasts.success("Wallpaper set successfully!");
       } else {
         toasts.error("Something went wrong!");
       }
@@ -142,7 +142,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
 
     if (!app_state.prismUser.loggedIn) {
-      toasts.codeSend('Sign in to use premium filters with coins.');
+      toasts.success('Sign in to use premium filters with coins.');
       googleSignInPopUp(context, () {
         unawaited(_runWithPremiumFilterGate(action, sourceTag: '$sourceTag.after_sign_in'));
       });
@@ -184,7 +184,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           filter: _filter.name,
         ),
       );
-      toasts.codeSend('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
+      toasts.success('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
     }
     await action();
   }
@@ -336,7 +336,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     if (_busy) {
       return;
     }
-    toasts.codeSend("Processing Wallpaper");
+    toasts.success("Processing Wallpaper");
     final imageFile = await saveFilteredImage();
     if (!mounted) {
       return;
@@ -349,7 +349,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
         analytics.track(DownloadWallpaperEvent(link: imageFile.path));
-        toasts.codeSend("Wall Saved in Pictures!");
+        toasts.success("Wall Saved in Pictures!");
       } else {
         toasts.error("Couldn't save wallpaper. Please retry!");
       }
@@ -373,7 +373,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _handleSetAction() async {
-    toasts.codeSend("Processing Wallpaper");
+    toasts.success("Processing Wallpaper");
     final imageFile = await saveFilteredImage();
     if (!mounted) {
       return;
