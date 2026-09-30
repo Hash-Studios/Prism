@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
 class ProfileCompletenessCard extends StatefulWidget {
-  const ProfileCompletenessCard({super.key, required this.status, this.onCompleteNow});
+  const ProfileCompletenessCard({super.key, required this.status, required this.onCompleteNow});
 
   final ProfileCompletenessStatus status;
-  final Future<void> Function()? onCompleteNow;
+  final Future<void> Function() onCompleteNow;
 
   @override
   State<ProfileCompletenessCard> createState() => _ProfileCompletenessCardState();
@@ -40,11 +40,11 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
   }
 
   Future<void> _handleComplete() async {
-    if (_isLoading || widget.onCompleteNow == null) return;
+    if (_isLoading) return;
     setState(() => _isLoading = true);
     SemanticsService.sendAnnouncement(View.of(context), 'Opening profile editor', TextDirection.ltr);
     try {
-      await widget.onCompleteNow!();
+      await widget.onCompleteNow();
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -52,10 +52,6 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
 
   @override
   Widget build(BuildContext context) {
-    if (widget.status.isComplete) {
-      return const SizedBox.shrink();
-    }
-
     final ThemeData theme = Theme.of(context);
     final ColorScheme colorScheme = theme.colorScheme;
     // Lerp from brand pink (start) toward primary as the profile fills up —
@@ -63,10 +59,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
     final Color progressColor =
         Color.lerp(PrismColors.brandPink, colorScheme.primary, widget.status.progress.clamp(0.0, 1.0)) ??
         PrismColors.brandPink;
-    final int remainingSteps = (widget.status.totalSteps - widget.status.completedSteps).clamp(
-      0,
-      widget.status.totalSteps,
-    );
+    final int remainingSteps = widget.status.missingSteps.length;
 
     return FadeTransition(
       opacity: _fade,
@@ -121,7 +114,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
                 ),
                 const SizedBox(width: 10),
                 FilledButton(
-                  onPressed: widget.onCompleteNow == null ? null : _handleComplete,
+                  onPressed: _handleComplete,
                   style: FilledButton.styleFrom(
                     backgroundColor: PrismColors.brandPink,
                     foregroundColor: PrismColors.onPrimary,
@@ -151,10 +144,10 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> with 
 }
 
 class _ProgressRing extends StatelessWidget {
-  const _ProgressRing({required this.status, this.progressColor});
+  const _ProgressRing({required this.status, required this.progressColor});
 
   final ProfileCompletenessStatus status;
-  final Color? progressColor;
+  final Color progressColor;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +171,7 @@ class _ProgressRing extends StatelessWidget {
                   strokeWidth: 4.5,
                   strokeCap: StrokeCap.round,
                   backgroundColor: theme.colorScheme.secondary.withValues(alpha: 0.15),
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor ?? theme.colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                 );
               },
             ),

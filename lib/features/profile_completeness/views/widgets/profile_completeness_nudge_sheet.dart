@@ -1,4 +1,5 @@
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 enum ProfileCompletenessNudgeAction { completeNow, notNow }
@@ -12,12 +13,12 @@ Future<ProfileCompletenessNudgeAction?> showProfileCompletenessNudgeSheet(
     isDismissible: false,
     enableDrag: false,
     useSafeArea: true,
-    builder: (context) => ProfileCompletenessNudgeSheet(status: status),
+    builder: (context) => _ProfileCompletenessNudgeSheet(status: status),
   );
 }
 
-class ProfileCompletenessNudgeSheet extends StatelessWidget {
-  const ProfileCompletenessNudgeSheet({super.key, required this.status});
+class _ProfileCompletenessNudgeSheet extends StatelessWidget {
+  const _ProfileCompletenessNudgeSheet({required this.status});
 
   final ProfileCompletenessStatus status;
 
@@ -64,8 +65,8 @@ class ProfileCompletenessNudgeSheet extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pop(ProfileCompletenessNudgeAction.completeNow),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE57697),
-                foregroundColor: Colors.white,
+                backgroundColor: PrismColors.brandPink,
+                foregroundColor: PrismColors.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: const Text('Complete now'),
