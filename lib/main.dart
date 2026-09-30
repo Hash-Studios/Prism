@@ -961,7 +961,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
             deepLinkBuilder: _routerDeepLinkBuilder,
             navigatorObservers: () => [
-              ...analytics.buildNavigatorObservers(),
+              ...AnalyticsRuntime.buildNavigatorObservers(),
               if (MonitoringRuntime.reporter.isEnabled)
                 SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
             ],
