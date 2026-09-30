@@ -13,6 +13,16 @@ sealed class FavouriteWallEntity {
   DateTime? get createdAt;
 }
 
+/// Newest first; entries without a date go last.
+int compareByCreatedAtDesc(FavouriteWallEntity a, FavouriteWallEntity b) {
+  final DateTime? aDate = a.createdAt;
+  final DateTime? bDate = b.createdAt;
+  if (aDate == null && bDate == null) return 0;
+  if (aDate == null) return 1;
+  if (bDate == null) return -1;
+  return bDate.compareTo(aDate);
+}
+
 final class PrismFavouriteWall extends FavouriteWallEntity {
   const PrismFavouriteWall({required super.id, required this.wallpaper}) : super(source: WallpaperSource.prism);
 

@@ -12,8 +12,6 @@ class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWall
 
 class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWallUseCase {}
 
-class _MockRemoveFavouriteWallUseCase extends Mock implements RemoveFavouriteWallUseCase {}
-
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
 
 void main() {
@@ -26,19 +24,16 @@ void main() {
         wall: LegacyFavouriteWall(id: 'w1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
       ),
     );
-    registerFallbackValue(const RemoveFavouriteWallParams(userId: 'user_1', wallId: 'w1'));
     registerFallbackValue(const ClearFavouriteWallsParams(userId: 'user_1', wallIds: <String>['w1']));
   });
 
   late _MockFetchFavouriteWallsUseCase fetchUseCase;
   late _MockToggleFavouriteWallUseCase toggleUseCase;
-  late _MockRemoveFavouriteWallUseCase removeUseCase;
   late _MockClearFavouriteWallsUseCase clearUseCase;
 
   setUp(() {
     fetchUseCase = _MockFetchFavouriteWallsUseCase();
     toggleUseCase = _MockToggleFavouriteWallUseCase();
-    removeUseCase = _MockRemoveFavouriteWallUseCase();
     clearUseCase = _MockClearFavouriteWallsUseCase();
 
     when(() => fetchUseCase(any())).thenAnswer(
@@ -49,14 +44,12 @@ void main() {
 
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
 
-    when(() => removeUseCase(any())).thenAnswer((_) async => Result.success(true));
-
     when(() => clearUseCase(any())).thenAnswer((_) async => Result.success(true));
   });
 
   blocTest<FavouriteWallsBloc, FavouriteWallsState>(
     'loads favourites for user and toggles item',
-    build: () => FavouriteWallsBloc(fetchUseCase, toggleUseCase, removeUseCase, clearUseCase),
+    build: () => FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase),
     act: (bloc) => bloc
       ..add(const FavouriteWallsEvent.started(userId: 'user_1'))
       ..add(
