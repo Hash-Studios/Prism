@@ -74,6 +74,30 @@ class _AiGenerationReservationResult {
   int get coinsSpent => mode == AiChargeMode.coinSpend && mutation.changed ? -mutation.delta : 0;
 }
 
+/// One-time earn rewards the user already got, read from `coinState`.
+class CoinEarnFlags {
+  const CoinEarnFlags({required this.firstUploadRewarded, required this.profileCompletionRewarded});
+
+  static const CoinEarnFlags empty = CoinEarnFlags(firstUploadRewarded: false, profileCompletionRewarded: false);
+
+  factory CoinEarnFlags.fromCoinState(Map<String, dynamic> coinState) => CoinEarnFlags(
+    firstUploadRewarded: coinState['firstWallpaperUploadRewarded'] == true,
+    profileCompletionRewarded: coinState['profileCompletionRewarded'] == true,
+  );
+
+  final bool firstUploadRewarded;
+  final bool profileCompletionRewarded;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CoinEarnFlags &&
+      other.firstUploadRewarded == firstUploadRewarded &&
+      other.profileCompletionRewarded == profileCompletionRewarded;
+
+  @override
+  int get hashCode => Object.hash(firstUploadRewarded, profileCompletionRewarded);
+}
+
 class StreakStatus {
   const StreakStatus({
     required this.streakDay,
@@ -233,6 +257,7 @@ class CoinsService {
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
   final ValueNotifier<int> deltaNotifier = ValueNotifier<int>(0);
   final ValueNotifier<StreakStatus> streakNotifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
+  final ValueNotifier<CoinEarnFlags> earnFlagsNotifier = ValueNotifier<CoinEarnFlags>(CoinEarnFlags.empty);
 
   /// Set only when a daily claim really paid out. The UI shows the daily sheet, then calls [consumeLastClaim].
   final ValueNotifier<StreakClaimResult?> lastClaimNotifier = ValueNotifier<StreakClaimResult?>(null);
@@ -772,6 +797,11 @@ class CoinsService {
         return StreakFreezePurchase(StreakFreezeOutcome.insufficientBalance, freezes: freezes);
       }
       if (_asBool(data['success'])) {
+        _logSpend(
+          action: CoinSpendAction.streakFreeze,
+          amount: CoinPolicy.streakFreezeCost,
+          sourceTag: 'coins.buy_streak_freeze',
+        );
         return StreakFreezePurchase(StreakFreezeOutcome.success, freezes: freezes);
       }
       return StreakFreezePurchase(
@@ -880,6 +910,18 @@ class CoinsService {
     );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
+      final CoinEarnFlags flags = earnFlagsNotifier.value;
+      if (action == CoinEarnAction.firstWallpaperUpload) {
+        earnFlagsNotifier.value = CoinEarnFlags(
+          firstUploadRewarded: true,
+          profileCompletionRewarded: flags.profileCompletionRewarded,
+        );
+      } else if (action == CoinEarnAction.profileCompletion) {
+        earnFlagsNotifier.value = CoinEarnFlags(
+          firstUploadRewarded: flags.firstUploadRewarded,
+          profileCompletionRewarded: true,
+        );
+      }
       _logEarn(action: action, amount: action.defaultAmount(), sourceTag: sourceTag, reason: logReason);
     }
     return result;
@@ -1011,6 +1053,7 @@ class CoinsService {
 
   StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
     final Map<String, dynamic> coinState = toJsonMap(userData[_coinStateField]);
+    earnFlagsNotifier.value = CoinEarnFlags.fromCoinState(coinState);
     final int timezoneOffsetMinutes =
         parseInt(coinState[_streakTimezoneOffsetMinutesField]) ?? _deviceTimezoneOffsetMinutes();
     final String todayLocalKey = _offsetDayKey(DateTime.now().toUtc(), timezoneOffsetMinutes);

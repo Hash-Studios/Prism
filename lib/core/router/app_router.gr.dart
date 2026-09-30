@@ -152,22 +152,6 @@ class BlockedAccountsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [CoinTransactionsScreen]
-class CoinTransactionsRoute extends PageRouteInfo<void> {
-  const CoinTransactionsRoute({List<PageRouteInfo>? children})
-    : super(CoinTransactionsRoute.name, initialChildren: children);
-
-  static const String name = 'CoinTransactionsRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const CoinTransactionsScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [CollectionTabPage]
 class CollectionTabRoute extends PageRouteInfo<void> {
   const CollectionTabRoute({List<PageRouteInfo>? children})
@@ -858,6 +842,68 @@ class ReviewRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [RewardsPage]
+class RewardsRoute extends PageRouteInfo<RewardsRouteArgs> {
+  RewardsRoute({Key? key, bool showBack = false, List<PageRouteInfo>? children})
+    : super(
+        RewardsRoute.name,
+        args: RewardsRouteArgs(key: key, showBack: showBack),
+        initialChildren: children,
+      );
+
+  static const String name = 'RewardsRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<RewardsRouteArgs>(
+        orElse: () => const RewardsRouteArgs(),
+      );
+      return RewardsPage(key: args.key, showBack: args.showBack);
+    },
+  );
+}
+
+class RewardsRouteArgs {
+  const RewardsRouteArgs({this.key, this.showBack = false});
+
+  final Key? key;
+
+  final bool showBack;
+
+  @override
+  String toString() {
+    return 'RewardsRouteArgs{key: $key, showBack: $showBack}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! RewardsRouteArgs) return false;
+    return key == other.key && showBack == other.showBack;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ showBack.hashCode;
+}
+
+/// generated route for
+/// [RewardsTabPage]
+class RewardsTabRoute extends PageRouteInfo<void> {
+  const RewardsTabRoute({List<PageRouteInfo>? children})
+    : super(RewardsTabRoute.name, initialChildren: children);
+
+  static const String name = 'RewardsTabRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      return const RewardsTabPage();
+    },
+  );
+}
+
+/// generated route for
 /// [SearchScreen]
 class SearchRoute extends PageRouteInfo<void> {
   const SearchRoute({List<PageRouteInfo>? children})
@@ -1081,38 +1127,6 @@ class SplashWidgetRoute extends PageRouteInfo<void> {
     name,
     builder: (data) {
       return const SplashWidget();
-    },
-  );
-}
-
-/// generated route for
-/// [StreakPage]
-class StreakRoute extends PageRouteInfo<void> {
-  const StreakRoute({List<PageRouteInfo>? children})
-    : super(StreakRoute.name, initialChildren: children);
-
-  static const String name = 'StreakRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const StreakPage();
-    },
-  );
-}
-
-/// generated route for
-/// [StreakTabPage]
-class StreakTabRoute extends PageRouteInfo<void> {
-  const StreakTabRoute({List<PageRouteInfo>? children})
-    : super(StreakTabRoute.name, initialChildren: children);
-
-  static const String name = 'StreakTabRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const StreakTabPage();
     },
   );
 }

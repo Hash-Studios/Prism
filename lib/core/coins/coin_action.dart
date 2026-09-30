@@ -11,7 +11,14 @@ enum CoinEarnAction {
   refund,
 }
 
-enum CoinSpendAction { wallpaperDownload, premiumWallpaperDownload, aiGeneration, premiumFilter, premiumPreview24h }
+enum CoinSpendAction {
+  wallpaperDownload,
+  premiumWallpaperDownload,
+  aiGeneration,
+  premiumFilter,
+  premiumPreview24h,
+  streakFreeze,
+}
 
 extension CoinEarnActionX on CoinEarnAction {
   int defaultAmount() {
@@ -49,6 +56,8 @@ extension CoinSpendActionX on CoinSpendAction {
         return CoinPolicy.premiumFilter;
       case CoinSpendAction.premiumPreview24h:
         return CoinPolicy.premiumPreview24h;
+      case CoinSpendAction.streakFreeze:
+        return CoinPolicy.streakFreezeCost;
     }
   }
 }

@@ -71,6 +71,7 @@ void main() {
         'ai_generation',
         'premium_filter',
         'premium_preview_24h',
+        'streak_freeze',
       ],
       'AiChargeMode': <String>['free_trial', 'pro_included', 'coin_spend', 'insufficient'],
       'SettingValue': <String>['anime_wallpapers', 'sketchy_wallpapers', 'recommendations_notifications'],
