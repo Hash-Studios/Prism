@@ -106,7 +106,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
         child: GridView.builder(
           physics: widget.physics,
           padding: EdgeInsets.zero,
-          itemCount: walls.isEmpty ? 20 : walls.length,
+          itemCount: walls.isEmpty ? 20 : walls.length + (state.hasMore ? 1 : 0),
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
@@ -120,7 +120,7 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
                 ),
               );
             }
-            if (index == walls.length - 1) {
+            if (index == walls.length) {
               return SeeMoreButton(
                 seeMoreLoader: state.isFetchingMore,
                 func: () {

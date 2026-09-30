@@ -135,9 +135,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
         return;
       }
       setState(() {
-        if (fresh.isNotEmpty) {
-          _results = fresh;
-        }
+        _results = fresh;
         _currentPage = 1;
         _hasMore = fresh.isNotEmpty;
       });
@@ -188,14 +186,14 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
         child: PulsePlaceholder(
           builder: (context, placeholderColor) => GridView.builder(
             padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: _results.length,
+            itemCount: _results.length + (_hasMore && _results.length >= 24 ? 1 : 0),
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
               childAspectRatio: 0.5,
             ),
             itemBuilder: (context, index) {
-              if (_hasMore && index == _results.length - 1 && index >= 23) {
+              if (_hasMore && _results.length >= 24 && index == _results.length) {
                 return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _requestNextPage);
               }
 

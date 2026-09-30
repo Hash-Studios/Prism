@@ -54,7 +54,7 @@ class _UserProfileLoaderState extends State<UserProfileLoader> with AutomaticKee
         buildWhen: (previous, current) => previous.status != current.status || previous.email != current.email,
         builder: (context, state) {
           if (_showLoading(state)) {
-            return const LoadingCards();
+            return const LoadingCards(borderRadius: BorderRadius.zero);
           }
           return const UserProfileGrid();
         },
