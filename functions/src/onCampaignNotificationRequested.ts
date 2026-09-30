@@ -2,12 +2,7 @@ import * as admin from "firebase-admin";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {sendNotification, emailToTopic} from "./notificationHelper";
-
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
+import {db, REGION, str} from "./common";
 
 /**
  * Triggered when an admin writes a document to the `notificationRequests`
@@ -39,7 +34,7 @@ const db = admin.firestore();
 export const onCampaignNotificationRequested = onDocumentCreated(
   {
     document: "notificationRequests/{requestId}",
-    region: "asia-south1",
+    region: REGION,
   },
   async (event) => {
     const requestId = event.params.requestId;
@@ -50,19 +45,18 @@ export const onCampaignNotificationRequested = onDocumentCreated(
       return;
     }
 
-    const title: string = (data.title ?? "").toString().trim();
-    const body: string = (data.body ?? "").toString().trim();
-    const modifier: string = (data.modifier ?? "all").toString().trim();
-    const route: string = (data.route ?? "announcement").toString().trim();
-    const imageUrl: string = (data.imageUrl ?? "").toString().trim();
-    const channelId: string = (data.channelId ?? "recommendations").toString().trim();
+    const title = str(data.title);
+    const body = str(data.body);
+    const modifier = str(data.modifier ?? "all");
+    const route = str(data.route ?? "announcement");
+    const imageUrl = str(data.imageUrl);
+    const channelId = str(data.channelId ?? "recommendations");
 
     if (!title || !body) {
-      await _markProcessed(requestId, {error: "title and body are required"});
+      await markProcessed(requestId, {error: "title and body are required"});
       return;
     }
 
-    // Determine the FCM topic from the modifier value.
     let fcmTopic: string;
     if (modifier === "all") {
       // All users subscribe to the "recommendations" topic on first app open.
@@ -77,18 +71,14 @@ export const onCampaignNotificationRequested = onDocumentCreated(
     await sendNotification({
       title,
       body,
-      data: {
-        route,
-        pageName: "",
-        url: "",
-      },
+      data: {route},
       imageUrl: imageUrl || undefined,
       modifier,
       channelId,
       fcmTarget: {topic: fcmTopic},
     });
 
-    await _markProcessed(requestId, {fcmTopic});
+    await markProcessed(requestId, {fcmTopic});
 
     logger.info("onCampaignNotificationRequested: notification sent.", {
       requestId,
@@ -99,7 +89,7 @@ export const onCampaignNotificationRequested = onDocumentCreated(
   },
 );
 
-async function _markProcessed(
+async function markProcessed(
   requestId: string,
   meta: Record<string, unknown>,
 ): Promise<void> {

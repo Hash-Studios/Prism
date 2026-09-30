@@ -1,12 +1,7 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {coinTransactionDoc, db, REGION, utcDateString} from "./common";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
-const REGION = "asia-south1";
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
 const AD_RATE_DAILY = "coinAdRateDaily";
@@ -21,21 +16,14 @@ const AWARDS: Record<string, number> = {
 const SPENDS: Record<string, number> = {
   wallpaperDownload: 5,
   premiumWallpaperDownload: 15,
-  aiGeneration: 0,
   premiumFilter: 5,
   premiumPreview24h: 10,
 };
 
 const AI_GENERATION_AMOUNTS = new Set([10, 75, 100]);
-const MAX_AMOUNT = 1000;
 const REFUND_WINDOW_MS = 3_600_000;
 const AD_RATE_MAX_PER_DAY = 20;
 const AD_RATE_MIN_GAP_MS = 20_000;
-
-export function clampAmount(value: unknown): number {
-  const amount = typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : 0;
-  return Math.max(0, Math.min(MAX_AMOUNT, amount));
-}
 
 function requiredText(value: unknown, field: string): string {
   if (typeof value !== "string" || value.trim().length === 0 || value.trim().length > 200) {
@@ -48,10 +36,6 @@ function uid(request: CallableRequest<unknown>): string {
   const value = request.auth?.uid?.trim() ?? "";
   if (!value) throw new HttpsError("unauthenticated", "Sign in to use coins.");
   return value;
-}
-
-function utcDateString(d = new Date()): string {
-  return d.toISOString().slice(0, 10);
 }
 
 function coinState(raw: unknown): Record<string, unknown> {
@@ -116,22 +100,17 @@ function writeTx(
   params: {userId: string; delta: number; previous: number; action: string; sourceTag: string; reason: string},
 ): string {
   const id = transactionId(params.action);
-  const now = admin.firestore.Timestamp.now();
-  tx.set(db.collection(TRANSACTIONS).doc(id), {
+  tx.set(db.collection(TRANSACTIONS).doc(id), coinTransactionDoc({
     id,
     userId: params.userId,
-    createdAt: now,
-    updatedAt: now,
+    at: admin.firestore.Timestamp.now(),
     delta: params.delta,
     balanceBefore: params.previous,
-    balanceAfter: params.previous + params.delta,
     action: params.action,
     description: params.reason,
     sourceTag: params.sourceTag,
     reason: params.reason,
-    status: "completed",
-    type: params.delta >= 0 ? "credit" : "debit",
-  });
+  }));
   return id;
 }
 
@@ -164,26 +143,29 @@ export const awardCoins = onCall({region: REGION, cors: true}, async (request: C
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);
+    const skip = (skipReason: string) => {
+      response = {...response, previousBalance: previous, currentBalance: previous, reason: skipReason};
+    };
 
     if (action === "firstWallpaperUpload" && state.firstWallpaperUploadRewarded === true) {
-      response = {...response, previousBalance: previous, currentBalance: previous, reason: "first_upload_reward_already_claimed"};
+      skip("first_upload_reward_already_claimed");
       return;
     }
     if (action === "profileCompletion" && state.profileCompletionRewarded === true) {
-      response = {...response, previousBalance: previous, currentBalance: previous, reason: "profile_reward_already_claimed"};
+      skip("profile_reward_already_claimed");
       return;
     }
     if (action === "proDailyBonus" && data.premium !== true) {
-      response = {...response, previousBalance: previous, currentBalance: previous, reason: "pro_bonus_requires_premium"};
+      skip("pro_bonus_requires_premium");
       return;
     }
     if (action === "proDailyBonus" && state.proDailyBonusDate === today) {
-      response = {...response, previousBalance: previous, currentBalance: previous, reason: "pro_bonus_already_claimed"};
+      skip("pro_bonus_already_claimed");
       return;
     }
     // ponytail: no AdMob server-side verification; add an SSV callback if ad fraud shows up
     if (action === "rewardedAd" && !rewardedAdAllowed(adRateSnap?.data() ?? {}, nowMs)) {
-      response = {...response, previousBalance: previous, currentBalance: previous, reason: "rewarded_ad_limit"};
+      skip("rewarded_ad_limit");
       return;
     }
 
@@ -271,14 +253,10 @@ export const spendCoins = onCall({region: REGION, cors: true}, async (request: C
   return response;
 });
 
-export function rejectSelfReferral(callerUid: string, inviterUserId: string): void {
-  if (callerUid === inviterUserId) throw new HttpsError("invalid-argument", "You cannot refer yourself.");
-}
-
 export const processReferral = onCall({region: REGION, cors: true}, async (request: CallableRequest<{inviterUserId?: unknown}>) => {
   const callerUid = uid(request);
   const inviterUid = requiredText(request.data?.inviterUserId, "inviterUserId");
-  rejectSelfReferral(callerUid, inviterUid);
+  if (callerUid === inviterUid) throw new HttpsError("invalid-argument", "You cannot refer yourself.");
   const reward = 100;
   const callerRef = db.collection(USERS).doc(callerUid);
   const inviterRef = db.collection(USERS).doc(inviterUid);
