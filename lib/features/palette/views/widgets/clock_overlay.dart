@@ -1,49 +1,46 @@
 import 'dart:io';
 
+import 'package:Prism/features/palette/views/widgets/accent_contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class ClockOverlay extends StatefulWidget {
-  final String? link;
+/// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
+String ordinalSuffix(int day) {
+  if (day >= 11 && day <= 13) return 'ᵗʰ';
+  return switch (day % 10) {
+    1 => 'ˢᵗ',
+    2 => 'ⁿᵈ',
+    3 => 'ʳᵈ',
+    _ => 'ᵗʰ',
+  };
+}
+
+class ClockOverlay extends StatelessWidget {
+  final String link;
   final bool file;
   final Color? accent;
   final bool colorChanged;
   const ClockOverlay({required this.link, required this.file, required this.accent, required this.colorChanged});
-  @override
-  _ClockOverlayState createState() => _ClockOverlayState();
-}
 
-class _ClockOverlayState extends State<ClockOverlay> {
   @override
   Widget build(BuildContext context) {
-    final day = DateFormat('EEEE').format(DateTime.now());
-    final month = DateFormat('MMMM').format(DateTime.now());
-    final dayNo = DateFormat('d').format(DateTime.now());
-    final suffix = dayNo[dayNo.length - 1] == "1"
-        ? "ˢᵗ"
-        : dayNo[dayNo.length - 1] == "2"
-        ? "ⁿᵈ"
-        : dayNo[dayNo.length - 1] == "3"
-        ? "ʳᵈ"
-        : "ᵗʰ";
-    final Color textColor = widget.accent == null
-        ? Theme.of(context).colorScheme.secondary
-        : widget.accent!.computeLuminance() > 0.5
-        ? Colors.black
-        : Colors.white;
+    final now = DateTime.now();
+    final day = DateFormat('EEEE').format(now);
+    final month = DateFormat('MMMM').format(now);
+    final Color textColor = accent?.onColor ?? Theme.of(context).colorScheme.secondary;
     final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
     return Material(
       child: Stack(
         children: <Widget>[
-          if (!widget.file)
+          if (!file)
             CachedNetworkImage(
-              imageUrl: widget.link!,
+              imageUrl: link,
               imageBuilder: (context, imageProvider) => Container(
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    colorFilter: widget.colorChanged ? ColorFilter.mode(widget.accent!, BlendMode.hue) : null,
+                    colorFilter: colorChanged ? ColorFilter.mode(accent!, BlendMode.hue) : null,
                     image: imageProvider,
                     fit: BoxFit.cover,
                   ),
@@ -55,9 +52,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
               child: Image.file(
-                File(widget.link!),
-                color: widget.accent,
-                colorBlendMode: widget.colorChanged ? BlendMode.color : null,
+                File(link),
+                color: accent,
+                colorBlendMode: colorChanged ? BlendMode.color : null,
                 fit: BoxFit.cover,
               ),
             ),
@@ -71,7 +68,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Text(
-                        DateFormat('EEEE d MMMM').format(DateTime.now()),
+                        DateFormat('EEEE d MMMM').format(now),
                         style: TextStyle(
                           color: textColor,
                           fontFamily: 'CupertinoSystemText',
@@ -80,7 +77,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                         ),
                       ),
                       Text(
-                        DateFormat('h:mm').format(DateTime.now()),
+                        DateFormat('h:mm').format(now),
                         style: TextStyle(
                           color: textColor,
                           fontFamily: 'CupertinoSystemDisplay',
@@ -114,7 +111,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "$month $dayNo$suffix | 27°C",
+                      "$month ${now.day}${ordinalSuffix(now.day)} | 27°C",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: textColor,

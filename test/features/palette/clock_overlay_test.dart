@@ -26,6 +26,22 @@ bool _isDockIcon(Widget widget) =>
     widget is Image && widget.image is AssetImage && (widget.image as AssetImage).assetName.contains('playstore');
 
 void main() {
+  test('ordinal suffix uses th for 11 to 13', () {
+    expect(<int>[1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 31].map(ordinalSuffix).toList(), <String>[
+      'ˢᵗ',
+      'ⁿᵈ',
+      'ʳᵈ',
+      'ᵗʰ',
+      'ᵗʰ',
+      'ᵗʰ',
+      'ᵗʰ',
+      'ˢᵗ',
+      'ⁿᵈ',
+      'ʳᵈ',
+      'ˢᵗ',
+    ]);
+  });
+
   testWidgets('iOS previews a lock screen without the Android dock', (WidgetTester tester) async {
     await _openPreview(tester);
 

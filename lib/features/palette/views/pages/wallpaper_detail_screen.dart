@@ -7,6 +7,7 @@ import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
+import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -23,6 +24,7 @@ import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/palette/domain/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
+import 'package:Prism/features/palette/views/widgets/accent_contrast.dart';
 import 'package:Prism/features/palette/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -32,6 +34,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -150,11 +153,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   void _setStatusBarIconBrightness(Color color) {
-    if (color.computeLuminance() > 0.5) {
-      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.dark);
-    } else {
-      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: Brightness.light);
-    }
+    applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: color.isLight ? Brightness.dark : Brightness.light);
   }
 
   @override
@@ -221,28 +220,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Widget _buildLoadingState(WallpaperDetailState state) {
     final thumbnailUrl = state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl;
+    final spinner = Center(
+      child: Semantics(label: 'Loading wallpaper', child: const CircularProgressIndicator()),
+    );
 
-    if (thumbnailUrl != null && thumbnailUrl.isNotEmpty) {
-      return Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            CachedNetworkImage(
-              imageUrl: thumbnailUrl,
-              fit: BoxFit.cover,
-              placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
-              errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
-            ),
-            Center(
-              child: Semantics(label: 'Loading wallpaper', child: const CircularProgressIndicator()),
-            ),
-          ],
-        ),
-      );
-    }
+    if (thumbnailUrl == null || thumbnailUrl.isEmpty) return Scaffold(body: spinner);
     return Scaffold(
-      body: Center(
-        child: Semantics(label: 'Loading wallpaper', child: const CircularProgressIndicator()),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            imageUrl: thumbnailUrl,
+            fit: BoxFit.cover,
+            placeholder: (ctx, _) => Container(color: Theme.of(ctx).primaryColor),
+            errorWidget: (ctx, _, _) => Container(color: Theme.of(ctx).primaryColor),
+          ),
+          spinner,
+        ],
       ),
     );
   }
@@ -516,232 +510,157 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildMetadataRow(BuildContext context, WallpaperDetailEntity entity, WallpaperDetailLoaded state) {
     return entity.when(
       prism: (wallpaper) => _buildPrismMetadata(context, wallpaper, state),
-      wallhaven: (wallpaper) => _buildWallhavenMetadata(context, wallpaper, entity),
-      pexels: (wallpaper) => _buildPexelsMetadata(context, wallpaper, entity),
+      wallhaven: (wallpaper) => _buildWallhavenMetadata(context, wallpaper),
+      pexels: (wallpaper) => _buildPexelsMetadata(context, wallpaper),
+    );
+  }
+
+  Widget _metadataShell({required List<Widget> left, required List<Widget> right}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            flex: 5,
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: left),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 4,
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: right),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPrismMetadata(BuildContext context, PrismWallpaper wallpaper, WallpaperDetailLoaded state) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Flexible(
-            flex: 5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    runSpacing: 4,
-                    children: [
-                      Text(
-                        wallpaper.id.toUpperCase(),
-                        style: Theme.of(
-                          context,
-                        ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                      ),
-                      if (state.views != null) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Container(
-                            height: 16,
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-                            width: 1,
-                          ),
-                        ),
-                        Text(
-                          "${state.views} views",
-                          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ] else if (state.viewsLoading) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                          child: Container(
-                            height: 16,
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
-                            width: 1,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Theme.of(context).colorScheme.secondary),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+    final secondary = Theme.of(context).colorScheme.secondary;
+    final divider = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6.0),
+      child: Container(height: 16, color: secondary.withValues(alpha: 0.4), width: 1),
+    );
+    final collections = wallpaper.collections;
+    final category = wallpaper.core.category;
+    final resolution = wallpaper.core.resolution;
+    final sizeBytes = wallpaper.core.sizeBytes;
+    final createdAt = wallpaper.core.createdAt;
+    return _metadataShell(
+      left: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 4,
+            children: [
+              Text(
+                wallpaper.id.toUpperCase(),
+                style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary),
+              ),
+              if (state.views != null) ...[
+                divider,
+                Text(
+                  "${state.views} views",
+                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary.withValues(alpha: 0.7)),
                 ),
-                if (wallpaper.collections?.isNotEmpty == true) ...[
-                  _buildInfoRow(context, JamIcons.folder, wallpaper.collections!.take(2).join(', ')),
-                  const SizedBox(height: 4),
-                ],
-                if (wallpaper.core.category != null) ...[
-                  _buildInfoRow(context, JamIcons.unordered_list, wallpaper.core.category!),
-                  const SizedBox(height: 4),
-                ],
-                if (wallpaper.core.resolution != null) ...[
-                  _buildInfoRow(context, JamIcons.set_square, wallpaper.core.resolution!),
-                  const SizedBox(height: 4),
-                ],
-                if (wallpaper.core.sizeBytes != null)
-                  _buildInfoRow(
-                    context,
-                    JamIcons.save,
-                    "${(wallpaper.core.sizeBytes! / 1000000).toStringAsFixed(2)} MB",
-                  ),
+              ] else if (state.viewsLoading) ...[
+                divider,
+                SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(secondary)),
+                ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 4,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildPrismAuthorRow(context, wallpaper),
-                if (wallpaper.core.createdAt != null) ...[
-                  const SizedBox(height: 4),
-                  _buildInfoRow(context, JamIcons.calendar, _formatDate(wallpaper.core.createdAt!), reversed: true),
-                ],
-                const SizedBox(height: 4),
-                _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
-              ],
-            ),
-          ),
+        ),
+        if (collections != null && collections.isNotEmpty) ...[
+          _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
+          const SizedBox(height: 4),
         ],
-      ),
+        if (category != null) ...[_buildInfoRow(context, JamIcons.unordered_list, category), const SizedBox(height: 4)],
+        if (resolution != null) ...[_buildInfoRow(context, JamIcons.set_square, resolution), const SizedBox(height: 4)],
+        if (sizeBytes != null) _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes)),
+      ],
+      right: [
+        _buildPrismAuthorRow(context, wallpaper),
+        if (createdAt != null) ...[
+          const SizedBox(height: 4),
+          _buildInfoRow(context, JamIcons.calendar, _formatDate(createdAt), reversed: true),
+        ],
+        const SizedBox(height: 4),
+        _buildInfoRow(context, JamIcons.database, 'Prism', reversed: true),
+      ],
     );
   }
 
-  Widget _buildWallhavenMetadata(BuildContext context, WallhavenWallpaper wallpaper, WallpaperDetailEntity entity) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Flexible(
-            flex: 5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoTitle(context, wallpaper.id.toUpperCase()),
-                if (wallpaper.views != null) ...[
-                  const SizedBox(height: 4),
-                  _buildInfoRow(context, JamIcons.eye, wallpaper.views.toString()),
-                ],
-                if (wallpaper.core.favourites != null) ...[
-                  const SizedBox(height: 4),
-                  _buildInfoRow(context, JamIcons.heart_f, wallpaper.core.favourites.toString()),
-                ],
-                if (wallpaper.sizeBytes != null || wallpaper.core.sizeBytes != null) ...[
-                  const SizedBox(height: 4),
-                  _buildInfoRow(
-                    context,
-                    JamIcons.save,
-                    "${((wallpaper.sizeBytes ?? wallpaper.core.sizeBytes ?? 0) / 1000000).toStringAsFixed(2)} MB",
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 4,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (wallpaper.core.authorName != null && wallpaper.core.authorName!.isNotEmpty) ...[
-                  _buildWallhavenAuthorLink(context, wallpaper.core.authorName!),
-                  const SizedBox(height: 4),
-                ],
-                if (wallpaper.core.category != null) ...[
-                  _buildInfoRow(
-                    context,
-                    JamIcons.unordered_list,
-                    wallpaper.core.category!,
-                    reversed: true,
-                    showIconLast: true,
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                if (wallpaper.core.resolution != null) ...[
-                  _buildInfoRow(
-                    context,
-                    JamIcons.set_square,
-                    wallpaper.core.resolution!,
-                    reversed: true,
-                    showIconLast: true,
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                _buildInfoRow(
-                  context,
-                  JamIcons.database,
-                  sourceDisplayName(entity.source),
-                  reversed: true,
-                  showIconLast: true,
-                ),
-              ],
-            ),
-          ),
+  Widget _buildWallhavenMetadata(BuildContext context, WallhavenWallpaper wallpaper) {
+    final views = wallpaper.views;
+    final favourites = wallpaper.core.favourites;
+    final sizeBytes = wallpaper.sizeBytes ?? wallpaper.core.sizeBytes;
+    final author = wallpaper.core.authorName;
+    final category = wallpaper.core.category;
+    final resolution = wallpaper.core.resolution;
+    return _metadataShell(
+      left: [
+        _buildInfoTitle(context, wallpaper.id.toUpperCase()),
+        if (views != null) ...[const SizedBox(height: 4), _buildInfoRow(context, JamIcons.eye, views.toString())],
+        if (favourites != null) ...[
+          const SizedBox(height: 4),
+          _buildInfoRow(context, JamIcons.heart_f, favourites.toString()),
         ],
-      ),
+        if (sizeBytes != null) ...[
+          const SizedBox(height: 4),
+          _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes)),
+        ],
+      ],
+      right: [
+        if (author != null && author.isNotEmpty) ...[
+          _buildAuthorLink(context, author, Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(author)}')),
+          const SizedBox(height: 4),
+        ],
+        if (category != null) ...[
+          _buildInfoRow(context, JamIcons.unordered_list, category, reversed: true),
+          const SizedBox(height: 4),
+        ],
+        if (resolution != null) ...[
+          _buildInfoRow(context, JamIcons.set_square, resolution, reversed: true),
+          const SizedBox(height: 4),
+        ],
+        _buildInfoRow(context, JamIcons.database, 'Wallhaven', reversed: true),
+      ],
     );
   }
 
-  Widget _buildPexelsMetadata(BuildContext context, PexelsWallpaper wallpaper, WallpaperDetailEntity entity) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Flexible(
-            flex: 5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoTitle(context, wallpaper.id),
-                if (wallpaper.core.width != null && wallpaper.core.height != null) ...[
-                  const SizedBox(height: 4),
-                  _buildInfoRow(context, JamIcons.set_square, "${wallpaper.core.width}x${wallpaper.core.height}"),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 4,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (wallpaper.photographer != null && wallpaper.photographer!.isNotEmpty) ...[
-                  _buildPexelsPhotographerLink(context, wallpaper.photographer!, wallpaper.photographerUrl),
-                  const SizedBox(height: 4),
-                ],
-                _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true, showIconLast: true),
-              ],
-            ),
-          ),
+  Widget _buildPexelsMetadata(BuildContext context, PexelsWallpaper wallpaper) {
+    final width = wallpaper.core.width;
+    final height = wallpaper.core.height;
+    final photographer = wallpaper.photographer;
+    final photographerUrl = wallpaper.photographerUrl?.trim() ?? '';
+    return _metadataShell(
+      left: [
+        _buildInfoTitle(context, wallpaper.id),
+        if (width != null && height != null) ...[
+          const SizedBox(height: 4),
+          _buildInfoRow(context, JamIcons.set_square, "${width}x$height"),
         ],
-      ),
+      ],
+      right: [
+        if (photographer != null && photographer.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: _buildAuthorLink(
+              context,
+              photographer,
+              photographerUrl.isEmpty ? null : Uri.tryParse(photographerUrl),
+            ),
+          ),
+          const SizedBox(height: 4),
+        ],
+        _buildInfoRow(context, JamIcons.database, 'Pexels', reversed: true),
+      ],
     );
   }
 
@@ -791,133 +710,68 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
     // Prefer email; fall back to name as username (getUserProfile handles both).
     final String profileIdentifier = emailTrimmed.isNotEmpty ? emailTrimmed : nameTrimmed;
-    final bool canNavigate = profileIdentifier.isNotEmpty;
+    Widget tappable(Widget child) => profileIdentifier.isEmpty
+        ? child
+        : Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
+              borderRadius: BorderRadius.circular(8),
+              child: child,
+            ),
+          );
 
     if (displayLabel == null) {
-      final Widget solo = Padding(padding: const EdgeInsets.only(bottom: 4), child: avatar);
-      if (!canNavigate) {
-        return solo;
-      }
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
-          borderRadius: BorderRadius.circular(8),
-          child: solo,
-        ),
-      );
+      return tappable(Padding(padding: const EdgeInsets.only(bottom: 4), child: avatar));
     }
 
-    Widget row = Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Text(
-              displayLabel,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: secondary),
+    return tappable(
+      Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                displayLabel,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: secondary),
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          avatar,
-        ],
+            const SizedBox(width: 10),
+            avatar,
+          ],
+        ),
       ),
     );
-
-    if (canNavigate) {
-      row = Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.router.push(ProfileRoute(profileIdentifier: profileIdentifier)),
-          borderRadius: BorderRadius.circular(8),
-          child: row,
-        ),
-      );
-    }
-    return row;
   }
 
-  Widget _buildWallhavenAuthorLink(BuildContext context, String username) {
+  Widget _buildAuthorLink(BuildContext context, String text, Uri? uri) {
+    final style = Theme.of(context).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary);
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxW = constraints.maxWidth.isFinite ? min(constraints.maxWidth, 200.0) : 200.0;
+        final label = Text(text, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style);
         return SizedBox(
           width: maxW,
           child: Align(
             alignment: Alignment.centerRight,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: () async {
-                final Uri uri = Uri.https('wallhaven.cc', '/user/${Uri.encodeComponent(username)}');
-                final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                if (!ok && context.mounted) {
-                  toasts.codeSend('Could not open profile');
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  username,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                ),
-              ),
-            ),
+            child: uri == null
+                ? label
+                : InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () async {
+                      final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      if (!ok && context.mounted) {
+                        toasts.codeSend('Could not open profile');
+                      }
+                    },
+                    child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: label),
+                  ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildPexelsPhotographerLink(BuildContext context, String photographer, String? photographerUrl) {
-    final String urlForLaunch = photographerUrl?.trim() ?? '';
-    final bool hasUrl = urlForLaunch.isNotEmpty;
-    final TextStyle style = Theme.of(
-      context,
-    ).textTheme.headlineSmall!.copyWith(color: Theme.of(context).colorScheme.secondary);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxW = constraints.maxWidth.isFinite ? min(constraints.maxWidth, 200.0) : 200.0;
-          return SizedBox(
-            width: maxW,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: hasUrl
-                  ? InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () async {
-                        final Uri? uri = Uri.tryParse(urlForLaunch);
-                        if (uri == null) {
-                          return;
-                        }
-                        final bool ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        if (!ok && context.mounted) {
-                          toasts.codeSend('Could not open profile');
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(
-                          photographer,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.end,
-                          style: style,
-                        ),
-                      ),
-                    )
-                  : Text(photographer, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end, style: style),
-            ),
-          );
-        },
-      ),
     );
   }
 
@@ -931,13 +785,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
-  Widget _buildInfoRow(
-    BuildContext context,
-    IconData icon,
-    String text, {
-    bool reversed = false,
-    bool showIconLast = false,
-  }) {
+  Widget _buildInfoRow(BuildContext context, IconData icon, String text, {bool reversed = false}) {
     final iconWidget = Icon(icon, size: 20, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7));
     final textWidget = Flexible(
       child: Text(
@@ -947,7 +795,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       ),
     );
     const spacer = SizedBox(width: 10);
-    if (showIconLast || reversed) {
+    if (reversed) {
       return Row(mainAxisSize: MainAxisSize.min, children: [textWidget, spacer, iconWidget]);
     }
     return Row(mainAxisSize: MainAxisSize.min, children: [iconWidget, spacer, textWidget]);
@@ -1066,11 +914,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 _trackAction(state, AnalyticsActionValue.backTapped);
                 Navigator.pop(context);
               },
-              color: paletteLoading
-                  ? Theme.of(context).colorScheme.secondary
-                  : (state.accent?.computeLuminance() ?? 0) > 0.5
-                  ? Colors.black
-                  : Colors.white,
+              color: _chromeColor(context, paletteLoading, state),
               icon: const Icon(JamIcons.chevron_left),
             ),
           ),
@@ -1103,11 +947,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   ),
                 );
               },
-              color: paletteLoading
-                  ? Theme.of(context).colorScheme.secondary
-                  : (state.accent?.computeLuminance() ?? 0) > 0.5
-                  ? Colors.black
-                  : Colors.white,
+              color: _chromeColor(context, paletteLoading, state),
               icon: const Icon(JamIcons.clock),
             ),
           ),
@@ -1142,9 +982,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             placeholder: (context, url) => Container(color: Theme.of(context).primaryColor),
             errorWidget: (context, url, error) {
               onWallpaperDisplayReady?.call();
-              return Center(
-                child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
-              );
+              return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
             },
           ),
           CachedNetworkImage(
@@ -1172,9 +1010,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         WidgetsBinding.instance.addPostFrameCallback((_) {
           onWallpaperDisplayReady?.call();
         });
-        imageLayer = Center(
-          child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
-        );
+        imageLayer = Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
       } else {
         imageLayer = CachedNetworkImage(
           imageUrl: url,
@@ -1187,9 +1023,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           progressIndicatorBuilder: (context, url, downloadProgress) => const SizedBox.shrink(),
           errorWidget: (context, url, error) {
             onWallpaperDisplayReady?.call();
-            return Center(
-              child: Icon(JamIcons.close_circle_f, color: _wallpaperErrorIconColor(context, paletteLoading, state)),
-            );
+            return Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state)));
           },
         );
       }
@@ -1202,31 +1036,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     return SizedBox.expand(child: imageLayer);
   }
 
-  Color _wallpaperErrorIconColor(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
-    return paletteLoading
-        ? Theme.of(context).colorScheme.secondary
-        : (state.accent?.computeLuminance() ?? 0) > 0.5
-        ? Colors.black
-        : Colors.white;
+  Color _chromeColor(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
+    if (paletteLoading) return Theme.of(context).colorScheme.secondary;
+    return state.accent?.onColor ?? Colors.white;
   }
 
   String _formatDate(DateTime date) {
     final local = date.toLocal();
-    final diff = DateTime.now().difference(local);
-    if (diff.inDays < 7) return timeago.format(local);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final month = months[local.month - 1];
-    if (local.year == DateTime.now().year) return '${local.day} $month';
-    return '${local.day} $month ${local.year}';
+    final now = DateTime.now();
+    if (now.difference(local).inDays < 7) return timeago.format(local);
+    return DateFormat(local.year == now.year ? 'd MMM' : 'd MMM y').format(local);
   }
-
-  String sourceDisplayName(WallpaperSource source) => switch (source) {
-    WallpaperSource.prism => 'Prism',
-    WallpaperSource.wallhaven => 'Wallhaven',
-    WallpaperSource.pexels => 'Pexels',
-    WallpaperSource.downloaded => 'Downloaded',
-    WallpaperSource.unknown => 'Unknown',
-  };
 }
 
 /// Press feedback for the wallpaper sheet action row: scale only (no layout animation).
