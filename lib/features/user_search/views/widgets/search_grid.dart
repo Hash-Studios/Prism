@@ -135,7 +135,9 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
         return;
       }
       setState(() {
-        _results = fresh;
+        if (fresh.isNotEmpty) {
+          _results = fresh;
+        }
         _currentPage = 1;
         _hasMore = fresh.isNotEmpty;
       });

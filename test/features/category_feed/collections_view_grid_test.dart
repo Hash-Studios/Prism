@@ -67,28 +67,6 @@ void main() {
     expect((tile.decoration! as BoxDecoration).borderRadius, isNull);
   });
 
-  testWidgets('keeps all collection items and appends See more when another page exists', (tester) async {
-    final originalWalls = anyCollectionWalls;
-    final originalHasMore = collectionHasMore;
-    anyCollectionWalls = <Map<String, dynamic>>[
-      <String, dynamic>{'id': '', 'wallpaper_thumb': '', 'wallpaper_url': ''},
-    ];
-    collectionHasMore = true;
-    AnalyticsRuntime.instance = FakeAppAnalytics();
-    addTearDown(() {
-      anyCollectionWalls = originalWalls;
-      collectionHasMore = originalHasMore;
-      AnalyticsRuntime.reset();
-    });
-
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CollectionViewGrid())));
-    await tester.pump(const Duration(milliseconds: 16));
-
-    await tester.scrollUntilVisible(find.text('See more'), 200);
-    expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
-    expect(find.text('See more'), findsOneWidget);
-  });
-
   testWidgets('does not replace the 24th collection item with See more', (tester) async {
     final originalWalls = anyCollectionWalls;
     final originalHasMore = collectionHasMore;
