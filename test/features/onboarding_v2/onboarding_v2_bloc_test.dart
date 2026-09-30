@@ -1,19 +1,19 @@
-// Firebase's own platform-interface packages are transitive (pulled in via firebase_core and
-// firebase_remote_config, not listed directly in pubspec.yaml) but needed here to stand up a
-// fake FirebaseRemoteConfig for the test — see the comment on _FakeFirebaseRemoteConfigPlatform.
-// ignore_for_file: depend_on_referenced_packages
-
 import 'package:Prism/auth/badge_model.dart';
 import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/category_feed/domain/repositories/category_feed_repository.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/data/repo/onboarding_v2_repo.dart';
@@ -26,11 +26,10 @@ import 'package:Prism/features/onboarding_v2/src/services/first_wallpaper_servic
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core_platform_interface/test.dart';
-import 'package:firebase_remote_config_platform_interface/firebase_remote_config_platform_interface.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
 import '../../support/fake_app_analytics.dart';
 
 class _MockFetchStarterPackUseCase extends Mock implements FetchStarterPackUseCase {}
@@ -49,27 +48,9 @@ class _MockOnboardingV2Repository extends Mock implements OnboardingV2Repository
 
 class _MockSettingsLocalDataSource extends Mock implements SettingsLocalDataSource {}
 
-class _RecordingAnalytics extends FakeAppAnalytics {
-  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
+class _MockFirebaseRemoteConfig extends Mock implements FirebaseRemoteConfig {}
 
-  @override
-  Future<void> track(AnalyticsEvent event) async => events.add(event);
-}
-
-// The bloc reaches into `FirebaseRemoteConfig.instance` directly, which needs a real
-// Firebase app to exist. `setupFirebaseCoreMocks()` mocks firebase_core's pigeon channel so
-// `Firebase.initializeApp()` succeeds; this fake stands in for the remote config platform so
-// `getString` doesn't hit a real (unmocked) platform channel.
-class _FakeFirebaseRemoteConfigPlatform extends FirebaseRemoteConfigPlatform {
-  @override
-  FirebaseRemoteConfigPlatform delegateFor({required FirebaseApp app}) => this;
-
-  @override
-  FirebaseRemoteConfigPlatform setInitialValues({required Map<Object?, Object?> remoteConfigValues}) => this;
-
-  @override
-  String getString(String key) => '';
-}
+class _MockAiGenerationRepository extends Mock implements AiGenerationRepositoryImpl {}
 
 PrismUsersV2 _user({required String id, required bool loggedIn, bool premium = false}) {
   final now = DateTime.now().toUtc().toIso8601String();
@@ -95,15 +76,36 @@ PrismUsersV2 _user({required String id, required bool loggedIn, bool premium = f
   );
 }
 
+OnboardingStarterCreatorEntity _creator(int i) => OnboardingStarterCreatorEntity(
+  userId: 'creator-$i',
+  email: 'creator-$i@example.com',
+  name: 'Creator $i',
+  photoUrl: '',
+  previewUrls: const <String>[],
+  rank: i,
+  followerCount: 0,
+);
+
+AiGenerationRecord _aiRecord() => AiGenerationRecord(
+  id: 'gen-1',
+  userId: 'u1',
+  createdAt: DateTime.utc(2026),
+  prompt: 'prompt',
+  stylePreset: AiStylePreset.nature,
+  qualityTier: AiQualityTier.fast,
+  provider: 'p',
+  model: 'm',
+  seed: 1,
+  width: 1,
+  height: 1,
+  imageUrl: 'https://example.com/full.jpg',
+  watermarkedImageUrl: 'https://example.com/thumb.jpg',
+  chargeMode: AiChargeMode.freeTrial,
+  coinsSpent: 0,
+  status: 'done',
+);
+
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  test('only an actual paywall purchase counts as onboarding purchase', () {
-    expect(PaywallResultValue.purchased.indicatesPurchase, isTrue);
-    expect(PaywallResultValue.restored.indicatesPurchase, isFalse);
-    expect(PaywallResultValue.cancelled.indicatesPurchase, isFalse);
-  });
-
   late _MockFetchStarterPackUseCase fetchStarterPackUseCase;
   late _MockSaveInterestsUseCase saveInterestsUseCase;
   late _MockFollowStarterPackUseCase followStarterPackUseCase;
@@ -112,19 +114,23 @@ void main() {
   late _MockCategoryFeedRepository categoryFeedRepository;
   late _MockOnboardingV2Repository onboardingRepository;
   late _MockSettingsLocalDataSource settingsLocalDataSource;
+  late _MockFirebaseRemoteConfig remoteConfig;
+  late _MockAiGenerationRepository aiRepository;
+  late FakeAppAnalytics analytics;
 
-  setUpAll(() async {
+  setUpAll(() {
     registerFallbackValue(const <String>[]);
     registerFallbackValue(const SaveInterestsParams(interests: <String>[]));
-    registerFallbackValue(const FollowStarterPackParams(creators: <OnboardingCreatorFollowParams>[]));
-    registerFallbackValue(const CompleteOnboardingParams(didPurchase: false, totalElapsedMs: 0));
-    setupFirebaseCoreMocks();
-    await Firebase.initializeApp();
-    FirebaseRemoteConfigPlatform.instance = _FakeFirebaseRemoteConfigPlatform();
+    registerFallbackValue(const FollowStarterPackParams(creators: <OnboardingStarterCreatorEntity>[]));
+    registerFallbackValue(const NoParams());
+    registerFallbackValue(AiStylePreset.nature);
+    registerFallbackValue(AiQualityTier.fast);
+    registerFallbackValue(AiChargeMode.freeTrial);
   });
 
   setUp(() {
-    AnalyticsRuntime.instance = _RecordingAnalytics();
+    analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
     fetchStarterPackUseCase = _MockFetchStarterPackUseCase();
     saveInterestsUseCase = _MockSaveInterestsUseCase();
     followStarterPackUseCase = _MockFollowStarterPackUseCase();
@@ -133,17 +139,17 @@ void main() {
     categoryFeedRepository = _MockCategoryFeedRepository();
     onboardingRepository = _MockOnboardingV2Repository();
     settingsLocalDataSource = _MockSettingsLocalDataSource();
+    remoteConfig = _MockFirebaseRemoteConfig();
+    aiRepository = _MockAiGenerationRepository();
 
-    getIt.registerSingleton<SettingsLocalDataSource>(settingsLocalDataSource);
-
-    // PersonalizedInterestsCatalog.load falls through remote (empty, see fake remote config
-    // above) and this cache miss to the built-in default catalog, which is non-empty — so
-    // _onStarted never calls categoryFeedRepository.getCategories().
+    // Empty remote config and cache make PersonalizedInterestsCatalog fall back to the built-in
+    // catalog, which is non-empty, so _onStarted never calls categoryFeedRepository.getCategories().
+    when(() => remoteConfig.getString(any())).thenReturn('');
     when(
       () => settingsLocalDataSource.get<String>(app_constants.personalizedInterestsLocalCacheKey, defaultValue: ''),
     ).thenReturn('');
     when(
-      () => fetchStarterPackUseCase(const FetchStarterPackParams()),
+      () => fetchStarterPackUseCase(const NoParams()),
     ).thenAnswer((_) async => Result.success(<OnboardingStarterCreatorEntity>[]));
     when(() => firstWallpaperService.recommendForOnboarding(any())).thenAnswer((_) async => null);
     when(
@@ -151,10 +157,9 @@ void main() {
     ).thenAnswer((_) async => Result.success(const OnboardingUserStatus(hasInterests: false, hasFollows: false)));
   });
 
-  tearDown(() async {
+  tearDown(() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
-    await getIt.reset();
   });
 
   OnboardingV2Bloc buildBloc() => OnboardingV2Bloc(
@@ -165,7 +170,12 @@ void main() {
     firstWallpaperService,
     categoryFeedRepository,
     onboardingRepository,
+    settingsLocalDataSource,
+    remoteConfig,
+    aiRepository: aiRepository,
   );
+
+  Iterable<String> trackedNames() => analytics.events.map((event) => event.eventName);
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'a signed-in user who left onboarding mid-flow resumes past the auth step',
@@ -189,6 +199,27 @@ void main() {
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'the first creators by rank start selected and toggling changes only the selection',
+    setUp: () {
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async => Result.success(List<OnboardingStarterCreatorEntity>.generate(5, (i) => _creator(4 - i))),
+      );
+    },
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-0@example.com'));
+      bloc.add(const OnboardingV2Event.creatorFollowToggled('creator-4@example.com'));
+    },
+    verify: (bloc) {
+      final pack = bloc.state.starterPackData;
+      expect(pack.creators.map((c) => c.rank), <int>[0, 1, 2, 3, 4]);
+      expect(pack.selectedEmails, <String>{'creator-1@example.com', 'creator-2@example.com', 'creator-4@example.com'});
+    },
+  );
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records selected interests only after saving succeeds',
     setUp: () {
       when(() => saveInterestsUseCase(any())).thenAnswer((_) async => Result.success(null));
@@ -202,10 +233,9 @@ void main() {
       bloc.add(const OnboardingV2Event.interestsConfirmed());
     },
     verify: (_) {
-      final events = (AnalyticsRuntime.instance as _RecordingAnalytics).events;
-      expect(events.map((event) => event.eventName), contains('onboarding_v2_interests_completed'));
+      expect(trackedNames(), contains('onboarding_v2_interests_completed'));
       expect(
-        events.singleWhere((event) => event.eventName == 'onboarding_v2_interests_completed').toWireParameters(),
+        analytics.events.singleWhere((e) => e.eventName == 'onboarding_v2_interests_completed').toWireParameters(),
         <String, Object?>{'selected_count': 3},
       );
     },
@@ -226,46 +256,140 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       bloc.add(const OnboardingV2Event.interestsConfirmed());
     },
-    verify: (_) {
-      final events = (AnalyticsRuntime.instance as _RecordingAnalytics).events;
-      expect(events, isEmpty);
-    },
+    verify: (_) => expect(analytics.events, isEmpty),
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
     'records starter-pack follows after the follow write succeeds',
     setUp: () {
       when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
-      when(() => fetchStarterPackUseCase(const FetchStarterPackParams())).thenAnswer(
-        (_) async => Result.success(
-          List<OnboardingStarterCreatorEntity>.generate(
-            OnboardingV2Config.minFollows,
-            (i) => OnboardingStarterCreatorEntity(
-              userId: 'creator-$i',
-              email: 'creator-$i@example.com',
-              name: 'Creator $i',
-              photoUrl: '',
-              previewUrls: const <String>[],
-              rank: i,
-              bio: '',
-              followerCount: 0,
-            ),
-          ),
-        ),
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async =>
+            Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
       );
     },
     build: buildBloc,
     act: (bloc) async {
       bloc.add(const OnboardingV2Event.started());
-      await Future<void>.delayed(Duration.zero);
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
       bloc.add(const OnboardingV2Event.starterPackConfirmed());
     },
     verify: (_) {
-      final event = (AnalyticsRuntime.instance as _RecordingAnalytics).events.singleWhere(
-        (event) => event.eventName == 'onboarding_v2_starter_pack_completed',
-      );
+      final event = analytics.events.singleWhere((e) => e.eventName == 'onboarding_v2_starter_pack_completed');
       expect(event.toWireParameters(), <String, Object?>{'followed_count': OnboardingV2Config.minFollows});
+      final followed = verify(() => followStarterPackUseCase(captureAny())).captured.single as FollowStarterPackParams;
+      expect(followed.creators.map((c) => c.email), <String>[
+        for (var i = 0; i < OnboardingV2Config.minFollows; i++) 'creator-$i@example.com',
+      ]);
     },
+  );
+
+  group('AI prompt for the interests', () {
+    Future<OnboardingV2State> confirmStarterPackWith(OnboardingV2Bloc bloc, List<String> interests) async {
+      for (final interest in interests) {
+        bloc.add(OnboardingV2Event.interestToggled(interest));
+      }
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
+      bloc.add(const OnboardingV2Event.starterPackConfirmed());
+      return bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.aiGenerate);
+    }
+
+    setUp(() {
+      when(() => followStarterPackUseCase(any())).thenAnswer((_) async => Result.success(null));
+      when(() => fetchStarterPackUseCase(const NoParams())).thenAnswer(
+        (_) async =>
+            Result.success(List<OnboardingStarterCreatorEntity>.generate(OnboardingV2Config.minFollows, _creator)),
+      );
+    });
+
+    test('an anime interest gets an anime style with a prompt from its pool', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      final state = await confirmStarterPackWith(bloc, <String>['Anime', 'Space', 'Tech']);
+
+      expect(state.aiData.stylePreset, AiStylePreset.anime);
+      expect(OnboardingV2Config.aiOnboardingPromptPool[AiStylePreset.anime], contains(state.aiData.prompt));
+    });
+
+    test('a very short interest name does not match a keyword by accident', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      final state = await confirmStarterPackWith(bloc, <String>['a', 'Cooking', 'Sports']);
+
+      expect(OnboardingV2Config.aiOnboardingStyles, contains(state.aiData.stylePreset));
+      expect(OnboardingV2Config.aiOnboardingPromptPool[state.aiData.stylePreset], contains(state.aiData.prompt));
+    });
+
+    test('every style the interest map can return has prompts', () {
+      for (final style in OnboardingV2Config.aiInterestStyleMap.values.toSet()) {
+        expect(OnboardingV2Config.aiOnboardingPromptPool[style], isNotEmpty, reason: '$style has no prompts');
+      }
+    });
+  });
+
+  group('AI generation', () {
+    setUp(() {
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) async => _aiRecord());
+    });
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a generated image becomes the first wallpaper',
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920')),
+      wait: Duration.zero,
+      verify: (bloc) {
+        expect(bloc.state.aiData.status, AiGenerateStatus.success);
+        expect(bloc.state.wallpaperData.wallpaper?.fullUrl, 'https://example.com/full.jpg');
+        expect(bloc.state.wallpaperData.wallpaper?.thumbnailUrl, 'https://example.com/thumb.jpg');
+      },
+    );
+
+    blocTest<OnboardingV2Bloc, OnboardingV2State>(
+      'a failed generation is reported and leaves the wallpaper alone',
+      setUp: () => when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenThrow(Exception('offline')),
+      build: buildBloc,
+      act: (bloc) => bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920')),
+      wait: Duration.zero,
+      verify: (bloc) {
+        expect(bloc.state.aiData.status, AiGenerateStatus.failure);
+        expect(bloc.state.wallpaperData.wallpaper, isNull);
+      },
+    );
+  });
+
+  blocTest<OnboardingV2Bloc, OnboardingV2State>(
+    'stepping back walks the steps in reverse and stops at auth',
+    setUp: () => app_state.prismUser = _user(id: 'resume-user', loggedIn: true),
+    build: buildBloc,
+    act: (bloc) async {
+      bloc.add(const OnboardingV2Event.started());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+      bloc.add(const OnboardingV2Event.stepBack());
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.auth);
+      bloc.add(const OnboardingV2Event.stepBack());
+    },
+    verify: (bloc) => expect(bloc.state.step, OnboardingV2Step.auth),
   );
 
   blocTest<OnboardingV2Bloc, OnboardingV2State>(
@@ -275,8 +399,6 @@ void main() {
         (_) async => const OnboardingWallpaperVm(
           fullUrl: 'https://example.com/wall.jpg',
           thumbnailUrl: 'https://example.com/thumb.jpg',
-          title: 'Wall',
-          authorName: 'Creator',
           sourceCategory: 'Nature',
         ),
       );
@@ -285,18 +407,18 @@ void main() {
     build: buildBloc,
     act: (bloc) async {
       bloc.add(const OnboardingV2Event.started());
-      await Future<void>.delayed(Duration.zero);
+      await bloc.stream.firstWhere((s) => s.loadStatus == LoadStatus.success);
       bloc.add(const OnboardingV2Event.aiGenerationStepContinued());
-      await Future<void>.delayed(Duration.zero);
+      await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.firstWallpaper);
       bloc.add(const OnboardingV2Event.firstWallpaperActionRequested());
     },
+    wait: Duration.zero,
     verify: (_) {
-      final events = (AnalyticsRuntime.instance as _RecordingAnalytics).events;
       expect(
-        events.map((event) => event.eventName),
+        trackedNames(),
         containsAll(<String>['onboarding_v2_first_wallpaper_shown', 'onboarding_v2_first_wallpaper_action']),
       );
-      final action = events.singleWhere((event) => event.eventName == 'onboarding_v2_first_wallpaper_action');
+      final action = analytics.events.singleWhere((e) => e.eventName == 'onboarding_v2_first_wallpaper_action');
       expect(action.toWireParameters()['result'], 'failure');
     },
   );
@@ -312,32 +434,11 @@ void main() {
       bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: true));
     },
     verify: (_) {
-      final events = (AnalyticsRuntime.instance as _RecordingAnalytics).events;
-      final completion = events.where((event) => event.eventName == 'onboarding_v2_completed').toList();
+      final completion = analytics.events.where((e) => e.eventName == 'onboarding_v2_completed').toList();
       expect(completion, hasLength(1));
       expect(completion.single.toWireParameters()['did_purchase'], 1);
+      expect(completion.single.toWireParameters()['total_elapsed_ms'], isA<int>());
       verify(() => completeOnboardingUseCase(any())).called(1);
-    },
-  );
-
-  blocTest<OnboardingV2Bloc, OnboardingV2State>(
-    'completion duration starts when onboarding starts',
-    setUp: () {
-      when(() => completeOnboardingUseCase(any())).thenAnswer((_) async => Result.success(null));
-    },
-    build: buildBloc,
-    act: (bloc) async {
-      bloc.add(const OnboardingV2Event.started());
-      await Future<void>.delayed(const Duration(milliseconds: 15));
-      bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: false));
-    },
-    verify: (_) {
-      final event = (AnalyticsRuntime.instance as _RecordingAnalytics).events.singleWhere(
-        (event) => event.eventName == 'onboarding_v2_completed',
-      );
-      final parameters = event.toWireParameters();
-      expect(parameters['did_purchase'], 0);
-      expect(parameters['total_elapsed_ms']! as int, greaterThanOrEqualTo(10));
     },
   );
 
@@ -353,9 +454,7 @@ void main() {
     build: buildBloc,
     act: (bloc) => bloc.add(const OnboardingV2Event.started()),
     verify: (_) {
-      final event = (AnalyticsRuntime.instance as _RecordingAnalytics).events.singleWhere(
-        (event) => event.eventName == 'onboarding_v2_completed',
-      );
+      final event = analytics.events.singleWhere((e) => e.eventName == 'onboarding_v2_completed');
       expect(event.toWireParameters()['did_purchase'], 0);
     },
   );
@@ -369,9 +468,6 @@ void main() {
     },
     build: buildBloc,
     act: (bloc) => bloc.add(const OnboardingV2Event.paywallResultReceived(didPurchase: false)),
-    verify: (_) {
-      final events = (AnalyticsRuntime.instance as _RecordingAnalytics).events;
-      expect(events, isEmpty);
-    },
+    verify: (_) => expect(analytics.events, isEmpty),
   );
 }

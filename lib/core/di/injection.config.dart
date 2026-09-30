@@ -611,17 +611,6 @@ _i174.GetIt initGetIt(
       gh<_i836.UpdateThemeModeUseCase>(),
     ),
   );
-  gh.factory<_i224.OnboardingV2Bloc>(
-    () => _i224.OnboardingV2Bloc(
-      gh<_i132.FetchStarterPackUseCase>(),
-      gh<_i95.SaveInterestsUseCase>(),
-      gh<_i74.FollowStarterPackUseCase>(),
-      gh<_i975.CompleteOnboardingV2UseCase>(),
-      gh<_i502.FirstWallpaperService>(),
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i897.OnboardingV2Repository>(),
-    ),
-  );
   gh.factory<_i717.PublicProfileBloc>(
     () => _i717.PublicProfileBloc(
       gh<_i446.FetchPublicProfileUseCase>(),
@@ -644,6 +633,19 @@ _i174.GetIt initGetIt(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
       gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.factory<_i224.OnboardingV2Bloc>(
+    () => _i224.OnboardingV2Bloc(
+      gh<_i132.FetchStarterPackUseCase>(),
+      gh<_i95.SaveInterestsUseCase>(),
+      gh<_i74.FollowStarterPackUseCase>(),
+      gh<_i975.CompleteOnboardingV2UseCase>(),
+      gh<_i502.FirstWallpaperService>(),
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i897.OnboardingV2Repository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i627.FirebaseRemoteConfig>(),
     ),
   );
   gh.factory<_i941.ProfileSetupsBloc>(

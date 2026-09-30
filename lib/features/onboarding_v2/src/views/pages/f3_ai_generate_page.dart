@@ -1,6 +1,7 @@
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,7 +28,6 @@ class F3AiGeneratePage extends StatelessWidget {
             return Stack(
               fit: StackFit.expand,
               children: [
-                // ── Prompt chip — sits below the two-line headline ──
                 Positioned(
                   top: OnboardingLayout.aiChipY * sy,
                   left: OnboardingLayout.aiChipX * sx,
@@ -35,7 +35,6 @@ class F3AiGeneratePage extends StatelessWidget {
                   child: _PromptChip(prompt: aiData.prompt, style: aiData.stylePreset.label),
                 ),
 
-                // ── Preview area (loading / result / failure) ──
                 Positioned(
                   top: OnboardingLayout.aiPreviewY * sy,
                   left: OnboardingLayout.aiPreviewX * sx,
@@ -44,23 +43,12 @@ class F3AiGeneratePage extends StatelessWidget {
                   child: _PreviewArea(aiData: aiData),
                 ),
 
-                // ── Skip link (top-right, same position as F4 skip) ──
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: OnboardingLayout.skipY * sy,
-                      right: (OnboardingLayout.designWidth - OnboardingLayout.skipX - 32) * sx,
-                    ),
-                    child: GestureDetector(
-                      onTap: () =>
-                          context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.aiGenerationStepContinued()),
-                      child: Text(
-                        'skip',
-                        style: OnboardingTypography.skip.copyWith(color: OnboardingColors.textPrimary),
-                      ),
-                    ),
-                  ),
+                OnboardingSkipButton(
+                  sx: sx,
+                  sy: sy,
+                  color: OnboardingColors.textPrimary,
+                  onTap: () =>
+                      context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.aiGenerationStepContinued()),
                 ),
               ],
             );
@@ -150,12 +138,7 @@ class _IdlePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
+    return _AiPreviewShell(
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -183,12 +166,7 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
+    return _AiPreviewShell(
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -236,12 +214,7 @@ class _FailureView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
+    return _AiPreviewShell(
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -260,6 +233,24 @@ class _FailureView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AiPreviewShell extends StatelessWidget {
+  const _AiPreviewShell({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: child,
     );
   }
 }
