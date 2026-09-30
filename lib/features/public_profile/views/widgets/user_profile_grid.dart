@@ -110,7 +110,7 @@ class _PhotographerWallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String imageUrl = wall.wallpaperThumb?.trim() ?? '';
+    final String imageUrl = normalizeWallpaperThumbnailUrl(wall.wallpaperThumb?.trim() ?? '');
     final bool hasValidImageUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
     return Semantics(
       button: true,
