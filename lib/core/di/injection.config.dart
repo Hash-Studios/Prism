@@ -10,10 +10,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:cloud_firestore/cloud_firestore.dart' as _i974;
-import 'package:firebase_auth/firebase_auth.dart' as _i59;
 import 'package:firebase_remote_config/firebase_remote_config.dart' as _i627;
 import 'package:get_it/get_it.dart' as _i174;
-import 'package:http/http.dart' as _i519;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:internet_connection_checker/internet_connection_checker.dart'
     as _i973;
@@ -101,14 +99,6 @@ import '../../features/prism_feed/data/repositories/prism_wallpaper_repository_i
     as _i759;
 import '../../features/prism_feed/domain/repositories/prism_wallpaper_repository.dart'
     as _i727;
-import '../../features/profile_setups/biz/bloc/profile_setups_bloc.j.dart'
-    as _i941;
-import '../../features/profile_setups/data/repositories/profile_setups_repository_impl.dart'
-    as _i983;
-import '../../features/profile_setups/domain/repositories/profile_setups_repository.dart'
-    as _i563;
-import '../../features/profile_setups/domain/usecases/profile_setups_usecases.dart'
-    as _i272;
 import '../../features/public_profile/biz/bloc/public_profile_bloc.j.dart'
     as _i717;
 import '../../features/public_profile/data/repositories/public_profile_repository_impl.dart'
@@ -202,18 +192,19 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i393.FirestoreTelemetrySink>(
     () => appModule.firestoreTelemetrySink,
   );
-  gh.lazySingleton<_i59.FirebaseAuth>(() => appModule.firebaseAuth);
   gh.lazySingleton<_i627.FirebaseRemoteConfig>(() => appModule.remoteConfig);
   gh.lazySingleton<_i973.InternetConnectionChecker>(
     () => appModule.internetConnectionChecker,
   );
   gh.lazySingleton<_i496.LocalStore>(() => appModule.localStore);
-  gh.lazySingleton<_i519.Client>(() => appModule.httpClient);
   gh.lazySingleton<_i1003.AppIconsLocalDataSource>(
     () => _i1003.AppIconsLocalDataSource(),
   );
   gh.lazySingleton<_i954.FeedCacheLocalDataSource>(
     () => _i954.FeedCacheLocalDataSource(),
+  );
+  gh.lazySingleton<_i721.StartupRepository>(
+    () => _i152.StartupRepositoryImpl(),
   );
   gh.lazySingleton<_i640.FavoritesLocalDataSource>(
     () => _i640.FavoritesLocalDataSource(gh<_i496.LocalStore>()),
@@ -265,6 +256,9 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
       gh<_i640.FavoritesLocalDataSource>(),
     ),
+  );
+  gh.lazySingleton<_i415.BootstrapAppUseCase>(
+    () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
   );
   gh.lazySingleton<_i366.NotificationsRepository>(
     () => _i1017.NotificationsRepositoryImpl(
@@ -318,9 +312,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i425.ThemeRepository>(
     () => _i404.ThemeRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
   );
-  gh.lazySingleton<_i721.StartupRepository>(
-    () => _i152.StartupRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
-  );
   gh.lazySingleton<_i491.ConnectivityService>(
     () => _i491.InternetConnectivityService(
       gh<_i973.InternetConnectionChecker>(),
@@ -343,14 +334,11 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i204.UserSearchRepository>(
     () => _i352.UserSearchRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
+  gh.factory<_i313.StartupBloc>(
+    () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
+  );
   gh.lazySingleton<_i986.GetSessionUseCase>(
     () => _i986.GetSessionUseCase(gh<_i738.SessionRepository>()),
-  );
-  gh.lazySingleton<_i986.RefreshPremiumUseCase>(
-    () => _i986.RefreshPremiumUseCase(gh<_i738.SessionRepository>()),
-  );
-  gh.lazySingleton<_i986.SignOutUseCase>(
-    () => _i986.SignOutUseCase(gh<_i738.SessionRepository>()),
   );
   gh.lazySingleton<_i897.OnboardingV2Repository>(
     () => _i794.OnboardingV2RepositoryImpl(
@@ -369,14 +357,10 @@ _i174.GetIt initGetIt(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
   );
-  gh.lazySingleton<_i340.RemoveFavouriteSetupUseCase>(
-    () => _i340.RemoveFavouriteSetupUseCase(
-      gh<_i841.FavouriteSetupsRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i340.ClearFavouriteSetupsUseCase>(
-    () => _i340.ClearFavouriteSetupsUseCase(
-      gh<_i841.FavouriteSetupsRepository>(),
+  gh.factory<_i364.SessionBloc>(
+    () => _i364.SessionBloc(
+      gh<_i986.GetSessionUseCase>(),
+      sessionRepository: gh<_i738.SessionRepository>(),
     ),
   );
   gh.lazySingleton<_i122.ReviewBatchRepository>(
@@ -407,8 +391,11 @@ _i174.GetIt initGetIt(
       gh<_i366.NotificationsRepository>(),
     ),
   );
-  gh.lazySingleton<_i415.BootstrapAppUseCase>(
-    () => _i415.BootstrapAppUseCase(gh<_i721.StartupRepository>()),
+  gh.factory<_i704.FavouriteSetupsBloc>(
+    () => _i704.FavouriteSetupsBloc(
+      gh<_i340.FetchFavouriteSetupsUseCase>(),
+      gh<_i340.ToggleFavouriteSetupUseCase>(),
+    ),
   );
   gh.lazySingleton<_i584.InAppNotificationsBloc>(
     () => _i584.InAppNotificationsBloc(
@@ -467,12 +454,6 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
-  gh.lazySingleton<_i563.ProfileSetupsRepository>(
-    () => _i983.ProfileSetupsRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i112.UserBlockRepository>(),
-    ),
-  );
   gh.lazySingleton<_i975.CompleteOnboardingV2UseCase>(
     () => _i975.CompleteOnboardingV2UseCase(gh<_i897.OnboardingV2Repository>()),
   );
@@ -492,14 +473,6 @@ _i174.GetIt initGetIt(
       gh<_i518.UpdateThemeLightAccentUseCase>(),
     ),
   );
-  gh.factory<_i704.FavouriteSetupsBloc>(
-    () => _i704.FavouriteSetupsBloc(
-      gh<_i340.FetchFavouriteSetupsUseCase>(),
-      gh<_i340.ToggleFavouriteSetupUseCase>(),
-      gh<_i340.RemoveFavouriteSetupUseCase>(),
-      gh<_i340.ClearFavouriteSetupsUseCase>(),
-    ),
-  );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
     () => _i903.PersonalizedFeedRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -515,14 +488,6 @@ _i174.GetIt initGetIt(
       gh<_i349.FirestoreClient>(),
       gh<_i954.FeedCacheLocalDataSource>(),
       gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.factory<_i364.SessionBloc>(
-    () => _i364.SessionBloc(
-      gh<_i986.GetSessionUseCase>(),
-      gh<_i986.RefreshPremiumUseCase>(),
-      gh<_i986.SignOutUseCase>(),
-      sessionRepository: gh<_i738.SessionRepository>(),
     ),
   );
   gh.factory<_i97.ThemeDarkBloc>(
@@ -555,9 +520,6 @@ _i174.GetIt initGetIt(
       gh<_i231.RecordPrismWallpaperViewsUsecase>(),
       gh<_i806.PaletteBloc>(),
     ),
-  );
-  gh.factory<_i313.StartupBloc>(
-    () => _i313.StartupBloc(gh<_i415.BootstrapAppUseCase>()),
   );
   gh.factory<_i733.UserSearchBloc>(
     () => _i733.UserSearchBloc(gh<_i750.SearchUsersUseCase>()),
@@ -598,14 +560,14 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
   );
+  gh.lazySingleton<_i247.FetchSetupByNameUseCase>(
+    () => _i247.FetchSetupByNameUseCase(gh<_i411.SetupsRepository>()),
+  );
   gh.lazySingleton<_i502.FirstWallpaperService>(
     () => _i502.FirstWallpaperService(
       gh<_i563.CategoryFeedRepository>(),
       gh<_i489.WallOfTheDayRepository>(),
     ),
-  );
-  gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
-    () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
   );
   gh.factory<_i736.ThemeModeBloc>(
     () => _i736.ThemeModeBloc(
@@ -622,17 +584,6 @@ _i174.GetIt initGetIt(
       gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
   );
-  gh.factory<_i224.OnboardingV2Bloc>(
-    () => _i224.OnboardingV2Bloc(
-      gh<_i132.FetchStarterPackUseCase>(),
-      gh<_i95.SaveInterestsUseCase>(),
-      gh<_i74.FollowStarterPackUseCase>(),
-      gh<_i975.CompleteOnboardingV2UseCase>(),
-      gh<_i502.FirstWallpaperService>(),
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i897.OnboardingV2Repository>(),
-    ),
-  );
   gh.lazySingleton<_i212.FetchPersonalizedFeedUseCase>(
     () => _i212.FetchPersonalizedFeedUseCase(
       gh<_i567.PersonalizedFeedRepository>(),
@@ -645,8 +596,18 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
-  gh.factory<_i941.ProfileSetupsBloc>(
-    () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
+  gh.factory<_i224.OnboardingV2Bloc>(
+    () => _i224.OnboardingV2Bloc(
+      gh<_i132.FetchStarterPackUseCase>(),
+      gh<_i95.SaveInterestsUseCase>(),
+      gh<_i74.FollowStarterPackUseCase>(),
+      gh<_i975.CompleteOnboardingV2UseCase>(),
+      gh<_i502.FirstWallpaperService>(),
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i897.OnboardingV2Repository>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i627.FirebaseRemoteConfig>(),
+    ),
   );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
