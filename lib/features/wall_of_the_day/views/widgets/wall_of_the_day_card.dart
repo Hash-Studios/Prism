@@ -64,7 +64,7 @@ class _WotdCardContent extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final String photographer = entity.photographer.trim();
     return FeedHeroCard(
-      image: PrismImageTile(url: entity.thumbnailUrl),
+      image: PrismImageTile(url: entity.thumbnailUrl, fallbackUrl: entity.url),
       semanticLabel: photographer.isEmpty ? 'Wall of the day' : 'Wall of the day by $photographer',
       title: photographer.isEmpty ? null : 'by $photographer',
       tag: ClipRRect(

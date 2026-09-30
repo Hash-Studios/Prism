@@ -2,9 +2,9 @@ package com.hash.prism
 
 import android.app.DownloadManager
 import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -12,6 +12,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import com.hash.prism.pigeon.DownloadItemsResult
 import com.hash.prism.pigeon.DownloadRequest
@@ -23,7 +24,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
@@ -33,6 +33,7 @@ import java.util.concurrent.Executors
 class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val ioExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val downloadExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
     override fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit) {
         runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }) { saveMediaInternal(request) }
@@ -42,19 +43,64 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         val link = request.link
         val isLocalFile = request.isLocalFile
         val kind = request.kind
+        var connection: HttpURLConnection? = null
+        var input: InputStream? = null
+        var downloadedFile: File? = null
         return try {
-            val bitmap = if (isLocalFile) {
-                loadBitmapFromFile(link)
-            } else {
-                loadBitmapFromUrl(link)
-            }
-
-            if (bitmap == null) {
-                return createErrorResult("FAILED_TO_LOAD_BITMAP", "Could not load image from source")
+            val mime: String
+            try {
+                if (isLocalFile) {
+                    val path = if (link.startsWith("file://")) {
+                        Uri.parse(link).path ?: throw IOException("Invalid file URI")
+                    } else {
+                        link
+                    }
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(path, options)
+                    mime = options.outMimeType ?: return createErrorResult(
+                        "FAILED_TO_LOAD_BITMAP",
+                        "Could not load image from source",
+                    )
+                    if (!mime.startsWith("image/") || options.outWidth <= 0 || options.outHeight <= 0) {
+                        return createErrorResult("FAILED_TO_LOAD_BITMAP", "Could not load image from source")
+                    }
+                    input = File(path).inputStream()
+                } else {
+                    val httpConnection = openDownloadConnection(URL(link))
+                    connection = httpConnection
+                    val responseMime = httpConnection.contentType?.substringBefore(';')?.trim()?.lowercase(Locale.US)
+                        ?.takeIf { it.startsWith("image/") }
+                    val tempFile = File.createTempFile("prism-media-", ".tmp", context.cacheDir)
+                    downloadedFile = tempFile
+                    var downloadedBytes = 0L
+                    httpConnection.inputStream.use { source ->
+                        FileOutputStream(tempFile).use { downloadedBytes = source.copyTo(it) }
+                    }
+                    val contentLength = httpConnection.contentLengthLong
+                    val contentEncoding = httpConnection.contentEncoding
+                    val unencoded = contentEncoding.isNullOrBlank() || contentEncoding.trim().equals("identity", ignoreCase = true)
+                    if (contentLength >= 0 && unencoded && downloadedBytes != contentLength) {
+                        return createErrorResult("FAILED_TO_LOAD_BITMAP", "Incomplete image response")
+                    }
+                    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeFile(tempFile.path, options)
+                    val detectedMime = options.outMimeType
+                    if (options.outWidth <= 0 || options.outHeight <= 0 || detectedMime == null) {
+                        return createErrorResult("FAILED_TO_LOAD_BITMAP", "Could not load image from source")
+                    }
+                    val finalUrl = httpConnection.url.toString()
+                    val declaredMime = responseMime ?: mimeFromExtension(finalUrl) ?: mimeFromExtension(link)
+                    mime = declaredMime?.takeIf { it == detectedMime } ?: detectedMime
+                    input = tempFile.inputStream()
+                }
+            } catch (e: Exception) {
+                return createErrorResult("FAILED_TO_LOAD_BITMAP", e.message)
             }
 
             val folderName = if (kind == SaveMediaKind.SETUP) "Prism Setups" else "Prism"
-            val saved = saveBitmapToPictures(bitmap, folderName)
+            val source = input
+            input = null
+            val saved = source?.use { writeToPictures(it, mime, folderName) } == true
 
             if (saved) {
                 showToastOnMainThread("Saved in Pictures/$folderName!")
@@ -65,11 +111,101 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         } catch (e: Exception) {
             e.printStackTrace()
             createErrorResult("EXCEPTION", e.message)
+        } finally {
+            try {
+                input?.close()
+            } catch (_: Exception) {
+            }
+            downloadedFile?.delete()
+            connection?.disconnect()
         }
     }
 
     override fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit) {
-        callback(Result.success(enqueueDownloadNow(request)))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // DownloadManager owns the MediaStore rows it creates, and Prism has no media read permission, so
+            // listDownloads could not see them. Writing through MediaStore makes Prism the owner.
+            // ponytail: in-process transfer, stops if the app is killed. Move to WorkManager if that matters.
+            runInBackground(callback, { createErrorResult("DOWNLOAD_FAILED", it.message) }, executor = downloadExecutor) {
+                downloadToMediaStore(request)
+            }
+        } else {
+            callback(Result.success(enqueueDownloadNow(request)))
+        }
+    }
+
+    private fun downloadToMediaStore(request: DownloadRequest): OperationResult {
+        val resolver = context.contentResolver
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, request.filenameWithoutExtension + ".jpg")
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Prism/Downloads")
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            ?: return createErrorResult("DOWNLOAD_FAILED", "Could not create the file")
+
+        var connection: HttpURLConnection? = null
+        return try {
+            val downloadConnection = openDownloadConnection(URL(request.link))
+            connection = downloadConnection
+            val output = resolver.openOutputStream(uri) ?: throw IOException("Could not open the file")
+            val bytesWritten = output.use { stream ->
+                downloadConnection.inputStream.use { input -> input.copyTo(stream) }
+            }
+            if (bytesWritten == 0L) throw IOException("Downloaded file is empty")
+            val updated = resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+            if (updated != 1) throw IOException("Could not publish the file")
+            createSuccessResult()
+        } catch (e: Exception) {
+            try {
+                resolver.delete(uri, null, null)
+            } catch (cleanupException: Exception) {
+                e.addSuppressed(cleanupException)
+                e.printStackTrace()
+            }
+            createErrorResult("DOWNLOAD_FAILED", e.message)
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private fun openDownloadConnection(initialUrl: URL): HttpURLConnection {
+        var url = initialUrl
+        repeat(MAX_DOWNLOAD_REDIRECTS + 1) { redirectCount ->
+            if (url.protocol != "http" && url.protocol != "https") {
+                throw IOException("Unsupported download URL protocol")
+            }
+
+            val connection = url.openConnection() as HttpURLConnection
+            try {
+                connection.connectTimeout = DOWNLOAD_CONNECT_TIMEOUT_MS
+                connection.readTimeout = DOWNLOAD_READ_TIMEOUT_MS
+                connection.instanceFollowRedirects = false
+
+                val responseCode = connection.responseCode
+                if (responseCode in REDIRECT_CODES) {
+                    val location = connection.getHeaderField("Location")
+                        ?: throw IOException("Redirect did not include a location")
+                    if (redirectCount == MAX_DOWNLOAD_REDIRECTS) {
+                        throw IOException("Too many download redirects")
+                    }
+                    url = URL(url, location)
+                    if (url.protocol != "http" && url.protocol != "https") {
+                        throw IOException("Unsupported download redirect protocol")
+                    }
+                    connection.disconnect()
+                } else if (responseCode !in 200..299) {
+                    throw IOException("HTTP $responseCode")
+                } else {
+                    return connection
+                }
+            } catch (e: Exception) {
+                connection.disconnect()
+                throw e
+            }
+        }
+        throw IOException("Too many download redirects")
     }
 
     private fun enqueueDownloadNow(request: DownloadRequest): OperationResult {
@@ -110,8 +246,13 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }) { clearDownloadsInternal() }
     }
 
-    private fun <T> runInBackground(callback: (Result<T>) -> Unit, onError: (Exception) -> T, task: () -> T) {
-        ioExecutor.execute {
+    private fun <T> runInBackground(
+        callback: (Result<T>) -> Unit,
+        onError: (Exception) -> T,
+        executor: ExecutorService = ioExecutor,
+        task: () -> T,
+    ) {
+        executor.execute {
             val result = try {
                 task()
             } catch (e: Exception) {
@@ -121,50 +262,20 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         }
     }
 
-    private fun loadBitmapFromFile(path: String): Bitmap? {
-        return try {
-            val resolvedPath = if (path.startsWith("file://")) path.substring(7) else path
-            BitmapFactory.decodeFile(resolvedPath)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    private fun loadBitmapFromUrl(urlString: String): Bitmap? {
-        var connection: HttpURLConnection? = null
-        var inputStream: InputStream? = null
-        return try {
-            val url = URL(urlString)
-            connection = url.openConnection() as HttpURLConnection
-            connection.doInput = true
-            connection.connect()
-            inputStream = connection.inputStream
-            BitmapFactory.decodeStream(inputStream)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        } finally {
-            try {
-                inputStream?.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-            connection?.disconnect()
-        }
-    }
-
     private fun listDownloadsInternal(): DownloadItemsResult {
         return try {
             val items = ArrayList<String>()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val isApi29 = Build.VERSION.SDK_INT == Build.VERSION_CODES.Q
                 val projection = arrayOf(
+                    MediaStore.Images.Media._ID,
                     MediaStore.Images.Media.DATA,
                     MediaStore.Images.Media.RELATIVE_PATH,
                     MediaStore.Images.Media.DISPLAY_NAME,
                 )
-                val selection = "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?"
+                val selection =
+                    "(${MediaStore.Images.Media.RELATIVE_PATH} LIKE ? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?) AND ${MediaStore.Images.Media.IS_PENDING}=0"
                 val selectionArgs = arrayOf(
                     Environment.DIRECTORY_PICTURES + "/Prism/Downloads/%",
                     "Prism/Downloads/%",
@@ -177,13 +288,21 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
                     selectionArgs,
                     MediaStore.Images.Media.DATE_ADDED + " DESC",
                 )?.use { cursor ->
+                    val idCol = cursor.getColumnIndex(MediaStore.Images.Media._ID)
                     val dataCol = cursor.getColumnIndex(MediaStore.Images.Media.DATA)
                     val relCol = cursor.getColumnIndex(MediaStore.Images.Media.RELATIVE_PATH)
                     val nameCol = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME)
 
                     while (cursor.moveToNext()) {
-                        var path = if (dataCol >= 0) cursor.getString(dataCol) else null
-                        if (path.isNullOrEmpty()) {
+                        var path = if (isApi29 && idCol >= 0) {
+                            // Android 10 blocks raw paths to shared media, so Dart gets a private copy.
+                            runCatching { cacheDownload(cursor.getLong(idCol)).absolutePath }.getOrNull()
+                        } else if (dataCol >= 0) {
+                            cursor.getString(dataCol)
+                        } else {
+                            null
+                        }
+                        if (!isApi29 && path.isNullOrEmpty()) {
                             val rel = if (relCol >= 0) cursor.getString(relCol) else null
                             val name = if (nameCol >= 0) cursor.getString(nameCol) else null
                             if (!rel.isNullOrEmpty() && !name.isNullOrEmpty()) {
@@ -198,7 +317,7 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
                 }
             }
 
-            if (items.isEmpty()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && items.isEmpty()) {
                 val prismLegacy = File("storage/emulated/0/Prism/Downloads/")
                 val prismPictures = File("storage/emulated/0/Pictures/Prism/Downloads/")
                 appendFiles(items, prismPictures)
@@ -221,16 +340,21 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
                     "Prism/Downloads/%",
                 )
                 deleted += context.contentResolver.delete(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    MediaStore.setIncludePending(MediaStore.Images.Media.EXTERNAL_CONTENT_URI),
                     selection,
                     selectionArgs,
                 )
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            return createErrorResult("CLEAR_FAILED", e.message)
         }
 
-        deleted += deleteDirectory(File("storage/emulated/0/Pictures/Prism/Downloads/"))
-        deleted += deleteDirectory(File("storage/emulated/0/Prism/Downloads/"))
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            deleted += deleteDirectory(File("storage/emulated/0/Pictures/Prism/Downloads/"))
+            deleted += deleteDirectory(File("storage/emulated/0/Prism/Downloads/"))
+        } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+            deleteDirectory(File(context.cacheDir, DOWNLOAD_CACHE_DIRECTORY))
+        }
 
         return if (deleted > 0) {
             createSuccessResult()
@@ -254,6 +378,32 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         }
     }
 
+    private fun cacheDownload(id: Long): File {
+        val directory = File(context.cacheDir, DOWNLOAD_CACHE_DIRECTORY)
+        if (!directory.exists() && !directory.mkdirs()) throw IOException("Could not create download cache")
+
+        val file = File(directory, "$id.jpg")
+        if (file.length() > 0) return file
+        val temporaryFile = File(directory, "$id.jpg.part")
+        return try {
+            val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+            val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Could not open the cached file")
+            val bytesWritten = input.use { source ->
+                FileOutputStream(temporaryFile).use { target -> source.copyTo(target) }
+            }
+            if (bytesWritten == 0L) throw IOException("Downloaded file is empty")
+            if (!temporaryFile.renameTo(file)) throw IOException("Could not cache downloaded file")
+            file
+        } catch (e: Exception) {
+            try {
+                temporaryFile.delete()
+            } catch (cleanupException: Exception) {
+                e.addSuppressed(cleanupException)
+            }
+            throw e
+        }
+    }
+
     private fun deleteDirectory(directory: File): Int {
         var deleted = 0
         try {
@@ -273,32 +423,57 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         return deleted
     }
 
-    private fun saveBitmapToPictures(bitmap: Bitmap, folderName: String): Boolean {
+    // Some CDNs serve images as application/octet-stream.
+    private fun mimeFromExtension(link: String): String? {
+        return when (Uri.parse(link).lastPathSegment?.substringAfterLast('.', "")?.lowercase(Locale.US)) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            else -> null
+        }
+    }
+
+    private fun writeToPictures(input: InputStream, mime: String, folderName: String): Boolean {
         val resolver: ContentResolver = context.contentResolver
-        val filename = "default_" + System.currentTimeMillis()
+        val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "jpg"
+        val filename = "default_" + System.currentTimeMillis() + "." + ext
 
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {
-                    put(MediaStore.MediaColumns.DISPLAY_NAME, "$filename.jpg")
-                    put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    put(MediaStore.MediaColumns.MIME_TYPE, mime)
                     put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + folderName)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
                 val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
                     ?: return false
 
-                resolver.openOutputStream(imageUri)?.use { fos ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                try {
+                    val out = resolver.openOutputStream(imageUri) ?: throw IOException("No output stream")
+                    out.use { input.copyTo(it) }
+                    val published = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
+                    if (resolver.update(imageUri, published, null, null) != 1) {
+                        throw IOException("Could not publish image")
+                    }
+                    true
+                } catch (e: Exception) {
+                    resolver.delete(imageUri, null, null)
+                    throw e
                 }
-                true
             } else {
                 val imagesDir = Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES + File.separator + folderName,
-                ).toString()
-                val image = File(imagesDir, "$filename.jpg")
-                FileOutputStream(image).use { fos ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+                )
+                imagesDir.mkdirs()
+                val imageFile = File(imagesDir, filename)
+                try {
+                    FileOutputStream(imageFile).use { input.copyTo(it) }
+                } catch (e: Exception) {
+                    imageFile.delete()
+                    throw e
                 }
                 true
             }
@@ -322,5 +497,19 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
 
     private fun showToastOnMainThread(message: String) {
         mainHandler.post { Toast.makeText(context, message, Toast.LENGTH_SHORT).show() }
+    }
+
+    private companion object {
+        const val DOWNLOAD_CONNECT_TIMEOUT_MS = 10_000
+        const val DOWNLOAD_READ_TIMEOUT_MS = 20_000
+        const val MAX_DOWNLOAD_REDIRECTS = 5
+        const val DOWNLOAD_CACHE_DIRECTORY = "prism_downloads"
+        val REDIRECT_CODES = setOf(
+            HttpURLConnection.HTTP_MOVED_PERM,
+            HttpURLConnection.HTTP_MOVED_TEMP,
+            HttpURLConnection.HTTP_SEE_OTHER,
+            307,
+            308,
+        )
     }
 }

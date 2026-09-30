@@ -81,6 +81,12 @@ android {
             proguardFiles getDefaultProguardFile(
                     'proguard-android-optimize.txt'),
                     'proguard-rules.pro'
+            optimization {
+                keepRules {
+                    // Its consumer rules add -dontoptimize. purchases_flutter already keeps com.amazon.**.
+                    ignoreFrom("com.revenuecat.purchases:purchases-store-amazon")
+                }
+            }
         }
     }
 }

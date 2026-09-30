@@ -36,6 +36,7 @@ class PrismWallTile extends StatelessWidget {
   const PrismWallTile({
     super.key,
     required this.url,
+    this.fallbackUrl,
     this.heroTag,
     this.onTap,
     this.onLongPress,
@@ -46,6 +47,9 @@ class PrismWallTile extends StatelessWidget {
   });
 
   final String url;
+
+  /// Tried when [url] fails, for example the full wallpaper after a broken thumbnail.
+  final String? fallbackUrl;
   final String? heroTag;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -74,7 +78,13 @@ class PrismWallTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
-              PrismImageTile(url: url, heroTag: heroTag, borderRadius: borderRadius, memCacheHeight: memCacheHeight),
+              PrismImageTile(
+                url: url,
+                fallbackUrl: fallbackUrl,
+                heroTag: heroTag,
+                borderRadius: borderRadius,
+                memCacheHeight: memCacheHeight,
+              ),
               // A pure white or black hairline keeps dark images from melting into the page.
               IgnorePointer(
                 child: DecoratedBox(

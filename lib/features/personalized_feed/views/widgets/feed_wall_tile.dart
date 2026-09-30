@@ -44,6 +44,7 @@ class FeedWallTile extends StatelessWidget {
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
     return PrismWallTile(
       url: item.thumbnailUrl,
+      fallbackUrl: item.fullUrl,
       heroTag: heroTag,
       semanticLabel: item.semanticLabel,
       onLongPress: onLongPress,

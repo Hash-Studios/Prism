@@ -35,3 +35,17 @@ class InMemoryLocalStore implements LocalStore {
     data[key] = value;
   }
 }
+
+class FailingDeleteLocalStore extends InMemoryLocalStore {
+  FailingDeleteLocalStore(this.failKey);
+
+  final String failKey;
+
+  @override
+  Future<void> delete(String key) async {
+    if (key == failKey) {
+      throw StateError('delete failed for $key');
+    }
+    await super.delete(key);
+  }
+}

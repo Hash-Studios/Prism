@@ -45,14 +45,17 @@ class FeedHeroCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: <Widget>[
                   image,
+                  // The scrim and text never take a tap, so the image's own controls (retry) still work.
                   if (heading != null || support != null)
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const <double>[0.4, 1],
-                          colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+                    IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const <double>[0.4, 1],
+                            colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+                          ),
                         ),
                       ),
                     ),
@@ -61,27 +64,29 @@ class FeedHeroCard extends StatelessWidget {
                       left: PrismSpace.md,
                       right: PrismSpace.md,
                       bottom: PrismSpace.md,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          if (heading != null)
-                            Text(
-                              heading,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: PrismTextStyles.cardTitle(context).copyWith(color: Colors.white),
-                            ),
-                          if (support != null)
-                            Text(
-                              support,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: PrismTextStyles.body(
-                                context,
-                              ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
-                            ),
-                        ],
+                      child: IgnorePointer(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            if (heading != null)
+                              Text(
+                                heading,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: PrismTextStyles.cardTitle(context).copyWith(color: Colors.white),
+                              ),
+                            if (support != null)
+                              Text(
+                                support,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: PrismTextStyles.body(
+                                  context,
+                                ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   if (tag != null) Positioned(left: PrismSpace.sm, top: PrismSpace.sm, child: tag!),

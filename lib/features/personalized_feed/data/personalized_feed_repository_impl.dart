@@ -73,12 +73,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   /// Reused on `page > 1` to avoid Remote Config + Firestore user doc on every scroll page.
   String? _bootstrapScope;
   Future<void>? _tasteSeedInFlight;
+  String? _tasteSeedScope;
+  int? _tasteSeedRevision;
   List<PersonalizedInterest> _catalog = const <PersonalizedInterest>[];
   List<String> _interests = const <String>[];
   List<String> _following = const <String>[];
 
   @override
   Future<void> lessLikeThis(FeedItemEntity item) async {
+    final String userId = app_state.prismUser.id.trim();
+    final int tasteRevision = _tasteSignals.revision;
+    final int impressionRevision = _impressions.revision;
     final DateTime now = DateTime.now().toUtc();
     await _tasteSignals.record(
       item.when(
@@ -93,12 +98,23 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         pexels: (_, wall) => TasteSignal.forWallpaper(TasteAction.lessLikeThis, wall.core, at: now),
       ),
     );
+    if (app_state.prismUser.id.trim() != userId ||
+        _tasteSignals.revision != tasteRevision ||
+        _impressions.revision != impressionRevision) {
+      return;
+    }
     await _impressions.hide(PersonalizedRankingService.canonicalKey(item), now);
   }
 
   @override
   Future<Result<PersonalizedFeedPage>> fetch(FetchPersonalizedFeedRequest request) async {
     final String userId = app_state.prismUser.id.trim();
+    final int tasteRevision = _tasteSignals.revision;
+    final int impressionRevision = _impressions.revision;
+    bool isCurrentSession() =>
+        app_state.prismUser.id.trim() == userId &&
+        _tasteSignals.revision == tasteRevision &&
+        _impressions.revision == impressionRevision;
     final bool isGuest = userId.isEmpty;
     final String cacheScope = isGuest ? 'guest' : userId.toLowerCase();
 
@@ -116,11 +132,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           remoteConfig: FirebaseRemoteConfig.instance,
           settingsLocal: _settingsLocal,
         );
+        if (!isCurrentSession()) {
+          return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+        }
         _interests = _resolveInterests(userDoc, _catalog);
         _following = isGuest ? const <String>[] : _resolveFollowing(userDoc);
         _bootstrapScope = cacheScope;
         if (!isGuest) {
-          await _seedTasteFromFavourites(userId);
+          await _seedTasteFromFavourites(userId, expectedRevision: tasteRevision);
         }
       }
 
@@ -177,7 +196,14 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         ),
       ]);
 
+      if (!isCurrentSession()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
+
       final Set<String> blocked = await _userBlockRepository.getBlockedCreatorEmails(waitForInitialLoad: true);
+      if (!isCurrentSession()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
       final List<RankingCandidate> candidates = pools
           .expand((pool) => pool)
           .where((c) => !BlockedCreatorsFilter.hidesFeedItem(c.item, blocked))
@@ -204,13 +230,19 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (failedSources > 0 && ranking.items.isEmpty) {
         throw StateError('Personalized feed sources failed without ranked candidates');
       }
-      await _impressions.recordShown(ranking.usedKeys, now);
+      await _impressions.recordShown(ranking.usedKeys, now, expectedRevision: impressionRevision);
+      if (!isCurrentSession()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
 
       final List<FeedItemEntity> merged = _mergeCachedAndNew(
         request.refresh ? const <FeedItemEntity>[] : request.existingItems,
         ranking.items,
       );
       await _writeCachedItems(scope: cacheScope, cachedItems: merged);
+      if (!isCurrentSession()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
 
       logger.i(
         '[PersonalizedFeed] fetch success',
@@ -229,7 +261,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       );
     } catch (error, stackTrace) {
       logger.e('[PersonalizedFeed] fetch failed', error: error, stackTrace: stackTrace);
+      if (!isCurrentSession()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
       final List<FeedItemEntity> cachedItems = await _readCachedItems(scope: cacheScope);
+      if (!isCurrentSession()) {
+        return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+      }
       if (cachedItems.isNotEmpty) {
         final Set<String> excluded = <String>{
           ...request.seenKeys,
@@ -270,11 +308,16 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
 
   /// Existing users already told us their taste through favourites. Read them
   /// once so the feed is personal from the first open after this update.
-  Future<void> _seedTasteFromFavourites(String userId) async {
-    if (_tasteSignals.isSeeded) {
+  Future<void> _seedTasteFromFavourites(String userId, {required int expectedRevision}) async {
+    if (_tasteSignals.isSeeded || _tasteSignals.revision != expectedRevision) {
       return;
     }
-    final Future<void> seeding = _tasteSeedInFlight ??= _loadTasteFromFavourites(userId);
+    if (_tasteSeedInFlight == null || _tasteSeedScope != userId || _tasteSeedRevision != expectedRevision) {
+      _tasteSeedScope = userId;
+      _tasteSeedRevision = expectedRevision;
+      _tasteSeedInFlight = _loadTasteFromFavourites(userId, expectedRevision: expectedRevision);
+    }
+    final Future<void> seeding = _tasteSeedInFlight!;
     try {
       await seeding.timeout(const Duration(seconds: 1));
     } catch (error) {
@@ -282,10 +325,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     }
   }
 
-  Future<void> _loadTasteFromFavourites(String userId) async {
+  Future<void> _loadTasteFromFavourites(String userId, {required int expectedRevision}) async {
     try {
       final Result<List<FavouriteWallEntity>> result = await _favouriteWallsRepository.fetchFavourites(userId: userId);
-      if (result.isFailure || _tasteSignals.isSeeded) {
+      if (result.isFailure ||
+          _tasteSignals.isSeeded ||
+          _tasteSignals.revision != expectedRevision ||
+          app_state.prismUser.id.trim() != userId) {
         return;
       }
       final DateTime now = DateTime.now().toUtc();
@@ -314,11 +360,17 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           },
       ];
       await _tasteSignals.recordAll(signals);
-      await _tasteSignals.markSeeded();
+      if (_tasteSignals.revision == expectedRevision && app_state.prismUser.id.trim() == userId) {
+        await _tasteSignals.markSeeded();
+      }
     } catch (error) {
       logger.w('[PersonalizedFeed] favourite taste seed failed: $error');
     } finally {
-      _tasteSeedInFlight = null;
+      if (_tasteSeedScope == userId && _tasteSeedRevision == expectedRevision) {
+        _tasteSeedInFlight = null;
+        _tasteSeedScope = null;
+        _tasteSeedRevision = null;
+      }
     }
   }
 
