@@ -849,6 +849,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
     localNotification.router = _appRouter;
+    localNotification.onPushTap = _handlePushTap;
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
