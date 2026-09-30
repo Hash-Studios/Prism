@@ -41,10 +41,10 @@ class UploadQuota {
     return (freeUploadsPerWeek - used).clamp(0, freeUploadsPerWeek);
   }
 
-  static int incrementWeeklyUploads({DateTime? now}) {
+  static Future<int> incrementWeeklyUploads({DateTime? now}) async {
     final DateTime target = now ?? DateTime.now();
     final int used = _readCountForCurrentWeek(target) + 1;
-    _settings.set(_weeklyCountPrefKey, used);
+    await _settings.set(_weeklyCountPrefKey, used);
     return used;
   }
 }

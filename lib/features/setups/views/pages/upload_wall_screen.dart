@@ -54,6 +54,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   late List<int> imageBytes;
   late List<int> imageBytesThumb;
   bool _submitted = false;
+  bool _submitting = false;
   @override
   void initState() {
     super.initState();
@@ -188,15 +189,49 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (!_submitted) deleteFile();
   }
 
+  Future<void> _submit() async {
+    if (_submitting || _submitted || isProcessing || isUploading) return;
+    setState(() => _submitting = true);
+    try {
+      final saved = await wall_store.createRecord(
+        id,
+        wallpaperProvider,
+        wallpaperThumb,
+        wallpaperUrl,
+        wallpaperResolution,
+        wallpaperSize,
+        null,
+        wallpaperCategory,
+        wallpaperDesc,
+        fromSetupRoute ? 'setup' : review,
+      );
+      if (!saved) return;
+      _submitted = true;
+    } catch (error, stackTrace) {
+      logger.w('Wallpaper submission failed', tag: 'upload', error: error, stackTrace: stackTrace);
+      toasts.error('Submit failed. Try again.');
+      return;
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+    if (!mounted) return;
+    analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
+    final router = context.router;
+    Navigator.pop(context, [wallpaperUrl, id]);
+    router.push(const ReviewRoute());
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
+      canPop: !_submitting,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) _onPop();
       },
       child: Scaffold(
         backgroundColor: Theme.of(context).primaryColor,
         appBar: AppBar(
+          automaticallyImplyLeading: !_submitting,
           title: Text("Upload Wallpaper", style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
         ),
         body: Column(
@@ -212,7 +247,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 ),
               ),
             ),
-            if (isProcessing || isUploading)
+            if (isProcessing || isUploading || _submitting)
               SizedBox(
                 width: MediaQuery.of(context).size.width / 2.4,
                 height: MediaQuery.of(context).size.width / 2.4,
@@ -220,11 +255,11 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               )
             else
               Container(),
-            if (isUploading)
+            if (isUploading || _submitting)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
                 child: Text(
-                  "Uploading...",
+                  _submitting ? 'Submitting...' : 'Uploading...',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.secondary),
                 ),
@@ -242,7 +277,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               )
             else
               Container(),
-            if (isProcessing || isUploading)
+            if (isProcessing || isUploading || _submitting)
               SizedBox(
                 width: MediaQuery.of(context).size.width / 2,
                 child: ClipRRect(
@@ -290,30 +325,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: !isProcessing && !isUploading
+          backgroundColor: !isProcessing && !isUploading && !_submitting
               ? Theme.of(context).colorScheme.error
               : Theme.of(context).hintColor,
           disabledElevation: 0,
-          onPressed: !isProcessing && !isUploading
-              ? () {
-                  _submitted = true;
-                  Navigator.pop(context, [wallpaperUrl, id]);
-                  analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
-                  wall_store.createRecord(
-                    id,
-                    wallpaperProvider,
-                    wallpaperThumb,
-                    wallpaperUrl,
-                    wallpaperResolution,
-                    wallpaperSize,
-                    null,
-                    wallpaperCategory,
-                    wallpaperDesc,
-                    fromSetupRoute ? "setup" : review,
-                  );
-                  context.router.push(const ReviewRoute());
-                }
-              : null,
+          tooltip: 'Submit wallpaper',
+          onPressed: !isProcessing && !isUploading && !_submitting ? _submit : null,
           child: const Icon(JamIcons.check, size: 40, color: Colors.white),
         ),
       ),
