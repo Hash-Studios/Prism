@@ -6,7 +6,13 @@ import 'package:Prism/features/wallhaven_feed/data/dtos/wallhaven_dtos.dart';
 extension WallhavenWallpaperDtoMapper on WallhavenWallpaperDto {
   WallhavenWallpaper toDomain() {
     final String fullUrl = path;
-    final String thumbnailUrl = thumbs?.original ?? thumbs?.large ?? thumbs?.small ?? fullUrl;
+    final String thumbnailUrl =
+        <String?>[
+          thumbs?.original,
+          thumbs?.large,
+          thumbs?.small,
+        ].firstWhere((url) => url?.trim().isNotEmpty ?? false, orElse: () => null) ??
+        fullUrl;
     final String? uploaderUsername = uploader?.username?.trim();
     final bool hasUploader = uploaderUsername != null && uploaderUsername.isNotEmpty;
 

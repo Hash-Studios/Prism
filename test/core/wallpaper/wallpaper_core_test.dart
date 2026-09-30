@@ -28,6 +28,18 @@ void main() {
       );
     });
 
+    test('only rewrites a Wallhaven crop URL path', () {
+      expect(
+        _core('https://uploads.example/wall.jpg?source=https://th.wallhaven.cc/lg/21/21276x.jpg').thumbnailUrl,
+        'https://uploads.example/wall.jpg?source=https://th.wallhaven.cc/lg/21/21276x.jpg',
+      );
+      expect(
+        _core('http://th.wallhaven.cc/lg/21/21276x.jpg').thumbnailUrl,
+        'http://th.wallhaven.cc/orig/21/21276x.jpg',
+      );
+      expect(_core('//th.wallhaven.cc/lg/21/21276x.jpg').thumbnailUrl, '//th.wallhaven.cc/orig/21/21276x.jpg');
+    });
+
     test('keeps non-wallhaven url unchanged', () {
       expect(
         _core('https://images.pexels.com/photos/1/lg/a.jpg').thumbnailUrl,
@@ -37,6 +49,24 @@ void main() {
 
     test('keeps empty string unchanged', () {
       expect(_core('').thumbnailUrl, '');
+    });
+  });
+
+  group('normalizeWallpaperThumbnailUrl', () {
+    test('rewrites Wallhaven crop URLs and leaves other URLs unchanged', () {
+      expect(
+        normalizeWallpaperThumbnailUrl('https://th.wallhaven.cc/lg/21/21276x.jpg'),
+        'https://th.wallhaven.cc/orig/21/21276x.jpg',
+      );
+      expect(
+        normalizeWallpaperThumbnailUrl('https://th.wallhaven.cc/small/21/21276x.jpg'),
+        'https://th.wallhaven.cc/orig/21/21276x.jpg',
+      );
+      expect(
+        normalizeWallpaperThumbnailUrl('https://images.pexels.com/photos/1/a.jpg'),
+        'https://images.pexels.com/photos/1/a.jpg',
+      );
+      expect(normalizeWallpaperThumbnailUrl(''), '');
     });
   });
 }

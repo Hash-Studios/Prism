@@ -6,7 +6,30 @@ String wallpaperSemanticLabel(String? author) {
   return name.isEmpty ? 'Wallpaper' : 'Wallpaper by $name';
 }
 
-final RegExp _wallhavenCropThumb = RegExp(r'//th\.wallhaven\.cc/(?:lg|small)/');
+final RegExp _wallhavenCropPath = RegExp('^/(?:lg|small)/');
+
+String normalizeWallpaperThumbnailUrl(String thumbnailUrl) {
+  final Uri? uri = Uri.tryParse(thumbnailUrl);
+  if (uri == null) return thumbnailUrl;
+
+  if (uri.host == 'th.wallhaven.cc') {
+    final String path = uri.path;
+    if (!_wallhavenCropPath.hasMatch(path)) return thumbnailUrl;
+    return uri.replace(path: path.replaceFirst(_wallhavenCropPath, '/orig/')).toString();
+  }
+
+  if (uri.host == 'images.pexels.com') {
+    try {
+      final Map<String, String> query = uri.queryParameters;
+      if (query['fit'] != 'crop' || !query.containsKey('w') || !query.containsKey('h')) return thumbnailUrl;
+      return uri.replace(queryParameters: <String, String>{...query, 'fit': 'max'}).toString();
+    } on FormatException {
+      return thumbnailUrl;
+    }
+  }
+
+  return thumbnailUrl;
+}
 
 class WallpaperCore {
   const WallpaperCore({
@@ -32,8 +55,8 @@ class WallpaperCore {
   final String fullUrl;
   final String _thumbnailUrl;
 
-  /// Wallhaven lg/small thumbs are landscape crops; orig keeps the aspect ratio.
-  String get thumbnailUrl => _thumbnailUrl.replaceFirst(_wallhavenCropThumb, '//th.wallhaven.cc/orig/');
+  /// Wallhaven lg/small and Pexels tiny variants crop the original aspect ratio.
+  String get thumbnailUrl => normalizeWallpaperThumbnailUrl(_thumbnailUrl);
 
   final String? resolution;
   final int? sizeBytes;

@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/dtos/setup_doc_dto.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 
@@ -17,7 +18,7 @@ extension SetupDocDtoX on SetupDocDto {
       userPhoto: userPhoto,
       wallId: wallId,
       source: WallpaperSourceX.fromWire(wallpaperProvider),
-      wallpaperThumb: wallpaperThumb,
+      wallpaperThumb: normalizeWallpaperThumbnailUrl(wallpaperThumb),
       wallpaperUrl: wallpaperUrl,
       widget: widget,
       widget2: widget2,
