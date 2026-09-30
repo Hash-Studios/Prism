@@ -98,6 +98,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
   bool _saving = false;
+  bool _sharing = false;
   bool _submitting = false;
   final Set<String> _unconfirmedSubmissionIds = <String>{};
 
@@ -594,6 +595,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _share(AiGenerationRecord record) async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    _trackShareEvent(const InviteShareTappedEvent(sourceContext: 'ai_wallpaper'));
     try {
       final ShareFormatValue format = await widget.shareCard(
         context,
@@ -601,7 +605,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         link: 'https://prismwalls.com',
         contextLine: 'Made with Prism AI',
       );
-      analytics.track(
+      if (!mounted) return;
+      _trackShareEvent(
         InviteShareResultEvent(
           channel: ShareChannelValue.shareSheet,
           result: EventResultValue.success,
@@ -611,6 +616,29 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       );
     } catch (error, stackTrace) {
       logger.w('AI share failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      _trackShareEvent(
+        const InviteShareResultEvent(
+          channel: ShareChannelValue.shareSheet,
+          result: EventResultValue.failure,
+          reason: AnalyticsReasonValue.error,
+          sourceContext: 'ai_wallpaper',
+        ),
+      );
+      if (mounted) toasts.error('Could not share. Please try again.');
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  void _trackShareEvent(AnalyticsEvent event) {
+    try {
+      unawaited(
+        analytics.track(event).catchError((Object error, StackTrace stackTrace) {
+          logger.w('AI share analytics failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+        }),
+      );
+    } catch (error, stackTrace) {
+      logger.w('AI share analytics failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -1205,8 +1233,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         color: Theme.of(context).primaryColor.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      child: Wrap(
+        alignment: WrapAlignment.spaceEvenly,
+        runAlignment: WrapAlignment.center,
         children: <Widget>[
           if (!hideSetWallpaperUi)
             _ActionButton(
@@ -1227,6 +1256,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             label: 'Share',
             semanticLabel: 'Share this wallpaper',
             onTap: () => _share(current),
+            isLoading: _sharing,
           ),
           if (canVary)
             _ActionButton(
@@ -1623,6 +1653,7 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.isPrimary = false,
+    this.isLoading = false,
     this.semanticLabel,
   });
 
@@ -1630,6 +1661,7 @@ class _ActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool isPrimary;
+  final bool isLoading;
   final String? semanticLabel;
 
   @override
@@ -1637,12 +1669,13 @@ class _ActionButton extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: semanticLabel ?? label,
+      label: isLoading ? 'Preparing share' : semanticLabel ?? label,
+      liveRegion: isLoading,
       child: Material(
         color: isPrimary ? scheme.primary : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          onTap: onTap,
+          onTap: isLoading ? null : onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             constraints: const BoxConstraints(minWidth: 64, minHeight: 48),
@@ -1650,7 +1683,14 @@ class _ActionButton extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
+                if (isLoading)
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onSurface),
+                  )
+                else
+                  Icon(icon, size: 22, color: isPrimary ? scheme.onPrimary : scheme.onSurface),
                 const SizedBox(height: 4),
                 Text(
                   label,

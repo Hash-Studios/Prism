@@ -15,6 +15,7 @@ class ShareButton extends StatefulWidget {
   final String? url;
   final String thumbUrl;
   final String? contextLine;
+  final Future<String> Function(String id, WallpaperSource source, String? url, String thumbUrl) createLink;
   final Future<ShareFormatValue> Function(
     BuildContext context, {
     required String imageUrl,
@@ -28,6 +29,7 @@ class ShareButton extends StatefulWidget {
     required this.url,
     required this.thumbUrl,
     this.contextLine,
+    this.createLink = createDynamicLink,
     this.shareCard = shareWallpaperCard,
     super.key,
   });
@@ -58,21 +60,33 @@ class _ShareButtonState extends State<ShareButton> {
   }
 
   Future<void> onShare() async {
+    if (isLoading) return;
+
+    final String? id = widget.id;
+    final WallpaperSource source = widget.source;
+    final String? url = widget.url;
+    final String thumbUrl = widget.thumbUrl;
+    final String imageUrl = url?.trim().isNotEmpty == true ? url!.trim() : thumbUrl.trim();
+    final String? contextLine = widget.contextLine;
+    final createLink = widget.createLink;
+    final shareCard = widget.shareCard;
+
     analytics.track(const InviteShareTappedEvent(sourceContext: 'wallpaper_screen'));
     setState(() {
       isLoading = true;
     });
 
     try {
-      final String link = await createDynamicLink(widget.id!, widget.source, widget.url, widget.thumbUrl);
+      final String link = await createLink(id!, source, url, thumbUrl);
       await Clipboard.setData(ClipboardData(text: link));
       if (!mounted) return;
-      final ShareFormatValue format = await widget.shareCard(
+      final ShareFormatValue format = await shareCard(
         context,
-        imageUrl: widget.url ?? widget.thumbUrl,
+        imageUrl: imageUrl,
         link: link,
-        contextLine: widget.contextLine,
+        contextLine: contextLine,
       );
+      if (!mounted) return;
       analytics.track(
         InviteShareResultEvent(
           channel: ShareChannelValue.shareSheet,

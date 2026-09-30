@@ -26,6 +26,22 @@ class _FakeConnectivityService implements ConnectivityService {
   Future<bool> hasConnection() async => true;
 }
 
+class _ThrowingShareTapAnalytics extends FakeAppAnalytics {
+  @override
+  Future<void> track(AnalyticsEvent event) {
+    if (event is InviteShareTappedEvent) throw StateError('analytics unavailable');
+    return super.track(event);
+  }
+}
+
+class _AsyncThrowingShareTapAnalytics extends FakeAppAnalytics {
+  @override
+  Future<void> track(AnalyticsEvent event) {
+    if (event is InviteShareTappedEvent) return Future<void>.error(StateError('analytics unavailable'));
+    return super.track(event);
+  }
+}
+
 class _FakeAiGenerationRepository extends Fake implements AiGenerationRepositoryImpl {
   _FakeAiGenerationRepository(this.record, this.metadata, {this.history});
 
@@ -52,7 +68,12 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   }
 }
 
-AiGenerationRecord _record({String? submittedWallId, String userId = 'user-1'}) => AiGenerationRecord(
+AiGenerationRecord _record({
+  String? submittedWallId,
+  String userId = 'user-1',
+  String imageUrl = '',
+  String watermarkedImageUrl = '',
+}) => AiGenerationRecord(
   id: 'generation-1',
   userId: userId,
   createdAt: DateTime.utc(2026),
@@ -64,8 +85,8 @@ AiGenerationRecord _record({String? submittedWallId, String userId = 'user-1'}) 
   seed: 1,
   width: 720,
   height: 1280,
-  imageUrl: '',
-  watermarkedImageUrl: '',
+  imageUrl: imageUrl,
+  watermarkedImageUrl: watermarkedImageUrl,
   chargeMode: AiChargeMode.freeTrial,
   coinsSpent: 0,
   status: submittedWallId == null ? 'success' : 'submitted',
@@ -75,6 +96,252 @@ AiGenerationRecord _record({String? submittedWallId, String userId = 'user-1'}) 
 const AiSubmissionMetadata _emptyMetadata = (title: '', description: '', category: '', tags: <String>[]);
 
 void main() {
+  testWidgets('AI share is single-flight, reports the chosen image and records tap and success', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(320, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    final Completer<ShareFormatValue> share = Completer<ShareFormatValue>();
+    var shareCalls = 0;
+    String? sharedImageUrl;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
+            Completer<AiSubmissionMetadata>(),
+          ),
+          shareCard: (context, {required imageUrl, required link, contextLine}) {
+            shareCalls++;
+            sharedImageUrl = imageUrl;
+            expect(link, 'https://prismwalls.com');
+            expect(contextLine, 'Made with Prism AI');
+            return shareCalls == 1 ? share.future : Future<ShareFormatValue>.value(ShareFormatValue.text);
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final Finder shareButton = find.text('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.tap(shareButton, warnIfMissed: false);
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+
+    expect(shareCalls, 1);
+    expect(sharedImageUrl, 'https://cdn/watermarked.png');
+    expect(find.text('Share'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
+    expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
+
+    share.complete(ShareFormatValue.card);
+    await tester.pumpAndSettle();
+    final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
+    expect(result.result, EventResultValue.success);
+    expect(result.format, ShareFormatValue.card);
+    expect(result.sourceContext, 'ai_wallpaper');
+    expect(find.text('Share'), findsOneWidget);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+    final List<InviteShareResultEvent> results = analytics.events.whereType<InviteShareResultEvent>().toList();
+    expect(results, hasLength(2));
+    expect(results.last.format, ShareFormatValue.text);
+  });
+
+  testWidgets('AI share failure records failure and restores the action', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true
+      ..premium = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final List<MethodCall> toastCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toastCalls.add(call);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+
+    var shareCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
+            Completer<AiSubmissionMetadata>(),
+          ),
+          shareCard: (_, {required imageUrl, required link, contextLine}) {
+            shareCalls++;
+            expect(imageUrl, 'https://cdn/full.png');
+            return Future<ShareFormatValue>.error(StateError('share unavailable'));
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.text('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+
+    final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
+    expect(result.result, EventResultValue.failure);
+    expect(result.reason, AnalyticsReasonValue.error);
+    expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
+    expect((toastCalls.single.arguments as Map<Object?, Object?>)['msg'], 'Could not share. Please try again.');
+    expect(find.text('Share'), findsOneWidget);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+    expect(shareCalls, 2);
+    expect(analytics.events.whereType<InviteShareResultEvent>(), hasLength(2));
+  });
+
+  testWidgets('AI share still completes and unlocks when tap analytics throws', (tester) async {
+    final analytics = _ThrowingShareTapAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    var shareCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
+          shareCard: (_, {required imageUrl, required link, contextLine}) async {
+            shareCalls++;
+            return ShareFormatValue.card;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.text('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+
+    expect(shareCalls, 1);
+    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+    expect(find.text('Share'), findsOneWidget);
+
+    final asyncAnalytics = _AsyncThrowingShareTapAnalytics();
+    AnalyticsRuntime.instance = asyncAnalytics;
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(shareCalls, 2);
+    expect(asyncAnalytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+    expect(find.text('Share'), findsOneWidget);
+  });
+
+  testWidgets('AI share handles asynchronous tap analytics failure', (tester) async {
+    final analytics = _AsyncThrowingShareTapAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    var shareCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
+          shareCard: (_, {required imageUrl, required link, contextLine}) async {
+            shareCalls++;
+            return ShareFormatValue.card;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.text('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(shareCalls, 1);
+    expect(analytics.events.whereType<InviteShareResultEvent>().single.result, EventResultValue.success);
+    expect(find.text('Share'), findsOneWidget);
+  });
+
+  testWidgets('AI share completion after disposal does not report a false success', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    final Completer<ShareFormatValue> share = Completer<ShareFormatValue>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
+          shareCard: (_, {required imageUrl, required link, contextLine}) => share.future,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.text('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pump();
+    await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+    share.complete(ShareFormatValue.card);
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
+    expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
+  });
+
   test('confirmed submission remains confirmed when a refresh returns stale history', () {
     final submitted = _record(submittedWallId: 'AIWALL1');
     final stale = _record();
