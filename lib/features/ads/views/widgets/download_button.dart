@@ -42,15 +42,11 @@ class DownloadButton extends StatefulWidget {
   State<DownloadButton> createState() => _DownloadButtonState();
 }
 
-enum _LowBalanceAction { none, downloadNow, watchAndDownload, upgrade }
-
 class _DownloadButtonState extends State<DownloadButton> {
   bool isLoading = false;
 
   CoinSpendAction get _downloadSpendAction =>
       widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
-
-  int get _downloadCost => _downloadSpendAction.cost();
 
   @override
   Widget build(BuildContext context) {
@@ -78,38 +74,11 @@ class _DownloadButtonState extends State<DownloadButton> {
       setState(() => isLoading = true);
     }
     try {
-      if (app_state.prismUser.premium) {
-        await _performDownload();
-        return;
-      }
-
-      if (!app_state.prismUser.loggedIn) {
+      if (!app_state.prismUser.premium && !app_state.prismUser.loggedIn) {
         await _showGuestAdGatePopup();
         return;
       }
-
-      final int balance = CoinsService.instance.balanceNotifier.value;
-      if (balance < CoinPolicy.lowBalanceNudgeThreshold) {
-        final bool handled = await _showLowBalanceNudge(
-          requiredCoins: _downloadCost,
-          allowDownloadNow: balance >= _downloadCost,
-          sourceTag: 'coins.download.low_balance_nudge',
-        );
-        if (handled) {
-          return;
-        }
-      }
-
-      if (balance < _downloadCost) {
-        await _showLowBalanceNudge(
-          requiredCoins: _downloadCost,
-          allowDownloadNow: false,
-          sourceTag: 'coins.download.insufficient_balance_nudge',
-        );
-        return;
-      }
-
-      await _attemptCoinSpendAndDownload(sourceTag: 'coins.download.spend');
+      await _gatedDownload();
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -232,163 +201,50 @@ class _DownloadButtonState extends State<DownloadButton> {
     if (pendingDownload != null) await pendingDownload;
   }
 
-  Future<bool> _showLowBalanceNudge({
-    required int requiredCoins,
-    required bool allowDownloadNow,
-    required String sourceTag,
-  }) async {
-    if (!mounted) {
-      return false;
-    }
+  Future<CoinGateChoice> _chooseLowBalanceAction(CoinGatePrompt prompt) async {
+    final bool allowDownloadNow = prompt.phase == CoinGatePhase.nudge && prompt.canSpend;
+    final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
+      context,
+      title: 'Low coin balance',
+      cost: prompt.cost,
+      message: (missing) => missing > 0
+          ? 'You need $missing more coins for this download.'
+          : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
+      options: [
+        if (allowDownloadNow) CoinGateOption(label: 'Download (-${prompt.cost})', value: CoinGateChoice.spend),
+        const CoinGateOption(label: 'Watch & Download (+${CoinPolicy.rewardedAd})', value: CoinGateChoice.watchAd),
+        const CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+      ],
+    );
+    return choice ?? (prompt.phase == CoinGatePhase.nudge ? CoinGateChoice.proceed : CoinGateChoice.cancel);
+  }
 
-    CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: requiredCoins);
-
-    final _LowBalanceAction action =
-        await showCoinGateSheet<_LowBalanceAction>(
-          context,
-          title: 'Low coin balance',
-          cost: requiredCoins,
-          message: (missing) => missing > 0
-              ? 'You need $missing more coins for this download.'
-              : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
-          options: [
-            if (allowDownloadNow)
-              CoinGateOption(label: 'Download (-$requiredCoins)', value: _LowBalanceAction.downloadNow),
-            const CoinGateOption(
-              label: 'Watch & Download (+${CoinPolicy.rewardedAd})',
-              value: _LowBalanceAction.watchAndDownload,
-            ),
-            const CoinGateOption(label: 'Upgrade to Pro', value: _LowBalanceAction.upgrade, outlined: true),
-          ],
-        ) ??
-        _LowBalanceAction.none;
-
-    switch (action) {
-      case _LowBalanceAction.downloadNow:
-        await _attemptCoinSpendAndDownload(
-          sourceTag: 'coins.download.nudge_download_now',
-          showNudgeOnInsufficient: false,
-        );
-        return true;
-      case _LowBalanceAction.watchAndDownload:
-        CoinsService.instance.logWatchAndDownloadUsed(
+  Future<void> _gatedDownload() {
+    final String contentId = widget.contentId?.trim() ?? '';
+    return CoinGate.forContext(context).run(
+      CoinGateSpec(
+        action: _downloadSpendAction,
+        reason: contentId.isEmpty ? null : 'content_$contentId',
+        tags: const CoinGateTags(
+          spend: 'coins.download.spend',
+          nudgeSpend: 'coins.download.nudge_download_now',
+          retrySpend: 'coins.download.watch_and_download.spend',
+          ad: 'coins.download.watch_and_download.rewarded_ad',
+          nudge: 'coins.download.low_balance_nudge',
+          insufficient: 'coins.download.insufficient_balance_nudge',
+        ),
+        upsellSource: 'download_watch_and_download_rewarded_ad',
+        upgradeSource: 'download_low_balance_upgrade',
+        nudgeBelow: CoinPolicy.lowBalanceNudgeThreshold,
+        isMounted: () => mounted,
+        perform: _performDownload,
+        choose: _chooseLowBalanceAction,
+        onWatchChosen: () => CoinsService.instance.logWatchAndDownloadUsed(
           isPremiumContent: widget.isPremiumContent,
           sourceTag: 'coins.download.watch_and_download',
-        );
-        await _handleWatchAndDownload(requiredCoins: requiredCoins);
-        return true;
-      case _LowBalanceAction.upgrade:
-        if (mounted) {
-          await PaywallOrchestrator.instance.present(
-            placement: PaywallPlacement.lowBalance,
-            source: 'download_low_balance_upgrade',
-          );
-        }
-        return true;
-      case _LowBalanceAction.none:
-        return false;
-    }
-  }
-
-  Future<void> _handleWatchAndDownload({required int requiredCoins}) async {
-    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
-    if (!watched) {
-      toasts.error('Ad was not completed.');
-      return;
-    }
-
-    try {
-      final credit = await CoinsService.instance.award(
-        CoinEarnAction.rewardedAd,
-        sourceTag: 'coins.download.watch_and_download.rewarded_ad',
-      );
-      if (!credit.changed) {
-        toasts.error('Unable to credit coins right now.');
-        return;
-      }
-      if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-          source: 'download_watch_and_download_rewarded_ad',
-        );
-      }
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(
-        sourceTag: 'coins.download.watch_and_download.rewarded_ad',
-        error: error,
-        stackTrace: stackTrace,
-      );
-      toasts.error('Unable to credit coins right now.');
-      return;
-    }
-
-    final int balance = CoinsService.instance.balanceNotifier.value;
-    if (balance < requiredCoins) {
-      toasts.error('Need ${requiredCoins - balance} more coins.');
-      return;
-    }
-
-    await _attemptCoinSpendAndDownload(
-      sourceTag: 'coins.download.watch_and_download.spend',
-      showNudgeOnInsufficient: false,
+        ),
+      ),
     );
-  }
-
-  Future<bool> _attemptCoinSpendAndDownload({required String sourceTag, bool showNudgeOnInsufficient = true}) async {
-    final CoinSpendAction spendAction = _downloadSpendAction;
-    final int spendCost = spendAction.cost();
-    final String contentId = widget.contentId?.trim() ?? '';
-    CoinMutationResult spendResult;
-    try {
-      spendResult = await CoinsService.instance.spend(
-        spendAction,
-        sourceTag: sourceTag,
-        reason: contentId.isEmpty ? null : 'content_$contentId',
-      );
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-      toasts.error('Unable to process coins right now.');
-      return false;
-    }
-
-    if (!spendResult.success) {
-      if (spendResult.insufficientBalance) {
-        if (showNudgeOnInsufficient && mounted) {
-          await _showLowBalanceNudge(
-            requiredCoins: spendCost,
-            allowDownloadNow: false,
-            sourceTag: 'coins.download.insufficient_balance_nudge',
-          );
-        }
-        return false;
-      }
-      toasts.error('Unable to process coins right now.');
-      return false;
-    }
-
-    final bool downloaded = await _performDownload();
-    if (!downloaded && spendResult.changed) {
-      try {
-        final CoinMutationResult refundResult = await CoinsService.instance.refundSpend(
-          spendAction,
-          transactionId: spendResult.transactionId,
-          sourceTag: '$sourceTag.refund',
-          reason: 'download_failed_refund',
-        );
-        if (refundResult.success && refundResult.changed) {
-          toasts.success('Download failed. ${refundResult.delta} coins refunded.');
-        } else {
-          CoinsService.instance.logCoinError(
-            sourceTag: '$sourceTag.refund',
-            error: StateError('Coin refund was not applied: ${refundResult.reason}'),
-          );
-          toasts.error('Download failed. Your refund could not be confirmed.');
-        }
-      } catch (error, stackTrace) {
-        CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
-        toasts.error('Download failed. Your refund could not be confirmed.');
-      }
-    }
-    return downloaded;
   }
 
   Future<bool> _performDownload() async {
