@@ -25,13 +25,21 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   static const String _photosPath = '/v1/photos';
 
   @override
-  bool hasMoreForCategory(String categoryName) => _cache.hasMore(categoryName);
+  bool hasMoreForCategory(String categoryName, {String? paginationKey}) =>
+      _cache.hasMore(paginationKey ?? categoryName);
 
   @override
-  Future<Result<List<PexelsWallpaper>>> fetchFeed({required String categoryName, required bool refresh}) {
+  Future<Result<List<PexelsWallpaper>>> fetchFeed({
+    required String categoryName,
+    required bool refresh,
+    int startPage = 1,
+    String? paginationKey,
+  }) {
     return _fetchPage(
       categoryName,
       refresh: refresh,
+      startPage: startPage,
+      paginationKey: paginationKey,
       buildUri: (page) => categoryName == 'Curated'
           ? Uri.https(_host, _curatedPath, <String, String>{'per_page': '24', 'page': page.toString()})
           : _searchUri(query: categoryName, page: page),
@@ -64,12 +72,15 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     String categoryName, {
     required bool refresh,
     required Uri Function(int page) buildUri,
+    int startPage = 1,
+    String? paginationKey,
   }) async {
+    final String pageKey = paginationKey ?? categoryName;
     if (refresh) {
-      _cache.reset(categoryName);
+      _cache.reset(pageKey);
     }
 
-    final int page = _cache.pageFor(categoryName);
+    final int page = refresh ? startPage : _cache.pageFor(pageKey);
     final Uri uri = buildUri(page);
 
     try {
@@ -80,6 +91,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       if (response.statusCode != 200) {
         return await _cachedOrFailure(
           categoryName: categoryName,
+          paginationKey: paginationKey,
           failure: ServerFailure(
             'Pexels feed request failed (${response.statusCode}): ${response.reasonPhrase ?? 'unknown'}',
           ),
@@ -95,8 +107,8 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       final List<PexelsWallpaper> walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
 
       await _cache.write(
-        categoryName,
-        scope: feedCacheSlug(categoryName),
+        pageKey,
+        scope: _scope(categoryName, paginationKey),
         payload: payload.toJson(),
         nextPage: currentPage + 1,
         hasMore: hasMore,
@@ -108,7 +120,7 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
       );
       return Result.success(walls);
     } catch (error, stackTrace) {
-      final cached = await _readCached(categoryName: categoryName);
+      final cached = await _readCached(categoryName: categoryName, paginationKey: paginationKey);
       if (cached != null) {
         logger.w(
           '[PexelsWallpaperRepository] remote fetch failed; returning cached snapshot',
@@ -149,9 +161,10 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
 
   Future<Result<List<PexelsWallpaper>>> _cachedOrFailure({
     required String categoryName,
+    String? paginationKey,
     required Failure failure,
   }) async {
-    final cached = await _readCached(categoryName: categoryName);
+    final cached = await _readCached(categoryName: categoryName, paginationKey: paginationKey);
     if (cached != null) {
       logger.w(
         '[PexelsWallpaperRepository] remote status failed; returning cached snapshot',
@@ -162,10 +175,14 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
     return Result.error(failure);
   }
 
-  Future<List<PexelsWallpaper>?> _readCached({required String categoryName}) => _cache.read(
-    categoryName,
-    scope: feedCacheSlug(categoryName),
+  Future<List<PexelsWallpaper>?> _readCached({required String categoryName, String? paginationKey}) => _cache.read(
+    paginationKey ?? categoryName,
+    scope: _scope(categoryName, paginationKey),
     decode: (payload) =>
         PexelsSearchResponseDto.fromJson(payload).photos.map((item) => item.toDomain()).toList(growable: false),
+  );
+
+  String _scope(String categoryName, String? paginationKey) => feedCacheSlug(
+    paginationKey == null || paginationKey == categoryName ? categoryName : '$categoryName.$paginationKey',
   );
 }

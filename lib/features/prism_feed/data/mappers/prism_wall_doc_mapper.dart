@@ -14,6 +14,11 @@ extension PrismWallDocMapper on PrismWallDocDto {
         ? null
         : uploadedBy;
 
+    final List<String> mergedTags = <String>[...tags];
+    if (category.isNotEmpty && category.toLowerCase() != 'general') mergedTags.add(category);
+    final Set<String> seenTags = <String>{};
+    mergedTags.retainWhere((String t) => seenTags.add(t.toLowerCase()));
+
     return PrismWallpaper(
       core: WallpaperCore(
         id: resolvedId,
@@ -30,7 +35,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
       ),
       collections: collections.isEmpty ? null : collections,
       review: review,
-      tags: tags.isEmpty ? null : tags,
+      tags: mergedTags.isEmpty ? null : mergedTags,
       aiMetadata: aiMetadata.isEmpty ? null : aiMetadata,
       isStreakExclusive: isStreakExclusive,
       requiredStreakDays: requiredStreakDays,
