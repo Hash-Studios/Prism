@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$(git rev-parse --show-toplevel)"
 
 target=lib/firebase_options.dart
 if [[ -f "$target" ]] && ! grep -q "CI stub" "$target"; then
