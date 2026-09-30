@@ -1,12 +1,19 @@
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 ThemeData _withAccent(ThemeData baseTheme, int accentColorValue) {
-  final Color accentColor = Color(accentColorValue);
-  return baseTheme.copyWith(
-    colorScheme: baseTheme.colorScheme.copyWith(primary: accentColor, error: accentColor),
+  final ColorScheme base = baseTheme.colorScheme;
+  return baseTheme.withPrismScheme(
+    prismColorScheme(
+      brightness: base.brightness,
+      background: base.surface,
+      foreground: base.onSurface,
+      accent: Color(accentColorValue),
+    ),
   );
 }
 

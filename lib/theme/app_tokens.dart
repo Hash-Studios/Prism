@@ -20,6 +20,52 @@ abstract final class PrismColors {
   static const Color onPrimary = Colors.white;
 }
 
+/// The spacing scale. Every gap and padding in new UI comes from here.
+abstract final class PrismSpace {
+  static const double xxs = 4;
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;
+  static const double lg = 20;
+  static const double xl = 24;
+  static const double xxl = 32;
+  static const double xxxl = 40;
+
+  /// Left and right page margin.
+  static const double page = 20;
+
+  /// Space to keep clear at the bottom of a tab page, above the floating bottom bar.
+  static const double bottomBarClearance = 120;
+
+  static const EdgeInsets pageInsets = EdgeInsets.symmetric(horizontal: page);
+}
+
+/// The corner radius scale. A nested surface uses the step below its parent so corners stay concentric.
+abstract final class PrismRadius {
+  /// Thumbnails, small tags.
+  static const double xs = 8;
+
+  /// Tiles, inputs inside cards, icon tiles.
+  static const double sm = 12;
+
+  /// Inputs, small cards, dialogs' inner content.
+  static const double md = 16;
+
+  /// Cards.
+  static const double lg = 20;
+
+  /// Sheets and dialogs.
+  static const double xl = 28;
+
+  /// Buttons, chips, pills.
+  static const double pill = 999;
+
+  static const BorderRadius card = BorderRadius.all(Radius.circular(lg));
+  static const BorderRadius tile = BorderRadius.all(Radius.circular(sm));
+  static const BorderRadius field = BorderRadius.all(Radius.circular(md));
+  static const BorderRadius sheet = BorderRadius.vertical(top: Radius.circular(xl));
+}
+
 /// Font family name constants.
 ///
 /// Keep font strings in one place so renaming a family only requires one edit.
@@ -47,6 +93,27 @@ abstract final class PrismTextStyles {
     );
   }
 
+  /// Hero line in Fraunces for onboarding, paywalls and big moments (34 w700).
+  static TextStyle display(BuildContext context) => TextStyle(
+    fontFamily: PrismFonts.fraunces,
+    fontSize: 34,
+    fontWeight: FontWeight.w700,
+    height: 1.08,
+    letterSpacing: -0.6,
+    color: Theme.of(context).colorScheme.onSurface,
+  );
+
+  /// Title of a pushed page, next to the back button (17 w700).
+  static TextStyle barTitle(BuildContext context) => _base(context, 17, FontWeight.w700);
+
+  /// Button label (15 w600). The button sets the colour.
+  static const TextStyle button = TextStyle(
+    fontFamily: PrismFonts.proximaNova,
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    height: 1.2,
+  );
+
   /// Page title (28 w700).
   static TextStyle screenTitle(BuildContext context) => _base(context, 28, FontWeight.w700, height: 1.1);
 
@@ -65,12 +132,12 @@ abstract final class PrismTextStyles {
   /// Body copy (14 w500, 70%).
   static TextStyle body(BuildContext context) => _base(context, 14, FontWeight.w500, alpha: 0.7);
 
-  /// Small supporting text (12 w500, 55%).
-  static TextStyle caption(BuildContext context) => _base(context, 12, FontWeight.w500, alpha: 0.55);
+  /// Small supporting text (12 w500, 60%).
+  static TextStyle caption(BuildContext context) => _base(context, 12, FontWeight.w500, alpha: 0.6);
 
   /// Small label above a value (11 w700, tracked). The caller upper-cases the text.
   static TextStyle eyebrow(BuildContext context) =>
-      _base(context, 11, FontWeight.w700, alpha: 0.55).copyWith(letterSpacing: 1.4);
+      _base(context, 11, FontWeight.w700, alpha: 0.6).copyWith(letterSpacing: 1.4);
 
   /// Big number in Fraunces.
   static TextStyle numeral(BuildContext context, double size) => TextStyle(
