@@ -4,10 +4,10 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -66,12 +66,7 @@ class _WotdCardContent extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              CachedNetworkImage(
-                imageUrl: entity.thumbnailUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, _) => const SizedBox.shrink(),
-                errorWidget: (_, _, _) => const SizedBox.shrink(),
-              ),
+              PrismImageTile(url: entity.thumbnailUrl, fallbackUrl: entity.url),
 
               Center(
                 child: Column(
