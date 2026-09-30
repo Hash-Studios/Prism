@@ -111,6 +111,37 @@ void main() {
     expect(style.color!.computeLuminance(), greaterThan(0.5));
   });
 
+  testWidgets('coin activity credit follows the active tertiary color', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    const Color tertiary = Color(0xFF7744AA);
+    final ThemeData theme = ThemeData.light().copyWith(
+      colorScheme: ThemeData.light().colorScheme.copyWith(tertiary: tertiary),
+    );
+    final firestore = CoinsTestFirestore()
+      ..transactions = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'credit-1',
+          'userId': 'user-1',
+          'action': 'dailyStreak',
+          'delta': 10,
+          'createdAt': DateTime.now(),
+        },
+      ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: theme,
+        home: const Scaffold(body: RewardsActivitySection()),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.widget<Text>(find.text('+10')).style?.color, tertiary);
+  });
+
   for (final Brightness brightness in Brightness.values) {
     group('${brightness.name} theme', () {
       testWidgets('spend section shows prices from CoinPolicy and runs the freeze callback', (tester) async {

@@ -1,10 +1,13 @@
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget host(Widget child, {Size? size}) => MaterialApp(
+  Widget host(Widget child, {Size? size, ThemeData? theme}) => MaterialApp(
+    theme: theme,
     home: Scaffold(
       body: size == null
           ? child
@@ -59,4 +62,34 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('title and body remain visible in light and dark themes', (tester) async {
+    for (final ThemeData theme in <ThemeData>[kLightTheme3, kDarkTheme8]) {
+      await tester.pumpWidget(
+        host(
+          const GlintState(kind: GlintStateKind.offline, title: 'Offline', body: 'Check your connection'),
+          theme: theme,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final Color titleColor = tester.renderObject<RenderParagraph>(find.text('Offline')).text.style!.color!;
+      final Color bodyColor = tester
+          .renderObject<RenderParagraph>(find.text('Check your connection'))
+          .text
+          .style!
+          .color!;
+      expect(_contrastRatio(titleColor, theme.colorScheme.surface), greaterThanOrEqualTo(3));
+      expect(_contrastRatio(bodyColor, theme.colorScheme.surface), greaterThanOrEqualTo(3));
+    }
+  });
+}
+
+double _contrastRatio(Color foreground, Color background) {
+  final Color composited = Color.alphaBlend(foreground, background);
+  final double foregroundLuminance = composited.computeLuminance();
+  final double backgroundLuminance = background.computeLuminance();
+  final double lighter = foregroundLuminance > backgroundLuminance ? foregroundLuminance : backgroundLuminance;
+  final double darker = foregroundLuminance > backgroundLuminance ? backgroundLuminance : foregroundLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }

@@ -139,7 +139,7 @@ class _ActivityRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final Color amountColor = entry.isCredit ? PrismColors.coinGain(context) : scheme.onSurface.withValues(alpha: 0.6);
+    final Color amountColor = entry.isCredit ? scheme.tertiary : scheme.onSurface.withValues(alpha: 0.6);
     final String amount = entry.delta > 0 ? '+${entry.delta}' : '${entry.delta}';
     final String label = coinTransactionLabel(entry);
     final String date = _relativeDate(entry.createdAt);

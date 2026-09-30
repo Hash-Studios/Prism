@@ -71,10 +71,12 @@ class FreezeCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text('Saves your streak if you miss a day. Used on its own.', style: PrismTextStyles.body(context)),
                 const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  runSpacing: 8,
                   children: <Widget>[
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         for (int i = 0; i < CoinPolicy.maxStreakFreezes; i++) ...<Widget>[
                           if (i > 0) const SizedBox(width: 8),
