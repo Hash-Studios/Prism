@@ -1,4 +1,6 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -132,29 +134,41 @@ class _FollowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isFollowing = user.isFollowedByCurrentUser;
+    final Color borderColor = isFollowing
+        ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.35)
+        : Theme.of(context).colorScheme.error;
+    final Color textColor = isFollowing
+        ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)
+        : Theme.of(context).colorScheme.error;
 
-    return SizedBox(
-      height: 32,
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          side: BorderSide(
-            color: isFollowing
-                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.35)
-                : Theme.of(context).colorScheme.error,
-          ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    return PressScale(
+      child: AnimatedContainer(
+        duration: context.motion(const Duration(milliseconds: 180)),
+        curve: Curves.easeOut,
+        height: 32,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor),
         ),
-        onPressed: () => _onPressed(context),
-        child: Text(
-          isFollowing ? 'Following' : 'Follow',
-          style: TextStyle(
-            fontFamily: PrismFonts.proximaNova,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isFollowing
-                ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)
-                : Theme.of(context).colorScheme.error,
+        child: OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            side: BorderSide.none,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          ),
+          onPressed: () => _onPressed(context),
+          child: AnimatedSwitcher(
+            duration: context.motion(const Duration(milliseconds: 140)),
+            child: Text(
+              isFollowing ? 'Following' : 'Follow',
+              key: ValueKey<bool>(isFollowing),
+              style: TextStyle(
+                fontFamily: PrismFonts.proximaNova,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
           ),
         ),
       ),

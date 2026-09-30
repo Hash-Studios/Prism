@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/material.dart';
@@ -230,7 +231,7 @@ class _LogEntryTile extends StatelessWidget {
 
     return InkWell(
       onTap: hasDetail
-          ? () => showModalBottomSheet(
+          ? () => showPrismSheet(
               context: context,
               isScrollControlled: true,
               backgroundColor: Theme.of(context).primaryColor,

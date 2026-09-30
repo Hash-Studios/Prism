@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -15,7 +16,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -681,6 +684,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         HapticFeedback.selectionClick();
       }
       if (mounted && app_state.prismUser.id == record.userId) {
+        showGlintToast(context);
         toasts.success('Submitted for review.');
       }
     } catch (error, stackTrace) {
@@ -744,6 +748,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
 
     await showModalBottomSheet<void>(
       context: context,
+      sheetAnimationStyle: AnimationStyle(
+        duration: context.motion(const Duration(milliseconds: 260)),
+        reverseDuration: context.motion(const Duration(milliseconds: 180)),
+        curve: PrismCurves.enter,
+        reverseCurve: PrismCurves.exit,
+      ),
       backgroundColor: Theme.of(context).primaryColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
@@ -849,6 +859,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   void _showAdvancedSheet() {
     showModalBottomSheet<void>(
       context: context,
+      sheetAnimationStyle: AnimationStyle(
+        duration: context.motion(const Duration(milliseconds: 260)),
+        reverseDuration: context.motion(const Duration(milliseconds: 180)),
+        curve: PrismCurves.enter,
+        reverseCurve: PrismCurves.exit,
+      ),
       isScrollControlled: true,
       backgroundColor: Theme.of(context).primaryColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -1097,7 +1113,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2.5, color: scheme.primary)),
+          const Glint(mood: GlintMood.curious, size: 64),
           const SizedBox(height: _AiGenSpace.md),
           Text('Crafting your wallpaper…', style: lineStyle?.copyWith(fontWeight: FontWeight.w600)),
           const SizedBox(height: _AiGenSpace.xs),
@@ -1365,13 +1381,21 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             shadowColor: Colors.transparent,
           ),
           onPressed: onPressed,
-          icon: loading
-              ? SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary.withValues(alpha: 0.85)),
-                )
-              : Icon(hasCoins ? Icons.auto_awesome_rounded : Icons.account_balance_wallet_outlined, size: 18),
+          icon: AnimatedSwitcher(
+            duration: context.motion(PrismDurations.fast),
+            child: loading
+                ? SizedBox(
+                    key: const ValueKey<bool>(true),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary.withValues(alpha: 0.85)),
+                  )
+                : Icon(
+                    hasCoins ? Icons.auto_awesome_rounded : Icons.account_balance_wallet_outlined,
+                    key: const ValueKey<bool>(false),
+                    size: 18,
+                  ),
+          ),
           label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
         ),
       ),
@@ -1381,7 +1405,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _buildHistoryStrip() {
     if (_loadingHistory) {
       return const Center(
-        child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
       );
     }
     final theme = Theme.of(context);

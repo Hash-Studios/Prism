@@ -1,5 +1,6 @@
 import 'dart:math' show max;
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
@@ -26,40 +27,26 @@ class FavoriteIcon extends StatefulWidget {
   _FavoriteIconState createState() => _FavoriteIconState();
 }
 
-class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _sizeAnimation;
-  late double _maxIconSize;
-
-  bool _isAnimationCompleted = false;
+class _FavoriteIconState extends State<FavoriteIcon> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final double _maxIconSize;
 
   @override
   void initState() {
     super.initState();
-
     _maxIconSize = widget.iconSize.clamp(20.0, 100.0);
-    final double minIconSize = _maxIconSize * 0.7;
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
-    _sizeAnimation = TweenSequence(<TweenSequenceItem<double>>[
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    _scale = TweenSequence(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: minIconSize, end: _maxIconSize),
+        tween: Tween<double>(begin: 1, end: 1.25).chain(CurveTween(curve: PrismCurves.enter)),
         weight: 50,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: _maxIconSize, end: minIconSize),
+        tween: Tween<double>(begin: 1.25, end: 1).chain(CurveTween(curve: PrismCurves.exit)),
         weight: 50,
       ),
-    ]).animate(CurvedAnimation(curve: Curves.slowMiddle, parent: _controller));
-
-    _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        widget.valueChanged();
-        _isAnimationCompleted = true;
-      } else if (status == AnimationStatus.dismissed) {
-        widget.valueChanged();
-        _isAnimationCompleted = false;
-      }
-    });
+    ]).animate(_controller);
   }
 
   @override
@@ -68,35 +55,33 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
     super.dispose();
   }
 
+  void _onTap() {
+    widget.valueChanged();
+    if (!context.reduceMotion) _controller.forward(from: 0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final layoutExtent = max(widget.tapTargetExtent ?? _maxIconSize, _maxIconSize);
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (BuildContext context, _) {
-        return InkResponse(
-          onTap: () {
-            if (_isAnimationCompleted) {
-              _controller.reverse();
-            } else {
-              _controller.forward();
-            }
-          },
-          containedInkWell: true,
-          radius: layoutExtent / 2,
-          child: SizedBox(
-            width: layoutExtent,
-            height: layoutExtent,
-            child: Center(
-              child: Icon(
-                widget.isFavorite ? JamIcons.heart_f : JamIcons.heart,
-                color: widget.iconColor,
-                size: _sizeAnimation.value,
-              ),
+    return InkResponse(
+      onTap: _onTap,
+      containedInkWell: true,
+      radius: layoutExtent / 2,
+      child: SizedBox(
+        width: layoutExtent,
+        height: layoutExtent,
+        child: Center(
+          child: ScaleTransition(
+            scale: _scale,
+            child: Icon(
+              widget.isFavorite ? JamIcons.heart_f : JamIcons.heart,
+              color: widget.iconColor,
+              // Rests at 70% of iconSize; the pop grows it from there.
+              size: _maxIconSize * 0.7,
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

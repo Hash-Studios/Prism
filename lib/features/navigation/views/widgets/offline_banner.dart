@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/material.dart';
 
 class ConnectivityWidget extends StatefulWidget {
@@ -11,7 +12,8 @@ class ConnectivityWidget extends StatefulWidget {
 
 class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
-    duration: const Duration(milliseconds: 500),
+    duration: const Duration(milliseconds: 260),
+    reverseDuration: const Duration(milliseconds: 180),
     vsync: this,
   );
   late final Timer _showTimer;
@@ -20,8 +22,17 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
   @override
   void initState() {
     super.initState();
-    _showTimer = Timer(const Duration(seconds: 1), _controller.forward);
-    _hideTimer = Timer(const Duration(seconds: 10), _controller.reverse);
+    _showTimer = Timer(const Duration(seconds: 1), () => _move(true));
+    _hideTimer = Timer(const Duration(seconds: 10), () => _move(false));
+  }
+
+  void _move(bool show) {
+    if (!mounted) return;
+    if (context.reduceMotion) {
+      _controller.value = show ? 1 : 0;
+    } else {
+      show ? _controller.forward() : _controller.reverse();
+    }
   }
 
   @override
@@ -37,9 +48,10 @@ class _ConnectivityWidgetState extends State<ConnectivityWidget> with SingleTick
     return Align(
       alignment: Alignment.bottomCenter,
       child: SlideTransition(
-        position: _controller.drive(
-          Tween<Offset>(begin: const Offset(0.0, 1.0), end: Offset.zero).chain(CurveTween(curve: Curves.fastOutSlowIn)),
-        ),
+        position: Tween<Offset>(
+          begin: const Offset(0.0, 1.0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: _controller, curve: PrismCurves.enter, reverseCurve: PrismCurves.exit)),
         child: const _OfflineBanner(),
       ),
     );
