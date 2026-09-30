@@ -102,7 +102,7 @@ void main() {
       }
 
       Future<void> close() async {
-        await tester.tap(find.text('Nice'));
+        await tester.tap(find.text('Nice').evaluate().isEmpty ? find.text('OK') : find.text('Nice'));
         await tester.pump();
         await tester.pump(const Duration(seconds: 1));
       }
@@ -120,6 +120,7 @@ void main() {
       await close();
       await open(_r(broken: true, daily: 5));
       expect(find.text('Your streak reset'), findsOneWidget);
+      expect(find.text('OK'), findsOneWidget);
       expect(find.text('Get a freeze for next time'), findsOneWidget);
 
       await close();
