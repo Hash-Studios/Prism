@@ -74,6 +74,26 @@ async function countUpTo(query: admin.firestore.Query, limit: number): Promise<n
   return snap.data().count;
 }
 
+/** A spend can still be refunded for a while, so only count AI spends older than any refund window. */
+export const AI_SPEND_SETTLE_MS = 60 * 60 * 1000;
+
+/** Pure: how many ledger timestamps are settled at [nowMs]. */
+export function settledCount(createdAtMs: number[], nowMs: number): number {
+  return createdAtMs.filter((ms) => Number.isFinite(ms) && nowMs - ms >= AI_SPEND_SETTLE_MS).length;
+}
+
+async function countSettledAiSpends(uid: string, nowMs: number): Promise<number> {
+  // ponytail: reads up to 40 recent rows with equality filters only (no composite index); a heavy AI user who
+  // spent 40+ in the last hour waits an hour for the badge.
+  const snap = await db.collection("coinTransactions").where("userId", "==", uid).where("action", "==", "aiGeneration")
+    .where("type", "==", "debit").where("status", "==", "completed").limit(40).get();
+  const times = snap.docs.map((d) => {
+    const at = d.get("createdAt");
+    return at instanceof admin.firestore.Timestamp ? at.toMillis() : Number.NaN;
+  });
+  return settledCount(times, nowMs);
+}
+
 async function gatherFacts(
   uid: string, data: admin.firestore.DocumentData, owned: Set<string>, nowMs: number, email: string,
 ): Promise<BadgeFacts> {
@@ -83,9 +103,7 @@ async function gatherFacts(
   const [approvedWalls, aiSpends, favourites, createdMs] = await Promise.all([
     need("creator") && email ?
       countUpTo(db.collection("walls").where("email", "==", email).where("review", "==", true), 1) : 0,
-    need("ai_artist") ?
-      countUpTo(db.collection("coinTransactions").where("userId", "==", uid).where("action", "==", "aiGeneration")
-        .where("type", "==", "debit").where("status", "==", "completed"), 10) : 0,
+    need("ai_artist") ? countSettledAiSpends(uid, nowMs) : 0,
     need("collector", "art_curator") ? countUpTo(db.collection(`${USERS}/${uid}/images`), 50) : 0,
     need("prism_veteran") && streakBest >= 7 ? badgeIo.accountCreatedMs(uid) : nowMs,
   ]);
