@@ -10,6 +10,7 @@ import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart
 import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
+import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/debug_flags.dart';
@@ -698,7 +699,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         if (app_state.prismUser.loggedIn) {
           unawaited(CoinsService.instance.processPendingReferralIfEligible(inviterUserId: action.inviterId));
         } else {
-          toasts.codeSend('Referral saved. Sign in to claim +100 coins.');
+          toasts.codeSend('Referral saved. Sign in to claim +${CoinPolicy.referral} coins.');
         }
         unawaited(
           analytics.track(
