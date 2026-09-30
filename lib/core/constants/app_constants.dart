@@ -67,8 +67,6 @@ const String defaultPersonalizedInterestsJson = '''
   {"name":"Music","query":"music vinyl","imageUrl":"https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]}
 ]''';
 
-const List<String> defaultTopTitleText = <String>['TOP-RATED', 'BEST OF COMMUNITY', 'FAN-FAVOURITE', 'TRENDING'];
-
 const List<String> defaultPremiumCollections = <String>['space', 'abstract', 'flat', 'mesh gradients', 'fluids'];
 
 const Set<String> adminEmails = <String>{'akshaymaurya3006@gmail.com', 'maurya.abhay30@gmail.com'};

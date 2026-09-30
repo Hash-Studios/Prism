@@ -7,16 +7,12 @@ class StartupConfigEntity {
     required this.obsoleteAppVersion,
     required this.verifiedUsers,
     required this.premiumCollections,
-    required this.topTitleText,
-    required this.categories,
-    required this.followersTab,
     required this.aiEnabled,
     required this.aiRolloutPercent,
     required this.aiSubmitEnabled,
     required this.aiVariationsEnabled,
     required this.useRcPaywalls,
     required this.onboardingV2Enabled,
-    required this.onboardingStarterPack,
   });
 
   final String topImageLink;
@@ -26,14 +22,10 @@ class StartupConfigEntity {
   final String obsoleteAppVersion;
   final List<String> verifiedUsers;
   final List<String> premiumCollections;
-  final List<String> topTitleText;
-  final List<Map<String, dynamic>> categories;
-  final bool followersTab;
   final bool aiEnabled;
   final int aiRolloutPercent;
   final bool aiSubmitEnabled;
   final bool aiVariationsEnabled;
   final bool useRcPaywalls;
   final bool onboardingV2Enabled;
-  final List<Map<String, dynamic>> onboardingStarterPack;
 }
