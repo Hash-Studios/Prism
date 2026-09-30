@@ -2,18 +2,24 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// Thrown when the user selects a different Google account during re-authentication.
@@ -26,8 +32,14 @@ class WrongAccountException implements Exception {
 }
 
 class GoogleAuth {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+  GoogleAuth({FirebaseAuth? auth, GoogleSignIn? googleSignIn, FirebaseMessaging? messaging})
+    : _auth = auth ?? FirebaseAuth.instance,
+      googleSignIn = googleSignIn ?? GoogleSignIn.instance,
+      _messaging = messaging;
+
+  final FirebaseAuth _auth;
+  final GoogleSignIn googleSignIn;
+  final FirebaseMessaging? _messaging;
   bool _googleSignInInitialized = false;
 
   Future<void> _ensureGoogleSignInInitialized() async {
@@ -40,6 +52,7 @@ class GoogleAuth {
 
   Future<SignInOutcome> signInWithGoogle() async {
     logger.i('signInWithGoogle start', tag: 'GoogleAuth');
+    bool firebaseSignedIn = false;
     try {
       await _ensureGoogleSignInInitialized();
       final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
@@ -52,6 +65,7 @@ class GoogleAuth {
       final AuthCredential credential = GoogleAuthProvider.credential(idToken: idToken);
 
       final UserCredential authResult = await _auth.signInWithCredential(credential);
+      firebaseSignedIn = true;
       final User? user = authResult.user;
       if (user == null) {
         throw StateError('Firebase user missing after Google sign-in.');
@@ -99,6 +113,9 @@ class GoogleAuth {
         ),
       );
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
+      if (firebaseSignedIn) {
+        await signOutGoogle();
+      }
       rethrow;
     }
   }
@@ -114,10 +131,18 @@ class GoogleAuth {
         message.contains('no credentials available');
   }
 
+  /// The one sign-out path (Google, Apple, account deletion, and a sign-in that
+  /// failed after Firebase accepted the credential). Server writes and topic
+  /// unsubscribes run first, while the Firebase session can still authorize them.
   Future<bool> signOutGoogle() async {
     clearInAppNotificationSyncGateAll();
     FcmTokenService.instance.cancel();
-    final String existingUserId = app_state.prismUser.id;
+    final PrismUsersV2 existingUser = app_state.prismUser;
+    await Future.wait(<Future<void>>[
+      _markLoggedOut(existingUser.id),
+      _unsubscribeUserTopics(existingUser),
+      _clearPersonalization(),
+    ]);
     await _ensureGoogleSignInInitialized();
     try {
       await googleSignIn.signOut();
@@ -149,20 +174,54 @@ class GoogleAuth {
         stackTrace: st,
       );
     }
-    try {
-      if (existingUserId.isNotEmpty) {
-        await firestoreClient.updateDoc(FirebaseCollections.usersV2, existingUserId, {
-          'loggedIn': false,
-        }, sourceTag: 'auth.signout.mark_logged_out');
-      }
-    } catch (e, st) {
-      logger.w('Failed to mark user logged out (expected if account was deleted)', error: e, stackTrace: st);
-    }
     await analytics.setUserId(null);
     await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
     await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
     logger.d("User Sign Out");
     return true;
+  }
+
+  Future<void> _markLoggedOut(String userId) async {
+    if (userId.isEmpty) {
+      return;
+    }
+    try {
+      await firestoreClient.updateDoc(FirebaseCollections.usersV2, userId, {
+        'loggedIn': false,
+      }, sourceTag: 'auth.signout.mark_logged_out');
+    } catch (e, st) {
+      logger.w('Failed to mark user logged out (expected if account was deleted)', error: e, stackTrace: st);
+    }
+  }
+
+  /// A shared or handed-down device must stop getting the previous user's pushes.
+  Future<void> _unsubscribeUserTopics(PrismUsersV2 user) async {
+    if (user.id.isEmpty) {
+      return;
+    }
+    try {
+      final FirebaseMessaging messaging = _messaging ?? FirebaseMessaging.instance;
+      final String? userTopic = userTopicFromId(user.id);
+      final String? followersTopic = followersTopicFromEmail(user.email);
+      await Future.wait(<Future<void>>[
+        if (userTopic != null) unsubscribeFromTopicSafely(messaging, userTopic, sourceTag: 'auth.signout.user_topic'),
+        if (followersTopic != null)
+          unsubscribeFromTopicSafely(messaging, followersTopic, sourceTag: 'auth.signout.followers_topic'),
+        setCreatorPostsTopics(messaging, user.following, subscribed: false, sourceTag: 'auth.signout.posts_topics'),
+      ]);
+    } catch (e, st) {
+      logger.w('Topic unsubscribe on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
+  }
+
+  /// Taste signals and feed impressions belong to the user, not the device.
+  Future<void> _clearPersonalization() async {
+    try {
+      await getIt<TasteSignalStore>().clear(allowReseed: true);
+      await getIt<FeedImpressionStore>().clear();
+    } catch (e, st) {
+      logger.w('Personalization clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
   }
 
   /// Re-authenticates the current Firebase user with a fresh Google credential.
