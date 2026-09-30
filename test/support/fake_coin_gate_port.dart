@@ -18,14 +18,22 @@ class FakeCoinGatePort implements CoinGatePort {
 
   int awardAmount = CoinPolicy.rewardedAd;
   bool adCompletes = true;
+  bool adThrows = false;
+  Future<void> Function()? afterAd;
   bool spendThrows = false;
+  bool spendAlwaysInsufficient = false;
+  Future<void> Function()? afterSpend;
   bool awardThrows = false;
   bool awardChanges = true;
+  bool recordThrows = false;
+  Future<void> Function()? afterRecord;
   bool refundApplies = true;
 
   @override
   Future<bool> watchRewardedAd() async {
     log.add('ad');
+    if (adThrows) throw StateError('ad failed');
+    await afterAd?.call();
     return adCompletes;
   }
 
@@ -34,6 +42,16 @@ class FakeCoinGatePort implements CoinGatePort {
     log.add('spend:$sourceTag');
     if (spendThrows) throw StateError('spend failed');
     final int cost = action.cost();
+    if (spendAlwaysInsufficient) {
+      return CoinMutationResult(
+        success: false,
+        changed: false,
+        previousBalance: balance,
+        currentBalance: balance,
+        delta: 0,
+        insufficientBalance: true,
+      );
+    }
     if (balance < cost) {
       return CoinMutationResult(
         success: false,
@@ -46,6 +64,7 @@ class FakeCoinGatePort implements CoinGatePort {
     }
     final int previous = balance;
     balance -= cost;
+    await afterSpend?.call();
     return CoinMutationResult(
       success: true,
       changed: true,
@@ -94,7 +113,11 @@ class FakeCoinGatePort implements CoinGatePort {
   }
 
   @override
-  Future<void> recordRewardedAdWatch({required String source}) async => log.add('watch:$source');
+  Future<void> recordRewardedAdWatch({required String source}) async {
+    log.add('watch:$source');
+    await afterRecord?.call();
+    if (recordThrows) throw StateError('watch record failed');
+  }
 
   @override
   Future<void> presentLowBalancePaywall({required String source}) async => log.add('paywall:$source');

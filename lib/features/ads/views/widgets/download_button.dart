@@ -236,6 +236,8 @@ class _DownloadButtonState extends State<DownloadButton> {
         upsellSource: 'download_watch_and_download_rewarded_ad',
         upgradeSource: 'download_low_balance_upgrade',
         nudgeBelow: CoinPolicy.lowBalanceNudgeThreshold,
+        precheckBalance: true,
+        repromptOnNudgeSpendInsufficient: false,
         isMounted: () => mounted,
         perform: _performDownload,
         choose: _chooseLowBalanceAction,

@@ -95,6 +95,96 @@ void main() {
     expect(port.errors, <String>['Unable to process coins right now.']);
   });
 
+  test('throwing spent callback cannot strand a confirmed charge', () async {
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async => false,
+        choose: (_) async => CoinGateChoice.cancel,
+        onSpent: (_, __) => throw StateError('success callback failed'),
+      ),
+    );
+
+    expect(result, CoinGateResult.failedRefunded);
+    expect(port.balance, 10);
+    expect(port.log, contains('error:x.spend'));
+  });
+
+  test('premium activated while prompt is open performs without spending', () async {
+    port.balance = 1;
+    final CoinGateSpec pendingPrompt = CoinGateSpec(
+      action: CoinSpendAction.premiumFilter,
+      tags: _tags,
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      isMounted: () => true,
+      perform: () async {
+        performed++;
+        return true;
+      },
+      choose: (_) async {
+        port.isPremium = true;
+        return CoinGateChoice.spend;
+      },
+      confirmFirst: true,
+    );
+
+    expect(await CoinGate(port).run(pendingPrompt), CoinGateResult.performedFree);
+    expect(port.log, isEmpty);
+    expect(performed, 1);
+  });
+
+  test('premium activated while prompt is open does not override cancel', () async {
+    port.balance = 1;
+    final CoinGateSpec pendingPrompt = CoinGateSpec(
+      action: CoinSpendAction.premiumFilter,
+      tags: _tags,
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      isMounted: () => true,
+      perform: () async {
+        performed++;
+        return true;
+      },
+      choose: (_) async {
+        port.isPremium = true;
+        return CoinGateChoice.cancel;
+      },
+      confirmFirst: true,
+    );
+
+    expect(await CoinGate(port).run(pendingPrompt), CoinGateResult.cancelled);
+    expect(performed, 0);
+    expect(port.log, isEmpty);
+  });
+
+  test('unmounted after a confirmed spend refunds without performing', () async {
+    bool mounted = true;
+    port.afterSpend = () async => mounted = false;
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => mounted,
+        perform: () async {
+          performed++;
+          return true;
+        },
+        choose: (_) async => CoinGateChoice.cancel,
+      ),
+    );
+
+    expect(result, CoinGateResult.failedRefunded);
+    expect(port.balance, 10);
+    expect(performed, 0);
+  });
+
   test('low balance and cancel stops without a charge', () async {
     port.balance = 1;
     expect(await CoinGate(port).run(spec()), CoinGateResult.cancelled);
@@ -125,6 +215,45 @@ void main() {
     expect(performed, 1);
   });
 
+  test('premium reached during ad upsell still runs the custom unlock attempt', () async {
+    port.balance = 1;
+    port.afterRecord = () async => port.isPremium = true;
+    int attempts = 0;
+    int customSpends = 0;
+    final CoinGateSpec retry = CoinGateSpec(
+      action: CoinSpendAction.premiumPreview24h,
+      tags: _tags,
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      isMounted: () => true,
+      spend: (_) async {
+        customSpends++;
+        return CoinMutationResult.noChange(balance: port.balance);
+      },
+      onAttempt: (_) => attempts++,
+      perform: () async => true,
+      choose: (_) async => CoinGateChoice.cancel,
+    );
+    final CoinGateSpec initial = CoinGateSpec(
+      action: retry.action,
+      tags: retry.tags,
+      upsellSource: retry.upsellSource,
+      upgradeSource: retry.upgradeSource,
+      isMounted: retry.isMounted,
+      spend: retry.spend,
+      onAttempt: retry.onAttempt,
+      perform: retry.perform,
+      choose: (_) async => CoinGateChoice.watchAd,
+      confirmFirst: true,
+      retrySpec: () => retry,
+    );
+
+    expect(await CoinGate(port).run(initial), CoinGateResult.performed);
+    expect(attempts, 1);
+    expect(customSpends, 1);
+    expect(port.balance, 11);
+  });
+
   test('watch ad that is not completed cancels with the ad toast', () async {
     port.balance = 1;
     choice = CoinGateChoice.watchAd;
@@ -146,9 +275,180 @@ void main() {
     port.balance = 0;
     port.awardAmount = 2;
     choice = CoinGateChoice.watchAd;
-    expect(await CoinGate(port).run(spec()), CoinGateResult.insufficient);
+    expect(
+      await CoinGate(port).run(
+        CoinGateSpec(
+          action: CoinSpendAction.premiumFilter,
+          tags: _tags,
+          upsellSource: 'upsell',
+          upgradeSource: 'upgrade',
+          isMounted: () => true,
+          perform: () async {
+            performed++;
+            return performResult;
+          },
+          choose: (prompt) async {
+            prompts.add(prompt);
+            return choice;
+          },
+          precheckBalance: true,
+        ),
+      ),
+      CoinGateResult.insufficient,
+    );
     expect(port.errors.last, 'Need 3 more coins.');
     expect(performed, 0);
+  });
+
+  test('initial precheck skips spend when balance is short', () async {
+    port.balance = 1;
+    expect(
+      await CoinGate(port).run(
+        CoinGateSpec(
+          action: CoinSpendAction.premiumFilter,
+          tags: _tags,
+          upsellSource: 'upsell',
+          upgradeSource: 'upgrade',
+          isMounted: () => true,
+          perform: () async => true,
+          choose: (prompt) async {
+            prompts.add(prompt);
+            return CoinGateChoice.cancel;
+          },
+          precheckBalance: true,
+        ),
+      ),
+      CoinGateResult.cancelled,
+    );
+    expect(port.log, <String>['nudge:x.low:5']);
+    expect(prompts.single.phase, CoinGatePhase.insufficient);
+  });
+
+  test('retry spec reopens insufficient prompt after attempting spend', () async {
+    port.balance = 1;
+    port.awardAmount = 2;
+    choice = CoinGateChoice.watchAd;
+    int prompted = 0;
+    final Future<CoinGateChoice> Function(CoinGatePrompt) choose = (_) async {
+      prompted++;
+      return prompted == 1 ? CoinGateChoice.watchAd : CoinGateChoice.cancel;
+    };
+    final CoinGateSpec retry = CoinGateSpec(
+      action: CoinSpendAction.premiumFilter,
+      tags: _tags,
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      isMounted: () => true,
+      perform: () async => true,
+      choose: choose,
+    );
+    final CoinGateSpec initial = CoinGateSpec(
+      action: retry.action,
+      tags: retry.tags,
+      upsellSource: retry.upsellSource,
+      upgradeSource: retry.upgradeSource,
+      isMounted: retry.isMounted,
+      perform: retry.perform,
+      choose: retry.choose,
+      confirmFirst: true,
+      retrySpec: () => retry,
+    );
+
+    expect(await CoinGate(port).run(initial), CoinGateResult.cancelled);
+    expect(port.log, <String>['ad', 'award:x.ad', 'watch:upsell', 'spend:x.spend', 'nudge:x.low:5']);
+    expect(prompted, 2);
+  });
+
+  test('nudge spend refusal can stop without reopening the prompt', () async {
+    port.spendAlwaysInsufficient = true;
+    choice = CoinGateChoice.spend;
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async => true,
+        choose: (prompt) async {
+          prompts.add(prompt);
+          return choice;
+        },
+        nudgeBelow: 11,
+        confirmFirst: true,
+        repromptOnNudgeSpendInsufficient: false,
+      ),
+    );
+
+    expect(result, CoinGateResult.insufficient);
+    expect(prompts, hasLength(1));
+    expect(port.log, <String>['nudge:x.low:5', 'spend:x.spend']);
+  });
+
+  test('stale insufficient result omits nudge analytics when balance now covers cost', () async {
+    port.spendAlwaysInsufficient = true;
+    final CoinGateResult result = await CoinGate(port).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        tags: _tags,
+        upsellSource: 'upsell',
+        upgradeSource: 'upgrade',
+        isMounted: () => true,
+        perform: () async => true,
+        choose: (_) async => CoinGateChoice.cancel,
+        logInsufficientOnlyWhenLow: true,
+      ),
+    );
+
+    expect(result, CoinGateResult.cancelled);
+    expect(port.log, <String>['spend:x.spend']);
+  });
+
+  test('prompt spend tag stays distinct from automatic ad retry tag', () async {
+    port.balance = 1;
+    port.awardAmount = 2;
+    port.spendAlwaysInsufficient = true;
+    int prompted = 0;
+    final CoinGateSpec retry = CoinGateSpec(
+      action: CoinSpendAction.premiumFilter,
+      tags: const CoinGateTags(
+        spend: 'x.auto.retry',
+        promptSpend: 'x.manual',
+        retrySpend: 'x.auto.retry',
+        ad: 'x.ad',
+        insufficient: 'x.low',
+      ),
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      isMounted: () => true,
+      perform: () async => true,
+      choose: (_) async {
+        prompted++;
+        return prompted == 1 ? CoinGateChoice.spend : CoinGateChoice.cancel;
+      },
+    );
+    final CoinGateSpec initial = CoinGateSpec(
+      action: retry.action,
+      tags: retry.tags,
+      upsellSource: retry.upsellSource,
+      upgradeSource: retry.upgradeSource,
+      isMounted: retry.isMounted,
+      perform: retry.perform,
+      choose: (_) async => CoinGateChoice.watchAd,
+      confirmFirst: true,
+      retrySpec: () => retry,
+    );
+
+    expect(await CoinGate(port).run(initial), CoinGateResult.cancelled);
+    expect(port.log, <String>[
+      'ad',
+      'award:x.ad',
+      'watch:upsell',
+      'spend:x.auto.retry',
+      'nudge:x.low:5',
+      'spend:x.manual',
+      'nudge:x.low:5',
+    ]);
   });
 
   test('nudge below threshold lets the user proceed when they can afford it', () async {
@@ -168,6 +468,31 @@ void main() {
     port.balance = 1;
     expect(await CoinGate(port).run(spec(mounted: false)), CoinGateResult.cancelled);
     expect(prompts, isEmpty);
+  });
+
+  test('host disposed while prompt is open does not spend', () async {
+    port.balance = 1;
+    bool mounted = true;
+    final CoinGateSpec pendingPrompt = CoinGateSpec(
+      action: CoinSpendAction.premiumFilter,
+      tags: _tags,
+      upsellSource: 'upsell',
+      upgradeSource: 'upgrade',
+      isMounted: () => mounted,
+      perform: () async {
+        performed++;
+        return true;
+      },
+      choose: (_) async {
+        mounted = false;
+        return CoinGateChoice.spend;
+      },
+      confirmFirst: true,
+    );
+
+    expect(await CoinGate(port).run(pendingPrompt), CoinGateResult.cancelled);
+    expect(port.log, isEmpty);
+    expect(performed, 0);
   });
 
   group('watchAdForCoins', () {
@@ -190,6 +515,34 @@ void main() {
       expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isFalse);
       expect(port.errors, <String>['Unable to credit coins right now.']);
       expect(port.log, contains('error:s'));
+    });
+
+    test('ad provider exception is logged and reported as incomplete', () async {
+      port.adThrows = true;
+      expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isFalse);
+      expect(port.errors, <String>['Ad was not completed.']);
+      expect(port.log, <String>['ad', 'error:s']);
+    });
+
+    test('upsell recording failure reports failure without awarding a second time', () async {
+      port.recordThrows = true;
+      expect(await CoinGate(port).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: mounted), isFalse);
+      expect(port.balance, 20);
+      expect(port.log, <String>['ad', 'award:s', 'watch:u', 'error:s']);
+      expect(port.errors, <String>['Unable to credit coins right now.']);
+    });
+
+    test('filter-style ad flow does not credit after unmount', () async {
+      bool mountedNow = true;
+      port.afterAd = () async => mountedNow = false;
+      expect(
+        await CoinGate(
+          port,
+        ).watchAdForCoins(sourceTag: 's', upsellSource: 'u', isMounted: () => mountedNow, creditAfterUnmount: false),
+        isFalse,
+      );
+      expect(port.balance, 10);
+      expect(port.log, <String>['ad']);
     });
   });
 
