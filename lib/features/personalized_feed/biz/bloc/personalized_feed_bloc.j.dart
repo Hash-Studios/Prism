@@ -65,8 +65,13 @@ class PersonalizedFeedBloc extends Bloc<PersonalizedFeedEvent, PersonalizedFeedS
       _load(emit, sourceContext: 'personalized_feed_refresh');
 
   Future<void> _onLessLikeThisRequested(_LessLikeThisRequested event, Emitter<PersonalizedFeedState> emit) async {
+    final String key = PersonalizedRankingService.canonicalKey(event.item);
     emit(
-      state.copyWith(items: state.items.where((item) => item.fullUrl != event.item.fullUrl).toList(growable: false)),
+      state.copyWith(
+        items: state.items
+            .where((item) => PersonalizedRankingService.canonicalKey(item) != key)
+            .toList(growable: false),
+      ),
     );
     try {
       await _repository.lessLikeThis(event.item);
