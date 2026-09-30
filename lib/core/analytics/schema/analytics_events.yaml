@@ -932,6 +932,22 @@ events:
       - name: wall_id
         key: wall_id
         type: string
+  - id: auto_rotate_enabled
+    fields:
+      - name: interval_minutes
+        key: interval_minutes
+        type: int
+      - name: target
+        key: target
+        type: enum
+        enum: WallpaperTarget
+      - name: shuffle
+        key: shuffle
+        type: bool
+      - name: wallpaper_count
+        key: wallpaper_count
+        type: int
+  - id: auto_rotate_disabled
   - id: nav_tab_selected
     fields:
       - name: from_tab

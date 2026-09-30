@@ -306,6 +306,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () => context.router.push(const QuickTileSettingsRoute()),
         ),
+        ListTile(
+          leading: const Icon(Icons.autorenew_rounded),
+          title: Text('Auto-rotate wallpapers', style: _titleStyle),
+          subtitle: const Text('Change your wallpaper on a timer', style: _subtitleStyle),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () {
+            if (app_state.prismUser.premium) {
+              context.router.push(const AutoRotateRoute());
+            } else {
+              PaywallOrchestrator.instance.presentOrRequireSignIn(
+                context,
+                placement: PaywallPlacement.autoRotate,
+                source: 'settings_auto_rotate',
+              );
+            }
+          },
+        ),
       ],
     );
   }
