@@ -82,6 +82,7 @@ class GoogleAuth {
         email: resolvedEmail,
         photoUrl: resolvedPhotoUrl,
         sourceTagPrefix: 'auth.signin',
+        messaging: _messaging,
       );
       await analytics.track(
         const AuthLoginResultEvent(
@@ -93,7 +94,10 @@ class GoogleAuth {
       return SignInOutcome.signedIn;
     } catch (e, st) {
       if (_isSignInCancelled(e)) {
-        await analytics.track(
+        if (firebaseSignedIn) {
+          await _rollbackSignIn();
+        }
+        await _trackSignInFailure(
           const AuthLoginResultEvent(
             method: AuthMethodValue.google,
             result: EventResultValue.cancelled,
@@ -104,7 +108,10 @@ class GoogleAuth {
         logger.i('signInWithGoogle canceled by user', tag: 'GoogleAuth');
         return SignInOutcome.cancelled;
       }
-      await analytics.track(
+      if (firebaseSignedIn) {
+        await _rollbackSignIn();
+      }
+      await _trackSignInFailure(
         const AuthLoginResultEvent(
           method: AuthMethodValue.google,
           result: EventResultValue.failure,
@@ -113,10 +120,28 @@ class GoogleAuth {
         ),
       );
       logger.e('signInWithGoogle failed', tag: 'GoogleAuth', error: e, stackTrace: st);
-      if (firebaseSignedIn) {
-        await signOutGoogle();
-      }
       rethrow;
+    }
+  }
+
+  Future<void> _rollbackSignIn() async {
+    try {
+      await signOutGoogle();
+    } catch (rollbackError, rollbackStackTrace) {
+      logger.w(
+        'Failed to roll back Firebase sign-in.',
+        tag: 'GoogleAuth',
+        error: rollbackError,
+        stackTrace: rollbackStackTrace,
+      );
+    }
+  }
+
+  Future<void> _trackSignInFailure(AuthLoginResultEvent event) async {
+    try {
+      await analytics.track(event);
+    } catch (error, stackTrace) {
+      logger.w('Failed to track sign-in result.', tag: 'GoogleAuth', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -136,15 +161,48 @@ class GoogleAuth {
   /// unsubscribes run first, while the Firebase session can still authorize them.
   Future<bool> signOutGoogle() async {
     clearInAppNotificationSyncGateAll();
-    FcmTokenService.instance.cancel();
+    try {
+      await FcmTokenService.instance.cancelAndWait();
+    } catch (e, st) {
+      logger.w('Failed to stop FCM token writes.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
+    try {
+      await waitForSignInBootstraps();
+    } catch (e, st) {
+      logger.w('Failed to drain sign-in bootstrap.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
     final PrismUsersV2 existingUser = app_state.prismUser;
+    final User? authenticatedUser = _auth.currentUser;
+    final String authenticatedUid = authenticatedUser?.uid.trim() ?? '';
+    final String userId = authenticatedUid.isNotEmpty ? authenticatedUid : existingUser.id;
+    String email = existingUser.id == userId ? existingUser.email : '';
+    List<String> following = existingUser.id == userId ? existingUser.following : const <String>[];
+    if (authenticatedUid.isNotEmpty && existingUser.id != userId) {
+      try {
+        final Map<String, dynamic>? authenticatedProfile = await firestoreClient.getById<Map<String, dynamic>>(
+          FirebaseCollections.usersV2,
+          userId,
+          (Map<String, dynamic> data, String _) => data,
+          sourceTag: 'auth.signout.find_user_doc',
+        );
+        email = authenticatedProfile?['email']?.toString() ?? '';
+        following = (authenticatedProfile?['following'] as List<dynamic>?)?.whereType<String>().toList() ?? following;
+      } catch (e, st) {
+        logger.w(
+          'Failed to load authenticated profile for topic cleanup.',
+          tag: 'GoogleAuth',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
     await Future.wait(<Future<void>>[
-      _markLoggedOut(existingUser.id),
-      _unsubscribeUserTopics(existingUser),
+      _markLoggedOut(userId),
+      _unsubscribeUserTopics(userId: userId, email: authenticatedUser?.email ?? email, following: following),
       _clearPersonalization(),
     ]);
-    await _ensureGoogleSignInInitialized();
     try {
+      await _ensureGoogleSignInInitialized();
       await googleSignIn.signOut();
     } catch (e, st) {
       logger.w(
@@ -157,13 +215,23 @@ class GoogleAuth {
     app_state.prismUser = createGuestPrismUser();
     // isSignedIn() reads FirebaseAuth.currentUser directly, so it must actually be cleared
     // here too. Used for Apple-signed-in users as well, not just Google.
+    bool firebaseSignOutSucceeded = true;
     try {
       await _auth.signOut();
     } catch (e, st) {
+      firebaseSignOutSucceeded = false;
       logger.w('FirebaseAuth signOut failed; continuing local sign-out cleanup.', error: e, stackTrace: st);
     }
-    await syncSentryUserScope(loggedIn: false, id: "", email: "");
-    await app_state.persistPrismUser();
+    try {
+      await syncSentryUserScope(loggedIn: false, id: '', email: '');
+    } catch (e, st) {
+      logger.w('Failed to clear Sentry user scope.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
+    try {
+      await app_state.persistPrismUser();
+    } catch (e, st) {
+      logger.w('Failed to persist signed-out user state.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
     try {
       await PurchasesService.instance.logOut();
     } catch (e, st) {
@@ -174,11 +242,23 @@ class GoogleAuth {
         stackTrace: st,
       );
     }
-    await analytics.setUserId(null);
-    await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
-    await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
-    logger.d("User Sign Out");
-    return true;
+    try {
+      await analytics.setUserId(null);
+    } catch (e, st) {
+      logger.w('Failed to clear analytics user id.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
+    try {
+      await analytics.setUserProperty(name: AnalyticsUserProperty.subscriptionTier.wireName, value: 'free');
+    } catch (e, st) {
+      logger.w('Failed to clear analytics subscription tier.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
+    try {
+      await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: '0');
+    } catch (e, st) {
+      logger.w('Failed to clear analytics premium state.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
+    logger.d('User Sign Out');
+    return firebaseSignOutSucceeded;
   }
 
   Future<void> _markLoggedOut(String userId) async {
@@ -195,19 +275,23 @@ class GoogleAuth {
   }
 
   /// A shared or handed-down device must stop getting the previous user's pushes.
-  Future<void> _unsubscribeUserTopics(PrismUsersV2 user) async {
-    if (user.id.isEmpty) {
+  Future<void> _unsubscribeUserTopics({
+    required String userId,
+    required String email,
+    required Iterable<String> following,
+  }) async {
+    if (userId.isEmpty) {
       return;
     }
     try {
       final FirebaseMessaging messaging = _messaging ?? FirebaseMessaging.instance;
-      final String? userTopic = userTopicFromId(user.id);
-      final String? followersTopic = followersTopicFromEmail(user.email);
+      final String? userTopic = userTopicFromId(userId);
+      final String? followersTopic = followersTopicFromEmail(email);
       await Future.wait(<Future<void>>[
         if (userTopic != null) unsubscribeFromTopicSafely(messaging, userTopic, sourceTag: 'auth.signout.user_topic'),
         if (followersTopic != null)
           unsubscribeFromTopicSafely(messaging, followersTopic, sourceTag: 'auth.signout.followers_topic'),
-        setCreatorPostsTopics(messaging, user.following, subscribed: false, sourceTag: 'auth.signout.posts_topics'),
+        setCreatorPostsTopics(messaging, following, subscribed: false, sourceTag: 'auth.signout.posts_topics'),
       ]);
     } catch (e, st) {
       logger.w('Topic unsubscribe on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
@@ -216,11 +300,19 @@ class GoogleAuth {
 
   /// Taste signals and feed impressions belong to the user, not the device.
   Future<void> _clearPersonalization() async {
-    try {
-      await getIt<TasteSignalStore>().clear(allowReseed: true);
-      await getIt<FeedImpressionStore>().clear();
-    } catch (e, st) {
-      logger.w('Personalization clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    if (getIt.isRegistered<TasteSignalStore>()) {
+      try {
+        await getIt<TasteSignalStore>().clear(allowReseed: true);
+      } catch (e, st) {
+        logger.w('Taste signal clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
+    }
+    if (getIt.isRegistered<FeedImpressionStore>()) {
+      try {
+        await getIt<FeedImpressionStore>().clear();
+      } catch (e, st) {
+        logger.w('Feed impression clear on sign-out failed.', tag: 'GoogleAuth', error: e, stackTrace: st);
+      }
     }
   }
 

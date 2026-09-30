@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -12,7 +13,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AppleAuth {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  AppleAuth({FirebaseAuth? auth, GoogleAuth? googleAuth})
+    : _auth = auth ?? FirebaseAuth.instance,
+      _googleAuth = googleAuth;
+
+  final FirebaseAuth _auth;
+  final GoogleAuth? _googleAuth;
 
   String _generateNonce([int length = 32]) {
     const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
@@ -81,8 +87,11 @@ class AppleAuth {
       );
       return SignInOutcome.signedIn;
     } on SignInWithAppleAuthorizationException catch (e) {
+      if (firebaseSignedIn) {
+        await _rollbackFirebaseSignIn();
+      }
       if (e.code == AuthorizationErrorCode.canceled) {
-        await analytics.track(
+        await _trackSignInResult(
           const AuthLoginResultEvent(
             method: AuthMethodValue.apple,
             result: EventResultValue.cancelled,
@@ -93,7 +102,7 @@ class AppleAuth {
         logger.i('signInWithApple canceled by user', tag: 'AppleAuth');
         return SignInOutcome.cancelled;
       }
-      await analytics.track(
+      await _trackSignInResult(
         const AuthLoginResultEvent(
           method: AuthMethodValue.apple,
           result: EventResultValue.failure,
@@ -104,7 +113,10 @@ class AppleAuth {
       logger.e('signInWithApple authorization failed', tag: 'AppleAuth', error: e);
       rethrow;
     } catch (e, st) {
-      await analytics.track(
+      if (firebaseSignedIn) {
+        await _rollbackFirebaseSignIn();
+      }
+      await _trackSignInResult(
         const AuthLoginResultEvent(
           method: AuthMethodValue.apple,
           result: EventResultValue.failure,
@@ -113,11 +125,23 @@ class AppleAuth {
         ),
       );
       logger.e('signInWithApple failed', tag: 'AppleAuth', error: e, stackTrace: st);
-      // Do not leave a Firebase session the app state does not know about.
-      if (firebaseSignedIn) {
-        await globalGoogleAuth.signOutGoogle();
-      }
       rethrow;
+    }
+  }
+
+  Future<void> _rollbackFirebaseSignIn() async {
+    try {
+      await (_googleAuth ?? globalGoogleAuth).signOutGoogle();
+    } catch (error, stackTrace) {
+      logger.w('Failed to roll back Apple Firebase sign-in.', tag: 'AppleAuth', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> _trackSignInResult(AuthLoginResultEvent event) async {
+    try {
+      await analytics.track(event);
+    } catch (error, stackTrace) {
+      logger.w('Failed to track Apple sign-in result.', tag: 'AppleAuth', error: error, stackTrace: stackTrace);
     }
   }
 
