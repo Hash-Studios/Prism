@@ -282,8 +282,8 @@ PrismUsersV2 _signedInUser() {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(clearRememberedFeedTerms);
-  tearDown(clearRememberedFeedTerms);
+  setUp(TasteSignal.clearRememberedFeedTerms);
+  tearDown(TasteSignal.clearRememberedFeedTerms);
 
   setUpAll(() async {
     setupFirebaseCoreMocks();

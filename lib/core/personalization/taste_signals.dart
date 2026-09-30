@@ -31,9 +31,6 @@ List<String> _normalizeTasteTerms(Iterable<String?> rawTerms) {
 final Map<String, List<String>> _feedTerms = <String, List<String>>{};
 const int _feedTermsCap = 500;
 
-@visibleForTesting
-void clearRememberedFeedTerms() => _feedTerms.clear();
-
 /// Remembers terms the feed knew for a wall, such as the search query that
 /// found it. Wallhaven and Pexels search results carry no tags, so without
 /// this their signals would have nothing to learn from.
@@ -81,6 +78,9 @@ class TasteSignal {
       creator: tasteCreatorOf(core),
     );
   }
+
+  @visibleForTesting
+  static void clearRememberedFeedTerms() => _feedTerms.clear();
 
   static TasteSignal? fromJson(Map<String, dynamic> json) {
     final TasteAction? action = TasteAction.values.asNameMap()[json['a']];
