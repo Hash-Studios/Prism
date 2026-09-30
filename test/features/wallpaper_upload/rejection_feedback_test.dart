@@ -25,7 +25,7 @@ void main() {
     await tester.pumpWidget(harness('Please use a screenshot with the full home screen visible.'));
 
     expect(find.text('Please use a screenshot with the full home screen visible.'), findsOneWidget);
-    expect(find.text('Review feedback'), findsOneWidget);
+    expect(find.text('Why it was rejected'), findsOneWidget);
   });
 
   testWidgets('uses a helpful fallback when a legacy rejection has no reason', (WidgetTester tester) async {

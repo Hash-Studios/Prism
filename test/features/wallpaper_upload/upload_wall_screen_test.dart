@@ -5,14 +5,18 @@ import 'dart:io';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_app_analytics.dart';
+
+const MethodChannel _toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
 
 class _TestAppRouter extends AppRouter {
   _TestAppRouter(this.uploadRoute);
@@ -66,6 +70,9 @@ void main() {
   }
 
   Future<void> setViewport(WidgetTester tester) async {
+    // Glint and the step spinner loop forever, so these tests run with motion off.
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     tester.view.physicalSize = const Size(360, 520);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -114,14 +121,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ready to submit'), findsOneWidget);
-    expect(find.text('Submit for review'), findsOneWidget);
+    expect(find.text('Upload'), findsOneWidget);
     expect(uploadCalls, 0);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pump();
-    expect(find.text('Uploading…'), findsOneWidget);
-    await tester.tap(find.text('Uploading…'), warnIfMissed: false);
+    expect(find.text('Uploading wallpaper'), findsOneWidget);
+    await tester.tap(find.byType(PrismButton), warnIfMissed: false);
     await tester.pump();
     expect(uploadCalls, 1);
     expect(saveCalls, 0);
@@ -131,11 +138,11 @@ void main() {
     );
     await tester.pump();
     await tester.pump();
-    expect(find.text('Submitting…'), findsOneWidget);
+    expect(find.text('Submitting wallpaper'), findsOneWidget);
     expect(saveCalls, 1);
     await tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Submitting…'), findsOneWidget);
+    expect(find.text('Submitting wallpaper'), findsOneWidget);
 
     save.complete(wall_store.WallSubmissionResult.submitted);
     await tester.pumpAndSettle();
@@ -186,7 +193,7 @@ void main() {
     await tester.tap(find.text('Open uploader'));
     await tester.pump(const Duration(milliseconds: 400));
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -226,7 +233,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
     expect(find.text('review-stub'), findsOneWidget);
@@ -304,7 +311,7 @@ void main() {
       ),
     );
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
     expect(find.text('Upload limit reached'), findsOneWidget);
@@ -341,21 +348,27 @@ void main() {
       ),
     );
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    final toastMessages = <String?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(_toastChannel, (call) async {
+      toastMessages.add((call.arguments as Map<Object?, Object?>)['msg'] as String?);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(_toastChannel, null));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Back'));
     await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
 
     expect(find.text('Discard this upload?'), findsOneWidget);
-    await tester.tap(find.text('Discard upload'));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(find.text('Upload limit reached'), findsOneWidget);
-    expect(find.text('Could not remove uploaded files. Try again.'), findsOneWidget);
-    ScaffoldMessenger.of(tester.element(find.text('Upload limit reached'))).hideCurrentSnackBar();
-    await tester.pumpAndSettle();
+    expect(toastMessages, <String?>['Could not remove uploaded files. Try again.']);
+    await tester.ensureVisible(find.text('Back'));
     await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Discard upload'));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(find.text('Upload limit reached'), findsNothing);
     expect(deleteCalls, 4);
@@ -390,7 +403,7 @@ void main() {
       ),
     );
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
 
     expect(find.text('Submission did not finish'), findsOneWidget);
@@ -431,7 +444,7 @@ void main() {
       ),
     );
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pump();
     await tester.pump();
     expect(uploadCalls, 2);
@@ -468,7 +481,7 @@ void main() {
       ),
     );
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     expect(find.text('Upload did not finish'), findsOneWidget);
 
@@ -510,13 +523,13 @@ void main() {
     );
     await tester.tap(find.text('Open uploader'));
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(find.text('Discard this upload?'), findsOneWidget);
-    await tester.tap(find.text('Discard upload'));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(deletedFiles, ['pixel.png']);
     expect(routeResult, isNull);
@@ -557,9 +570,10 @@ void main() {
     );
     await pumpImagePreparation(tester);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.ensureVisible(find.text('Try again'));
+    await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
 
     expect(wallpaperCalls, 2);
@@ -602,11 +616,12 @@ void main() {
     );
     await pumpImagePreparation(tester);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     expect(find.text('Upload did not finish'), findsOneWidget);
 
-    await tester.tap(find.text('Submit for review'));
+    await tester.ensureVisible(find.text('Try again'));
+    await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
 
     expect(wallpaperCalls, 1);
@@ -647,13 +662,13 @@ void main() {
     );
     await tester.tap(find.text('Open uploader'));
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(find.text('Discard this upload?'), findsOneWidget);
-    await tester.tap(find.text('Discard upload'));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(deletedFiles, ['pixel.png']);
     expect(routeResult, isNull);
@@ -697,13 +712,13 @@ void main() {
     );
     await tester.tap(find.text('Open uploader'));
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(find.text('Discard this upload?'), findsOneWidget);
-    await tester.tap(find.text('Discard upload'));
+    await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
     expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
     expect(routeResult, isNull);
@@ -744,13 +759,14 @@ void main() {
     );
     await tester.tap(find.text('Open uploader'));
     await pumpImagePreparation(tester);
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     expect(uploadCalls, 1);
 
-    await tester.tap(find.text('Submit for review'));
+    await tester.ensureVisible(find.text('Try again'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
-    Navigator.of(tester.element(find.text('Uploading…'))).pop();
+    Navigator.of(tester.element(find.text('Uploading wallpaper'))).pop();
     await tester.pump(const Duration(milliseconds: 10));
     cleanup.complete();
     await tester.pumpAndSettle();
@@ -806,12 +822,12 @@ void main() {
     await tester.tap(find.text('Open uploader'));
     await pumpImagePreparation(tester);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Submit for review'));
+    await tester.tap(find.text('Upload'));
     await tester.pump();
     await tester.pump();
-    expect(find.text('Uploading…'), findsOneWidget);
+    expect(find.text('Uploading wallpaper'), findsOneWidget);
 
-    Navigator.of(tester.element(find.text('Uploading…'))).pop();
+    Navigator.of(tester.element(find.text('Uploading wallpaper'))).pop();
     await tester.pump(const Duration(milliseconds: 10));
     thumbnailUpload.complete(
       const GitHubContent(downloadUrl: 'https://example.test/thumb.png', path: 'thumb_pixel.png', sha: 'thumb-sha'),
@@ -823,6 +839,91 @@ void main() {
     expect(deletedFiles, ['pixel.png', 'thumb_pixel.png']);
     expect(routeResult, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('ready state shows the preview facts, the checklist and one Upload button', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(image: image, prepareImageForTesting: () async {}),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upload wallpaper'), findsOneWidget);
+    expect(find.text('Resolution'), findsOneWidget);
+    expect(find.text('1 x 1'), findsOneWidget);
+    expect(find.text('Size'), findsOneWidget);
+    expect(find.text('0.00 MB'), findsOneWidget);
+    expect(find.text('Ready to submit'), findsOneWidget);
+    expect(find.text('Image and preview are ready'), findsOneWidget);
+    expect(find.text('Upload the wallpaper and its preview'), findsOneWidget);
+    expect(find.text('Moderators review it before it appears in Prism'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Upload'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('while uploading, the button shows a spinner and the active step is named', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final fullUpload = Completer<GitHubContent>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          uploadFileForTesting: ({required isThumbnail}) => fullUpload.future,
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+
+    expect(find.text('Uploading wallpaper'), findsOneWidget);
+    expect(find.text('Uploading the wallpaper and its preview'), findsOneWidget);
+    expect(find.text('Upload'), findsNothing);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).loading, isTrue);
+    fullUpload.completeError(StateError('stop'));
+    await tester.pump();
+    await tester.pump();
+  });
+
+  testWidgets('an image that cannot be prepared shows the reason and a retry', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    var attempts = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {
+            if (attempts++ == 0) throw StateError('decode failed');
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Image could not be prepared'), findsOneWidget);
+    expect(find.text('We could not prepare this image. Try again or choose another image.'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Upload'), findsNothing);
+
+    await tester.ensureVisible(find.text('Try again'));
+    await tester.tap(find.text('Try again'));
+    await pumpImagePreparation(tester);
+    await tester.pumpAndSettle();
+
+    expect(attempts, 2);
+    expect(find.text('Ready to submit'), findsOneWidget);
   });
 }
 

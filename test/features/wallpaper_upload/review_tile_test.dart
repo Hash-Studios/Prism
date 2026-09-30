@@ -27,22 +27,33 @@ void main() {
   testWidgets('pads the minutes of the submission time', (tester) async {
     await _pumpTile(tester, <String, dynamic>{...base, 'createdAt': DateTime(2026, 3, 4, 17, 7)});
 
-    expect(find.text('4 March 2026, 5:07 PM'), findsOneWidget);
+    expect(find.text('4 Mar 2026, 5:07 PM'), findsOneWidget);
   });
 
   testWidgets('shows no date when the submission time is missing', (tester) async {
     await _pumpTile(tester, base);
 
     expect(find.textContaining(RegExp(r'\d{4}, \d')), findsNothing);
-    expect(find.text('S1'), findsOneWidget);
+    expect(find.text('1440 x 3200 · 2 MB'), findsOneWidget);
   });
 
-  testWidgets('shows the in review chip for a pending wallpaper and rejected chip for a rejected one', (tester) async {
-    await _pumpTile(tester, base);
-    expect(find.text('IN REVIEW'), findsOneWidget);
+  testWidgets(
+    'shows the in review tag for a pending wallpaper and the rejected tag with its reason for a rejected one',
+    (tester) async {
+      await _pumpTile(tester, base);
+      expect(find.text('In review'), findsOneWidget);
+      expect(find.text('Why it was rejected'), findsNothing);
 
-    await _pumpTile(tester, base, rejected: true);
-    expect(find.text('REJECTED'), findsOneWidget);
+      await _pumpTile(tester, base, rejected: true);
+      expect(find.text('Rejected'), findsOneWidget);
+      expect(find.text('Why it was rejected'), findsOneWidget);
+    },
+  );
+
+  testWidgets('does not show the internal upload id', (tester) async {
+    await _pumpTile(tester, base);
+
+    expect(find.text('S1'), findsNothing);
   });
 
   testWidgets('labels download and delete actions for screen reader users', (tester) async {
