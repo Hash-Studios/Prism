@@ -1,257 +1,236 @@
-import 'package:Prism/core/widgets/glint/glint.dart';
+import 'dart:math' as math;
+
+import 'package:Prism/core/utils/ai_target_size.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
-import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
-import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_skip_button.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// F3 unique content: AI wallpaper generation step.
-/// Background, headline, progress, CTA button, and helper text are owned by
-/// the shell overlay. This page owns the prompt chip, preview area, and skip.
-class F3AiGeneratePage extends StatelessWidget {
+/// Step 3: generate a first wallpaper from a prompt and style picked from the user's interests.
+class F3AiGeneratePage extends StatefulWidget {
   const F3AiGeneratePage({super.key});
+
+  @override
+  State<F3AiGeneratePage> createState() => _F3AiGeneratePageState();
+}
+
+class _F3AiGeneratePageState extends State<F3AiGeneratePage> {
+  late final TextEditingController _prompt;
+
+  @override
+  void initState() {
+    super.initState();
+    _prompt = TextEditingController(text: context.read<OnboardingV2Bloc>().state.aiData.prompt);
+  }
+
+  @override
+  void dispose() {
+    _prompt.dispose();
+    super.dispose();
+  }
+
+  void _generate(BuildContext context) {
+    final MediaQueryData media = MediaQuery.of(context);
+    context.read<OnboardingV2Bloc>().add(
+      OnboardingV2Event.aiGenerationRequested(
+        targetSize: aiTargetSize(size: media.size, devicePixelRatio: media.devicePixelRatio),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnboardingV2Bloc, OnboardingV2State>(
       buildWhen: (prev, curr) => prev.aiData != curr.aiData,
       builder: (context, state) {
-        final aiData = state.aiData;
-
+        final OnboardingAiData ai = state.aiData;
+        final bool loading = ai.status == AiGenerateStatus.loading;
         return OnboardingFrame(
-          builder: (context, sx, sy) {
-            // Preview fills from below the chip to just above the CTA.
-            const previewBottom = OnboardingLayout.ctaY - 12;
-            const previewHeight = previewBottom - OnboardingLayout.aiPreviewY;
-
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                Positioned(
-                  top: OnboardingLayout.aiChipY * sy,
-                  left: OnboardingLayout.aiChipX * sx,
-                  right: OnboardingLayout.aiChipX * sx,
-                  child: _PromptChip(prompt: aiData.prompt, style: aiData.stylePreset.label),
+          title: 'Create your first wallpaper',
+          body: 'Made for you by AI, based on what you picked.',
+          primaryLabel: ai.status == AiGenerateStatus.failure ? 'Try again' : 'Generate',
+          primaryLoading: loading,
+          onPrimary: () => _generate(context),
+          onSkip: () => context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.aiGenerationStepContinued()),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // The prompt and style rows take about 200 points at 1x text. The preview gets the rest, never less
+              // than 200, and the page scrolls when a small screen or large text leaves no room.
+              final double fixed = 200 * MediaQuery.textScalerOf(context).scale(1);
+              final double previewHeight = math.max(200, constraints.maxHeight - fixed);
+              return SingleChildScrollView(
+                padding: PrismSpace.pageInsets,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    PrismTextField(controller: _prompt, label: 'Prompt', enabled: false, minLines: 2, maxLines: 3),
+                    const SizedBox(height: PrismSpace.sm),
+                    _StyleTile(style: ai.stylePreset.label, swatches: ai.stylePreset.swatchColors),
+                    const SizedBox(height: PrismSpace.md),
+                    SizedBox(
+                      height: previewHeight,
+                      child: _Preview(ai: ai),
+                    ),
+                  ],
                 ),
-
-                Positioned(
-                  top: OnboardingLayout.aiPreviewY * sy,
-                  left: OnboardingLayout.aiPreviewX * sx,
-                  right: OnboardingLayout.aiPreviewX * sx,
-                  height: previewHeight * sy,
-                  child: _PreviewArea(aiData: aiData),
-                ),
-
-                OnboardingSkipButton(
-                  sx: sx,
-                  sy: sy,
-                  color: OnboardingColors.textPrimary,
-                  onTap: () =>
-                      context.read<OnboardingV2Bloc>().add(const OnboardingV2Event.aiGenerationStepContinued()),
-                ),
-              ],
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
   }
 }
 
-class _PromptChip extends StatelessWidget {
-  const _PromptChip({required this.prompt, required this.style});
+class _StyleTile extends StatelessWidget {
+  const _StyleTile({required this.style, required this.swatches});
 
-  final String prompt;
   final String style;
+  final List<Color> swatches;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    return PrismGroup(
+      children: <Widget>[
+        PrismRow(
+          title: style,
+          subtitle: 'Style',
+          leading: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
+              gradient: LinearGradient(colors: swatches.length > 1 ? swatches : <Color>[...swatches, ...swatches]),
             ),
-            child: Text(
-              style,
-              style: const TextStyle(
-                fontFamily: OnboardingTypography.sans,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
+            child: const SizedBox.square(dimension: 32),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              prompt,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: OnboardingTypography.sans,
-                fontSize: 13,
-                color: Colors.black.withValues(alpha: 0.75),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreviewArea extends StatelessWidget {
-  const _PreviewArea({required this.aiData});
-
-  final OnboardingAiData aiData;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 400),
-      child: switch (aiData.status) {
-        AiGenerateStatus.idle => const _IdlePlaceholder(key: ValueKey('idle')),
-        AiGenerateStatus.loading => const _LoadingView(key: ValueKey('loading')),
-        AiGenerateStatus.success => _ResultImage(
-          key: const ValueKey('success'),
-          imageUrl: aiData.thumbnailUrl ?? aiData.imageUrl ?? '',
         ),
-        AiGenerateStatus.failure => const _FailureView(key: ValueKey('failure')),
-      },
+      ],
     );
   }
 }
 
-class _IdlePlaceholder extends StatelessWidget {
-  const _IdlePlaceholder({super.key});
+/// The preview slot, at the shape of the phone screen. It shows a placeholder, Glint while it works, the result, or
+/// a failure.
+class _Preview extends StatelessWidget {
+  const _Preview({required this.ai});
+
+  final OnboardingAiData ai;
 
   @override
   Widget build(BuildContext context) {
-    return _AiPreviewShell(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.auto_awesome_rounded, color: Colors.black.withValues(alpha: 0.35), size: 40),
-            const SizedBox(height: 12),
-            Text(
-              'tap generate to create\nyour unique wallpaper',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: OnboardingTypography.sans,
-                fontSize: 14,
-                color: Colors.black.withValues(alpha: 0.45),
+    final Size screen = MediaQuery.sizeOf(context);
+    return Center(
+      child: AspectRatio(
+        aspectRatio: screen.width / screen.height,
+        child: AnimatedSwitcher(
+          duration: context.motion(PrismDurations.base),
+          switchInCurve: PrismCurves.enter,
+          switchOutCurve: PrismCurves.exit,
+          child: switch (ai.status) {
+            AiGenerateStatus.idle => const _Slot(
+              key: ValueKey('idle'),
+              child: _SlotMessage(icon: Icons.auto_awesome_rounded, text: 'Your wallpaper will appear here.'),
+            ),
+            AiGenerateStatus.loading => const _Slot(
+              key: ValueKey('loading'),
+              child: _SlotMessage(mood: GlintMood.curious, text: 'Crafting your wallpaper…'),
+            ),
+            AiGenerateStatus.success => _Result(
+              key: const ValueKey('success'),
+              url: ai.thumbnailUrl ?? ai.imageUrl ?? '',
+            ),
+            AiGenerateStatus.failure => const _Slot(
+              key: ValueKey('failure'),
+              child: GlintState(
+                kind: GlintStateKind.error,
+                title: 'Could not generate it',
+                body: 'Tap Try again.',
+                glintSize: 72,
+                padding: EdgeInsets.all(PrismSpace.md),
               ),
             ),
-          ],
+          },
         ),
       ),
     );
   }
 }
 
-class _LoadingView extends StatelessWidget {
-  const _LoadingView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _AiPreviewShell(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Glint(mood: GlintMood.curious, size: 64),
-            const SizedBox(height: 16),
-            Text(
-              'crafting your wallpaper…',
-              style: TextStyle(
-                fontFamily: OnboardingTypography.sans,
-                fontSize: 14,
-                color: Colors.black.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ResultImage extends StatelessWidget {
-  const _ResultImage({super.key, required this.imageUrl});
-
-  final String imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        fadeInDuration: const Duration(milliseconds: 300),
-        errorWidget: (_, _, _) => const _FailureView(),
-      ),
-    );
-  }
-}
-
-class _FailureView extends StatelessWidget {
-  const _FailureView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return _AiPreviewShell(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Glint(mood: GlintMood.sad, size: 64),
-            const SizedBox(height: 12),
-            Text(
-              'something went wrong.\ntap generate to try again.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: OnboardingTypography.sans,
-                fontSize: 14,
-                color: Colors.black.withValues(alpha: 0.45),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AiPreviewShell extends StatelessWidget {
-  const _AiPreviewShell({required this.child});
+class _Slot extends StatelessWidget {
+  const _Slot({super.key, required this.child});
 
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        color: cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(PrismRadius.lg),
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
       ),
-      child: child,
+      child: Center(child: child),
+    );
+  }
+}
+
+class _SlotMessage extends StatelessWidget {
+  const _SlotMessage({this.icon, this.mood, required this.text});
+
+  final IconData? icon;
+  final GlintMood? mood;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.all(PrismSpace.md),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (mood != null)
+              Glint(mood: mood!, size: 88)
+            else
+              Icon(icon, size: 36, color: cs.onSurface.withValues(alpha: 0.5)),
+            const SizedBox(height: PrismSpace.sm),
+            Text(text, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Result extends StatelessWidget {
+  const _Result({super.key, required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(PrismRadius.lg),
+      child: CachedNetworkImage(
+        imageUrl: url,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        fadeInDuration: context.motion(PrismDurations.base),
+        errorWidget: (_, _, _) => const _Slot(
+          child: GlintState(
+            kind: GlintStateKind.error,
+            title: 'Could not show it',
+            body: 'Tap Try again.',
+            glintSize: 72,
+            padding: EdgeInsets.all(PrismSpace.md),
+          ),
+        ),
+      ),
     );
   }
 }

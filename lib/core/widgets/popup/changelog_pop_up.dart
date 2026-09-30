@@ -4,11 +4,8 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/core/widgets/accent_color.dart';
-import 'package:Prism/core/widgets/popup/popup_header.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -29,90 +26,30 @@ class _ChangelogVersion {
 const String _changelogUrl = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/CHANGELOG.md';
 const String _changelogCacheKey = 'remote_changelog_markdown_cache';
 
+/// Opens the "What's new" sheet. [func] runs when the sheet closes.
 void showChangelog(BuildContext context, [VoidCallback? func]) {
-  final controller = ScrollController();
-  final NavigatorState? navigator = Navigator.maybeOf(context, rootNavigator: true);
-  final AlertDialog aboutPopUp = AlertDialog(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    content: Container(
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
-      width: MediaQuery.of(context).size.width * .78,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          PopupHeader(
-            width: MediaQuery.of(context).size.width * .78,
-            child: Stack(
-              children: [
-                Center(child: Icon(JamIcons.refresh, color: Theme.of(context).colorScheme.secondary)),
-                Positioned(
-                  bottom: 10,
-                  right: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'v$currentAppVersion',
-                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: Theme.of(context).colorScheme.secondary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
-            child: Scrollbar(
-              radius: const Radius.circular(500),
-              thickness: 5,
-              controller: controller,
-              thumbVisibility: true,
-              child: _ChangelogList(controller: controller),
-            ),
+  showPrismSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.85),
+      child: PrismSheetBody(
+        title: "What's new",
+        message: 'You are on version $currentAppVersion.',
+        scrollable: true,
+        actions: <Widget>[
+          PrismButton(
+            label: 'See the full changelog',
+            variant: PrismButtonVariant.ghost,
+            expand: true,
+            onPressed: () => openPrismLink(sheetContext, 'https://bit.ly/prismchanges'),
           ),
         ],
+        child: const _ChangelogList(),
       ),
     ),
-    actions: [
-      TextButton(
-        onPressed: () {
-          openPrismLink(context, "https://bit.ly/prismchanges");
-          func?.call();
-        },
-        child: Text(
-          'VIEW FULL',
-          style: TextStyle(fontSize: 14.0, color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w600),
-        ),
-      ),
-      FilledButton(
-        style: FilledButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.error,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-        ),
-        onPressed: () {
-          if (navigator?.canPop() ?? false) {
-            navigator?.pop();
-          }
-          func?.call();
-        },
-        child: const Text(
-          'CLOSE',
-          style: TextStyle(fontSize: 14.0, color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      ),
-    ],
-    contentPadding: const EdgeInsets.fromLTRB(0, 0, 0, 10),
-    backgroundColor: Theme.of(context).primaryColor,
-    actionsPadding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-  );
-  showModal(context: context, builder: (BuildContext context) => aboutPopUp);
+  ).whenComplete(() => func?.call());
 }
 
 _ChangeType _inferChangeType(String text) {
@@ -132,11 +69,11 @@ _ChangeType _inferChangeType(String text) {
 IconData _iconForType(_ChangeType type) {
   switch (type) {
     case _ChangeType.feature:
-      return JamIcons.magic;
+      return Icons.auto_awesome_rounded;
     case _ChangeType.fix:
-      return JamIcons.bug;
+      return Icons.bug_report_rounded;
     case _ChangeType.improvement:
-      return JamIcons.refresh;
+      return Icons.bolt_rounded;
   }
 }
 
@@ -177,8 +114,7 @@ List<_ChangelogVersion> _parseChangelogMarkdown(String markdown) {
 }
 
 class _ChangelogList extends StatefulWidget {
-  final ScrollController controller;
-  const _ChangelogList({required this.controller});
+  const _ChangelogList();
 
   @override
   State<_ChangelogList> createState() => _ChangelogListState();
@@ -187,6 +123,7 @@ class _ChangelogList extends StatefulWidget {
 class _ChangelogListState extends State<_ChangelogList> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   List<_ChangelogVersion> _items = const <_ChangelogVersion>[];
+  bool _loading = true;
 
   @override
   void initState() {
@@ -195,6 +132,9 @@ class _ChangelogListState extends State<_ChangelogList> {
   }
 
   Future<void> _loadRemoteChangelog() async {
+    if (!_loading) {
+      setState(() => _loading = true);
+    }
     final cached = _settingsLocal.get<String?>(_changelogCacheKey);
     if (cached != null && cached.trim().isNotEmpty) {
       final parsedCached = _parseChangelogMarkdown(cached);
@@ -223,113 +163,93 @@ class _ChangelogListState extends State<_ChangelogList> {
       });
     } catch (error, stackTrace) {
       logger.w('Changelog fetch failed', error: error, stackTrace: stackTrace);
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: widget.controller,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                'The changelog could not be loaded.',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
-              ),
-            ),
-          for (int i = 0; i < _items.length; i++) ...[
-            _ChangeVersion(number: _items[i].version, showDivider: i > 0),
-            for (final item in _items[i].changes) _ChangeRow(text: item.text, type: item.type),
+    if (_items.isEmpty) {
+      return _loading
+          ? SizedBox(height: 220, child: PrismSkeleton.rows(rows: 4, avatar: false, padding: EdgeInsets.zero))
+          : GlintState(
+              kind: GlintStateKind.error,
+              title: 'Could not load the changelog',
+              body: 'Check your connection and try again.',
+              actionLabel: 'Try again',
+              onAction: () => unawaited(_loadRemoteChangelog()),
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
+            );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (int i = 0; i < _items.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(height: PrismSpace.xl),
+          _ChangeVersion(number: _items[i].version, isLatest: i == 0),
+          const SizedBox(height: PrismSpace.sm),
+          for (int j = 0; j < _items[i].changes.length; j++) ...<Widget>[
+            if (j > 0) const SizedBox(height: PrismSpace.sm),
+            _ChangeRow(text: _items[i].changes[j].text, type: _items[i].changes[j].type),
           ],
-          const SizedBox(height: 8),
         ],
-      ),
+      ],
     );
   }
 }
 
 class _ChangeVersion extends StatelessWidget {
+  const _ChangeVersion({required this.number, required this.isLatest});
+
   final String number;
-  final bool showDivider;
-  const _ChangeVersion({required this.number, this.showDivider = false});
+  final bool isLatest;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
+    return Row(
       children: <Widget>[
-        if (showDivider)
-          Divider(
-            height: 1,
-            thickness: 1,
-            indent: 20,
-            endIndent: 20,
-            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-          child: Row(
-            children: [
-              Text(
-                number,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ),
-            ],
-          ),
-        ),
+        Flexible(child: Text(number, style: PrismTextStyles.cardTitle(context))),
+        if (isLatest) ...<Widget>[
+          const SizedBox(width: PrismSpace.xs),
+          const PrismTag(label: 'Latest', tone: PrismTone.accent),
+        ],
       ],
     );
   }
 }
 
 class _ChangeRow extends StatelessWidget {
-  final String text;
-  final _ChangeType type;
   const _ChangeRow({required this.text, required this.type});
 
-  Color _typeColor(BuildContext context) {
-    switch (type) {
-      case _ChangeType.feature:
-        return accentColor(context);
-      case _ChangeType.fix:
-        return Colors.orange;
-      case _ChangeType.improvement:
-        return Theme.of(context).colorScheme.secondary.withValues(alpha: 0.65);
-    }
-  }
+  final String text;
+  final _ChangeType type;
 
   @override
   Widget build(BuildContext context) {
-    final color = _typeColor(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(width: 20),
-          Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: Icon(_iconForType(type), size: 20, color: color),
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: cs.onSurface.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(PrismRadius.xs),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
-            ),
+          child: Icon(_iconForType(type), size: 16, color: cs.onSurface.withValues(alpha: 0.8)),
+        ),
+        const SizedBox(width: PrismSpace.sm),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(text, style: PrismTextStyles.body(context).copyWith(color: cs.onSurface, height: 1.35)),
           ),
-          const SizedBox(width: 20),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
