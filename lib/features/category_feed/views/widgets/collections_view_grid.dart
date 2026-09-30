@@ -158,10 +158,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
                 fields: <String, Object?>{'wall_id': wallId, 'thumb': wallpaperThumb, 'url': wallpaperUrl},
               );
               return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).hintColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: BoxDecoration(color: Theme.of(context).hintColor.withValues(alpha: 0.08)),
                 child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
               );
             }
@@ -180,15 +177,13 @@ class _CollectionViewGridState extends State<CollectionViewGrid> with SingleTick
                         Container(
                           decoration: BoxDecoration(
                             color: placeholderColor,
-                            borderRadius: BorderRadius.circular(20),
                             image: DecorationImage(
                               image: CachedNetworkImageProvider(wallpaperThumb),
                               fit: BoxFit.cover,
                             ),
                           ),
                         ),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
+                        ClipRect(
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
