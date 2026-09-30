@@ -363,7 +363,9 @@ class _FeedCarouselState extends State<_FeedCarousel> {
                     iconPadding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
                     fit: StackFit.loose,
                     clipBehavior: Clip.hardEdge,
-                    child: SizedBox.expand(child: PrismImageTile(url: wall.wallpaper.thumbnailUrl)),
+                    child: SizedBox.expand(
+                      child: PrismImageTile(url: wall.thumbnailUrl, fallbackUrl: wall.fullUrl),
+                    ),
                   ),
                 ),
               );
