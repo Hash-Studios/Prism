@@ -37,13 +37,10 @@ class _ArrowBounceAnimationState extends State<ArrowBounceAnimation> with Single
     return Transform.scale(
       scale: scale,
       child: GestureDetector(
-        onTap: _onTap,
-        child: Container(color: Colors.transparent, height: 250, width: 40, child: widget.child),
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: SizedBox(height: 250, width: 40, child: widget.child),
       ),
     );
-  }
-
-  void _onTap() {
-    widget.onTap?.call();
   }
 }
