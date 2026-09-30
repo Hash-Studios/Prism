@@ -6,17 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
-String ordinalSuffix(int day) {
-  if (day >= 11 && day <= 13) return 'ᵗʰ';
-  return switch (day % 10) {
-    1 => 'ˢᵗ',
-    2 => 'ⁿᵈ',
-    3 => 'ʳᵈ',
-    _ => 'ᵗʰ',
-  };
-}
-
 class ClockOverlay extends StatelessWidget {
   final String link;
   final bool file;
@@ -24,12 +13,24 @@ class ClockOverlay extends StatelessWidget {
   final bool colorChanged;
   const ClockOverlay({required this.link, required this.file, required this.accent, required this.colorChanged});
 
+  /// Superscript ordinal suffix for a day of the month: 1ˢᵗ, 2ⁿᵈ, 3ʳᵈ, 4ᵗʰ, 11ᵗʰ.
+  @visibleForTesting
+  static String ordinalSuffix(int day) {
+    if (day >= 11 && day <= 13) return 'ᵗʰ';
+    return switch (day % 10) {
+      1 => 'ˢᵗ',
+      2 => 'ⁿᵈ',
+      3 => 'ʳᵈ',
+      _ => 'ᵗʰ',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final day = DateFormat('EEEE').format(now);
     final month = DateFormat('MMMM').format(now);
-    final Color textColor = accent?.onColor ?? Theme.of(context).colorScheme.secondary;
+    final Color textColor = accent == null ? Theme.of(context).colorScheme.secondary : onColor(accent!);
     final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
     return Material(
       child: Stack(
@@ -111,7 +112,7 @@ class ClockOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "$month ${now.day}${ordinalSuffix(now.day)} | 27°C",
+                      "$month ${now.day}${ClockOverlay.ordinalSuffix(now.day)} | 27°C",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: textColor,

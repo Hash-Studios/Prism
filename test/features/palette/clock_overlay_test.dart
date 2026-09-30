@@ -27,7 +27,7 @@ bool _isDockIcon(Widget widget) =>
 
 void main() {
   test('ordinal suffix uses th for 11 to 13', () {
-    expect(<int>[1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 31].map(ordinalSuffix).toList(), <String>[
+    expect(<int>[1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 31].map(ClockOverlay.ordinalSuffix).toList(), <String>[
       'ˢᵗ',
       'ⁿᵈ',
       'ʳᵈ',

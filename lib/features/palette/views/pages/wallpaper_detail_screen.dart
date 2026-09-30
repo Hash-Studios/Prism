@@ -153,7 +153,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   void _setStatusBarIconBrightness(Color color) {
-    applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: color.isLight ? Brightness.dark : Brightness.light);
+    applyEdgeToEdgeOverlayStyle(
+      statusBarIconBrightness: onColor(color) == Colors.black ? Brightness.dark : Brightness.light,
+    );
   }
 
   @override
@@ -1038,7 +1040,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   Color _chromeColor(BuildContext context, bool paletteLoading, WallpaperDetailLoaded state) {
     if (paletteLoading) return Theme.of(context).colorScheme.secondary;
-    return state.accent?.onColor ?? Colors.white;
+    final accent = state.accent;
+    return accent == null ? Colors.white : onColor(accent);
   }
 
   String _formatDate(DateTime date) {
