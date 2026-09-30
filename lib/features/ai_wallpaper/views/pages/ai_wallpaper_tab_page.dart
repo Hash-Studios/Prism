@@ -570,7 +570,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
 
       final String communityId = _buildCommunityId(record.id);
-      await wallstore.createRecord(
+      final saved = await wallstore.createRecord(
         communityId,
         'Prism',
         record.watermarkedImageUrl,
@@ -593,18 +593,25 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         aiPrompt: record.prompt,
         aiStylePreset: record.stylePreset.apiValue,
       );
+      if (!saved) return;
       final updated = record.copyWith(
         submittedWallId: communityId,
         submittedAt: DateTime.now().toUtc(),
         status: 'submitted',
       );
-      await _repository.saveHistoryRecord(updated);
-      setState(() {
-        _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
-        if (_latest?.id == updated.id) {
-          _latest = updated;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
+          if (_latest?.id == updated.id) {
+            _latest = updated;
+          }
+        });
+      }
+      try {
+        await _repository.saveHistoryRecord(updated);
+      } catch (error, stackTrace) {
+        logger.w('Saved AI submission history sync failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      }
       analytics.track(AiSubmitSuccessEvent(generationId: record.id));
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
