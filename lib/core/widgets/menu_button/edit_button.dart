@@ -23,8 +23,6 @@ class EditButton extends StatefulWidget {
 
 class _EditButtonState extends State<EditButton> {
   late bool isLoading;
-  late String imageData;
-  late String imageThumbData;
 
   @override
   void initState() {
@@ -54,22 +52,20 @@ class _EditButtonState extends State<EditButton> {
     setState(() {
       isLoading = true;
     });
-    toasts.codeSend("Loading Wallpaper");
+    toasts.codeSend('Loading Wallpaper');
     try {
       final response = await http.get(Uri.parse(url));
       final documentDirectory = await getApplicationDocumentsDirectory();
-      final firstPath = "${documentDirectory.path}/images";
-      final filePathAndName = "${documentDirectory.path}/images/pic.jpg";
-      final filePathAndNameThumb = "${documentDirectory.path}/images/picThumb.jpg";
-      await Directory(firstPath).create(recursive: true);
-      final File file2 = File(filePathAndName);
-      file2.writeAsBytesSync(response.bodyBytes);
-      final File file3 = File(filePathAndNameThumb);
-      final List<int> imageBytesThumb = await compute<File, List<int>>(_resizeImage, file2);
-      file3.writeAsBytesSync(imageBytesThumb);
+      final imagesDirectory = '${documentDirectory.path}/images';
+      await Directory(imagesDirectory).create(recursive: true);
+      final File fullFile = File('$imagesDirectory/pic.jpg');
+      final File thumbFile = File('$imagesDirectory/picThumb.jpg');
+      await fullFile.writeAsBytes(response.bodyBytes);
+      final List<int> thumbBytes = await compute<Uint8List, List<int>>(_resizeImage, response.bodyBytes);
+      await thumbFile.writeAsBytes(thumbBytes);
       if (!mounted) return;
-      final thumbDecoded = decodeImageLenient(File(filePathAndNameThumb).readAsBytesSync());
-      final fullDecoded = decodeImageLenient(File(filePathAndName).readAsBytesSync());
+      final thumbDecoded = decodeImageLenient(thumbBytes);
+      final fullDecoded = decodeImageLenient(response.bodyBytes);
       if (thumbDecoded == null || fullDecoded == null) {
         toasts.error('Could not open this image for editing');
         setState(() {
@@ -78,16 +74,14 @@ class _EditButtonState extends State<EditButton> {
         return;
       }
       setState(() {
-        imageData = filePathAndName;
-        imageThumbData = filePathAndNameThumb;
         isLoading = false;
       });
       context.router.push(
         WallpaperFilterRoute(
           image: thumbDecoded,
           finalImage: fullDecoded,
-          filename: path.basename(File(filePathAndNameThumb).path),
-          finalFilename: path.basename(File(filePathAndName).path),
+          filename: path.basename(thumbFile.path),
+          finalFilename: path.basename(fullFile.path),
         ),
       );
     } catch (_) {
@@ -100,15 +94,11 @@ class _EditButtonState extends State<EditButton> {
     }
   }
 
-  static Future<List<int>> _resizeImage(File file) async {
-    final bytes = await file.readAsBytes();
+  static List<int> _resizeImage(Uint8List bytes) {
     final imagelib.Image? decoded = decodeImageLenient(bytes);
     if (decoded == null) {
       throw const FormatException('decodeImageLenient');
     }
-    final imagelib.Image image = decoded;
-    final imagelib.Image resized = imagelib.copyResize(image, width: 300);
-    final List<int> resizedBytes = imagelib.encodeJpg(resized);
-    return resizedBytes;
+    return imagelib.encodeJpg(imagelib.copyResize(decoded, width: 300));
   }
 }
