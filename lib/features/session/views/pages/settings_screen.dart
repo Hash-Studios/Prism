@@ -23,6 +23,7 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -71,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _showAnime = _settingsLocal.get<int>('WHcategories', defaultValue: 100) == 111;
     _showSketchy = _settingsLocal.get<int>('WHpurity', defaultValue: 100) == 110;
     _notifWotd = _settingsLocal.get<bool>(PersistenceKeys.notifWotd, defaultValue: true);
-    _notifPromo = _settingsLocal.get<bool>('recommendationsSubscriber', defaultValue: true);
+    _notifPromo = _settingsLocal.get<bool>(NotificationPrefKeys.recommendations, defaultValue: true);
     _downloadQuality = _DownloadQuality.fromName(
       _settingsLocal.get<String>(PersistenceKeys.downloadQuality, defaultValue: _DownloadQuality.original.name),
     );
@@ -275,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle: const Text('New features, events & announcements', style: _subtitleStyle),
           onChanged: (value) {
             setState(() => _notifPromo = value);
-            _settingsLocal.set('recommendationsSubscriber', value);
+            _settingsLocal.set(NotificationPrefKeys.recommendations, value);
             _trackSettingsToggle(SettingValue.recommendationsNotifications, value);
             _setTopic('recommendations', value);
           },
