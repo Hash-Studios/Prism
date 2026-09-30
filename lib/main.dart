@@ -57,6 +57,7 @@ import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/firebase_options.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -71,11 +72,6 @@ import 'package:http/http.dart' as http;
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late PrefsCompat localPrefs;
-String? currentThemeID;
-String? currentDarkThemeID;
-String? currentMode;
-Color? lightAccent;
-Color? darkAccent;
 late bool optimisedWallpapers;
 int? categories;
 int? purity;
@@ -136,6 +132,14 @@ int _colorValueFromPrefs(dynamic rawValue, {required int fallback}) {
 
   return fallback;
 }
+
+List<Future<void>> _normalizeThemePrefs() => <Future<void>>[
+  localPrefs.put('lightThemeID', localPrefs.get('lightThemeID', defaultValue: prismDefaultLightThemeId)?.toString()),
+  localPrefs.put('darkThemeID', localPrefs.get('darkThemeID', defaultValue: prismDefaultDarkThemeId)?.toString()),
+  localPrefs.put('themeMode', localPrefs.get('themeMode')?.toString() ?? 'Dark'),
+  localPrefs.put('lightAccent', _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: prismDefaultAccentValue)),
+  localPrefs.put('darkAccent', _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: prismDefaultAccentValue)),
+];
 
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
@@ -223,13 +227,6 @@ Future<void> main() async {
 
       // Read all prefs first, then batch writes in parallel.
       final systemOverlayColorValue = _colorValueFromPrefs(localPrefs.get("systemOverlayColor"), fallback: 0xFFE57697);
-      currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-      currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-      currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
-      final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
-      lightAccent = Color(lightAccentValue);
-      final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
-      darkAccent = Color(darkAccentValue);
       optimisedWallpapers = localPrefs.get('optimisedWallpapers') == true;
       categories = localPrefs.get('WHcategories') as int? ?? 100;
       purity = localPrefs.get('WHpurity') as int? ?? 100;
@@ -240,11 +237,7 @@ Future<void> main() async {
 
       await Future.wait(<Future<void>>[
         localPrefs.put("systemOverlayColor", systemOverlayColorValue),
-        localPrefs.put("lightThemeID", currentThemeID),
-        localPrefs.put("darkThemeID", currentDarkThemeID),
-        localPrefs.put("themeMode", currentMode),
-        localPrefs.put("lightAccent", lightAccentValue),
-        localPrefs.put("darkAccent", darkAccentValue),
+        ..._normalizeThemePrefs(),
         localPrefs.put('optimisedWallpapers', optimisedWallpapers),
         localPrefs.put('WHcategories', categories == 100 ? 100 : 111),
         localPrefs.put('WHpurity', purity == 100 ? 100 : 110),
@@ -255,7 +248,9 @@ Future<void> main() async {
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
       ]);
-      applyEdgeToEdgeOverlayStyle(statusBarIconBrightness: currentMode == 'Light' ? Brightness.dark : Brightness.light);
+      applyEdgeToEdgeOverlayStyle(
+        statusBarIconBrightness: localPrefs.get('themeMode') == 'Light' ? Brightness.dark : Brightness.light,
+      );
 
       await FirebaseInit.readyFuture;
 
@@ -1092,19 +1087,7 @@ class _RestartWidgetState extends State<RestartWidget> {
     setState(() {
       key = UniqueKey();
     });
-    currentThemeID = localPrefs.get('lightThemeID', defaultValue: "kLFrost White")?.toString();
-    unawaited(localPrefs.put("lightThemeID", currentThemeID));
-    currentDarkThemeID = localPrefs.get('darkThemeID', defaultValue: "kDMaterial Dark")?.toString();
-    unawaited(localPrefs.put("darkThemeID", currentDarkThemeID));
-    currentMode = localPrefs.get('themeMode')?.toString() ?? "Dark";
-    unawaited(localPrefs.put("themeMode", currentMode));
-    final lightAccentValue = _colorValueFromPrefs(localPrefs.get('lightAccent'), fallback: 0xFFE57697);
-    lightAccent = Color(lightAccentValue);
-    unawaited(localPrefs.put("lightAccent", lightAccentValue));
-
-    final darkAccentValue = _colorValueFromPrefs(localPrefs.get('darkAccent'), fallback: 0xFFE57697);
-    darkAccent = Color(darkAccentValue);
-    unawaited(localPrefs.put("darkAccent", darkAccentValue));
+    unawaited(Future.wait(_normalizeThemePrefs()));
   }
 
   @override
