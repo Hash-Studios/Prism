@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -20,7 +20,7 @@ class SetupGuidelinesScreen extends StatefulWidget {
 }
 
 class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
-  final picker2 = ImagePicker();
+  final _picker = ImagePicker();
 
   Future getSetup() async {
     if (!app_state.prismUser.premium) {
@@ -30,14 +30,12 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
       );
       return;
     }
-    final StackRouter router = context.router;
-    final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (!mounted) {
       return;
     }
     if (pickedFile != null) {
-      Navigator.pop(context);
-      Future<void>.delayed(Duration.zero).then((_) => router.push(UploadSetupRoute(image: File(pickedFile.path))));
+      await context.router.replace(UploadSetupRoute(image: File(pickedFile.path)));
     }
   }
 
@@ -62,9 +60,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
               ),
             ),
           ),
-          if (MediaQuery.of(context).size.height > 650)
-            Container()
-          else
+          if (MediaQuery.of(context).size.height <= 650)
             TextButton(
               onPressed: () => getSetup(),
               child: Text(
@@ -79,53 +75,7 @@ class _SetupGuidelinesScreenState extends State<SetupGuidelinesScreen> {
           const Spacer(),
           SizedBox(
             width: MediaQuery.of(context).size.width,
-            child: context.prismModeStyleForContext() == "Dark"
-                ? SvgPicture.string(
-                    setupDark
-                        .replaceAll("181818", Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
-                        .replaceAll(
-                          "E57697",
-                          Theme.of(
-                            context,
-                          ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                        )
-                        .replaceAll(
-                          "F0F0F0",
-                          Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                        )
-                        .replaceAll(
-                          "2F2E41",
-                          Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                        )
-                        .replaceAll(
-                          "3F3D56",
-                          Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                        )
-                        .replaceAll("2F2F2F", Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
-                  )
-                : SvgPicture.string(
-                    setupLight
-                        .replaceAll("181818", Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2))
-                        .replaceAll(
-                          "E57697",
-                          Theme.of(
-                            context,
-                          ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                        )
-                        .replaceAll(
-                          "F0F0F0",
-                          Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                        )
-                        .replaceAll(
-                          "2F2E41",
-                          Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                        )
-                        .replaceAll(
-                          "3F3D56",
-                          Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                        )
-                        .replaceAll("2F2F2F", Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2)),
-                  ),
+            child: SvgPicture.string(themedIllustration(context, dark: setupDark, light: setupLight)),
           ),
           const Spacer(),
           SizedBox(
@@ -170,7 +120,7 @@ Guidelines for uploading setups -""",
                 icon: Icon(JamIcons.arrow_right, color: Theme.of(context).colorScheme.secondary),
               ),
             )
-          : Container(),
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

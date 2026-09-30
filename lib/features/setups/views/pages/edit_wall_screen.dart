@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:extended_image/extended_image.dart';
@@ -46,7 +44,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
   double sat = 1;
   double bright = 0;
   double con = 1;
-  double cropRatio = 1 / 2;
+  _CropRatio cropRatio = _CropRatio.r9x18;
 
   List<double> calculateContrastMatrix(double contrast) {
     final m = List<double>.from(defaultColorMatrix);
@@ -56,26 +54,9 @@ class _EditWallScreenState extends State<EditWallScreen> {
     return m;
   }
 
-  File? image;
-  @override
-  void initState() {
-    super.initState();
-    image = widget.image;
-  }
-
   void changeCropRatio() {
     setState(() {
-      if (cropRatio == 1 / 2) {
-        cropRatio = 9 / 16;
-      } else if (cropRatio == 9 / 16) {
-        cropRatio = 9 / 21;
-      } else if (cropRatio == 9 / 21) {
-        cropRatio = 9 / 19.5;
-      } else if (cropRatio == 9 / 19.5) {
-        cropRatio = 1 / 2;
-      } else {
-        cropRatio = 1 / 2;
-      }
+      cropRatio = cropRatio.next;
     });
   }
 
@@ -176,11 +157,29 @@ class _EditWallScreenState extends State<EditWallScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
                         const Spacer(flex: 3),
-                        _buildSat(),
+                        _buildSlider(
+                          label: 'Saturation',
+                          value: sat,
+                          min: 0,
+                          max: 2,
+                          onChanged: (value) => setState(() => sat = value),
+                        ),
                         const Spacer(),
-                        _buildBrightness(),
+                        _buildSlider(
+                          label: 'Brightness',
+                          value: bright,
+                          min: -1,
+                          max: 1,
+                          onChanged: (value) => setState(() => bright = value),
+                        ),
                         const Spacer(),
-                        _buildCon(),
+                        _buildSlider(
+                          label: 'Contrast',
+                          value: con,
+                          min: 0,
+                          max: 4,
+                          onChanged: (value) => setState(() => con = value),
+                        ),
                         const Spacer(flex: 3),
                       ],
                     ),
@@ -233,14 +232,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
         child: ExtendedImage(
           color: bright > 0 ? Colors.white.withValues(alpha: bright) : Colors.black.withValues(alpha: -bright),
           colorBlendMode: bright > 0 ? BlendMode.lighten : BlendMode.darken,
-          image: ExtendedFileImageProvider(image!, cacheRawData: true),
+          image: ExtendedFileImageProvider(widget.image, cacheRawData: true),
           height: MediaQuery.of(context).size.width,
           width: MediaQuery.of(context).size.width,
           extendedImageEditorKey: editorKey,
           mode: ExtendedImageMode.editor,
           fit: BoxFit.contain,
           initEditorConfigHandler: (ExtendedImageState? state) {
-            return EditorConfig(maxScale: 8.0, cropAspectRatio: cropRatio);
+            return EditorConfig(maxScale: 8.0, cropAspectRatio: cropRatio.ratio);
           },
         ),
       ),
@@ -267,15 +266,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.crop, color: Theme.of(context).colorScheme.secondary),
-          label: cropRatio == 1 / 2
-              ? "9:18"
-              : cropRatio == 9 / 16
-              ? "9:16"
-              : cropRatio == 9 / 21
-              ? "9:21"
-              : cropRatio == 9 / 19.5
-              ? "9:19.5"
-              : "9:18",
+          label: cropRatio.label,
         ),
       ],
       onTap: (int index) {
@@ -295,7 +286,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     );
   }
 
-  Future<void> crop([bool test = false]) async {
+  Future<void> crop() async {
     final ExtendedImageEditorState state = editorKey.currentState!;
     final Rect? rect = state.getCropRect();
     if (rect == null) {
@@ -305,7 +296,6 @@ class _EditWallScreenState extends State<EditWallScreen> {
     if (action == null) {
       return;
     }
-    final double radian = action.rotateRadians;
 
     final bool flipHorizontal = action.flipY;
     final Uint8List img = state.rawImageData;
@@ -315,7 +305,7 @@ class _EditWallScreenState extends State<EditWallScreen> {
     option.addOption(ClipOption.fromRect(rect));
     option.addOption(FlipOption(horizontal: flipHorizontal));
     if (action.rotateRadians != 0) {
-      option.addOption(RotateOption(radian.toInt()));
+      option.addOption(RotateOption(action.rotateDegrees.round()));
     }
 
     option.addOption(ColorOption.saturation(sat));
@@ -324,23 +314,14 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     option.outputFormat = const OutputFormat.jpeg(100);
 
-    logger.d(const JsonEncoder.withIndent('  ').convert(option.toJson()));
-
-    final DateTime start = DateTime.now();
     final Uint8List? result = await ImageEditor.editImage(image: img, imageEditorOption: option);
     if (!mounted) return;
     if (result == null) {
       return;
     }
 
-    logger.d('result.length = ${result.length}');
-
-    final Duration diff = DateTime.now().difference(start);
-    image!.writeAsBytesSync(result);
-    logger.d('image_editor time : $diff');
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) return;
-    await context.router.replace(UploadWallRoute(image: image!, fromSetupRoute: false));
+    widget.image.writeAsBytesSync(result);
+    await context.router.replace(UploadWallRoute(image: widget.image, fromSetupRoute: false));
   }
 
   void flip() {
@@ -353,60 +334,39 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
   // Each slider gets its own semantics container: without one, popping this screen on iOS left the engine's
   // accessibility root empty (zero size, no children), so VoiceOver saw nothing in the app until a restart.
-  Widget _buildSat() {
+  Widget _buildSlider({
+    required String label,
+    required double value,
+    required double min,
+    required double max,
+    required ValueChanged<double> onChanged,
+  }) {
     return Semantics(
       container: true,
       child: Slider(
         activeColor: Theme.of(context).colorScheme.secondary,
         inactiveColor: Theme.of(context).hintColor,
-        label: 'Saturation ${sat.toStringAsFixed(2)}',
-        onChanged: (double value) {
-          setState(() {
-            sat = value;
-          });
-        },
+        label: '$label ${value.toStringAsFixed(2)}',
+        onChanged: onChanged,
         divisions: 50,
-        value: sat,
-        max: 2,
+        value: value,
+        min: min,
+        max: max,
       ),
     );
   }
+}
 
-  Widget _buildBrightness() {
-    return Semantics(
-      container: true,
-      child: Slider(
-        activeColor: Theme.of(context).colorScheme.secondary,
-        inactiveColor: Theme.of(context).hintColor,
-        label: 'Brightness ${bright.toStringAsFixed(2)}',
-        onChanged: (double value) {
-          setState(() {
-            bright = value;
-          });
-        },
-        divisions: 50,
-        value: bright,
-        min: -1,
-      ),
-    );
-  }
+enum _CropRatio {
+  r9x18(1 / 2, '9:18'),
+  r9x16(9 / 16, '9:16'),
+  r9x21(9 / 21, '9:21'),
+  r9x195(9 / 19.5, '9:19.5');
 
-  Widget _buildCon() {
-    return Semantics(
-      container: true,
-      child: Slider(
-        activeColor: Theme.of(context).colorScheme.secondary,
-        inactiveColor: Theme.of(context).hintColor,
-        label: 'Contrast ${con.toStringAsFixed(2)}',
-        onChanged: (double value) {
-          setState(() {
-            con = value;
-          });
-        },
-        divisions: 50,
-        value: con,
-        max: 4,
-      ),
-    );
-  }
+  const _CropRatio(this.ratio, this.label);
+
+  final double ratio;
+  final String label;
+
+  _CropRatio get next => _CropRatio.values[(index + 1) % _CropRatio.values.length];
 }
