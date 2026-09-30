@@ -824,6 +824,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       final Uri? parsed = Uri.tryParse(rawUrl);
       if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
         final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
+        if (!mounted) return;
         if (deepLinkRoute != null) {
           _appRouter.navigate(deepLinkRoute);
           return;
@@ -832,6 +833,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
 
     final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
+    if (!mounted) return;
     if (mappedRoute != null) {
       _appRouter.navigate(mappedRoute);
       return;
