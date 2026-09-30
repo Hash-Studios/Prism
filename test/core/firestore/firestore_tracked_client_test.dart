@@ -1,3 +1,5 @@
+// ignore_for_file: subtype_of_sealed_class, avoid_implementing_value_types
+
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_error.dart';
