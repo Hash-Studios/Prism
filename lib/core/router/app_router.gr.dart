@@ -945,15 +945,10 @@ class ShareSetupViewRoute extends PageRouteInfo<ShareSetupViewRouteArgs> {
   ShareSetupViewRoute({
     Key? key,
     required String setupName,
-    String thumbnailUrl = '',
     List<PageRouteInfo>? children,
   }) : super(
          ShareSetupViewRoute.name,
-         args: ShareSetupViewRouteArgs(
-           key: key,
-           setupName: setupName,
-           thumbnailUrl: thumbnailUrl,
-         ),
+         args: ShareSetupViewRouteArgs(key: key, setupName: setupName),
          rawPathParams: {'setupName': setupName},
          initialChildren: children,
        );
@@ -969,44 +964,32 @@ class ShareSetupViewRoute extends PageRouteInfo<ShareSetupViewRouteArgs> {
           setupName: pathParams.getString('setupName'),
         ),
       );
-      return ShareSetupViewScreen(
-        key: args.key,
-        setupName: args.setupName,
-        thumbnailUrl: args.thumbnailUrl,
-      );
+      return ShareSetupViewScreen(key: args.key, setupName: args.setupName);
     },
   );
 }
 
 class ShareSetupViewRouteArgs {
-  const ShareSetupViewRouteArgs({
-    this.key,
-    required this.setupName,
-    this.thumbnailUrl = '',
-  });
+  const ShareSetupViewRouteArgs({this.key, required this.setupName});
 
   final Key? key;
 
   final String setupName;
 
-  final String thumbnailUrl;
-
   @override
   String toString() {
-    return 'ShareSetupViewRouteArgs{key: $key, setupName: $setupName, thumbnailUrl: $thumbnailUrl}';
+    return 'ShareSetupViewRouteArgs{key: $key, setupName: $setupName}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ShareSetupViewRouteArgs) return false;
-    return key == other.key &&
-        setupName == other.setupName &&
-        thumbnailUrl == other.thumbnailUrl;
+    return key == other.key && setupName == other.setupName;
   }
 
   @override
-  int get hashCode => key.hashCode ^ setupName.hashCode ^ thumbnailUrl.hashCode;
+  int get hashCode => key.hashCode ^ setupName.hashCode;
 }
 
 /// generated route for

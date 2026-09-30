@@ -28,10 +28,9 @@ final class UserLinkIntent extends DeepLinkActionEntity {
 }
 
 final class SetupLinkIntent extends DeepLinkActionEntity {
-  const SetupLinkIntent({required this.setupName, required this.thumbnailUrl, required super.rawUri});
+  const SetupLinkIntent({required this.setupName, required super.rawUri});
 
   final String setupName;
-  final String thumbnailUrl;
 }
 
 final class ReferLinkIntent extends DeepLinkActionEntity {
