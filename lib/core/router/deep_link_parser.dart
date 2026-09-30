@@ -74,16 +74,7 @@ class DeepLinkParser {
     }
 
     if (_setupRoots.contains(root)) {
-      final String setupName = _firstNonEmpty(<String?>[
-        segments.safeAt(1),
-        uri.queryParameters['name'],
-        uri.queryParameters['setupName'],
-        uri.queryParameters['setup_name'],
-      ]);
-      if (setupName.isEmpty) {
-        return UnknownIntent(rawUri: uri.toString());
-      }
-      return SetupLinkIntent(setupName: setupName, rawUri: uri.toString());
+      return SetupLinkIntent(rawUri: uri.toString());
     }
 
     if (_referRoots.contains(root)) {

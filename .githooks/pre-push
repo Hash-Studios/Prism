@@ -5,6 +5,7 @@
 # Dart changes      -> format-check, env-guard, version-guard, analyze, find-unused-ci
 # functions/ change -> typecheck + lint + node tests (built into a temp dir)
 # web/ change       -> tsc --noEmit
+# firestore.rules   -> rules smoke test on the emulator (needs Java)
 #
 # PRE_PUSH_FULL=1 git push  also runs flutter test.
 # SKIP_PRE_PUSH=1 git push  skips the hook once.
@@ -50,6 +51,11 @@ if grep -qE '^functions/(src/|package(-lock)?\.json$|tsconfig)' <<<"$changed"; t
   trap 'rm -rf "$out"' EXIT
   (cd functions && npx tsc --outDir "$out" && npm run lint)
   NODE_PATH="$REPO_ROOT/functions/node_modules" node --test "$out"/__tests__/*.test.js
+fi
+
+if grep -qE '^firestore\.rules$|^tool/firestore_rules_smoke\.mjs$' <<<"$changed"; then
+  echo "pre-push: Firestore rules changed, running the rules smoke test"
+  make rules-test
 fi
 
 if grep -qE '^web/' <<<"$changed"; then

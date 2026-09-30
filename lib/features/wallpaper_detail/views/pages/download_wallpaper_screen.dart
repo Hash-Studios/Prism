@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -24,9 +26,8 @@ class DownloadWallpaperScreen extends StatefulWidget {
   State<DownloadWallpaperScreen> createState() => _DownloadWallpaperScreenState();
 }
 
-class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController shakeController;
-  late final Animation<double> offsetAnimation;
+class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> {
+  final ShakeController _shake = ShakeController();
 
   String get _sourceContext => '${widget.source.wireValue}_download_wallpaper_screen';
 
@@ -45,27 +46,14 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
   }
 
   @override
-  void initState() {
-    super.initState();
-    shakeController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
-    offsetAnimation =
-        Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(shakeController)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              shakeController.reverse();
-            }
-          });
-  }
-
-  @override
   void dispose() {
-    shakeController.dispose();
+    _shake.dispose();
     super.dispose();
   }
 
   void _bounce() {
     HapticFeedback.vibrate();
-    shakeController.forward(from: 0.0);
+    _shake.shake();
   }
 
   @override
@@ -75,19 +63,17 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
       backgroundColor: Theme.of(context).primaryColor,
       body: Stack(
         children: <Widget>[
-          AnimatedBuilder(
-            animation: offsetAnimation,
-            builder: (buildContext, child) {
+          ShakeOnce(
+            controller: _shake,
+            distance: 48,
+            builder: (buildContext, value, _) {
               return GestureDetector(
                 onLongPress: _bounce,
                 onTap: _bounce,
                 child: Container(
-                  margin: EdgeInsets.symmetric(
-                    vertical: offsetAnimation.value * 1.25,
-                    horizontal: offsetAnimation.value / 2,
-                  ),
+                  margin: EdgeInsets.symmetric(vertical: value * 1.25, horizontal: value / 2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(offsetAnimation.value),
+                    borderRadius: BorderRadius.circular(value),
                     image: DecorationImage(image: FileImage(widget.file), fit: BoxFit.cover),
                   ),
                   height: MediaQuery.of(context).size.height,
@@ -130,10 +116,11 @@ class _DownloadWallpaperScreenState extends State<DownloadWallpaperScreen> with 
                   Navigator.push(
                     context,
                     PageRouteBuilder(
+                      transitionDuration: context.motion(const Duration(milliseconds: 200)),
+                      reverseTransitionDuration: context.motion(const Duration(milliseconds: 200)),
                       pageBuilder: (context, animation, secondaryAnimation) {
-                        animation = Tween(begin: 0.0, end: 1.0).animate(animation);
                         return FadeTransition(
-                          opacity: animation,
+                          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
                           child: ClockOverlay(colorChanged: false, accent: null, link: widget.file.path, file: true),
                         );
                       },

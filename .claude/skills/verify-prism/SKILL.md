@@ -167,7 +167,6 @@ See `features/README.md` for the full index and driving conventions, then the ma
 - [Onboarding and sign-in](./features/onboarding-signin.md)
 - [Home feed](./features/home-feed.md)
 - [Wallpaper detail](./features/wallpaper-detail.md)
-- [Setups](./features/setups.md)
 - [Search](./features/search.md)
 - [Profile and edit profile](./features/profile.md)
 - [Coins and streak](./features/coins-streak.md)

@@ -31,26 +31,6 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
     }
   }
 
-  @override
-  Future<Result<String>> recordSetupView(String setupId) async {
-    final String id = setupId.trim().toUpperCase();
-    if (id.isEmpty) {
-      return Result.error(const ServerFailure('Invalid setup id'));
-    }
-    try {
-      final cf.HttpsCallable callable = appFunctions.httpsCallable(
-        'recordSetupView',
-        options: cf.HttpsCallableOptions(timeout: _callableTimeout),
-      );
-      final cf.HttpsCallableResult result = await callable.call(<String, dynamic>{'setupId': id});
-      return Result.success(_viewsString(result.data));
-    } on cf.FirebaseFunctionsException catch (e) {
-      return Result.error(ServerFailure('Failed to record setup view: ${e.message ?? e.code}'));
-    } catch (e) {
-      return Result.error(ServerFailure('Failed to record setup view: $e'));
-    }
-  }
-
   static String _viewsString(Object? data) {
     if (data is Map) {
       final Object? raw = data['views'];

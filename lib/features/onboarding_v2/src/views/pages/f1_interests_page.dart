@@ -42,7 +42,12 @@ class F1InterestsPage extends StatelessWidget {
                   right: OnboardingLayout.tilesX * sx,
                   height: OnboardingLayout.tilesHeight * sy,
                   child: available.isEmpty
-                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      ? const Center(
+                          child: SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          ),
+                        )
                       : OnboardingFadeMask(
                           stops: const [0.01, 0.10, 0.82, 1.0],
                           child: GridView.builder(

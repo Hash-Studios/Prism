@@ -5,6 +5,7 @@ import 'package:Prism/auth/post_sign_in.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/widgets/accent_color.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/popup_header.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -30,7 +31,7 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Theme.of(context).primaryColor),
       width: MediaQuery.of(context).size.width * .7,
       height: MediaQuery.of(context).size.height * .3,
-      child: const Center(child: CircularProgressIndicator()),
+      child: const GlintState(kind: GlintStateKind.loading, title: 'Signing in'),
     ),
   );
 
@@ -72,7 +73,6 @@ void googleSignInPopUp(BuildContext context, VoidCallback func) {
   final List<(IconData, String)> benefits = <(IconData, String)>[
     (JamIcons.heart, 'The ability to favourite wallpapers.'),
     (JamIcons.upload, 'The ability to upload wallpapers.'),
-    if (!Platform.isIOS) (JamIcons.instant_picture, 'The ability to upload setups.'),
     if (!Platform.isIOS) (JamIcons.coin, 'The ability to view premium content.'),
     (JamIcons.cloud, 'The ability to cloud sync data.'),
   ];

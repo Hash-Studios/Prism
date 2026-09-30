@@ -12,7 +12,8 @@ PrismWallpaper _wallpaper({int? days, int? cost}) => PrismWallpaper(
 );
 
 StreakStatus _streak({required bool active, int day = 0}) => StreakStatus(
-  streakDay: day,
+  streakDay: day % 7,
+  count: day,
   active: active,
   claimedToday: false,
   reminderEnabled: true,
@@ -29,6 +30,11 @@ void main() {
     final wallpaper = _wallpaper(days: 5, cost: 500);
     expect(wallpaper.isUnlockedFor(_streak(active: true, day: 5), 0), isTrue);
     expect(wallpaper.isUnlockedFor(_streak(active: true, day: 4), 0), isFalse);
+  });
+
+  test('the uncapped count is compared, not the 7-day cycle day', () {
+    expect(_wallpaper(days: 30, cost: 500).isUnlockedFor(_streak(active: true, day: 30), 0), isTrue);
+    expect(_wallpaper(days: 30, cost: 500).isUnlockedFor(_streak(active: true, day: 29), 0), isFalse);
   });
 
   test('a streak that lapsed does not count', () {

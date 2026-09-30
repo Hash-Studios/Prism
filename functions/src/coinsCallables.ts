@@ -20,6 +20,10 @@ const SPENDS: Record<string, number> = {
   premiumPreview24h: 10,
 };
 
+export const STREAK_FREEZE_COST = 50;
+export const MAX_STREAK_FREEZES = 2;
+const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
+
 const AI_GENERATION_AMOUNTS = new Set([10, 75, 100]);
 const REFUND_WINDOW_MS = 3_600_000;
 const AD_RATE_MAX_PER_DAY = 20;
@@ -62,6 +66,7 @@ export function refundableDelta(debit: admin.firestore.DocumentData | undefined,
   if (debit.userId !== callerUid) throw notRefundable();
   if (debit.type !== "debit") throw notRefundable();
   if (debit.status !== "completed") throw notRefundable();
+  if (debit.action === "streakFreeze") throw notRefundable();
   const createdAtMs = (debit.createdAt as admin.firestore.Timestamp | undefined)?.toMillis?.();
   if (typeof createdAtMs !== "number") throw notRefundable();
   if (nowMs - createdAtMs > REFUND_WINDOW_MS) throw notRefundable();
@@ -297,4 +302,90 @@ export const processReferral = onCall({region: REGION, cors: true}, async (reque
     };
   });
   return result;
+});
+
+export function isValidRequestId(value: unknown): value is string {
+  return typeof value === "string" && REQUEST_ID_PATTERN.test(value);
+}
+
+export type FreezePurchasePlan =
+  | {atCap: true}
+  | {insufficientBalance: true}
+  | {current: number; freezes: number};
+
+/** Premium never changes the price or the cap. */
+export function planFreezePurchase(balance: number, freezes: number): FreezePurchasePlan {
+  if (freezes >= MAX_STREAK_FREEZES) return {atCap: true};
+  if (balance < STREAK_FREEZE_COST) return {insufficientBalance: true};
+  return {current: balance - STREAK_FREEZE_COST, freezes: freezes + 1};
+}
+
+export const buyStreakFreeze = onCall({region: REGION, cors: true}, async (request: CallableRequest<{requestId?: unknown}>) => {
+  const callerUid = uid(request);
+  const requestId = request.data?.requestId;
+  if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
+  const userRef = db.collection(USERS).doc(callerUid);
+  const txId = `ctx_streakFreeze_${callerUid}_${requestId}`;
+  const txRef = db.collection(TRANSACTIONS).doc(txId);
+  const emptyResponse = {
+    success: false,
+    changed: false,
+    previousBalance: 0,
+    currentBalance: 0,
+    delta: 0,
+    streakFreezes: 0,
+    insufficientBalance: false,
+    atCap: false,
+    reason: "streak_freeze_purchase",
+    transactionId: "",
+  };
+  let response = emptyResponse;
+
+  await db.runTransaction(async (tx) => {
+    response = {...emptyResponse};
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
+    const txSnap = await tx.get(txRef);
+    const data = snap.data() ?? {};
+    const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
+    const rawFreezes = Number(coinState(data.coinState).streakFreezes);
+    const freezes = Number.isFinite(rawFreezes) ? Math.max(0, Math.trunc(rawFreezes)) : 0;
+    const current = {previousBalance: previous, currentBalance: previous, streakFreezes: freezes, transactionId: txId};
+    if (txSnap.exists) {
+      response = {...response, ...current, success: true, reason: "duplicate"};
+      return;
+    }
+    const plan = planFreezePurchase(previous, freezes);
+    if ("atCap" in plan) {
+      response = {...response, ...current, atCap: true, reason: "streak_freeze_at_cap", transactionId: ""};
+      return;
+    }
+    if ("insufficientBalance" in plan) {
+      response = {...response, ...current, insufficientBalance: true, reason: "streak_freeze_insufficient_balance", transactionId: ""};
+      return;
+    }
+    tx.update(userRef, {"coins": plan.current, "coinState.streakFreezes": plan.freezes});
+    tx.set(txRef, coinTransactionDoc({
+      id: txId,
+      userId: callerUid,
+      at: admin.firestore.Timestamp.now(),
+      delta: -STREAK_FREEZE_COST,
+      balanceBefore: previous,
+      action: "streakFreeze",
+      description: "Streak freeze",
+      sourceTag: "coins.buy_streak_freeze.callable",
+      reason: "streak_freeze_purchase",
+    }));
+    response = {
+      ...response,
+      success: true,
+      changed: true,
+      previousBalance: previous,
+      currentBalance: plan.current,
+      delta: -STREAK_FREEZE_COST,
+      streakFreezes: plan.freezes,
+      transactionId: txId,
+    };
+  });
+  return response;
 });

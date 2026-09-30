@@ -8,18 +8,6 @@ import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 
-class ReportSetupEvent extends AnalyticsEvent {
-  const ReportSetupEvent();
-
-  @override
-  String get eventName => 'report_setup';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return const <String, Object?>{};
-  }
-}
-
 class ContentReportSubmitEvent extends AnalyticsEvent {
   const ContentReportSubmitEvent({required this.contentType, required this.result, this.reason});
 
@@ -52,34 +40,6 @@ class UserBlockActionEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'action': action, if (result != null) 'result': result!};
-  }
-}
-
-class SetupFavStatusChangedEvent extends AnalyticsEvent {
-  const SetupFavStatusChangedEvent({required this.setupId});
-
-  final String setupId;
-
-  @override
-  String get eventName => 'setup_fav_status_changed';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'id': setupId};
-  }
-}
-
-class DownloadOwnSetupEvent extends AnalyticsEvent {
-  const DownloadOwnSetupEvent({required this.link});
-
-  final String link;
-
-  @override
-  String get eventName => 'download_own_setup';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'link': link};
   }
 }
 
@@ -288,21 +248,6 @@ class SubscriptionTriggerAfterAdWatch3Event extends AnalyticsEvent {
 
   @override
   String get eventName => 'subscription_trigger_after_ad_watch_3';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'source': source, 'placement': placement};
-  }
-}
-
-class SubscriptionTriggerSetupCreateBlockEvent extends AnalyticsEvent {
-  const SubscriptionTriggerSetupCreateBlockEvent({required this.source, required this.placement});
-
-  final String source;
-  final String placement;
-
-  @override
-  String get eventName => 'subscription_trigger_setup_create_block';
 
   @override
   Map<String, Object?> toWireParameters() {
@@ -740,36 +685,6 @@ class CollectionsCheckedEvent extends AnalyticsEvent {
   }
 }
 
-class EditSetupEvent extends AnalyticsEvent {
-  const EditSetupEvent({required this.setupId, required this.link});
-
-  final String setupId;
-  final String link;
-
-  @override
-  String get eventName => 'edit_setup';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'id': setupId, 'link': link};
-  }
-}
-
-class UploadSetupEvent extends AnalyticsEvent {
-  const UploadSetupEvent({required this.setupId, required this.link});
-
-  final String setupId;
-  final String link;
-
-  @override
-  String get eventName => 'upload_setup';
-
-  @override
-  Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'id': setupId, 'link': link};
-  }
-}
-
 class FavStatusChangedEvent extends AnalyticsEvent {
   const FavStatusChangedEvent({required this.wallId, required this.provider});
 
@@ -1175,6 +1090,45 @@ class WotdOpenedFromPushEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class AutoRotateEnabledEvent extends AnalyticsEvent {
+  const AutoRotateEnabledEvent({
+    required this.intervalMinutes,
+    required this.target,
+    required this.shuffle,
+    required this.wallpaperCount,
+  });
+
+  final int intervalMinutes;
+  final WallpaperTarget target;
+  final bool shuffle;
+  final int wallpaperCount;
+
+  @override
+  String get eventName => 'auto_rotate_enabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'interval_minutes': intervalMinutes,
+      'target': target.wireValue,
+      'shuffle': shuffle ? 1 : 0,
+      'wallpaper_count': wallpaperCount,
+    };
+  }
+}
+
+class AutoRotateDisabledEvent extends AnalyticsEvent {
+  const AutoRotateDisabledEvent();
+
+  @override
+  String get eventName => 'auto_rotate_disabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
   }
 }
 

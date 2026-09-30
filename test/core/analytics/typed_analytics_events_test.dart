@@ -27,9 +27,9 @@ void main() {
       final RecordingAnalyticsProvider provider = RecordingAnalyticsProvider();
       final ProviderBackedAppAnalytics analytics = ProviderBackedAppAnalytics(provider: provider);
 
-      await analytics.track(const ReportSetupEvent());
+      await analytics.track(const CollectionsCheckedEvent());
 
-      expect(provider.events.single.name, 'report_setup');
+      expect(provider.events.single.name, 'collections_checked');
       expect(provider.events.single.parameters, <String, Object>{});
     });
 

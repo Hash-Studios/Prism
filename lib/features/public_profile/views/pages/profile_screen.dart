@@ -11,8 +11,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
-import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
@@ -145,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting || snapshot.hasError) {
                     return ColoredBox(
                       color: Theme.of(context).primaryColor,
-                      child: Center(child: Loader()),
+                      child: const GlintState(kind: GlintStateKind.loading, title: 'Loading profile'),
                     );
                   }
                   final PublicProfileEntity? profile = snapshot.data;

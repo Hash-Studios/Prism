@@ -176,7 +176,9 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
             },
             builder: (context, state) {
               if (state.status == ReviewBatchStatus.loading) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                );
               }
 
               if (state.walls.isEmpty) {

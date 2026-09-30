@@ -7,7 +7,7 @@ extension StreakUnlock on PrismWallpaper {
   bool isUnlockedFor(StreakStatus status, int balance) {
     final streakDays = requiredStreakDays;
     final coinCost = streakShopCoinCost;
-    final streakMet = streakDays == null || (status.active && status.streakDay >= streakDays);
+    final streakMet = streakDays == null || (status.active && status.count >= streakDays);
     final coinsMet = coinCost == null || balance >= coinCost;
     return streakMet || coinsMet;
   }
