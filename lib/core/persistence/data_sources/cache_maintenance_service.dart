@@ -24,21 +24,36 @@ class CacheMaintenanceService {
   final BaseCacheManager? _imageCache;
 
   Future<void> clearTransientCache() async {
-    await (_imageCache ?? DefaultCacheManager()).emptyCache();
-    PaintingBinding.instance.imageCache.clear();
-    await _notificationsLocal.clearAll();
-    await _notificationsLocal.clearLastFetchAtUtc();
-    await _feedCacheLocal.clearAllFeedCaches();
-    await _appIconsLocal.clear();
-    final documents = await getApplicationDocumentsDirectory();
-    if (await documents.exists()) {
-      await for (final entry in documents.list(followLinks: false)) {
-        final name = path.basename(entry.path);
-        if ((entry is Directory && name == 'images') ||
-            (entry is File && name.startsWith('filtered_') && name.endsWith('_pic.jpg'))) {
-          await entry.delete(recursive: entry is Directory);
+    final steps = <Future<void> Function()>[
+      () => (_imageCache ?? DefaultCacheManager()).emptyCache(),
+      () async => PaintingBinding.instance.imageCache.clear(),
+      _notificationsLocal.clearAll,
+      _notificationsLocal.clearLastFetchAtUtc,
+      _feedCacheLocal.clearAllFeedCaches,
+      _appIconsLocal.clear,
+      () async {
+        final documents = await getApplicationDocumentsDirectory();
+        if (await documents.exists()) {
+          await for (final entry in documents.list(followLinks: false)) {
+            try {
+              final name = path.basename(entry.path);
+              if ((entry is Directory && name == 'images') ||
+                  (entry is File &&
+                      name.startsWith('filtered_') &&
+                      name.endsWith('_pic.jpg') &&
+                      name.length >= 'filtered__pic.jpg'.length)) {
+                await entry.delete(recursive: entry is Directory);
+              }
+            } catch (_) {}
+          }
         }
-      }
+      },
+    ];
+
+    for (final step in steps) {
+      try {
+        await step();
+      } catch (_) {}
     }
   }
 }
