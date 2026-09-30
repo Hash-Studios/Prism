@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/router/app_router.dart';
-import 'package:auto_route/auto_route.dart';
+import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +18,11 @@ class LocalNotification {
   );
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  // The live `_MyAppState` sets these. RestartWidget re-creates that state, and the new one replaces them.
   AppRouter? router;
   Future<void> Function(Map<String, dynamic> data)? onPushTap;
+  VoidCallback? onForegroundPush;
+  bool _listeningForPush = false;
   bool _launchHandled = false;
   LocalNotification() {
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
@@ -49,19 +52,34 @@ class LocalNotification {
     return '$count ${count == 1 ? 'wall' : 'walls'} downloaded.';
   }
 
-  Future<void> fetchNotificationData(BuildContext context) async {
+  /// Listens to FCM once per process. Listening from each `_MyAppState` added one more listener per restart.
+  void listenForPushMessages() {
+    if (_listeningForPush) return;
+    _listeningForPush = true;
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      unawaited(showPushNotification(message));
+      onForegroundPush?.call();
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) => unawaited(onPushTap?.call(message.data)));
+  }
+
+  Future<void> fetchNotificationData() async {
     // RestartWidget re-runs this after logout, and the launch details stay the same. Handle them once.
     if (_launchHandled) return;
     _launchHandled = true;
     final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin
         .getNotificationAppLaunchDetails();
-    if (!context.mounted) {
-      return;
-    }
     if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
     final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
     if (payload == 'downloaded') {
-      context.router.push(const DownloadRoute());
+      final AppRouter? launchRouter = router;
+      if (launchRouter == null) return;
+      // The splash would replace a route pushed now.
+      final bool canRoute = await waitForPushTapStartup(
+        isMounted: () => identical(router, launchRouter),
+        isReady: () => !isStartingUp(launchRouter),
+      );
+      if (canRoute) launchRouter.push(const DownloadRoute());
     } else {
       final Map<String, dynamic>? data = _pushData(payload);
       if (data != null) await onPushTap?.call(data);
