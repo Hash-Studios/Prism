@@ -306,6 +306,43 @@ void main() {
     await _pump(tester, ThemeData.dark(), FreezeCard(onEarnCoins: () {}));
     final double cardRight = tester.getTopRight(find.byType(FreezeCard)).dx;
     final double buttonRight = tester.getTopRight(find.byType(FilledButton)).dx;
-    expect(cardRight - buttonRight, lessThan(40));
+    expect(cardRight - buttonRight, closeTo(18, 0.01));
   });
+
+  for (final ThemeData theme in <ThemeData>[kLightTheme, kDarkTheme]) {
+    testWidgets('freeze button folds to the left at 320px and text scale 1.3 (${theme.brightness.name})', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.3)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FreezeCard(onEarnCoins: () {}),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      final Rect card = tester.getRect(find.byType(FreezeCard));
+      final Rect button = tester.getRect(find.byType(FilledButton));
+      final Rect slot = tester.getRect(find.byIcon(Icons.ac_unit_rounded).last);
+      expect(button.top, greaterThan(slot.bottom));
+      expect(button.left - card.left, closeTo(18, 0.01));
+      expect(button.right, lessThanOrEqualTo(card.right - 18));
+      expect(button.bottom, lessThanOrEqualTo(card.bottom - 18));
+    });
+  }
 }
