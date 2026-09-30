@@ -57,7 +57,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       }
 
       final wallResult = await _prismWallpaperRepository.fetchByDocumentId(pointer.wallDocumentId);
-      return wallResult.fold(
+      return await wallResult.fold(
         onSuccess: (wallpaper) {
           if (wallpaper == null) {
             return Result.success(null);

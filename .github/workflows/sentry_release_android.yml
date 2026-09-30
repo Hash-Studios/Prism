@@ -32,10 +32,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.0'
+          flutter-version: ${{ steps.fvm.outputs.version }}
 
       - name: Install dependencies
         run: flutter pub get

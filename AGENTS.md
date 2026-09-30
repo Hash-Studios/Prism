@@ -64,7 +64,7 @@ Prism is a Flutter mobile wallpaper app (Android/iOS). The main development loop
 ### Environment prerequisites (already installed in snapshot)
 
 - **Dart SDK** at `/usr/lib/dart-sdk` (FVM requires a host Dart)
-- **FVM** installed via `dart pub global activate fvm`; Flutter 3.41.4 pinned in `.fvmrc`
+- **FVM** installed via `dart pub global activate fvm`; Flutter 3.47.5 pinned in `.fvmrc`
 - **Android SDK** at `~/android-sdk` with platform 36, build-tools 36.0.0, NDK
 - **Java 17** at `/usr/lib/jvm/java-17-openjdk-amd64`
 - Shell PATH and env vars configured in `~/.bashrc`

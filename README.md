@@ -294,7 +294,7 @@ More details about these can be found in the [`pubspec.yaml`](https://github.com
 
 ## Development Setup (FVM)
 
-This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.41.4`).
+This repository pins Flutter via FVM in [`.fvmrc`](.fvmrc) (`3.47.5`).
 
 Run this single command from the project root:
 

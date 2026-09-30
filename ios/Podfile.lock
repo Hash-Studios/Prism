@@ -9,6 +9,8 @@ PODS:
     - GoogleUtilities/Environment (~> 8.0)
     - GoogleUtilities/UserDefaults (~> 8.0)
     - PromisesObjC (~> 2.4)
+  - async_wallpaper (3.3.0):
+    - Flutter
   - audioplayers_darwin (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -324,6 +326,7 @@ PODS:
     - FlutterMacOS
 
 DEPENDENCIES:
+  - async_wallpaper (from `.symlinks/plugins/async_wallpaper/ios`)
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
   - cloud_functions (from `.symlinks/plugins/cloud_functions/ios`)
@@ -407,6 +410,8 @@ SPEC REPOS:
     - Sentry
 
 EXTERNAL SOURCES:
+  async_wallpaper:
+    :path: ".symlinks/plugins/async_wallpaper/ios"
   audioplayers_darwin:
     :path: ".symlinks/plugins/audioplayers_darwin/darwin"
   cloud_firestore:
@@ -479,6 +484,7 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   AppAuth: 1c1a8afa7e12f2ec3a294d9882dfa5ab7d3cb063
   AppCheckCore: cc8fd0a3a230ddd401f326489c99990b013f0c4f
+  async_wallpaper: 993e2bb017589f73097b81c77cbb016ce45a9800
   audioplayers_darwin: f15e209a3e856d1a7edcf98dc029f484fead2242
   cloud_firestore: 565f7b324f6c98153b723191a4dc4f166a3c8019
   cloud_functions: a0f62dde76c707396d7f25bbdb869589cf16ff06
