@@ -23,6 +23,7 @@ class PrismChip extends StatelessWidget {
     return PressScale(
       enabled: onTap != null,
       child: Semantics(
+        container: true,
         button: true,
         selected: selected,
         child: GestureDetector(
@@ -36,7 +37,7 @@ class PrismChip extends StatelessWidget {
           child: AnimatedContainer(
             duration: context.motion(PrismDurations.fast),
             curve: PrismCurves.enter,
-            constraints: const BoxConstraints(minHeight: 36),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: PrismSpace.xs),
             decoration: BoxDecoration(
               color: selected ? cs.onSurface : cs.onSurface.withValues(alpha: 0.06),

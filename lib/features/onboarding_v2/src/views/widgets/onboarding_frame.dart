@@ -59,19 +59,20 @@ class OnboardingFrame extends StatelessWidget {
                     ),
             ),
           ),
-          Padding(
-            padding: PrismSpace.pageInsets,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Semantics(header: true, child: Text(title, style: PrismTextStyles.display(context))),
-                const SizedBox(height: PrismSpace.xs),
-                Text(body, style: PrismTextStyles.body(context).copyWith(fontSize: 15, height: 1.35)),
-              ],
+          Expanded(
+            child: SingleChildScrollView(
+              padding: PrismSpace.pageInsets,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Semantics(header: true, child: Text(title, style: PrismTextStyles.display(context))),
+                  const SizedBox(height: PrismSpace.xs),
+                  Text(body, style: PrismTextStyles.body(context).copyWith(fontSize: 15, height: 1.35)),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: PrismSpace.lg),
-          Expanded(child: _FadeBottom(child: child)),
+          Expanded(flex: 3, child: _FadeBottom(child: child)),
           Padding(
             padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.md),
             child: Column(

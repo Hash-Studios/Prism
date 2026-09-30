@@ -16,10 +16,18 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/fake_firestore_client.dart';
 
 class _ReviewFirestoreClient extends FakeFirestoreClient {
-  _ReviewFirestoreClient({this.failRejectedStream = false, this.failPendingStream = false, this.neverEmit = false});
+  _ReviewFirestoreClient({
+    this.failRejectedStream = false,
+    this.failPendingStream = false,
+    this.neverRejected = false,
+    this.neverPending = false,
+    this.neverEmit = false,
+  });
 
   final bool failRejectedStream;
   final bool failPendingStream;
+  final bool neverRejected;
+  final bool neverPending;
   final bool neverEmit;
   final List<FirestoreDocument> rejectedRows = <FirestoreDocument>[];
   final List<FirestoreDocument> pendingRows = <FirestoreDocument>[];
@@ -27,6 +35,10 @@ class _ReviewFirestoreClient extends FakeFirestoreClient {
   @override
   Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
     if (neverEmit) return StreamController<List<T>>().stream;
+    if (spec.collection == FirebaseCollections.rejectedWalls && neverRejected) {
+      return StreamController<List<T>>().stream;
+    }
+    if (spec.collection == FirebaseCollections.walls && neverPending) return StreamController<List<T>>().stream;
     if (spec.collection == FirebaseCollections.rejectedWalls && failRejectedStream) {
       return Stream<List<T>>.error(StateError('offline'));
     }
@@ -251,6 +263,65 @@ void main() {
 
     expect(find.byType(PrismSkeleton), findsOneWidget);
     expect(find.text('Nothing here yet'), findsNothing);
+  });
+
+  testWidgets('shows pending uploads while the rejected stream is unresolved', (tester) async {
+    firestore = _ReviewFirestoreClient(neverRejected: true);
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.pendingRows.add(const FirestoreDocument('pending-1', <String, dynamic>{'size': '2 MB'}));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    final Finder pendingTile = find.byWidgetPredicate(
+      (widget) => widget is WallTile && widget.wallpaper.id == 'pending-1',
+    );
+    await tester.ensureVisible(pendingTile);
+    await tester.pump();
+    expect(find.text('In review'), findsWidgets);
+    expect(pendingTile, findsOneWidget);
+    expect(find.byType(PrismSkeleton), findsNWidgets(2));
+    expect(find.text('Nothing here yet'), findsNothing);
+  });
+
+  testWidgets('shows rejected uploads while the pending stream is unresolved', (tester) async {
+    firestore = _ReviewFirestoreClient(neverPending: true);
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.rejectedRows.add(const FirestoreDocument('rejected-1', <String, dynamic>{'size': '2 MB'}));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    final Finder rejectedTile = find.byWidgetPredicate(
+      (widget) => widget is WallTile && widget.wallpaper.id == 'rejected-1',
+    );
+    await tester.ensureVisible(rejectedTile);
+    await tester.pump();
+    expect(find.text('Rejected'), findsWidgets);
+    expect(rejectedTile, findsOneWidget);
+    expect(find.byType(PrismSkeleton), findsNWidgets(2));
+    expect(find.text('Nothing here yet'), findsNothing);
+  });
+
+  testWidgets('shows loaded content and the sibling error when one stream fails', (tester) async {
+    firestore = _ReviewFirestoreClient(failRejectedStream: true);
+    getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    firestore.pendingRows.add(const FirestoreDocument('pending-1', <String, dynamic>{'size': '2 MB'}));
+
+    await tester.pumpWidget(_screen());
+    await tester.pump();
+
+    final Finder pendingTile = find.byWidgetPredicate(
+      (widget) => widget is WallTile && widget.wallpaper.id == 'pending-1',
+    );
+    await tester.ensureVisible(pendingTile);
+    await tester.pump();
+    expect(find.text("Couldn't load your rejected submissions."), findsOneWidget);
+    expect(find.text('In review'), findsWidgets);
+    expect(pendingTile, findsOneWidget);
   });
 
   testWidgets('shows one error with a retry when both lists fail to load', (tester) async {

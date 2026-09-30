@@ -119,14 +119,22 @@ class _ModerationCardState extends State<ModerationCard> {
                 filled: true,
                 onPressed: openFull,
               ),
-              const Spacer(),
-              ModerationDangerButton(label: 'Reject', onPressed: locked ? null : widget.onReject),
               const SizedBox(width: PrismSpace.xs),
-              PrismButton(
-                label: _isApproved ? 'Approved' : 'Approve',
-                size: PrismButtonSize.compact,
-                loading: _isApproving,
-                onPressed: locked ? null : _approve,
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: PrismSpace.xs,
+                  runSpacing: PrismSpace.xs,
+                  children: <Widget>[
+                    ModerationDangerButton(label: 'Reject', onPressed: locked ? null : widget.onReject),
+                    PrismButton(
+                      label: _isApproved ? 'Approved' : 'Approve',
+                      size: PrismButtonSize.compact,
+                      loading: _isApproving,
+                      onPressed: locked ? null : _approve,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

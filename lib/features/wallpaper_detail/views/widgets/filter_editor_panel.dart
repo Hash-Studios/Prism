@@ -115,6 +115,7 @@ class FilterEditorPanel extends StatelessWidget {
       button: true,
       selected: selected,
       label: name,
+      onTap: onTap,
       excludeSemantics: true,
       child: PressScale(
         child: GestureDetector(

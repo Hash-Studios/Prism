@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/widgets/prism_image_tile.dart';
@@ -7,6 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('a loaded small image fills a loosely constrained grid stack', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetDevicePixelRatio);
     const String url = 'https://example.com/small-wall.png';
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     ui.Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 10, 10), ui.Paint()..color = Colors.red);
@@ -15,11 +18,12 @@ void main() {
     picture.dispose();
     addTearDown(image.dispose);
     const CachedNetworkImageProvider provider = CachedNetworkImageProvider(url);
-    PaintingBinding.instance.imageCache.putIfAbsent(
-      provider,
-      () => OneFrameImageStreamCompleter(Future<ImageInfo>.value(ImageInfo(image: image.clone()))),
-    );
-    addTearDown(() => PaintingBinding.instance.imageCache.evict(provider));
+    const int decodeHeight = 400;
+    const ResizeImage resizedProvider = ResizeImage(provider, height: decodeHeight);
+    final Object resizedKey = await resizedProvider.obtainKey(ImageConfiguration.empty);
+    final Completer<ImageInfo> imageInfo = Completer<ImageInfo>();
+    PaintingBinding.instance.imageCache.putIfAbsent(resizedKey, () => OneFrameImageStreamCompleter(imageInfo.future));
+    addTearDown(() => PaintingBinding.instance.imageCache.evict(resizedKey));
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -32,6 +36,7 @@ void main() {
         ),
       ),
     );
+    imageInfo.complete(ImageInfo(image: image.clone()));
     await tester.pumpAndSettle();
     expect(tester.widget<RawImage>(find.byType(RawImage)).image, isNotNull);
     expect(tester.getSize(find.byType(RawImage)), const Size(200, 400));

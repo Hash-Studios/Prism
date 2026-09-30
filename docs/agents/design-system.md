@@ -57,8 +57,8 @@ Use `PrismTextStyles`. Do not use `Theme.of(context).textTheme` roles or raw `Te
 | `cardTitle` | 16 w700 | Card heading |
 | `rowTitle` | 15 w600 | Row title, labels |
 | `button` | 15 w600 | Button label |
-| `body` | 14 w500, 70% | Body copy |
-| `caption` | 12 w500, 60% | Small supporting text |
+| `body` | 14 w500, `onSurfaceVariant` | Body copy |
+| `caption` | 12 w500, `onSurfaceVariant` | Small supporting text |
 | `eyebrow` | 11 w700 tracked | A label above a value. At most one per screen |
 | `numeral(size)` | Fraunces | Big numbers: coins, streak, counts |
 

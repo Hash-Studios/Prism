@@ -41,7 +41,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
     final bool confirmed = await showPrismConfirm(
       context,
       title: 'Unblock $name?',
-      message: 'They will be able to see your profile and wallpapers again.',
+      message: 'Their posts will appear in your feed again.',
       confirmLabel: 'Unblock',
     );
     if (!confirmed || !mounted) return;
@@ -82,7 +82,8 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
               child: const GlintState(
                 kind: GlintStateKind.empty,
                 title: 'No blocked accounts',
-                body: 'People you block cannot see your profile or wallpapers.',
+                body:
+                    'Blocking hides their posts from your feed. They may still be able to view your public profile and wallpapers.',
               ),
             );
           }

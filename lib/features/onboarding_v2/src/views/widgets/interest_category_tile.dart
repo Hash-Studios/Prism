@@ -27,10 +27,16 @@ class InterestCategoryTile extends StatelessWidget {
     final BorderRadius radius = BorderRadius.circular(PrismRadius.sm);
     final Widget placeholder = ColoredBox(color: cs.surfaceContainerHigh);
     final String? url = imageUrl;
+    void select() {
+      HapticFeedback.selectionClick();
+      onTap();
+    }
+
     return Semantics(
       button: true,
       selected: isSelected,
       label: name,
+      onTap: select,
       child: ExcludeSemantics(
         child: PressScale(
           child: AnimatedScale(
@@ -39,10 +45,7 @@ class InterestCategoryTile extends StatelessWidget {
             curve: PrismCurves.enter,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onTap();
-              },
+              onTap: select,
               child: ClipRRect(
                 borderRadius: radius,
                 child: Stack(

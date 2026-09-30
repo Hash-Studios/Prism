@@ -50,6 +50,7 @@ class StatPill extends StatelessWidget {
         button: true,
         label: semanticLabel,
         excludeSemantics: true,
+        onTap: onTap,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,

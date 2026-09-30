@@ -105,13 +105,32 @@ void main() {
   testWidgets('each stat is a labelled button that opens its list', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
-      await pumpHeader(tester);
+      await pumpHeader(tester, ownProfile: true);
 
       await tester.tap(find.bySemanticsLabel('Followers'));
       await tester.tap(find.bySemanticsLabel('Following'));
       await tester.tap(find.bySemanticsLabel('Posts'));
 
       expect(taps, <String>['followers', 'following', 'posts']);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('another profile keeps Followers actionable but hides Following action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      await pumpHeader(tester);
+
+      expect(find.bySemanticsLabel('Followers'), findsOneWidget);
+      expect(tester.getSemantics(find.bySemanticsLabel('Following')), matchesSemantics(label: 'Following', value: '1'));
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Followers')),
+        matchesSemantics(label: 'Followers', value: '2', isButton: true, hasTapAction: true),
+      );
+      expect(find.text('Following'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Followers'));
+      expect(taps, <String>['followers']);
     } finally {
       semantics.dispose();
     }

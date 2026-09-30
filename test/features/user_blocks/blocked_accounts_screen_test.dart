@@ -72,7 +72,7 @@ void main() {
 
     expect(find.text('Blocked accounts'), findsOneWidget);
     expect(find.text('No blocked accounts'), findsOneWidget);
-    expect(find.text('People you block cannot see your profile or wallpapers.'), findsOneWidget);
+    expect(find.textContaining('Blocking hides their posts from your feed.'), findsOneWidget);
   });
 
   testWidgets('a failed load offers a retry that loads again', (tester) async {
@@ -103,6 +103,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Unblock sam_k?'), findsOneWidget);
+    expect(find.textContaining('Their posts will appear in your feed again.'), findsOneWidget);
     expect(repo.unblocked, isEmpty);
 
     await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Unblock')));

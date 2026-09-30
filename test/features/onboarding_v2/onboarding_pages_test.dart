@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
@@ -8,10 +10,12 @@ import 'package:Prism/features/onboarding_v2/src/views/pages/f2_starter_pack_pag
 import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f4_first_wallpaper_page.dart';
 import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wallpaper_vm.j.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/interest_category_tile.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -77,6 +81,37 @@ void main() {
   );
 
   group('interests', () {
+    testWidgets('screen-reader activation toggles a category and updates its selected semantics', (tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      bool selected = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: prismDarkThemes.first.theme,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) => InterestCategoryTile(
+                name: 'Nature',
+                isSelected: selected,
+                onTap: () => setState(() => selected = !selected),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final Finder category = find.bySemanticsLabel('Nature');
+      final SemanticsNode node = tester.getSemantics(category);
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      tester.binding.performSemanticsAction(
+        SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: node.id),
+      );
+      await tester.pump();
+
+      expect(tester.getSemantics(category).getSemanticsData().flagsCollection.isSelected, ui.Tristate.isTrue);
+      semantics.dispose();
+    });
+
     testWidgets('shows a skeleton while categories load and keeps Continue off', (tester) async {
       await pumpPage(tester, const F1InterestsPage(), interests(load: LoadStatus.loading));
 
@@ -294,6 +329,68 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
 
         expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  group('real compact and landscape viewports', () {
+    final cases = <String, (double, double, double)>{
+      'compact 2x': (320, 568, 2),
+      'compact 3x': (320, 568, 3),
+      '390x844 3x': (390, 844, 3),
+      'landscape 2x': (844, 390, 2),
+      'landscape 3x': (844, 390, 3),
+    };
+
+    for (final entry in cases.entries) {
+      testWidgets('F1-F4 primary actions stay reachable at ${entry.key}', (tester) async {
+        final (width, height, textScale) = entry.value;
+        const all = <String>['Nature', 'Space', 'Anime'];
+        final creators = <OnboardingStarterCreatorEntity>[_creator(1), _creator(2), _creator(3)];
+        final steps = <(Widget, OnboardingV2State, String)>[
+          (const F1InterestsPage(), interests(available: all, selected: all), 'Continue'),
+          (
+            const F2StarterPackPage(),
+            OnboardingV2State.initial().copyWith(
+              step: OnboardingV2Step.starterPack,
+              loadStatus: LoadStatus.success,
+              starterPackData: OnboardingStarterPackData(
+                creators: creators,
+                selectedEmails: creators.map((creator) => creator.email).toSet(),
+              ),
+            ),
+            'Continue',
+          ),
+          (
+            const F3AiGeneratePage(),
+            OnboardingV2State.initial().copyWith(
+              step: OnboardingV2Step.aiGenerate,
+              aiData: const OnboardingAiData(
+                prompt: 'a quiet mountain lake',
+                stylePreset: AiStylePreset.nature,
+                status: AiGenerateStatus.idle,
+              ),
+            ),
+            'Generate',
+          ),
+          (
+            const F4FirstWallpaperPage(),
+            OnboardingV2State.initial().copyWith(step: OnboardingV2Step.firstWallpaper),
+            'Continue',
+          ),
+        ];
+
+        for (final (page, state, label) in steps) {
+          await pumpPage(tester, page, state, width: width, height: height, textScale: textScale);
+          final Finder action = find.text(label);
+          await tester.ensureVisible(action);
+          expect(tester.getRect(action).overlaps(Offset.zero & Size(width, height)), isTrue);
+          expect(
+            tester.takeException(),
+            isNull,
+            reason: 'overflow in ${page.runtimeType} at ${width}x$height with $textScale text',
+          );
+        }
       });
     }
   });

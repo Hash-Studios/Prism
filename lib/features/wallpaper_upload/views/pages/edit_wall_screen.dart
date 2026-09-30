@@ -180,16 +180,21 @@ class _EditWallScreenState extends State<EditWallScreen> {
 
     option.outputFormat = const OutputFormat.jpeg(100);
 
-    final Uint8List? result = await ImageEditor.editImage(image: img, imageEditorOption: option);
-    if (!mounted) return;
-    if (result == null) {
-      setState(() => _saving = false);
-      toasts.error('Could not save your edits. Try again.');
-      return;
-    }
+    try {
+      final Uint8List? result = await ImageEditor.editImage(image: img, imageEditorOption: option);
+      if (!mounted) return;
+      if (result == null) {
+        toasts.error('Could not save your edits. Try again.');
+        return;
+      }
 
-    widget.image.writeAsBytesSync(result);
-    await context.router.replace(UploadWallRoute(image: widget.image));
+      widget.image.writeAsBytesSync(result);
+      await context.router.replace(UploadWallRoute(image: widget.image));
+    } catch (_) {
+      if (mounted) toasts.error('Could not save your edits. Try again.');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   void flip() {
