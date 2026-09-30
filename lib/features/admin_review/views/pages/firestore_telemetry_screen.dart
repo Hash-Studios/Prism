@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/firestore/firestore_telemetry.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -110,105 +111,90 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Firestore telemetry'),
-        actions: <Widget>[
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loading ? null : _loadTelemetry, tooltip: 'Refresh'),
-        ],
-      ),
+    return PrismPage(
+      title: 'Firestore telemetry',
+      actions: <Widget>[
+        PrismIconButton(icon: Icons.refresh_rounded, tooltip: 'Refresh', onPressed: _loading ? null : _loadTelemetry),
+      ],
       body: _loading
-          ? const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)))
+          ? PrismSkeleton.cards(height: 140)
           : _error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                    const SizedBox(height: 16),
-                    FilledButton(onPressed: _loadTelemetry, child: const Text('Retry')),
-                  ],
-                ),
-              ),
+          ? GlintState(
+              kind: GlintStateKind.error,
+              title: 'Could not read telemetry',
+              body: _error,
+              actionLabel: 'Try again',
+              onAction: _loadTelemetry,
+            )
+          : _rawContent.isEmpty
+          ? const GlintState(
+              kind: GlintStateKind.empty,
+              title: 'No telemetry yet',
+              body: 'Use the app to generate Firestore events.',
             )
           : RefreshIndicator(
               onRefresh: _loadTelemetry,
-              child: SingleChildScrollView(
+              child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text('Summary', style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 12),
-                            _StatRow('Total events', '$_totalEvents'),
-                            _StatRow('Estimated document reads', '$_docReads'),
-                            _StatRow('Estimated document writes', '$_docWrites'),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: _rawContent.isEmpty ? null : _copyAllData,
-                      icon: const Icon(Icons.copy),
-                      label: const Text('Copy all data (NDJSON)'),
-                    ),
-                    if (_rawContent.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'No telemetry recorded yet. Use the app to generate Firestore events.',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    Column(
-                      spacing: 16,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxl),
+                children: <Widget>[
+                  PrismCard(
+                    child: Column(
                       children: <Widget>[
-                        _StatsCard(
-                          title: 'By collection',
-                          tiles: <Widget>[
-                            for (final e in _byCollection)
-                              ListTile(
-                                title: Text(e.key),
-                                subtitle: Text('${e.value.reads} reads, ${e.value.writes} writes, ${e.value.ops} ops'),
-                              ),
-                          ],
-                        ),
-                        _StatsCard(
-                          title: 'By operation',
-                          tiles: <Widget>[
-                            for (final e in _byOperation) ListTile(title: Text(e.key), trailing: Text('${e.value}')),
-                          ],
-                        ),
-                        _StatsCard(
-                          title: 'By source (top 15)',
-                          tiles: <Widget>[
-                            for (final e in _bySourceTag.take(15))
-                              ListTile(
-                                title: Text(e.key, overflow: TextOverflow.ellipsis),
-                                trailing: Text('${e.value}'),
-                              ),
-                          ],
-                        ),
+                        _StatRow('Total events', '$_totalEvents'),
+                        _StatRow('Estimated document reads', '$_docReads'),
+                        _StatRow('Estimated document writes', '$_docWrites'),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: PrismSpace.sm),
+                  PrismButton(
+                    label: 'Copy all data',
+                    icon: Icons.copy_rounded,
+                    variant: PrismButtonVariant.tonal,
+                    expand: true,
+                    onPressed: _copyAllData,
+                  ),
+                  _StatsSection(
+                    title: 'By collection',
+                    rows: <PrismRow>[
+                      for (final e in _byCollection)
+                        PrismRow(
+                          icon: Icons.folder_outlined,
+                          title: _middleEllipsis(e.key),
+                          subtitle:
+                              '${_count(e.value.reads, 'read')} · ${_count(e.value.writes, 'write')} · ${_count(e.value.ops, 'op')}',
+                        ),
+                    ],
+                  ),
+                  _StatsSection(
+                    title: 'By operation',
+                    rows: <PrismRow>[
+                      for (final e in _byOperation)
+                        PrismRow(icon: Icons.bolt_rounded, title: e.key, value: '${e.value}'),
+                    ],
+                  ),
+                  _StatsSection(
+                    title: 'By source (top 15)',
+                    rows: <PrismRow>[
+                      for (final e in _bySourceTag.take(15))
+                        PrismRow(icon: Icons.sell_outlined, title: _middleEllipsis(e.key), value: '${e.value}'),
+                    ],
+                  ),
+                ],
               ),
             ),
     );
   }
+}
+
+String _count(int n, String noun) => '$n $noun${n == 1 ? '' : 's'}';
+
+/// Keeps the start and end of a long path, such as a user document path, and drops the middle.
+String _middleEllipsis(String text, {int max = 40}) {
+  if (text.length <= max) return text;
+  final int keep = (max - 1) ~/ 2;
+  return '${text.substring(0, keep)}…${text.substring(text.length - keep)}';
 }
 
 List<MapEntry<String, int>> _countBy(List<_TelemetryEvent> events, String Function(_TelemetryEvent) key) {
@@ -219,31 +205,26 @@ List<MapEntry<String, int>> _countBy(List<_TelemetryEvent> events, String Functi
   return counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 }
 
-class _StatsCard extends StatelessWidget {
-  const _StatsCard({required this.title, required this.tiles});
+class _StatsSection extends StatelessWidget {
+  const _StatsSection({required this.title, required this.rows});
 
   final String title;
-  final List<Widget> tiles;
+  final List<PrismRow> rows;
 
   @override
   Widget build(BuildContext context) {
-    if (tiles.isEmpty) {
+    if (rows.isEmpty) {
       return const SizedBox.shrink();
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(title, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
-        Card(
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: tiles.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, i) => tiles[i],
-          ),
+        PrismSectionHeader(
+          title: title,
+          small: true,
+          padding: const EdgeInsets.only(top: PrismSpace.xl, bottom: PrismSpace.xs, left: PrismSpace.xxs),
         ),
+        PrismGroup(children: rows),
       ],
     );
   }
@@ -313,12 +294,13 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text(label),
-          Text(value, style: Theme.of(context).textTheme.titleSmall),
+          Expanded(child: Text(label, style: PrismTextStyles.body(context))),
+          const SizedBox(width: PrismSpace.sm),
+          Text(value, style: PrismTextStyles.rowTitle(context)),
         ],
       ),
     );

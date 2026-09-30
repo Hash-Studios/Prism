@@ -1,4 +1,5 @@
 import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/swipe_action_overlay.dart';
@@ -6,6 +7,7 @@ import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.d
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
@@ -36,7 +38,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     _bloc = GetIt.I<ReviewBatchBloc>();
     _bloc.add(const ReviewBatchLoadRequested());
 
-    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _animationController = AnimationController(vsync: this);
   }
 
   @override
@@ -109,18 +111,18 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
     _startAnimation(
       target: approve ? maxX : -maxX,
-      curve: Curves.easeOut,
       onDone: () => _bloc.add(approve ? const ReviewBatchSwipeApproved() : const ReviewBatchSwipeRejected()),
     );
   }
 
-  void _startSnapBackAnimation() => _startAnimation(target: 0, curve: Curves.easeOutCubic);
+  void _startSnapBackAnimation() => _startAnimation(target: 0);
 
-  void _startAnimation({required double target, required Curve curve, VoidCallback? onDone}) {
+  void _startAnimation({required double target, VoidCallback? onDone}) {
+    _animationController.duration = context.motion(PrismDurations.base);
     _xAnimation = Tween<double>(
       begin: _dragX,
       end: target,
-    ).animate(CurvedAnimation(parent: _animationController, curve: curve));
+    ).animate(CurvedAnimation(parent: _animationController, curve: PrismCurves.enter));
 
     setState(() {
       _phase = _SwipePhase.animating;
@@ -142,25 +144,20 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Swipe Review'),
-          actions: [
-            BlocBuilder<ReviewBatchBloc, ReviewBatchState>(
-              builder: (context, state) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Center(
-                    child: Text(
-                      '${state.currentIndex + 1}/${state.walls.length}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                );
-              },
+      child: PrismPage(
+        title: 'Swipe review',
+        actions: [
+          BlocBuilder<ReviewBatchBloc, ReviewBatchState>(
+            builder: (context, state) => Padding(
+              padding: const EdgeInsets.only(right: PrismSpace.xs),
+              child: Text(
+                '${state.walls.isEmpty ? 0 : state.currentIndex + 1}/${state.walls.length}',
+                style: PrismTextStyles.caption(context),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
+        bottomBar: BlocBuilder<ReviewBatchBloc, ReviewBatchState>(builder: (context, state) => _buildBottomBar(state)),
         body: BlocListener<ReviewBatchBloc, ReviewBatchState>(
           listenWhen: (previous, current) => current.undoCount > previous.undoCount,
           listener: (context, state) => toasts.success('Undo successful'),
@@ -170,15 +167,13 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                 toasts.error(state.errorMessage!);
               }
               if (state.status == ReviewBatchStatus.batchComplete) {
-                toasts.success('Batch complete! Loading next batch...');
+                toasts.success('Batch complete. Loading the next batch.');
                 _bloc.add(const ReviewBatchNextBatchRequested());
               }
             },
             builder: (context, state) {
               if (state.status == ReviewBatchStatus.loading) {
-                return const Center(
-                  child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                );
+                return _buildLoading();
               }
 
               if (state.walls.isEmpty) {
@@ -193,10 +188,16 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
             },
           ),
         ),
-        bottomNavigationBar: BlocBuilder<ReviewBatchBloc, ReviewBatchState>(
-          builder: (context, state) {
-            return _buildBottomBar(state);
-          },
+      ),
+    );
+  }
+
+  Widget _buildLoading() {
+    return PrismSkeleton(
+      child: Padding(
+        padding: SwipeWallpaperCard.margin,
+        child: LayoutBuilder(
+          builder: (context, constraints) => PrismBone(height: constraints.maxHeight, radius: PrismRadius.lg),
         ),
       ),
     );
@@ -209,161 +210,132 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     return Column(
       children: [
         Expanded(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              if (state.currentIndex + 1 < state.walls.length)
-                Positioned.fill(
-                  child: Transform.scale(
-                    scale: 0.9,
-                    child: SwipeWallpaperCard.fromDocument(state.walls[state.currentIndex + 1], isTopCard: false),
+          child: Semantics(
+            label: 'Wallpaper to review',
+            customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
+              const CustomSemanticsAction(label: 'Approve'): () => _dismissFromSemantics(approve: true),
+              const CustomSemanticsAction(label: 'Reject'): () => _dismissFromSemantics(approve: false),
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (state.currentIndex + 1 < state.walls.length)
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) => Transform.scale(
+                        scale: 0.94 + 0.06 * (_displayX.abs() / _swipeThreshold).clamp(0.0, 1.0),
+                        child: child,
+                      ),
+                      child: SwipeWallpaperCard.fromDocument(state.walls[state.currentIndex + 1], isTopCard: false),
+                    ),
                   ),
-                ),
-              AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  final x = _displayX;
-                  final swipeProgress = x / _swipeThreshold;
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Center(
-                        child: Transform.translate(
-                          offset: Offset(x, 0),
-                          child: Transform.rotate(
-                            angle: (x / 1000) * 0.3,
-                            child: SwipeWallpaperCard.fromDocument(currentWall),
+                AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    final x = _displayX;
+                    final swipeProgress = x / _swipeThreshold;
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Center(
+                          child: Transform.translate(
+                            offset: Offset(x, 0),
+                            child: Transform.rotate(
+                              angle: (x / 1000) * 0.3,
+                              child: SwipeWallpaperCard.fromDocument(currentWall),
+                            ),
                           ),
                         ),
-                      ),
-                      SwipeActionOverlay(swipeProgress: swipeProgress),
-                    ],
-                  );
-                },
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanStart: _onPanStart,
-                onPanUpdate: _onPanUpdate,
-                onPanEnd: _onPanEnd,
-                onPanCancel: _onPanCancel,
-                onTap: () => _showFullImage(currentWall),
-                child: const SizedBox.expand(),
-              ),
-            ],
+                        SwipeActionOverlay(swipeProgress: swipeProgress),
+                      ],
+                    );
+                  },
+                ),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanStart: _onPanStart,
+                  onPanUpdate: _onPanUpdate,
+                  onPanEnd: _onPanEnd,
+                  onPanCancel: _onPanCancel,
+                  onTap: () => _showFullImage(currentWall),
+                  child: const SizedBox.expand(),
+                ),
+              ],
+            ),
           ),
         ),
-        _buildSwipeHints(),
-        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.only(top: PrismSpace.xxs, bottom: PrismSpace.xs),
+          child: Text('Swipe right to approve, left to reject', style: PrismTextStyles.caption(context)),
+        ),
       ],
     );
   }
 
-  Widget _buildSwipeHints() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SwipeHintIndicator(icon: Icons.close, label: 'Swipe Left\nto Reject', color: Colors.red),
-          SwipeHintIndicator(icon: Icons.check_circle_outline, label: 'Swipe Right\nto Approve', color: Colors.green),
-        ],
-      ),
-    );
+  void _dismissFromSemantics({required bool approve}) {
+    if (_phase == _SwipePhase.animating) return;
+    _startDismissAnimation(approve: approve);
   }
 
   Widget _buildBottomBar(ReviewBatchState state) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _ActionButton(
-              icon: Icons.undo,
-              label: 'Undo',
-              color: Colors.orange,
-              enabled: state.canUndo,
-              onTap: () => _bloc.add(const ReviewBatchUndoRequested()),
-            ),
-            _ActionButton(
-              icon: Icons.fullscreen,
-              label: 'View',
-              color: Colors.indigo,
-              enabled: state.hasMoreWalls,
-              onTap: () {
-                final wall = state.currentWall;
-                if (wall != null) {
-                  _showFullImage(wall);
-                }
-              },
-            ),
-            _ActionButton(
-              icon: Icons.skip_next,
-              label: 'Skip',
-              color: Colors.blue,
-              enabled: state.hasMoreWalls,
-              onTap: () {
-                _bloc.add(const ReviewBatchSwipeSkipped());
-              },
-            ),
-            _ActionButton(
-              icon: Icons.list,
-              label: 'List',
-              color: Colors.purple,
-              onTap: () {
-                context.router.maybePop();
-              },
-            ),
-          ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _ActionButton(
+          icon: Icons.undo_rounded,
+          label: 'Undo',
+          enabled: state.canUndo,
+          onTap: () => _bloc.add(const ReviewBatchUndoRequested()),
         ),
-      ),
+        _ActionButton(
+          icon: Icons.open_in_full_rounded,
+          label: 'View',
+          enabled: state.hasMoreWalls,
+          onTap: () {
+            final wall = state.currentWall;
+            if (wall != null) {
+              _showFullImage(wall);
+            }
+          },
+        ),
+        _ActionButton(
+          icon: Icons.skip_next_rounded,
+          label: 'Skip',
+          enabled: state.hasMoreWalls,
+          onTap: () {
+            _bloc.add(const ReviewBatchSwipeSkipped());
+          },
+        ),
+        _ActionButton(
+          icon: Icons.view_list_rounded,
+          label: 'List',
+          semanticLabel: 'Back to the review list',
+          onTap: () {
+            context.router.maybePop();
+          },
+        ),
+      ],
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.check_circle_outline, size: 80, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 16),
-          Text('All caught up!', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          const Text('No wallpapers pending review.'),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              _bloc.add(const ReviewBatchLoadRequested());
-            },
-            icon: const Icon(Icons.refresh),
-            label: const Text('Refresh'),
-          ),
-        ],
-      ),
+    return GlintState(
+      kind: GlintStateKind.nothingNew,
+      title: 'All caught up',
+      body: 'No wallpapers pending review.',
+      actionLabel: 'Refresh',
+      onAction: () => _bloc.add(const ReviewBatchLoadRequested()),
     );
   }
 
   Widget _buildBatchComplete(ReviewBatchState state) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.done_all, size: 80, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 16),
-          Text('Batch Complete!', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text('${state.totalPending} wallpapers remaining'),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () {
-              _bloc.add(const ReviewBatchNextBatchRequested());
-            },
-            icon: const Icon(Icons.arrow_forward),
-            label: const Text('Load Next Batch'),
-          ),
-        ],
-      ),
+    return GlintState(
+      kind: GlintStateKind.nothingNew,
+      title: 'Batch complete',
+      body: '${state.totalPending} wallpapers remaining',
+      actionLabel: 'Load next batch',
+      onAction: () => _bloc.add(const ReviewBatchNextBatchRequested()),
     );
   }
 
@@ -374,48 +346,53 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   }
 }
 
+/// A neutral 56 point circle with an icon and a caption. It dims when [enabled] is false.
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final String? semanticLabel;
   final bool enabled;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
     required this.label,
-    required this.color,
-    this.enabled = true,
     required this.onTap,
+    this.semanticLabel,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: enabled ? 1.0 : 0.4,
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: color, width: 2),
-                ),
-                child: Icon(icon, color: color, size: 28),
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: semanticLabel ?? label,
+      excludeSemantics: true,
+      child: PressScale(
+        enabled: enabled,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: enabled ? onTap : null,
+          child: Opacity(
+            opacity: enabled ? 1 : 0.38,
+            child: SizedBox(
+              width: 72,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(color: cs.onSurface.withValues(alpha: 0.08), shape: BoxShape.circle),
+                    child: Icon(icon, color: cs.onSurface, size: 26),
+                  ),
+                  const SizedBox(height: PrismSpace.xxs),
+                  Text(label, style: PrismTextStyles.caption(context)),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ],
+            ),
           ),
         ),
       ),

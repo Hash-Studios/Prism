@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/debug/debug_flags.dart';
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/logger/app_logger.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Only show toasts for warn-level and above by default to avoid flooding
@@ -11,6 +12,17 @@ const AppLogLevel _kToastMinLevel = AppLogLevel.warn;
 
 /// Maximum number of toasts visible simultaneously.
 const int _kMaxToasts = 5;
+
+/// The colour of each log level. These are data colours, so they do not follow the theme. Every debug surface reads
+/// them from here.
+extension AppLogLevelColor on AppLogLevel {
+  Color get color => switch (this) {
+    AppLogLevel.debug => const Color(0xFF78909C),
+    AppLogLevel.info => PrismColors.success,
+    AppLogLevel.warn => PrismColors.warning,
+    AppLogLevel.error => const Color(0xFFE5484D),
+  };
+}
 
 /// Wraps the app and injects log toast overlays when [DebugFlags.showLogToasts]
 /// is enabled. Toasts appear at the bottom of the screen and auto-dismiss
@@ -78,8 +90,8 @@ class _LogToastOverlayState extends State<LogToastOverlay> {
           if (_toasts.isNotEmpty)
             Positioned(
               bottom: 80,
-              left: 12,
-              right: 12,
+              left: PrismSpace.sm,
+              right: PrismSpace.sm,
               // IgnorePointer ensures toast widgets never absorb edge-swipe
               // gestures that belong to the Cupertino back-swipe detector.
               child: IgnorePointer(
@@ -101,64 +113,51 @@ class _ToastEntry {
   final Key id;
 }
 
+/// One log line as a toast. It sits above the app's theme, so it uses the inverse surface of whichever theme is
+/// found and marks the level with a coloured chip.
 class _LogToastWidget extends StatelessWidget {
   const _LogToastWidget({super.key, required this.entry});
   final _ToastEntry entry;
 
   @override
   Widget build(BuildContext context) {
-    final color = _levelColor(entry.record.level);
-    final label = entry.record.level.shortLabel;
-    final tag = entry.record.tag;
-    final message = entry.record.message;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final Color level = entry.record.level.color;
+    final String label = entry.record.level.shortLabel;
+    final String? tag = entry.record.tag;
+    final TextStyle base = PrismTextStyles.caption(
+      context,
+    ).copyWith(fontWeight: FontWeight.w600, color: cs.onInverseSurface);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: PrismSpace.xxs),
       child: Material(
         color: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.92), borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
+          decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(PrismRadius.sm)),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(color: level, borderRadius: BorderRadius.circular(PrismRadius.pill)),
                 child: Text(
                   label,
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: base.copyWith(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: PrismSpace.xs),
               if (tag != null) ...[
-                Text('[$tag]', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                const SizedBox(width: 4),
+                Text('[$tag]', style: base.copyWith(color: cs.onInverseSurface.withValues(alpha: 0.7))),
+                const SizedBox(width: PrismSpace.xxs),
               ],
               Expanded(
-                child: Text(
-                  message,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
+                child: Text(entry.record.message, maxLines: 2, overflow: TextOverflow.ellipsis, style: base),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Color _levelColor(AppLogLevel level) {
-    switch (level) {
-      case AppLogLevel.debug:
-        return Colors.blueGrey.shade600;
-      case AppLogLevel.info:
-        return Colors.green.shade700;
-      case AppLogLevel.warn:
-        return Colors.orange.shade700;
-      case AppLogLevel.error:
-        return Colors.red.shade700;
-    }
   }
 }

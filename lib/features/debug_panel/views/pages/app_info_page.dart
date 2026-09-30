@@ -4,6 +4,7 @@ import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -159,25 +160,25 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (_loading) {
-      return const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)));
-    }
+    if (_loading) return PrismSkeleton.rows(avatar: false, rows: 10);
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xxl),
       children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: FilledButton.icon(
-            icon: const Icon(Icons.copy_all, size: 18),
-            label: const Text('Copy Full Diagnostic Report'),
-            onPressed: () => copyToClipboard(
-              context,
-              _buildDiagnosticReport(),
-              label: 'Diagnostic report copied to clipboard',
-              duration: const Duration(seconds: 2),
+        Row(
+          children: [
+            Expanded(
+              child: PrismButton(
+                label: 'Copy diagnostic report',
+                icon: Icons.copy_all_rounded,
+                variant: PrismButtonVariant.tonal,
+                onPressed: () =>
+                    copyToClipboard(context, _buildDiagnosticReport(), label: 'Diagnostic report copied to clipboard'),
+              ),
             ),
-          ),
+            const SizedBox(width: PrismSpace.xs),
+            PrismIconButton(icon: Icons.refresh_rounded, tooltip: 'Refresh', filled: true, onPressed: _loadInfo),
+          ],
         ),
         _InfoSection(title: 'Package', data: _packageInfo),
         _InfoSection(title: 'Environment', data: _envInfo),
@@ -185,15 +186,6 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
         _InfoSection(title: 'Device', data: _deviceInfo),
         _InfoSection(title: 'Screen', data: _screenInfo),
         if (_remoteConfig.isNotEmpty) _InfoSection(title: 'Remote Config', data: _remoteConfig),
-        const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Refresh'),
-            onPressed: _loadInfo,
-          ),
-        ),
       ],
     );
   }
@@ -204,64 +196,33 @@ class _InfoSection extends StatelessWidget {
   final String title;
   final Map<String, String> data;
 
+  /// Values up to this length sit beside the label. Longer ones go under it so they can wrap.
+  static const int _inlineMax = 18;
+
   @override
   Widget build(BuildContext context) {
+    final Color hint = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DebugSectionHeader(title, top: 16),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: Column(
-            children: [
-              for (final (i, e) in data.entries.indexed)
-                Container(
-                  decoration: BoxDecoration(
-                    border: i == data.length - 1
-                        ? null
-                        : Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 0.5)),
-                  ),
-                  child: _InfoRow(label: e.key, value: e.value),
-                ),
-            ],
-          ),
+        PrismSectionHeader(
+          title: title,
+          small: true,
+          padding: const EdgeInsets.only(top: PrismSpace.xl, bottom: PrismSpace.xs, left: PrismSpace.xxs),
         ),
-      ],
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onLongPress: () => copyToClipboard(context, value, label: 'Copied: $value'),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        PrismGroup(
           children: [
-            SizedBox(
-              width: 140,
-              child: Text(
-                label,
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
+            for (final e in data.entries)
+              PrismRow(
+                title: e.key,
+                value: e.value.length <= _inlineMax ? e.value : null,
+                subtitle: e.value.length <= _inlineMax ? null : e.value,
+                trailing: Icon(Icons.copy_rounded, size: 16, color: hint),
+                onTap: () => copyToClipboard(context, e.value),
               ),
-            ),
-            Expanded(
-              child: SelectableText(value, style: const TextStyle(fontSize: 12, fontFamily: 'monospace')),
-            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
