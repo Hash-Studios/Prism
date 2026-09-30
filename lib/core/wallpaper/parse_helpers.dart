@@ -37,3 +37,5 @@ int? parseInt(Object? v) {
   if (v is String) return int.tryParse(v);
   return null;
 }
+
+int parseIntOr(Object? v, {int fallback = 0}) => parseInt(v) ?? fallback;

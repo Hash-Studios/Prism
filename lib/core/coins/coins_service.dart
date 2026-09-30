@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
@@ -15,6 +16,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/profile/profile_completeness_evaluator.dart';
 import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/json_utils.dart';
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/logger/logger.dart';
@@ -130,8 +133,6 @@ class CoinsService {
   static const String _streakReminderEnabledField = 'streakReminderEnabled';
   static const String _streakTimezoneOffsetMinutesField = 'streakTimezoneOffsetMinutes';
   static const String _streakReminderNextAtUtcField = 'streakReminderNextAtUtc';
-  static const String _streakReminderLastSentDateField = 'streakReminderLastSentDate';
-  static const String _streakLastClaimServerAtField = 'streakLastClaimServerAt';
   static const Duration _deltaAnimationDuration = Duration(milliseconds: 1400);
   static const Duration _premiumPreviewAccessDuration = Duration(hours: 24);
   final ValueNotifier<int> balanceNotifier = ValueNotifier<int>(app_state.prismUser.coins);
@@ -141,6 +142,9 @@ class CoinsService {
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
 
   int _deltaVersion = 0;
+
+  CoinMutationResult get _notLoggedIn =>
+      CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
 
   String? get pendingReferralInviterId {
     final String inviter = _settings.get<String>(_pendingReferralInviterPrefKey, defaultValue: '').trim();
@@ -156,8 +160,6 @@ class CoinsService {
   }
 
   Future<void> clearPendingReferralInviterId() => _settings.delete(_pendingReferralInviterPrefKey);
-
-  bool get streakReminderPreferenceEnabled => _preferredStreakReminderEnabled();
 
   Future<void> setStreakReminderPreference(
     bool enabled, {
@@ -178,12 +180,11 @@ class CoinsService {
         if (data == null) {
           return;
         }
-        final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-        _ensureCoinStateDefaults(coinState, reminderEnabled: enabled, timezoneOffsetMinutes: timezoneOffsetMinutes);
+        final Map<String, dynamic> coinState = toJsonMap(data[_coinStateField]);
         final DateTime nowUtc = DateTime.now().toUtc();
         final String todayLocalKey = _offsetDayKey(nowUtc, timezoneOffsetMinutes);
         final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
-        final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+        final int streakDay = _clampStreakDay(parseIntOr(coinState['streakDay']));
         final bool active =
             streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
         // Rules only allow the client to write these specific coinState leaves, never the whole map.
@@ -228,7 +229,7 @@ class CoinsService {
       await refreshStreakStatus();
       return;
     }
-    _applyLocalBalance(_asInt(data['coins']), delta: 0);
+    _applyLocalBalance(parseIntOr(data['coins']), delta: 0);
     _syncStreakFromUserData(data);
   }
 
@@ -246,7 +247,7 @@ class CoinsService {
     if (userData == null) {
       return app_state.prismUser.coins;
     }
-    final int coins = _asInt(userData['coins']);
+    final int coins = parseIntOr(userData['coins']);
     _applyLocalBalance(coins, delta: 0);
     _syncStreakFromUserData(userData);
     return coins;
@@ -318,7 +319,7 @@ class CoinsService {
     String? transactionId,
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
+      return _notLoggedIn;
     }
     final bool isRefund = action == CoinEarnAction.refund;
     // Refunds are keyed by the debit's transactionId; the server ignores amount for them.
@@ -343,11 +344,10 @@ class CoinsService {
     CoinSpendAction action, {
     String sourceTag = 'coins.spend',
     int? amountOverride,
-    bool bypassForPremium = true,
     String? reason,
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
+      return _notLoggedIn;
     }
     final int amount = amountOverride ?? action.cost();
     if (amount <= 0) {
@@ -360,7 +360,7 @@ class CoinsService {
       action: action.name,
       sourceTag: sourceTag,
       reason: reason ?? action.name,
-      allowPremiumBypass: bypassForPremium,
+      allowPremiumBypass: true,
     );
 
     _applyLocalBalance(result.currentBalance, delta: result.delta);
@@ -433,7 +433,6 @@ class CoinsService {
     AiChargeMode mode, {
     String sourceTag = 'coins.rollback.ai_generation',
     String? reservationTransactionId,
-    int? coinsToRefund,
   }) async {
     if (mode == AiChargeMode.insufficient) {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'no_reservation_to_rollback');
@@ -466,12 +465,6 @@ class CoinsService {
     required AiChargeMode mode,
     required int coinsSpent,
     String sourceTag = 'coins.commit.ai_generation',
-    String? reservationTransactionId,
-    String? generationId,
-    String? imageUrl,
-    String? thumbUrl,
-    String? prompt,
-    String? stylePreset,
   }) {
     analytics.track(
       AiChargeCommittedEvent(
@@ -512,13 +505,7 @@ class CoinsService {
     if (isPremium) {
       return true;
     }
-    final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
-    _ensureCoinStateDefaults(
-      coinState,
-      reminderEnabled: _preferredStreakReminderEnabled(),
-      timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
-    );
-    final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
+    final Map<String, int> previewUnlocks = _previewUnlocksFromState(toJsonMap(userData[_coinStateField]));
     return (previewUnlocks[normalizedKey] ?? 0) > DateTime.now().millisecondsSinceEpoch;
   }
 
@@ -527,7 +514,7 @@ class CoinsService {
     String sourceTag = 'coins.preview.unlock',
   }) async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
+      return _notLoggedIn;
     }
     final String normalizedKey = _normalizeCollectionKey(collectionKey);
     if (normalizedKey.isEmpty) {
@@ -563,8 +550,7 @@ class CoinsService {
       if (data == null) {
         return result;
       }
-      final Map<String, dynamic> coinState = _coinStateFromRaw(data[_coinStateField]);
-      final Map<String, int> previewUnlocks = _previewUnlocksFromState(coinState);
+      final Map<String, int> previewUnlocks = _previewUnlocksFromState(toJsonMap(data[_coinStateField]));
       previewUnlocks[normalizedKey] =
           DateTime.now().millisecondsSinceEpoch + _premiumPreviewAccessDuration.inMilliseconds;
       // Rules only allow the client to write this nested leaf, never the whole coinState map.
@@ -577,32 +563,33 @@ class CoinsService {
 
   Future<CoinMutationResult> claimDailyLoginAndStreakIfEligible() async {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
+      return _notLoggedIn;
     }
     final int previousBalance = app_state.prismUser.coins;
     final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
     final bool reminderEnabled = _preferredStreakReminderEnabled();
     try {
-      final HttpsCallable callable = FirebaseFunctions.instanceFor(
-        region: 'asia-south1',
-      ).httpsCallable('claimDailyStreak', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)));
+      final HttpsCallable callable = appFunctions.httpsCallable(
+        'claimDailyStreak',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 20)),
+      );
       final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
         'reminderEnabled': reminderEnabled,
       });
-      final Map<String, dynamic> payload = _asStringDynamicMap(response.data);
+      final Map<String, dynamic> payload = toJsonMap(response.data);
 
       final bool claimed = _asBool(payload['claimed']);
       final bool alreadyClaimedToday = _asBool(payload['alreadyClaimedToday']);
-      final int streakDay = _clampStreakDay(_asInt(payload['streakDay']));
-      final int dailyReward = _asInt(payload['dailyReward']);
-      final int streakBonusReward = _asInt(payload['streakBonusReward']);
-      final int totalReward = _asInt(payload['totalReward']);
-      final int newBalance = _asInt(payload['newBalance']);
+      final int streakDay = _clampStreakDay(parseIntOr(payload['streakDay']));
+      final int dailyReward = parseIntOr(payload['dailyReward']);
+      final int streakBonusReward = parseIntOr(payload['streakBonusReward']);
+      final int totalReward = parseIntOr(payload['totalReward']);
+      final int newBalance = parseIntOr(payload['newBalance']);
       final String todayLocalKey = (payload['todayLocalKey']?.toString() ?? '').trim();
       final int? nextReminderAtUtcMillis = payload['nextReminderAtUtcMillis'] == null
           ? null
-          : _asInt(payload['nextReminderAtUtcMillis']);
+          : parseIntOr(payload['nextReminderAtUtcMillis']);
       final int delta = newBalance - previousBalance;
 
       _applyLocalBalance(newBalance, delta: delta);
@@ -658,73 +645,36 @@ class CoinsService {
     }
   }
 
-  Future<CoinMutationResult> maybeAwardProDailyBonus() async {
-    if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
-    }
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'awardCoins',
-      amount: CoinPolicy.proDailyBonus,
-      action: CoinEarnAction.proDailyBonus.name,
+  Future<CoinMutationResult> maybeAwardProDailyBonus() {
+    return _awardFixed(
+      CoinEarnAction.proDailyBonus,
       sourceTag: 'coins.claim_pro_daily_bonus',
       reason: 'pro_daily_bonus',
     );
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) {
-      _logEarn(
-        action: CoinEarnAction.proDailyBonus,
-        amount: CoinPolicy.proDailyBonus,
-        sourceTag: 'coins.claim_pro_daily_bonus',
-      );
-    }
-    return result;
   }
 
-  Future<CoinMutationResult> maybeAwardProfileCompletion() async {
+  Future<CoinMutationResult> maybeAwardProfileCompletion() {
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
+      return Future.value(_notLoggedIn);
     }
     if (!_isProfileComplete()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'profile_incomplete');
+      return Future.value(
+        CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'profile_incomplete'),
+      );
     }
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'awardCoins',
-      amount: CoinPolicy.profileCompletion,
-      action: CoinEarnAction.profileCompletion.name,
+    return _awardFixed(
+      CoinEarnAction.profileCompletion,
       sourceTag: 'coins.profile_completion',
       reason: 'profile_completion',
     );
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) {
-      _logEarn(
-        action: CoinEarnAction.profileCompletion,
-        amount: CoinPolicy.profileCompletion,
-        sourceTag: 'coins.profile_completion',
-      );
-    }
-    return result;
   }
 
-  Future<CoinMutationResult> maybeAwardFirstWallpaperUpload() async {
-    if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
-    }
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'awardCoins',
-      amount: CoinPolicy.firstWallpaperUpload,
-      action: CoinEarnAction.firstWallpaperUpload.name,
+  Future<CoinMutationResult> maybeAwardFirstWallpaperUpload() {
+    return _awardFixed(
+      CoinEarnAction.firstWallpaperUpload,
       sourceTag: 'coins.first_wallpaper_upload',
       reason: 'first_wallpaper_upload',
     );
-    _applyLocalBalance(result.currentBalance, delta: result.delta);
-    if (result.changed) {
-      _logEarn(
-        action: CoinEarnAction.firstWallpaperUpload,
-        amount: CoinPolicy.firstWallpaperUpload,
-        sourceTag: 'coins.first_wallpaper_upload',
-      );
-    }
-    return result;
   }
 
   Future<CoinMutationResult> processPendingReferralIfEligible({String? inviterUserId}) async {
@@ -732,7 +682,7 @@ class CoinsService {
       await setPendingReferralInviterId(inviterUserId);
     }
     if (!_canMutateCoins()) {
-      return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'not_logged_in');
+      return _notLoggedIn;
     }
     final String currentUserId = app_state.prismUser.id;
     final String? pendingInviter = pendingReferralInviterId;
@@ -744,27 +694,42 @@ class CoinsService {
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, reason: 'self_referral');
     }
 
-    final CoinMutationResult result = await _callCoinMutation(
-      callableName: 'processReferral',
-      amount: CoinPolicy.referral,
-      action: CoinEarnAction.referral.name,
+    final CoinMutationResult result = await _awardFixed(
+      CoinEarnAction.referral,
       sourceTag: 'coins.process_referral',
       reason: pendingInviter,
+      logReason: 'referee_reward',
+      callableName: 'processReferral',
       inviterUserId: pendingInviter,
     );
-
     if (result.changed || result.reason == 'referral_already_processed') {
       await clearPendingReferralInviterId();
     }
+    return result;
+  }
 
+  Future<CoinMutationResult> _awardFixed(
+    CoinEarnAction action, {
+    required String sourceTag,
+    required String reason,
+    String? logReason,
+    String callableName = 'awardCoins',
+    String? inviterUserId,
+  }) async {
+    if (!_canMutateCoins()) {
+      return _notLoggedIn;
+    }
+    final CoinMutationResult result = await _callCoinMutation(
+      callableName: callableName,
+      amount: action.defaultAmount(),
+      action: action.name,
+      sourceTag: sourceTag,
+      reason: reason,
+      inviterUserId: inviterUserId,
+    );
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
-      _logEarn(
-        action: CoinEarnAction.referral,
-        amount: CoinPolicy.referral,
-        sourceTag: 'coins.process_referral',
-        reason: 'referee_reward',
-      );
+      _logEarn(action: action, amount: action.defaultAmount(), sourceTag: sourceTag, reason: logReason);
     }
     return result;
   }
@@ -784,7 +749,7 @@ class CoinsService {
     String? transactionId,
   }) async {
     try {
-      final HttpsCallable callable = FirebaseFunctions.instanceFor(region: 'asia-south1').httpsCallable(callableName);
+      final HttpsCallable callable = appFunctions.httpsCallable(callableName);
       final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
         if (amount != null) 'amount': amount,
         'action': action,
@@ -794,16 +759,16 @@ class CoinsService {
         if (inviterUserId != null) 'inviterUserId': inviterUserId,
         if (transactionId != null) 'transactionId': transactionId,
       });
-      final Map<String, dynamic> data = _asStringDynamicMap(response.data);
-      final int balance = _asInt(data['currentBalance']);
+      final Map<String, dynamic> data = toJsonMap(response.data);
+      final int balance = parseIntOr(data['currentBalance']);
       return CoinMutationResult(
         success: data['success'] == true,
         changed: data['changed'] == true,
         bypassed: data['bypassed'] == true,
         insufficientBalance: data['insufficientBalance'] == true,
-        previousBalance: _asInt(data['previousBalance']),
+        previousBalance: parseIntOr(data['previousBalance']),
         currentBalance: balance,
-        delta: _asInt(data['delta']),
+        delta: parseIntOr(data['delta']),
         reason: data['reason']?.toString() ?? reason,
         transactionId: data['transactionId']?.toString() ?? '',
       );
@@ -819,26 +784,6 @@ class CoinsService {
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
     );
     return status.isComplete;
-  }
-
-  int _asInt(Object? value) {
-    if (value is int) {
-      return value;
-    }
-    if (value is num) {
-      return value.toInt();
-    }
-    return int.tryParse(value?.toString() ?? '') ?? 0;
-  }
-
-  Map<String, dynamic> _asStringDynamicMap(Object? raw) {
-    if (raw is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(raw);
-    }
-    if (raw is Map) {
-      return raw.map((key, value) => MapEntry(key.toString(), value));
-    }
-    return <String, dynamic>{};
   }
 
   bool _asBool(Object? value) {
@@ -857,47 +802,6 @@ class CoinsService {
     }
     final SubscriptionTier tierFromDoc = SubscriptionTier.fromValue(data['subscriptionTier']?.toString());
     return premiumFlag || tierFromDoc.isPaid;
-  }
-
-  Map<String, dynamic> _coinStateFromRaw(Object? raw) {
-    if (raw is Map<String, dynamic>) {
-      return Map<String, dynamic>.from(raw);
-    }
-    if (raw is Map) {
-      return raw.map((key, value) => MapEntry(key.toString(), value));
-    }
-    return <String, dynamic>{};
-  }
-
-  bool _ensureCoinStateDefaults(
-    Map<String, dynamic> coinState, {
-    required bool reminderEnabled,
-    required int timezoneOffsetMinutes,
-  }) {
-    bool changed = false;
-    changed |= _putDefaultIfMissing(coinState, 'lastDailyClaimDate', '');
-    changed |= _putDefaultIfMissing(coinState, 'streakDay', 0);
-    changed |= _putDefaultIfMissing(coinState, 'profileCompletionRewarded', false);
-    changed |= _putDefaultIfMissing(coinState, 'firstWallpaperUploadRewarded', false);
-    changed |= _putDefaultIfMissing(coinState, 'proDailyBonusDate', '');
-    changed |= _putDefaultIfMissing(coinState, 'referredByUserId', '');
-    changed |= _putDefaultIfMissing(coinState, 'referralRewarded', false);
-    changed |= _putDefaultIfMissing(coinState, 'premiumPreviewUnlocks', <String, int>{});
-    changed |= _putDefaultIfMissing(coinState, _streakReminderEnabledField, reminderEnabled);
-    changed |= _putDefaultIfMissing(coinState, _streakTimezoneOffsetMinutesField, timezoneOffsetMinutes);
-    changed |= _putDefaultIfMissing(coinState, _streakReminderLastSentDateField, '');
-    changed |= _putDefaultIfMissing(coinState, _streakLastClaimServerAtField, '');
-    final Map<String, int> normalizedPreviewUnlocks = _previewUnlocksFromState(coinState);
-    if (!_previewUnlockStateEquals(coinState['premiumPreviewUnlocks'], normalizedPreviewUnlocks)) {
-      coinState['premiumPreviewUnlocks'] = normalizedPreviewUnlocks;
-      changed = true;
-    }
-    final int normalizedStreakDay = _clampStreakDay(_asInt(coinState['streakDay']));
-    if (normalizedStreakDay != _asInt(coinState['streakDay'])) {
-      coinState['streakDay'] = normalizedStreakDay;
-      changed = true;
-    }
-    return changed;
   }
 
   int _deviceTimezoneOffsetMinutes() {
@@ -932,23 +836,7 @@ class CoinsService {
     return '${shifted.year}-$month-$day';
   }
 
-  DateTime? _parseUtcDateTime(Object? value) {
-    if (value == null) {
-      return null;
-    }
-    if (value is DateTime) {
-      return value.toUtc();
-    }
-    final dynamic raw = value;
-    try {
-      // ignore: avoid_dynamic_calls
-      final dynamic maybeDate = raw.toDate();
-      if (maybeDate is DateTime) {
-        return maybeDate.toUtc();
-      }
-    } catch (_) {}
-    return DateTime.tryParse(value.toString())?.toUtc();
-  }
+  DateTime? _parseUtcDateTime(Object? value) => parseDateTime(value)?.toUtc();
 
   DateTime _computeNextReminderAtUtc({
     required DateTime nowUtc,
@@ -971,16 +859,12 @@ class CoinsService {
   }
 
   StreakStatus _syncStreakFromUserData(Map<String, dynamic> userData) {
-    final Map<String, dynamic> coinState = _coinStateFromRaw(userData[_coinStateField]);
-    _ensureCoinStateDefaults(
-      coinState,
-      reminderEnabled: _preferredStreakReminderEnabled(),
-      timezoneOffsetMinutes: _deviceTimezoneOffsetMinutes(),
-    );
-    final int timezoneOffsetMinutes = _asInt(coinState[_streakTimezoneOffsetMinutesField]);
+    final Map<String, dynamic> coinState = toJsonMap(userData[_coinStateField]);
+    final int timezoneOffsetMinutes =
+        parseInt(coinState[_streakTimezoneOffsetMinutesField]) ?? _deviceTimezoneOffsetMinutes();
     final String todayLocalKey = _offsetDayKey(DateTime.now().toUtc(), timezoneOffsetMinutes);
     final String lastClaimDate = (coinState['lastDailyClaimDate'] as String? ?? '').trim();
-    final int streakDay = _clampStreakDay(_asInt(coinState['streakDay']));
+    final int streakDay = _clampStreakDay(parseIntOr(coinState['streakDay']));
     final bool active =
         streakDay > 0 && (lastClaimDate == todayLocalKey || _isPreviousDay(lastClaimDate, todayLocalKey));
     final bool claimedToday = lastClaimDate == todayLocalKey;
@@ -988,21 +872,13 @@ class CoinsService {
       streakDay: active ? streakDay : 0,
       active: active,
       claimedToday: claimedToday,
-      reminderEnabled: _asBool(coinState[_streakReminderEnabledField]),
+      reminderEnabled: _asBool(coinState[_streakReminderEnabledField] ?? _preferredStreakReminderEnabled()),
       timezoneOffsetMinutes: timezoneOffsetMinutes,
       lastClaimDate: lastClaimDate,
       nextReminderAtUtc: _parseUtcDateTime(coinState[_streakReminderNextAtUtcField]),
     );
     streakNotifier.value = status;
     return status;
-  }
-
-  bool _putDefaultIfMissing(Map<String, dynamic> map, String key, Object value) {
-    if (!map.containsKey(key)) {
-      map[key] = value;
-      return true;
-    }
-    return false;
   }
 
   Map<String, int> _previewUnlocksFromState(Map<String, dynamic> coinState) {
@@ -1019,34 +895,12 @@ class CoinsService {
       if (normalizedKey.isEmpty) {
         return;
       }
-      final int expiryMillis = _asInt(value);
+      final int expiryMillis = parseIntOr(value);
       if (expiryMillis > 0) {
         normalized[normalizedKey] = expiryMillis;
       }
     });
     return normalized;
-  }
-
-  bool _previewUnlockStateEquals(Object? raw, Map<String, int> normalized) {
-    if (raw is! Map) {
-      return normalized.isEmpty;
-    }
-    if (raw.length != normalized.length) {
-      return false;
-    }
-    for (final entry in normalized.entries) {
-      final Object? rawValue = raw[entry.key];
-      if (_asInt(rawValue) != entry.value) {
-        return false;
-      }
-    }
-    for (final rawKey in raw.keys) {
-      final String normalizedRawKey = _normalizeCollectionKey(rawKey.toString());
-      if (!normalized.containsKey(normalizedRawKey)) {
-        return false;
-      }
-    }
-    return true;
   }
 
   String _normalizeCollectionKey(String rawKey) {
