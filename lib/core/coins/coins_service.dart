@@ -261,18 +261,19 @@ class CoinsService {
 
   /// Set only when a daily claim really paid out. The UI shows the daily sheet, then calls [consumeLastClaim].
   final ValueNotifier<StreakClaimResult?> lastClaimNotifier = ValueNotifier<StreakClaimResult?>(null);
-  String? _lastClaimUserId;
-  String? _lastPublishedClaimDay;
+  String? _pendingClaimUserId;
+  final Set<(String, String)> _publishedClaimDays = <(String, String)>{};
   String? _pendingFreezeUserId;
   String? _pendingFreezeRequestId;
 
   StreakClaimResult? get pendingClaimForCurrentUser {
-    if (!_canMutateCoins() || _lastClaimUserId != app_state.prismUser.id) consumeLastClaim();
+    if (!_canMutateCoins() || _pendingClaimUserId != app_state.prismUser.id) consumeLastClaim();
     return lastClaimNotifier.value;
   }
 
   void consumeLastClaim() {
     lastClaimNotifier.value = null;
+    _pendingClaimUserId = null;
   }
 
   SettingsLocalDataSource get _settings => getIt<SettingsLocalDataSource>();
@@ -357,7 +358,6 @@ class CoinsService {
       return;
     }
     final String userId = app_state.prismUser.id;
-    final user = app_state.prismUser;
     // The server owns coinState defaults now; the rules block writing it from the client,
     // so this only reads and defaults locally/in-memory instead of persisting anything.
     final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
@@ -366,8 +366,8 @@ class CoinsService {
       (value, _) => value,
       sourceTag: 'coins.bootstrap',
     );
-    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return;
-    if (_lastClaimUserId != user.id) consumeLastClaim();
+    if (!_canMutateCoins() || userId != app_state.prismUser.id) return;
+    if (_pendingClaimUserId != userId) consumeLastClaim();
     if (data == null) {
       await refreshStreakStatus();
       return;
@@ -381,14 +381,13 @@ class CoinsService {
       return app_state.prismUser.coins;
     }
     final String userId = app_state.prismUser.id;
-    final user = app_state.prismUser;
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
       (data, _) => data,
       sourceTag: 'coins.refresh_balance',
     );
-    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return app_state.prismUser.coins;
+    if (!_canMutateCoins() || userId != app_state.prismUser.id) return app_state.prismUser.coins;
     if (userData == null) {
       return app_state.prismUser.coins;
     }
@@ -406,14 +405,13 @@ class CoinsService {
       return StreakStatus.empty;
     }
     final String userId = app_state.prismUser.id;
-    final user = app_state.prismUser;
     final Map<String, dynamic>? userData = await firestoreClient.getById<Map<String, dynamic>>(
       FirebaseCollections.usersV2,
       userId,
       (data, _) => data,
       sourceTag: 'coins.refresh_streak',
     );
-    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return StreakStatus.empty;
+    if (!_canMutateCoins() || userId != app_state.prismUser.id) return StreakStatus.empty;
     if (userData == null) {
       return streakNotifier.value;
     }
@@ -673,7 +671,10 @@ class CoinsService {
         reason: 'invalid_collection_key',
       );
     }
-    if (await hasPremiumPreviewAccessForCollection(normalizedKey)) {
+    final String userId = app_state.prismUser.id;
+    final bool hasAccess = await hasPremiumPreviewAccessForCollection(normalizedKey);
+    if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
+    if (hasAccess) {
       return CoinMutationResult.noChange(
         balance: app_state.prismUser.coins,
         reason: 'premium_preview_already_unlocked',
@@ -715,7 +716,7 @@ class CoinsService {
       return _notLoggedIn;
     }
     final int previousBalance = app_state.prismUser.coins;
-    final user = app_state.prismUser;
+    final String userId = app_state.prismUser.id;
     final int timezoneOffsetMinutes = _deviceTimezoneOffsetMinutes();
     final bool reminderEnabled = _preferredStreakReminderEnabled();
     try {
@@ -727,7 +728,7 @@ class CoinsService {
         'timezoneOffsetMinutes': timezoneOffsetMinutes,
         'reminderEnabled': reminderEnabled,
       });
-      if (!_canMutateCoins() || user.id != app_state.prismUser.id) return _notLoggedIn;
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
       final Map<String, dynamic> payload = toJsonMap(response.data);
       final StreakClaimResult result = StreakClaimResult.fromPayload(payload);
       final bool claimed = result.claimed;
@@ -762,9 +763,8 @@ class CoinsService {
             ? null
             : DateTime.fromMillisecondsSinceEpoch(nextReminderAtUtcMillis, isUtc: true),
       );
-      if (claimed && (_lastClaimUserId != user.id || _lastPublishedClaimDay != todayLocalKey)) {
-        _lastClaimUserId = user.id;
-        _lastPublishedClaimDay = todayLocalKey;
+      if (claimed && _publishedClaimDays.add((userId, todayLocalKey))) {
+        _pendingClaimUserId = userId;
         lastClaimNotifier.value = result;
       }
 
@@ -803,7 +803,7 @@ class CoinsService {
       );
     } catch (error, stackTrace) {
       logCoinError(sourceTag: 'coins.claim_daily_and_streak.callable', error: error, stackTrace: stackTrace);
-      if (_canMutateCoins() && user.id == app_state.prismUser.id) await refreshStreakStatus();
+      if (_canMutateCoins() && userId == app_state.prismUser.id) await refreshStreakStatus();
       return CoinMutationResult.noChange(balance: app_state.prismUser.coins, success: false, reason: 'callable_failed');
     }
   }
@@ -812,11 +812,11 @@ class CoinsService {
     if (!_canMutateCoins()) {
       return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'not_logged_in');
     }
-    final user = app_state.prismUser;
+    final String userId = app_state.prismUser.id;
     final SettingsLocalDataSource settings = _settings;
-    if (_pendingFreezeUserId != user.id) _pendingFreezeRequestId = null;
-    _pendingFreezeUserId = user.id;
-    final String pendingKey = 'pendingStreakFreezeRequest.${user.id}';
+    if (_pendingFreezeUserId != userId) _pendingFreezeRequestId = null;
+    _pendingFreezeUserId = userId;
+    final String pendingKey = 'pendingStreakFreezeRequest.$userId';
     final String persistedRequest = settings.isOpen ? settings.get<String>(pendingKey, defaultValue: '') : '';
     if (_pendingFreezeRequestId == null && persistedRequest.isNotEmpty) _pendingFreezeRequestId = persistedRequest;
     final String requestId = _pendingFreezeRequestId ??= _newRequestId();
@@ -829,7 +829,7 @@ class CoinsService {
 
     try {
       if (settings.isOpen) await settings.set(pendingKey, requestId);
-      if (!_canMutateCoins() || user.id != app_state.prismUser.id) {
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) {
         return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'session_changed');
       }
       final HttpsCallable callable = appFunctions.httpsCallable('buyStreakFreeze');
@@ -838,7 +838,7 @@ class CoinsService {
       if (_asBool(data['success']) || _asBool(data['atCap']) || _asBool(data['insufficientBalance'])) {
         await clearPending();
       }
-      if (!_canMutateCoins() || user.id != app_state.prismUser.id) {
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) {
         return const StreakFreezePurchase(StreakFreezeOutcome.failed, message: 'session_changed');
       }
       final int freezes = _clampFreezes(parseIntOr(data['streakFreezes']));
@@ -965,7 +965,7 @@ class CoinsService {
     if (!_canMutateCoins()) {
       return _notLoggedIn;
     }
-    final user = app_state.prismUser;
+    final String userId = app_state.prismUser.id;
     final CoinMutationResult result = await _callCoinMutation(
       callableName: callableName,
       amount: action.defaultAmount(),
@@ -974,7 +974,7 @@ class CoinsService {
       reason: reason,
       inviterUserId: inviterUserId,
     );
-    if (!_canMutateCoins() || user.id != app_state.prismUser.id) return _notLoggedIn;
+    if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
     _applyLocalBalance(result.currentBalance, delta: result.delta);
     if (result.changed) {
       final CoinEarnFlags flags = earnFlagsNotifier.value;
@@ -1008,6 +1008,7 @@ class CoinsService {
     String? inviterUserId,
     String? transactionId,
   }) async {
+    final String userId = app_state.prismUser.id;
     try {
       final HttpsCallable callable = appFunctions.httpsCallable(callableName);
       final HttpsCallableResult<dynamic> response = await callable.call(<String, dynamic>{
@@ -1019,6 +1020,7 @@ class CoinsService {
         if (inviterUserId != null) 'inviterUserId': inviterUserId,
         if (transactionId != null) 'transactionId': transactionId,
       });
+      if (!_canMutateCoins() || userId != app_state.prismUser.id) return _notLoggedIn;
       final Map<String, dynamic> data = toJsonMap(response.data);
       final int balance = parseIntOr(data['currentBalance']);
       return CoinMutationResult(

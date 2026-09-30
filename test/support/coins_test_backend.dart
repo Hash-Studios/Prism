@@ -114,6 +114,7 @@ class CoinsTestFirestore extends Fake implements FirestoreClient {
   Map<String, dynamic> userData = <String, dynamic>{};
   Future<Map<String, dynamic>>? userResponse;
   List<Map<String, dynamic>> transactions = <Map<String, dynamic>>[];
+  int getByIdCalls = 0;
   int queries = 0;
   int? dedupeWindowMs;
 
@@ -124,7 +125,10 @@ class CoinsTestFirestore extends Fake implements FirestoreClient {
     T Function(Map<String, dynamic>, String) map, {
     required String sourceTag,
     bool preferCacheFirst = false,
-  }) async => map(userResponse == null ? userData : await userResponse!, id);
+  }) async {
+    getByIdCalls++;
+    return map(userResponse == null ? userData : await userResponse!, id);
+  }
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
