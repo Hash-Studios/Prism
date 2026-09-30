@@ -1,3 +1,6 @@
+// Firebase platform-interface packages are transitive, but these fakes need them.
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
