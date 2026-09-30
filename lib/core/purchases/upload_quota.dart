@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/logger/logger.dart';
 
 class UploadQuota {
   const UploadQuota._();
@@ -22,8 +25,17 @@ class UploadQuota {
   static int _readCountForCurrentWeek(DateTime now) {
     final String currentWeekKey = _weekKey(now);
     if (storedWeekStart != currentWeekKey) {
-      _settings.set(_weekStartPrefKey, currentWeekKey);
-      _settings.set(_weeklyCountPrefKey, 0);
+      unawaited(
+        Future.wait<void>([
+          _settings.set(_weekStartPrefKey, currentWeekKey),
+          _settings.set(_weeklyCountPrefKey, 0),
+        ]).then<void>(
+          (_) {},
+          onError: (Object error, StackTrace stackTrace) {
+            logger.w('Could not reset weekly upload quota', tag: 'Upload', error: error, stackTrace: stackTrace);
+          },
+        ),
+      );
       return 0;
     }
     return _settings.get<int>(_weeklyCountPrefKey, defaultValue: 0);
@@ -42,10 +54,10 @@ class UploadQuota {
     return (freeUploadsPerWeek - used).clamp(0, freeUploadsPerWeek);
   }
 
-  static int incrementWeeklyUploads({DateTime? now}) {
+  static Future<int> incrementWeeklyUploads({DateTime? now}) async {
     final DateTime target = now ?? DateTime.now();
     final int used = _readCountForCurrentWeek(target) + 1;
-    _settings.set(_weeklyCountPrefKey, used);
+    await _settings.set(_weeklyCountPrefKey, used);
     return used;
   }
 }

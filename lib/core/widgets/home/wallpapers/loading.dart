@@ -2,9 +2,10 @@ import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:flutter/material.dart';
 
 class LoadingCards extends StatelessWidget {
-  const LoadingCards({super.key, this.childAspectRatio = 0.6625});
+  const LoadingCards({super.key, this.childAspectRatio = 0.6625, this.borderRadius = BorderRadius.zero});
 
   final double childAspectRatio;
+  final BorderRadius borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,7 @@ class LoadingCards extends StatelessWidget {
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
         ),
-        itemBuilder: (context, index) => PulseFill(borderRadius: BorderRadius.circular(20)),
+        itemBuilder: (context, index) => PulseFill(borderRadius: borderRadius),
       ),
     );
   }

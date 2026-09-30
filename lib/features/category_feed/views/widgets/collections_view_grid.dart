@@ -108,7 +108,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       child: PulsePlaceholder(
         builder: (context, _) => GridView.builder(
           padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-          itemCount: walls.length,
+          itemCount: walls.length + (collectionHasMore && walls.length >= 24 ? 1 : 0),
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
@@ -117,14 +117,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
             crossAxisSpacing: 8,
           ),
           itemBuilder: (context, index) {
-            final Map<String, dynamic> wall = walls[index];
-            final String wallId = _wallString(wall, 'id');
-            final String wallpaperThumb = _wallString(wall, 'wallpaper_thumb');
-            final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
-            final WallpaperSource wallSource = _wallSource(wall);
-            final bool validPayload =
-                wallId.trim().isNotEmpty && isValidNetworkUrl(wallpaperThumb) && isValidNetworkUrl(wallpaperUrl);
-            if (index == walls.length - 1 && collectionHasMore && walls.length >= 24) {
+            if (index == walls.length && collectionHasMore && walls.length >= 24) {
               return SeeMoreButton(
                 seeMoreLoader: seeMoreLoader,
                 func: () {
@@ -141,6 +134,13 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 },
               );
             }
+            final Map<String, dynamic> wall = walls[index];
+            final String wallId = _wallString(wall, 'id');
+            final String wallpaperThumb = _wallString(wall, 'wallpaper_thumb');
+            final String wallpaperUrl = _wallString(wall, 'wallpaper_url');
+            final WallpaperSource wallSource = _wallSource(wall);
+            final bool validPayload =
+                wallId.trim().isNotEmpty && isValidNetworkUrl(wallpaperThumb) && isValidNetworkUrl(wallpaperUrl);
             if (!validPayload) {
               logger.w(
                 'Skipping malformed collection tile payload.',
@@ -148,10 +148,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 fields: <String, Object?>{'wall_id': wallId, 'thumb': wallpaperThumb, 'url': wallpaperUrl},
               );
               return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).hintColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: BoxDecoration(color: Theme.of(context).hintColor.withValues(alpha: 0.08)),
                 child: Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.secondary)),
               );
             }
@@ -163,13 +160,8 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                 target: index,
                 child: Stack(
                   children: [
-                    PrismImageTile(
-                      url: wallpaperThumb,
-                      heroTag: prismHeroTag(this, index, wallId),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
+                    PrismImageTile(url: wallpaperThumb, heroTag: prismHeroTag(this, index, wallId)),
+                    ClipRect(
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(

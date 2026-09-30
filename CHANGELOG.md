@@ -1,5 +1,15 @@
 ## Changelog
 
+### v3.1.0
+- Your home feed learns what you love and ranks wallpapers on your device
+- Tune your feed shows what it has learned and lets you shape it
+- The wallpaper editor runs on the GPU, with filters you can stack and adjust with sliders
+- Meet Glint, a small companion with ten moods
+- Pro members see their streak bonus in the streak header
+- Uploads, reviews and favourites are more reliable
+- The launch screen follows your theme
+- Security and stability fixes
+
 ### v3.0.9
 - Shared wallpaper, setup and profile links open the right screen, even when the app was closed
 - Coins are credited on our servers, and the Earn and Invite a friend rows work again

@@ -24,15 +24,6 @@ String? _authorName(FeedItemEntity wallpaper) => wallpaper.when(
   pexels: (_, wall) => wall.core.authorName,
 );
 
-String _thumbnailUrl(FeedItemEntity wallpaper) => wallpaper.when(
-  prism: (_, wall) => wall.thumbnailUrl,
-  wallhaven: (_, wall) {
-    final String thumb = wall.thumbs?['original'] ?? '';
-    return thumb.isNotEmpty && thumb != 'null' ? thumb : wall.fullUrl;
-  },
-  pexels: (_, wall) => wall.thumbnailUrl,
-);
-
 class SearchGrid extends StatefulWidget {
   const SearchGrid({super.key, required this.query, required this.provider, required this.initialResults});
 
@@ -179,14 +170,14 @@ class _SearchGridState extends State<SearchGrid> {
         child: PulsePlaceholder(
           builder: (context, _) => GridView.builder(
             padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-            itemCount: _results.length,
+            itemCount: _results.length + (_hasMore && _results.length >= 24 ? 1 : 0),
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
               childAspectRatio: 0.5,
             ),
             itemBuilder: (context, index) {
-              if (_hasMore && index == _results.length - 1 && index >= 23) {
+              if (_hasMore && _results.length >= 24 && index == _results.length) {
                 return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _requestNextPage);
               }
 
@@ -199,7 +190,7 @@ class _SearchGridState extends State<SearchGrid> {
                   target: index,
                   child: Stack(
                     children: [
-                      PrismImageTile(url: _thumbnailUrl(wallpaper), heroTag: prismHeroTag(this, index, wallpaper.id)),
+                      PrismImageTile(url: wallpaper.thumbnailUrl, heroTag: prismHeroTag(this, index, wallpaper.id)),
                       Material(
                         color: Colors.transparent,
                         child: InkWell(

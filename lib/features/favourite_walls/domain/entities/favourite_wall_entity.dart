@@ -1,4 +1,5 @@
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -94,7 +95,8 @@ final class LegacyFavouriteWall extends FavouriteWallEntity {
   final JsonMap legacyPayload;
 
   @override
-  String get thumbnailUrl => parseString(firstPresent(legacyPayload, <String>['wallpaper_thumb', 'thumb']));
+  String get thumbnailUrl =>
+      normalizeWallpaperThumbnailUrl(parseString(firstPresent(legacyPayload, <String>['wallpaper_thumb', 'thumb'])));
 
   @override
   String get fullUrl => parseString(firstPresent(legacyPayload, <String>['wallpaper_url', 'url']));

@@ -162,7 +162,7 @@ class _ColorGridState extends State<ColorGrid> {
         child: PulsePlaceholder(
           builder: (context, _) => GridView.builder(
             padding: EdgeInsets.zero,
-            itemCount: walls.isEmpty ? 24 : walls.length,
+            itemCount: walls.isEmpty ? 24 : walls.length + (_hasMore ? 1 : 0),
             shrinkWrap: true,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
@@ -172,7 +172,7 @@ class _ColorGridState extends State<ColorGrid> {
               if (walls.isEmpty) {
                 return const PulseFill();
               }
-              if (_hasMore && index == walls.length - 1) {
+              if (_hasMore && index == walls.length) {
                 return SeeMoreButton(
                   seeMoreLoader: seeMoreLoader,
                   func: () {
