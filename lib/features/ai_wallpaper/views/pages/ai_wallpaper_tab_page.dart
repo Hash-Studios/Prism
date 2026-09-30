@@ -61,6 +61,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
   bool _submitting = false;
+  final Set<String> _unconfirmedSubmissionIds = <String>{};
 
   static const int _maxPromptChars = 4000;
   static const int _maxVariationChars = 2000;
@@ -558,11 +559,17 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       toasts.error('AI submit is currently disabled.');
       return;
     }
+    if (_unconfirmedSubmissionIds.contains(record.id)) {
+      toasts.error('Submission status is unconfirmed. Check Review Status before trying again.');
+      return;
+    }
     if (_submitting) return;
     setState(() => _submitting = true);
 
-    analytics.track(AiSubmitStartedEvent(generationId: record.id));
+    bool submissionStarted = false;
+    bool submissionConfirmed = false;
     try {
+      analytics.track(AiSubmitStartedEvent(generationId: record.id));
       final metadata = await _repository.prefillSubmissionMetadata(generationId: record.id);
       final edited = await _showSubmissionEditor(metadata);
       if (edited == null) {
@@ -570,7 +577,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       }
 
       final String communityId = _buildCommunityId(record.id);
-      await wallstore.createRecord(
+      submissionStarted = true;
+      final wallstore.WallSubmissionResult submissionResult = await wallstore.createRecord(
         communityId,
         'Prism',
         record.watermarkedImageUrl,
@@ -593,28 +601,61 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         aiPrompt: record.prompt,
         aiStylePreset: record.stylePreset.apiValue,
       );
+      if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
+        return;
+      }
+      submissionConfirmed = true;
       final updated = record.copyWith(
         submittedWallId: communityId,
         submittedAt: DateTime.now().toUtc(),
         status: 'submitted',
       );
-      await _repository.saveHistoryRecord(updated);
-      setState(() {
-        _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
-        if (_latest?.id == updated.id) {
-          _latest = updated;
-        }
-      });
+      if (mounted) {
+        setState(() {
+          _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
+          if (_latest?.id == updated.id) {
+            _latest = updated;
+          }
+        });
+      }
+      try {
+        await _repository.saveHistoryRecord(updated);
+      } catch (error, stackTrace) {
+        logger.w(
+          'AI wallpaper submitted but local history could not be saved',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
       analytics.track(AiSubmitSuccessEvent(generationId: record.id));
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
       }
       toasts.codeSend('Submitted for review.');
     } catch (error, stackTrace) {
-      logger.w('AI community submit failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(
-        _isOfflineOrNetworkError(error) ? 'No connection. Try again when online.' : 'Submit failed. Try again.',
-      );
+      if (submissionConfirmed) {
+        logger.w(
+          'AI wallpaper submission succeeded but follow-up work failed',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      } else if (submissionStarted) {
+        if (mounted) {
+          setState(() => _unconfirmedSubmissionIds.add(record.id));
+        }
+        logger.w(
+          'AI wallpaper submission status is unconfirmed',
+          tag: 'ai_wallpaper',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        toasts.error('Could not confirm the submission. Check Review Status before trying again.');
+      } else {
+        logger.w('AI community submit failed before saving', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+        toasts.error(_isOfflineOrNetworkError(error) ? 'No connection. Try again.' : 'Submit failed. Please retry.');
+      }
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
@@ -881,7 +922,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _buildResultArea(AiGenerationRecord? current, bool loading) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool canSubmit =
-        current != null && current.submittedWallId == null && app_state.aiSubmitEnabled && !_submitting;
+        current != null &&
+        current.submittedWallId == null &&
+        app_state.aiSubmitEnabled &&
+        !_submitting &&
+        !_unconfirmedSubmissionIds.contains(current.id);
     final ({int cacheWidth, int cacheHeight}) decode = _mainPreviewDecodeExtents(context);
 
     return RepaintBoundary(
@@ -940,6 +985,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                                   padding: const EdgeInsets.all(14),
                                   child: Icon(Icons.upload_outlined, color: scheme.onInverseSurface, size: 20),
                                 ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (_unconfirmedSubmissionIds.contains(current.id))
+                        Positioned(
+                          left: 8,
+                          right: 8,
+                          bottom: 8,
+                          child: Material(
+                            color: scheme.inverseSurface.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              child: Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Text(
+                                      'Submission status is unconfirmed. Check before retrying.',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(color: scheme.onInverseSurface),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => context.router.push(const ReviewRoute()),
+                                    child: Text('Check status', style: TextStyle(color: scheme.onInverseSurface)),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
