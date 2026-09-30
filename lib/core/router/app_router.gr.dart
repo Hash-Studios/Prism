@@ -28,34 +28,111 @@ class AboutRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [AdminReviewScreen]
-class AdminReviewRoute extends PageRouteInfo<void> {
-  const AdminReviewRoute({List<PageRouteInfo>? children})
-    : super(AdminReviewRoute.name, initialChildren: children);
+class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
+  AdminReviewRoute({
+    Key? key,
+    AdminModerationRepository? repository,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AdminReviewRoute.name,
+         args: AdminReviewRouteArgs(key: key, repository: repository),
+         initialChildren: children,
+       );
 
   static const String name = 'AdminReviewRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AdminReviewScreen();
+      final args = data.argsAs<AdminReviewRouteArgs>(
+        orElse: () => const AdminReviewRouteArgs(),
+      );
+      return AdminReviewScreen(key: args.key, repository: args.repository);
     },
   );
 }
 
+class AdminReviewRouteArgs {
+  const AdminReviewRouteArgs({this.key, this.repository});
+
+  final Key? key;
+
+  final AdminModerationRepository? repository;
+
+  @override
+  String toString() {
+    return 'AdminReviewRouteArgs{key: $key, repository: $repository}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AdminReviewRouteArgs) return false;
+    return key == other.key && repository == other.repository;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ repository.hashCode;
+}
+
 /// generated route for
 /// [AiWallpaperTabPage]
-class AiTabRoute extends PageRouteInfo<void> {
-  const AiTabRoute({List<PageRouteInfo>? children})
-    : super(AiTabRoute.name, initialChildren: children);
+class AiTabRoute extends PageRouteInfo<AiTabRouteArgs> {
+  AiTabRoute({
+    Key? key,
+    AiGenerationRepositoryImpl? repository,
+    Future<WallSubmissionResult> Function()? submitForTesting,
+    List<PageRouteInfo>? children,
+  }) : super(
+         AiTabRoute.name,
+         args: AiTabRouteArgs(
+           key: key,
+           repository: repository,
+           submitForTesting: submitForTesting,
+         ),
+         initialChildren: children,
+       );
 
   static const String name = 'AiTabRoute';
 
   static PageInfo page = PageInfo(
     name,
     builder: (data) {
-      return const AiWallpaperTabPage();
+      final args = data.argsAs<AiTabRouteArgs>(
+        orElse: () => const AiTabRouteArgs(),
+      );
+      return AiWallpaperTabPage(
+        key: args.key,
+        repository: args.repository,
+        submitForTesting: args.submitForTesting,
+      );
     },
   );
+}
+
+class AiTabRouteArgs {
+  const AiTabRouteArgs({this.key, this.repository, this.submitForTesting});
+
+  final Key? key;
+
+  final AiGenerationRepositoryImpl? repository;
+
+  final Future<WallSubmissionResult> Function()? submitForTesting;
+
+  @override
+  String toString() {
+    return 'AiTabRouteArgs{key: $key, repository: $repository, submitForTesting: $submitForTesting}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! AiTabRouteArgs) return false;
+    return key == other.key && repository == other.repository;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ repository.hashCode;
 }
 
 /// generated route for
@@ -1126,6 +1203,12 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     Key? key,
     required File image,
     required bool fromSetupRoute,
+    Future<void> Function()? prepareImageForTesting,
+    Future<GitHubContent> Function({required bool isThumbnail})?
+    uploadFileForTesting,
+    Future<void> Function({required String path, required String sha})?
+    deleteFileForTesting,
+    Future<WallSubmissionResult> Function()? createRecordForTesting,
     List<PageRouteInfo>? children,
   }) : super(
          UploadWallRoute.name,
@@ -1133,6 +1216,10 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            key: key,
            image: image,
            fromSetupRoute: fromSetupRoute,
+           prepareImageForTesting: prepareImageForTesting,
+           uploadFileForTesting: uploadFileForTesting,
+           deleteFileForTesting: deleteFileForTesting,
+           createRecordForTesting: createRecordForTesting,
          ),
          initialChildren: children,
        );
@@ -1147,6 +1234,10 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         key: args.key,
         image: args.image,
         fromSetupRoute: args.fromSetupRoute,
+        prepareImageForTesting: args.prepareImageForTesting,
+        uploadFileForTesting: args.uploadFileForTesting,
+        deleteFileForTesting: args.deleteFileForTesting,
+        createRecordForTesting: args.createRecordForTesting,
       );
     },
   );
@@ -1157,6 +1248,10 @@ class UploadWallRouteArgs {
     this.key,
     required this.image,
     required this.fromSetupRoute,
+    this.prepareImageForTesting,
+    this.uploadFileForTesting,
+    this.deleteFileForTesting,
+    this.createRecordForTesting,
   });
 
   final Key? key;
@@ -1165,9 +1260,19 @@ class UploadWallRouteArgs {
 
   final bool fromSetupRoute;
 
+  final Future<void> Function()? prepareImageForTesting;
+
+  final Future<GitHubContent> Function({required bool isThumbnail})?
+  uploadFileForTesting;
+
+  final Future<void> Function({required String path, required String sha})?
+  deleteFileForTesting;
+
+  final Future<WallSubmissionResult> Function()? createRecordForTesting;
+
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, fromSetupRoute: $fromSetupRoute}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, fromSetupRoute: $fromSetupRoute, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting}';
   }
 
   @override
