@@ -34,7 +34,7 @@ class CoinBalanceChip extends StatelessWidget {
                   requiredCoins: CoinPolicy.lowBalanceNudgeThreshold,
                 );
               }
-              context.router.push(const CoinTransactionsRoute());
+              context.router.push(RewardsRoute());
             }
 
             final Color bgColor = isEarn

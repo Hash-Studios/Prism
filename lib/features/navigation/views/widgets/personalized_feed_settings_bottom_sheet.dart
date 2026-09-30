@@ -6,6 +6,7 @@ import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
@@ -37,7 +38,7 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
   }
   final FeedMix currentMix = FeedMix.parse(settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
-  await showModalBottomSheet<void>(
+  await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,

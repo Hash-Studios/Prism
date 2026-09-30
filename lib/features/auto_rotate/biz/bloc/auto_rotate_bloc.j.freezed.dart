@@ -218,7 +218,7 @@ return rotateNowPressed();case _:
 
 class _Started implements AutoRotateEvent {
   const _Started({required final  List<String> favouriteUrls, required this.isPro}): _favouriteUrls = favouriteUrls;
-
+  
 
  final  List<String> _favouriteUrls;
  List<String> get favouriteUrls {
@@ -292,7 +292,7 @@ as bool,
 
 class _EntitlementChanged implements AutoRotateEvent {
   const _EntitlementChanged({required this.isPro, required this.userId});
-
+  
 
  final  bool isPro;
  final  String userId;

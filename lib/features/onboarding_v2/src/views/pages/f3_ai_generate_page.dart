@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_frame.dart';
@@ -171,7 +172,7 @@ class _LoadingView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(color: Colors.black.withValues(alpha: 0.6), strokeWidth: 2.5),
+            const Glint(mood: GlintMood.curious, size: 64),
             const SizedBox(height: 16),
             Text(
               'crafting your wallpaper…',
@@ -219,7 +220,7 @@ class _FailureView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.refresh_rounded, color: Colors.black.withValues(alpha: 0.45), size: 36),
+            const Glint(mood: GlintMood.sad, size: 64),
             const SizedBox(height: 12),
             Text(
               'something went wrong.\ntap generate to try again.',

@@ -282,8 +282,10 @@ Future<void> main() async {
 }
 
 Future<void> _deferredStartup({required bool firebaseInitialized}) async {
-  await MobileAds.instance.initialize();
-  await _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized);
+  await Future.wait(<Future<Object?>>[
+    MobileAds.instance.initialize(),
+    _configureAnalyticsRuntime(firebaseInitialized: firebaseInitialized),
+  ]);
 }
 
 SentryConfig _resolveSentryConfig() {
@@ -426,7 +428,7 @@ class _MyApp extends StatefulWidget {
 
 class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final AppRouter _appRouter;
-  late final AnalyticsIdentitySync _analyticsIdentitySync;
+  final AnalyticsIdentitySync _analyticsIdentitySync = AnalyticsIdentitySync();
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
   final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
   final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
@@ -492,6 +494,10 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       isPremium: isPremium,
       sourceTag: sourceTag,
     );
+  }
+
+  void _onAnalyticsRuntimeChanged() {
+    unawaited(_syncAnalyticsIdentityFromAppState(sourceTag: 'analytics_runtime_ready'));
   }
 
   Future<void> _syncAnalyticsIdentityFromAppState({required String sourceTag}) {
@@ -859,7 +865,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
     localNotification.router = _appRouter;
-    _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
+    AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(_restoreLoginStatus());
@@ -888,6 +894,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    AnalyticsRuntime.changes.removeListener(_onAnalyticsRuntimeChanged);
     unawaited(analytics.flush());
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -959,7 +966,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             deepLinkTransformer: (uri) async => _deepLinkParser.transform(uri),
             deepLinkBuilder: _routerDeepLinkBuilder,
             navigatorObservers: () => [
-              ...analytics.buildNavigatorObservers(),
+              ...AnalyticsRuntime.buildNavigatorObservers(),
               if (MonitoringRuntime.reporter.isEnabled)
                 SentryNavigatorObserver(enableAutoTransactions: false, ignoreRoutes: <String>['/']),
             ],

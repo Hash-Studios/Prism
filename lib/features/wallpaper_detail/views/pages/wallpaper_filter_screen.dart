@@ -7,14 +7,16 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/animated/loader.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
@@ -369,7 +371,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
     try {
-      final WallpaperTarget? target = await showModalBottomSheet<WallpaperTarget>(
+      final WallpaperTarget? target = await showPrismSheet<WallpaperTarget>(
         isScrollControlled: true,
         context: context,
         builder: (context) => SetOptionsPanel(
@@ -430,24 +432,30 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
               icon: const Icon(JamIcons.refresh),
               onPressed: _isEdited && !_busy ? _reset : null,
             ),
-            if (_busy)
-              Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(color: theme.colorScheme.error),
-                ),
-              )
-            else
-              IconButton(
-                tooltip: 'Download',
-                icon: const Icon(JamIcons.download),
-                onPressed: !_editorReady
-                    ? null
-                    : () => unawaited(
-                        _startActionWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download'),
+            AnimatedSwitcher(
+              duration: context.motion(PrismDurations.fast),
+              child: _busy
+                  ? Center(
+                      key: const ValueKey('busy'),
+                      child: SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.error),
                       ),
-              ),
+                    )
+                  : IconButton(
+                      key: const ValueKey('download'),
+                      tooltip: 'Download',
+                      icon: const Icon(JamIcons.download),
+                      onPressed: !_editorReady
+                          ? null
+                          : () => unawaited(
+                              _startActionWithPremiumFilterGate(
+                                _handleDownloadAction,
+                                sourceTag: 'coins.filter.download',
+                              ),
+                            ),
+                    ),
+            ),
             if (!hideSetWallpaperUi)
               IconButton(
                 tooltip: 'Set as wallpaper',
@@ -475,7 +483,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   Widget _buildPreview(ThemeData theme) {
     final Size? size = _imageSize;
     if (size == null) {
-      return Center(child: Loader());
+      return const GlintState(kind: GlintStateKind.loading, title: 'Loading image');
     }
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     return Column(

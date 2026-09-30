@@ -2,7 +2,9 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -33,7 +35,7 @@ Future<void> showContentReportSheet(
     return;
   }
 
-  await showModalBottomSheet<void>(
+  await showPrismSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
@@ -176,9 +178,16 @@ class _ContentReportSheetBodyState extends State<_ContentReportSheetBody> {
           const SizedBox(height: 12),
           FilledButton(
             onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Submit report'),
+            child: AnimatedSwitcher(
+              duration: context.motion(PrismDurations.fast),
+              child: _submitting
+                  ? const SizedBox.square(
+                      key: ValueKey('loading'),
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Submit report', key: ValueKey('label')),
+            ),
           ),
         ],
       ),
