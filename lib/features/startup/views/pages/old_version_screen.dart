@@ -1,12 +1,11 @@
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class OldVersion extends StatelessWidget {
-  String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS
-      ? "https://apps.apple.com/app/id6670200846"
-      : "https://play.google.com/store/apps/details?id=com.hash.prism";
+  String get _storeLink => defaultTargetPlatform == TargetPlatform.iOS ? appStoreUrl : playStoreUrl;
 
   @override
   Widget build(BuildContext context) {

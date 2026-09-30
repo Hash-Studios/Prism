@@ -3,10 +3,10 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/features/startup/biz/bloc/startup_bloc.j.dart';
 import 'package:Prism/features/startup/views/pages/old_version_screen.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +40,6 @@ class SplashWidget extends StatefulWidget {
 class _SplashWidgetState extends State<SplashWidget> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
   bool _navigated = false;
-  bool _notchMeasured = false;
 
   // Tracks whether the debug-forced onboarding redirect has already fired this
   // app session. Resets on process restart (static lives for the process lifetime).
@@ -61,25 +60,14 @@ class _SplashWidgetState extends State<SplashWidget> {
     });
   }
 
-  void _measureNotch(BuildContext context) {
-    if (_notchMeasured) {
-      return;
-    }
-    final height = MediaQuery.of(context).padding.top;
-    app_state.hasNotch = height > 24;
-    app_state.notchSize = height;
-    context.read<StartupBloc>().add(StartupEvent.notchMeasured(notchHeight: height));
-    _notchMeasured = true;
-    logger.d('Notch Height = $height');
-  }
-
   void _navigatePostBootstrap(BuildContext context) {
     if (_navigated) {
       return;
     }
     _navigated = true;
     final effectiveDebugForce = OnboardingV2Config.debugForceOnboarding && !_debugOnboardingShownThisSession;
-    final isOnboarded = !effectiveDebugForce && _settingsLocal.get<bool>('onboarded_v2_new', defaultValue: false);
+    final isOnboarded =
+        !effectiveDebugForce && _settingsLocal.get<bool>(OnboardingV2Keys.onboardedNew, defaultValue: false);
     final v2Enabled = effectiveDebugForce || (context.read<StartupBloc>().state.config?.onboardingV2Enabled ?? false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
@@ -103,8 +91,6 @@ class _SplashWidgetState extends State<SplashWidget> {
 
   @override
   Widget build(BuildContext context) {
-    _measureNotch(context);
-
     return BlocConsumer<StartupBloc, StartupState>(
       listener: (context, state) {
         if (state.status == LoadStatus.success && !state.isObsoleteVersion) {
@@ -114,6 +100,12 @@ class _SplashWidgetState extends State<SplashWidget> {
       builder: (context, state) {
         if (state.status == LoadStatus.success && state.isObsoleteVersion) {
           return OldVersion();
+        }
+        if (state.status == LoadStatus.failure) {
+          return _StartupFailure(
+            onRetry: () =>
+                context.read<StartupBloc>().add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+          );
         }
         return const _SecondarySplash();
       },
@@ -138,6 +130,34 @@ class _SecondarySplash extends StatelessWidget {
           height: MediaQuery.of(context).size.width * 0.29074074074,
           decoration: const BoxDecoration(
             image: DecorationImage(image: AssetImage('assets/images/ic_launcher.webp'), fit: BoxFit.cover),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StartupFailure extends StatelessWidget {
+  const _StartupFailure({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text("Prism couldn't start", style: textTheme.titleLarge, textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text('Check your connection and try again.', style: textTheme.bodyMedium, textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              FilledButton(onPressed: onRetry, child: const Text('Retry')),
+            ],
           ),
         ),
       ),

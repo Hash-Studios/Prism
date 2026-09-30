@@ -14,7 +14,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 export 'package:Prism/core/utils/string_extensions.dart';
 
-bool hasNotch = false;
 double? notchSize;
 
 String _runtimeAppVersion = app_constants.currentAppVersion;
@@ -72,14 +71,11 @@ StartupConfigEntity? get startupConfig {
 
 String get currentAppVersion => _runtimeAppVersion;
 String get currentAppVersionCode => _runtimeAppVersionCode;
-String get obsoleteAppVersion => startupConfig?.obsoleteAppVersion ?? app_constants.defaultObsoleteAppVersion;
 
 String get topImageLink => startupConfig?.topImageLink ?? app_constants.defaultTopImageLink;
 String get bannerText => startupConfig?.bannerText ?? app_constants.defaultBannerText;
 bool get bannerTextOn => startupConfig?.bannerTextOn ?? app_constants.defaultBannerTextOn;
 String get bannerURL => startupConfig?.bannerUrl ?? app_constants.defaultBannerUrl;
-
-bool get followersTab => startupConfig?.followersTab ?? true;
 
 bool get aiEnabled => startupConfig?.aiEnabled ?? app_constants.defaultAiEnabled;
 int get aiRolloutPercent => startupConfig?.aiRolloutPercent ?? app_constants.defaultAiRolloutPercent;
@@ -87,7 +83,6 @@ bool get aiSubmitEnabled => startupConfig?.aiSubmitEnabled ?? app_constants.defa
 bool get aiVariationsEnabled => startupConfig?.aiVariationsEnabled ?? app_constants.defaultAiVariationsEnabled;
 bool get useRcPaywalls => startupConfig?.useRcPaywalls ?? app_constants.defaultUseRcPaywalls;
 
-List<String> get topTitleText => List<String>.from(startupConfig?.topTitleText ?? app_constants.defaultTopTitleText);
 List<String> get premiumCollections =>
     List<String>.from(startupConfig?.premiumCollections ?? app_constants.defaultPremiumCollections);
 List<String> get verifiedUsers => List<String>.from(startupConfig?.verifiedUsers ?? app_constants.defaultVerifiedUsers);
