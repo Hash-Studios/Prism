@@ -4,12 +4,14 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:injectable/injectable.dart';
 
 class AiGenerationApiException implements Exception {
   AiGenerationApiException({required this.message, required this.code, required this.statusCode});
@@ -22,15 +24,26 @@ class AiGenerationApiException implements Exception {
   String toString() => 'AiGenerationApiException(code: $code, statusCode: $statusCode, message: $message)';
 }
 
-class AiGenerationRepositoryImpl {
-  AiGenerationRepositoryImpl({http.Client? client, FirebaseAuth? auth})
-    : _client = client ?? http.Client(),
-      _auth = auth ?? FirebaseAuth.instance;
+typedef AiSubmissionMetadata = ({String title, String description, String category, List<String> tags});
 
+@lazySingleton
+class AiGenerationRepositoryImpl {
   static const String _apiBase = 'https://prismwalls.com/api/ai';
 
-  final http.Client _client;
-  final FirebaseAuth _auth;
+  final http.Client _client = http.Client();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  User _requireUser() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw AiGenerationApiException(
+        message: 'Please sign in to generate wallpapers.',
+        code: 'unauthorized',
+        statusCode: 401,
+      );
+    }
+    return user;
+  }
 
   Future<AiGenerationRecord> generate({
     required String prompt,
@@ -41,14 +54,7 @@ class AiGenerationRepositoryImpl {
     required int coinsSpent,
     int? seed,
   }) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw AiGenerationApiException(
-        message: 'Please sign in to generate wallpapers.',
-        code: 'unauthorized',
-        statusCode: 401,
-      );
-    }
+    final user = _requireUser();
 
     final payload = <String, dynamic>{
       'prompt': prompt,
@@ -82,14 +88,7 @@ class AiGenerationRepositoryImpl {
     String variationPrompt = '',
     double strength = 0.45,
   }) async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      throw AiGenerationApiException(
-        message: 'Please sign in to generate wallpapers.',
-        code: 'unauthorized',
-        statusCode: 401,
-      );
-    }
+    final user = _requireUser();
 
     final AiGenerationRecord? original = await _fetchById(generationId);
     final payload = <String, dynamic>{'variationPrompt': variationPrompt, 'strength': strength};
@@ -112,9 +111,23 @@ class AiGenerationRepositoryImpl {
     return record;
   }
 
-  Future<Map<String, dynamic>> prefillSubmissionMetadata({required String generationId}) async {
+  Future<AiSubmissionMetadata> prefillSubmissionMetadata({
+    required String generationId,
+    required List<String> defaultTags,
+  }) async {
     final data = await _post('/metadata/prefill', <String, dynamic>{'generationId': generationId});
-    return data;
+    final Object? rawTags = data['tags'];
+    return (
+      title: parseString(data['title']).trim(),
+      description: parseString(data['description']).trim(),
+      category: parseString(data['category']).trim(),
+      tags: rawTags is List
+          ? rawTags
+                .map((item) => item?.toString().trim() ?? '')
+                .where((item) => item.isNotEmpty)
+                .toList(growable: false)
+          : defaultTags,
+    );
   }
 
   Future<void> saveHistoryRecord(AiGenerationRecord record) async {
@@ -219,12 +232,6 @@ class AiGenerationRepositoryImpl {
     required int coinsSpent,
     String? parentGenerationId,
   }) {
-    int parseInt(dynamic raw, {int fallback = 0}) {
-      if (raw is int) return raw;
-      if (raw is num) return raw.toInt();
-      return int.tryParse(raw?.toString() ?? '') ?? fallback;
-    }
-
     final imageUrls = data['imageUrls'] is Map<String, dynamic>
         ? data['imageUrls'] as Map<String, dynamic>
         : <String, dynamic>{};
@@ -250,9 +257,9 @@ class AiGenerationRepositoryImpl {
       qualityTier: responseQualityTier,
       provider: (data['provider'] ?? 'unknown').toString(),
       model: (data['model'] ?? '').toString(),
-      seed: parseInt(data['seed']),
-      width: parseInt(data['width'], fallback: 1080),
-      height: parseInt(data['height'], fallback: 1920),
+      seed: parseInt(data['seed']) ?? 0,
+      width: parseInt(data['width']) ?? 1080,
+      height: parseInt(data['height']) ?? 1920,
       imageUrl: imageUrl,
       watermarkedImageUrl: watermarkedImageUrl,
       chargeMode: chargeMode,
