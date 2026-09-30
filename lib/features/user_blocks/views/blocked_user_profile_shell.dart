@@ -49,7 +49,7 @@ class BlockedUserProfileShell extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Their wallpapers and setups are hidden from your feeds and notifications. '
+                'Their wallpapers are hidden from your feeds and notifications. '
                 'You can unblock them any time.',
                 textAlign: TextAlign.center,
                 style: TextStyle(

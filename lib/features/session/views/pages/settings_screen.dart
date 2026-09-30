@@ -543,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: const SizedBox(
           width: 250,
           child: Text(
-            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers and setups will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
+            'This will permanently delete your account, remove your personal data, and sign you out.\n\nYour uploaded wallpapers will remain visible as "Deleted Account".\n\nThis action cannot be undone.',
           ),
         ),
         actions: [
@@ -609,7 +609,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.instant_picture_f),
           title: Text('Buy Premium', style: _titleStyle),
-          subtitle: const Text('Get unlimited setups and filters.', style: _subtitleStyle),
+          subtitle: const Text('Get unlimited uploads and filters.', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
