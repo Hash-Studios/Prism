@@ -38,6 +38,7 @@ class FirestoreDocument {
   bool get review => _bool('review');
   String get resolution => _string('resolution');
   String get size => _string('size');
+  List<String> get collections => _stringList('collections');
 
   Map<String, dynamic> data() => payload;
 
@@ -67,5 +68,13 @@ class FirestoreDocument {
       return null;
     }
     return DateTime.tryParse(raw);
+  }
+
+  List<String> _stringList(String key) {
+    final value = payload[key];
+    if (value is List) {
+      return value.map((entry) => entry?.toString() ?? '').where((entry) => entry.isNotEmpty).toList(growable: false);
+    }
+    return const <String>[];
   }
 }

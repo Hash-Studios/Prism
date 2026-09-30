@@ -76,7 +76,7 @@ class AdminModerationRepository {
     final Map<String, dynamic>? notification = _notification(
       email: wall.email,
       title: 'Wallpaper Approved',
-      body: 'Your wallpaper "${wall['title'] ?? ''}" is now live!',
+      body: 'Your wallpaper "${wall.payload['title'] ?? ''}" is now live!',
       imageUrl: wall.wallpaperThumb,
     );
     final List<String> collections = wall.collections;
@@ -123,7 +123,7 @@ class AdminModerationRepository {
     return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'review': false,
       'collections': wall.collections,
-      if (wall['createdAt'] != null) 'createdAt': wall['createdAt'],
+      if (wall.payload['createdAt'] != null) 'createdAt': wall.payload['createdAt'],
     }, sourceTag: 'admin_review.undo_approve_wall');
   }
 
