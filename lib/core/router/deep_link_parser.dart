@@ -11,14 +11,33 @@ class DeepLinkParser {
   static const Set<String> _shortCodeRoots = <String>{'l'};
 
   Uri transform(Uri uri) {
-    final List<String> segments = _segments(uri);
-    if (segments.isEmpty) {
-      return uri.path.isEmpty ? uri.replace(path: '/') : uri;
+    try {
+      // prism://share/abc -> prism:///share/abc. Keep the raw path so escaped characters survive.
+      if (_isCustomScheme(uri) && uri.host.trim().isNotEmpty && !_isDomainHost(uri.host)) {
+        uri = uri.replace(host: '', path: '/${uri.host}${uri.path}');
+      } else if (uri.path.isEmpty) {
+        uri = uri.replace(path: '/');
+      }
+
+      // auto_route decodes the returned path and query, so validate after moving the custom-scheme host into the path.
+      uri.pathSegments;
+      uri.queryParameters;
+      return uri;
+    } on FormatException {
+      return Uri(path: '/not-found');
     }
-    return uri.replace(path: '/${segments.join('/')}');
   }
 
   DeepLinkActionEntity parse(Uri uri) {
+    try {
+      return _parse(uri);
+    } on FormatException {
+      // Malformed percent encoding (for example %FF) in the path or query.
+      return UnknownIntent(rawUri: uri.toString());
+    }
+  }
+
+  DeepLinkActionEntity _parse(Uri uri) {
     final List<String> segments = _segments(uri);
     if (segments.isEmpty) {
       return UnknownIntent(rawUri: uri.toString());
@@ -74,16 +93,7 @@ class DeepLinkParser {
     }
 
     if (_setupRoots.contains(root)) {
-      final String setupName = _firstNonEmpty(<String?>[
-        segments.safeAt(1),
-        uri.queryParameters['name'],
-        uri.queryParameters['setupName'],
-        uri.queryParameters['setup_name'],
-      ]);
-      if (setupName.isEmpty) {
-        return UnknownIntent(rawUri: uri.toString());
-      }
-      return SetupLinkIntent(setupName: setupName, rawUri: uri.toString());
+      return SetupLinkIntent(rawUri: uri.toString());
     }
 
     if (_referRoots.contains(root)) {
@@ -140,7 +150,7 @@ class DeepLinkParser {
     for (final String? value in values) {
       final String trimmed = value?.trim() ?? '';
       if (trimmed.isNotEmpty) {
-        return Uri.decodeComponent(trimmed);
+        return trimmed;
       }
     }
     return '';

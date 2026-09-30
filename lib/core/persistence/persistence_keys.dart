@@ -30,10 +30,14 @@ class PersistenceKeys {
   /// JSON list under a single key per user scope.
   static String favoritesWallSet(String userId) => '${favoritesWallPrefix}__set.$userId';
 
-  static String favoritesSetupSet(String userId) => '${favoritesSetupPrefix}__set.$userId';
-
   // Notification preferences
   static const String notifWotd = 'notif.wotd';
+
+  // Auto-rotate wallpapers (Android, Pro). Read through SettingsLocalDataSource.
+  static const String autoRotateEnabled = 'autoRotate.enabled';
+  static const String autoRotateIntervalMinutes = 'autoRotate.intervalMinutes';
+  static const String autoRotateTarget = 'autoRotate.target';
+  static const String autoRotateShuffle = 'autoRotate.shuffle';
 
   // Download quality: 'original' | 'compressed'
   static const String downloadQuality = 'downloadQuality';

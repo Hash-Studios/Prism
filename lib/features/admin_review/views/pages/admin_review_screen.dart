@@ -30,27 +30,24 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   late TabController _controller;
   late final AdminModerationRepository _repository;
   late Stream<List<FirestoreDocument>> _pendingWallsStream;
-  late Stream<List<FirestoreDocument>> _pendingSetupsStream;
   late Stream<List<FirestoreDocument>> _openReportsStream;
-  late Stream<(int, int, int)> _pendingCountsStream;
+  late Stream<(int, int)> _pendingCountsStream;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.repository ?? getIt<AdminModerationRepository>();
-    _controller = TabController(length: 4, vsync: this);
+    _controller = TabController(length: 3, vsync: this);
     _subscribeStreams();
   }
 
   void _subscribeStreams() {
     _pendingWallsStream = _repository.watchPendingWalls();
-    _pendingSetupsStream = _repository.watchPendingSetups();
     _openReportsStream = _repository.watchOpenContentReports();
-    _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
+    _pendingCountsStream = Rx.combineLatest2<int, int, (int, int)>(
       _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
-      _repository.watchPendingSetups().map((List<FirestoreDocument> list) => list.length),
       _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
-      (int a, int b, int c) => (a, b, c),
+      (int a, int b) => (a, b),
     );
   }
 
@@ -66,15 +63,14 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<(int, int, int)>(
+    return StreamBuilder<(int, int)>(
       stream: _pendingCountsStream,
-      builder: (BuildContext context, AsyncSnapshot<(int, int, int)> countSnapshot) {
+      builder: (BuildContext context, AsyncSnapshot<(int, int)> countSnapshot) {
         final counts = countSnapshot.hasError || countSnapshot.connectionState == ConnectionState.waiting
             ? null
             : countSnapshot.data;
         final String wallsCount = counts?.$1.toString() ?? '—';
-        final String setupsCount = counts?.$2.toString() ?? '—';
-        final String reportsCount = counts?.$3.toString() ?? '—';
+        final String reportsCount = counts?.$2.toString() ?? '—';
         return Scaffold(
           appBar: AppBar(
             title: const Text('Admin Moderation'),
@@ -91,7 +87,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
               controller: _controller,
               tabs: <Tab>[
                 Tab(text: 'Walls ($wallsCount)'),
-                Tab(text: 'Setups ($setupsCount)'),
                 Tab(text: 'Reports ($reportsCount)'),
                 const Tab(text: 'Notifications'),
               ],
@@ -99,7 +94,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           ),
           body: TabBarView(
             controller: _controller,
-            children: <Widget>[_buildWallTab(), _buildSetupTab(), _buildReportsTab(), const _NotificationSenderTab()],
+            children: <Widget>[_buildWallTab(), _buildReportsTab(), const _NotificationSenderTab()],
           ),
         );
       },
@@ -119,7 +114,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           doc: wall,
           previewUrl: previewUrl,
           fullUrl: wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl,
-          extraLines: const <String>[],
           approve: () async {
             await _repository.approveWall(wall);
             toasts.success('Wallpaper approved');
@@ -127,32 +121,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           reject: (String reason) async {
             await _repository.rejectWall(wall, reason: reason);
             toasts.error('Wallpaper rejected');
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildSetupTab() {
-    return _buildPendingTab(
-      stream: _pendingSetupsStream,
-      keyPrefix: 'setup',
-      emptyLabel: 'No pending setups',
-      errorLabel: 'Could not load pending setups.',
-      itemBuilder: (BuildContext context, FirestoreDocument setup) {
-        return _moderationCard(
-          context,
-          doc: setup,
-          previewUrl: setup.image,
-          fullUrl: setup.image,
-          extraLines: <String>['Name: ${setup.name.isNotEmpty ? setup.name : '-'}'],
-          approve: () async {
-            await _repository.approveSetup(setup);
-            toasts.success('Setup approved');
-          },
-          reject: (String reason) async {
-            await _repository.rejectSetup(setup, reason: reason);
-            toasts.error('Setup rejected');
           },
         );
       },
@@ -201,7 +169,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     required FirestoreDocument doc,
     required String previewUrl,
     required String fullUrl,
-    required List<String> extraLines,
     required Future<void> Function() approve,
     required Future<void> Function(String reason) reject,
   }) {
@@ -213,7 +180,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         Text('ID: ${doc.id}'),
         Text('By: ${doc.by.isNotEmpty ? doc.by : '-'}'),
         Text('Email: ${doc.email.isNotEmpty ? doc.email : '-'}'),
-        for (final String line in extraLines) Text(line),
         Text(
           createdAt != null ? 'Uploaded ${timeago.format(createdAt.toLocal())}' : 'Uploaded —',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),

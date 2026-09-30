@@ -44,7 +44,7 @@ Future<void> confirmAndBlockUser({
     builder: (BuildContext ctx) => AlertDialog(
       title: const Text('Block user?'),
       content: Text(
-        'You will unfollow $name, stop seeing their wallpapers and setups in feeds, '
+        'You will unfollow $name, stop seeing their wallpapers in feeds, '
         'and no longer get notifications about their new posts.',
       ),
       actions: <Widget>[

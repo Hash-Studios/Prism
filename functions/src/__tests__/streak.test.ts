@@ -270,3 +270,153 @@ test("planStreakClaim: a doc with no streak to protect never burns freezes", () 
   assert.equal(plan.freezesUsed, 0);
   assert.equal(plan.freezesLeft, 2);
 });
+
+test("a signed-out user gets no streak reminder and the stored token is not read", async (t) => {
+  const yesterday = localDateKeyFromUtc(new Date(Date.now() - 86_400_000), 0);
+  const updates: Record<string, unknown>[] = [];
+  let tokenReads = 0;
+  const userDoc = {
+    data: () => ({email: "sam@example.com", loggedIn: false, coinState: {
+      streakDay: 3,
+      streakCount: 3,
+      streakFreezes: 0,
+      lastDailyClaimDate: yesterday,
+      streakTimezoneOffsetMinutes: 0,
+      streakClaimTimezoneOffsetMinutes: 0,
+    }}),
+    ref: {
+      id: "u1",
+      update: async (data: Record<string, unknown>) => updates.push(data),
+      collection: () => {
+        tokenReads += 1;
+        return {doc: () => ({get: async () => ({get: () => "stale-token"})})};
+      },
+    },
+  };
+  const query = {
+    where: () => query,
+    orderBy: () => query,
+    limit: () => query,
+    get: async () => ({empty: false, size: 1, docs: [userDoc]}),
+  };
+  t.mock.method(db, "collection", () => query);
+  const send = t.mock.method(admin.messaging(), "send", async () => "id");
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(send.mock.callCount(), 0);
+  assert.equal(tokenReads, 0);
+  assert.equal(updates.length, 1);
+  assert.ok(!("coinState.streakReminderLastSentDate" in updates[0]));
+  assert.ok(updates[0]["coinState.streakReminderNextAtUtc"] instanceof admin.firestore.Timestamp);
+});
+
+test("a signed-out reminder retries after 15 minutes and sends after sign-in", async (t) => {
+  const start = new Date("2026-01-02T20:00:00Z");
+  t.mock.timers.enable({apis: ["Date"], now: start});
+  let loggedIn = false;
+  let tokenReads = 0;
+  let nextAt = admin.firestore.Timestamp.fromDate(start);
+  let lastSentDate = "";
+  const state = {
+    streakDay: 3,
+    streakCount: 3,
+    streakFreezes: 0,
+    streakReminderEnabled: true,
+    lastDailyClaimDate: "2026-01-01",
+    streakTimezoneOffsetMinutes: 0,
+    streakClaimTimezoneOffsetMinutes: 0,
+  };
+  const userDoc = {
+    data: () => ({email: "sam@example.com", loggedIn, coinState: {
+      ...state,
+      streakReminderLastSentDate: lastSentDate,
+      streakReminderNextAtUtc: nextAt,
+    }}),
+    ref: {
+      id: "u1",
+      update: async (updates: Record<string, unknown>) => {
+        const updatedNextAt = updates["coinState.streakReminderNextAtUtc"];
+        if (updatedNextAt instanceof admin.firestore.Timestamp) nextAt = updatedNextAt;
+        const updatedLastSentDate = updates["coinState.streakReminderLastSentDate"];
+        if (typeof updatedLastSentDate === "string") lastSentDate = updatedLastSentDate;
+      },
+      collection: () => {
+        tokenReads += 1;
+        return {doc: () => ({get: async () => ({get: () => "session-token"})})};
+      },
+    },
+  };
+  const query = {
+    where: () => query,
+    orderBy: () => query,
+    limit: () => query,
+    get: async () => {
+      const due = nextAt.toMillis() <= Date.now();
+      return {empty: !due, size: due ? 1 : 0, docs: due ? [userDoc] : []};
+    },
+  };
+  t.mock.method(db, "collection", (name: string) => name === "usersv2" ? query : {add: async () => undefined});
+  const sentMessages: admin.messaging.Message[] = [];
+  const send = t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
+    sentMessages.push(message);
+    return "id";
+  });
+
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(send.mock.callCount(), 0);
+  assert.equal(tokenReads, 0);
+  assert.equal(nextAt.toMillis(), start.getTime() + 15 * 60_000);
+
+  t.mock.timers.setTime(start.getTime() + 15 * 60_000);
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(send.mock.callCount(), 0);
+  assert.equal(tokenReads, 0);
+  assert.equal(nextAt.toMillis(), start.getTime() + 30 * 60_000);
+
+  loggedIn = true;
+  t.mock.timers.setTime(start.getTime() + 30 * 60_000);
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(send.mock.callCount(), 1);
+  assert.equal("token" in sentMessages[0] ? sentMessages[0].token : undefined, "session-token");
+  assert.equal(tokenReads, 1);
+  assert.equal(lastSentDate, "2026-01-02");
+  assert.equal(nextAt.toDate().toISOString(), "2026-01-03T20:00:00.000Z");
+});
+
+test("a legacy streak user without loggedIn still gets a reminder", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-01-02T20:00:00Z")});
+  const yesterday = "2026-01-01";
+  const now = admin.firestore.Timestamp.now();
+  const userDoc = {
+    data: () => ({email: "legacy@example.com", coinState: {
+      streakDay: 3,
+      streakCount: 3,
+      streakFreezes: 0,
+      streakReminderEnabled: true,
+      lastDailyClaimDate: yesterday,
+      streakTimezoneOffsetMinutes: 0,
+      streakClaimTimezoneOffsetMinutes: 0,
+      streakReminderNextAtUtc: now,
+    }}),
+    ref: {
+      id: "legacy-user",
+      update: async () => undefined,
+      collection: () => ({doc: () => ({get: async () => ({get: () => "legacy-token"})})}),
+    },
+  };
+  const query = {
+    where: () => query,
+    orderBy: () => query,
+    limit: () => query,
+    get: async () => ({empty: false, size: 1, docs: [userDoc]}),
+  };
+  t.mock.method(db, "collection", (name: string) => name === "usersv2" ? query : {add: async () => undefined});
+  const sentMessages: admin.messaging.Message[] = [];
+  const send = t.mock.method(admin.messaging(), "send", async (message: admin.messaging.Message) => {
+    sentMessages.push(message);
+    return "id";
+  });
+
+  await sendStreakReminders.run({} as Parameters<typeof sendStreakReminders.run>[0]);
+  assert.equal(send.mock.callCount(), 1);
+  assert.equal("token" in sentMessages[0] ? sentMessages[0].token : undefined, "legacy-token");
+});
