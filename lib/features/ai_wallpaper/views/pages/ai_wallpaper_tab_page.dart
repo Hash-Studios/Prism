@@ -451,12 +451,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         mode: reservation.mode,
         coinsSpent: reservation.coinsSpent,
         sourceTag: 'coins.commit.ai_screen',
-        reservationTransactionId: reservation.transactionId,
-        generationId: generated.id,
-        imageUrl: generated.watermarkedImageUrl,
-        thumbUrl: generated.watermarkedImageUrl,
-        prompt: generated.prompt,
-        stylePreset: generated.stylePreset.apiValue,
       );
 
       setState(() {
@@ -497,7 +491,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         reservation.mode,
         sourceTag: 'coins.rollback.ai_screen',
         reservationTransactionId: reservation.transactionId,
-        coinsToRefund: _selectedQualityTier.coinCost,
       );
       analytics.track(
         AiGenerateFailedEvent(error: error.toString(), mode: aiChargeModeValueFromDomain(reservation.mode)),

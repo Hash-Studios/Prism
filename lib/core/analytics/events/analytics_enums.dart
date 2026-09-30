@@ -65,8 +65,7 @@ enum CoinSpendActionValue {
   premiumWallpaperDownload('premium_wallpaper_download'),
   aiGeneration('ai_generation'),
   premiumFilter('premium_filter'),
-  premiumPreview24h('premium_preview_24h'),
-  streakFreeze('streak_freeze');
+  premiumPreview24h('premium_preview_24h');
 
   const CoinSpendActionValue(this.wireValue);
 
