@@ -81,6 +81,30 @@ void main() {
     expect(decoded.wallpaper.core.source, WallpaperSource.wallhaven);
   });
 
+  test('cached Wallhaven crop URLs resolve to orig and are rewritten on save', () {
+    const oldCropUrl = 'https://th.wallhaven.cc/lg/21/21276x.jpg';
+    const originalUrl = 'https://th.wallhaven.cc/orig/21/21276x.jpg';
+    final cached =
+        decodeFeedItem(<String, dynamic>{
+              'type': 'wallhaven',
+              'id': '21276x',
+              'wallpaper': <String, dynamic>{
+                'core': <String, dynamic>{
+                  'id': '21276x',
+                  'source': 'wallhaven',
+                  'fullUrl': 'https://wallhaven.cc/w/21276x',
+                  'thumbnailUrl': oldCropUrl,
+                },
+              },
+            })!
+            as WallhavenFeedItem;
+
+    expect(cached.wallpaper.core.thumbnailUrl, originalUrl);
+    final encoded = encodeFeedItem(cached)['wallpaper']! as Map<String, Object?>;
+    final core = encoded['core']! as Map<String, Object?>;
+    expect(core['thumbnailUrl'], originalUrl);
+  });
+
   test('pexels item survives a JSON round trip', () {
     final item = FeedItemEntity.pexels(
       id: 'x1',

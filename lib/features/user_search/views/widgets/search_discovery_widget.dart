@@ -184,7 +184,7 @@ class _TrendingList extends StatelessWidget {
         itemCount: items.length,
         itemBuilder: (context, index) {
           final wall = items[index];
-          final thumbUrl = wall.thumbs?['original'] ?? wall.core.thumbnailUrl;
+          final thumbUrl = wall.thumbnailUrl;
           return Semantics(
             button: true,
             label: wallpaperSemanticLabel(wall.core.authorName),

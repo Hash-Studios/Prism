@@ -31,30 +31,35 @@ Future<WallSubmissionResult> createRecord(
   String? aiOriginalImageUrl,
   String? aiPrompt,
   String? aiStylePreset,
+  DateTime Function()? now,
 }) async {
   final user = app_state.prismUser;
   final bool isPremium = user.premium;
+  final DateTime Function() currentTime = now ?? DateTime.now;
   final WallSubmissionResult result = await submitWallRecord(
     isPremium: isPremium,
-    hasFreeQuota: UploadQuota.hasFreeUploadQuotaRemaining,
+    hasFreeQuota: () => UploadQuota.hasFreeUploadQuotaRemaining(now: currentTime()),
     consumeFreeQuota: () async {
-      UploadQuota.incrementWeeklyUploads();
-      user.uploadsWeekStart = UploadQuota.storedWeekStart;
-      user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
-      final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
-      if (user.id.trim().isNotEmpty) {
-        unawaited(
-          firestoreClient
-              .updateDoc(FirebaseCollections.usersV2, user.id, {
-                'uploadsWeekStart': user.uploadsWeekStart,
-                'uploadsThisWeek': user.uploadsThisWeek,
-              }, sourceTag: 'upload.weekly_quota_sync')
-              .catchError((Object error, StackTrace stackTrace) {
-                logger.w('Could not sync weekly upload quota', tag: 'Upload', error: error, stackTrace: stackTrace);
-              }),
-        );
+      try {
+        await UploadQuota.incrementWeeklyUploads(now: currentTime());
+      } finally {
+        user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek(now: currentTime());
+        user.uploadsWeekStart = UploadQuota.storedWeekStart;
+        final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
+        if (user.id.trim().isNotEmpty) {
+          unawaited(
+            firestoreClient
+                .updateDoc(FirebaseCollections.usersV2, user.id, {
+                  'uploadsWeekStart': user.uploadsWeekStart,
+                  'uploadsThisWeek': user.uploadsThisWeek,
+                }, sourceTag: 'upload.weekly_quota_sync')
+                .catchError((Object error, StackTrace stackTrace) {
+                  logger.w('Could not sync weekly upload quota', tag: 'Upload', error: error, stackTrace: stackTrace);
+                }),
+          );
+        }
+        if (persistUser != null) await persistUser;
       }
-      if (persistUser != null) await persistUser;
     },
     firestoreClient: firestoreClient,
     record: {

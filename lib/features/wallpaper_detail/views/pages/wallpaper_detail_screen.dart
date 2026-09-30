@@ -12,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/utils/format_utils.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
@@ -208,8 +209,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> {
   }
 
   Widget _buildLoadingState(WallpaperDetailState state) {
-    final thumbnailUrl = state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl;
-    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
+    final String thumbnailUrl = normalizeWallpaperThumbnailUrl(
+      (state is WallpaperDetailLoading ? state.thumbnailUrl : widget.thumbnailUrl) ?? '',
+    );
+    if (thumbnailUrl.isEmpty) {
       return const Scaffold(
         body: GlintState(kind: GlintStateKind.loading, title: 'Loading wallpaper'),
       );

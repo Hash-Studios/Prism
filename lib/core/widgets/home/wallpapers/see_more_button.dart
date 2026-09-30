@@ -12,7 +12,7 @@ class SeeMoreButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialButton(
       color: context.isDarkMode ? Colors.white10 : Colors.black.withValues(alpha: .1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: const RoundedRectangleBorder(),
       onPressed: () {
         func();
       },
