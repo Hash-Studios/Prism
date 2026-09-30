@@ -134,6 +134,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       thumbPath = thumbValue.path;
       thumbSha = thumbValue.sha;
       if (!mounted) return deleteFile();
+      if (wallpaperUrl == null || wallpaperThumb == null) throw StateError('GitHub returned no download URL');
       setState(() {
         isUploading = false;
       });
