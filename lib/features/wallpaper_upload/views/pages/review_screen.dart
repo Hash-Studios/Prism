@@ -83,6 +83,7 @@ class _WallReview extends StatelessWidget {
               (data, docId) => FirestoreDocument(docId, data),
             ),
             builder: (BuildContext context, AsyncSnapshot<List<FirestoreDocument>> snapshot) {
+              if (snapshot.hasError) return const _ReviewMessage("Couldn't load your rejected submissions.");
               if (!snapshot.hasData) {
                 return const SizedBox.shrink();
               } else {
@@ -224,6 +225,7 @@ class WallTile extends StatelessWidget {
                                   Container(
                                     decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                                     child: IconButton(
+                                      tooltip: 'Delete wallpaper',
                                       icon: const Icon(JamIcons.trash, color: Colors.white),
                                       onPressed: () => showDeleteConfirm(
                                         context,

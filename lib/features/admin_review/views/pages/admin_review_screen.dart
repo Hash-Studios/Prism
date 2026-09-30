@@ -113,7 +113,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           doc: wall,
           previewUrl: previewUrl,
           fullUrl: wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : previewUrl,
-          extraLines: const <String>[],
           approve: () async {
             await _repository.approveWall(wall);
             toasts.success('Wallpaper approved');
@@ -169,7 +168,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     required FirestoreDocument doc,
     required String previewUrl,
     required String fullUrl,
-    required List<String> extraLines,
     required Future<void> Function() approve,
     required Future<void> Function(String reason) reject,
   }) {
@@ -181,7 +179,6 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         Text('ID: ${doc.id}'),
         Text('By: ${doc.by.isNotEmpty ? doc.by : '-'}'),
         Text('Email: ${doc.email.isNotEmpty ? doc.email : '-'}'),
-        for (final String line in extraLines) Text(line),
         Text(
           createdAt != null ? 'Uploaded ${timeago.format(createdAt.toLocal())}' : 'Uploaded —',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),

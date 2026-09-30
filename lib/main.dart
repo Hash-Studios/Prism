@@ -31,6 +31,7 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/router/pending_deep_link_queue.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -64,7 +65,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:url_launcher/url_launcher.dart' as launcher;
 
 late LocalNotification localNotification;
 const double _sentryReplaySessionSampleRate = 0.1;
@@ -422,10 +422,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
   final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
-  final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
+  final PendingDeepLinkQueue _pendingDeepLinks = PendingDeepLinkQueue();
   bool _bootstrapCompleted = false;
   static bool _launchLinkHandled = false;
-  bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
@@ -614,7 +613,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _processPendingDeepLinks() async {
-    if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
+    if (!_bootstrapCompleted || _pendingDeepLinks.isEmpty) {
       return;
     }
     if (_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name) {
@@ -623,16 +622,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       });
       return;
     }
-    _processingPendingDeepLinks = true;
-    try {
-      final List<DeepLinkActionEntity> queued = List<DeepLinkActionEntity>.from(_pendingDeepLinks);
-      _pendingDeepLinks.clear();
-      for (final DeepLinkActionEntity action in queued) {
-        await _handleDeepLinkIntent(action);
-      }
-    } finally {
-      _processingPendingDeepLinks = false;
-    }
+    await _pendingDeepLinks.drain(_handleDeepLinkIntent, ready: _bootstrapCompleted);
   }
 
   Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
@@ -659,7 +649,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           ),
         );
       case SetupLinkIntent():
-        // Setups were removed; old shared setup links open Home.
         _appRouter.navigate(const HomeTabRoute());
         toasts.error('Home screen setups are no longer available.');
         unawaited(
@@ -786,7 +775,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
             ),
           ),
         );
-        await launcher.launchUrl(Uri.https('prismwalls.com', '/l/$code'));
+        if (!await _shortLinkResolver.openFallback(code)) {
+          _appRouter.navigate(const NotFoundRoute());
+        }
     }
   }
 
@@ -798,6 +789,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     final String rawUrl = (data['url']?.toString() ?? '').trim();
 
     logger.i('Push tapped', tag: 'Push', fields: <String, Object?>{'route': route, 'wall_id': wallId, 'url': rawUrl});
+
+    if (_isLegacySetupRoute(route)) {
+      _queueDeepLink(SetupLinkIntent(rawUri: route));
+      return;
+    }
     if (route == 'wall_of_the_day') {
       unawaited(analytics.track(WotdOpenedFromPushEvent(wallId: wallId)));
     }
@@ -805,6 +801,11 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (rawUrl.isNotEmpty) {
       final Uri? parsed = Uri.tryParse(rawUrl);
       if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
+        final DeepLinkActionEntity action = _deepLinkParser.parse(_deepLinkParser.transform(parsed));
+        if (action is SetupLinkIntent || action is ShortCodeIntent) {
+          _queueDeepLink(action);
+          return;
+        }
         final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
         if (deepLinkRoute != null) {
           _appRouter.navigate(deepLinkRoute);
@@ -819,6 +820,18 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       return;
     }
     _appRouter.navigate(const NotFoundRoute());
+  }
+
+  bool _isLegacySetupRoute(String route) {
+    final Uri? uri = Uri.tryParse(route.trim());
+    return uri != null && _deepLinkParser.parse(uri) is SetupLinkIntent;
+  }
+
+  void _queueDeepLink(DeepLinkActionEntity action) {
+    _pendingDeepLinks.add(action);
+    if (_bootstrapCompleted) {
+      unawaited(_processPendingDeepLinks());
+    }
   }
 
   Future<void> _listenForPushMessages() async {
@@ -852,6 +865,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
     localNotification.router = _appRouter;
+    localNotification.onPushTap = _handlePushTap;
     _analyticsIdentitySync = AnalyticsIdentitySync(analytics: AnalyticsRuntime.instance);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
