@@ -1,3 +1,4 @@
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -7,6 +8,8 @@ import 'package:Prism/features/in_app_notifications/domain/usecases/notification
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
+import '../../in_app_notification_fixture.dart';
 
 class _MockFetchNotificationsUseCase extends Mock implements FetchNotificationsUseCase {}
 
@@ -32,29 +35,22 @@ void main() {
   late _MockDeleteNotificationsByIdsUseCase deleteManyUseCase;
   late _MockClearNotificationsUseCase clearUseCase;
 
-  final unread = InAppNotificationEntity(
-    id: 'notif-1',
-    title: 't',
-    pageName: '/route',
-    body: 'b',
-    imageUrl: 'img',
-    arguments: <Object>[],
-    url: '',
-    createdAt: DateTime(2024),
-    read: false,
+  final unread = notification('notif-1');
+  final second = notification('notif-2', read: true);
+  final markedRead = unread.copyWith(read: true);
+  const failure = CacheFailure('disk full');
+  final seeded = InAppNotificationsState.initial().copyWith(
+    status: LoadStatus.success,
+    actionStatus: ActionStatus.success,
+    items: <InAppNotificationEntity>[unread, second],
+    unreadCount: 1,
   );
 
-  final read = InAppNotificationEntity(
-    id: 'notif-1',
-    title: 't',
-    pageName: '/route',
-    body: 'b',
-    imageUrl: 'img',
-    arguments: <Object>[],
-    url: '',
-    createdAt: DateTime(2024),
-    read: true,
-  );
+  InAppNotificationsState loaded(List<InAppNotificationEntity> items) =>
+      seeded.copyWith(items: items, unreadCount: items.where((item) => !item.read).length);
+
+  InAppNotificationsBloc buildBloc() =>
+      InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase);
 
   setUp(() {
     fetchUseCase = _MockFetchNotificationsUseCase();
@@ -62,62 +58,131 @@ void main() {
     deleteUseCase = _MockDeleteNotificationUseCase();
     deleteManyUseCase = _MockDeleteNotificationsByIdsUseCase();
     clearUseCase = _MockClearNotificationsUseCase();
-
-    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread]));
-
-    when(() => markUseCase(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[read]));
-
-    when(() => deleteUseCase(any())).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
-
-    when(() => deleteManyUseCase(any())).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
-
-    when(
-      () => clearUseCase(const NoParams()),
-    ).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
   });
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
-    'loads notifications and marks one as read',
-    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
-    act: (bloc) => bloc
-      ..add(const InAppNotificationsEvent.started(syncRemote: true))
-      ..add(const InAppNotificationsEvent.markReadRequested(id: 'notif-1')),
-    verify: (bloc) {
-      expect(bloc.state.status, LoadStatus.success);
-      expect(bloc.state.unreadCount, 0);
-      expect(bloc.state.items.first.read, isTrue);
+    'started loads notifications through a loading state and counts the unread ones',
+    build: () {
+      when(
+        () => fetchUseCase(any()),
+      ).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, second]));
+      return buildBloc();
     },
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.started(syncRemote: true)),
+    expect: () => <InAppNotificationsState>[
+      InAppNotificationsState.initial().copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress),
+      seeded,
+    ],
+    verify: (_) => verify(
+      () => fetchUseCase(any(that: isA<FetchNotificationsParams>().having((p) => p.syncRemote, 'syncRemote', true))),
+    ).called(1),
   );
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
-    'localReloadRequested refreshes from cache without forcing loading state on success path',
-    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
-    seed: () => const InAppNotificationsState(
-      status: LoadStatus.success,
-      actionStatus: ActionStatus.success,
-      items: <InAppNotificationEntity>[],
-      unreadCount: 0,
-    ),
-    act: (bloc) => bloc.add(const InAppNotificationsEvent.localReloadRequested()),
-    verify: (bloc) {
-      verify(() => fetchUseCase(const FetchNotificationsParams(syncRemote: false))).called(1);
-      expect(bloc.state.status, LoadStatus.success);
-      expect(bloc.state.items, isNotEmpty);
+    'a failed load keeps what was cached and reports the failure',
+    build: () {
+      when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(failure));
+      return buildBloc();
     },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.refreshRequested()),
+    expect: () => <InAppNotificationsState>[
+      seeded.copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress),
+      seeded.copyWith(status: LoadStatus.failure, actionStatus: ActionStatus.failure, failure: failure),
+    ],
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'localReloadRequested reads the cache without a loading state',
+    build: () {
+      when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread]));
+      return buildBloc();
+    },
+    seed: () => seeded.copyWith(items: const <InAppNotificationEntity>[], unreadCount: 0),
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.localReloadRequested()),
+    expect: () => <InAppNotificationsState>[
+      loaded(<InAppNotificationEntity>[unread]),
+    ],
+    verify: (_) => verify(
+      () => fetchUseCase(any(that: isA<FetchNotificationsParams>().having((p) => p.syncRemote, 'syncRemote', false))),
+    ).called(1),
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'a failed local reload leaves the load status alone',
+    build: () {
+      when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(failure));
+      return buildBloc();
+    },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.localReloadRequested()),
+    expect: () => <InAppNotificationsState>[seeded.copyWith(actionStatus: ActionStatus.failure, failure: failure)],
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'markReadRequested publishes the list the use case returns',
+    build: () {
+      when(
+        () => markUseCase(any()),
+      ).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[markedRead, second]));
+      return buildBloc();
+    },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.markReadRequested(id: 'notif-1')),
+    expect: () => <InAppNotificationsState>[
+      seeded.copyWith(actionStatus: ActionStatus.inProgress),
+      loaded(<InAppNotificationEntity>[markedRead, second]),
+    ],
+    verify: (_) => verify(
+      () => markUseCase(any(that: isA<MarkNotificationAsReadParams>().having((p) => p.id, 'id', 'notif-1'))),
+    ).called(1),
   );
 
   blocTest<InAppNotificationsBloc, InAppNotificationsState>(
     'deleteManyRequested removes several ids in one pass',
-    build: () => InAppNotificationsBloc(fetchUseCase, markUseCase, deleteUseCase, deleteManyUseCase, clearUseCase),
-    seed: () => const InAppNotificationsState(
-      status: LoadStatus.success,
-      actionStatus: ActionStatus.success,
-      items: <InAppNotificationEntity>[],
-      unreadCount: 0,
-    ),
-    act: (bloc) => bloc.add(const InAppNotificationsEvent.deleteManyRequested(ids: <String>['a', 'b'])),
-    verify: (_) {
-      verify(() => deleteManyUseCase(any(that: isA<DeleteNotificationsByIdsParams>()))).called(1);
+    build: () {
+      when(() => deleteManyUseCase(any())).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
+      return buildBloc();
     },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.deleteManyRequested(ids: <String>['notif-1', 'notif-2'])),
+    expect: () => <InAppNotificationsState>[
+      seeded.copyWith(actionStatus: ActionStatus.inProgress),
+      loaded(const <InAppNotificationEntity>[]),
+    ],
+    verify: (_) => verify(
+      () =>
+          deleteManyUseCase(any(that: isA<DeleteNotificationsByIdsParams>().having((p) => p.ids, 'ids', hasLength(2)))),
+    ).called(1),
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'clearRequested empties the inbox and zeroes the unread count',
+    build: () {
+      when(
+        () => clearUseCase(const NoParams()),
+      ).thenAnswer((_) async => Result.success(const <InAppNotificationEntity>[]));
+      return buildBloc();
+    },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.clearRequested()),
+    expect: () => <InAppNotificationsState>[
+      seeded.copyWith(actionStatus: ActionStatus.inProgress),
+      loaded(const <InAppNotificationEntity>[]),
+    ],
+  );
+
+  blocTest<InAppNotificationsBloc, InAppNotificationsState>(
+    'deleteRequested keeps the list when the delete fails',
+    build: () {
+      when(() => deleteUseCase(any())).thenAnswer((_) async => Result.error(failure));
+      return buildBloc();
+    },
+    seed: () => seeded,
+    act: (bloc) => bloc.add(const InAppNotificationsEvent.deleteRequested(id: 'notif-1')),
+    expect: () => <InAppNotificationsState>[
+      seeded.copyWith(actionStatus: ActionStatus.inProgress),
+      seeded.copyWith(actionStatus: ActionStatus.failure, failure: failure),
+    ],
   );
 }

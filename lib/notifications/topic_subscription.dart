@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 final RegExp _invalidFcmTopicCharacters = RegExp(r'[^A-Za-z0-9\-_.~%]');
@@ -26,7 +27,8 @@ String? _creatorPostsTopicFromEmail(String email) {
   return base == null ? null : '${base}_posts';
 }
 
-bool get creatorPostsAlertsEnabled => getIt<SettingsLocalDataSource>().get<bool>('postsSubscriber', defaultValue: true);
+bool get creatorPostsAlertsEnabled =>
+    getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.posts, defaultValue: true);
 
 /// What the Posts switch controls: every followed creator's posts topic.
 // ponytail: one topic call per followed creator, sequentially; batch server-side if follow lists get large.
@@ -52,79 +54,58 @@ String? userTopicFromId(String uid) {
   return sanitized.isEmpty ? null : 'u_$sanitized';
 }
 
-Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
+Future<bool> subscribeToTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) {
+  return _changeTopic(messaging, topic, subscribe: true, sourceTag: sourceTag);
+}
+
+Future<void> unsubscribeFromTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) {
+  return _changeTopic(messaging, topic, subscribe: false, sourceTag: sourceTag);
+}
+
+/// Subscribes to or unsubscribes from [topic]; returns whether the call went through.
+Future<bool> _changeTopic(
+  FirebaseMessaging messaging,
+  String topic, {
+  required bool subscribe,
+  required String sourceTag,
+}) async {
   final String normalizedTopic = topic.trim();
   if (normalizedTopic.isEmpty) {
     return false;
   }
+  final String noun = subscribe ? 'subscription' : 'unsubscription';
+  final Map<String, Object?> fields = <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag};
   try {
     final bool canProceed = await _canProceedWithTopicCall(messaging);
     if (!canProceed) {
-      logger.w(
-        'Skipping topic subscription until APNS token is available.',
-        tag: 'Push',
-        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
-      );
+      logger.w('Skipping topic $noun until APNS token is available.', tag: 'Push', fields: fields);
       return false;
     }
-    await messaging.subscribeToTopic(normalizedTopic);
+    if (subscribe) {
+      await messaging.subscribeToTopic(normalizedTopic);
+    } else {
+      await messaging.unsubscribeFromTopic(normalizedTopic);
+    }
     return true;
   } catch (error, stackTrace) {
     if (_isApnsTokenMissing(error)) {
       logger.w(
-        'Topic subscription skipped because APNS token is not set yet.',
+        'Topic $noun skipped because APNS token is not set yet.',
         tag: 'Push',
         error: error,
         stackTrace: stackTrace,
-        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
+        fields: fields,
       );
       return false;
     }
     logger.e(
-      'Failed to subscribe to topic.',
+      'Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} topic.',
       tag: 'Push',
       error: error,
       stackTrace: stackTrace,
-      fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
+      fields: fields,
     );
     return false;
-  }
-}
-
-Future<void> unsubscribeFromTopicSafely(FirebaseMessaging messaging, String topic, {required String sourceTag}) async {
-  final String normalizedTopic = topic.trim();
-  if (normalizedTopic.isEmpty) {
-    return;
-  }
-  try {
-    final bool canProceed = await _canProceedWithTopicCall(messaging);
-    if (!canProceed) {
-      logger.w(
-        'Skipping topic unsubscription until APNS token is available.',
-        tag: 'Push',
-        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
-      );
-      return;
-    }
-    await messaging.unsubscribeFromTopic(normalizedTopic);
-  } catch (error, stackTrace) {
-    if (_isApnsTokenMissing(error)) {
-      logger.w(
-        'Topic unsubscription skipped because APNS token is not set yet.',
-        tag: 'Push',
-        error: error,
-        stackTrace: stackTrace,
-        fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
-      );
-      return;
-    }
-    logger.e(
-      'Failed to unsubscribe from topic.',
-      tag: 'Push',
-      error: error,
-      stackTrace: stackTrace,
-      fields: <String, Object?>{'topic': normalizedTopic, 'sourceTag': sourceTag},
-    );
   }
 }
 
