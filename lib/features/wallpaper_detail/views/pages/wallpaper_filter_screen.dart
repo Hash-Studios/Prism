@@ -6,12 +6,10 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
-import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
@@ -26,7 +24,6 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 
 @RoutePage()
@@ -38,8 +35,6 @@ class WallpaperFilterScreen extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
 }
-
-enum _PremiumFilterLowBalanceAction { none, watchAd, upgrade }
 
 class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   final List<WallpaperFilter> _stack = <WallpaperFilter>[];
@@ -171,10 +166,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } catch (_) {}
   }
 
-  Future<void> _setWallpaper(String path, WallpaperTarget target) async {
+  Future<bool> _setWallpaper(String path, WallpaperTarget target) async {
+    bool applied = false;
     try {
-      final bool result = await WallpaperService.setWallpaperFromSource(path, target);
-      if (result) {
+      applied = await WallpaperService.setWallpaperFromSource(path, target);
+      if (applied) {
         analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success));
         toasts.success("Wallpaper set successfully!");
       } else {
@@ -184,13 +180,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       logger.e('Set wallpaper failed', error: e);
       analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.failure));
     }
-    if (!mounted) {
-      return;
+    if (mounted) {
+      Navigator.of(context).pop();
     }
-    Navigator.of(context).pop();
+    return applied;
   }
 
-  Future<void> _runWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
+  /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the charge is refunded.
+  Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
     if (!mounted) return;
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
@@ -205,48 +202,49 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
 
-    analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: sourceTag, filter: _editLabel));
-
-    CoinMutationResult spendResult;
-    try {
-      spendResult = await CoinsService.instance.spendForPremiumFilter(
-        sourceTag: '$sourceTag.spend',
-        reason: 'filter_$_editLabel',
-      );
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(sourceTag: '$sourceTag.spend', error: error, stackTrace: stackTrace);
-      toasts.error('Unable to process coins right now.');
-      return;
-    }
-    if (!mounted) return;
-
-    if (!spendResult.success) {
-      if (spendResult.insufficientBalance) {
-        await _showPremiumFilterLowBalanceNudge(
-          sourceTag: '$sourceTag.low_balance_nudge',
-          onWatchAd: () => _watchAdAndRetryPremiumFilter(action, sourceTag: '$sourceTag.watch_and_retry'),
-        );
-        return;
-      }
-      toasts.error('Unable to process coins right now.');
-      return;
-    }
-
-    _premiumFilterUnlockedForSession = true;
-    if (spendResult.changed) {
-      analytics.track(
-        CoinPremiumFilterSpendSuccessEvent(
-          sourceTag: sourceTag,
-          coinsSpent: CoinPolicy.premiumFilter,
-          filter: _editLabel,
+    final String filter = _editLabel;
+    final String retryTag = '$sourceTag.watch_and_retry';
+    // Spend tags end in `.spend`. The filter events log the tag without it.
+    String eventTag(String spendTag) => spendTag.substring(0, spendTag.length - '.spend'.length);
+    final CoinGateResult result = await CoinGate.forContext(context).run(
+      CoinGateSpec(
+        action: CoinSpendAction.premiumFilter,
+        reason: 'filter_$filter',
+        tags: CoinGateTags(
+          spend: '$sourceTag.spend',
+          retrySpend: '$retryTag.retry.spend',
+          ad: '$retryTag.rewarded_ad',
+          insufficient: '$sourceTag.low_balance_nudge',
         ),
-      );
-      toasts.success('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
+        upsellSource: 'premium_filter_watch_ad',
+        upgradeSource: 'premium_filter_low_balance',
+        isMounted: () => mounted,
+        perform: action,
+        choose: _choosePremiumFilterAction,
+        failureLabel: 'Export failed',
+        refundReason: 'premium_filter_export_failed_refund',
+        onAttempt: (spendTag) =>
+            analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: eventTag(spendTag), filter: filter)),
+        onWatchChosen: () => analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: retryTag, filter: filter)),
+        onSpent: (spendTag, _) {
+          analytics.track(
+            CoinPremiumFilterSpendSuccessEvent(
+              sourceTag: eventTag(spendTag),
+              coinsSpent: CoinPolicy.premiumFilter,
+              filter: filter,
+            ),
+          );
+          toasts.success('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
+        },
+      ),
+    );
+    // A failed or refunded export must not leave the filter unlocked for the session.
+    if (result == CoinGateResult.performed) {
+      _premiumFilterUnlockedForSession = true;
     }
-    await action();
   }
 
-  Future<void> _startActionWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
+  Future<void> _startActionWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
     if (!mounted || _busy || !_editorReady) return;
     setState(() => _busy = true);
     try {
@@ -258,89 +256,36 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
   }
 
-  Future<void> _showPremiumFilterLowBalanceNudge({
-    required String sourceTag,
-    required Future<void> Function() onWatchAd,
-  }) async {
-    if (!mounted) {
-      return;
-    }
-    CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: CoinPolicy.premiumFilter);
-    final _PremiumFilterLowBalanceAction action =
-        await showCoinGateSheet<_PremiumFilterLowBalanceAction>(
-          context,
-          title: 'Need Coins for Premium Filter',
-          cost: CoinPolicy.premiumFilter,
-          message: (missing) =>
-              'Applying this filter costs -${CoinPolicy.premiumFilter} coins. Need $missing more coins.',
-          options: const [
-            CoinGateOption(
-              label: 'Watch Ad (+${CoinPolicy.rewardedAd})',
-              value: _PremiumFilterLowBalanceAction.watchAd,
-            ),
-            CoinGateOption(label: 'Upgrade to Pro', value: _PremiumFilterLowBalanceAction.upgrade, outlined: true),
-          ],
-        ) ??
-        _PremiumFilterLowBalanceAction.none;
-
-    switch (action) {
-      case _PremiumFilterLowBalanceAction.watchAd:
-        await onWatchAd();
-        return;
-      case _PremiumFilterLowBalanceAction.upgrade:
-        if (mounted) {
-          await PaywallOrchestrator.instance.present(
-            placement: PaywallPlacement.lowBalance,
-            source: 'premium_filter_low_balance',
-          );
-        }
-        return;
-      case _PremiumFilterLowBalanceAction.none:
-        return;
-    }
+  Future<CoinGateChoice> _choosePremiumFilterAction(CoinGatePrompt prompt) async {
+    final CoinGateChoice? choice = await showCoinGateSheet<CoinGateChoice>(
+      context,
+      title: 'Need Coins for Premium Filter',
+      cost: CoinPolicy.premiumFilter,
+      message: (missing) => 'Applying this filter costs -${CoinPolicy.premiumFilter} coins. Need $missing more coins.',
+      options: const [
+        CoinGateOption(label: 'Watch Ad (+${CoinPolicy.rewardedAd})', value: CoinGateChoice.watchAd),
+        CoinGateOption(label: 'Upgrade to Pro', value: CoinGateChoice.upgrade, outlined: true),
+      ],
+    );
+    return choice ?? CoinGateChoice.cancel;
   }
 
-  Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
-    analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _editLabel));
-    final bool watched = await watchRewardedAd(context.read<AdsBloc>());
-    if (!mounted) return;
-    if (!watched) {
-      toasts.error('Ad was not completed.');
-      return;
-    }
-    try {
-      final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: '$sourceTag.rewarded_ad');
-      if (!credit.changed) {
-        toasts.error('Unable to credit coins right now.');
-        return;
-      }
-      if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'premium_filter_watch_ad');
-      }
-    } catch (error, stackTrace) {
-      CoinsService.instance.logCoinError(sourceTag: '$sourceTag.rewarded_ad', error: error, stackTrace: stackTrace);
-      toasts.error('Unable to credit coins right now.');
-      return;
-    }
-    await _runWithPremiumFilterGate(action, sourceTag: '$sourceTag.retry');
-  }
-
-  Future<void> _handleDownloadAction() async {
+  Future<bool> _handleDownloadAction() async {
     File? imageFile;
     try {
       toasts.success("Processing Wallpaper");
       imageFile = await saveFilteredImage();
       if (!mounted) {
-        return;
+        return false;
       }
       final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
         analytics.track(DownloadWallpaperEvent(link: imageFile.path));
         toasts.success("Wall Saved in Pictures!");
-      } else {
-        toasts.error("Couldn't save wallpaper. Please retry!");
+        return true;
       }
+      toasts.error("Couldn't save wallpaper. Please retry!");
     } on PlatformException catch (e) {
       if (e.code == 'channel-error') {
         logger.w('saveMedia channel unavailable (native side not registered)', error: e);
@@ -354,9 +299,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } finally {
       if (imageFile != null) await _deleteEditedFile(imageFile);
     }
+    return false;
   }
 
-  Future<void> _handleSetAction() async {
+  /// Returns false only when the render or the wallpaper set failed. Closing the target sheet is not a failure.
+  Future<bool> _handleSetAction() async {
     File? imageFile;
     try {
       toasts.success("Processing Wallpaper");
@@ -364,11 +311,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } catch (e) {
       logger.e('Unexpected filter render failure', error: e);
       toasts.error("Something went wrong!");
-      return;
+      return false;
     }
     if (!mounted) {
       await _deleteEditedFile(imageFile);
-      return;
+      return false;
     }
     try {
       final WallpaperTarget? target = await showPrismSheet<WallpaperTarget>(
@@ -392,17 +339,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           },
         ),
       );
-      if (!mounted) return;
-      switch (target) {
-        case WallpaperTarget.home:
-          await _setWallpaper(imageFile.path, WallpaperTarget.home);
-        case WallpaperTarget.lock:
-          await _setWallpaper(imageFile.path, WallpaperTarget.lock);
-        case WallpaperTarget.both:
-          await _setWallpaper(imageFile.path, WallpaperTarget.both);
-        case null:
-          return;
-      }
+      if (!mounted || target == null) return true;
+      return await _setWallpaper(imageFile.path, target);
     } finally {
       await _deleteEditedFile(imageFile);
     }

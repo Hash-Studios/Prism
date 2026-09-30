@@ -1,8 +1,6 @@
-import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
-import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
@@ -13,7 +11,6 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// "Earn coins": every way to get coins, with the reward for each.
 class RewardsEarnSection extends StatefulWidget {
@@ -36,22 +33,13 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   Future<void> _watchRewardedAdAndCreditCoins() async {
-    if (!await watchRewardedAd(context.read<AdsBloc>())) {
-      toasts.error('Ad was not completed.');
-      return;
-    }
-    try {
-      final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
-      if (!credit.changed) {
-        toasts.error('Unable to credit coins right now.');
-        return;
-      }
-      if (mounted) {
-        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'coin_hub_rewarded_ad');
-      }
+    final bool credited = await CoinGate.forContext(context).watchAdForCoins(
+      sourceTag: 'coins.hub.rewarded_ad',
+      upsellSource: 'coin_hub_rewarded_ad',
+      isMounted: () => mounted,
+    );
+    if (credited) {
       toasts.success('+${CoinPolicy.rewardedAd} coins');
-    } catch (_) {
-      toasts.error('Ad was not completed.');
     }
   }
 
