@@ -15,6 +15,12 @@ import 'package:injectable/injectable.dart';
 @LazySingleton(as: AdsRepository)
 class AdsRepositoryImpl implements AdsRepository {
   static const int _maxFailedLoadAttempts = 3;
+  static const Duration _loadRetryDelay = Duration(seconds: 2);
+  static const Duration _loadTimeout = Duration(seconds: 30);
+  static const Duration _showTimeout = Duration(seconds: 45);
+  static const String _prodAdUnitId = 'ca-app-pub-4649644680694757/3358009164';
+  static const String _testAndroidAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
+  static const String _testIosAdUnitId = 'ca-app-pub-3940256099942544/1712485313';
   static const AdRequest _request = AdRequest(
     nonPersonalizedAds: false,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
@@ -35,11 +41,7 @@ class AdsRepositoryImpl implements AdsRepository {
 
     void loadWithRetry() {
       RewardedAd.load(
-        adUnitId: kReleaseMode
-            ? "ca-app-pub-4649644680694757/3358009164"
-            : (Platform.isAndroid
-                  ? 'ca-app-pub-3940256099942544/5224354917'
-                  : 'ca-app-pub-3940256099942544/1712485313'),
+        adUnitId: kReleaseMode ? _prodAdUnitId : (Platform.isAndroid ? _testAndroidAdUnitId : _testIosAdUnitId),
         request: _request,
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
@@ -63,7 +65,7 @@ class AdsRepositoryImpl implements AdsRepository {
             _numRewardedLoadAttempts += 1;
 
             if (_numRewardedLoadAttempts <= _maxFailedLoadAttempts) {
-              loadWithRetry();
+              Future<void>.delayed(_loadRetryDelay, loadWithRetry);
               return;
             }
 
@@ -79,7 +81,7 @@ class AdsRepositoryImpl implements AdsRepository {
     loadWithRetry();
 
     return completer.future.timeout(
-      const Duration(seconds: 30),
+      _loadTimeout,
       onTimeout: () {
         _state = _state.copyWith(loadingAd: false, adLoaded: false, adFailed: true);
         return Result.error(const NetworkFailure('Timed out while loading rewarded ad'));
@@ -89,7 +91,7 @@ class AdsRepositoryImpl implements AdsRepository {
 
   @override
   Future<Result<AdsEntity>> showRewardedAd() async {
-    _state = _state.copyWith(adLoaded: false, adFailed: false);
+    _state = _state.copyWith(adLoaded: false, adFailed: false, rewardEarned: false);
     final ad = _rewardedAd;
     if (ad == null) {
       logger.d('Warning: attempt to show rewarded before loaded.');
@@ -124,28 +126,13 @@ class AdsRepositoryImpl implements AdsRepository {
     ad.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
         logger.d('$ad with reward RewardItem(${reward.amount}, ${reward.type})');
-        _state = _state.copyWith(downloadCoins: _state.downloadCoins + reward.amount);
+        _state = _state.copyWith(rewardEarned: true);
         if (!completer.isCompleted) {
           completer.complete(Result.success(_state));
         }
       },
     );
 
-    return completer.future.timeout(const Duration(seconds: 45), onTimeout: () => Result.success(_state));
-  }
-
-  @override
-  Future<Result<AdsEntity>> addReward({required num rewardAmount}) async {
-    _state = _state.copyWith(downloadCoins: _state.downloadCoins + rewardAmount);
-    return Result.success(_state);
-  }
-
-  @override
-  Future<Result<AdsEntity>> reset() async {
-    _rewardedAd?.dispose();
-    _rewardedAd = null;
-    _numRewardedLoadAttempts = 0;
-    _state = AdsEntity.empty;
-    return Result.success(_state);
+    return completer.future.timeout(_showTimeout, onTimeout: () => Result.success(_state));
   }
 }

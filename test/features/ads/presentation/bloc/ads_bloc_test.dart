@@ -1,10 +1,10 @@
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
+import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/domain/entities/ads_entity.dart';
 import 'package:Prism/features/ads/domain/usecases/ads_usecases.dart';
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -12,66 +12,57 @@ class _MockCreateRewardedAdUseCase extends Mock implements CreateRewardedAdUseCa
 
 class _MockShowRewardedAdUseCase extends Mock implements ShowRewardedAdUseCase {}
 
-class _MockAddRewardUseCase extends Mock implements AddRewardUseCase {}
-
-class _MockResetAdsUseCase extends Mock implements ResetAdsUseCase {}
-
 void main() {
-  setUpAll(() {
-    registerFallbackValue(const AddRewardParams(rewardAmount: 0));
-  });
+  const loaded = AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: true, adFailed: false);
+  const earned = AdsEntity(rewardEarned: true, loadingAd: false, adLoaded: false, adFailed: false);
+  const dismissed = AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: false, adFailed: false);
 
   late _MockCreateRewardedAdUseCase createUseCase;
   late _MockShowRewardedAdUseCase showUseCase;
-  late _MockAddRewardUseCase addRewardUseCase;
-  late _MockResetAdsUseCase resetUseCase;
+  late AdsBloc bloc;
 
   setUp(() {
     createUseCase = _MockCreateRewardedAdUseCase();
     showUseCase = _MockShowRewardedAdUseCase();
-    addRewardUseCase = _MockAddRewardUseCase();
-    resetUseCase = _MockResetAdsUseCase();
-
-    when(() => createUseCase(const NoParams())).thenAnswer(
-      (_) async => Result.success(const AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: true, adFailed: false)),
-    );
-
-    when(() => addRewardUseCase(any())).thenAnswer(
-      (_) async =>
-          Result.success(const AdsEntity(downloadCoins: 10, loadingAd: false, adLoaded: true, adFailed: false)),
-    );
-
-    when(() => resetUseCase(const NoParams())).thenAnswer((_) async => Result.success(AdsEntity.empty));
-
-    when(() => showUseCase(const NoParams())).thenAnswer((_) async => Result.success(AdsEntity.empty));
+    when(() => createUseCase(const NoParams())).thenAnswer((_) async => Result.success(loaded));
+    bloc = AdsBloc(createUseCase, showUseCase);
   });
 
-  AdsBloc buildBloc() => AdsBloc(createUseCase, showUseCase, addRewardUseCase, resetUseCase);
+  tearDown(() => bloc.close());
 
-  blocTest<AdsBloc, AdsState>(
-    'rewardEarned unlocks when threshold is met',
-    build: buildBloc,
-    act: (bloc) => bloc
-      ..add(const AdsEvent.started())
-      ..add(const AdsEvent.rewardEarned(rewardAmount: 10)),
-    expect: () => <AdsState>[
-      AdsState.initial().copyWith(status: LoadStatus.loading, actionStatus: ActionStatus.inProgress),
-      AdsState.initial().copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        ads: const AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: true, adFailed: false),
-      ),
-      AdsState.initial().copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.inProgress,
-        ads: const AdsEntity(downloadCoins: 0, loadingAd: false, adLoaded: true, adFailed: false),
-      ),
-      AdsState.initial().copyWith(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        shouldUnlockDownload: true,
-        ads: const AdsEntity(downloadCoins: 10, loadingAd: false, adLoaded: true, adFailed: false),
-      ),
-    ],
-  );
+  void stubShow(List<Result<AdsEntity>> results) {
+    when(() => showUseCase(const NoParams())).thenAnswer((_) async => results.removeAt(0));
+  }
+
+  test('reward earned unlocks the download', () async {
+    stubShow([Result.success(earned)]);
+
+    expect(await bloc.watchRewardedAd(), isTrue);
+    await pumpEventQueue();
+    expect(bloc.state.actionStatus, ActionStatus.idle);
+    expect(bloc.state.shouldUnlockDownload, isFalse);
+  });
+
+  test('a later dismissed ad does not unlock after an earlier reward', () async {
+    stubShow([Result.success(earned), Result.success(dismissed)]);
+
+    expect(await bloc.watchRewardedAd(), isTrue);
+    expect(await bloc.watchRewardedAd(), isFalse);
+  });
+
+  test('a failed show does not unlock', () async {
+    stubShow([Result.error(const ValidationFailure('Rewarded ad is not loaded'))]);
+
+    expect(await bloc.watchRewardedAd(), isFalse);
+  });
+
+  test('a failed load skips the show', () async {
+    when(() => createUseCase(const NoParams())).thenAnswer(
+      (_) async =>
+          Result.success(const AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: false, adFailed: true)),
+    );
+
+    expect(await bloc.watchRewardedAd(), isFalse);
+    verifyNever(() => showUseCase(const NoParams()));
+  });
 }

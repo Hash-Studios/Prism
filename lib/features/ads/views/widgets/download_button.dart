@@ -45,18 +45,12 @@ class DownloadButton extends StatefulWidget {
 enum _LowBalanceAction { none, downloadNow, watchAndDownload, upgrade }
 
 class _DownloadButtonState extends State<DownloadButton> {
-  late bool isLoading;
+  bool isLoading = false;
 
   CoinSpendAction get _downloadSpendAction =>
       widget.isPremiumContent ? CoinSpendAction.premiumWallpaperDownload : CoinSpendAction.wallpaperDownload;
 
   int get _downloadCost => _downloadSpendAction.cost();
-
-  @override
-  void initState() {
-    super.initState();
-    isLoading = false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +176,7 @@ class _DownloadButtonState extends State<DownloadButton> {
                               ? null
                               : () async {
                                   setDialogState(() => watchingAd = true);
-                                  final bool watched = await _watchRewardedAd();
+                                  final bool watched = await context.read<AdsBloc>().watchRewardedAd();
                                   if (mounted) {
                                     setDialogState(() => watchingAd = false);
                                   }
@@ -320,7 +314,7 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<void> _handleWatchAndDownload({required int requiredCoins}) async {
-    final bool watched = await _watchRewardedAd();
+    final bool watched = await context.read<AdsBloc>().watchRewardedAd();
     if (!watched) {
       toasts.error('Ad was not completed.');
       return;
@@ -363,12 +357,13 @@ class _DownloadButtonState extends State<DownloadButton> {
   }
 
   Future<bool> _attemptCoinSpendAndDownload({required String sourceTag, bool showNudgeOnInsufficient = true}) async {
+    final String contentId = widget.contentId?.trim() ?? '';
     CoinMutationResult spendResult;
     try {
       spendResult = await CoinsService.instance.spend(
         _downloadSpendAction,
         sourceTag: sourceTag,
-        reason: widget.contentId?.trim().isNotEmpty == true ? 'content_${widget.contentId!.trim()}' : null,
+        reason: contentId.isEmpty ? null : 'content_$contentId',
       );
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
@@ -408,48 +403,6 @@ class _DownloadButtonState extends State<DownloadButton> {
     return downloaded;
   }
 
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  Future<bool> _watchRewardedAd() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      return false;
-    }
-    bool watchRequested = false;
-    try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      return result.shouldUnlockDownload;
-    } catch (_) {
-      return false;
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
-    }
-  }
-
   Future<bool> _performDownload() async {
     final String link = widget.link?.trim() ?? '';
     if (link.isEmpty) {
@@ -462,7 +415,6 @@ class _DownloadButtonState extends State<DownloadButton> {
     }
 
     try {
-      logger.d(link);
       if (link.contains('com.hash.prism')) {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
