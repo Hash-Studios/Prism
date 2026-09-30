@@ -12,6 +12,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
@@ -34,12 +35,18 @@ import 'package:photofilters/filters/preset_filters.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  const WallpaperFilterScreen({super.key, this.image, this.finalImage, this.filename, this.finalFilename});
+  const WallpaperFilterScreen({
+    super.key,
+    required this.image,
+    required this.finalImage,
+    required this.filename,
+    required this.finalFilename,
+  });
 
-  final imagelib.Image? image;
-  final imagelib.Image? finalImage;
-  final String? filename;
-  final String? finalFilename;
+  final imagelib.Image image;
+  final imagelib.Image finalImage;
+  final String filename;
+  final String finalFilename;
 
   @override
   State<StatefulWidget> createState() => _WallpaperFilterScreenState();
@@ -48,16 +55,11 @@ class WallpaperFilterScreen extends StatefulWidget {
 enum _PremiumFilterLowBalanceAction { none, watchAd, upgrade }
 
 class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
-  String? filename;
-  String? finalFilename;
-  Map<String, List<int>?> cachedFilters = {};
-  Filter? _filter;
-  imagelib.Image? image;
-  imagelib.Image? finalImage;
-  late bool loading;
-  late bool isLoading;
+  final Map<String, Uint8List> cachedFilters = {};
+  Filter _filter = _filters.first;
+  bool _busy = false;
   bool _premiumFilterUnlockedForSession = false;
-  List<Filter> selectedFilters = [
+  static final List<Filter> _filters = [
     NoFilter(),
     AddictiveBlueFilter(),
     AddictiveRedFilter(),
@@ -112,42 +114,18 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     XProIIFilter(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    loading = false;
-    isLoading = false;
-    _filter = selectedFilters[0];
-    image = widget.image;
-    finalImage = widget.finalImage;
-    filename = widget.filename;
-    finalFilename = widget.finalFilename;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  Future<void> _setBothWallPaper(String url) async {
-    bool? result;
+  Future<void> _setWallpaper(String path, WallpaperTarget target, WallpaperTargetValue analyticsTarget) async {
     try {
-      result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.both);
+      final bool result = await WallpaperService.setWallpaperFromSource(path, target);
       if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.success),
-        );
+        analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.success));
         toasts.codeSend("Wallpaper set successfully!");
       } else {
-        logger.d("Failed");
         toasts.error("Something went wrong!");
       }
     } catch (e) {
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.both, result: BinaryResultValue.failure),
-      );
-      logger.d(e.toString());
+      logger.e('Set wallpaper failed', error: e);
+      analytics.track(SetWallEvent(wallpaperTarget: analyticsTarget, result: BinaryResultValue.failure));
     }
     if (!mounted) {
       return;
@@ -155,59 +133,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     Navigator.of(context).pop();
   }
 
-  Future<void> _setLockWallPaper(String url) async {
-    bool? result;
-    try {
-      result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.lock);
-      if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.success),
-        );
-        toasts.codeSend("Wallpaper set successfully!");
-      } else {
-        logger.d("Failed");
-        toasts.error("Something went wrong!");
-      }
-    } catch (e) {
-      logger.d(e.toString());
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.lock, result: BinaryResultValue.failure),
-      );
-    }
-    if (!mounted) {
-      return;
-    }
-    Navigator.of(context).pop();
-  }
-
-  Future<void> _setHomeWallPaper(String url) async {
-    bool? result;
-    try {
-      result = await WallpaperService.setWallpaperFromSource(url, WallpaperTarget.home);
-      if (result) {
-        logger.d("Success");
-        analytics.track(
-          const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.success),
-        );
-        toasts.codeSend("Wallpaper set successfully!");
-      } else {
-        logger.d("Failed");
-        toasts.error("Something went wrong!");
-      }
-    } catch (e) {
-      logger.d(e.toString());
-      analytics.track(
-        const SetWallEvent(wallpaperTarget: WallpaperTargetValue.home, result: BinaryResultValue.failure),
-      );
-    }
-    if (!mounted) {
-      return;
-    }
-    Navigator.of(context).pop();
-  }
-
-  bool get _selectedFilterNeedsPremiumSpend => _filter != null && _filter is! NoFilter;
+  bool get _selectedFilterNeedsPremiumSpend => _filter is! NoFilter;
 
   Future<void> _runWithPremiumFilterGate(Future<void> Function() action, {required String sourceTag}) async {
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
@@ -223,13 +149,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
 
-    analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: sourceTag, filter: _filter?.name ?? ''));
+    analytics.track(CoinPremiumFilterSpendAttemptEvent(sourceTag: sourceTag, filter: _filter.name));
 
     CoinMutationResult spendResult;
     try {
       spendResult = await CoinsService.instance.spendForPremiumFilter(
         sourceTag: '$sourceTag.spend',
-        reason: 'filter_${_filter?.name ?? ''}',
+        reason: 'filter_${_filter.name}',
       );
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: '$sourceTag.spend', error: error, stackTrace: stackTrace);
@@ -255,7 +181,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         CoinPremiumFilterSpendSuccessEvent(
           sourceTag: sourceTag,
           coinsSpent: CoinPolicy.premiumFilter,
-          filter: _filter?.name ?? '',
+          filter: _filter.name,
         ),
       );
       toasts.codeSend('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
@@ -341,7 +267,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _watchAdAndRetryPremiumFilter(Future<void> Function() action, {required String sourceTag}) async {
-    analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _filter?.name ?? ''));
+    analytics.track(CoinFilterWatchAndRetryUsedEvent(sourceTag: sourceTag, filter: _filter.name));
     final bool watched = await _watchRewardedAd();
     if (!watched) {
       toasts.error('Ad was not completed.');
@@ -407,7 +333,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
   }
 
   Future<void> _handleDownloadAction() async {
-    if (isLoading || loading) {
+    if (_busy) {
       return;
     }
     toasts.codeSend("Processing Wallpaper");
@@ -416,7 +342,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       return;
     }
     setState(() {
-      isLoading = true;
+      _busy = true;
     });
     final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
     try {
@@ -440,16 +366,13 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          isLoading = false;
+          _busy = false;
         });
       }
     }
   }
 
   Future<void> _handleSetAction() async {
-    if (loading) {
-      return;
-    }
     toasts.codeSend("Processing Wallpaper");
     final imageFile = await saveFilteredImage();
     if (!mounted) {
@@ -462,17 +385,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         onTap1: () {
           HapticFeedback.vibrate();
           Navigator.of(context).pop();
-          _setHomeWallPaper(imageFile.path);
+          _setWallpaper(imageFile.path, WallpaperTarget.home, WallpaperTargetValue.home);
         },
         onTap2: () {
           HapticFeedback.vibrate();
           Navigator.of(context).pop();
-          _setLockWallPaper(imageFile.path);
+          _setWallpaper(imageFile.path, WallpaperTarget.lock, WallpaperTargetValue.lock);
         },
         onTap3: () {
           HapticFeedback.vibrate();
           Navigator.of(context).pop();
-          _setBothWallPaper(imageFile.path);
+          _setWallpaper(imageFile.path, WallpaperTarget.both, WallpaperTargetValue.both);
         },
       ),
     );
@@ -492,9 +415,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
         ),
         backgroundColor: Theme.of(context).primaryColor,
         actions: <Widget>[
-          if (loading)
-            Container()
-          else if (isLoading)
+          if (_busy)
             Center(
               child: SizedBox(
                 width: 20,
@@ -510,129 +431,103 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
                   unawaited(_runWithPremiumFilterGate(_handleDownloadAction, sourceTag: 'coins.filter.download')),
             ),
           if (!hideSetWallpaperUi)
-            if (loading)
-              Container()
-            else
-              IconButton(
-                tooltip: 'Set as wallpaper',
-                icon: const Icon(JamIcons.check),
-                onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
-              ),
+            IconButton(
+              tooltip: 'Set as wallpaper',
+              icon: const Icon(JamIcons.check),
+              onPressed: () => unawaited(_runWithPremiumFilterGate(_handleSetAction, sourceTag: 'coins.filter.set')),
+            ),
         ],
       ),
       backgroundColor: Theme.of(context).primaryColor,
       body: SizedBox.expand(
-        child: loading
-            ? Center(child: Loader())
-            : Column(
-                children: [
-                  Expanded(
-                    flex: 6,
-                    child: SizedBox.expand(child: _buildFilteredImage(_filter, finalImage, finalFilename)),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    flex: 2,
-                    child: ColoredBox(
-                      color: Theme.of(context).primaryColor,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: selectedFilters.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          return GestureDetector(
-                            onTap: () => setState(() {
-                              _filter = selectedFilters[index];
-                            }),
-                            child: Container(
-                              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: <Widget>[
-                                  Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      _buildFilterThumbnail(selectedFilters[index], image, filename),
-                                      if (_filter == selectedFilters[index])
-                                        Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(500),
-                                            color: Colors.white,
-                                          ),
-                                          child: const Icon(JamIcons.check, color: Colors.black),
-                                        )
-                                      else
-                                        Container(),
-                                    ],
+        child: Column(
+          children: [
+            Expanded(flex: 6, child: SizedBox.expand(child: _buildFilteredImage())),
+            const Divider(height: 1),
+            Expanded(
+              flex: 2,
+              child: ColoredBox(
+                color: Theme.of(context).primaryColor,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _filters.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return GestureDetector(
+                      onTap: () => setState(() {
+                        _filter = _filters[index];
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                _buildFilterThumbnail(_filters[index]),
+                                if (_filter == _filters[index])
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(500),
+                                      color: Colors.white,
+                                    ),
+                                    child: const Icon(JamIcons.check, color: Colors.black),
                                   ),
-                                  const SizedBox(height: 10.0),
-                                  Text(
-                                    selectedFilters[index].name,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-                                  ),
-                                ],
-                              ),
+                              ],
                             ),
-                          );
-                        },
+                            const SizedBox(height: 10.0),
+                            Text(
+                              _filters[index].name,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    );
+                  },
+                ),
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFilterThumbnail(Filter filter, imagelib.Image? image, String? filename) {
-    final String filterName = filter.name;
-    if (cachedFilters[filterName] == null) {
-      return FutureBuilder<List<int>>(
-        future: compute(_applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
-        builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.active:
-            case ConnectionState.waiting:
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: 90.0,
-                  height: MediaQuery.of(context).size.height * 0.15,
-                  color: Theme.of(context).primaryColor,
-                  child: Center(child: Loader()),
-                ),
-              );
-            case ConnectionState.done:
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
-              cachedFilters[filterName] = snapshot.data;
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: 90.0,
-                  height: MediaQuery.of(context).size.height * 0.15,
-                  color: Theme.of(context).primaryColor,
-                  child: Image(image: MemoryImage((snapshot.data as Uint8List?)!), fit: BoxFit.cover),
-                ),
-              );
-          }
-        },
-      );
-    } else {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 90.0,
-          height: MediaQuery.of(context).size.height * 0.15,
-          color: Theme.of(context).primaryColor,
-          child: Image(image: MemoryImage(cachedFilters[filterName]! as Uint8List), fit: BoxFit.cover),
-        ),
-      );
+  Widget _thumbFrame(Widget child) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 90.0,
+        height: MediaQuery.of(context).size.height * 0.15,
+        color: Theme.of(context).primaryColor,
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildFilterThumbnail(Filter filter) {
+    final Uint8List? cached = cachedFilters[filter.name];
+    if (cached != null) {
+      return _thumbFrame(Image(image: MemoryImage(cached), fit: BoxFit.cover));
     }
+    return FutureBuilder<Uint8List>(
+      future: compute(_applyFilter, (filter: filter, image: widget.image, filename: widget.filename)),
+      builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _thumbFrame(Center(child: Loader()));
+        }
+        final Uint8List? bytes = snapshot.data;
+        if (snapshot.hasError || bytes == null) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        cachedFilters[filter.name] = bytes;
+        return _thumbFrame(Image(image: MemoryImage(bytes), fit: BoxFit.cover));
+      },
+    );
   }
 
   Future<String> get _localPath async {
@@ -643,119 +538,80 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<File> get _localFile async {
     final path = await _localPath;
-    return File('$path/filtered_${_filter?.name ?? "_"}_$finalFilename');
+    return File('$path/filtered_${_filter.name}_${widget.finalFilename}');
   }
 
   Future<File> saveFilteredImage() async {
     final imageFile = await _localFile;
-    final List<int> finalFilterImageBytes = await compute(_applyFilter, <String, dynamic>{
-      "filter": _filter,
-      "image": finalImage,
-      "filename": finalFilename,
-    });
+    final Uint8List finalFilterImageBytes = await compute(_applyFilter, (
+      filter: _filter,
+      image: widget.finalImage,
+      filename: widget.finalFilename,
+    ));
     await imageFile.writeAsBytes(finalFilterImageBytes);
     return imageFile;
   }
 
-  Widget _buildFilteredImage(Filter? filter, imagelib.Image? image, String? filename) {
-    return FutureBuilder<List<int>>(
-      future: compute(_applyFilter, <String, dynamic>{"filter": filter, "image": image, "filename": filename}),
-      builder: (BuildContext context, AsyncSnapshot<List<int>> snapshot) {
-        switch (snapshot.connectionState) {
-          case ConnectionState.none:
-            return cachedFilters[filter?.name ?? "_"] == null
-                ? Center(child: Loader())
-                : Stack(
-                    children: [
-                      PhotoView(
-                        imageProvider: MemoryImage((cachedFilters[filter?.name ?? "_"] as Uint8List?)!),
-                        backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
-                      ),
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              height: 25,
-                              width: 25,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                                      ? Theme.of(context).colorScheme.error == Colors.black
-                                            ? Theme.of(context).colorScheme.secondary
-                                            : Theme.of(context).colorScheme.error
-                                      : Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                            ),
-                            Icon(Icons.high_quality_rounded, color: Theme.of(context).colorScheme.secondary),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-          case ConnectionState.active:
-          case ConnectionState.waiting:
-            return cachedFilters[filter?.name ?? "_"] == null
-                ? Center(child: Loader())
-                : Stack(
-                    children: [
-                      PhotoView(
-                        imageProvider: MemoryImage((cachedFilters[filter?.name ?? "_"] as Uint8List?)!),
-                        backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
-                      ),
-                      Positioned(
-                        right: 10,
-                        top: 10,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              height: 25,
-                              width: 25,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(
-                                  context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-                                      ? Theme.of(context).colorScheme.error == Colors.black
-                                            ? Theme.of(context).colorScheme.secondary
-                                            : Theme.of(context).colorScheme.error
-                                      : Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                            ),
-                            Icon(Icons.high_quality_rounded, color: Theme.of(context).colorScheme.secondary),
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-          case ConnectionState.done:
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-            cachedFilters[filter?.name ?? "_"] = snapshot.data;
-            return PhotoView(
-              imageProvider: MemoryImage((snapshot.data as Uint8List?)!),
-              backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
-            );
+  Widget _buildFilteredImage() {
+    final Filter filter = _filter;
+    return FutureBuilder<Uint8List>(
+      future: compute(_applyFilter, (filter: filter, image: widget.finalImage, filename: widget.finalFilename)),
+      builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          final Uint8List? cached = cachedFilters[filter.name];
+          if (cached == null) return Center(child: Loader());
+          return Stack(
+            children: [
+              PhotoView(
+                imageProvider: MemoryImage(cached),
+                backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
+              ),
+              _progressOverlay(context),
+            ],
+          );
         }
+        final Uint8List? bytes = snapshot.data;
+        if (snapshot.hasError || bytes == null) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        cachedFilters[filter.name] = bytes;
+        return PhotoView(
+          imageProvider: MemoryImage(bytes),
+          backgroundDecoration: BoxDecoration(color: Theme.of(context).primaryColor),
+        );
       },
+    );
+  }
+
+  Widget _progressOverlay(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool errorInvisible = context.isDarkMode && context.prismIsAmoledDark() && scheme.error == Colors.black;
+    return Positioned(
+      right: 10,
+      top: 10,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            height: 25,
+            width: 25,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(errorInvisible ? scheme.secondary : scheme.error),
+            ),
+          ),
+          Icon(Icons.high_quality_rounded, color: scheme.secondary),
+        ],
+      ),
     );
   }
 }
 
-///The global applyfilter function
-List<int> _applyFilter(Map<String, dynamic> params) {
-  final Filter? filter = params["filter"] as Filter?;
-  final imagelib.Image image = params["image"] as imagelib.Image;
-  final String filename = params["filename"] as String;
-  List<int> bytes = image.getBytes();
-  if (filter != null) {
-    filter.apply(bytes as Uint8List, image.width, image.height);
-  }
-  final imagelib.Image image0 = imagelib.Image.fromBytes(image.width, image.height, bytes);
+typedef _FilterJob = ({Filter filter, imagelib.Image image, String filename});
 
-  return bytes = imagelib.encodeNamedImage(image0, filename)!;
+Uint8List _applyFilter(_FilterJob job) {
+  final image = job.image;
+  final Uint8List bytes = image.getBytes();
+  job.filter.apply(bytes, image.width, image.height);
+  final imagelib.Image filtered = imagelib.Image.fromBytes(image.width, image.height, bytes);
+  return Uint8List.fromList(imagelib.encodeNamedImage(filtered, job.filename)!);
 }
