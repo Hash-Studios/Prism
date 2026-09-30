@@ -29,4 +29,3 @@
 
 ## Room 2.6 keeps RoomDatabase subclasses but not the constructor it calls by reflection (WorkManager)
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
-
