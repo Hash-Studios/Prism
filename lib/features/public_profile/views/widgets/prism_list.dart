@@ -5,9 +5,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
-import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:animations/animations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -46,7 +45,10 @@ const List<_ApiLink> _apiLinks = <_ApiLink>[
   ),
 ];
 
+/// The "More" list on the About page: changelog, share, privacy policy and wallpaper sources.
 class PrismList extends StatelessWidget {
+  const PrismList({super.key});
+
   String get _shareText => defaultTargetPlatform == TargetPlatform.iOS
       ? "Fall in love with your phone's personalization again! Check out Prism -\n$appStoreUrl"
       : 'Fall in love with Android customisation again! Check out Prism -\n$playStoreUrl';
@@ -82,32 +84,58 @@ class PrismList extends StatelessWidget {
     _trackExternalLink(link.destination, launched: launched, sourceContext: link.sourceContext);
   }
 
+  void _showSources(BuildContext context) {
+    showPrismSheet<void>(
+      context: context,
+      builder: (sheetContext) => PrismSheetBody(
+        title: 'Wallpaper sources',
+        message: 'Prism uses these services to bring you wallpapers.',
+        child: Column(
+          children: <Widget>[
+            for (final _ApiLink link in _apiLinks)
+              PrismRow(
+                leading: Icon(link.icon, size: 22, color: Theme.of(sheetContext).colorScheme.onSurface),
+                title: link.name,
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_openApiLink(link));
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _PrismListTile(
-          icon: JamIcons.info,
-          title: "What's new?",
-          subtitle: 'Check out the changelog',
+    return PrismGroup(
+      children: <Widget>[
+        PrismRow(
+          icon: Icons.new_releases_rounded,
+          title: "What's new",
+          subtitle: 'See the changelog',
           onTap: () {
             _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_whats_new');
             showChangelog(context);
           },
         ),
-        _PrismListTile(
-          icon: JamIcons.share_alt,
-          title: 'Share Prism!',
-          subtitle: 'Quick link to pass on to your friends and enemies',
+        PrismRow(
+          icon: Icons.ios_share_rounded,
+          title: 'Share Prism',
+          subtitle: 'Send a link to a friend',
+          showChevron: false,
           onTap: () async {
             _trackAction(AnalyticsActionValue.drawerSharePrismTapped, sourceContext: 'profile_prism_list_share');
             await ShareService.shareText(text: _shareText, context: context);
           },
         ),
-        _PrismListTile(
-          icon: JamIcons.users,
-          title: 'Privacy Policy',
-          subtitle: "Read Prism's Privacy Policy.",
+        PrismRow(
+          icon: Icons.privacy_tip_rounded,
+          title: 'Privacy policy',
+          subtitle: 'How Prism handles your data',
           onTap: () async {
             _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_privacy');
             final bool launched = await launchUrl(
@@ -120,68 +148,16 @@ class PrismList extends StatelessWidget {
             );
           },
         ),
-        _PrismListTile(
-          icon: JamIcons.picture,
-          title: 'API',
-          subtitle: 'Prism uses Wallhaven and Pexels API for wallpapers',
+        PrismRow(
+          icon: Icons.collections_rounded,
+          title: 'Wallpaper sources',
+          subtitle: 'Prism uses Wallhaven and Pexels for wallpapers',
           onTap: () {
             _trackAction(AnalyticsActionValue.actionChipTapped, sourceContext: 'profile_prism_list_api');
-            showModal(
-              context: context,
-              builder: (context) => AlertDialog(
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
-                content: SizedBox(
-                  height: 280,
-                  width: 250,
-                  child: Center(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: <Widget>[
-                        for (final _ApiLink link in _apiLinks)
-                          ListTile(
-                            leading: Icon(link.icon, color: Theme.of(context).colorScheme.secondary),
-                            title: Text(link.name, style: Theme.of(context).textTheme.headlineMedium),
-                            onTap: () {
-                              HapticFeedback.vibrate();
-                              Navigator.of(context).pop();
-                              unawaited(_openApiLink(link));
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
+            _showSources(context);
           },
         ),
       ],
-    );
-  }
-}
-
-class _PrismListTile extends StatelessWidget {
-  const _PrismListTile({required this.icon, required this.title, required this.subtitle, required this.onTap});
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.secondary,
-          fontWeight: FontWeight.w500,
-          fontFamily: PrismFonts.proximaNova,
-        ),
-      ),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
-      onTap: onTap,
     );
   }
 }
