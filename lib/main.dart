@@ -31,6 +31,7 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/router/pending_deep_link_queue.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -424,10 +425,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
   final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
-  final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
+  final PendingDeepLinkQueue _pendingDeepLinks = PendingDeepLinkQueue();
   bool _bootstrapCompleted = false;
   static bool _launchLinkHandled = false;
-  bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
@@ -620,7 +620,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _processPendingDeepLinks() async {
-    if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
+    if (!_bootstrapCompleted || _pendingDeepLinks.isEmpty) {
       return;
     }
     if (_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name) {
@@ -629,16 +629,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       });
       return;
     }
-    _processingPendingDeepLinks = true;
-    try {
-      final List<DeepLinkActionEntity> queued = List<DeepLinkActionEntity>.from(_pendingDeepLinks);
-      _pendingDeepLinks.clear();
-      for (final DeepLinkActionEntity action in queued) {
-        await _handleDeepLinkIntent(action);
-      }
-    } finally {
-      _processingPendingDeepLinks = false;
-    }
+    await _pendingDeepLinks.drain(_handleDeepLinkIntent);
   }
 
   Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
