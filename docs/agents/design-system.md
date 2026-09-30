@@ -94,6 +94,10 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 | `GlintState(kind:, title:, body:, actionLabel:, onAction:)` | Empty, error, offline, loading and nothing-new states. |
 | `showGlintToast(context, mood:)` | A success moment: wallpaper set, upload sent, purchase done. |
 | `toasts.success(msg)` / `toasts.error(msg)` | Short feedback. It is themed and sits above the bottom bar. |
+| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (12) and radius (12) app-wide. `LoadingCards()` is its skeleton. |
+| `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. |
+| `PrismAvatar(url:, name:, size:)` | Every profile picture. |
+| `PrismSegmented(values:, selected:, labelOf:, onChanged:)` | Two to four exclusive choices. |
 | `PressScale(child:)` | Press feedback on custom tappable surfaces (tiles, cards). |
 
 Rules:

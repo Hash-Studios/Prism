@@ -22,9 +22,9 @@ class PrismImageTile extends StatelessWidget {
         : CachedNetworkImage(
             imageUrl: url,
             fit: BoxFit.cover,
-            fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-            fadeInCurve: Curves.easeOut,
-            fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
+            fadeInDuration: context.motion(PrismDurations.fast),
+            fadeInCurve: PrismCurves.enter,
+            fadeOutDuration: context.motion(PrismDurations.fast),
             placeholder: (_, _) => PulseFill(borderRadius: borderRadius),
             errorWidget: (_, _, _) => PulseFill(borderRadius: borderRadius),
           );
