@@ -118,7 +118,7 @@ class _FirestoreTelemetryScreenState extends State<FirestoreTelemetryScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)))
           : _error != null
           ? Center(
               child: Padding(

@@ -160,7 +160,7 @@ class _AppInfoPageState extends State<AppInfoPage> with AutomaticKeepAliveClient
     super.build(context);
 
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)));
     }
 
     return ListView(
