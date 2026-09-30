@@ -197,54 +197,19 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
     CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: CoinPolicy.premiumFilter);
     final _PremiumFilterLowBalanceAction action =
-        await showModalBottomSheet<_PremiumFilterLowBalanceAction>(
-          context: context,
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (sheetContext) {
-            final int balance = CoinsService.instance.balanceNotifier.value;
-            final int missing = (CoinPolicy.premiumFilter - balance).clamp(0, CoinPolicy.premiumFilter);
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(sheetContext).hintColor,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Need Coins for Premium Filter', style: Theme.of(sheetContext).textTheme.displaySmall),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Applying this filter costs -5 coins. Need $missing more coins.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(sheetContext).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumFilterLowBalanceAction.watchAd),
-                      child: const Text('Watch Ad (+10)'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumFilterLowBalanceAction.upgrade),
-                      child: const Text('Upgrade to Pro'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        await showCoinGateSheet<_PremiumFilterLowBalanceAction>(
+          context,
+          title: 'Need Coins for Premium Filter',
+          cost: CoinPolicy.premiumFilter,
+          message: (missing) =>
+              'Applying this filter costs -${CoinPolicy.premiumFilter} coins. Need $missing more coins.',
+          options: const [
+            CoinGateOption(
+              label: 'Watch Ad (+${CoinPolicy.rewardedAd})',
+              value: _PremiumFilterLowBalanceAction.watchAd,
+            ),
+            CoinGateOption(label: 'Upgrade to Pro', value: _PremiumFilterLowBalanceAction.upgrade, outlined: true),
+          ],
         ) ??
         _PremiumFilterLowBalanceAction.none;
 

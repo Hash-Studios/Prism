@@ -221,65 +221,22 @@ class _DownloadButtonState extends State<DownloadButton> {
     CoinsService.instance.logLowBalanceNudge(sourceTag: sourceTag, requiredCoins: requiredCoins);
 
     final _LowBalanceAction action =
-        await showModalBottomSheet<_LowBalanceAction>(
-          context: context,
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (sheetContext) {
-            final int balance = CoinsService.instance.balanceNotifier.value;
-            final int missing = (requiredCoins - balance).clamp(0, requiredCoins);
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(sheetContext).hintColor,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Low coin balance', style: Theme.of(sheetContext).textTheme.displaySmall),
-                  const SizedBox(height: 10),
-                  Text(
-                    missing > 0
-                        ? 'You need $missing more coins for this download.'
-                        : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(sheetContext).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  if (allowDownloadNow)
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.downloadNow),
-                        child: Text('Download (-$requiredCoins)'),
-                      ),
-                    ),
-                  if (allowDownloadNow) const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.watchAndDownload),
-                      child: const Text('Watch & Download (+10)'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_LowBalanceAction.upgrade),
-                      child: const Text('Upgrade to Pro'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        await showCoinGateSheet<_LowBalanceAction>(
+          context,
+          title: 'Low coin balance',
+          cost: requiredCoins,
+          message: (missing) => missing > 0
+              ? 'You need $missing more coins for this download.'
+              : 'You are below ${CoinPolicy.lowBalanceNudgeThreshold} coins.',
+          options: [
+            if (allowDownloadNow)
+              CoinGateOption(label: 'Download (-$requiredCoins)', value: _LowBalanceAction.downloadNow),
+            const CoinGateOption(
+              label: 'Watch & Download (+${CoinPolicy.rewardedAd})',
+              value: _LowBalanceAction.watchAndDownload,
+            ),
+            const CoinGateOption(label: 'Upgrade to Pro', value: _LowBalanceAction.upgrade, outlined: true),
+          ],
         ) ??
         _LowBalanceAction.none;
 

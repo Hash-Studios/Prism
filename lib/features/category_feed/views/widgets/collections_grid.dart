@@ -160,64 +160,24 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
     }
 
     final _PremiumPreviewAction action =
-        await showModalBottomSheet<_PremiumPreviewAction>(
-          context: context,
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (sheetContext) {
-            final int currentBalance = CoinsService.instance.balanceNotifier.value;
-            final int missing = (CoinPolicy.premiumPreview24h - currentBalance).clamp(0, CoinPolicy.premiumPreview24h);
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(sheetContext).hintColor,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Premium Collection', style: Theme.of(sheetContext).textTheme.displaySmall),
-                  const SizedBox(height: 10),
-                  Text(
-                    missing > 0
-                        ? 'Unlock 24h preview for -10 coins. Need $missing more coins.'
-                        : 'Unlock this premium collection for 24 hours for -10 coins.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(sheetContext).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.unlockNow),
-                      child: const Text('Unlock 24h (-10)'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.watchAndUnlock),
-                      child: const Text('Watch Ad (+10) & Unlock'),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(_PremiumPreviewAction.upgrade),
-                      child: const Text('Upgrade to Pro'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        await showCoinGateSheet<_PremiumPreviewAction>(
+          context,
+          title: 'Premium Collection',
+          cost: CoinPolicy.premiumPreview24h,
+          message: (missing) => missing > 0
+              ? 'Unlock 24h preview for -${CoinPolicy.premiumPreview24h} coins. Need $missing more coins.'
+              : 'Unlock this premium collection for 24 hours for -${CoinPolicy.premiumPreview24h} coins.',
+          options: const [
+            CoinGateOption(
+              label: 'Unlock 24h (-${CoinPolicy.premiumPreview24h})',
+              value: _PremiumPreviewAction.unlockNow,
+            ),
+            CoinGateOption(
+              label: 'Watch Ad (+${CoinPolicy.rewardedAd}) & Unlock',
+              value: _PremiumPreviewAction.watchAndUnlock,
+            ),
+            CoinGateOption(label: 'Upgrade to Pro', value: _PremiumPreviewAction.upgrade, outlined: true),
+          ],
         ) ??
         _PremiumPreviewAction.none;
 
