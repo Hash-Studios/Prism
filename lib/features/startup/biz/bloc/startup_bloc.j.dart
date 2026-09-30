@@ -11,6 +11,35 @@ part 'startup_event.j.dart';
 part 'startup_state.j.dart';
 part 'startup_bloc.j.freezed.dart';
 
+/// Compares valid dotted numeric versions part by part, ignoring valid suffixes.
+bool isVersionLower(String version, String other) {
+  List<int>? parse(String value) {
+    final match = RegExp(
+      r'^([0-9]+(?:\.[0-9]+)*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$',
+    ).firstMatch(value.trim());
+    if (match == null) return null;
+
+    final parts = <int>[];
+    for (final component in match.group(1)!.split('.')) {
+      final part = int.tryParse(component);
+      if (part == null) return null;
+      parts.add(part);
+    }
+    return parts;
+  }
+
+  final a = parse(version);
+  final b = parse(other);
+  if (a == null || b == null) return false;
+
+  for (var i = 0; i < a.length || i < b.length; i++) {
+    final x = i < a.length ? a[i] : 0;
+    final y = i < b.length ? b[i] : 0;
+    if (x != y) return x < y;
+  }
+  return false;
+}
+
 @injectable
 class StartupBloc extends Bloc<StartupEvent, StartupState> {
   StartupBloc(this._bootstrapAppUseCase) : super(StartupState.initial()) {
@@ -28,9 +57,8 @@ class StartupBloc extends Bloc<StartupEvent, StartupState> {
 
     result.fold(
       onSuccess: (config) {
-        final currentVersion = event.currentVersion ?? '0.0.0';
-        final isObsolete =
-            int.parse(currentVersion.replaceAll('.', '')) < int.parse(config.obsoleteAppVersion.replaceAll('.', ''));
+        final currentVersion = event.currentVersion ?? '';
+        final isObsolete = isVersionLower(currentVersion, config.obsoleteAppVersion);
 
         emit(
           state.copyWith(
