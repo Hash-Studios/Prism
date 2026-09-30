@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
@@ -14,8 +15,10 @@ import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/setup_wallpaper_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/animated/favourite_icon.dart';
+import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/animated/show_up.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
+import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/core/collapsed_panel.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
@@ -50,20 +53,10 @@ class SetupDetailView extends StatefulWidget {
   State<SetupDetailView> createState() => _SetupDetailViewState();
 }
 
-class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProviderStateMixin {
+class _SetupDetailViewState extends State<SetupDetailView> {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final PanelController _panelController = PanelController();
-  late final AnimationController _shakeController = AnimationController(
-    duration: const Duration(milliseconds: 300),
-    vsync: this,
-  );
-  late final Animation<double> _offsetAnimation =
-      Tween(begin: 0.0, end: 48.0).chain(CurveTween(curve: Curves.easeOutCubic)).animate(_shakeController)
-        ..addStatusListener((status) {
-          if (status == AnimationStatus.completed) {
-            _shakeController.reverse();
-          }
-        });
+  final ShakeController _shake = ShakeController();
   late final Future<String> _futureView;
   bool _panelCollapsed = true;
 
@@ -79,7 +72,7 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
 
   @override
   void dispose() {
-    _shakeController.dispose();
+    _shake.dispose();
     super.dispose();
   }
 
@@ -129,10 +122,11 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
     Navigator.push(
       context,
       PageRouteBuilder(
+        transitionDuration: context.motion(const Duration(milliseconds: 200)),
+        reverseTransitionDuration: context.motion(const Duration(milliseconds: 200)),
         pageBuilder: (context, animation, secondaryAnimation) {
-          animation = Tween(begin: 0.0, end: 1.0).animate(animation);
           return FadeTransition(
-            opacity: animation,
+            opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
             child: SetupOverlay(link: _setup.image),
           );
         },
@@ -489,9 +483,10 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
         ),
         body: Stack(
           children: <Widget>[
-            AnimatedBuilder(
-              animation: _offsetAnimation,
-              builder: (buildContext, child) {
+            ShakeOnce(
+              controller: _shake,
+              distance: 48,
+              builder: (buildContext, value, _) {
                 return GestureDetector(
                   onPanUpdate: (details) {
                     if (details.delta.dy < -10) {
@@ -500,35 +495,23 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
                   },
                   onLongPress: () {
                     HapticFeedback.vibrate();
-                    _shakeController.forward(from: 0.0);
+                    _shake.shake();
                   },
                   onTap: () {
                     HapticFeedback.vibrate();
-                    _shakeController.forward(from: 0.0);
+                    _shake.shake();
                   },
                   child: CachedNetworkImage(
                     imageUrl: setup.image,
                     imageBuilder: (context, imageProvider) => Container(
-                      margin: EdgeInsets.symmetric(
-                        vertical: _offsetAnimation.value * 1.25,
-                        horizontal: _offsetAnimation.value / 2,
-                      ),
+                      margin: EdgeInsets.symmetric(vertical: value * 1.25, horizontal: value / 2),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(_offsetAnimation.value),
+                        borderRadius: BorderRadius.circular(value),
                         image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
                       ),
                     ),
-                    progressIndicatorBuilder: (context, url, downloadProgress) => Stack(
-                      children: <Widget>[
-                        const SizedBox.expand(child: Text('', overflow: TextOverflow.fade)),
-                        Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation(theme.colorScheme.error),
-                            value: downloadProgress.progress,
-                          ),
-                        ),
-                      ],
-                    ),
+                    progressIndicatorBuilder: (context, url, downloadProgress) =>
+                        const GlintState(kind: GlintStateKind.loading, title: 'Loading setup'),
                     errorWidget: (context, url, error) =>
                         Center(child: Icon(JamIcons.close_circle_f, color: secondary)),
                   ),

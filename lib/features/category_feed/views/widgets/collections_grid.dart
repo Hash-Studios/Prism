@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -87,7 +88,7 @@ class _CollectionTileSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PulsePlaceholder(
-      builder: (BuildContext context, Color color) {
+      builder: (BuildContext context, Color _) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -95,11 +96,11 @@ class _CollectionTileSkeleton extends StatelessWidget {
               height: _kCollectionsTitleBlockHeight,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Container(width: cellWidth * 0.65, height: 13, color: color),
+                child: SizedBox(width: cellWidth * 0.65, height: 13, child: const PulseFill()),
               ),
             ),
             const SizedBox(height: _kCollectionsTitleImageGap),
-            Expanded(child: ColoredBox(color: color)),
+            const Expanded(child: PulseFill()),
           ],
         );
       },
@@ -394,11 +395,21 @@ class _CollectionsGridState extends State<CollectionsGrid> with TickerProviderSt
             child: PremiumBanner(
               comparator: !isPremium,
               child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  image: thumbImage != null ? DecorationImage(image: thumbImage, fit: BoxFit.cover) : null,
-                ),
-                child: thumbImage != null ? null : const SizedBox.expand(),
+                decoration: BoxDecoration(color: scheme.surfaceContainerHighest),
+                child: thumbImage == null
+                    ? const SizedBox.expand()
+                    : Image(
+                        image: thumbImage,
+                        fit: BoxFit.cover,
+                        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) => wasSynchronouslyLoaded
+                            ? child
+                            : AnimatedOpacity(
+                                opacity: frame == null ? 0 : 1,
+                                duration: context.motion(const Duration(milliseconds: 180)),
+                                curve: Curves.easeOut,
+                                child: child,
+                              ),
+                      ),
               ),
             ),
           ),

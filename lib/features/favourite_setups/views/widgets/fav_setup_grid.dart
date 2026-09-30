@@ -7,11 +7,11 @@ import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
 import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -44,7 +44,6 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> {
   @override
   Widget build(BuildContext context) {
     final List<SetupEntity>? setups = context.favouriteSetupsAdapter().items;
-    final Color placeholderColor = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1);
     return FutureBuilder<void>(
       future: _initialLoad,
       builder: (context, snapshot) {
@@ -117,16 +116,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> {
                     itemBuilder: (context, index) {
                       return Stack(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: placeholderColor,
-                              borderRadius: BorderRadius.circular(20),
-                              image: DecorationImage(
-                                image: CachedNetworkImageProvider(setups[index].image),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
+                          PrismImageTile(url: setups[index].image, borderRadius: BorderRadius.circular(20)),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: Material(

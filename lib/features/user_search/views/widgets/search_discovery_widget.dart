@@ -220,11 +220,11 @@ class _TrendingSkeletonRow extends StatelessWidget {
     return SizedBox(
       height: itemHeight,
       child: PulsePlaceholder(
-        builder: (context, color) => ListView.builder(
+        builder: (context, _) => ListView.builder(
           padding: EdgeInsets.zero,
           scrollDirection: Axis.horizontal,
           itemCount: 6,
-          itemBuilder: (_, _) => Container(width: itemWidth, height: itemHeight, color: color),
+          itemBuilder: (_, _) => SizedBox(width: itemWidth, height: itemHeight, child: const PulseFill()),
         ),
       ),
     );
