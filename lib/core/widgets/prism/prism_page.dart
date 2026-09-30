@@ -121,9 +121,13 @@ class _PrismPageState extends State<PrismPage> {
       resizeToAvoidBottomInset: widget.resizeToAvoidBottomInset,
       bottomNavigationBar: widget.bottomBar == null
           ? null
-          : SafeArea(
-              minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
-              child: widget.bottomBar!,
+          // The keyboard inset keeps the action above the keyboard.
+          : Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+              child: SafeArea(
+                minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
+                child: widget.bottomBar!,
+              ),
             ),
       body: SafeArea(
         bottom: false,

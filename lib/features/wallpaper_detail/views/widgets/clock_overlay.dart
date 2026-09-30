@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/accent_contrast.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -30,9 +31,12 @@ class ClockOverlay extends StatelessWidget {
     final now = DateTime.now();
     final day = DateFormat('EEEE').format(now);
     final month = DateFormat('MMMM').format(now);
-    final Color textColor = accent == null ? Theme.of(context).colorScheme.secondary : onColor(accent!);
+    final Color textColor = accent == null ? Colors.white : onColor(accent!);
     final bool iosPreview = defaultTargetPlatform == TargetPlatform.iOS;
+    final Size screen = MediaQuery.sizeOf(context);
+    final TextStyle base = PrismTextStyles.screenTitle(context).copyWith(color: textColor);
     return Material(
+      color: Theme.of(context).colorScheme.surface,
       child: Stack(
         children: <Widget>[
           if (!file)
@@ -50,8 +54,8 @@ class ClockOverlay extends StatelessWidget {
             )
           else
             SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
+              height: screen.height,
+              width: screen.width,
               child: Image.file(
                 File(link),
                 color: accent,
@@ -59,34 +63,36 @@ class ClockOverlay extends StatelessWidget {
                 fit: BoxFit.cover,
               ),
             ),
+          if (textColor == Colors.white)
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const <double>[0, 0.4, 0.8, 1],
+                    colors: <Color>[
+                      Colors.black.withValues(alpha: 0.35),
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.35),
+                    ],
+                  ),
+                ),
+                child: SizedBox(height: screen.height, width: screen.width),
+              ),
+            ),
           if (iosPreview)
             SafeArea(
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 24),
+                  padding: const EdgeInsets.only(top: PrismSpace.xl),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Text(
-                        DateFormat('EEEE d MMMM').format(now),
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'CupertinoSystemText',
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        DateFormat('h:mm').format(now),
-                        style: TextStyle(
-                          color: textColor,
-                          fontFamily: 'CupertinoSystemDisplay',
-                          fontSize: 96,
-                          fontWeight: FontWeight.w700,
-                          height: 1.1,
-                        ),
-                      ),
+                      Text(DateFormat('EEEE d MMMM').format(now), style: base.copyWith(fontSize: 20)),
+                      Text(DateFormat('h:mm').format(now), style: base.copyWith(fontSize: 96, height: 1.1)),
                     ],
                   ),
                 ),
@@ -94,32 +100,18 @@ class ClockOverlay extends StatelessWidget {
             )
           else ...<Widget>[
             SizedBox(
-              height: MediaQuery.of(context).size.height / 3,
-              width: MediaQuery.of(context).size.width,
+              height: screen.height / 3,
+              width: screen.width,
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
+                    Text('$day,', textAlign: TextAlign.center, style: base.copyWith(fontSize: 24)),
+                    const SizedBox(height: PrismSpace.xxs),
                     Text(
-                      "$day,",
+                      '$month ${now.day}${ClockOverlay.ordinalSuffix(now.day)} | 27°C',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: textColor,
-                        fontFamily: "Roboto",
-                        fontSize: 25,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "$month ${now.day}${ClockOverlay.ordinalSuffix(now.day)} | 27°C",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: textColor,
-                        fontFamily: "Roboto",
-                        fontSize: 25,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: base.copyWith(fontSize: 24),
                     ),
                   ],
                 ),
@@ -128,31 +120,65 @@ class ClockOverlay extends StatelessWidget {
             Positioned(
               bottom: 100,
               child: SizedBox(
-                width: MediaQuery.of(context).size.width,
+                width: screen.width,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
-                    Image.asset("assets/images/dialer.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/messages.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/prism.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/playstore.webp", width: MediaQuery.of(context).size.width * 0.14),
-                    Image.asset("assets/images/chrome.webp", width: MediaQuery.of(context).size.width * 0.14),
+                    for (final String icon in <String>['dialer', 'messages', 'prism', 'playstore', 'chrome'])
+                      Image.asset('assets/images/$icon.webp', width: screen.width * 0.14),
                   ],
                 ),
               ),
             ),
           ],
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: PrismSpace.md),
+                child: ExcludeSemantics(
+                  child: Text(
+                    'Tap anywhere to close',
+                    style: PrismTextStyles.caption(context).copyWith(color: textColor),
+                  ),
+                ),
+              ),
+            ),
+          ),
           Semantics(
             button: true,
             label: 'Close preview',
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: () => Navigator.pop(context),
-              child: SizedBox(height: MediaQuery.of(context).size.height, width: MediaQuery.of(context).size.width),
+              child: SizedBox(height: screen.height, width: screen.width),
             ),
           ),
         ],
       ),
     );
   }
+}
+
+/// Opens the lock screen preview over the current page.
+Future<void> pushClockPreview(
+  BuildContext context, {
+  required String link,
+  required bool file,
+  Color? accent,
+  bool colorChanged = false,
+}) {
+  return Navigator.push<void>(
+    context,
+    PageRouteBuilder<void>(
+      transitionDuration: context.motion(PrismDurations.base),
+      reverseTransitionDuration: context.motion(PrismDurations.fast),
+      pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
+        opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
+        child: ClockOverlay(colorChanged: colorChanged, accent: accent, link: link, file: file),
+      ),
+      fullscreenDialog: true,
+      opaque: false,
+    ),
+  );
 }

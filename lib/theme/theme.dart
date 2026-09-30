@@ -20,242 +20,127 @@ const _darkAppBarOverlayStyle = SystemUiOverlayStyle(
   systemStatusBarContrastEnforced: false,
 );
 
-const _lightMain = Color(0xFFFFFFFF);
-const _lightSecond = Color(0xFFEDEDED);
-const _lightAccent = Color(0xFF2F2F2F);
-const _darkMain = Color(0xFF000000);
-const _darkSecond = Color(0xFF2F2F2F);
-const _darkAccent = Color(0xFFF0F0F0);
 const _defaultPink = Color(0xFFE57697);
 
-ThemeData _lightTheme({
-  required Color primary,
-  required Color hint,
+/// Text roles for Material widgets that read the theme. App code uses `PrismTextStyles`, not these.
+TextTheme _textTheme(ColorScheme cs) {
+  TextStyle sans(double size, FontWeight weight, {Color? color, double? height}) => TextStyle(
+    fontFamily: PrismFonts.proximaNova,
+    fontSize: size,
+    fontWeight: weight,
+    height: height,
+    color: color ?? cs.onSurface,
+  );
+  TextStyle serif(double size) => TextStyle(
+    fontFamily: PrismFonts.fraunces,
+    fontSize: size,
+    fontWeight: FontWeight.w700,
+    height: 1.1,
+    color: cs.onSurface,
+  );
+  return TextTheme(
+    displayLarge: serif(40),
+    displayMedium: serif(34),
+    displaySmall: serif(28),
+    headlineLarge: sans(28, FontWeight.w700, height: 1.1),
+    headlineMedium: sans(24, FontWeight.w700),
+    headlineSmall: sans(20, FontWeight.w700),
+    titleLarge: sans(20, FontWeight.w700),
+    titleMedium: sans(16, FontWeight.w700),
+    titleSmall: sans(15, FontWeight.w600),
+    bodyLarge: sans(16, FontWeight.w500),
+    bodyMedium: sans(14, FontWeight.w500),
+    bodySmall: sans(12, FontWeight.w500, color: cs.onSurfaceVariant),
+    labelLarge: sans(15, FontWeight.w600),
+    labelMedium: sans(13, FontWeight.w600),
+    labelSmall: sans(11, FontWeight.w700),
+  );
+}
+
+/// Builds one Prism theme from its page [background], its text [foreground] and its default [accent].
+ThemeData _theme({
+  required Brightness brightness,
+  required Color background,
+  required Color foreground,
   required Color accent,
-  Color secondary = _lightAccent,
 }) {
+  final bool dark = brightness == Brightness.dark;
   return ThemeData(
+    // Transparent on purpose: plain `Material` wrappers must not paint over wallpapers.
     canvasColor: Colors.transparent,
-    primaryColor: primary,
-    brightness: Brightness.light,
-    appBarTheme: const AppBarTheme(systemOverlayStyle: _lightAppBarOverlayStyle),
-    focusColor: _lightMain,
-    hintColor: hint,
-    textTheme: TextTheme(
-      labelLarge: const TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-        color: _lightMain,
-      ),
-      headlineSmall: const TextStyle(fontSize: 16.0, color: _lightMain, fontFamily: PrismFonts.proximaNova),
-      headlineMedium: const TextStyle(
-        fontSize: 16,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: FontWeight.w500,
-        color: _lightAccent,
-      ),
-      displaySmall: const TextStyle(
-        fontSize: 20,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: FontWeight.w500,
-        color: Colors.black,
-      ),
-      displayMedium: const TextStyle(
-        fontSize: 24,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: FontWeight.w500,
-        color: Colors.black,
-      ),
-      displayLarge: const TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        color: _lightAccent,
-        fontSize: 50,
-        fontWeight: FontWeight.w600,
-      ),
-      titleMedium: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w900,
-        color: _lightSecond,
-        fontFamily: PrismFonts.roboto,
-      ),
-      titleLarge: TextStyle(
-        fontSize: 13.0,
-        color: _lightMain.withValues(alpha: .85),
-        fontFamily: PrismFonts.proximaNova,
-      ),
-      bodyMedium: TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: _lightMain.withValues(alpha: .75),
-      ),
-      bodyLarge: const TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: 24,
-        fontWeight: FontWeight.w500,
-        color: _lightMain,
-      ),
-      bodySmall: const TextStyle(
-        fontFamily: PrismFonts.roboto,
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: _lightAccent,
-      ),
-    ),
+    primaryColor: background,
+    brightness: brightness,
+    fontFamily: PrismFonts.proximaNova,
+    appBarTheme: AppBarTheme(systemOverlayStyle: dark ? _darkAppBarOverlayStyle : _lightAppBarOverlayStyle),
   ).withPrismScheme(
-    prismColorScheme(
+    prismColorScheme(brightness: brightness, background: background, foreground: foreground, accent: accent),
+  );
+}
+
+// A light theme's text is a dark ink that keeps the theme's tint.
+ThemeData _lightTheme({required Color background, required Color accent, Color tint = const Color(0xFF2F2F2F)}) =>
+    _theme(
       brightness: Brightness.light,
-      background: primary,
-      // A dark ink that keeps the theme's tint.
-      foreground: Color.alphaBlend(Colors.black.withValues(alpha: 0.8), secondary),
+      background: background,
+      foreground: Color.alphaBlend(Colors.black.withValues(alpha: 0.8), tint),
       accent: accent,
-    ),
-  );
-}
+    );
 
-ThemeData _darkTheme({
-  required Color primary,
-  required Color hint,
-  required Color accent,
-  required Color secondary,
-  Color text = _darkAccent,
-  Color titleMedium = _darkSecond,
-}) {
-  return ThemeData(
-    canvasColor: Colors.transparent,
-    primaryColor: primary,
-    brightness: Brightness.dark,
-    appBarTheme: const AppBarTheme(systemOverlayStyle: _darkAppBarOverlayStyle),
-    focusColor: _darkMain,
-    hintColor: hint,
-    textTheme: TextTheme(
-      labelLarge: const TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-        color: _darkMain,
-      ),
-      headlineSmall: TextStyle(fontSize: 16.0, color: text, fontFamily: PrismFonts.proximaNova),
-      headlineMedium: TextStyle(
-        fontSize: 16,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: FontWeight.w500,
-        color: text,
-      ),
-      displaySmall: const TextStyle(
-        fontSize: 20,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
-      ),
-      displayMedium: const TextStyle(
-        fontSize: 24,
-        fontFamily: PrismFonts.proximaNova,
-        fontWeight: FontWeight.w500,
-        color: Colors.white,
-      ),
-      displayLarge: TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        color: text,
-        fontSize: 50,
-        fontWeight: FontWeight.w600,
-      ),
-      titleMedium: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w900,
-        color: titleMedium,
-        fontFamily: PrismFonts.roboto,
-      ),
-      titleLarge: TextStyle(fontSize: 14.0, color: text.withValues(alpha: .85), fontFamily: PrismFonts.proximaNova),
-      bodyMedium: TextStyle(
-        fontFamily: PrismFonts.proximaNova,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: text.withValues(alpha: .85),
-      ),
-      bodyLarge: TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 22, fontWeight: FontWeight.w500, color: text),
-      bodySmall: TextStyle(fontFamily: PrismFonts.roboto, fontSize: 16, fontWeight: FontWeight.w400, color: text),
-    ),
-  ).withPrismScheme(
-    prismColorScheme(brightness: Brightness.dark, background: primary, foreground: secondary, accent: accent),
-  );
-}
+ThemeData _darkTheme({required Color background, required Color accent, required Color foreground}) =>
+    _theme(brightness: Brightness.dark, background: background, foreground: foreground, accent: accent);
 
-ThemeData kLightTheme = _lightTheme(primary: _lightMain, hint: _lightSecond, accent: _defaultPink);
-
+ThemeData kLightTheme = _lightTheme(background: const Color(0xFFFFFFFF), accent: _defaultPink);
 ThemeData kLightTheme2 = _lightTheme(
-  primary: const Color(0xFFF7F1E3),
-  hint: const Color(0xFFF1E6D0),
+  background: const Color(0xFFF7F1E3),
   accent: const Color(0xFFC19439),
-  secondary: const Color(0xFF96732C),
+  tint: const Color(0xFF96732C),
 );
-
 ThemeData kLightTheme3 = _lightTheme(
-  primary: const Color(0xFFC5A79F),
-  hint: const Color(0xFFBE9C93),
+  background: const Color(0xFFC5A79F),
   accent: const Color(0xFFA7796D),
-  secondary: const Color(0xFF7D564B),
+  tint: const Color(0xFF7D564B),
 );
-
 ThemeData kLightTheme4 = _lightTheme(
-  primary: const Color(0xFF8399BE),
-  hint: const Color(0xFF788CAF),
+  background: const Color(0xFF8399BE),
   accent: const Color(0xFF596F95),
-  secondary: const Color(0xFF36435A),
+  tint: const Color(0xFF36435A),
 );
 
-ThemeData kDarkTheme = _darkTheme(primary: _darkMain, hint: _darkSecond, accent: _defaultPink, secondary: _darkAccent);
-
-ThemeData kDarkTheme2 = _darkTheme(
-  primary: Colors.black,
-  hint: Colors.black,
-  accent: Colors.white,
-  secondary: Colors.white,
-  text: Colors.white,
-  titleMedium: Colors.black,
+ThemeData kDarkTheme = _darkTheme(
+  background: const Color(0xFF000000),
+  accent: _defaultPink,
+  foreground: const Color(0xFFF0F0F0),
 );
-
+ThemeData kDarkTheme2 = _darkTheme(background: Colors.black, accent: Colors.white, foreground: Colors.white);
 ThemeData kDarkTheme3 = _darkTheme(
-  primary: const Color(0xFF202113),
-  hint: const Color(0xFF35371F),
+  background: const Color(0xFF202113),
   accent: const Color(0xFF767B45),
-  secondary: const Color(0xFFE3E4D0),
+  foreground: const Color(0xFFE3E4D0),
 );
-
 ThemeData kDarkTheme4 = _darkTheme(
-  primary: const Color(0xFF041B29),
-  hint: const Color(0xFF152836),
+  background: const Color(0xFF041B29),
   accent: const Color(0xFF427DA8),
-  secondary: const Color(0xFFB0CCE0),
+  foreground: const Color(0xFFB0CCE0),
 );
-
 ThemeData kDarkTheme5 = _darkTheme(
-  primary: const Color(0xFF12210E),
-  hint: const Color(0xFF1D2B1A),
+  background: const Color(0xFF12210E),
   accent: const Color(0xFF4C7044),
-  secondary: const Color(0xFFD9E6D6),
+  foreground: const Color(0xFFD9E6D6),
 );
-
 ThemeData kDarkTheme6 = _darkTheme(
-  primary: const Color(0xFF290D02),
-  hint: const Color(0xFF361B12),
+  background: const Color(0xFF290D02),
   accent: const Color(0xFF703826),
-  secondary: const Color(0xFFDFB0A0),
+  foreground: const Color(0xFFDFB0A0),
 );
-
 ThemeData kDarkTheme7 = _darkTheme(
-  primary: const Color(0xFF142431),
-  hint: const Color(0xFF193543),
+  background: const Color(0xFF142431),
   accent: const Color(0xFF2D6079),
-  secondary: const Color(0xFFA9CDDF),
+  foreground: const Color(0xFFA9CDDF),
 );
-
 ThemeData kDarkTheme8 = _darkTheme(
-  primary: const Color(0xFF393D46),
-  hint: const Color(0xFF33363F),
+  background: const Color(0xFF393D46),
   accent: const Color(0xFF686E80),
-  secondary: const Color(0xFFEEEFF2),
+  foreground: const Color(0xFFEEEFF2),
 );
 
 /// Applies a Prism [ColorScheme] and the component defaults that follow from it. The accent picker calls this again
@@ -285,6 +170,7 @@ extension PrismThemeData on ThemeData {
     );
     return copyWith(
       colorScheme: cs,
+      textTheme: _textTheme(cs),
       scaffoldBackgroundColor: cs.surface,
       dividerColor: hairline,
       splashColor: cs.onSurface.withValues(alpha: 0.06),

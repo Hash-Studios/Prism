@@ -2,9 +2,14 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+const double _kSmallScreenHeight = 700;
 
 /// Shows the sheet for one paid daily claim. [onSeeRewards] runs after the sheet closes.
 Future<void> showDailyClaimSheet(BuildContext context, StreakClaimResult result, {VoidCallback? onSeeRewards}) async {
@@ -12,8 +17,6 @@ Future<void> showDailyClaimSheet(BuildContext context, StreakClaimResult result,
     context: context,
     useSafeArea: true,
     isScrollControlled: true,
-    showDragHandle: true,
-    backgroundColor: Theme.of(context).colorScheme.surface,
     builder: (_) => DailyClaimSheet(result: result),
   );
   if (seeRewards == true) onSeeRewards?.call();
@@ -29,7 +32,8 @@ class DailyClaimSheet extends StatefulWidget {
 }
 
 class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProviderStateMixin {
-  static const Duration _total = Duration(milliseconds: 1500);
+  // Glint lands, the reward counts up, then the week fills in: about a second in all.
+  static final Duration _total = PrismDurations.slow * 3;
   late final AnimationController _c = AnimationController(vsync: this, duration: _total);
   bool _started = false;
 
@@ -43,6 +47,7 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
     }
     if (_started) return;
     _started = true;
+    HapticFeedback.lightImpact();
     _c.forward();
   }
 
@@ -96,131 +101,80 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final StreakClaimResult r = widget.result;
-    final bool small = MediaQuery.sizeOf(context).height < 700;
-    final copy = _copy;
+    final bool small = MediaQuery.sizeOf(context).height < _kSmallScreenHeight;
+    final ({String title, String? sub, bool showReward}) copy = _copy;
     final String? breakdown = _breakdown;
     final Widget glint = AnimatedBuilder(
       animation: _c,
       builder: (context, child) {
         final double t = const Interval(0.05, 0.4, curve: PrismCurves.pop).transform(_c.value);
-        return Transform.scale(scale: t.clamp(0.0, 1.2), child: child);
+        return Opacity(
+          opacity: t.clamp(0.0, 1.0),
+          child: Transform.scale(scale: 0.9 + 0.1 * t, child: child),
+        );
       },
-      child: Glint(mood: _mood, size: small ? 88 : 140),
+      child: Glint(mood: _mood, size: small ? 88 : 128),
     );
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            glint,
-            const SizedBox(height: 8),
-            Text(copy.title, textAlign: TextAlign.center, style: PrismTextStyles.sheetHeadline(context)),
-            if (copy.sub != null) ...[
-              const SizedBox(height: 4),
-              Text(copy.sub!, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
-            ],
-            if (copy.showReward) ...[
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const PrismCoinIcon(size: 32),
-                  const SizedBox(width: 10),
-                  AnimatedBuilder(
-                    animation: _c,
-                    builder: (context, _) {
-                      final double t = const Interval(0.1, 0.6, curve: Curves.easeOutCubic).transform(_c.value);
-                      return Text('+${(r.totalReward * t).round()}', style: PrismTextStyles.numeral(context, 44));
-                    },
-                  ),
-                ],
-              ),
-              if (breakdown != null) ...[
-                const SizedBox(height: 8),
-                Text(breakdown, style: PrismTextStyles.caption(context)),
-              ],
-            ],
-            const SizedBox(height: 24),
-            _CycleStrip(day: r.streakDay, animation: _c),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  shape: const StadiumBorder(),
-                  textStyle: PrismTextStyles.rowTitle(context),
-                ),
-                child: Text(r.streakBroken ? 'OK' : 'Nice'),
-              ),
-            ),
-            const SizedBox(height: 4),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(
-                r.streakBroken ? 'Get a freeze for next time' : 'See rewards',
-                style: PrismTextStyles.rowTitle(context),
-              ),
-            ),
+    final PrismButton seeRewards = PrismButton(
+      label: r.streakBroken ? 'Get a freeze for next time' : 'See rewards',
+      expand: true,
+      variant: r.streakBroken ? PrismButtonVariant.primary : PrismButtonVariant.ghost,
+      onPressed: () => Navigator.of(context).pop(true),
+    );
+    final PrismButton done = PrismButton(
+      label: r.streakBroken ? 'OK' : 'Nice',
+      expand: true,
+      variant: r.streakBroken ? PrismButtonVariant.ghost : PrismButtonVariant.primary,
+      onPressed: () => Navigator.of(context).pop(false),
+    );
+    return PrismSheetBody(
+      centered: true,
+      scrollable: true,
+      actions: <Widget>[
+        if (r.streakBroken) ...<Widget>[seeRewards, done] else ...<Widget>[done, seeRewards],
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          glint,
+          const SizedBox(height: PrismSpace.xs),
+          Semantics(
+            header: true,
+            child: Text(copy.title, textAlign: TextAlign.center, style: PrismTextStyles.sheetHeadline(context)),
+          ),
+          if (copy.sub != null) ...<Widget>[
+            const SizedBox(height: PrismSpace.xxs),
+            Text(copy.sub!, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CycleStrip extends StatelessWidget {
-  const _CycleStrip({required this.day, required this.animation});
-
-  final int day;
-  final Animation<double> animation;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        for (int i = 1; i <= 7; i++)
-          Expanded(
-            child: Column(
-              children: [
+          if (copy.showReward) ...<Widget>[
+            const SizedBox(height: PrismSpace.lg),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const PrismCoinIcon(size: 32),
+                const SizedBox(width: PrismSpace.sm),
                 AnimatedBuilder(
-                  animation: animation,
+                  animation: _c,
                   builder: (context, _) {
-                    final double start = 0.5 + (i - 1) * 0.04;
-                    final double t = Interval(
-                      start,
-                      (start + 0.2).clamp(0.0, 1.0),
-                      curve: PrismCurves.enter,
-                    ).transform(animation.value);
-                    final bool done = i <= day;
-                    return Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: done ? Color.lerp(Colors.transparent, scheme.primary, t) : null,
-                        border: done && t >= 1
-                            ? null
-                            : Border.all(color: scheme.onSurface.withValues(alpha: 0.12), width: 1.5),
-                      ),
-                      child: done && t > 0
-                          ? Opacity(
-                              opacity: t,
-                              child: Icon(Icons.check_rounded, size: 18, color: scheme.onPrimary),
-                            )
-                          : null,
-                    );
+                    final double t = const Interval(0.1, 0.6, curve: PrismCurves.enter).transform(_c.value);
+                    return Text('+${(r.totalReward * t).round()}', style: PrismTextStyles.numeral(context, 44));
                   },
                 ),
-                const SizedBox(height: 6),
-                Text('Day $i', style: PrismTextStyles.caption(context).copyWith(fontSize: 10)),
               ],
             ),
+            if (breakdown != null) ...<Widget>[
+              const SizedBox(height: PrismSpace.xs),
+              Text(breakdown, textAlign: TextAlign.center, style: PrismTextStyles.caption(context)),
+            ],
+          ],
+          const SizedBox(height: PrismSpace.xl),
+          StreakCycleStrip(
+            cycleDay: r.streakDay,
+            showRewards: false,
+            startDelay: PrismDurations.slow + PrismDurations.fast,
           ),
-      ],
+        ],
+      ),
     );
   }
 }

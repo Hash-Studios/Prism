@@ -1,8 +1,10 @@
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -21,12 +23,14 @@ class RewardsSpendSection extends StatelessWidget {
         icon: Icons.auto_awesome_rounded,
         label: 'AI wallpaper',
         price: 'from ${CoinPolicy.aiGenerationFast}',
+        spokenPrice: 'from ${CoinPolicy.aiGenerationFast} coins',
         onTap: () => context.router.root.push(AiTabRoute()),
       ),
       _SpendTile(
         icon: Icons.workspace_premium_rounded,
         label: 'Premium collection',
         price: '${CoinPolicy.premiumPreview24h} for 24 h',
+        spokenPrice: '${CoinPolicy.premiumPreview24h} coins for 24 hours',
         onTap: () =>
             context.router.root.navigate(const DashboardRoute(children: <PageRouteInfo>[CollectionTabRoute()])),
       ),
@@ -34,6 +38,7 @@ class RewardsSpendSection extends StatelessWidget {
         icon: Icons.image_outlined,
         label: 'Premium wallpaper',
         price: '${CoinPolicy.premiumWallpaperDownload}',
+        spokenPrice: '${CoinPolicy.premiumWallpaperDownload} coins',
         onTap: () => _showInfo(
           context,
           title: 'Premium wallpaper',
@@ -45,6 +50,7 @@ class RewardsSpendSection extends StatelessWidget {
         icon: Icons.tune_rounded,
         label: 'Filters',
         price: '${CoinPolicy.premiumFilter} per edit',
+        spokenPrice: '${CoinPolicy.premiumFilter} coins per edit',
         onTap: () => _showInfo(
           context,
           title: 'Filters',
@@ -55,12 +61,14 @@ class RewardsSpendSection extends StatelessWidget {
         icon: Icons.ac_unit_rounded,
         label: 'Streak freeze',
         price: '${CoinPolicy.streakFreezeCost}',
+        spokenPrice: '${CoinPolicy.streakFreezeCost} coins',
         onTap: onStreakFreeze,
       ),
       _SpendTile(
         icon: Icons.download_rounded,
         label: 'Downloads',
         price: '${CoinPolicy.wallpaperDownload}',
+        spokenPrice: '${CoinPolicy.wallpaperDownload} coins',
         onTap: () => _showInfo(
           context,
           title: 'Downloads',
@@ -68,25 +76,27 @@ class RewardsSpendSection extends StatelessWidget {
         ),
       ),
     ];
-    return Padding(
-      padding: const EdgeInsets.only(top: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const _SectionTitle('Use your coins'),
-          const SizedBox(height: 12),
-          for (int i = 0; i < tiles.length; i += 2) ...<Widget>[
-            if (i > 0) const SizedBox(height: 10),
-            Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const PrismSectionHeader(
+          title: 'Use your coins',
+          padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
+        ),
+        for (int i = 0; i < tiles.length; i += 2) ...<Widget>[
+          if (i > 0) const SizedBox(height: PrismSpace.xs + 2),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Expanded(child: tiles[i]),
-                const SizedBox(width: 10),
-                Expanded(child: tiles[i + 1]),
+                const SizedBox(width: PrismSpace.xs + 2),
+                Expanded(child: i + 1 < tiles.length ? tiles[i + 1] : const SizedBox.shrink()),
               ],
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -94,116 +104,92 @@ class RewardsSpendSection extends StatelessWidget {
     showPrismSheet<void>(
       context: context,
       useSafeArea: true,
-      builder: (sheetContext) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(title, style: PrismTextStyles.sheetHeadline(sheetContext)),
-              const SizedBox(height: 8),
-              Text(body, style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4)),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(sheetContext).pop();
-                  PaywallOrchestrator.instance.presentOrRequireSignIn(
-                    context,
-                    placement: PaywallPlacement.mainUpsell,
-                    source: 'rewards_spend_sheet',
-                  );
-                },
-                child: const Text('See Pro'),
-              ),
-              TextButton(onPressed: () => Navigator.of(sheetContext).pop(), child: const Text('Close')),
-            ],
+      builder: (sheetContext) => PrismSheetBody(
+        title: title,
+        message: body,
+        actions: <Widget>[
+          PrismButton(
+            label: 'See Pro',
+            expand: true,
+            onPressed: () {
+              Navigator.of(sheetContext).pop();
+              PaywallOrchestrator.instance.presentOrRequireSignIn(
+                context,
+                placement: PaywallPlacement.mainUpsell,
+                source: 'rewards_spend_sheet',
+              );
+            },
           ),
-        );
-      },
-    );
-  }
-}
-
-class _SpendTile extends StatelessWidget {
-  const _SpendTile({required this.icon, required this.label, required this.price, required this.onTap});
-
-  final IconData icon;
-  final String label;
-  final String price;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: onTap != null,
-      label: '$label, $price coins',
-      excludeSemantics: true,
-      onTap: onTap,
-      child: PressScale(
-        child: Material(
-          color: scheme.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.08)),
+          PrismButton(
+            label: 'Close',
+            expand: true,
+            variant: PrismButtonVariant.ghost,
+            onPressed: () => Navigator.of(sheetContext).pop(),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 104),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: scheme.onSurface.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(icon, size: 20, color: scheme.onSurface),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: <Widget>[
-                        const PrismCoinIcon(size: 14),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            price,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: PrismTextStyles.caption(
-                              context,
-                            ).copyWith(color: scheme.onSurface.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
+class _SpendTile extends StatelessWidget {
+  const _SpendTile({
+    required this.icon,
+    required this.label,
+    required this.price,
+    required this.spokenPrice,
+    required this.onTap,
+  });
 
-  final String title;
+  final IconData icon;
+  final String label;
+  final String price;
+  final String spokenPrice;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: PrismTextStyles.sectionTitle(context));
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return PrismCard(
+      onTap: onTap,
+      semanticLabel: '$label, $spokenPrice',
+      padding: const EdgeInsets.all(14),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 76),
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
+                ),
+                child: Icon(icon, size: 20, color: cs.onSurface),
+              ),
+              const SizedBox(height: PrismSpace.sm),
+              Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+              const SizedBox(height: PrismSpace.xs),
+              Row(
+                children: <Widget>[
+                  const PrismCoinIcon(size: 14),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      price,
+                      style: PrismTextStyles.caption(
+                        context,
+                      ).copyWith(color: cs.onSurface.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

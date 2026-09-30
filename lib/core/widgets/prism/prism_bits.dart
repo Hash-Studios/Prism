@@ -150,20 +150,23 @@ class PrismSegmented<T> extends StatelessWidget {
                               HapticFeedback.selectionClick();
                               onChanged!(value);
                             },
-                      child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             if (iconOf?.call(value) != null) ...<Widget>[
                               Icon(iconOf!(value), size: 16, color: value == selected ? cs.surface : cs.onSurface),
                               const SizedBox(width: 6),
                             ],
-                            AnimatedDefaultTextStyle(
-                              duration: context.motion(PrismDurations.fast),
-                              style: PrismTextStyles.rowTitle(
-                                context,
-                              ).copyWith(fontSize: 14, color: value == selected ? cs.surface : cs.onSurface),
-                              child: Text(labelOf(value), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Flexible(
+                              child: AnimatedDefaultTextStyle(
+                                duration: context.motion(PrismDurations.fast),
+                                style: PrismTextStyles.rowTitle(
+                                  context,
+                                ).copyWith(fontSize: 14, color: value == selected ? cs.surface : cs.onSurface),
+                                child: Text(labelOf(value), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
                             ),
                           ],
                         ),

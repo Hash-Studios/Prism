@@ -50,6 +50,7 @@ class PrismSheetBody extends StatelessWidget {
     this.actions = const <Widget>[],
     this.centered = false,
     this.scrollable = false,
+    this.showHandle = true,
   });
 
   final String? title;
@@ -67,6 +68,9 @@ class PrismSheetBody extends StatelessWidget {
 
   /// Lets [child] scroll when the sheet is tall. Use with `isScrollControlled: true`.
   final bool scrollable;
+
+  /// Hide the drag handle on a sheet that cannot be dragged away.
+  final bool showHandle;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +122,7 @@ class PrismSheetBody extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            handle,
+            if (showHandle) handle else const SizedBox(height: PrismSpace.xl),
             if (scrollable)
               Flexible(
                 child: SingleChildScrollView(

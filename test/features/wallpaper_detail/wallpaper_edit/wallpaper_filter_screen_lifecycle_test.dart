@@ -51,7 +51,7 @@ Future<void> _waitForFailure(WidgetTester tester) async {
   for (int attempt = 0; attempt < 20; attempt++) {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
     await tester.pump();
-    if (find.text("Couldn't open this wallpaper.").evaluate().isNotEmpty) return;
+    if (find.text("Couldn't open this wallpaper").evaluate().isNotEmpty) return;
   }
   fail('Invalid preview did not show its error state');
 }

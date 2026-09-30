@@ -16,6 +16,7 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
 
@@ -140,6 +141,48 @@ void main() {
     await tester.pump();
 
     expect(tester.widget<Text>(find.text('+10')).style?.color, tertiary);
+  });
+
+  testWidgets('activity keeps its rows while a balance change refreshes them', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = CoinsTestFirestore()
+      ..transactions = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'tx-1',
+          'userId': 'user-1',
+          'action': 'streakFreeze',
+          'delta': -50,
+          'createdAt': DateTime.now(),
+        },
+      ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.light));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('-50'), findsOneWidget);
+
+    CoinsService.instance.balanceNotifier.value = 10;
+    await tester.pump();
+    expect(find.text('-50'), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading'), findsNothing);
+    await tester.pump();
+  });
+
+  testWidgets('collection section shows a retry when it fails to load', (tester) async {
+    final _MockShopBloc bloc = _MockShopBloc();
+    whenListen(
+      bloc,
+      const Stream<StreakShopState>.empty(),
+      initialState: const StreakShopState(status: StreakShopStatus.failure),
+    );
+    getIt.registerFactory<StreakShopBloc>(() => bloc);
+    await tester.pumpWidget(_host(const RewardsCollectionSection(), Brightness.dark));
+    await tester.pump();
+    expect(find.text("Couldn't load the collection"), findsOneWidget);
+    await tester.tap(find.text('Try again'));
+    verify(() => bloc.add(const StreakShopLoaded())).called(greaterThanOrEqualTo(1));
   });
 
   for (final Brightness brightness in Brightness.values) {

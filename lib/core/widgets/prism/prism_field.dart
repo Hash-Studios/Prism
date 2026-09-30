@@ -12,6 +12,7 @@ class PrismTextField extends StatelessWidget {
     this.helper,
     this.error,
     this.prefixIcon,
+    this.prefixText,
     this.suffix,
     this.maxLines = 1,
     this.minLines,
@@ -36,6 +37,9 @@ class PrismTextField extends StatelessWidget {
   /// Shown in the error colour under the field. Says what is wrong and how to fix it.
   final String? error;
   final IconData? prefixIcon;
+
+  /// Fixed text before the value, for example '@'.
+  final String? prefixText;
   final Widget? suffix;
   final int? maxLines;
   final int? minLines;
@@ -76,6 +80,8 @@ class PrismTextField extends StatelessWidget {
         helperText: helper,
         errorText: error,
         prefixIcon: prefixIcon == null ? null : Icon(prefixIcon, size: 20),
+        prefixText: prefixText,
+        prefixStyle: PrismTextStyles.body(context).copyWith(fontSize: 16),
         suffixIcon: suffix,
       ),
     );

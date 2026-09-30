@@ -6,14 +6,11 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
-import 'package:Prism/global/svg_assets.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 @RoutePage()
 class DownloadScreen extends StatefulWidget {
@@ -23,6 +20,8 @@ class DownloadScreen extends StatefulWidget {
 
 class _DownloadScreenState extends State<DownloadScreen> {
   List<File> files = [];
+  bool _loading = true;
+  bool _failed = false;
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
   GlobalKey<RefreshIndicatorState> refreshDownloadKey = GlobalKey<RefreshIndicatorState>();
 
@@ -35,21 +34,26 @@ class _DownloadScreenState extends State<DownloadScreen> {
   Future<void> readData() async {
     _contentLoadTracker.start();
     List<File> found;
+    bool failed = false;
     try {
       final result = await PrismMediaHostApi().listDownloads();
       if (!result.success) {
         logger.w(result.message ?? 'Unable to list downloads');
         found = <File>[];
+        failed = true;
       } else {
         found = result.items.map(File.new).where((file) => file.existsSync()).toList(growable: false);
       }
     } catch (e) {
       logger.d(e.toString());
       found = <File>[];
+      failed = true;
     }
     if (!mounted) return;
     setState(() {
       files = found;
+      _loading = false;
+      _failed = failed;
     });
     _contentLoadTracker.success(
       itemCount: found.length,
@@ -67,90 +71,136 @@ class _DownloadScreenState extends State<DownloadScreen> {
     );
   }
 
-  Future<void> refreshList() async {
-    refreshDownloadKey.currentState?.show();
+  Future<void> _retry() async {
     setState(() {
       files = [];
+      _loading = true;
+      _failed = false;
     });
     await readData();
   }
 
+  Future<void> refreshList() async {
+    refreshDownloadKey.currentState?.show();
+    setState(() {
+      files = [];
+      _loading = true;
+      _failed = false;
+    });
+    await readData();
+  }
+
+  void _open(File file) {
+    unawaited(
+      analytics.track(
+        SurfaceActionTappedEvent(
+          surface: AnalyticsSurfaceValue.downloadScreen,
+          action: AnalyticsActionValue.openDownloadedWallpaperTapped,
+          sourceContext: 'download_screen_open_item',
+          itemId: file.path,
+        ),
+      ),
+    );
+    context.router.push(DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: file));
+  }
+
+  /// Keeps a message scrollable so pull to refresh works on it.
+  Widget _message(Widget child) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(height: constraints.maxHeight, child: child),
+    ),
+  );
+
+  Widget _content(BuildContext context) {
+    if (_loading) return const LoadingCards();
+    if (_failed) {
+      return _message(
+        GlintState(
+          kind: GlintStateKind.error,
+          title: "Couldn't load your downloads",
+          body: 'Check your storage access and try again.',
+          actionLabel: 'Try again',
+          onAction: _retry,
+        ),
+      );
+    }
+    if (files.isEmpty) {
+      return _message(
+        GlintState(
+          kind: GlintStateKind.empty,
+          title: 'No downloads yet',
+          body: 'Wallpapers you download are kept here.',
+          actionLabel: 'Browse wallpapers',
+          onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xs, bottom: PrismSpace.xl),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: files.length,
+      gridDelegate: PrismWallGrid.delegate(context),
+      itemBuilder: (context, index) => _DownloadTile(file: files[index], onTap: () => _open(files[index])),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const PreferredSize(
-        preferredSize: Size(double.infinity, 55),
-        child: HeadingChipBar(current: "Downloads"),
-      ),
-      backgroundColor: Theme.of(context).primaryColor,
-      body: SafeArea(
-        child: RefreshIndicator(
-          backgroundColor: Theme.of(context).primaryColor,
-          key: refreshDownloadKey,
-          onRefresh: refreshList,
-          child: files.isNotEmpty
-              ? GridView.builder(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                  itemCount: files.length,
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                    childAspectRatio: 0.6625,
-                    mainAxisSpacing: 8,
-                    crossAxisSpacing: 8,
+    return PrismPage(
+      title: 'Downloads',
+      body: RefreshIndicator(key: refreshDownloadKey, onRefresh: refreshList, child: _content(context)),
+    );
+  }
+}
+
+/// One downloaded wallpaper: a local file drawn like a [PrismWallTile].
+class _DownloadTile extends StatelessWidget {
+  const _DownloadTile({required this.file, required this.onTap});
+
+  final File file;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return PressScale(
+      scale: 0.97,
+      child: Semantics(
+        button: true,
+        image: true,
+        label: 'Downloaded wallpaper',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: ClipRRect(
+            borderRadius: PrismWallGrid.tileRadius,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                ColoredBox(color: cs.surfaceContainerHigh),
+                Image(
+                  image: ResizeImage(FileImage(file), width: 400),
+                  fit: BoxFit.cover,
+                  frameBuilder: (context, child, frame, sync) => AnimatedOpacity(
+                    duration: context.motion(PrismDurations.fast),
+                    opacity: frame == null ? 0 : 1,
+                    child: child,
                   ),
-                  itemBuilder: (BuildContext context, int index) {
-                    return Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(image: FileImage(files[index]), fit: BoxFit.cover),
-                          ),
-                        ),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                              highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                              onTap: () {
-                                unawaited(
-                                  analytics.track(
-                                    SurfaceActionTappedEvent(
-                                      surface: AnalyticsSurfaceValue.downloadScreen,
-                                      action: AnalyticsActionValue.openDownloadedWallpaperTapped,
-                                      sourceContext: 'download_screen_open_item',
-                                      itemId: files[index].path,
-                                    ),
-                                  ),
-                                );
-                                context.router.push(
-                                  DownloadWallpaperRoute(source: WallpaperSource.downloaded, file: files[index]),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      child: SvgPicture.string(themedIllustration(context, dark: downloadsDark, light: downloadsLight)),
-                    ),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height * 0.1,
-                    ),
-                  ],
+                  errorBuilder: (_, _, _) =>
+                      Center(child: Icon(Icons.broken_image_rounded, color: cs.onSurface.withValues(alpha: 0.4))),
                 ),
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: PrismWallGrid.tileRadius,
+                      border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

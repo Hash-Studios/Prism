@@ -227,7 +227,7 @@ void main() {
     await _tapInvert(tester);
     await tester.tap(_iconButton('Set as wallpaper'));
 
-    final Finder optionsTitle = find.text('Set Wallpaper as');
+    final Finder optionsTitle = find.text('Set wallpaper');
     for (var attempt = 0; attempt < 40 && optionsTitle.evaluate().isEmpty; attempt++) {
       await tester.pump(const Duration(milliseconds: 25));
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));

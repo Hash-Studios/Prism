@@ -14,7 +14,17 @@ class ShareButton extends StatefulWidget {
   final WallpaperSource source;
   final String? url;
   final String thumbUrl;
-  const ShareButton({required this.id, required this.source, required this.url, required this.thumbUrl, super.key});
+
+  /// Shows a caption under the round button.
+  final bool labelled;
+  const ShareButton({
+    required this.id,
+    required this.source,
+    required this.url,
+    required this.thumbUrl,
+    this.labelled = false,
+    super.key,
+  });
 
   @override
   _ShareButtonState createState() => _ShareButtonState();
@@ -32,12 +42,13 @@ class _ShareButtonState extends State<ShareButton> {
   Widget build(BuildContext context) {
     return CircularMenuButton(
       label: 'Share',
+      caption: widget.labelled ? 'Share' : null,
       onTap: () {
         logger.d('Share');
         onShare();
       },
       isLoading: isLoading,
-      child: Icon(JamIcons.share_alt, color: Theme.of(context).colorScheme.secondary, size: 20),
+      child: const Icon(JamIcons.share_alt),
     );
   }
 
