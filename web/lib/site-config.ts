@@ -7,4 +7,5 @@ export const GITHUB_URL = "https://github.com/Hash-Studios/Prism";
 export const SITE_URL = "https://prismwalls.com";
 export const APP_NAME = "Prism Wallpapers";
 // Shared by the privacy and terms pages.
+export const CONTACT_EMAIL = "hash.studios.inc@gmail.com";
 export const EFFECTIVE_DATE = "2026-09-28";

@@ -399,7 +399,7 @@ We collect usage analytics, crash logs, and optional account info (name, email, 
 
 Full privacy policy: [PRIVACY.md](PRIVACY.md)
 
-Contact: hash.studios.inc+prism@gmail.com
+Contact: hash.studios.inc@gmail.com
 
 ## Contributors
 
