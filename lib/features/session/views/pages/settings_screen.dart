@@ -194,6 +194,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
       value: _downloadQuality.title,
       onTap: _showDownloadQualitySheet,
     ),
+    PrismRow(
+      icon: Icons.autorenew_rounded,
+      title: 'Auto-rotate wallpapers',
+      subtitle: 'Change your wallpaper on a timer',
+      onTap: () {
+        if (app_state.prismUser.premium) {
+          context.router.push(const AutoRotateRoute());
+        } else {
+          PaywallOrchestrator.instance.presentOrRequireSignIn(
+            context,
+            placement: PaywallPlacement.autoRotate,
+            source: 'settings_auto_rotate',
+          );
+        }
+      },
+    ),
   ];
 
   void _showDownloadQualitySheet() {

@@ -1,4 +1,5 @@
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,6 +37,38 @@ void main() {
     await store.hide('a', now);
 
     expect(store.recentShows(now.add(const Duration(days: 15))), <String, int>{'a': 99});
+  });
+
+  test('clear removes both impressions and hidden markers', () async {
+    await store.recordShown(<String>['shown'], now);
+    await store.hide('hidden', now);
+
+    await store.clear();
+
+    expect(store.recentShows(now), isEmpty);
+  });
+
+  test('clear invalidates impression writes from work that started before sign-out', () async {
+    final int revision = store.revision;
+    await store.clear();
+
+    await store.recordShown(<String>['stale'], now, expectedRevision: revision);
+
+    expect(store.recentShows(now), isEmpty);
+  });
+
+  test('clear deletes hidden markers even when deleting impressions fails', () async {
+    final FailingDeleteLocalStore localStore = FailingDeleteLocalStore(
+      PersistenceKeys.settings('personalized_feed_impressions_v1'),
+    );
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(localStore);
+    store = FeedImpressionStore(settings);
+    await settings.set('personalized_feed_impressions_v1', '{}');
+    await settings.set('personalized_feed_hidden_v1', '[]');
+
+    await expectLater(store.clear(), throwsStateError);
+
+    expect(localStore.data.containsKey(PersistenceKeys.settings('personalized_feed_hidden_v1')), isFalse);
   });
 
   test('ordinary impressions never collide with the hidden marker', () async {

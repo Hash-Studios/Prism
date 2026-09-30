@@ -84,7 +84,9 @@ void main() {
     );
 
     await tester.tap(find.byType(CircularMenuButton));
-    await tester.pumpAndSettle();
+    // The button shows its own spinner while the gate is open, so settle by time.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Download this wallpaper'), findsOneWidget);
     expect(find.text('Watch a small video ad to download this wallpaper.'), findsOneWidget);

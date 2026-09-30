@@ -19,6 +19,7 @@ class PaywallPlacement {
   static const String lowBalance = 'low_balance';
   static const String afterAdWatch3 = 'after_ad_watch_3';
   static const String uploadLimitReached = 'upload_limit_reached';
+  static const String autoRotate = 'auto_rotate';
 }
 
 class PaywallOrchestrator {

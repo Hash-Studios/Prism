@@ -90,6 +90,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   bool _loadingHistory = false;
   bool _historyFailed = false;
   bool _loadingGeneration = false;
+  bool _saving = false;
   bool _submitting = false;
   final Set<String> _unconfirmedSubmissionIds = <String>{};
 
@@ -421,6 +422,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _save(AiGenerationRecord record) async {
+    if (_saving) return;
+    _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
     try {
       final request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));

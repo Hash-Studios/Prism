@@ -43,6 +43,7 @@ class WallpaperTile extends StatelessWidget {
         (columns == null || columns <= 0 ? null : (MediaQuery.sizeOf(context).width / columns * 3).round());
     return PrismWallTile(
       url: item.thumbnailUrl,
+      fallbackUrl: item.fullUrl,
       heroTag: heroTag,
       semanticLabel: item.semanticLabel,
       memCacheHeight: decodeHeight,
