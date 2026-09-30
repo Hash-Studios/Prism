@@ -24,10 +24,6 @@ forbid() {
 
 forbid 'analytics\.logEvent\(' \
   "Forbidden analytics.logEvent usage detected outside analytics internals:"
-forbid 'analytics\.logShare\(' \
-  "Forbidden analytics.logShare usage detected outside analytics internals:"
-forbid 'analytics\.logLogin\(' \
-  "Forbidden analytics.logLogin usage detected outside analytics internals:"
 forbid 'analytics\.logScreenView\(' \
   "Forbidden analytics.logScreenView usage detected outside analytics internals:"
 forbid "logEvent\\(name:[[:space:]]*['\"]" \

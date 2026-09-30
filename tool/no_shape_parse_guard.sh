@@ -10,7 +10,6 @@ TARGETS=(
   "lib/features/pexels_feed/data"
   "lib/features/prism_feed/data"
   "lib/features/setups/data"
-  "lib/features/profile_setups/data"
   "lib/features/public_profile/data"
   "lib/features/favourite_setups/data"
   "lib/features/favourite_walls/data"
