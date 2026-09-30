@@ -93,9 +93,11 @@ service cloud.firestore {
     // Public feeds; unreviewed docs are owner/admin only.
     match /walls/{docId} {
       allow read: if resource.data.review == true || isEmailOwner(resource.data.email) || isConfiguredAdmin();
-      allow create: if isSignedIn()
-          && isEmailOwner(request.resource.data.email)
-          && request.resource.data.review != true;
+      // Admins re-create a rejected wall when they undo the rejection.
+      allow create: if isConfiguredAdmin()
+          || (isSignedIn()
+              && isEmailOwner(request.resource.data.email)
+              && request.resource.data.review != true);
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email)
