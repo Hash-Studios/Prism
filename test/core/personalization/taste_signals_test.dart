@@ -12,11 +12,11 @@ void main() {
   late TasteSignalStore store;
 
   setUp(() {
-    clearRememberedFeedTerms();
+    TasteSignal.clearRememberedFeedTerms();
     store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
   });
 
-  tearDown(clearRememberedFeedTerms);
+  tearDown(TasteSignal.clearRememberedFeedTerms);
 
   test('record then read round-trips action, terms and creator', () async {
     final DateTime at = DateTime.utc(2026, 1, 2, 3, 4, 5);
@@ -108,7 +108,7 @@ void main() {
     rememberFeedTerms('f', <String>['space']);
     expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, <String>['space']);
 
-    clearRememberedFeedTerms();
+    TasteSignal.clearRememberedFeedTerms();
 
     expect(TasteSignal.forWallpaper(TasteAction.open, _core()).terms, isEmpty);
   });
