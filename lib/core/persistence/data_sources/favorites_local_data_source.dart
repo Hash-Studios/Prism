@@ -66,6 +66,10 @@ class FavoritesLocalDataSource {
     await _saveSetupSet(scope, ids);
   }
 
+  Future<void> replaceSetupFavourites(String userId, Iterable<String> itemIds) {
+    return _saveSetupSet(_scope(userId), itemIds.where((id) => id.isNotEmpty).toSet());
+  }
+
   Future<void> setSeeded(String userId, bool value) async {
     final scope = _scope(userId);
     final key = PersistenceKeys.favoritesSeeded(scope);

@@ -40,7 +40,9 @@ class FavouriteSetupsRepositoryImpl implements FavouriteSetupsRepository {
   @override
   Future<Result<List<SetupEntity>>> fetchFavourites({required String userId}) async {
     try {
-      return Result.success(await _read(userId));
+      final items = await _read(userId);
+      await _favoritesLocal.replaceSetupFavourites(userId, items.map((setup) => setup.id));
+      return Result.success(items);
     } catch (error) {
       return Result.error(ServerFailure('Unable to fetch favourite setups: $error'));
     }

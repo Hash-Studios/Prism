@@ -57,6 +57,18 @@ void main() {
     expect(result.data, isEmpty);
   });
 
+  test('fetching favourites refreshes the local favourite set for the heart icon', () async {
+    client.docs[_collection] = <String, Map<String, dynamic>>{
+      'SETUP1': <String, dynamic>{'id': 'SETUP1', 'name': 'Bloodland'},
+    };
+    await local.setSetupFavourite('user-1', 'STALE', true);
+
+    await repository.fetchFavourites(userId: 'user-1');
+
+    expect(local.isSetupFavourite('user-1', 'SETUP1'), isTrue);
+    expect(local.isSetupFavourite('user-1', 'STALE'), isFalse);
+  });
+
   test('reports a failure when the list cannot be read', () async {
     client.queryError = StateError('offline');
 
