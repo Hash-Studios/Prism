@@ -170,3 +170,48 @@ test("syncSubscription: an older response cannot overwrite a newer subscription 
   assert.deepEqual(olderResult, newerResult);
   assert.deepEqual(store.get("usersv2/u"), newerResult);
 });
+
+function syncHarness(t: TestContext, user: Doc) {
+  const store = new Map<string, Doc>([["usersv2/u", user], ["subscriptionSync/u", {lastAt: NOW}]]);
+  const path = (collection: string, id: string) => `${collection}/${id}`;
+  t.mock.method(db, "collection", (name: string) => ({
+    doc: (id: string) => ({path: path(name, id), get: async () => ({data: () => store.get(path(name, id))})}),
+  }) as unknown as ReturnType<typeof db.collection>);
+  t.mock.method(db, "runTransaction", async (callback: (tx: unknown) => Promise<unknown>) => callback({
+    get: async (ref: {path: string}) => ({data: () => store.get(ref.path)}),
+    set: (ref: {path: string}, data: Doc) => store.set(ref.path, data),
+    update: (ref: {path: string}, data: Doc) => store.set(ref.path, {...store.get(ref.path), ...data}),
+    delete: (ref: {path: string}) => store.delete(ref.path),
+  }));
+  t.mock.method(Date, "now", () => NOW + 5_000);
+  const originalKey = process.env.REVENUECAT_SECRET_KEY;
+  process.env.REVENUECAT_SECRET_KEY = "test-token";
+  t.after(() => {
+    if (originalKey === undefined) delete process.env.REVENUECAT_SECRET_KEY;
+    else process.env.REVENUECAT_SECRET_KEY = originalKey;
+  });
+  const fetchMock = t.mock.method(globalThis, "fetch", async () => ({
+    ok: true,
+    json: async () => ({subscriber: {entitlements: {prism_ultra: {expires_date: "2026-02-01T00:00:00.000Z"}}}}),
+  }) as Response);
+  return {store, fetchMock};
+}
+
+test("syncSubscription: a stored-Free user inside the cooldown still gets a fresh RevenueCat result", async (t: TestContext) => {
+  const {store, fetchMock} = syncHarness(t, {premium: false, subscriptionTier: "free"});
+
+  const result = await syncSubscription.run({auth: {uid: "u"}, data: {}} as never);
+
+  assert.equal(fetchMock.mock.callCount(), 1);
+  assert.deepEqual(result, {premium: true, subscriptionTier: "pro"});
+  assert.deepEqual(store.get("usersv2/u"), {premium: true, subscriptionTier: "pro"});
+});
+
+test("syncSubscription: a stored-premium user inside the cooldown gets the cached result without RevenueCat", async (t: TestContext) => {
+  const {fetchMock} = syncHarness(t, {premium: true, subscriptionTier: "lifetime"});
+
+  const result = await syncSubscription.run({auth: {uid: "u"}, data: {}} as never);
+
+  assert.equal(fetchMock.mock.callCount(), 0);
+  assert.deepEqual(result, {premium: true, subscriptionTier: "lifetime"});
+});

@@ -7,7 +7,7 @@ import {db, readDailyCount, REGION, utcDateString} from "./common";
 const UPLOADS = "githubUploads";
 const UPLOAD_STATS = "githubUploadStats";
 const UPLOAD_INTENTS = "githubUploadIntents";
-const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const ISO_BMFF_IMAGE_BRANDS = new Set(["heic", "heix", "hevc", "heim", "heis", "mif1", "msf1", "avif"]);
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 const MAX_UPLOADS_PER_DAY = 30;
 const INTENT_LEASE_MS = 120_000;
@@ -53,10 +53,16 @@ export function isValidGithubPath(filePath: unknown): filePath is string {
   );
 }
 
-export function hasAllowedImageExtension(filePath: string): boolean {
-  const name = filePath.split("/").pop() ?? "";
-  const dot = name.lastIndexOf(".");
-  return dot > 0 && ALLOWED_EXTENSIONS.has(name.slice(dot).toLowerCase());
+/** True when the first bytes of the base64 payload are a JPEG, PNG, GIF, WebP, HEIC/HEIF or AVIF header. */
+export function isAllowedImageContent(contentBase64: string): boolean {
+  // 44 base64 chars decode to 33 bytes: enough for every signature below.
+  const b = Buffer.from(contentBase64.slice(0, 44), "base64");
+  const ascii = (from: number, to: number) => b.subarray(from, to).toString("latin1");
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return true;
+  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return true;
+  if (b.length >= 6 && ["GIF87a", "GIF89a"].includes(ascii(0, 6))) return true;
+  if (b.length >= 12 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return true;
+  return b.length >= 12 && ascii(4, 8) === "ftyp" && ISO_BMFF_IMAGE_BRANDS.has(ascii(8, 12));
 }
 
 export function isValidBase64(value: string): boolean {
@@ -470,9 +476,9 @@ export const githubPutFile = onCall(
     if (rawSha != null) throw new HttpsError("invalid-argument", "Overwrites are not allowed.");
     const {repo, path, message} = validateCommon(request.data ?? {});
     const contentBase64 = requiredString(request.data?.contentBase64, "contentBase64");
-    if (!hasAllowedImageExtension(path)) throw new HttpsError("invalid-argument", "Only jpg, png and webp files are allowed.");
     if (base64DecodedBytes(contentBase64) > MAX_UPLOAD_BYTES) throw new HttpsError("invalid-argument", "File is too large.");
     if (!isValidBase64(contentBase64)) throw new HttpsError("invalid-argument", "contentBase64 must be valid base64.");
+    if (!isAllowedImageContent(contentBase64)) throw new HttpsError("invalid-argument", "Only image files are allowed.");
 
     const nowMs = Date.now();
     await reserveUploadSlot(callerUid, false, nowMs);

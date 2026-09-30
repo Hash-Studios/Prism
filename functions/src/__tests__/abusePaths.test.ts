@@ -6,7 +6,7 @@ import {awardCoins, processReferral, referralSkipReason, spendCoins, unlockPremi
 import {
   base64DecodedBytes,
   githubPutFile,
-  hasAllowedImageExtension,
+  isAllowedImageContent,
   isWallSubmissionUpload,
   reserveUploadSlot,
   weekStartUtc,
@@ -596,11 +596,33 @@ test("spendCoins still works for the other spend actions", async (t) => {
 
 // GitHub uploads
 
-test("hasAllowedImageExtension: allows jpg, jpeg, png, webp in any case and rejects the rest", () => {
-  for (const name of ["a.jpg", "dir/a.JPEG", "a.png", "x/y/a.WebP"]) assert.equal(hasAllowedImageExtension(name), true, name);
-  for (const name of ["a.gif", "a.svg", "a.html", "a.png.exe", "png", ".png", "dir.png/a", "a"]) {
-    assert.equal(hasAllowedImageExtension(name), false, name);
-  }
+const b64 = (bytes: number[] | string) => Buffer.from(bytes as never, typeof bytes === "string" ? "latin1" : undefined).toString("base64");
+const ftyp = (brand: string) => "\0\0\0\x18ftyp" + brand + "\0\0\0\0";
+
+test("isAllowedImageContent: accepts JPEG, PNG, GIF, WebP, HEIC/HEIF and AVIF signatures", () => {
+  const accepted = [
+    b64([0xff, 0xd8, 0xff, 0xe0]),
+    b64([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]),
+    b64("GIF87a\0\0"),
+    b64("GIF89a\0\0"),
+    b64("RIFF\x01\0\0\0WEBPVP8 "),
+    ...["heic", "heix", "hevc", "heim", "heis", "mif1", "msf1", "avif"].map((brand) => b64(ftyp(brand))),
+  ];
+  for (const payload of accepted) assert.equal(isAllowedImageContent(payload), true, payload);
+});
+
+test("isAllowedImageContent: rejects text, zip, html, svg, empty and unknown ftyp brands", () => {
+  const rejected = [
+    b64("hello world, this is text"),
+    b64("PK\x03\x04\0\0\0\0\0\0\0\0"),
+    b64("<html><body>x</body></html>"),
+    b64("<svg xmlns='http://www.w3.org/2000/svg'/>"),
+    b64("RIFF\x01\0\0\0WAVEfmt "),
+    b64(ftyp("mp42")),
+    b64([0xff, 0xd8]),
+    "",
+  ];
+  for (const payload of rejected) assert.equal(isAllowedImageContent(payload), false, payload);
 });
 
 test("base64DecodedBytes: matches the decoded size", () => {
@@ -623,18 +645,30 @@ test("isWallSubmissionUpload: only thumb_ files in the walls repo count", () => 
 });
 
 function putReq(data: Record<string, unknown>) {
-  return {auth: {uid: "u"}, data: {repo: "walls", message: "m", contentBase64: "AAAA", path: "a.jpg", ...data}};
+  return {auth: {uid: "u"}, data: {repo: "walls", message: "m", contentBase64: "/9j/", path: "a.jpg", ...data}};
 }
 
-test("githubPutFile: rejects bad extensions and oversize files before touching Firestore", async (t) => {
+test("githubPutFile: rejects non-image bytes (even named .jpg), bad base64 and oversize files before Firestore", async (t) => {
   process.env.GH_REPO_WALLS = "walls";
   t.mock.method(db, "runTransaction", () => {
     throw new Error("must not reserve a slot");
   });
-  await assert.rejects(() => run(githubPutFile, putReq({path: "evil.html"})), {code: "invalid-argument"});
-  await assert.rejects(() => run(githubPutFile, putReq({path: "dir/evil.gif"})), {code: "invalid-argument"});
+  for (const payload of [b64("<html>not an image</html>"), b64("PK\x03\x04zip"), b64("plain text")]) {
+    await assert.rejects(() => run(githubPutFile, putReq({path: "evil.jpg", contentBase64: payload})), {
+      code: "invalid-argument", message: "Only image files are allowed.",
+    });
+  }
+  await assert.rejects(() => run(githubPutFile, putReq({contentBase64: "/9j/!"})), {code: "invalid-argument"});
   const big = Buffer.alloc(15 * 1024 * 1024 + 1).toString("base64");
   await assert.rejects(() => run(githubPutFile, putReq({contentBase64: big})), {code: "invalid-argument"});
+});
+
+test("githubPutFile: a real JPEG named .heic passes validation", async (t) => {
+  process.env.GH_REPO_WALLS = "walls";
+  t.mock.method(db, "runTransaction", () => {
+    throw new Error("reached slot reservation");
+  });
+  await assert.rejects(() => run(githubPutFile, putReq({path: "photo.heic"})), /reached slot reservation/);
 });
 
 test("reserveUploadSlot: stops at 30 uploads a day", async (t) => {
