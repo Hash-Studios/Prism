@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:Prism/core/router/app_router.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,6 +19,8 @@ class LocalNotification {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   AppRouter? router;
+  Future<void> Function(Map<String, dynamic> data)? onPushTap;
+  bool _launchHandled = false;
   LocalNotification() {
     const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
       '@drawable/ic_notification',
@@ -29,6 +34,9 @@ class LocalNotification {
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         if (response.payload == 'downloaded') {
           router?.push(const DownloadRoute());
+        } else {
+          final Map<String, dynamic>? data = _pushData(response.payload);
+          if (data != null) unawaited(onPushTap?.call(data));
         }
       },
     );
@@ -42,14 +50,34 @@ class LocalNotification {
   }
 
   Future<void> fetchNotificationData(BuildContext context) async {
+    // RestartWidget re-runs this after logout, and the launch details stay the same. Handle them once.
+    if (_launchHandled) return;
+    _launchHandled = true;
     final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin
         .getNotificationAppLaunchDetails();
     if (!context.mounted) {
       return;
     }
-    if (notificationAppLaunchDetails?.notificationResponse?.payload == "downloaded") {
+    if (notificationAppLaunchDetails?.didNotificationLaunchApp != true) return;
+    final String? payload = notificationAppLaunchDetails?.notificationResponse?.payload;
+    if (payload == 'downloaded') {
       context.router.push(const DownloadRoute());
+    } else {
+      final Map<String, dynamic>? data = _pushData(payload);
+      if (data != null) await onPushTap?.call(data);
     }
+  }
+
+  /// Push data stored by [showPushNotification]. Older builds stored only the route string.
+  static Map<String, dynamic>? _pushData(String? payload) {
+    if (payload == null || payload.isEmpty || payload == 'downloadProgress') return null;
+    try {
+      final Object? decoded = jsonDecode(payload);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } on FormatException {
+      // Legacy route-only payload.
+    }
+    return <String, dynamic>{'route': payload};
   }
 
   Future<void> createNotificationChannel(String id, String name, String description, bool playSound) async {
@@ -128,7 +156,7 @@ class LocalNotification {
       title: notification.title,
       body: notification.body,
       notificationDetails: platformDetails,
-      payload: message.data['route']?.toString(),
+      payload: jsonEncode(message.data),
     );
   }
 
