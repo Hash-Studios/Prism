@@ -14,17 +14,11 @@ class FakeAppAnalytics implements AppAnalytics {
   Future<void> flush() async {}
 
   @override
-  Future<void> logLogin({String? loginMethod}) async {}
-
-  @override
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,
     Map<String, Object?>? parameters,
   }) async {}
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
 
   @override
   Future<void> setUserId(String? userId) async {

@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:Prism/auth/apple_auth.dart';
 import 'package:Prism/auth/google_auth.dart';
-import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/audio/app_sound_manager.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
