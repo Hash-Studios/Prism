@@ -474,7 +474,10 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(_stageTitle, style: theme.textTheme.titleMedium),
+                                    Text(
+                                      _stageTitle,
+                                      style: theme.textTheme.titleMedium?.copyWith(color: colors.onSurface),
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       _stageDescription,

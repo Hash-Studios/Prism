@@ -195,6 +195,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('stage title stays readable when a legacy theme hard-codes titleMedium', (tester) async {
+    await setViewport(tester);
+    final image = await makeImage(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          colorScheme: const ColorScheme.dark(),
+          textTheme: const TextTheme(titleMedium: TextStyle(color: Colors.black)),
+        ),
+        home: UploadWallScreen(image: image, fromSetupRoute: false, prepareImageForTesting: () async {}),
+      ),
+    );
+    await pumpImagePreparation(tester);
+
+    expect(tester.widget<Text>(find.text('Ready to submit')).style?.color, const ColorScheme.dark().onSurface);
+  });
+
   testWidgets('shows a weekly quota result without retrying a save', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
