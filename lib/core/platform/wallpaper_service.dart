@@ -8,15 +8,15 @@ class WallpaperService {
   static Future<bool> setWallpaperFromSource(String source, WallpaperTarget target) async {
     final normalizedSource = _normalizeSource(source);
     final filePath = await _resolveToLocalFile(normalizedSource);
-    final request = aw.WallpaperRequest(
+    final request = aw.StaticWallpaperRequest(
+      source: aw.WallpaperSource.filePath(filePath),
       target: aw.WallpaperTarget.values.byName(target.name),
-      sourceType: aw.WallpaperSourceType.file,
-      source: filePath,
+      strategy: aw.WallpaperApplyStrategy.direct,
     );
 
-    final result = await aw.AsyncWallpaper.setWallpaper(request).timeout(const Duration(seconds: 30));
+    final result = await aw.AsyncWallpaper.applyWallpaper(request).timeout(const Duration(seconds: 30));
 
-    return result.isSuccess;
+    return result.status == aw.WallpaperOperationStatus.applied;
   }
 
   static String _normalizeSource(String source) {

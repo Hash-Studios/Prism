@@ -13,6 +13,7 @@ import 'package:Prism/global/svg_assets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class FavouriteSetupGrid extends StatefulWidget {
@@ -104,7 +105,7 @@ class _FavouriteSetupGridState extends State<FavouriteSetupGrid> {
                   },
                   child: GridView.builder(
                     shrinkWrap: true,
-                    cacheExtent: 50000,
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(50000),
                     padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
                     itemCount: setups.length,
                     gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(

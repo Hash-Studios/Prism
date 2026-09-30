@@ -30,5 +30,8 @@
     "eslint-plugin-import": "^2.25.4",
     "typescript": "^5.7.3"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "uuid": "^11.1.1"
+  }
 }
