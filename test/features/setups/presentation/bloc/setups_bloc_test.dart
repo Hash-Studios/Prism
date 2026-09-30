@@ -14,29 +14,7 @@ import '../../../../support/fake_user_block_repository.dart';
 class _MockFetchSetupsUseCase extends Mock implements FetchSetupsUseCase {}
 
 SetupEntity _setup(String id, {String email = ''}) {
-  return SetupEntity(
-    id: id,
-    by: '',
-    icon: '',
-    iconUrl: '',
-    desc: '',
-    email: email,
-    image: '',
-    name: '',
-    userPhoto: '',
-    wallId: '',
-    source: WallpaperSource.prism,
-    wallpaperThumb: '',
-    wallpaperUrl: '',
-    widget: '',
-    widget2: '',
-    widgetUrl: '',
-    widgetUrl2: '',
-    link: '',
-    review: true,
-    resolution: '',
-    size: '',
-  );
+  return SetupEntity(id: id, email: email, image: '', source: WallpaperSource.prism, review: true);
 }
 
 void main() {
@@ -54,21 +32,22 @@ void main() {
       if (params.refresh) {
         return Result.success(SetupsPage(items: <SetupEntity>[_setup('1')], hasMore: true, nextCursor: '1'));
       }
-      return Result.success(SetupsPage(items: <SetupEntity>[_setup('2')], hasMore: false, nextCursor: '2'));
+      return Result.success(
+        SetupsPage(items: <SetupEntity>[_setup('1'), _setup('2')], hasMore: false, nextCursor: '2'),
+      );
     });
   });
 
   blocTest<SetupsBloc, SetupsState>(
-    'paginates and appends unique setups',
+    'appends the next page and drops duplicate ids',
     build: () => SetupsBloc(fetchUseCase, FakeUserBlockRepository.pending()),
     act: (bloc) => bloc
       ..add(const SetupsEvent.started())
       ..add(const SetupsEvent.fetchMoreRequested()),
     verify: (bloc) {
       expect(bloc.state.status, LoadStatus.success);
-      expect(bloc.state.items.length, 2);
       expect(bloc.state.hasMore, isFalse);
-      expect(bloc.state.items.map((e) => e.id), containsAll(<String>['1', '2']));
+      expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
     },
   );
 

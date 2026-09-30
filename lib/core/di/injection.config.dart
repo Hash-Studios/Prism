@@ -364,16 +364,6 @@ _i174.GetIt initGetIt(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
   );
-  gh.lazySingleton<_i340.RemoveFavouriteSetupUseCase>(
-    () => _i340.RemoveFavouriteSetupUseCase(
-      gh<_i841.FavouriteSetupsRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i340.ClearFavouriteSetupsUseCase>(
-    () => _i340.ClearFavouriteSetupsUseCase(
-      gh<_i841.FavouriteSetupsRepository>(),
-    ),
-  );
   gh.lazySingleton<_i122.ReviewBatchRepository>(
     () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
   );
@@ -394,6 +384,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i474.DeleteNotificationsByIdsUseCase>(
     () => _i474.DeleteNotificationsByIdsUseCase(
       gh<_i366.NotificationsRepository>(),
+    ),
+  );
+  gh.factory<_i704.FavouriteSetupsBloc>(
+    () => _i704.FavouriteSetupsBloc(
+      gh<_i340.FetchFavouriteSetupsUseCase>(),
+      gh<_i340.ToggleFavouriteSetupUseCase>(),
     ),
   );
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
@@ -473,14 +469,6 @@ _i174.GetIt initGetIt(
       gh<_i518.LoadThemeLightUseCase>(),
       gh<_i518.UpdateThemeLightUseCase>(),
       gh<_i518.UpdateThemeLightAccentUseCase>(),
-    ),
-  );
-  gh.factory<_i704.FavouriteSetupsBloc>(
-    () => _i704.FavouriteSetupsBloc(
-      gh<_i340.FetchFavouriteSetupsUseCase>(),
-      gh<_i340.ToggleFavouriteSetupUseCase>(),
-      gh<_i340.RemoveFavouriteSetupUseCase>(),
-      gh<_i340.ClearFavouriteSetupsUseCase>(),
     ),
   );
   gh.lazySingleton<_i567.PersonalizedFeedRepository>(
@@ -593,6 +581,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i247.FetchSetupsUseCase>(
     () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
+  );
+  gh.lazySingleton<_i247.FetchSetupByNameUseCase>(
+    () => _i247.FetchSetupByNameUseCase(gh<_i411.SetupsRepository>()),
   );
   gh.lazySingleton<_i502.FirstWallpaperService>(
     () => _i502.FirstWallpaperService(
