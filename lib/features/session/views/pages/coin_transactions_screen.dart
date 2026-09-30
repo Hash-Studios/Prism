@@ -10,7 +10,6 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -19,6 +18,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const Color _coinAccent = Color(0xFF00BCD4);
 const Color _coinGold = Color(0xFFFFC107);
