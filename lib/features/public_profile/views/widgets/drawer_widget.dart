@@ -9,6 +9,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/main.dart' as main;
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -47,16 +48,14 @@ class ProfileDrawer extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                app_state.prismUser.premium == true ? 'Prism Pro' : 'Prism',
+                app_state.prismUser.premium ? 'Prism Pro' : 'Prism',
                 style: Theme.of(
                   context,
                 ).textTheme.displaySmall!.copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
               const SizedBox(height: 2),
               Text(
-                app_state.prismUser.premium == true
-                    ? 'Exclusive premium walls & setups!'
-                    : 'Exclusive wallpapers & setups!',
+                app_state.prismUser.premium ? 'Exclusive premium walls & setups!' : 'Exclusive wallpapers & setups!',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7)),
@@ -95,9 +94,10 @@ class ProfileDrawer extends StatelessWidget {
       trailing: Icon(JamIcons.chevron_right, color: Theme.of(context).colorScheme.secondary),
       title: Text(
         text,
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall!.copyWith(fontFamily: 'Proxima Nova', color: Theme.of(context).colorScheme.secondary),
+        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+          fontFamily: PrismFonts.proximaNova,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
       ),
       onTap: onTap,
     );

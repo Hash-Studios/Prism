@@ -29,8 +29,8 @@ void main() {
     final groups = groupInAppNotificationsByTitle(<InAppNotificationEntity>[
       notification('a', title: '  Hi  ', createdAt: DateTime.utc(2024, 1, 3)),
       notification('b', title: 'Hi', createdAt: DateTime.utc(2024, 1, 2)),
-      notification('c', title: '', createdAt: DateTime.utc(2024, 1, 1)),
-      notification('d', title: '   ', createdAt: DateTime.utc(2024)),
+      notification('c', title: '', createdAt: DateTime.utc(2024)),
+      notification('d', title: '   ', createdAt: DateTime.utc(2023)),
     ]);
 
     expect(groups.map((g) => g.key), <String>['Hi', '__untitled__']);
