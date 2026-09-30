@@ -474,10 +474,10 @@ class _Headline extends StatelessWidget {
     // Auth: no horizontal constraint — the explicit \n is the only line break.
     // Applying padding here would squeeze "Your screen," onto a second line.
     OnboardingV2Step.auth => 0,
-    OnboardingV2Step.interests => OnboardingLayout.step2TitleX,
-    OnboardingV2Step.starterPack => OnboardingLayout.step3TitleX,
-    OnboardingV2Step.aiGenerate => OnboardingLayout.step4TitleX,
-    OnboardingV2Step.firstWallpaper => OnboardingLayout.step4TitleX,
+    OnboardingV2Step.interests => OnboardingLayout.interestsTitleX,
+    OnboardingV2Step.starterPack => OnboardingLayout.starterPackTitleX,
+    OnboardingV2Step.aiGenerate => OnboardingLayout.aiTitleX,
+    OnboardingV2Step.firstWallpaper => OnboardingLayout.aiTitleX,
   };
 
   static String _headlineText(OnboardingV2Step step) => switch (step) {
@@ -767,7 +767,7 @@ class _ProBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: OnboardingLayout.step4BadgeY * sy,
+      top: OnboardingLayout.proBadgeY * sy,
       left: 0,
       right: 0,
       child: OnboardingStaggeredFade(

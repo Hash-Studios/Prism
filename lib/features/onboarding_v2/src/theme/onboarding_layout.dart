@@ -15,10 +15,10 @@ class OnboardingLayout {
   static const double welcomeBodyY = 535;
 
   static const double stepTitleY = 100;
-  static const double step4BadgeY = 184;
-  static const double step2TitleX = 10;
-  static const double step3TitleX = 10;
-  static const double step4TitleX = 10;
+  static const double proBadgeY = 184;
+  static const double interestsTitleX = 10;
+  static const double starterPackTitleX = 10;
+  static const double aiTitleX = 10;
 
   static const double progressY = 63;
   static const double progressWidth = 56;
