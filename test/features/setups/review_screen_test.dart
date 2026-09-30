@@ -43,6 +43,36 @@ void main() {
     });
   }
 
+  testWidgets('a pending wall tile with a 20-character Firestore id fits a 440px screen', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(440, 956);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: WallTile(
+              FirestoreDocument('pWTbDtblpDvZpVsYZbjt', <String, dynamic>{
+                'createdAt': DateTime.utc(2026, 9, 30),
+                'size': '0.25MB',
+                'resolution': '1080x2160',
+              }),
+              rejected: false,
+            ),
+          ),
+        ),
+      ),
+    );
+    // The Ahem test font is taller than real fonts, so only the horizontal fit is asserted here.
+    tester.takeException();
+
+    expect(
+      tester.getRect(find.text('pWTbDtblpDvZpVsYZbjt')).right,
+      lessThanOrEqualTo(tester.getRect(find.byType(Card)).right),
+    );
+  });
+
   testWidgets('a legacy rejected setup without a reason shows the fallback in its tile', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
