@@ -41,4 +41,31 @@ void main() {
 
     expect(analytics.events.where((e) => e.eventName == 'wotd_viewed'), hasLength(1));
   });
+
+  testWidgets('the card carries a Wall of the day tag and names the photographer', (tester) async {
+    final handle = tester.ensureSemantics();
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(AnalyticsRuntime.reset);
+    final bloc = _MockWotdBloc();
+    when(() => bloc.state).thenReturn(
+      WotdState.initial().copyWith(
+        status: LoadStatus.success,
+        entity: const WallOfTheDayEntity(wallId: 'wotd-2', url: '', thumbnailUrl: '', photographer: 'Ana'),
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: BlocProvider<WotdBloc>.value(
+          value: bloc,
+          child: const SizedBox(width: 366, height: 205, child: WallOfTheDayCard()),
+        ),
+      ),
+    );
+
+    expect(find.text('Wall of the day'), findsOneWidget);
+    expect(find.text('by Ana'), findsOneWidget);
+    expect(find.bySemanticsLabel('Wall of the day by Ana'), findsOneWidget);
+    handle.dispose();
+  });
 }

@@ -15,7 +15,7 @@ FeedItemEntity _item({String? author}) => FeedItemEntity.prism(
 );
 
 void main() {
-  testWidgets('reduced motion disables tile Hero flights and image fades', (tester) async {
+  testWidgets('reduced motion disables tile Hero flights', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
@@ -26,7 +26,7 @@ void main() {
         ),
       ),
     );
-    expect(tester.widget<HeroMode>(find.byType(HeroMode)).enabled, isFalse);
+    expect(find.byType(Hero), findsNothing);
   });
 
   testWidgets('the same wallpaper twice has distinct Hero tags', (tester) async {

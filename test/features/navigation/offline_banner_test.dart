@@ -35,14 +35,15 @@ void main() {
     await pump(false);
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(milliseconds: 80));
-    expect(tester.widget<SlideTransition>(_slide).position.value.dy, greaterThan(0));
+    expect(tester.widget<SlideTransition>(_slide).position.value.dy, lessThan(0));
     await pump(true);
     expect(tester.widget<SlideTransition>(_slide).position.value, Offset.zero);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('the banner slides in after a second and out after ten', (tester) async {
+  testWidgets('the pill slides down after a second and out after ten', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ConnectivityWidget())));
-    expect(find.text('No Internet'), findsOneWidget);
+    expect(find.text('You are offline'), findsOneWidget);
+    expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 2));
     await tester.pump(const Duration(seconds: 12));
