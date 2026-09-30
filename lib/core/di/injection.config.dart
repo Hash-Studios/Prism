@@ -23,6 +23,8 @@ import '../../data/content_reports/firebase_content_report_repository.dart'
 import '../../data/user_blocks/firebase_user_block_repository.dart' as _i545;
 import '../../data/view_stats/firebase_view_stats_repository.dart' as _i818;
 import '../../features/admin_review/biz/bloc/review_batch_bloc.dart' as _i711;
+import '../../features/admin_review/data/admin_moderation_repository.dart'
+    as _i25;
 import '../../features/admin_review/data/review_batch_repository.dart' as _i122;
 import '../../features/ads/biz/bloc/ads_bloc.j.dart' as _i567;
 import '../../features/ads/data/repositories/ads_repository_impl.dart' as _i418;
@@ -382,6 +384,9 @@ _i174.GetIt initGetIt(
       gh<_i841.FavouriteSetupsRepository>(),
     ),
   );
+  gh.lazySingleton<_i25.AdminModerationRepository>(
+    () => _i25.AdminModerationRepository(gh<_i349.FirestoreClient>()),
+  );
   gh.lazySingleton<_i122.ReviewBatchRepository>(
     () => _i122.ReviewBatchRepository(gh<_i349.FirestoreClient>()),
   );
@@ -402,6 +407,12 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i474.DeleteNotificationsByIdsUseCase>(
     () => _i474.DeleteNotificationsByIdsUseCase(
       gh<_i366.NotificationsRepository>(),
+    ),
+  );
+  gh.factory<_i711.ReviewBatchBloc>(
+    () => _i711.ReviewBatchBloc(
+      gh<_i122.ReviewBatchRepository>(),
+      gh<_i25.AdminModerationRepository>(),
     ),
   );
   gh.lazySingleton<_i415.BootstrapAppUseCase>(
@@ -553,9 +564,6 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i456.StreakShopBloc>(
     () => _i456.StreakShopBloc(gh<_i727.PrismWallpaperRepository>()),
-  );
-  gh.factory<_i711.ReviewBatchBloc>(
-    () => _i711.ReviewBatchBloc(gh<_i122.ReviewBatchRepository>()),
   );
   gh.lazySingleton<_i446.FetchPublicProfileUseCase>(
     () => _i446.FetchPublicProfileUseCase(gh<_i817.PublicProfileRepository>()),

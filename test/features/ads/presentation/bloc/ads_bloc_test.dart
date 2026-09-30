@@ -15,7 +15,6 @@ class _MockShowRewardedAdUseCase extends Mock implements ShowRewardedAdUseCase {
 void main() {
   const loaded = AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: true, adFailed: false);
   const earned = AdsEntity(rewardEarned: true, loadingAd: false, adLoaded: false, adFailed: false);
-  const dismissed = AdsEntity(rewardEarned: false, loadingAd: false, adLoaded: false, adFailed: false);
 
   late _MockCreateRewardedAdUseCase createUseCase;
   late _MockShowRewardedAdUseCase showUseCase;
@@ -44,7 +43,7 @@ void main() {
   });
 
   test('a later dismissed ad does not unlock after an earlier reward', () async {
-    stubShow([Result.success(earned), Result.success(dismissed)]);
+    stubShow([Result.success(earned), Result.success(AdsEntity.empty)]);
 
     expect(await bloc.watchRewardedAd(), isTrue);
     expect(await bloc.watchRewardedAd(), isFalse);

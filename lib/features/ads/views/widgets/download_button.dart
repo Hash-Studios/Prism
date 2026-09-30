@@ -9,7 +9,6 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/features/ads/ads.dart';
