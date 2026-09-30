@@ -16,7 +16,7 @@ class ShareButton extends StatefulWidget {
   final String thumbUrl;
   final String? contextLine;
   final Future<String> Function(String id, WallpaperSource source, String? url, String thumbUrl) createLink;
-  final Future<ShareFormatValue> Function(
+  final Future<ShareCardResult> Function(
     BuildContext context, {
     required String imageUrl,
     required String link,
@@ -80,19 +80,15 @@ class _ShareButtonState extends State<ShareButton> {
       final String link = await createLink(id!, source, url, thumbUrl);
       await Clipboard.setData(ClipboardData(text: link));
       if (!mounted) return;
-      final ShareFormatValue format = await shareCard(
-        context,
-        imageUrl: imageUrl,
-        link: link,
-        contextLine: contextLine,
-      );
+      final ShareCardResult shared = await shareCard(context, imageUrl: imageUrl, link: link, contextLine: contextLine);
       if (!mounted) return;
       analytics.track(
         InviteShareResultEvent(
           channel: ShareChannelValue.shareSheet,
-          result: EventResultValue.success,
+          result: shared.dismissed ? EventResultValue.cancelled : EventResultValue.success,
+          reason: shared.dismissed ? AnalyticsReasonValue.userCancelled : null,
           sourceContext: 'wallpaper_screen',
-          format: format,
+          format: shared.format,
         ),
       );
     } catch (error, stackTrace) {

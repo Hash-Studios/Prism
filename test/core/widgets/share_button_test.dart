@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +38,7 @@ void main() {
                   calls
                     ..add(imageUrl)
                     ..add(contextLine);
-                  return ShareFormatValue.card;
+                  return (format: ShareFormatValue.card, dismissed: false);
                 },
           ),
         ),
@@ -52,6 +53,40 @@ void main() {
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.format, ShareFormatValue.card);
     expect(result.toWireParameters()['format'], 'card');
+  });
+
+  testWidgets('a dismissed share sheet is tracked as cancelled', (tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareButton(
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://img.test/full.jpg',
+            thumbUrl: 'https://img.test/thumb.jpg',
+            createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/share?id=$id',
+            shareCard:
+                (BuildContext context, {required String imageUrl, required String link, String? contextLine}) async =>
+                    (format: ShareFormatValue.text, dismissed: true),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(seconds: 1)));
+    await tester.pump(const Duration(seconds: 1));
+
+    final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
+    expect(result.result, EventResultValue.cancelled);
+    expect(result.reason, AnalyticsReasonValue.userCancelled);
+    expect(result.format, ShareFormatValue.text);
   });
 
   testWidgets('a second tap does not start another share while the first is pending', (tester) async {
@@ -74,7 +109,7 @@ void main() {
             },
             shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
               shareCalls++;
-              return Future<ShareFormatValue>.value(ShareFormatValue.card);
+              return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
             },
           ),
         ),
@@ -127,7 +162,7 @@ void main() {
                 shareCard:
                     (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
                       currentCalls.addAll(<String?>[imageUrl, link, contextLine]);
-                      return Future<ShareFormatValue>.value(ShareFormatValue.card);
+                      return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
                     },
               ),
             );
@@ -160,7 +195,7 @@ void main() {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     addTearDown(AnalyticsRuntime.reset);
-    final Completer<ShareFormatValue> share = Completer<ShareFormatValue>();
+    final Completer<ShareCardResult> share = Completer<ShareCardResult>();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -181,7 +216,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
-    share.complete(ShareFormatValue.card);
+    share.complete((format: ShareFormatValue.card, dismissed: false));
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
     await tester.pump();
 
@@ -205,7 +240,7 @@ void main() {
             createLink: (id, source, url, thumbUrl) => link.future,
             shareCard: (BuildContext context, {required String imageUrl, required String link, String? contextLine}) {
               sharedImageUrl = imageUrl;
-              return Future<ShareFormatValue>.value(ShareFormatValue.card);
+              return Future<ShareCardResult>.value((format: ShareFormatValue.card, dismissed: false));
             },
           ),
         ),
