@@ -1527,6 +1527,21 @@ class OnboardingV2CompletedEvent extends AnalyticsEvent {
   }
 }
 
+class BadgeEarnedEvent extends AnalyticsEvent {
+  const BadgeEarnedEvent({required this.badgeId, required this.coins});
+
+  final String badgeId;
+  final int coins;
+
+  @override
+  String get eventName => 'badge_earned';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'badge_id': badgeId, 'coins': coins};
+  }
+}
+
 class AppCrashFatalEvent extends AnalyticsEvent {
   const AppCrashFatalEvent();
 

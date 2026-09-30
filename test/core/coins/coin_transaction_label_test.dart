@@ -33,6 +33,7 @@ void main() {
       'premiumFilter': 'Premium filter',
       'premiumPreview24h': 'Collection preview, 24 h',
       'streakFreeze': 'Streak freeze',
+      'badgeReward': 'Badge reward',
     };
     expected.forEach((action, label) => expect(coinTransactionLabel(_tx(action)), label));
   });

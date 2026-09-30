@@ -44,6 +44,7 @@ import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
+import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
@@ -551,6 +552,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
       await CoinsService.instance.maybeAwardProDailyBonus();
       await CoinsService.instance.processPendingReferralIfEligible();
+      await getIt<BadgeRepository>().check();
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: 'coins.main.$sourceTag', error: error, stackTrace: stackTrace);
     } finally {
