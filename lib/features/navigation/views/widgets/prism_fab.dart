@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
+import 'package:Prism/core/widgets/glint/glint_data.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/nav_bar_surface.dart';
@@ -84,22 +85,13 @@ class _PrismFabState extends State<PrismFab> {
   }
 }
 
-/// The logo's sweep: purple, magenta, coral, orange, yellow, mint, cyan, lavender, and back to purple.
+/// The logo's rainbow ring, in Glint's own colours.
 class _RainbowRingPainter extends CustomPainter {
   const _RainbowRingPainter();
 
   static const double _width = 2.5;
-  static const List<Color> _colors = <Color>[
-    Color(0xFF8F6BFF),
-    Color(0xFFE44BD0),
-    Color(0xFFFF6F61),
-    Color(0xFFFF9F43),
-    Color(0xFFFFD84D),
-    Color(0xFF62E6B0),
-    Color(0xFF4FD1FF),
-    Color(0xFFB9A4FF),
-    Color(0xFF8F6BFF),
-  ];
+  // Glint's ring colours, closed back to the first so the sweep has no seam.
+  static const List<Color> _colors = <Color>[...glintRingNodeColors, glintPurple];
 
   @override
   void paint(Canvas canvas, Size size) {
