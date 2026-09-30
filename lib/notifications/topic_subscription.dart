@@ -31,22 +31,23 @@ bool get creatorPostsAlertsEnabled =>
     getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.posts, defaultValue: true);
 
 /// What the Posts switch controls: every followed creator's posts topic.
-// ponytail: one topic call per followed creator, sequentially; batch server-side if follow lists get large.
 Future<void> setCreatorPostsTopics(
   FirebaseMessaging messaging,
   Iterable<String> creatorEmails, {
   required bool subscribed,
   required String sourceTag,
 }) async {
-  for (final String email in creatorEmails) {
-    final String? topic = _creatorPostsTopicFromEmail(email);
-    if (topic == null) continue;
-    if (subscribed) {
-      await subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
-    } else {
-      await unsubscribeFromTopicSafely(messaging, topic, sourceTag: sourceTag);
-    }
-  }
+  await Future.wait<void>(
+    creatorEmails.map((String email) async {
+      final String? topic = _creatorPostsTopicFromEmail(email);
+      if (topic == null) return;
+      if (subscribed) {
+        await subscribeToTopicSafely(messaging, topic, sourceTag: sourceTag);
+      } else {
+        await unsubscribeFromTopicSafely(messaging, topic, sourceTag: sourceTag);
+      }
+    }),
+  );
 }
 
 String? userTopicFromId(String uid) {

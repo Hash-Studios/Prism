@@ -9,12 +9,21 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_user_scope.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 enum SignInOutcome { signedIn, cancelled }
+
+final Set<Future<void>> _signInBootstraps = <Future<void>>{};
+
+Future<void> waitForSignInBootstraps() async {
+  while (_signInBootstraps.isNotEmpty) {
+    await Future.wait<void>(_signInBootstraps.toList(growable: false));
+  }
+}
 
 /// Runs the steps every provider shares once Firebase has accepted the credential:
 /// upsert the user document, publish the user to analytics, subscribe to topics,
@@ -25,6 +34,7 @@ Future<void> completeSignIn({
   required String email,
   required String photoUrl,
   required String sourceTagPrefix,
+  FirebaseMessaging? messaging,
 }) async {
   final Map<String, dynamic>? existing = await firestoreClient.getById<Map<String, dynamic>>(
     FirebaseCollections.usersV2,
@@ -35,7 +45,7 @@ Future<void> completeSignIn({
   final String now = DateTime.now().toUtc().toIso8601String();
   if (existing != null) {
     app_state.prismUser = PrismUsersV2.fromMapWithUser(existing, user);
-    firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
+    await firestoreClient.updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
       'lastLoginAt': now,
       'loggedIn': true,
     }, sourceTag: '$sourceTagPrefix.update_last_login');
@@ -60,7 +70,7 @@ Future<void> completeSignIn({
       transactions: [],
       coverPhoto: '',
     );
-    firestoreClient.setDoc(
+    await firestoreClient.setDoc(
       FirebaseCollections.usersV2,
       app_state.prismUser.id,
       app_state.prismUser.toJson(),
@@ -78,28 +88,34 @@ Future<void> completeSignIn({
     name: AnalyticsUserProperty.isPremium.wireName,
     value: app_state.prismUser.premium ? '1' : '0',
   );
+  final FirebaseMessaging resolvedMessaging = messaging ?? FirebaseMessaging.instance;
   final String? userTopic = userTopicFromId(user.uid);
   if (userTopic != null) {
-    await subscribeToTopicSafely(FirebaseMessaging.instance, userTopic, sourceTag: '$sourceTagPrefix.user_topic');
+    await subscribeToTopicSafely(resolvedMessaging, userTopic, sourceTag: '$sourceTagPrefix.user_topic');
   }
   final String? followersTopic = followersTopicFromEmail(email);
   if (followersTopic != null) {
-    await subscribeToTopicSafely(
-      FirebaseMessaging.instance,
-      followersTopic,
-      sourceTag: '$sourceTagPrefix.followers_topic',
-    );
+    await subscribeToTopicSafely(resolvedMessaging, followersTopic, sourceTag: '$sourceTagPrefix.followers_topic');
   }
-  unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id));
-  FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id);
-  unawaited(() async {
+  unawaited(FcmTokenService.instance.syncToken(userId: app_state.prismUser.id, messaging: resolvedMessaging));
+  FcmTokenService.instance.listenForTokenRefresh(userId: app_state.prismUser.id, messaging: resolvedMessaging);
+  Future<void> runBootstrap() async {
     await PurchasesService.instance.checkAndPersistPremium();
     await CoinsService.instance.bootstrapForCurrentUser();
     await CoinsService.instance.refreshBalance();
     await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
     await CoinsService.instance.maybeAwardProDailyBonus();
     await CoinsService.instance.processPendingReferralIfEligible();
-  }());
+  }
+
+  late final Future<void> bootstrap;
+  bootstrap = runBootstrap()
+      .catchError((Object error, StackTrace stackTrace) {
+        logger.w('Sign-in bootstrap failed.', tag: 'Auth', error: error, stackTrace: stackTrace);
+      })
+      .whenComplete(() => _signInBootstraps.remove(bootstrap));
+  _signInBootstraps.add(bootstrap);
+  unawaited(bootstrap);
   await syncSentryUserScope(
     loggedIn: app_state.prismUser.loggedIn,
     id: app_state.prismUser.id,

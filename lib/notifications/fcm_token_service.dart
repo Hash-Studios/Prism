@@ -19,19 +19,23 @@ class FcmTokenService {
   FcmTokenService._();
   static final FcmTokenService instance = FcmTokenService._();
   StreamSubscription<String>? _tokenRefreshSubscription;
+  final Set<Future<void>> _pendingWrites = <Future<void>>{};
+  int _generation = 0;
 
   /// Fetches the current FCM token and writes it to Firestore for [userId].
   /// Call once after login.
-  Future<void> syncToken({required String userId}) async {
+  Future<void> syncToken({required String userId, FirebaseMessaging? messaging, FirestoreClient? client}) async {
     if (userId.trim().isEmpty) return;
+    final int generation = _generation;
     try {
-      final String? token = await FirebaseMessaging.instance.getToken();
-      if (token == null || token.trim().isEmpty) return;
-      await _persistToken(userId: userId, token: token);
+      final String? token = await (messaging ?? FirebaseMessaging.instance).getToken();
+      if (generation != _generation || token == null || token.trim().isEmpty) return;
+      await _trackWrite(() => _persistToken(userId: userId, token: token, client: client));
+      if (generation != _generation) return;
       // Carries a Followers switch turned off on an older build over to the server.
       if (getIt.isRegistered<SettingsLocalDataSource>() &&
           !getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.followers, defaultValue: true)) {
-        await saveFollowerAlerts(userId: userId, enabled: false);
+        await saveFollowerAlerts(userId: userId, enabled: false, client: client);
       }
     } catch (e, st) {
       logger.w('FcmTokenService: failed to sync token.', error: e, stackTrace: st);
@@ -42,12 +46,14 @@ class FcmTokenService {
   Future<void> saveFollowerAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
     if (userId.trim().isEmpty) return;
     try {
-      await (client ?? firestoreClient).setDoc(
-        '${FirebaseCollections.usersV2}/$userId/private',
-        'session',
-        <String, dynamic>{'followerAlerts': enabled},
-        merge: true,
-        sourceTag: 'fcm_token.follower_alerts',
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'followerAlerts': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.follower_alerts',
+        ),
       );
     } catch (e, st) {
       logger.w('FcmTokenService: failed to save follower alerts.', error: e, stackTrace: st);
@@ -56,25 +62,65 @@ class FcmTokenService {
 
   /// Listens for token refreshes and persists the new token automatically.
   /// Call once after login.
-  void listenForTokenRefresh({required String userId}) {
-    cancel();
+  void listenForTokenRefresh({required String userId, FirebaseMessaging? messaging, FirestoreClient? client}) {
+    _cancelListener();
     if (userId.trim().isEmpty) return;
-    _tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen((String newToken) async {
-      try {
-        await _persistToken(userId: userId, token: newToken);
-      } catch (e, st) {
-        logger.w('FcmTokenService: failed to persist refreshed token.', error: e, stackTrace: st);
-      }
+    final int generation = _generation;
+    _tokenRefreshSubscription = (messaging ?? FirebaseMessaging.instance).onTokenRefresh.listen((String newToken) {
+      if (generation != _generation) return;
+      unawaited(_persistRefreshedToken(userId, newToken, generation, client));
     });
   }
 
   void cancel() {
-    unawaited(_tokenRefreshSubscription?.cancel());
-    _tokenRefreshSubscription = null;
+    _generation++;
+    unawaited(_cancelListener());
   }
 
-  Future<void> _persistToken({required String userId, required String token}) async {
-    await firestoreClient.setDoc(
+  /// Cancels future token writes and waits for writes already sent to Firestore.
+  Future<void> cancelAndWait() async {
+    _generation++;
+    try {
+      await _cancelListener();
+    } catch (_) {}
+    await Future.wait<void>(
+      _pendingWrites
+          .map((Future<void> write) async {
+            try {
+              await write;
+            } catch (_) {}
+          })
+          .toList(growable: false),
+    );
+  }
+
+  Future<void> _persistRefreshedToken(String userId, String token, int generation, FirestoreClient? client) async {
+    if (generation != _generation) return;
+    try {
+      await _trackWrite(() => _persistToken(userId: userId, token: token, client: client));
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to persist refreshed token.', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _cancelListener() async {
+    final Future<void>? cancellation = _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = null;
+    await cancellation;
+  }
+
+  Future<void> _trackWrite(Future<void> Function() write) async {
+    final Future<void> pending = Future<void>.sync(write);
+    _pendingWrites.add(pending);
+    try {
+      await pending;
+    } finally {
+      _pendingWrites.remove(pending);
+    }
+  }
+
+  Future<void> _persistToken({required String userId, required String token, FirestoreClient? client}) async {
+    await (client ?? firestoreClient).setDoc(
       '${FirebaseCollections.usersV2}/$userId/private',
       'session',
       <String, dynamic>{'fcmToken': token},
