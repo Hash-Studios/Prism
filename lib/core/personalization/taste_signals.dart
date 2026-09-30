@@ -12,8 +12,12 @@ const Set<String> _noiseTerms = <String>{'community', 'general', 'wallpaper', 'w
 
 /// Lowercase, de-duplicated descriptive terms of a wallpaper.
 List<String> tasteTermsOf(WallpaperCore core, {List<String>? tags, List<String>? collections}) {
+  return _normalizeTasteTerms(<String?>[core.category, ...?tags, ...?collections]);
+}
+
+List<String> _normalizeTasteTerms(Iterable<String?> rawTerms) {
   final Set<String> out = <String>{};
-  for (final String? raw in <String?>[core.category, ...?tags, ...?collections]) {
+  for (final String? raw in rawTerms) {
     final String term = (raw ?? '').trim().toLowerCase();
     if (term.isNotEmpty && term.length <= 40 && !_noiseTerms.contains(term)) {
       out.add(term);
@@ -53,11 +57,16 @@ class TasteSignal {
     if (action == null || at == null || terms is! List) {
       return null;
     }
+    final List<String> normalizedTerms = _normalizeTasteTerms(terms.whereType<String>());
+    final String creator = json['c']?.toString().trim().toLowerCase() ?? '';
+    if (normalizedTerms.isEmpty && creator.isEmpty) {
+      return null;
+    }
     return TasteSignal(
       action: action,
       at: at.toUtc(),
-      terms: terms.map((e) => e.toString()).toList(growable: false),
-      creator: json['c']?.toString(),
+      terms: normalizedTerms,
+      creator: creator.isEmpty ? null : creator,
     );
   }
 

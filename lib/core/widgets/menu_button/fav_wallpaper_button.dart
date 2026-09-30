@@ -70,11 +70,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       });
       return;
     }
-    final bool wasFavourite = _favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id);
     context.favouriteWallsAdapter(listen: false).favCheck(wall).then((success) {
       if (success) {
         analytics.track(FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString));
-        if (!wasFavourite) {
+        if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
           widget.onFavourited?.call();
         }
       }

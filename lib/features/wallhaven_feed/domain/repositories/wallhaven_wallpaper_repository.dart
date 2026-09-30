@@ -8,10 +8,11 @@ abstract class WallhavenWallpaperRepository {
     int categories,
     int purity,
     int startPage = 1,
+    String? paginationKey,
   });
 
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1});
 
   Future<Result<WallhavenWallpaper?>> fetchById(String id);
-  bool hasMoreForCategory(String categoryName);
+  bool hasMoreForCategory(String categoryName, {String? paginationKey});
 }

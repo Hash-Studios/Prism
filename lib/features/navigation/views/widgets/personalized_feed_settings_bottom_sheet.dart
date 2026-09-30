@@ -16,8 +16,9 @@ import 'package:flutter/services.dart';
 
 const Duration _kTileMotion = Duration(milliseconds: 150);
 const Duration _kSectionMotion = Duration(milliseconds: 200);
+final ValueNotifier<int> personalizedFeedSettingsRevision = ValueNotifier<int>(0);
 
-Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {VoidCallback? onPreferencesSaved}) async {
+Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async {
   final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();
   final List<PersonalizedInterest> catalog = await PersonalizedInterestsCatalog.load(
     remoteConfig: FirebaseRemoteConfig.instance,
@@ -40,30 +41,40 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {Void
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => PersonalizedFeedSettingsSheet(
-      catalog: catalog,
-      initialInterests: selected,
-      initialFeedMix: currentMix,
-      onSave: (List<String> interests, FeedMix feedMix) async {
-        final bool persisted = await _persistInterests(settingsLocal, interests);
-        if (!persisted) {
-          return;
-        }
-        await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
-        onPreferencesSaved?.call();
-      },
+    builder: (sheetContext) => AnimatedPadding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheetContext).bottom),
+      duration: const Duration(milliseconds: 200),
+      child: MediaQuery.removeViewInsets(
+        context: sheetContext,
+        removeBottom: true,
+        child: PersonalizedFeedSettingsSheet(
+          catalog: catalog,
+          initialInterests: selected,
+          initialFeedMix: currentMix,
+          onSave: (List<String> interests, FeedMix feedMix) async {
+            final bool persisted = await _persistInterests(settingsLocal, interests);
+            if (!persisted) {
+              return false;
+            }
+            await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
+            return true;
+          },
+        ),
+      ),
     ),
   );
 }
 
 Future<bool> _persistInterests(SettingsLocalDataSource settingsLocal, List<String> interests) async {
-  await settingsLocal.set('onboarding_v2_interests', interests.join(','));
   if (!app_state.prismUser.loggedIn) {
+    await settingsLocal.set('onboarding_v2_interests', interests.join(','));
     return true;
   }
   final SaveInterestsUseCase saveInterests = getIt<SaveInterestsUseCase>();
   final Result<void> saveResult = await saveInterests(SaveInterestsParams(interests: interests));
-  return saveResult.isSuccess;
+  if (!saveResult.isSuccess) return false;
+  await settingsLocal.set('onboarding_v2_interests', interests.join(','));
+  return true;
 }
 
 class PersonalizedFeedSettingsSheet extends StatefulWidget {
@@ -79,7 +90,7 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
   final List<PersonalizedInterest> catalog;
   final Set<String> initialInterests;
   final FeedMix initialFeedMix;
-  final Future<void> Function(List<String> interests, FeedMix feedMix) onSave;
+  final Future<bool> Function(List<String> interests, FeedMix feedMix) onSave;
 
   /// Defaults to the app-wide store.
   final TasteSignalStore? tasteSignals;
@@ -130,6 +141,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   Future<void> _clearLearned() async {
     await _tasteSignals.clear();
     if (!mounted) return;
+    personalizedFeedSettingsRevision.value += 1;
     setState(() => _learned = TasteProfile.empty);
     _messengerKey.currentState?.showSnackBar(const SnackBar(content: Text('Learning history cleared')));
   }
@@ -137,8 +149,19 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   Future<void> _save() async {
     if (!_canSave) return;
     setState(() => _saving = true);
-    await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
-    if (mounted) Navigator.of(context).pop();
+    try {
+      final bool saved = await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
+      if (!mounted) return;
+      if (saved) {
+        personalizedFeedSettingsRevision.value += 1;
+        Navigator.of(context).pop();
+        return;
+      }
+    } catch (_) {
+      if (!mounted) return;
+    }
+    setState(() => _saving = false);
+    _messengerKey.currentState?.showSnackBar(const SnackBar(content: Text('Could not save feed settings. Try again.')));
   }
 
   @override
@@ -402,6 +425,7 @@ class _InterestTile extends StatelessWidget {
       button: true,
       selected: selected,
       label: 'Interest: ${interest.name}, ${selected ? 'selected' : 'not selected'}',
+      onTap: onTap,
       excludeSemantics: true,
       child: AnimatedScale(
         scale: selected ? PrismBottomSheet.interestTileSelectedScale : 1,

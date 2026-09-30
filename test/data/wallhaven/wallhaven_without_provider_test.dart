@@ -41,6 +41,7 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
     int categories = 100,
     int purity = 100,
     int startPage = 1,
+    String? paginationKey,
   }) async => result;
 
   @override

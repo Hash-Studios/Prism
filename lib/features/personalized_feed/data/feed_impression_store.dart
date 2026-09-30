@@ -15,15 +15,15 @@ class FeedImpressionStore {
   static const int _cap = 800;
   static const Duration _window = Duration(days: 14);
 
-  /// A hidden wallpaper counts as shown this often, which sinks it for good.
+  /// Marks a hidden wallpaper while its impression entry is retained.
   static const int hiddenShows = 99;
 
-  /// Key to times shown within the last 14 days.
+  /// Recent show counts plus hidden markers that remain in the bounded store.
   Map<String, int> recentShows(DateTime now) {
     final DateTime cutoff = now.subtract(_window);
     return <String, int>{
       for (final MapEntry<String, _Impression> entry in _read().entries)
-        if (entry.value.lastShown.isAfter(cutoff)) entry.key: entry.value.count,
+        if (entry.value.count >= hiddenShows || entry.value.lastShown.isAfter(cutoff)) entry.key: entry.value.count,
     };
   }
 
@@ -32,7 +32,16 @@ class FeedImpressionStore {
     final DateTime cutoff = now.subtract(_window);
     for (final String key in keys) {
       final _Impression? old = all.remove(key);
-      final int count = old == null || old.lastShown.isBefore(cutoff) ? 1 : old.count + 1;
+      final int count;
+      if (old != null && old.count >= hiddenShows) {
+        count = hiddenShows;
+      } else if (old == null || old.lastShown.isBefore(cutoff)) {
+        count = 1;
+      } else if (old.count >= hiddenShows - 1) {
+        count = hiddenShows - 1;
+      } else {
+        count = old.count + 1;
+      }
       all[key] = _Impression(count, now);
     }
     return _write(all);
@@ -56,11 +65,13 @@ class FeedImpressionStore {
       }
       final Map<String, _Impression> out = <String, _Impression>{};
       decoded.forEach((key, value) {
-        if (value is List && value.length == 2 && value[0] is int && value[1] is int) {
-          out[key.toString()] = _Impression(
-            value[0] as int,
-            DateTime.fromMillisecondsSinceEpoch((value[1] as int) * 60000, isUtc: true),
-          );
+        if (key is String && value is List && value.length == 2 && value[0] is int && value[1] is int) {
+          final int count = value[0] as int;
+          final int timestampMinutes = value[1] as int;
+          if (count < 0 || timestampMinutes < -144000000000 || timestampMinutes > 144000000000) {
+            return;
+          }
+          out[key] = _Impression(count, DateTime.fromMillisecondsSinceEpoch(timestampMinutes * 60000, isUtc: true));
         }
       });
       return out;

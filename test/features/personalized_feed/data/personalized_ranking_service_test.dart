@@ -143,4 +143,38 @@ void main() {
 
     expect(result.items.map((e) => e.id), <String>['d']);
   });
+
+  test('a hidden wall is excluded even when it is the only candidate', () {
+    final RankingCandidate hidden = _cand(_prism('hidden', category: 'space'));
+
+    final PersonalizedRankingResult result = rank(
+      <RankingCandidate>[hidden],
+      recentShows: <String, int>{hidden.key: 99},
+      limit: 1,
+    );
+
+    expect(result.items, isEmpty);
+  });
+
+  test('disliked walls are not treated as exploration candidates', () {
+    const TasteProfile profile = TasteProfile(
+      terms: <String, double>{'space': 4, 'cats': -0.1},
+      creators: <String, double>{},
+    );
+    final PersonalizedRankingResult result = service.rank(
+      candidates: <RankingCandidate>[
+        for (int i = 0; i < 23; i++) _cand(_prism('positive$i', category: 'space')),
+        _cand(_prism('disliked', category: 'cats'), CandidatePool.following),
+      ],
+      profile: profile,
+      recentShows: const <String, int>{},
+      excludedKeys: const <String>{},
+      mix: FeedMix.balanced,
+      random: Random(1),
+      now: now,
+    );
+
+    expect(result.items, hasLength(24));
+    expect(result.items[4].id, isNot('disliked'));
+  });
 }

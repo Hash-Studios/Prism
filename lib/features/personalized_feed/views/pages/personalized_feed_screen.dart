@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/home/wallpapers/carousel_dots.dart';
 import 'package:Prism/core/widgets/premium_banners/premium_banner.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
+import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/palette/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
@@ -45,11 +46,19 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
   void initState() {
     super.initState();
     _bloc = getIt<PersonalizedFeedBloc>();
+    personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     _bloc.add(const PersonalizedFeedEvent.started());
+  }
+
+  void _onFeedSettingsChanged() {
+    if (mounted) {
+      _bloc.add(const PersonalizedFeedEvent.refreshRequested());
+    }
   }
 
   @override
   void dispose() {
+    personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
     _scrollController.dispose();
     _bloc.close();
     super.dispose();

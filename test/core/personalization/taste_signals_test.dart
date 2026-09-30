@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -40,6 +42,30 @@ void main() {
     expect(read, hasLength(300));
     expect(read.first.terms, ['t10']);
     expect(read.last.terms, ['t309']);
+  });
+
+  test('drops malformed stored terms without discarding valid signals', () async {
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final TasteSignalStore malformedStore = TasteSignalStore(settings);
+    await settings.set(
+      'personalized_taste_signals_v1',
+      jsonEncode(<Map<String, Object?>>[
+        <String, Object?>{
+          'a': 'open',
+          't': '2026-01-01T00:00:00.000Z',
+          'k': <Object?>['', null, 42, ' general '],
+        },
+        <String, Object?>{
+          'a': 'favourite',
+          't': '2026-01-02T00:00:00.000Z',
+          'k': <Object?>[' Nature ', 'nature', true],
+        },
+      ]),
+    );
+
+    final List<TasteSignal> signals = malformedStore.read();
+    expect(signals, hasLength(1));
+    expect(signals.single.terms, <String>['nature']);
   });
 
   test('tasteTermsOf lowercases, de-duplicates and drops noise terms', () {
