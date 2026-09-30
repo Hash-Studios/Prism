@@ -43,7 +43,7 @@ export function winBackStepFor(
   return null;
 }
 
-async function todaysWall(): Promise<{title: string; imageUrl?: string}> {
+async function todaysWall(): Promise<{title: string; wallId?: string; imageUrl?: string}> {
   const fallback = {title: "A fresh pick"};
   try {
     const cur = await db.collection("wall_of_the_day").doc("current").get();
@@ -51,7 +51,7 @@ async function todaysWall(): Promise<{title: string; imageUrl?: string}> {
     if (!wallId) return fallback;
     const wall = (await db.collection("walls").doc(wallId).get()).data();
     if (!wall) return fallback;
-    return {title: str(wall.title).trim() || fallback.title, imageUrl: str(wall.wallpaper_thumb) || undefined};
+    return {title: str(wall.title).trim() || fallback.title, wallId, imageUrl: str(wall.wallpaper_thumb) || undefined};
   } catch (err) {
     logger.warn("winBack: could not read wall of the day.", {err});
     return fallback;
@@ -106,7 +106,7 @@ export const sendWinBackPushes = onSchedule(
                 await sendNotification({
                   title: copy.title,
                   body: copy.body(wall.title),
-                  data: {route: "wall_of_the_day"},
+                  data: {route: "wall_of_the_day", ...(wall.wallId ? {wall_id: wall.wallId} : {})},
                   imageUrl: wall.imageUrl,
                   modifier: email || uid,
                   channelId: "wall_of_the_day",
