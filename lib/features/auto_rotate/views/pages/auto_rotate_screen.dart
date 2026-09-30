@@ -1,14 +1,17 @@
-import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
+import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
+import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +33,12 @@ const Map<WallpaperTarget, String> _targetLabels = <WallpaperTarget, String>{
 
 List<String> _urlsOf(FavouriteWallsState state) => state.items.map((item) => item.fullUrl).toList(growable: false);
 
+Future<void> _presentAutoRotatePaywall(BuildContext context) async {
+  await PaywallOrchestrator.instance.present(placement: PaywallPlacement.autoRotate, source: 'auto_rotate_screen');
+  if (!context.mounted) return;
+  context.read<SessionBloc>().add(const SessionEvent.started());
+}
+
 @RoutePage()
 class AutoRotateScreen extends StatefulWidget {
   const AutoRotateScreen({super.key});
@@ -39,54 +48,138 @@ class AutoRotateScreen extends StatefulWidget {
 }
 
 class _AutoRotateScreenState extends State<AutoRotateScreen> {
-  late final AutoRotateBloc _bloc = getIt<AutoRotateBloc>();
+  bool _initializationFailed = false;
+  bool _started = false;
+
+  bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
 
   @override
-  void initState() {
-    super.initState();
-    _start();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_started) {
+      _started = true;
+      _start();
+    }
   }
 
   Future<void> _start() async {
-    await context.favouriteWallsAdapter(listen: false).getDataBase();
-    if (!mounted) return;
-    _bloc.add(
-      AutoRotateEvent.started(
-        favouriteUrls: _urlsOf(context.read<FavouriteWallsBloc>().state),
-        isPro: app_state.prismUser.premium,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _bloc.close();
-    super.dispose();
+    if (!_isAndroid) return;
+    try {
+      final SessionBloc sessionBloc = context.read<SessionBloc>();
+      if (sessionBloc.state.status == LoadStatus.initial || sessionBloc.state.status == LoadStatus.loading) {
+        await sessionBloc.stream.firstWhere(
+          (state) => state.status != LoadStatus.initial && state.status != LoadStatus.loading,
+        );
+      }
+      if (!mounted) return;
+      if (sessionBloc.state.status != LoadStatus.success) {
+        setState(() => _initializationFailed = true);
+        return;
+      }
+      final session = sessionBloc.state.session;
+      await context.favouriteWallsAdapter(listen: false).getDataBase();
+      if (!mounted) return;
+      final latestSession = sessionBloc.state;
+      if (latestSession.status != LoadStatus.success || latestSession.session.userId != session.userId) {
+        setState(() => _initializationFailed = true);
+        return;
+      }
+      final FavouriteWallsBloc favouritesBloc = context.read<FavouriteWallsBloc>();
+      if (favouritesBloc.state.status == LoadStatus.loading) {
+        await favouritesBloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
+        if (!mounted) return;
+      }
+      final latestSessionAfterLoad = sessionBloc.state;
+      if (latestSessionAfterLoad.status != LoadStatus.success ||
+          latestSessionAfterLoad.session.userId != session.userId) {
+        setState(() => _initializationFailed = true);
+        return;
+      }
+      final FavouriteWallsState favourites = favouritesBloc.state;
+      if (favourites.status == LoadStatus.failure ||
+          (session.userId.isNotEmpty &&
+              (favourites.userId != session.userId || favourites.status != LoadStatus.success)) ||
+          (session.userId.isEmpty && favourites.userId.isNotEmpty)) {
+        setState(() => _initializationFailed = true);
+        return;
+      }
+      setState(() => _initializationFailed = false);
+      context.read<AutoRotateBloc>().add(
+        AutoRotateEvent.started(
+          favouriteUrls: _urlsOf(favourites),
+          isPro: latestSessionAfterLoad.session.loggedIn && latestSessionAfterLoad.session.premium,
+        ),
+      );
+    } catch (_) {
+      if (mounted) setState(() => _initializationFailed = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<AutoRotateBloc>.value(
-      value: _bloc,
-      child: BlocListener<FavouriteWallsBloc, FavouriteWallsState>(
-        listenWhen: (previous, current) => previous.items != current.items,
-        listener: (context, state) => _bloc.add(AutoRotateEvent.favouritesChanged(_urlsOf(state))),
-        child: Scaffold(
-          backgroundColor: Theme.of(context).primaryColor,
-          appBar: const PreferredSize(
-            preferredSize: Size(double.infinity, 55),
-            child: HeadingChipBar(current: 'Auto-rotate'),
-          ),
-          body: BlocBuilder<AutoRotateBloc, AutoRotateState>(
-            builder: (context, state) {
-              if (!state.loaded) return const Center(child: CircularProgressIndicator());
-              if (!app_state.prismUser.premium) return const _ProPrompt();
-              if (state.favouriteCount < AutoRotateBloc.minWallpapers) return const _EmptyState();
-              return _Controls(state: state);
-            },
-          ),
-        ),
+    return Scaffold(
+      backgroundColor: Theme.of(context).primaryColor,
+      appBar: const PreferredSize(
+        preferredSize: Size(double.infinity, 55),
+        child: HeadingChipBar(current: 'Auto-rotate'),
       ),
+      body: !_isAndroid
+          ? _Message(
+              icon: Icons.android_rounded,
+              text: 'Auto-rotate is only available on Android.',
+              buttonLabel: 'Back',
+              onPressed: () {
+                context.router.maybePop();
+              },
+            )
+          : BlocBuilder<AutoRotateBloc, AutoRotateState>(
+              builder: (context, state) {
+                if (state.status.isRunning && !state.config.enabled) {
+                  return _Message(
+                    icon: Icons.error_outline_rounded,
+                    text: 'Could not stop wallpaper rotation.',
+                    buttonLabel: 'Try again',
+                    onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
+                  );
+                }
+                if (state.status.isRunning && state.config.enabled && state.status.lastError != null) {
+                  return _Message(
+                    icon: Icons.error_outline_rounded,
+                    text: 'Could not change wallpaper.',
+                    buttonLabel: 'Change now',
+                    onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.rotateNowPressed()),
+                  );
+                }
+                if (state.status.lastError != null) {
+                  return _Message(
+                    icon: Icons.error_outline_rounded,
+                    text: 'Could not update auto-rotate.',
+                    buttonLabel: 'Try again',
+                    onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false)),
+                  );
+                }
+                if (_initializationFailed) {
+                  return _Message(
+                    icon: Icons.error_outline_rounded,
+                    text: 'Could not load auto-rotate settings.',
+                    buttonLabel: 'Try again',
+                    onPressed: _start,
+                  );
+                }
+                if (!state.loaded) return const Center(child: CircularProgressIndicator());
+                if (!state.isPro) return const _ProPrompt();
+                if (state.favouriteCount < AutoRotateBloc.minWallpapers) return const _EmptyState();
+                if (state.startFailed) {
+                  return _Message(
+                    icon: Icons.error_outline_rounded,
+                    text: 'Could not start wallpaper rotation.',
+                    buttonLabel: 'Try again',
+                    onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
+                  );
+                }
+                return _Controls(state: state);
+              },
+            ),
     );
   }
 }
@@ -147,11 +240,13 @@ class _ProPrompt extends StatelessWidget {
       icon: Icons.autorenew_rounded,
       text: 'Auto-rotate is a Prism Pro feature.',
       buttonLabel: 'See Prism Pro',
-      onPressed: () => PaywallOrchestrator.instance.presentOrRequireSignIn(
-        context,
-        placement: PaywallPlacement.autoRotate,
-        source: 'auto_rotate_screen',
-      ),
+      onPressed: () {
+        if (!app_state.prismUser.loggedIn) {
+          googleSignInPopUp(context, () => _presentAutoRotatePaywall(context));
+        } else {
+          _presentAutoRotatePaywall(context);
+        }
+      },
     );
   }
 }

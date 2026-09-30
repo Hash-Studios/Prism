@@ -40,6 +40,8 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
 import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
@@ -246,24 +248,27 @@ Future<void> main() async {
 
       runApp(
         LogToastOverlay(
-          child: RestartWidget(
-            child: MultiBlocProvider(
-              providers: [
-                BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
-                BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
-                BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
-                BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
-                BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
-                BlocProvider<StartupBloc>(
-                  create: (_) =>
-                      getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
-                ),
-                BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
-                BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
-              ],
-              child: _MyApp(),
+          child: BlocProvider<AutoRotateBloc>(
+            create: (_) => getIt<AutoRotateBloc>(),
+            child: RestartWidget(
+              child: MultiBlocProvider(
+                providers: [
+                  BlocProvider<AdsBloc>(create: (_) => getIt<AdsBloc>()),
+                  BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
+                  BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
+                  BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
+                  BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
+                  BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
+                  BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
+                  BlocProvider<StartupBloc>(
+                    create: (_) =>
+                        getIt<StartupBloc>()..add(StartupEvent.started(currentVersion: app_state.currentAppVersion)),
+                  ),
+                  BlocProvider<ThemeBloc>(create: (_) => getIt<ThemeBloc>()..add(const ThemeEvent.started())),
+                  BlocProvider<WotdBloc>(create: (_) => getIt<WotdBloc>()..add(const WotdEvent.started())),
+                ],
+                child: AutoRotateSessionListener(child: _MyApp()),
+              ),
             ),
           ),
         ),

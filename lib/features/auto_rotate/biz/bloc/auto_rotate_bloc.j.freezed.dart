@@ -55,11 +55,12 @@ extension AutoRotateEventPatterns on AutoRotateEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _FavouritesChanged value)?  favouritesChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _IntervalChanged value)?  intervalChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _ShuffleChanged value)?  shuffleChanged,TResult Function( _RotateNowPressed value)?  rotateNowPressed,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _FavouritesChanged value)?  favouritesChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _IntervalChanged value)?  intervalChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _ShuffleChanged value)?  shuffleChanged,TResult Function( _RotateNowPressed value)?  rotateNowPressed,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _FavouritesChanged() when favouritesChanged != null:
+return started(_that);case _EntitlementChanged() when entitlementChanged != null:
+return entitlementChanged(_that);case _FavouritesChanged() when favouritesChanged != null:
 return favouritesChanged(_that);case _Toggled() when toggled != null:
 return toggled(_that);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that);case _TargetChanged() when targetChanged != null:
@@ -83,11 +84,12 @@ return rotateNowPressed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _FavouritesChanged value)  favouritesChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _IntervalChanged value)  intervalChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _ShuffleChanged value)  shuffleChanged,required TResult Function( _RotateNowPressed value)  rotateNowPressed,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _FavouritesChanged value)  favouritesChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _IntervalChanged value)  intervalChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _ShuffleChanged value)  shuffleChanged,required TResult Function( _RotateNowPressed value)  rotateNowPressed,}){
 final _that = this;
 switch (_that) {
 case _Started():
-return started(_that);case _FavouritesChanged():
+return started(_that);case _EntitlementChanged():
+return entitlementChanged(_that);case _FavouritesChanged():
 return favouritesChanged(_that);case _Toggled():
 return toggled(_that);case _IntervalChanged():
 return intervalChanged(_that);case _TargetChanged():
@@ -110,11 +112,12 @@ return rotateNowPressed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _FavouritesChanged value)?  favouritesChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _IntervalChanged value)?  intervalChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _ShuffleChanged value)?  shuffleChanged,TResult? Function( _RotateNowPressed value)?  rotateNowPressed,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _FavouritesChanged value)?  favouritesChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _IntervalChanged value)?  intervalChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _ShuffleChanged value)?  shuffleChanged,TResult? Function( _RotateNowPressed value)?  rotateNowPressed,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that);case _FavouritesChanged() when favouritesChanged != null:
+return started(_that);case _EntitlementChanged() when entitlementChanged != null:
+return entitlementChanged(_that);case _FavouritesChanged() when favouritesChanged != null:
 return favouritesChanged(_that);case _Toggled() when toggled != null:
 return toggled(_that);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that);case _TargetChanged() when targetChanged != null:
@@ -137,10 +140,11 @@ return rotateNowPressed(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function()?  rotateNowPressed,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( List<String> favouriteUrls,  bool isPro)?  started,TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( List<String> favouriteUrls)?  favouritesChanged,TResult Function( bool enabled)?  toggled,TResult Function( int minutes)?  intervalChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool shuffle)?  shuffleChanged,TResult Function()?  rotateNowPressed,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.favouriteUrls,_that.isPro);case _FavouritesChanged() when favouritesChanged != null:
+return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
+return entitlementChanged(_that.isPro,_that.userId);case _FavouritesChanged() when favouritesChanged != null:
 return favouritesChanged(_that.favouriteUrls);case _Toggled() when toggled != null:
 return toggled(_that.enabled);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged != null:
@@ -164,10 +168,11 @@ return rotateNowPressed();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function()  rotateNowPressed,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( List<String> favouriteUrls,  bool isPro)  started,required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( List<String> favouriteUrls)  favouritesChanged,required TResult Function( bool enabled)  toggled,required TResult Function( int minutes)  intervalChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool shuffle)  shuffleChanged,required TResult Function()  rotateNowPressed,}) {final _that = this;
 switch (_that) {
 case _Started():
-return started(_that.favouriteUrls,_that.isPro);case _FavouritesChanged():
+return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged():
+return entitlementChanged(_that.isPro,_that.userId);case _FavouritesChanged():
 return favouritesChanged(_that.favouriteUrls);case _Toggled():
 return toggled(_that.enabled);case _IntervalChanged():
 return intervalChanged(_that.minutes);case _TargetChanged():
@@ -190,10 +195,11 @@ return rotateNowPressed();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function()?  rotateNowPressed,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( List<String> favouriteUrls,  bool isPro)?  started,TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( List<String> favouriteUrls)?  favouritesChanged,TResult? Function( bool enabled)?  toggled,TResult? Function( int minutes)?  intervalChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool shuffle)?  shuffleChanged,TResult? Function()?  rotateNowPressed,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
-return started(_that.favouriteUrls,_that.isPro);case _FavouritesChanged() when favouritesChanged != null:
+return started(_that.favouriteUrls,_that.isPro);case _EntitlementChanged() when entitlementChanged != null:
+return entitlementChanged(_that.isPro,_that.userId);case _FavouritesChanged() when favouritesChanged != null:
 return favouritesChanged(_that.favouriteUrls);case _Toggled() when toggled != null:
 return toggled(_that.enabled);case _IntervalChanged() when intervalChanged != null:
 return intervalChanged(_that.minutes);case _TargetChanged() when targetChanged != null:
@@ -212,7 +218,7 @@ return rotateNowPressed();case _:
 
 class _Started implements AutoRotateEvent {
   const _Started({required final  List<String> favouriteUrls, required this.isPro}): _favouriteUrls = favouriteUrls;
-  
+
 
  final  List<String> _favouriteUrls;
  List<String> get favouriteUrls {
@@ -275,6 +281,74 @@ class __$StartedCopyWithImpl<$Res>
 favouriteUrls: null == favouriteUrls ? _self._favouriteUrls : favouriteUrls // ignore: cast_nullable_to_non_nullable
 as List<String>,isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
 as bool,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _EntitlementChanged implements AutoRotateEvent {
+  const _EntitlementChanged({required this.isPro, required this.userId});
+
+
+ final  bool isPro;
+ final  String userId;
+
+/// Create a copy of AutoRotateEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$EntitlementChangedCopyWith<_EntitlementChanged> get copyWith => __$EntitlementChangedCopyWithImpl<_EntitlementChanged>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EntitlementChanged&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.userId, userId) || other.userId == userId));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,isPro,userId);
+
+@override
+String toString() {
+  return 'AutoRotateEvent.entitlementChanged(isPro: $isPro, userId: $userId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$EntitlementChangedCopyWith<$Res> implements $AutoRotateEventCopyWith<$Res> {
+  factory _$EntitlementChangedCopyWith(_EntitlementChanged value, $Res Function(_EntitlementChanged) _then) = __$EntitlementChangedCopyWithImpl;
+@useResult
+$Res call({
+ bool isPro, String userId
+});
+
+
+
+
+}
+/// @nodoc
+class __$EntitlementChangedCopyWithImpl<$Res>
+    implements _$EntitlementChangedCopyWith<$Res> {
+  __$EntitlementChangedCopyWithImpl(this._self, this._then);
+
+  final _EntitlementChanged _self;
+  final $Res Function(_EntitlementChanged) _then;
+
+/// Create a copy of AutoRotateEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? isPro = null,Object? userId = null,}) {
+  return _then(_EntitlementChanged(
+isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
+as bool,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
