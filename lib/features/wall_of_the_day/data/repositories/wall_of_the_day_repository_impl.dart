@@ -19,10 +19,7 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
   final PrismWallpaperRepository _prismWallpaperRepository;
   final UserBlockRepository _userBlockRepository;
 
-  WallOfTheDayEntity? _cachedEntity;
-  String? _cachedWallDocumentId;
-  DateTime? _cachedFeaturedDayUtc;
-  String? _cachedAuthorEmail;
+  _CachedPick? _cached;
 
   static bool _isSameCalendarDayUtc(DateTime a, DateTime b) {
     final au = a.toUtc();
@@ -46,31 +43,30 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
       }
 
       final DateTime featuredUtc = pointer.featuredAt.toUtc();
-      if (_cachedEntity != null &&
-          _cachedWallDocumentId == pointer.wallDocumentId &&
-          _cachedFeaturedDayUtc != null &&
-          _isSameCalendarDayUtc(_cachedFeaturedDayUtc!, featuredUtc)) {
+      final cached = _cached;
+      if (cached != null &&
+          cached.wallDocumentId == pointer.wallDocumentId &&
+          _isSameCalendarDayUtc(cached.featuredDayUtc, featuredUtc)) {
         // Re-check against the caller's blocked creators on every call (not just on
         // fetch) so a since-blocked creator's pick disappears instantly, without
         // waiting for the day-scoped cache to expire.
-        return Result.success(_visibleForCaller(_cachedEntity, _cachedAuthorEmail));
+        return Result.success(_visibleForCaller(cached.entity, cached.authorEmail));
       }
 
       final wallResult = await _prismWallpaperRepository.fetchByDocumentId(pointer.wallDocumentId);
       return wallResult.fold(
         onSuccess: (wallpaper) {
-          if (wallpaper == null) {
-            return Result.success(null);
-          }
-          if (wallpaper.fullUrl.isEmpty) {
+          if (wallpaper == null || wallpaper.fullUrl.isEmpty) {
             return Result.success(null);
           }
           final WallOfTheDayEntity entity = wallOfTheDayEntityFromPrismWallpaper(wallpaper);
-          _cachedEntity = entity;
-          _cachedWallDocumentId = pointer.wallDocumentId;
-          _cachedFeaturedDayUtc = featuredUtc;
-          _cachedAuthorEmail = wallpaper.core.authorEmail;
-          return Result.success(_visibleForCaller(entity, _cachedAuthorEmail));
+          _cached = _CachedPick(
+            entity: entity,
+            wallDocumentId: pointer.wallDocumentId,
+            featuredDayUtc: featuredUtc,
+            authorEmail: wallpaper.core.authorEmail,
+          );
+          return Result.success(_visibleForCaller(entity, wallpaper.core.authorEmail));
         },
         onFailure: (failure) => Result.error(failure),
       );
@@ -87,4 +83,18 @@ class WallOfTheDayRepositoryImpl implements WallOfTheDayRepository {
     final blocked = _userBlockRepository.cachedBlockedCreatorEmails;
     return BlockedCreatorsFilter.hidesCreatorEmail(authorEmail, blocked) ? null : entity;
   }
+}
+
+class _CachedPick {
+  const _CachedPick({
+    required this.entity,
+    required this.wallDocumentId,
+    required this.featuredDayUtc,
+    required this.authorEmail,
+  });
+
+  final WallOfTheDayEntity entity;
+  final String wallDocumentId;
+  final DateTime featuredDayUtc;
+  final String? authorEmail;
 }

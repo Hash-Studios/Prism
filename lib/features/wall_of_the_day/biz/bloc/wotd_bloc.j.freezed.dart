@@ -206,7 +206,7 @@ String toString() {
 /// @nodoc
 mixin _$WotdState {
 
- LoadStatus get status; WallOfTheDayEntity? get entity; Failure? get failure;
+ LoadStatus get status; WallOfTheDayEntity? get entity;
 /// Create a copy of WotdState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -217,16 +217,16 @@ $WotdStateCopyWith<WotdState> get copyWith => _$WotdStateCopyWithImpl<WotdState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WotdState&&(identical(other.status, status) || other.status == status)&&(identical(other.entity, entity) || other.entity == entity)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WotdState&&(identical(other.status, status) || other.status == status)&&(identical(other.entity, entity) || other.entity == entity));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,entity,failure);
+int get hashCode => Object.hash(runtimeType,status,entity);
 
 @override
 String toString() {
-  return 'WotdState(status: $status, entity: $entity, failure: $failure)';
+  return 'WotdState(status: $status, entity: $entity)';
 }
 
 
@@ -237,7 +237,7 @@ abstract mixin class $WotdStateCopyWith<$Res>  {
   factory $WotdStateCopyWith(WotdState value, $Res Function(WotdState) _then) = _$WotdStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, WallOfTheDayEntity? entity, Failure? failure
+ LoadStatus status, WallOfTheDayEntity? entity
 });
 
 
@@ -254,12 +254,11 @@ class _$WotdStateCopyWithImpl<$Res>
 
 /// Create a copy of WotdState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? entity = freezed,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? entity = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,entity: freezed == entity ? _self.entity : entity // ignore: cast_nullable_to_non_nullable
-as WallOfTheDayEntity?,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as WallOfTheDayEntity?,
   ));
 }
 
@@ -344,10 +343,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  WallOfTheDayEntity? entity,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  WallOfTheDayEntity? entity)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WotdState() when $default != null:
-return $default(_that.status,_that.entity,_that.failure);case _:
+return $default(_that.status,_that.entity);case _:
   return orElse();
 
 }
@@ -365,10 +364,10 @@ return $default(_that.status,_that.entity,_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  WallOfTheDayEntity? entity,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  WallOfTheDayEntity? entity)  $default,) {final _that = this;
 switch (_that) {
 case _WotdState():
-return $default(_that.status,_that.entity,_that.failure);case _:
+return $default(_that.status,_that.entity);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -385,10 +384,10 @@ return $default(_that.status,_that.entity,_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  WallOfTheDayEntity? entity,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  WallOfTheDayEntity? entity)?  $default,) {final _that = this;
 switch (_that) {
 case _WotdState() when $default != null:
-return $default(_that.status,_that.entity,_that.failure);case _:
+return $default(_that.status,_that.entity);case _:
   return null;
 
 }
@@ -400,12 +399,11 @@ return $default(_that.status,_that.entity,_that.failure);case _:
 
 
 class _WotdState implements WotdState {
-  const _WotdState({required this.status, this.entity, this.failure});
+  const _WotdState({required this.status, this.entity});
   
 
 @override final  LoadStatus status;
 @override final  WallOfTheDayEntity? entity;
-@override final  Failure? failure;
 
 /// Create a copy of WotdState
 /// with the given fields replaced by the non-null parameter values.
@@ -417,16 +415,16 @@ _$WotdStateCopyWith<_WotdState> get copyWith => __$WotdStateCopyWithImpl<_WotdSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WotdState&&(identical(other.status, status) || other.status == status)&&(identical(other.entity, entity) || other.entity == entity)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WotdState&&(identical(other.status, status) || other.status == status)&&(identical(other.entity, entity) || other.entity == entity));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,entity,failure);
+int get hashCode => Object.hash(runtimeType,status,entity);
 
 @override
 String toString() {
-  return 'WotdState(status: $status, entity: $entity, failure: $failure)';
+  return 'WotdState(status: $status, entity: $entity)';
 }
 
 
@@ -437,7 +435,7 @@ abstract mixin class _$WotdStateCopyWith<$Res> implements $WotdStateCopyWith<$Re
   factory _$WotdStateCopyWith(_WotdState value, $Res Function(_WotdState) _then) = __$WotdStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, WallOfTheDayEntity? entity, Failure? failure
+ LoadStatus status, WallOfTheDayEntity? entity
 });
 
 
@@ -454,12 +452,11 @@ class __$WotdStateCopyWithImpl<$Res>
 
 /// Create a copy of WotdState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? entity = freezed,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? entity = freezed,}) {
   return _then(_WotdState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,entity: freezed == entity ? _self.entity : entity // ignore: cast_nullable_to_non_nullable
-as WallOfTheDayEntity?,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as WallOfTheDayEntity?,
   ));
 }
 

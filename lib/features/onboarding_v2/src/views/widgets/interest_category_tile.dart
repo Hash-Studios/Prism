@@ -14,11 +14,10 @@ class InterestCategoryTile extends StatelessWidget {
   final String name;
   final String? imageUrl;
   final bool isSelected;
-  final VoidCallback? onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    // eliminates 4 object allocations per tile rebuild.
     const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
     const selectedTileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
     final accent = Theme.of(context).colorScheme.primary;
@@ -35,12 +34,10 @@ class InterestCategoryTile extends StatelessWidget {
         borderRadius: tileRadius,
         child: InkWell(
           borderRadius: tileRadius,
-          onTap: onTap == null
-              ? null
-              : () {
-                  HapticFeedback.lightImpact();
-                  onTap!();
-                },
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
           child: ClipRRect(
             borderRadius: isSelected ? selectedTileRadius : tileRadius,
             child: Stack(

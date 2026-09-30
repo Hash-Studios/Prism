@@ -5,7 +5,6 @@ class WallOfTheDayEntity {
     required this.wallId,
     required this.url,
     required this.thumbnailUrl,
-    required this.title,
     required this.photographer,
     this.source = WallpaperSource.prism,
   });
@@ -14,7 +13,6 @@ class WallOfTheDayEntity {
   final String wallId;
   final String url;
   final String thumbnailUrl;
-  final String title;
   final String photographer;
   final WallpaperSource source;
 }
