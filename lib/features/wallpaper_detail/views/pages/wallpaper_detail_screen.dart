@@ -3,6 +3,8 @@ import 'dart:math' show min;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -71,6 +73,16 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   late Animation<double> _offsetAnimation;
   PanelController panelController = PanelController();
   bool _accentToastShown = false;
+  bool _openRecorded = false;
+
+  void _recordTaste(TasteAction action, FeedItemEntity entity) {
+    final TasteSignal signal = entity.when(
+      prism: (_, w) => TasteSignal.forWallpaper(action, w.core, tags: w.tags, collections: w.collections),
+      wallhaven: (_, w) => TasteSignal.forWallpaper(action, w.core, tags: w.tags),
+      pexels: (_, w) => TasteSignal.forWallpaper(action, w.core),
+    );
+    unawaited(getIt<TasteSignalStore>().record(signal));
+  }
 
   /// Identity for the wallpaper currently shown; resets [_wallpaperImageShown] when it changes.
   String? _wallpaperLoadIdentity;
@@ -196,6 +208,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget build(BuildContext context) {
     return BlocListener<WallpaperDetailBloc, WallpaperDetailState>(
       listener: (context, state) {
+        if (state is WallpaperDetailLoaded && !_openRecorded) {
+          _openRecorded = true;
+          _recordTaste(TasteAction.open, state.entity);
+        }
         if (state is WallpaperDetailLoaded && state.colors != null && state.accent != null) {
           _setStatusBarIconBrightness(state.accent!);
         }
@@ -800,12 +816,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final url = entity.fullUrl;
     final List<Widget> actions = <Widget>[
       _SheetActionTapScale(
-        child: DownloadButton(link: url, sourceContext: _getSourceContext(state)),
+        child: DownloadButton(
+          link: url,
+          sourceContext: _getSourceContext(state),
+          onDownloaded: () => _recordTaste(TasteAction.download, entity),
+        ),
       ),
       if (!hideSetWallpaperUi)
-        _SheetActionTapScale(child: SetWallpaperButton(url: url, promptNotificationPermissionOnSuccess: true)),
+        _SheetActionTapScale(
+          child: SetWallpaperButton(
+            url: url,
+            promptNotificationPermissionOnSuccess: true,
+            onSet: () => _recordTaste(TasteAction.set, entity),
+          ),
+        ),
       _SheetActionTapScale(
-        child: FavouriteWallpaperButton(wall: FavouriteWallEntity.fromFeedItem(entity), trash: false),
+        child: FavouriteWallpaperButton(
+          wall: FavouriteWallEntity.fromFeedItem(entity),
+          trash: false,
+          onFavourited: () => _recordTaste(TasteAction.favourite, entity),
+        ),
       ),
       _SheetActionTapScale(
         child: ShareButton(id: entity.id, source: entity.source, url: entity.fullUrl, thumbUrl: entity.thumbnailUrl),

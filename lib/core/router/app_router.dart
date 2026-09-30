@@ -60,7 +60,6 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_scr
 import 'package:auto_route/auto_route.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' show Image;
 
 part 'app_router.gr.dart';
 

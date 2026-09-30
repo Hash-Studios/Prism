@@ -1,168 +1,173 @@
+import 'dart:math';
+
+import 'package:Prism/core/personalization/taste_profile.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
+
+/// Where a candidate came from. The prior discounts sources further from the
+/// user's own network, like X's out-of-network discount.
+enum CandidatePool {
+  following(prior: 1),
+  taste(prior: 0.9),
+  fresh(prior: 0.85),
+  gems(prior: 0.85),
+  wallhaven(prior: 0.75),
+  pexels(prior: 0.7);
+
+  const CandidatePool({required this.prior});
+
+  final double prior;
+
+  bool get isExternal => this == CandidatePool.wallhaven || this == CandidatePool.pexels;
+}
+
+class RankingCandidate {
+  RankingCandidate({required this.item, required this.pool, List<String> extraTerms = const <String>[]})
+    : key = PersonalizedRankingService.canonicalKey(item),
+      creator = tasteCreatorOf(item.wallpaperCore),
+      terms = <String>{...termsOf(item), ...extraTerms.map((e) => e.toLowerCase())}.toList(growable: false);
+
+  final FeedItemEntity item;
+  final CandidatePool pool;
+  final String key;
+  final String? creator;
+  final List<String> terms;
+
+  static List<String> termsOf(FeedItemEntity item) => item.when(
+    prism: (_, wall) => tasteTermsOf(wall.core, tags: wall.tags, collections: wall.collections),
+    wallhaven: (_, wall) => tasteTermsOf(wall.core, tags: wall.tags),
+    pexels: (_, wall) => tasteTermsOf(wall.core),
+  );
+}
 
 class PersonalizedRankingResult {
-  const PersonalizedRankingResult({required this.items, required this.usedKeys, this.discoveryCount = 0});
+  const PersonalizedRankingResult({required this.items, required this.usedKeys});
 
   final List<FeedItemEntity> items;
   final List<String> usedKeys;
-
-  /// Number of items that came from the discovery (unfollowed creator) pool.
-  final int discoveryCount;
 }
 
+/// Scores and mixes feed candidates on device. Stages follow X's home mixer:
+/// filter, score (weighted taste affinity x source prior x freshness x
+/// impression fatigue x noise), then select with author diversity decay and
+/// reserved exploration slots.
 class PersonalizedRankingService {
   const PersonalizedRankingService();
 
-  PersonalizedRankingResult rankAndMix({
-    required List<FeedItemEntity> creatorItems,
-    required List<FeedItemEntity> wallhavenItems,
-    required List<FeedItemEntity> pexelsItems,
-    List<FeedItemEntity> discoveryItems = const <FeedItemEntity>[],
-    required Set<String> blockedKeys,
-    required Set<String> interests,
+  static const double _authorDecay = 0.5;
+  static const double _authorFloor = 0.3;
+  static const double _fatiguePerShow = 0.4;
+  static const double _freshDays = 14;
+  static const double _maxExternalShare = 0.5;
+
+  PersonalizedRankingResult rank({
+    required List<RankingCandidate> candidates,
+    required TasteProfile profile,
+    required Map<String, int> recentShows,
+    required Set<String> excludedKeys,
+    required FeedMix mix,
+    required Random random,
+    required DateTime now,
     int limit = 24,
-    int creatorTarget = 10,
-    int discoveryTarget = 4,
-    int wallhavenTarget = 5,
-    int pexelsTarget = 5,
   }) {
-    final creatorCandidates = _score(creatorItems, sourceBase: 1000, interests: interests, blockedKeys: blockedKeys);
-    // Discovery items are Prism-hosted walls from unfollowed creators, scored
-    // between followed creators (1000) and external sources (600).
-    final discoveryCandidates = _score(discoveryItems, sourceBase: 800, interests: interests, blockedKeys: blockedKeys);
-    final wallhavenCandidates = _score(wallhavenItems, sourceBase: 600, interests: interests, blockedKeys: blockedKeys);
-    final pexelsCandidates = _score(pexelsItems, sourceBase: 550, interests: interests, blockedKeys: blockedKeys);
-
-    final List<_Ranked> selected = <_Ranked>[];
-    final Set<String> selectedKeys = <String>{};
-    // Track which keys were filled from the discovery pool for reporting.
-    final Set<String> discoverySelectedKeys = <String>{};
-
-    void pickFrom(List<_Ranked> pool, int target, {bool isDiscovery = false}) {
-      int remaining = target;
-      for (final candidate in pool) {
-        if (selected.length >= limit || remaining <= 0) {
-          return;
-        }
-        if (selectedKeys.contains(candidate.key)) {
-          continue;
-        }
-        selected.add(candidate);
-        selectedKeys.add(candidate.key);
-        if (isDiscovery) {
-          discoverySelectedKeys.add(candidate.key);
-        }
-        remaining -= 1;
+    final Map<String, _Scored> byKey = <String, _Scored>{};
+    for (final RankingCandidate candidate in candidates) {
+      if (excludedKeys.contains(candidate.key) ||
+          (recentShows[candidate.key] ?? 0) >= FeedImpressionStore.hiddenShows) {
+        continue;
+      }
+      final _Scored scored = _score(candidate, profile, recentShows[candidate.key] ?? 0, random, now);
+      final _Scored? existing = byKey[candidate.key];
+      if (existing == null || scored.score > existing.score) {
+        byKey[candidate.key] = scored;
       }
     }
 
-    pickFrom(creatorCandidates, creatorTarget);
-    pickFrom(discoveryCandidates, discoveryTarget, isDiscovery: true);
-    pickFrom(wallhavenCandidates, wallhavenTarget);
-    pickFrom(pexelsCandidates, pexelsTarget);
+    final List<_Scored> pool = byKey.values.toList()..sort((a, b) => b.score.compareTo(a.score));
+    final List<_Scored> selected = <_Scored>[];
+    final Map<String, int> perCreator = <String, int>{};
+    final int maxExternal = (limit * _maxExternalShare).ceil();
+    int external = 0;
 
-    // Backfill remaining slots from all pools sorted by score.
-    if (selected.length < limit) {
-      final leftovers = <_Ranked>[
-        ...creatorCandidates,
-        ...discoveryCandidates,
-        ...wallhavenCandidates,
-        ...pexelsCandidates,
-      ]..sort((a, b) => b.score.compareTo(a.score));
-      for (final candidate in leftovers) {
-        if (selected.length >= limit) {
-          break;
-        }
-        if (selectedKeys.add(candidate.key)) {
-          selected.add(candidate);
-        }
+    while (selected.length < limit && pool.isNotEmpty) {
+      final bool exploreSlot = (selected.length + 1) % mix.exploreEvery == 0;
+      final _Scored? pick =
+          _best(pool, perCreator, external < maxExternal, onlyExplore: exploreSlot) ??
+          _best(pool, perCreator, external < maxExternal) ??
+          _best(pool, perCreator, true);
+      if (pick == null) {
+        break;
+      }
+      pool.remove(pick);
+      selected.add(pick);
+      if (pick.candidate.pool.isExternal) {
+        external += 1;
+      }
+      final String? creator = pick.candidate.creator;
+      if (creator != null) {
+        perCreator[creator] = (perCreator[creator] ?? 0) + 1;
       }
     }
-
-    selected.sort((a, b) => b.score.compareTo(a.score));
-    final items = selected.map((e) => e.item).toList(growable: false);
 
     return PersonalizedRankingResult(
-      items: items,
-      usedKeys: selected.map((e) => e.key).toList(growable: false),
-      discoveryCount: discoverySelectedKeys.length,
+      items: selected.map((e) => e.candidate.item).toList(growable: false),
+      usedKeys: selected.map((e) => e.candidate.key).toList(growable: false),
     );
   }
 
-  List<_Ranked> _score(
-    List<FeedItemEntity> items, {
-    required int sourceBase,
-    required Set<String> interests,
-    required Set<String> blockedKeys,
-  }) {
-    final ranked = <_Ranked>[];
-    for (int index = 0; index < items.length; index += 1) {
-      final item = items[index];
-      final key = canonicalKey(item);
-      if (blockedKeys.contains(key)) {
+  _Scored _score(RankingCandidate candidate, TasteProfile profile, int shows, Random random, DateTime now) {
+    final double taste = profile.termAffinity(candidate.terms);
+    final double creator = profile.creatorAffinity(candidate.creator);
+    final DateTime? createdAt = candidate.item.wallpaperCore.createdAt;
+    final double ageDays = createdAt == null ? double.infinity : now.difference(createdAt).inHours / 24;
+    final double freshness = ageDays < _freshDays ? 0.5 * (1 - ageDays / _freshDays) : 0;
+    final double base = max(0.05, 1 + 1.5 * taste + creator + freshness);
+    final double fatigue = pow(_fatiguePerShow, shows).toDouble();
+    final double noise = 0.7 + 0.6 * random.nextDouble();
+    return _Scored(
+      candidate: candidate,
+      score: candidate.pool.prior * base * fatigue * noise,
+      explore: taste == 0 && creator == 0,
+    );
+  }
+
+  _Scored? _best(List<_Scored> pool, Map<String, int> perCreator, bool allowExternal, {bool onlyExplore = false}) {
+    _Scored? best;
+    double bestScore = double.negativeInfinity;
+    for (final _Scored entry in pool) {
+      if (onlyExplore && !entry.explore) {
         continue;
       }
-
-      final searchable = _searchableFields(item);
-      int interestHits = 0;
-      for (final interest in interests) {
-        if (interest.isEmpty) {
-          continue;
-        }
-        final normalized = interest.toLowerCase();
-        if (searchable.any((value) => value.contains(normalized))) {
-          interestHits += 1;
-        }
+      if (!allowExternal && entry.candidate.pool.isExternal) {
+        continue;
       }
-
-      final score = sourceBase + (interestHits * 120) + (items.length - index);
-      ranked.add(_Ranked(item: item, score: score, key: key));
+      final String? creator = entry.candidate.creator;
+      final int seen = creator == null ? 0 : perCreator[creator] ?? 0;
+      final double adjusted = entry.score * ((1 - _authorFloor) * pow(_authorDecay, seen) + _authorFloor);
+      if (adjusted > bestScore) {
+        bestScore = adjusted;
+        best = entry;
+      }
     }
-    ranked.sort((a, b) => b.score.compareTo(a.score));
-    return ranked;
+    return best;
   }
 
   static String canonicalKey(FeedItemEntity item) {
-    final normalizedUrl = _fullUrl(item).trim().toLowerCase();
+    final String normalizedUrl = item.wallpaperCore.fullUrl.trim().toLowerCase();
     if (normalizedUrl.isNotEmpty) {
       return normalizedUrl;
     }
     return '${item.source.wireValue}:${item.id.trim().toLowerCase()}';
   }
-
-  static String _fullUrl(FeedItemEntity item) => item.when(
-    prism: (_, wall) => wall.fullUrl,
-    wallhaven: (_, wall) => wall.fullUrl,
-    pexels: (_, wall) => wall.fullUrl,
-  );
-
-  List<String> _searchableFields(FeedItemEntity item) {
-    return item.when(
-      prism: (_, wall) {
-        final fields = <String>[
-          wall.core.category ?? '',
-          ...(wall.tags ?? const <String>[]),
-          ...(wall.collections ?? const <String>[]),
-        ];
-        return fields.map((e) => e.toLowerCase()).where((e) => e.isNotEmpty).toList(growable: false);
-      },
-      wallhaven: (_, wall) {
-        final fields = <String>[wall.core.category ?? '', ...(wall.tags ?? const <String>[])];
-        return fields.map((e) => e.toLowerCase()).where((e) => e.isNotEmpty).toList(growable: false);
-      },
-      pexels: (_, wall) {
-        final fields = <String>[wall.core.category ?? '', wall.photographer ?? ''];
-        return fields.map((e) => e.toLowerCase()).where((e) => e.isNotEmpty).toList(growable: false);
-      },
-    );
-  }
 }
 
-class _Ranked {
-  const _Ranked({required this.item, required this.score, required this.key});
+class _Scored {
+  const _Scored({required this.candidate, required this.score, required this.explore});
 
-  final FeedItemEntity item;
-  final int score;
-  final String key;
+  final RankingCandidate candidate;
+  final double score;
+  final bool explore;
 }
