@@ -11,21 +11,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 typedef ShareCardRender = Future<File> Function({required String imageUrl, required String link, String? contextLine});
 typedef ShareCardImageResolver = Future<ui.Image> Function(ImageProvider provider);
 typedef ShareCardSend =
-    Future<void> Function({required String text, required File file, required BuildContext context});
-typedef ShareTextSend = Future<void> Function({required String text, required BuildContext context});
+    Future<ShareResult> Function({required String text, required File file, required BuildContext context});
+typedef ShareTextSend = Future<ShareResult> Function({required String text, required BuildContext context});
+typedef ShareCardResult = ({ShareFormatValue format, bool dismissed});
 
-Future<void> _sendCard({required String text, required File file, required BuildContext context}) =>
+Future<ShareResult> _sendCard({required String text, required File file, required BuildContext context}) =>
     ShareService.shareFile(file: file, text: text, context: context);
 
-Future<void> _sendText({required String text, required BuildContext context}) =>
+Future<ShareResult> _sendText({required String text, required BuildContext context}) =>
     ShareService.shareText(text: text, context: context);
 
 /// Shares [link] with a branded image card, falling back to plain text if the card cannot be made or sent.
-Future<ShareFormatValue> shareWallpaperCard(
+Future<ShareCardResult> shareWallpaperCard(
   BuildContext context, {
   required String imageUrl,
   required String link,
@@ -38,9 +40,9 @@ Future<ShareFormatValue> shareWallpaperCard(
   File? file;
   try {
     file = await render(imageUrl: imageUrl, link: link, contextLine: contextLine);
-    if (!context.mounted) return ShareFormatValue.text;
-    await sendCard(text: text, file: file, context: context);
-    return ShareFormatValue.card;
+    if (!context.mounted) return (format: ShareFormatValue.text, dismissed: false);
+    final ShareResult sent = await sendCard(text: text, file: file, context: context);
+    return (format: ShareFormatValue.card, dismissed: sent.status == ShareResultStatus.dismissed);
   } catch (error, stackTrace) {
     logger.w('Share card failed; sharing text', error: error, stackTrace: stackTrace);
   } finally {
@@ -52,9 +54,9 @@ Future<ShareFormatValue> shareWallpaperCard(
       }
     }
   }
-  if (!context.mounted) return ShareFormatValue.text;
-  await sendText(text: text, context: context);
-  return ShareFormatValue.text;
+  if (!context.mounted) return (format: ShareFormatValue.text, dismissed: false);
+  final ShareResult sent = await sendText(text: text, context: context);
+  return (format: ShareFormatValue.text, dismissed: sent.status == ShareResultStatus.dismissed);
 }
 
 /// Renders the card off-screen and writes it to the temp dir as a PNG.

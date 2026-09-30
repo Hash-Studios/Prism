@@ -9,6 +9,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:share_plus/share_plus.dart';
+
+const ShareResult _shared = ShareResult('', ShareResultStatus.success);
+const ShareResult _dismissed = ShareResult('', ShareResultStatus.dismissed);
 
 void main() {
   late BuildContext context;
@@ -34,7 +38,7 @@ void main() {
     File? sent;
     String? sentText;
 
-    final ShareFormatValue? format = await tester.runAsync(
+    final ShareCardResult? result = await tester.runAsync(
       () => shareWallpaperCard(
         context,
         imageUrl: 'u',
@@ -43,30 +47,68 @@ void main() {
         sendCard: ({required String text, required File file, required BuildContext context}) async {
           sent = file;
           sentText = text;
+          return _shared;
         },
         sendText: ({required String text, required BuildContext context}) async => fail('text fallback used'),
       ),
     );
 
-    expect(format, ShareFormatValue.card);
+    expect(result?.format, ShareFormatValue.card);
+    expect(result?.dismissed, isFalse);
     expect(sent?.path, 'card.png');
     expect(sentText, '🔥Check this out ➜ https://x.test/a');
+  });
+
+  testWidgets('reports a dismissed card share', (tester) async {
+    await pumpContext(tester);
+    final ShareCardResult? result = await tester.runAsync(
+      () => shareWallpaperCard(
+        context,
+        imageUrl: 'u',
+        link: 'https://x.test/a',
+        render: okRender,
+        sendCard: ({required String text, required File file, required BuildContext context}) async => _dismissed,
+        sendText: ({required String text, required BuildContext context}) async => fail('text fallback used'),
+      ),
+    );
+
+    expect(result?.format, ShareFormatValue.card);
+    expect(result?.dismissed, isTrue);
+  });
+
+  testWidgets('reports a dismissed text fallback share', (tester) async {
+    await pumpContext(tester);
+    final ShareCardResult result = await shareWallpaperCard(
+      context,
+      imageUrl: 'u',
+      link: 'https://x.test/a',
+      render: failRender,
+      sendCard: ({required String text, required File file, required BuildContext context}) async => fail('card sent'),
+      sendText: ({required String text, required BuildContext context}) async => _dismissed,
+    );
+
+    expect(result.format, ShareFormatValue.text);
+    expect(result.dismissed, isTrue);
   });
 
   testWidgets('falls back to the text link when rendering fails', (tester) async {
     await pumpContext(tester);
     final List<String> texts = <String>[];
 
-    final ShareFormatValue format = await shareWallpaperCard(
+    final ShareCardResult result = await shareWallpaperCard(
       context,
       imageUrl: 'u',
       link: 'https://x.test/a',
       render: failRender,
       sendCard: ({required String text, required File file, required BuildContext context}) async => fail('card sent'),
-      sendText: ({required String text, required BuildContext context}) async => texts.add(text),
+      sendText: ({required String text, required BuildContext context}) async {
+        texts.add(text);
+        return _shared;
+      },
     );
 
-    expect(format, ShareFormatValue.text);
+    expect(result?.format, ShareFormatValue.text);
+    expect(result?.dismissed, isFalse);
     expect(texts.single, '🔥Check this out ➜ https://x.test/a');
   });
 
@@ -74,7 +116,7 @@ void main() {
     await pumpContext(tester);
     final List<String> texts = <String>[];
 
-    final ShareFormatValue? format = await tester.runAsync(
+    final ShareCardResult? result = await tester.runAsync(
       () => shareWallpaperCard(
         context,
         imageUrl: 'u',
@@ -82,11 +124,15 @@ void main() {
         render: okRender,
         sendCard: ({required String text, required File file, required BuildContext context}) async =>
             throw StateError('share failed'),
-        sendText: ({required String text, required BuildContext context}) async => texts.add(text),
+        sendText: ({required String text, required BuildContext context}) async {
+          texts.add(text);
+          return _shared;
+        },
       ),
     );
 
-    expect(format, ShareFormatValue.text);
+    expect(result?.format, ShareFormatValue.text);
+    expect(result?.dismissed, isFalse);
     expect(texts.single, '🔥Check this out ➜ https://x.test/a');
   });
 
@@ -104,6 +150,7 @@ void main() {
         render: ({required String imageUrl, required String link, String? contextLine}) async => card,
         sendCard: ({required String text, required File file, required BuildContext context}) async {
           existedDuringSend = await file.exists();
+          return _shared;
         },
       );
 
@@ -126,7 +173,7 @@ void main() {
         render: ({required String imageUrl, required String link, String? contextLine}) async => card,
         sendCard: ({required String text, required File file, required BuildContext context}) async =>
             throw StateError('share failed'),
-        sendText: ({required String text, required BuildContext context}) async {},
+        sendText: ({required String text, required BuildContext context}) async => _shared,
       );
 
       expect(await card.exists(), isFalse);
@@ -148,6 +195,7 @@ void main() {
         render: ({required String imageUrl, required String link, String? contextLine}) async => card,
         sendCard: ({required String text, required File file, required BuildContext context}) async {
           sent = true;
+          return _shared;
         },
       );
       expect(sent, isFalse);

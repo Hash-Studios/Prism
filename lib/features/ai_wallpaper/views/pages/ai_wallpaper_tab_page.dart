@@ -68,7 +68,7 @@ class AiWallpaperTabPage extends StatefulWidget {
   const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting, this.shareCard = shareWallpaperCard});
 
   final AiGenerationRepositoryImpl? repository;
-  final Future<ShareFormatValue> Function(
+  final Future<ShareCardResult> Function(
     BuildContext context, {
     required String imageUrl,
     required String link,
@@ -599,7 +599,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     setState(() => _sharing = true);
     _trackShareEvent(const InviteShareTappedEvent(sourceContext: 'ai_wallpaper'));
     try {
-      final ShareFormatValue format = await widget.shareCard(
+      final ShareCardResult shared = await widget.shareCard(
         context,
         imageUrl: record.displayUrl(isPremium: app_state.prismUser.premium),
         link: 'https://prismwalls.com',
@@ -609,9 +609,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       _trackShareEvent(
         InviteShareResultEvent(
           channel: ShareChannelValue.shareSheet,
-          result: EventResultValue.success,
+          result: shared.dismissed ? EventResultValue.cancelled : EventResultValue.success,
+          reason: shared.dismissed ? AnalyticsReasonValue.userCancelled : null,
           sourceContext: 'ai_wallpaper',
-          format: format,
+          format: shared.format,
         ),
       );
     } catch (error, stackTrace) {

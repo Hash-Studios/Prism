@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -111,7 +112,7 @@ void main() {
       ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-    final Completer<ShareFormatValue> share = Completer<ShareFormatValue>();
+    final Completer<ShareCardResult> share = Completer<ShareCardResult>();
     var shareCalls = 0;
     String? sharedImageUrl;
     await tester.pumpWidget(
@@ -126,7 +127,9 @@ void main() {
             sharedImageUrl = imageUrl;
             expect(link, 'https://prismwalls.com');
             expect(contextLine, 'Made with Prism AI');
-            return shareCalls == 1 ? share.future : Future<ShareFormatValue>.value(ShareFormatValue.text);
+            return shareCalls == 1
+                ? share.future
+                : Future<ShareCardResult>.value((format: ShareFormatValue.text, dismissed: false));
           },
         ),
       ),
@@ -147,7 +150,7 @@ void main() {
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
 
-    share.complete(ShareFormatValue.card);
+    share.complete((format: ShareFormatValue.card, dismissed: false));
     await tester.pumpAndSettle();
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.result, EventResultValue.success);
@@ -195,7 +198,7 @@ void main() {
           shareCard: (_, {required imageUrl, required link, contextLine}) {
             shareCalls++;
             expect(imageUrl, 'https://cdn/full.png');
-            return Future<ShareFormatValue>.error(StateError('share unavailable'));
+            return Future<ShareCardResult>.error(StateError('share unavailable'));
           },
         ),
       ),
@@ -216,6 +219,53 @@ void main() {
     await tester.pumpAndSettle();
     expect(shareCalls, 2);
     expect(analytics.events.whereType<InviteShareResultEvent>(), hasLength(2));
+  });
+
+  testWidgets('AI share dismissed by the user is tracked as cancelled without an error toast', (tester) async {
+    final analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    addTearDown(AnalyticsRuntime.reset);
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final List<MethodCall> toastCalls = <MethodCall>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      toastCalls.add(call);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(
+            _record(imageUrl: 'https://cdn/full.png', watermarkedImageUrl: 'https://cdn/watermarked.png'),
+            Completer<AiSubmissionMetadata>(),
+          ),
+          shareCard: (_, {required imageUrl, required link, contextLine}) async =>
+              (format: ShareFormatValue.card, dismissed: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final Finder shareButton = find.text('Share');
+    await tester.ensureVisible(shareButton);
+    await tester.tap(shareButton);
+    await tester.pumpAndSettle();
+
+    final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
+    expect(result.result, EventResultValue.cancelled);
+    expect(result.reason, AnalyticsReasonValue.userCancelled);
+    expect(result.format, ShareFormatValue.card);
+    expect(toastCalls, isEmpty);
   });
 
   testWidgets('AI share still completes and unlocks when tap analytics throws', (tester) async {
@@ -240,7 +290,7 @@ void main() {
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
           shareCard: (_, {required imageUrl, required link, contextLine}) async {
             shareCalls++;
-            return ShareFormatValue.card;
+            return (format: ShareFormatValue.card, dismissed: false);
           },
         ),
       ),
@@ -287,7 +337,7 @@ void main() {
           repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>()),
           shareCard: (_, {required imageUrl, required link, contextLine}) async {
             shareCalls++;
-            return ShareFormatValue.card;
+            return (format: ShareFormatValue.card, dismissed: false);
           },
         ),
       ),
@@ -319,7 +369,7 @@ void main() {
       ..loggedIn = true;
     addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
-    final Completer<ShareFormatValue> share = Completer<ShareFormatValue>();
+    final Completer<ShareCardResult> share = Completer<ShareCardResult>();
     await tester.pumpWidget(
       MaterialApp(
         home: AiWallpaperTabPage(
@@ -334,7 +384,7 @@ void main() {
     await tester.tap(shareButton);
     await tester.pump();
     await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
-    share.complete(ShareFormatValue.card);
+    share.complete((format: ShareFormatValue.card, dismissed: false));
     await tester.pump();
 
     expect(tester.takeException(), isNull);
