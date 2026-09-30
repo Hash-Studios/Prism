@@ -9,8 +9,6 @@ import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
-import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/coins/streak_pill.dart';
 import 'package:Prism/features/ads/ads.dart';
@@ -18,6 +16,14 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+const Color _coinAccent = Color(0xFF00BCD4);
+const Color _coinGold = Color(0xFFFFC107);
+const Color _coinCardSurface = Color(0xFF1A1A2E);
+
+String _formatTime(DateTime dateTime) => DateFormat('dd/MM/yyyy HH:mm').format(dateTime.toLocal());
 
 @RoutePage()
 class CoinTransactionsScreen extends StatefulWidget {
@@ -30,18 +36,14 @@ class CoinTransactionsScreen extends StatefulWidget {
 class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
   static const DeepLinkNavigation _deepLinkNavigation = DeepLinkNavigation();
 
-  // Transactions
   bool _loading = false;
   List<CoinTransactionEntry> _items = const <CoinTransactionEntry>[];
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-
-  // Ad reward
   bool _loadingReward = false;
 
   @override
   void initState() {
     super.initState();
-    _contentLoadTracker.start();
     _load();
   }
 
@@ -87,15 +89,6 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
         setState(() => _loading = false);
       }
     }
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    final String month = local.month.toString().padLeft(2, '0');
-    final String day = local.day.toString().padLeft(2, '0');
-    final String hour = local.hour.toString().padLeft(2, '0');
-    final String minute = local.minute.toString().padLeft(2, '0');
-    return '$day/$month/${local.year} $hour:$minute';
   }
 
   Future<void> _openLinkedFlow(CoinTransactionEntry item) async {
@@ -177,61 +170,23 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
     }
   }
 
-  Future<bool> _ensureRewardedAdReady(AdsBloc bloc) async {
-    if (bloc.state.ads.adLoaded) {
-      return true;
-    }
-    if (!bloc.state.ads.loadingAd) {
-      bloc.add(const AdsEvent.started());
-    }
-    try {
-      final AdsState state = await bloc.stream
-          .firstWhere((state) => state.ads.adLoaded || state.ads.adFailed)
-          .timeout(const Duration(seconds: 30));
-      return state.ads.adLoaded;
-    } catch (_) {
-      return false;
-    }
-  }
-
   Future<void> _watchRewardedAdAndCreditCoins() async {
-    final AdsBloc bloc = context.read<AdsBloc>();
-    if (!await _ensureRewardedAdReady(bloc)) {
-      toasts.error('Ads unavailable right now. Try again later.');
+    if (!await watchRewardedAd(context.read<AdsBloc>())) {
+      toasts.error('Ad was not completed.');
       return;
     }
-    bool watchRequested = false;
     try {
-      final Future<AdsState> completion = bloc.stream
-          .firstWhere(
-            (state) => state.shouldUnlockDownload || state.actionStatus == ActionStatus.failure || state.ads.adFailed,
-          )
-          .timeout(const Duration(seconds: 60));
-      bloc.add(const AdsEvent.watchAdRequested());
-      watchRequested = true;
-      final AdsState result = await completion;
-      if (result.shouldUnlockDownload) {
-        final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
-        if (!credit.changed) {
-          toasts.error('Unable to credit coins right now.');
-          return;
-        }
-        if (mounted) {
-          await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(
-            context,
-            source: 'coin_hub_rewarded_ad',
-          );
-        }
-        toasts.codeSend('+${CoinPolicy.rewardedAd} coins');
+      final credit = await CoinsService.instance.award(CoinEarnAction.rewardedAd, sourceTag: 'coins.hub.rewarded_ad');
+      if (!credit.changed) {
+        toasts.error('Unable to credit coins right now.');
         return;
       }
-      toasts.error('Ad was not completed.');
+      if (mounted) {
+        await PaywallOrchestrator.instance.recordRewardedAdWatchAndMaybeUpsell(source: 'coin_hub_rewarded_ad');
+      }
+      toasts.success('+${CoinPolicy.rewardedAd} coins');
     } catch (_) {
       toasts.error('Ad was not completed.');
-    } finally {
-      if (watchRequested) {
-        bloc.add(const AdsEvent.transientStateCleared());
-      }
     }
   }
 
@@ -245,24 +200,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
             backgroundColor: Theme.of(context).primaryColor,
             surfaceTintColor: Colors.transparent,
             floating: true,
-            title: RichText(
-              text: TextSpan(
-                children: <TextSpan>[
-                  TextSpan(
-                    text: 'Prism ',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(color: const Color(0xFF00BCD4), fontWeight: FontWeight.w800),
-                  ),
-                  TextSpan(
-                    text: 'Coins',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-            ),
+            title: _TwoToneHeading(first: 'Prism ', second: 'Coins', style: Theme.of(context).textTheme.titleLarge),
           ),
           SliverToBoxAdapter(child: _CoinHeroSection()),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -273,13 +211,7 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
           const SliverToBoxAdapter(child: _HowCoinsUsedSection()),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
           SliverToBoxAdapter(
-            child: _TransactionsSection(
-              loading: _loading,
-              items: _items,
-              onRefresh: _load,
-              formatTime: _formatTime,
-              onTapItem: _openLinkedFlow,
-            ),
+            child: _TransactionsSection(loading: _loading, items: _items, onRefresh: _load, onTapItem: _openLinkedFlow),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 80)),
         ],
@@ -297,8 +229,6 @@ class _CoinTransactionsScreenState extends State<CoinTransactionsScreen> {
   }
 }
 
-// ── Coin Hero Section ─────────────────────────────────────────────────────────
-
 class _CoinHeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -307,9 +237,9 @@ class _CoinHeroSection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
+          color: _coinCardSurface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF00BCD4).withValues(alpha: 0.5), width: 1.5),
+          border: Border.all(color: _coinAccent.withValues(alpha: 0.5), width: 1.5),
         ),
         child: Column(
           children: <Widget>[
@@ -326,12 +256,7 @@ class _CoinHeroSection extends StatelessWidget {
                     ),
                     const Text(
                       'coins',
-                      style: TextStyle(
-                        color: Color(0xFFFFC107),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        letterSpacing: 1.2,
-                      ),
+                      style: TextStyle(color: _coinGold, fontWeight: FontWeight.w700, fontSize: 14, letterSpacing: 1.2),
                     ),
                   ],
                 );
@@ -346,8 +271,6 @@ class _CoinHeroSection extends StatelessWidget {
   }
 }
 
-// ── Earn Coins Section ────────────────────────────────────────────────────────
-
 class _EarnCoinsSection extends StatelessWidget {
   const _EarnCoinsSection({required this.onWatchAd, required this.loadingReward});
 
@@ -361,60 +284,48 @@ class _EarnCoinsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          RichText(
-            text: TextSpan(
-              children: <TextSpan>[
-                TextSpan(
-                  text: 'Earn',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: const Color(0xFF00BCD4), fontWeight: FontWeight.w800),
-                ),
-                TextSpan(
-                  text: ' Coins',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
-          ),
+          _TwoToneHeading(first: 'Earn', second: ' Coins', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           _WatchAdItem(onTap: onWatchAd, loading: loadingReward),
           const SizedBox(height: 8),
-          const _EarnRow(
+          const _CoinRow(
             icon: Icons.local_fire_department_rounded,
             label: 'Daily Streak (Day 1–2)',
-            amount: '+${CoinPolicy.streakDay1To2Daily}c/day',
+            value: '+${CoinPolicy.streakDay1To2Daily}c/day',
             accentColor: Colors.orange,
+            valueColor: Colors.green,
           ),
           const SizedBox(height: 8),
-          _EarnRow(
+          _CoinRow(
             icon: Icons.local_fire_department_rounded,
             label: 'Daily Streak (Day 7)',
-            amount: '+${CoinPolicy.streakTotalRewardForDay(7)}c',
+            value: '+${CoinPolicy.streakTotalRewardForDay(7)}c',
             accentColor: Colors.orange,
+            valueColor: Colors.green,
           ),
           const SizedBox(height: 8),
-          const _EarnRow(
+          const _CoinRow(
             icon: Icons.people_outline,
             label: 'Refer Friend',
-            amount: '+${CoinPolicy.referral}c',
+            value: '+${CoinPolicy.referral}c',
             accentColor: Color(0xFF9C27B0),
+            valueColor: Colors.green,
           ),
           const SizedBox(height: 8),
-          const _EarnRow(
+          const _CoinRow(
             icon: Icons.upload_outlined,
             label: 'First Upload',
-            amount: '+${CoinPolicy.firstWallpaperUpload}c',
+            value: '+${CoinPolicy.firstWallpaperUpload}c',
             accentColor: Colors.green,
+            valueColor: Colors.green,
           ),
           const SizedBox(height: 8),
-          const _EarnRow(
+          const _CoinRow(
             icon: Icons.person_outline,
             label: 'Profile Completion',
-            amount: '+${CoinPolicy.profileCompletion}c',
+            value: '+${CoinPolicy.profileCompletion}c',
             accentColor: Colors.blue,
+            valueColor: Colors.green,
           ),
         ],
       ),
@@ -430,7 +341,7 @@ class _WatchAdItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color accent = Color(0xFF00BCD4);
+    const Color accent = _coinAccent;
     return Semantics(
       button: true,
       child: GestureDetector(
@@ -480,58 +391,6 @@ class _WatchAdItem extends StatelessWidget {
   }
 }
 
-class _EarnRow extends StatelessWidget {
-  const _EarnRow({required this.icon, required this.label, required this.amount, required this.accentColor});
-
-  final IconData icon;
-  final String label;
-  final String amount;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).hintColor,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(icon, size: 20, color: accentColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
-            ),
-            child: Text(
-              amount,
-              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── How Coins Are Used Section ────────────────────────────────────────────────
-
 class _HowCoinsUsedSection extends StatelessWidget {
   const _HowCoinsUsedSection();
 
@@ -542,58 +401,46 @@ class _HowCoinsUsedSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          RichText(
-            text: TextSpan(
-              children: <TextSpan>[
-                TextSpan(
-                  text: 'How Coins',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: const Color(0xFF00BCD4), fontWeight: FontWeight.w800),
-                ),
-                TextSpan(
-                  text: ' Are Used',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
-          ),
+          _TwoToneHeading(first: 'How Coins', second: ' Are Used', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
-          _SpendRow(
+          _CoinRow(
             icon: Icons.auto_awesome_rounded,
             label: 'AI Generation (Fast)',
-            cost: '${CoinPolicy.aiGenerationFast}c',
+            value: '${CoinPolicy.aiGenerationFast}c',
             accentColor: Theme.of(context).colorScheme.primary,
+            valueColor: Colors.red,
           ),
           const SizedBox(height: 8),
-          _SpendRow(
+          _CoinRow(
             icon: Icons.auto_awesome_rounded,
             label: 'AI Generation (Balanced)',
-            cost: '${CoinPolicy.aiGenerationBalanced}c',
+            value: '${CoinPolicy.aiGenerationBalanced}c',
             accentColor: Theme.of(context).colorScheme.primary,
+            valueColor: Colors.red,
           ),
           const SizedBox(height: 8),
-          _SpendRow(
+          _CoinRow(
             icon: Icons.auto_awesome_rounded,
             label: 'AI Generation (Quality)',
-            cost: '${CoinPolicy.aiGenerationQuality}c',
+            value: '${CoinPolicy.aiGenerationQuality}c',
             accentColor: Theme.of(context).colorScheme.primary,
+            valueColor: Colors.red,
           ),
           const SizedBox(height: 8),
-          const _SpendRow(
+          const _CoinRow(
             icon: Icons.download_outlined,
             label: 'Download Wallpaper',
-            cost: '${CoinPolicy.wallpaperDownload}c',
-            accentColor: Color(0xFF00BCD4),
+            value: '${CoinPolicy.wallpaperDownload}c',
+            accentColor: _coinAccent,
+            valueColor: Colors.red,
           ),
           const SizedBox(height: 8),
-          const _SpendRow(
+          const _CoinRow(
             icon: Icons.download_outlined,
             label: 'Premium Wallpaper',
-            cost: '${CoinPolicy.premiumWallpaperDownload}c',
+            value: '${CoinPolicy.premiumWallpaperDownload}c',
             accentColor: Colors.amber,
+            valueColor: Colors.red,
           ),
         ],
       ),
@@ -601,13 +448,20 @@ class _HowCoinsUsedSection extends StatelessWidget {
   }
 }
 
-class _SpendRow extends StatelessWidget {
-  const _SpendRow({required this.icon, required this.label, required this.cost, required this.accentColor});
+class _CoinRow extends StatelessWidget {
+  const _CoinRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.accentColor,
+    required this.valueColor,
+  });
 
   final IconData icon;
   final String label;
-  final String cost;
+  final String value;
   final Color accentColor;
+  final Color valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -636,13 +490,13 @@ class _SpendRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.15),
+              color: valueColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+              border: Border.all(color: valueColor.withValues(alpha: 0.4)),
             ),
             child: Text(
-              cost,
-              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w700, fontSize: 12),
+              value,
+              style: TextStyle(color: valueColor, fontWeight: FontWeight.w700, fontSize: 12),
             ),
           ),
         ],
@@ -651,21 +505,43 @@ class _SpendRow extends StatelessWidget {
   }
 }
 
-// ── Transactions Section ──────────────────────────────────────────────────────
+class _TwoToneHeading extends StatelessWidget {
+  const _TwoToneHeading({required this.first, required this.second, required this.style});
+
+  final String first;
+  final String second;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        children: <TextSpan>[
+          TextSpan(
+            text: first,
+            style: style?.copyWith(color: _coinAccent, fontWeight: FontWeight.w800),
+          ),
+          TextSpan(
+            text: second,
+            style: style?.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _TransactionsSection extends StatelessWidget {
   const _TransactionsSection({
     required this.loading,
     required this.items,
     required this.onRefresh,
-    required this.formatTime,
     required this.onTapItem,
   });
 
   final bool loading;
   final List<CoinTransactionEntry> items;
   final Future<void> Function() onRefresh;
-  final String Function(DateTime) formatTime;
   final Future<void> Function(CoinTransactionEntry) onTapItem;
 
   @override
@@ -675,24 +551,7 @@ class _TransactionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          RichText(
-            text: TextSpan(
-              children: <TextSpan>[
-                TextSpan(
-                  text: 'Recent',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: const Color(0xFF00BCD4), fontWeight: FontWeight.w800),
-                ),
-                TextSpan(
-                  text: ' Activity',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w800),
-                ),
-              ],
-            ),
-          ),
+          _TwoToneHeading(first: 'Recent', second: ' Activity', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           if (loading)
             const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
@@ -706,7 +565,7 @@ class _TransactionsSection extends StatelessWidget {
             Column(
               children: <Widget>[
                 for (final item in items) ...<Widget>[
-                  _TransactionTile(item: item, formatTime: formatTime, onTap: () => onTapItem(item)),
+                  _TransactionTile(item: item, onTap: () => onTapItem(item)),
                   const SizedBox(height: 8),
                 ],
               ],
@@ -718,10 +577,9 @@ class _TransactionsSection extends StatelessWidget {
 }
 
 class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.item, required this.formatTime, required this.onTap});
+  const _TransactionTile({required this.item, required this.onTap});
 
   final CoinTransactionEntry item;
-  final String Function(DateTime) formatTime;
   final VoidCallback onTap;
 
   @override
@@ -769,7 +627,7 @@ class _TransactionTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${formatTime(item.createdAt)}  ·  Balance: ${item.balanceAfter}',
+                    '${_formatTime(item.createdAt)}  ·  Balance: ${item.balanceAfter}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
                     ),

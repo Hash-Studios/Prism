@@ -2,7 +2,6 @@ import 'package:Prism/core/persistence/local_store.dart';
 
 class InMemoryLocalStore implements LocalStore {
   final Map<String, Object?> data = <String, Object?>{};
-  bool ready = true;
 
   @override
   Future<void> clearAll() async {
@@ -26,7 +25,7 @@ class InMemoryLocalStore implements LocalStore {
   Future<void> init() async {}
 
   @override
-  bool get isReady => ready;
+  bool get isReady => true;
 
   @override
   Future<List<String>> keys() async => data.keys.toList(growable: false);

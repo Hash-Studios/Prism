@@ -4,4 +4,5 @@ part of 'setups_bloc.j.dart';
 abstract class SetupsEvent with _$SetupsEvent {
   const factory SetupsEvent.started() = _Started;
   const factory SetupsEvent.fetchMoreRequested() = _FetchMoreRequested;
+  const factory SetupsEvent.blockedCreatorsChanged(Set<String> blocked) = _BlockedCreatorsChanged;
 }

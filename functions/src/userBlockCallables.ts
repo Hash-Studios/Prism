@@ -1,14 +1,8 @@
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
+import {db, readDailyCount, REGION, utcDateString} from "./common";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
-
-const REGION = "asia-south1";
 const USERS_V2 = "usersv2";
 const BLOCKED_USERS = "blockedUsers";
 const RATE_DAILY = "userBlockRateDaily";
@@ -19,10 +13,6 @@ const MAX_ACTIONS_PER_DAY = 200;
 const MIN_MS_BETWEEN_SAME_TARGET = 60 * 1000;
 
 const MAX_UID_LEN = 128;
-
-function utcDateString(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
 
 function normalizeUid(raw: unknown): string {
   if (typeof raw !== "string") {
@@ -57,13 +47,7 @@ function matchingEmailsFromList(list: unknown, normalizedTarget: string): string
   return out;
 }
 
-interface BlockUserResponse {
-  ok: true;
-}
-
-interface UnblockUserResponse {
-  ok: true;
-}
+type OkResponse = {ok: true};
 
 /**
  * Shape of the auto-filed `contentReports` doc created when a user blocks
@@ -87,15 +71,11 @@ export function buildBlockContentReportDoc(params: {
   };
 }
 
-export function isSameTargetCooldownActive(params: {
-  action: "block" | "unblock";
-  lastAtMs?: number;
-  nowMs: number;
-}): boolean {
-  if (params.action !== "block" || params.lastAtMs == null) {
+export function isSameTargetCooldownActive(lastAtMs: number | undefined, nowMs: number): boolean {
+  if (lastAtMs == null) {
     return false;
   }
-  const elapsed = params.nowMs - params.lastAtMs;
+  const elapsed = nowMs - lastAtMs;
   return elapsed >= 0 && elapsed < MIN_MS_BETWEEN_SAME_TARGET;
 }
 
@@ -104,7 +84,7 @@ export const blockUser = onCall(
     region: REGION,
     cors: true,
   },
-  async (request: CallableRequest<{targetUserId?: string}>): Promise<BlockUserResponse> => {
+  async (request: CallableRequest<{targetUserId?: string}>): Promise<OkResponse> => {
     const callerUid = request.auth?.uid;
     if (!callerUid) {
       throw new HttpsError("unauthenticated", "Sign in to block a user.");
@@ -162,19 +142,12 @@ export const blockUser = onCall(
 
       if (targetRateSnap.exists) {
         const last = targetRateSnap.data()?.lastAt as admin.firestore.Timestamp | undefined;
-        if (isSameTargetCooldownActive({action: "block", lastAtMs: last?.toMillis(), nowMs})) {
+        if (isSameTargetCooldownActive(last?.toMillis(), nowMs)) {
           throw new HttpsError("resource-exhausted", "Please wait a moment before changing this block.");
         }
       }
 
-      let dailyCount = 0;
-      if (dailyRateSnap.exists) {
-        const d = dailyRateSnap.data()?.day as string | undefined;
-        const c = dailyRateSnap.data()?.count;
-        if (d === today && typeof c === "number") {
-          dailyCount = c;
-        }
-      }
+      const dailyCount = readDailyCount(dailyRateSnap, today);
       if (dailyCount >= MAX_ACTIONS_PER_DAY) {
         throw new HttpsError("resource-exhausted", "Daily limit reached. Try again tomorrow.");
       }
@@ -244,7 +217,7 @@ export const unblockUser = onCall(
     region: REGION,
     cors: true,
   },
-  async (request: CallableRequest<{targetUserId?: string}>): Promise<UnblockUserResponse> => {
+  async (request: CallableRequest<{targetUserId?: string}>): Promise<OkResponse> => {
     const callerUid = request.auth?.uid;
     if (!callerUid) {
       throw new HttpsError("unauthenticated", "Sign in to unblock a user.");
@@ -275,14 +248,7 @@ export const unblockUser = onCall(
         throw new HttpsError("not-found", "This user is not blocked.");
       }
 
-      let dailyCount = 0;
-      if (dailyRateSnap.exists) {
-        const d = dailyRateSnap.data()?.day as string | undefined;
-        const c = dailyRateSnap.data()?.count;
-        if (d === today && typeof c === "number") {
-          dailyCount = c;
-        }
-      }
+      const dailyCount = readDailyCount(dailyRateSnap, today);
       if (dailyCount >= MAX_ACTIONS_PER_DAY) {
         throw new HttpsError("resource-exhausted", "Daily limit reached. Try again tomorrow.");
       }

@@ -3,10 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/global/svg_assets.dart';
@@ -31,23 +33,6 @@ class EditProfilePanel extends StatefulWidget {
   _EditProfilePanelState createState() => _EditProfilePanelState();
 }
 
-class _ProfileLinkOption {
-  _ProfileLinkOption({
-    required this.name,
-    required this.link,
-    required this.icon,
-    required this.validator,
-    // ignore: unused_element_parameter
-    this.value = '',
-  });
-
-  final String name;
-  final String link;
-  final IconData icon;
-  final String validator;
-  String value;
-}
-
 class _EditProfilePanelState extends State<EditProfilePanel> {
   final TextEditingController linkController = TextEditingController();
   late TextEditingController bioController;
@@ -65,221 +50,52 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool isCheckingUsername = false;
   File? _pfp;
   File? _cover;
-  late List<int> _compressedPFP;
-  late List<int> _compressedCover;
-  late String pfpSha;
-  late String pfpPath;
-  late String pfpUrl;
-  late String coverSha;
-  late String coverPath;
-  late String coverUrl;
   final picker2 = ImagePicker();
-  List<_ProfileLinkOption> linkIcons = [
-    _ProfileLinkOption(name: 'github', link: 'https://github.com/username', icon: JamIcons.github, validator: 'github'),
-    _ProfileLinkOption(
-      name: 'twitter',
-      link: 'https://twitter.com/username',
-      icon: JamIcons.twitter,
-      validator: 'twitter',
-    ),
-    _ProfileLinkOption(
-      name: 'instagram',
-      link: 'https://instagram.com/username',
-      icon: JamIcons.instagram,
-      validator: 'instagram',
-    ),
-    _ProfileLinkOption(name: 'email', link: 'your@email.com', icon: JamIcons.inbox, validator: '@'),
-    _ProfileLinkOption(name: 'telegram', link: 'https://t.me/username', icon: JamIcons.paper_plane, validator: 't.me'),
-    _ProfileLinkOption(
-      name: 'dribbble',
-      link: 'https://dribbble.com/username',
-      icon: JamIcons.basketball,
-      validator: 'dribbble',
-    ),
-    _ProfileLinkOption(
-      name: 'linkedin',
-      link: 'https://linkedin.com/in/username',
-      icon: JamIcons.linkedin,
-      validator: 'linkedin',
-    ),
-    _ProfileLinkOption(
-      name: 'bio.link',
-      link: 'https://bio.link/username',
-      icon: JamIcons.world,
-      validator: 'bio.link',
-    ),
-    _ProfileLinkOption(
-      name: 'patreon',
-      link: 'https://patreon.com/username',
-      icon: JamIcons.patreon,
-      validator: 'patreon',
-    ),
-    _ProfileLinkOption(name: 'trello', link: 'https://trello.com/username', icon: JamIcons.trello, validator: 'trello'),
-    _ProfileLinkOption(
-      name: 'reddit',
-      link: 'https://reddit.com/user/username',
-      icon: JamIcons.reddit,
-      validator: 'reddit',
-    ),
-    _ProfileLinkOption(
-      name: 'behance',
-      link: 'https://behance.net/username',
-      icon: JamIcons.behance,
-      validator: 'behance.net',
-    ),
-    _ProfileLinkOption(
-      name: 'deviantart',
-      link: 'https://deviantart.com/username',
-      icon: JamIcons.deviantart,
-      validator: 'deviantart',
-    ),
-    _ProfileLinkOption(name: 'gitlab', link: 'https://gitlab.com/username', icon: JamIcons.gitlab, validator: 'gitlab'),
-    _ProfileLinkOption(
-      name: 'medium',
-      link: 'https://username.medium.com/',
-      icon: JamIcons.medium,
-      validator: 'medium',
-    ),
-    _ProfileLinkOption(name: 'paypal', link: 'https://paypal.me/username', icon: JamIcons.paypal, validator: 'paypal'),
-    _ProfileLinkOption(
-      name: 'spotify',
-      link: 'https://open.spotify.com/user/username',
-      icon: JamIcons.spotify,
-      validator: 'open.spotify',
-    ),
-    _ProfileLinkOption(
-      name: 'twitch',
-      link: 'https://twitch.tv/username',
-      icon: JamIcons.twitch,
-      validator: 'twitch.tv',
-    ),
-    _ProfileLinkOption(
-      name: 'unsplash',
-      link: 'https://unsplash.com/username',
-      icon: JamIcons.unsplash,
-      validator: 'unsplash',
-    ),
-    _ProfileLinkOption(
-      name: 'youtube',
-      link: 'https://youtube.com/channel/username',
-      icon: JamIcons.youtube,
-      validator: 'youtube',
-    ),
-    _ProfileLinkOption(
-      name: 'linktree',
-      link: 'https://linktr.ee/username',
-      icon: JamIcons.tree_alt,
-      validator: 'linktr.ee',
-    ),
-    _ProfileLinkOption(
-      name: 'buymeacoffee',
-      link: 'https://buymeacoff.ee/username',
-      icon: JamIcons.coffee,
-      validator: 'buymeacoff.ee',
-    ),
-    _ProfileLinkOption(name: 'custom link', link: '', icon: JamIcons.link, validator: ''),
-  ];
-  _ProfileLinkOption? _link;
+  late final Map<String, String> _linkValues = <String, String>{
+    for (final ProfileLinkKind kind in profileLinkKinds) kind.name: app_state.prismUser.links[kind.name] ?? '',
+  };
+  ProfileLinkKind _link = profileLinkKinds.firstWhere((kind) => kind.name == customLinkName);
 
   @override
   void initState() {
-    linkIcons.sort((a, b) => a.name.compareTo(b.name));
-    final links = app_state.prismUser.links;
-    for (final element in linkIcons) {
-      final String value = links[element.name]?.toString() ?? '';
-      if (value.isNotEmpty) {
-        element.value = value;
-      }
-    }
-    _link = linkIcons[3];
     bioController = TextEditingController(text: app_state.prismUser.bio);
     usernameController = TextEditingController(text: app_state.prismUser.username);
     nameController = TextEditingController(text: app_state.prismUser.name);
     super.initState();
   }
 
-  Future getPFP() async {
+  Future<void> _pickImage(ValueSetter<File> onPicked) async {
     final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _pfp = File(pickedFile.path);
-        pfpEdit = true;
-      });
-    }
-  }
-
-  Future getCover() async {
-    final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _cover = File(pickedFile.path);
-        coverEdit = true;
-      });
+      setState(() => onPicked(File(pickedFile.path)));
     }
   }
 
   Future<Uint8List> compressFile(File file) async {
     final result = await FlutterImageCompress.compressWithFile(file.absolute.path, minWidth: 400, quality: 85);
-    logger.d(file.lengthSync().toString());
-    logger.d(result!.length.toString());
-    return result;
+    return result!;
   }
 
-  Future processImage() async {
-    _compressedPFP = await compressFile(_pfp!);
-    await uploadFile();
-  }
-
-  Future processImageCover() async {
-    _compressedCover = await compressFile(_cover!);
-    await uploadFileCover();
-  }
-
-  Future uploadFile() async {
+  Future<void> _uploadImage(File file, {required String field}) async {
+    final Uint8List compressed = await compressFile(file);
     try {
-      final String base64Image = base64Encode(_compressedPFP);
       final value = await GitHubContentApi().putFile(
         repo: Env.normalize(Env.ghRepoWalls),
-        message: path.basename(_pfp!.path),
-        contentBase64: base64Image,
-        path: path.basename(_pfp!.path),
+        message: path.basename(file.path),
+        contentBase64: base64Encode(compressed),
+        path: path.basename(file.path),
       );
-      setState(() {
-        pfpUrl = value.downloadUrl!;
-        pfpPath = value.path!;
-        pfpSha = value.sha!;
-      });
-      logger.d('File Uploaded');
-      app_state.prismUser.profilePhoto = pfpUrl;
+      final String url = value.downloadUrl!;
+      if (field == 'profilePhoto') {
+        app_state.prismUser.profilePhoto = url;
+      } else {
+        app_state.prismUser.coverPhoto = url;
+      }
       app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{"profilePhoto": pfpUrl}, 'profile.edit.profilePhoto');
+      await _updateCurrentUser(<String, dynamic>{field: url}, 'profile.edit.$field');
     } catch (e) {
       logger.d(e.toString());
-      toasts.error("Some uploading issue, please try again.");
-    }
-  }
-
-  Future uploadFileCover() async {
-    try {
-      final String base64Image = base64Encode(_compressedCover);
-      final value = await GitHubContentApi().putFile(
-        repo: Env.normalize(Env.ghRepoWalls),
-        message: path.basename(_cover!.path),
-        contentBase64: base64Image,
-        path: path.basename(_cover!.path),
-      );
-      setState(() {
-        coverUrl = value.downloadUrl!;
-        coverPath = value.path!;
-        coverSha = value.sha!;
-      });
-      logger.d('Cover File Uploaded');
-      app_state.prismUser.coverPhoto = coverUrl;
-      app_state.persistPrismUser();
-      await _updateCurrentUser(<String, dynamic>{"coverPhoto": coverUrl}, 'profile.edit.coverPhoto');
-    } catch (e) {
-      logger.d(e.toString());
-      toasts.error("Some uploading issue, please try again.");
+      toasts.error('Some uploading issue, please try again.');
     }
   }
 
@@ -374,10 +190,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       await _updateCurrentUser(<String, dynamic>{"username": usernameController.text}, 'profile.edit.username');
     }
     if (_pfp != null && pfpEdit) {
-      await processImage();
+      await _uploadImage(_pfp!, field: 'profilePhoto');
     }
     if (_cover != null && coverEdit) {
-      await processImageCover();
+      await _uploadImage(_cover!, field: 'coverPhoto');
     }
     if (bioEdit && bioController.text.isNotEmpty) {
       app_state.prismUser.bio = bioController.text;
@@ -391,11 +207,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     }
     if (linkEdit) {
       final Map<String, String> links = Map<String, String>.from(app_state.prismUser.links);
-      for (final icon in linkIcons) {
-        if (icon.value.isNotEmpty) {
-          links[icon.name] = icon.value;
+      _linkValues.forEach((name, value) {
+        if (value.isNotEmpty) {
+          links[name] = value;
         }
-      }
+      });
       app_state.prismUser.links = links;
       app_state.persistPrismUser();
       await _updateCurrentUser(<String, dynamic>{"links": links}, 'profile.edit.links');
@@ -405,7 +221,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     setState(() => isLoading = false);
     if (mounted) {
       Navigator.pop(context);
-      toasts.codeSend("Profile updated!");
+      toasts.success("Profile updated!");
     }
   }
 
@@ -514,7 +330,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             button: true,
             label: 'Change cover photo',
             child: GestureDetector(
-              onTap: getCover,
+              onTap: () => _pickImage((file) {
+                _cover = file;
+                coverEdit = true;
+              }),
               child: (_cover == null)
                   ? (app_state.prismUser.coverPhoto != null &&
                             Uri.tryParse(app_state.prismUser.coverPhoto!)?.hasAuthority == true)
@@ -525,14 +344,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           )
                         : SvgPicture.string(
                             defaultHeader
-                                .replaceAll(
-                                  "#181818",
-                                  "#${theme.primaryColor.toARGB32().toRadixString(16).substring(2)}",
-                                )
-                                .replaceAll(
-                                  "#E77597",
-                                  "#${theme.colorScheme.error.toARGB32().toRadixString(16).substring(2)}",
-                                ),
+                                .replaceAll("#181818", "#${theme.primaryColor.rgbHex}")
+                                .replaceAll("#E77597", "#${theme.colorScheme.error.rgbHex}"),
                             fit: BoxFit.cover,
                           )
                   : Image.file(_cover!, fit: BoxFit.cover),
@@ -601,7 +414,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           button: true,
           label: 'Change profile photo',
           child: GestureDetector(
-            onTap: getPFP,
+            onTap: () => _pickImage((file) {
+              _pfp = file;
+              pfpEdit = true;
+            }),
             child: Container(
               width: size,
               height: size,
@@ -643,7 +459,10 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           right: 0,
           child: ExcludeSemantics(
             child: GestureDetector(
-              onTap: getPFP,
+              onTap: () => _pickImage((file) {
+                _pfp = file;
+                pfpEdit = true;
+              }),
               child: Container(
                 width: PrismProfile.cameraChipSize,
                 height: PrismProfile.cameraChipSize,
@@ -796,9 +615,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           padding: const EdgeInsets.symmetric(horizontal: PrismProfile.linkSelectorHorizontalPadding),
           child: Semantics(
             label: 'Link type',
-            child: DropdownButton<_ProfileLinkOption>(
+            child: DropdownButton<ProfileLinkKind>(
               menuWidth: 200,
-              items: linkIcons.map((link) {
+              items: profileLinkKinds.map((link) {
                 return DropdownMenuItem(
                   value: link,
                   child: Row(
@@ -819,14 +638,14 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
               }).toList(),
               underline: const SizedBox.shrink(),
               onChanged: (value) {
-                setState(() => _link = value);
-                linkController.text = _link?.value ?? '';
+                setState(() => _link = value!);
+                linkController.text = _linkValues[_link.name] ?? '';
               },
               icon: const SizedBox.shrink(),
               value: _link,
               dropdownColor: theme.primaryColor,
               selectedItemBuilder: (BuildContext context) {
-                return linkIcons.map<Widget>((link) {
+                return profileLinkKinds.map<Widget>((link) {
                   return Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -853,30 +672,30 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             style: PrismTextStyles.fieldInputSmall(context),
             controller: linkController,
             decoration: _fieldDecoration(
-              label: _link?.name.inCaps ?? '',
-              hintText: _link?.link,
+              label: _link.name.inCaps,
+              hintText: _link.placeholder,
               suffixIcon: IconButton(
                 tooltip: 'Remove link',
                 onPressed: () => showRemoveAlertDialog(context, () async {
                   linkController.text = '';
                   final links = app_state.prismUser.links;
-                  links.remove(_link?.name);
+                  links.remove(_link.name);
                   app_state.prismUser.links = links;
                   app_state.persistPrismUser();
                   await _updateCurrentUser(<String, dynamic>{
                     "links": app_state.prismUser.links,
                   }, 'profile.edit.removeLink');
-                }, "${_link?.name.inCaps} link"),
+                }, '${_link.name.inCaps} link'),
                 icon: Icon(JamIcons.close, color: secondary.withValues(alpha: PrismFormField.iconOpacity), size: 20),
               ),
             ),
             onChanged: (value) {
-              if (value.toLowerCase().contains('${_link?.validator.toLowerCase()}')) {
-                if (_link != null) _link!.value = value;
+              if (value.toLowerCase().contains(_link.validator.toLowerCase())) {
+                _linkValues[_link.name] = value;
               } else if (value.isEmpty) {
-                if (_link != null) _link!.value = '';
+                _linkValues[_link.name] = '';
               }
-              final changed = linkIcons.any((icon) => icon.value.isNotEmpty);
+              final changed = _linkValues.values.any((v) => v.isNotEmpty);
               setState(() => linkEdit = changed);
             },
           ),

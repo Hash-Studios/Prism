@@ -11,6 +11,21 @@ void main() {
     expect(AiStylePreset.fromApiValue('unknown'), AiStylePreset.abstract);
   });
 
+  test('ai style preset api values round trip', () {
+    for (final style in AiStylePreset.values) {
+      expect(AiStylePreset.fromApiValue(style.apiValue), style);
+    }
+    expect(AiStylePreset.meshGradient.apiValue, 'mesh gradient');
+    expect(AiStylePreset.fromApiValue(' Mesh Gradient '), AiStylePreset.meshGradient);
+  });
+
+  test('ai quality tier api values round trip', () {
+    for (final tier in AiQualityTier.values) {
+      expect(AiQualityTier.fromApiValue(tier.apiValue), tier);
+    }
+    expect(AiQualityTier.quality.apiValue, 'quality');
+  });
+
   test('ai quality tier parsing is stable', () {
     expect(AiQualityTier.fromApiValue('fast'), AiQualityTier.fast);
     expect(AiQualityTier.fromApiValue('quality'), AiQualityTier.quality);
@@ -49,5 +64,6 @@ void main() {
     expect(record.qualityTier, AiQualityTier.balanced);
     expect(record.chargeMode, AiChargeMode.coinSpend);
     expect(record.coinsSpent, 20);
+    expect(record.toJson()['chargeMode'], 'coin_spend');
   });
 }

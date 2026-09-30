@@ -4,19 +4,20 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/core/widgets/accent_color.dart';
+import 'package:Prism/core/widgets/popup/popup_header.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-enum ChangeType { feature, fix, improvement }
+enum _ChangeType { feature, fix, improvement }
 
 class _ChangeItem {
-  final IconData icon;
   final String text;
-  final ChangeType type;
-  const _ChangeItem({required this.icon, required this.text, required this.type});
+  final _ChangeType type;
+  const _ChangeItem({required this.text, required this.type});
 }
 
 class _ChangelogVersion {
@@ -28,79 +29,7 @@ class _ChangelogVersion {
 const String _changelogUrl = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/CHANGELOG.md';
 const String _changelogCacheKey = 'remote_changelog_markdown_cache';
 
-const List<_ChangelogVersion> _fallbackChangelog = [
-  _ChangelogVersion(
-    version: 'v2.6.9',
-    changes: [
-      _ChangeItem(icon: JamIcons.magic, text: 'AI-powered wallpaper generation pipeline.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.coin, text: 'Coins economy — earn and spend coins in-app.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.crown, text: 'Subscriptions and new paywall experience.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.user_plus, text: 'All-new onboarding experience.', type: ChangeType.feature),
-      _ChangeItem(
-        icon: JamIcons.link,
-        text: 'Deep links — open walls and profiles from URLs.',
-        type: ChangeType.feature,
-      ),
-      _ChangeItem(icon: JamIcons.user, text: 'Profile completeness indicator.', type: ChangeType.improvement),
-      _ChangeItem(icon: JamIcons.filter, text: 'Added 20+ new wallpaper filters.', type: ChangeType.improvement),
-      _ChangeItem(icon: JamIcons.save, text: 'Save setups as drafts before uploading.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.download, text: 'Fixed wallpaper download bugs.', type: ChangeType.fix),
-      _ChangeItem(icon: JamIcons.eye, text: 'New splash screen animation.', type: ChangeType.improvement),
-    ],
-  ),
-  _ChangelogVersion(
-    version: 'v2.6.8',
-    changes: [
-      _ChangeItem(icon: JamIcons.user, text: 'All-new profile with cover photo and bio.', type: ChangeType.improvement),
-      _ChangeItem(
-        icon: JamIcons.instant_picture,
-        text: 'Add icons with a single tap while submitting setups.',
-        type: ChangeType.feature,
-      ),
-      _ChangeItem(icon: JamIcons.link, text: 'Add up to 25 links in your profile.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.filter, text: 'Added 23 new filters like Rise, Ashby, etc.', type: ChangeType.feature),
-      _ChangeItem(icon: JamIcons.bug, text: 'Fixed first-time app open stuck on splash screen.', type: ChangeType.fix),
-    ],
-  ),
-  _ChangelogVersion(
-    version: 'v2.6.7',
-    changes: [
-      _ChangeItem(icon: JamIcons.user, text: 'Add bio or change your username now!', type: ChangeType.feature),
-      _ChangeItem(
-        icon: JamIcons.log_in,
-        text: 'Fix log-in bug affecting follows, favourites, and more.',
-        type: ChangeType.fix,
-      ),
-    ],
-  ),
-  _ChangelogVersion(
-    version: 'v2.6.6',
-    changes: [
-      _ChangeItem(icon: JamIcons.share, text: 'Fix share profile not working.', type: ChangeType.fix),
-      _ChangeItem(icon: JamIcons.search, text: 'Local caching for search providers.', type: ChangeType.improvement),
-      _ChangeItem(icon: JamIcons.bug, text: 'Minor bug fixes and improvements.', type: ChangeType.fix),
-    ],
-  ),
-  _ChangelogVersion(
-    version: 'v2.6.5',
-    changes: [
-      _ChangeItem(
-        icon: JamIcons.user,
-        text: 'New user model — username, photo, links and bio.',
-        type: ChangeType.feature,
-      ),
-      _ChangeItem(icon: JamIcons.download, text: 'Download notifications.', type: ChangeType.feature),
-      _ChangeItem(
-        icon: JamIcons.refresh,
-        text: 'Improved network requests with pagination.',
-        type: ChangeType.improvement,
-      ),
-      _ChangeItem(icon: JamIcons.bug, text: 'Major bug fixes and improvements.', type: ChangeType.fix),
-    ],
-  ),
-];
-
-void showChangelog(BuildContext context, VoidCallback func) {
+void showChangelog(BuildContext context, [VoidCallback? func]) {
   final controller = ScrollController();
   final NavigatorState? navigator = Navigator.maybeOf(context, rootNavigator: true);
   final AlertDialog aboutPopUp = AlertDialog(
@@ -112,14 +41,8 @@ void showChangelog(BuildContext context, VoidCallback func) {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // Header — animation + version label
-          Container(
-            height: 150,
+          PopupHeader(
             width: MediaQuery.of(context).size.width * .78,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10)),
-              color: Theme.of(context).hintColor,
-            ),
             child: Stack(
               children: [
                 Center(child: Icon(JamIcons.refresh, color: Theme.of(context).colorScheme.secondary)),
@@ -144,7 +67,6 @@ void showChangelog(BuildContext context, VoidCallback func) {
               ],
             ),
           ),
-          // Scrollable changelog list
           ConstrainedBox(
             constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.45),
             child: Scrollbar(
@@ -162,7 +84,7 @@ void showChangelog(BuildContext context, VoidCallback func) {
       TextButton(
         onPressed: () {
           openPrismLink(context, "https://bit.ly/prismchanges");
-          func();
+          func?.call();
         },
         child: Text(
           'VIEW FULL',
@@ -178,7 +100,7 @@ void showChangelog(BuildContext context, VoidCallback func) {
           if (navigator?.canPop() ?? false) {
             navigator?.pop();
           }
-          func();
+          func?.call();
         },
         child: const Text(
           'CLOSE',
@@ -193,27 +115,27 @@ void showChangelog(BuildContext context, VoidCallback func) {
   showModal(context: context, builder: (BuildContext context) => aboutPopUp);
 }
 
-ChangeType _inferChangeType(String text) {
+_ChangeType _inferChangeType(String text) {
   final value = text.toLowerCase();
   if (value.contains('fix') || value.contains('bug') || value.contains('crash')) {
-    return ChangeType.fix;
+    return _ChangeType.fix;
   }
   if (value.contains('improve') ||
       value.contains('optimiz') ||
       value.contains('performance') ||
       value.contains('refactor')) {
-    return ChangeType.improvement;
+    return _ChangeType.improvement;
   }
-  return ChangeType.feature;
+  return _ChangeType.feature;
 }
 
-IconData _iconForType(ChangeType type) {
+IconData _iconForType(_ChangeType type) {
   switch (type) {
-    case ChangeType.feature:
+    case _ChangeType.feature:
       return JamIcons.magic;
-    case ChangeType.fix:
+    case _ChangeType.fix:
       return JamIcons.bug;
-    case ChangeType.improvement:
+    case _ChangeType.improvement:
       return JamIcons.refresh;
   }
 }
@@ -246,14 +168,11 @@ List<_ChangelogVersion> _parseChangelogMarkdown(String markdown) {
         continue;
       }
       final type = _inferChangeType(text);
-      currentChanges.add(_ChangeItem(icon: _iconForType(type), text: text, type: type));
+      currentChanges.add(_ChangeItem(text: text, type: type));
     }
   }
   flushCurrent();
 
-  if (versions.isEmpty) {
-    return _fallbackChangelog;
-  }
   return versions.take(5).toList(growable: false);
 }
 
@@ -267,7 +186,7 @@ class _ChangelogList extends StatefulWidget {
 
 class _ChangelogListState extends State<_ChangelogList> {
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
-  List<_ChangelogVersion> _items = _fallbackChangelog;
+  List<_ChangelogVersion> _items = const <_ChangelogVersion>[];
 
   @override
   void initState() {
@@ -302,7 +221,9 @@ class _ChangelogListState extends State<_ChangelogList> {
       setState(() {
         _items = parsed;
       });
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      logger.w('Changelog fetch failed', error: error, stackTrace: stackTrace);
+    }
   }
 
   @override
@@ -312,9 +233,17 @@ class _ChangelogListState extends State<_ChangelogList> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                'The changelog could not be loaded.',
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
+              ),
+            ),
           for (int i = 0; i < _items.length; i++) ...[
             _ChangeVersion(number: _items[i].version, showDivider: i > 0),
-            for (final item in _items[i].changes) _ChangeRow(icon: item.icon, text: item.text, type: item.type),
+            for (final item in _items[i].changes) _ChangeRow(text: item.text, type: item.type),
           ],
           const SizedBox(height: 8),
         ],
@@ -363,22 +292,17 @@ class _ChangeVersion extends StatelessWidget {
 }
 
 class _ChangeRow extends StatelessWidget {
-  final IconData icon;
   final String text;
-  final ChangeType type;
-  const _ChangeRow({required this.icon, required this.text, required this.type});
+  final _ChangeType type;
+  const _ChangeRow({required this.text, required this.type});
 
   Color _typeColor(BuildContext context) {
     switch (type) {
-      case ChangeType.feature:
-        return context.prismModeStyleForContext() == "Dark" && context.prismIsAmoledDark()
-            ? Theme.of(context).colorScheme.error == Colors.black
-                  ? Theme.of(context).colorScheme.secondary
-                  : Theme.of(context).colorScheme.error
-            : Theme.of(context).colorScheme.error;
-      case ChangeType.fix:
+      case _ChangeType.feature:
+        return accentColor(context);
+      case _ChangeType.fix:
         return Colors.orange;
-      case ChangeType.improvement:
+      case _ChangeType.improvement:
         return Theme.of(context).colorScheme.secondary.withValues(alpha: 0.65);
     }
   }
@@ -394,7 +318,7 @@ class _ChangeRow extends StatelessWidget {
           const SizedBox(width: 20),
           Padding(
             padding: const EdgeInsets.only(top: 1),
-            child: Icon(icon, size: 20, color: color),
+            child: Icon(_iconForType(type), size: 20, color: color),
           ),
           const SizedBox(width: 12),
           Expanded(
