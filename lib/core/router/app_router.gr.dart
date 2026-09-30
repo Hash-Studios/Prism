@@ -765,22 +765,6 @@ class ProfileRouteArgs {
 }
 
 /// generated route for
-/// [ProfileTabPage]
-class ProfileTabRoute extends PageRouteInfo<void> {
-  const ProfileTabRoute({List<PageRouteInfo>? children})
-    : super(ProfileTabRoute.name, initialChildren: children);
-
-  static const String name = 'ProfileTabRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const ProfileTabPage();
-    },
-  );
-}
-
-/// generated route for
 /// [QuickTileSettingsScreen]
 class QuickTileSettingsRoute extends PageRouteInfo<void> {
   const QuickTileSettingsRoute({List<PageRouteInfo>? children})

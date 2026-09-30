@@ -21,7 +21,6 @@ import 'package:Prism/features/navigation/views/pages/ai_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/collection_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
-import 'package:Prism/features/navigation/views/pages/profile_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/search_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/setups_tab_page.dart';
 import 'package:Prism/features/navigation/views/pages/streak_tab_page.dart';
@@ -103,18 +102,6 @@ class AppRouter extends RootStackRouter {
         AutoRoute(path: 'streak', page: StreakTabRoute.page),
         // Collection tab
         AutoRoute(path: 'collection', page: CollectionTabRoute.page),
-        // Profile tab
-        AutoRoute(
-          path: 'profile',
-          page: ProfileTabRoute.page,
-          children: [
-            AutoRoute(path: '', page: ProfileRoute.page),
-            AutoRoute(path: 'share-prism', page: SharePrismRoute.page),
-            AutoRoute(path: 'edit', page: EditProfilePanelRoute.page),
-            AutoRoute(path: 'followers', page: FollowersRoute.page),
-            AutoRoute(path: 'following', page: FollowingListRoute.page),
-          ],
-        ),
       ],
     ),
 
