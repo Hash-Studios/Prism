@@ -17,6 +17,7 @@ import 'package:Prism/features/personalized_feed/biz/bloc/personalized_feed_bloc
 import 'package:Prism/features/personalized_feed/views/widgets/empty_card.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -96,9 +97,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen> with Au
       return;
     }
     _bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(item));
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(const SnackBar(content: Text("Got it. You'll see fewer like this.")));
+    toasts.codeSend("Got it. You'll see fewer like this.");
   }
 
   @override
