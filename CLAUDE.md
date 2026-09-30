@@ -81,7 +81,7 @@ Keep paths and commands exact. Use ASD-STE100 Simplified Technical English. Neve
 
 | Part | Path | Notes |
 |---|---|---|
-| App | `lib/`, `test/` | Flutter 3.41 pinned in `.fvmrc`, run through `fvm` |
+| App | `lib/`, `test/` | Flutter 3.47 pinned in `.fvmrc`, run through `fvm` |
 | Cloud Functions | `functions/` | TypeScript, Firebase Functions v2, region `asia-south1` |
 | Firestore | `firestore.rules`, `firestore.indexes.json`, `firebase.json` | project `prism-wallpapers` (`.firebaserc`) |
 | Website | `web/` | Next.js on Cloudflare (`wrangler.toml`) |
