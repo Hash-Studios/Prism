@@ -346,7 +346,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       );
     } catch (error, stackTrace) {
       CoinsService.instance.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-      if (mounted) toasts.error('Unable to process coins right now.');
+      toasts.error('Unable to process coins right now.');
       return false;
     }
 
@@ -361,7 +361,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         }
         return false;
       }
-      if (mounted) toasts.error('Unable to process coins right now.');
+      toasts.error('Unable to process coins right now.');
       return false;
     }
 
@@ -375,17 +375,17 @@ class _DownloadButtonState extends State<DownloadButton> {
           reason: 'download_failed_refund',
         );
         if (refundResult.success && refundResult.changed) {
-          if (mounted) toasts.success('Download failed. ${refundResult.delta} coins refunded.');
+          toasts.success('Download failed. ${refundResult.delta} coins refunded.');
         } else {
           CoinsService.instance.logCoinError(
             sourceTag: '$sourceTag.refund',
             error: StateError('Coin refund was not applied: ${refundResult.reason}'),
           );
-          if (mounted) toasts.error('Download failed. Your refund could not be confirmed.');
+          toasts.error('Download failed. Your refund could not be confirmed.');
         }
       } catch (error, stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: '$sourceTag.refund', error: error, stackTrace: stackTrace);
-        if (mounted) toasts.error('Download failed. Your refund could not be confirmed.');
+        toasts.error('Download failed. Your refund could not be confirmed.');
       }
     }
     return downloaded;
@@ -406,14 +406,14 @@ class _DownloadButtonState extends State<DownloadButton> {
         final SaveMediaRequest request = SaveMediaRequest(link: link, isLocalFile: true, kind: SaveMediaKind.wallpaper);
         final OperationResult result = await PrismMediaHostApi().saveMedia(request);
         if (!result.success) {
-          if (mounted) toasts.error("Couldn't download! Please retry.");
+          toasts.error("Couldn't download! Please retry.");
           return false;
         }
       } else {
         final DownloadRequest request = DownloadRequest(link: link, filenameWithoutExtension: downloadBaseName(link));
         final OperationResult result = await PrismMediaHostApi().enqueueDownload(request);
         if (!result.success) {
-          if (mounted) toasts.error(result.message ?? "Couldn't download! Please retry.");
+          toasts.error(result.message ?? "Couldn't download! Please retry.");
           return false;
         }
       }
@@ -423,11 +423,11 @@ class _DownloadButtonState extends State<DownloadButton> {
       } else {
         logger.e('Download failed', error: e);
       }
-      if (mounted) toasts.error("Couldn't download! Please retry.");
+      toasts.error("Couldn't download! Please retry.");
       return false;
     } catch (e, stackTrace) {
       logger.e('Unexpected download failure', error: e, stackTrace: stackTrace);
-      if (mounted) toasts.error('Something went wrong!');
+      toasts.error('Something went wrong!');
       return false;
     }
 
@@ -443,13 +443,13 @@ class _DownloadButtonState extends State<DownloadButton> {
       logger.w('Download analytics failed after media was saved', error: e, stackTrace: stackTrace);
     }
 
+    try {
+      toasts.success(wallpaperSavedMessage);
+      onDownloaded?.call();
+    } catch (e, stackTrace) {
+      logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
+    }
     if (mounted) {
-      try {
-        toasts.success(wallpaperSavedMessage);
-        onDownloaded?.call();
-      } catch (e, stackTrace) {
-        logger.w('Download follow-up failed after media was saved', error: e, stackTrace: stackTrace);
-      }
       try {
         await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
           context,

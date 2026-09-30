@@ -187,27 +187,11 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
     }
 
     override fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runInBackground(
-                callback,
-                { createDownloadItemsError("EXCEPTION", it.message) },
-                executor = downloadExecutor,
-            ) {
-                ioExecutor.submit<DownloadItemsResult> { listDownloadsInternal() }.get()
-            }
-        } else {
-            runInBackground(callback, { createDownloadItemsError("EXCEPTION", it.message) }) { listDownloadsInternal() }
-        }
+        runInBackground(callback, { createDownloadItemsError("EXCEPTION", it.message) }) { listDownloadsInternal() }
     }
 
     override fun clearDownloads(callback: (Result<OperationResult>) -> Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }, executor = downloadExecutor) {
-                ioExecutor.submit<OperationResult> { clearDownloadsInternal() }.get()
-            }
-        } else {
-            runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }) { clearDownloadsInternal() }
-        }
+        runInBackground(callback, { createErrorResult("EXCEPTION", it.message) }) { clearDownloadsInternal() }
     }
 
     private fun <T> runInBackground(
@@ -289,8 +273,8 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
 
                     while (cursor.moveToNext()) {
                         var path = if (isApi29 && idCol >= 0) {
-                            val id = cursor.getLong(idCol)
-                            cacheDownload(id).absolutePath
+                            // Android 10 blocks raw paths to shared media, so Dart gets a private copy.
+                            runCatching { cacheDownload(cursor.getLong(idCol)).absolutePath }.getOrNull()
                         } else if (dataCol >= 0) {
                             cursor.getString(dataCol)
                         } else {
@@ -377,6 +361,7 @@ class PrismMediaHostApiImpl(private val context: Context) : PrismMediaHostApi {
         if (!directory.exists() && !directory.mkdirs()) throw IOException("Could not create download cache")
 
         val file = File(directory, "$id.jpg")
+        if (file.length() > 0) return file
         val temporaryFile = File(directory, "$id.jpg.part")
         return try {
             val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
