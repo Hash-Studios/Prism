@@ -801,8 +801,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
   }
 
-  bool get _pastStartup =>
-      mounted && _bootstrapCompleted && !(_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name);
+  bool get _pastStartup => mounted && _bootstrapCompleted && !isStartingUp(_appRouter);
 
   /// Routes a tapped push notification to the correct screen based on
   /// the `route` field in the notification's data payload.
@@ -846,16 +845,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     final bool firebaseReady = await FirebaseInit.readyFuture;
     if (!firebaseReady) return;
 
-    // Foreground: show a heads-up local notification + sync the inbox.
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      unawaited(localNotification.showPushNotification(message));
-      unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
-    });
-
-    // Background / terminated → foreground: user tapped the notification.
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      unawaited(_handlePushTap(message.data));
-    });
+    // Foreground messages and taps on background pushes. It calls the callbacks set in initState.
+    localNotification.listenForPushMessages();
 
     // Launched from terminated state by tapping a notification.
     FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
@@ -871,13 +862,16 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
-    localNotification.router = _appRouter;
-    localNotification.onPushTap = _handlePushTap;
+    localNotification
+      ..router = _appRouter
+      ..onPushTap = _handlePushTap
+      ..onForegroundPush = () =>
+          unawaited(syncInAppNotificationsFromRemote().then((_) => _reloadInAppNotificationsFromCache()));
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(_restoreLoginStatus());
-    unawaited(localNotification.fetchNotificationData(context));
+    unawaited(localNotification.fetchNotificationData());
     unawaited(_listenForPushMessages());
   }
 
