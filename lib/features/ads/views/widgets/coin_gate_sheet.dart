@@ -1,4 +1,7 @@
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 class CoinGateOption<T> {
@@ -17,10 +20,9 @@ Future<T?> showCoinGateSheet<T>(
   required String Function(int missing) message,
   required List<CoinGateOption<T>> options,
 }) {
-  return showModalBottomSheet<T>(
+  return showPrismSheet<T>(
     context: context,
     backgroundColor: Theme.of(context).primaryColor,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (sheetContext) {
       final int missing = (cost - CoinsService.instance.balanceNotifier.value).clamp(0, cost);
       return Padding(
@@ -37,6 +39,7 @@ Future<T?> showCoinGateSheet<T>(
               ),
             ),
             const SizedBox(height: 16),
+            if (missing > 0) ...[const Glint(mood: GlintMood.worried, size: 72), const SizedBox(height: 8)],
             Text(title, style: Theme.of(sheetContext).textTheme.displaySmall),
             const SizedBox(height: 10),
             Text(message(missing), textAlign: TextAlign.center, style: Theme.of(sheetContext).textTheme.bodyMedium),
@@ -54,6 +57,17 @@ Future<T?> showCoinGateSheet<T>(
                         onPressed: () => Navigator.of(sheetContext).pop(option.value),
                         child: Text(option.label),
                       ),
+              ),
+            ],
+            if (missing > 0) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () {
+                  final StackRouter router = context.router;
+                  Navigator.of(sheetContext).pop();
+                  router.pushPath('/rewards');
+                },
+                child: const Text('Earn coins'),
               ),
             ],
           ],
