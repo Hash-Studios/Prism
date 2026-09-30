@@ -4,6 +4,7 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/persistence/local_store.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -16,7 +17,7 @@ class SessionLocalDataSource {
   PrismUsersV2 readCurrentUser() {
     final dynamic raw = _store.get(PersistenceKeys.sessionCurrentUser);
     if (raw is Map) {
-      final map = raw.map<String, dynamic>((key, value) => MapEntry(key.toString(), value));
+      final map = toJsonMap(raw);
       try {
         final PrismUsersV2 user = PrismUsersV2.fromJson(map);
         // Self-heal any stale or partially malformed payloads by rewriting
@@ -34,9 +35,5 @@ class SessionLocalDataSource {
 
   Future<void> writeCurrentUser(PrismUsersV2 user) {
     return _store.set(PersistenceKeys.sessionCurrentUser, user.toJson());
-  }
-
-  Future<void> clearCurrentUser() {
-    return _store.delete(PersistenceKeys.sessionCurrentUser);
   }
 }
