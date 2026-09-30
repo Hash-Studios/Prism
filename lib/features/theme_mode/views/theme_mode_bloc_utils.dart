@@ -1,5 +1,3 @@
-import 'package:Prism/features/theme_dark/theme_dark.dart';
-import 'package:Prism/features/theme_light/theme_light.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -19,65 +17,61 @@ String _modeAbsoluteLabel(ThemeMode mode) => switch (mode) {
 };
 
 extension PrismThemeContextX on BuildContext {
-  ThemeLightBloc _themeLightBloc(bool listen) => listen ? watch<ThemeLightBloc>() : read<ThemeLightBloc>();
-
-  ThemeDarkBloc _themeDarkBloc(bool listen) => listen ? watch<ThemeDarkBloc>() : read<ThemeDarkBloc>();
-
-  ThemeModeBloc _themeModeBloc(bool listen) => listen ? watch<ThemeModeBloc>() : read<ThemeModeBloc>();
+  ThemeState _themeState(bool listen) => (listen ? watch<ThemeBloc>() : read<ThemeBloc>()).state;
 
   ThemeData prismLightTheme({bool listen = true}) {
-    final state = _themeLightBloc(listen).state;
+    final light = _themeState(listen).light;
     return _withAccent(
-      (prismThemeById(prismLightThemes, state.theme.themeId) ?? prismLightThemes.first).theme,
-      state.theme.accentColorValue,
+      (prismThemeById(prismLightThemes, light.themeId) ?? prismLightThemes.first).theme,
+      light.accentColorValue,
     );
   }
 
   ThemeData prismDarkTheme({bool listen = true}) {
-    final state = _themeDarkBloc(listen).state;
+    final dark = _themeState(listen).dark;
     return _withAccent(
-      (prismThemeById(prismDarkThemes, state.theme.themeId) ?? prismDarkThemes.first).theme,
-      state.theme.accentColorValue,
+      (prismThemeById(prismDarkThemes, dark.themeId) ?? prismDarkThemes.first).theme,
+      dark.accentColorValue,
     );
   }
 
-  String prismLightThemeId({bool listen = true}) => _themeLightBloc(listen).state.theme.themeId;
+  String prismLightThemeId({bool listen = true}) => _themeState(listen).light.themeId;
 
-  String prismDarkThemeId({bool listen = true}) => _themeDarkBloc(listen).state.theme.themeId;
+  String prismDarkThemeId({bool listen = true}) => _themeState(listen).dark.themeId;
 
-  int prismLightAccentValue({bool listen = true}) => _themeLightBloc(listen).state.theme.accentColorValue;
+  int prismLightAccentValue({bool listen = true}) => _themeState(listen).light.accentColorValue;
 
-  int prismDarkAccentValue({bool listen = true}) => _themeDarkBloc(listen).state.theme.accentColorValue;
+  int prismDarkAccentValue({bool listen = true}) => _themeState(listen).dark.accentColorValue;
 
-  ThemeMode prismThemeMode({bool listen = true}) => _themeModeBloc(listen).state.mode.mode;
+  ThemeMode prismThemeMode({bool listen = true}) => _themeState(listen).mode;
 
-  String prismModeAbs({bool listen = true}) => _modeAbsoluteLabel(_themeModeBloc(listen).state.mode.mode);
+  String prismModeAbs({bool listen = true}) => _modeAbsoluteLabel(_themeState(listen).mode);
 
   bool prismIsAmoledDark({bool listen = true}) => prismDarkThemeId(listen: listen) == prismAmoledDarkThemeId;
 
   void setPrismThemeMode(ThemeMode mode) {
-    read<ThemeModeBloc>().add(ThemeModeEvent.modeChanged(mode: mode));
+    read<ThemeBloc>().add(ThemeEvent.modeChanged(mode: mode));
   }
 
   void setPrismLightTheme(String themeId) {
-    read<ThemeLightBloc>().add(ThemeLightEvent.themeChanged(themeId: themeId));
+    read<ThemeBloc>().add(ThemeEvent.lightThemeChanged(themeId: themeId));
   }
 
   void setPrismDarkTheme(String themeId) {
-    read<ThemeDarkBloc>().add(ThemeDarkEvent.themeChanged(themeId: themeId));
+    read<ThemeBloc>().add(ThemeEvent.darkThemeChanged(themeId: themeId));
   }
 
   void setPrismLightAccent(Color? accentColor) {
     if (accentColor == null) {
       return;
     }
-    read<ThemeLightBloc>().add(ThemeLightEvent.accentChanged(accentColorValue: accentColor.toARGB32()));
+    read<ThemeBloc>().add(ThemeEvent.lightAccentChanged(accentColorValue: accentColor.toARGB32()));
   }
 
   void setPrismDarkAccent(Color? accentColor) {
     if (accentColor == null) {
       return;
     }
-    read<ThemeDarkBloc>().add(ThemeDarkEvent.accentChanged(accentColorValue: accentColor.toARGB32()));
+    read<ThemeBloc>().add(ThemeEvent.darkAccentChanged(accentColorValue: accentColor.toARGB32()));
   }
 }
