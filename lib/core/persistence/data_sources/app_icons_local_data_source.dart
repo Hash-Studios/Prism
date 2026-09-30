@@ -1,5 +1,6 @@
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:injectable/injectable.dart';
 
 @lazySingleton
@@ -10,13 +11,7 @@ class AppIconsLocalDataSource {
 
   Future<Map<String, dynamic>> readIconsPayload() async {
     final raw = await _cache.get(PersistenceKeys.cacheIconsAppsPayload);
-    if (raw is Map<String, dynamic>) {
-      return raw;
-    }
-    if (raw is Map) {
-      return raw.map<String, dynamic>((key, value) => MapEntry(key.toString(), value));
-    }
-    return <String, dynamic>{};
+    return toJsonMap(raw);
   }
 
   Future<void> writeIconsPayload(Map<String, dynamic> payload) async {

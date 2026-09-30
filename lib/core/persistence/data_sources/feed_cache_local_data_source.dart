@@ -1,5 +1,6 @@
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
+import 'package:Prism/core/utils/json_utils.dart';
 import 'package:injectable/injectable.dart';
 
 class FeedSnapshot {
@@ -8,8 +9,6 @@ class FeedSnapshot {
   final Object? payload;
   final DateTime cachedAtUtc;
   final int ttlHours;
-
-  bool get isExpired => DateTime.now().toUtc().isAfter(cachedAtUtc.add(Duration(hours: ttlHours)));
 }
 
 @lazySingleton
@@ -23,7 +22,7 @@ class FeedCacheLocalDataSource {
     if (raw is! Map) {
       return null;
     }
-    final map = raw.map<String, dynamic>((key, value) => MapEntry(key.toString(), value));
+    final map = toJsonMap(raw);
     final cachedAt = DateTime.tryParse((map['cachedAtUtc'] as String?) ?? '')?.toUtc();
     if (cachedAt == null) {
       return null;

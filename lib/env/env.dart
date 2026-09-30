@@ -13,7 +13,6 @@ class Env {
   }
 
   // GitHub
-  static const String ghUserName = String.fromEnvironment('GH_USERNAME');
   static const String ghRepoWalls = String.fromEnvironment('GH_REPO_WALLS');
   static const String ghRepoSetups = String.fromEnvironment('GH_REPO_SETUPS');
 
@@ -38,9 +37,4 @@ class Env {
 
   // Persistence
   static const bool skipFirebaseInit = bool.fromEnvironment('SKIP_FIREBASE_INIT');
-
-  static const String localPersistenceBackend = String.fromEnvironment(
-    'LOCAL_PERSISTENCE_BACKEND',
-    defaultValue: 'shared_prefs',
-  );
 }
