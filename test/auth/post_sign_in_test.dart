@@ -77,6 +77,7 @@ class _Auth extends Fake implements FirebaseAuth {
   Future<void> signOut() async => calls.add('auth.signOut');
 }
 
+// ignore: avoid_implementing_value_types
 class _Account extends Fake implements GoogleSignInAccount {
   @override
   GoogleSignInAuthentication get authentication => const GoogleSignInAuthentication(idToken: 'id-token');

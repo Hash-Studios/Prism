@@ -20,6 +20,7 @@ import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// Thrown when the user selects a different Google account during re-authentication.
@@ -161,16 +162,8 @@ class GoogleAuth {
   /// unsubscribes run first, while the Firebase session can still authorize them.
   Future<bool> signOutGoogle() async {
     clearInAppNotificationSyncGateAll();
-    try {
-      await FcmTokenService.instance.cancelAndWait();
-    } catch (e, st) {
-      logger.w('Failed to stop FCM token writes.', tag: 'GoogleAuth', error: e, stackTrace: st);
-    }
-    try {
-      await waitForSignInBootstraps();
-    } catch (e, st) {
-      logger.w('Failed to drain sign-in bootstrap.', tag: 'GoogleAuth', error: e, stackTrace: st);
-    }
+    await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
+    await _bounded(waitForSignInBootstraps, 'drain sign-in bootstrap');
     final PrismUsersV2 existingUser = app_state.prismUser;
     final User? authenticatedUser = _auth.currentUser;
     final String authenticatedUid = authenticatedUser?.uid.trim() ?? '';
@@ -179,12 +172,14 @@ class GoogleAuth {
     List<String> following = existingUser.id == userId ? existingUser.following : const <String>[];
     if (authenticatedUid.isNotEmpty && existingUser.id != userId) {
       try {
-        final Map<String, dynamic>? authenticatedProfile = await firestoreClient.getById<Map<String, dynamic>>(
-          FirebaseCollections.usersV2,
-          userId,
-          (Map<String, dynamic> data, String _) => data,
-          sourceTag: 'auth.signout.find_user_doc',
-        );
+        final Map<String, dynamic>? authenticatedProfile = await firestoreClient
+            .getById<Map<String, dynamic>>(
+              FirebaseCollections.usersV2,
+              userId,
+              (Map<String, dynamic> data, String _) => data,
+              sourceTag: 'auth.signout.find_user_doc',
+            )
+            .timeout(signOutStepTimeout);
         email = authenticatedProfile?['email']?.toString() ?? '';
         following = (authenticatedProfile?['following'] as List<dynamic>?)?.whereType<String>().toList() ?? following;
       } catch (e, st) {
@@ -197,8 +192,11 @@ class GoogleAuth {
       }
     }
     await Future.wait(<Future<void>>[
-      _markLoggedOut(userId),
-      _unsubscribeUserTopics(userId: userId, email: authenticatedUser?.email ?? email, following: following),
+      _bounded(() => _markLoggedOut(userId), 'mark logged out'),
+      _bounded(
+        () => _unsubscribeUserTopics(userId: userId, email: authenticatedUser?.email ?? email, following: following),
+        'unsubscribe topics',
+      ),
       _clearPersonalization(),
     ]);
     try {
@@ -259,6 +257,20 @@ class GoogleAuth {
     }
     logger.d('User Sign Out');
     return firebaseSignOutSucceeded;
+  }
+
+  /// Firestore writes made offline only complete when the server acks them, so
+  /// every network step before sign-out gets a limit. A step that runs out of
+  /// time is skipped; sign-out itself never waits on the network.
+  @visibleForTesting
+  static Duration signOutStepTimeout = const Duration(seconds: 3);
+
+  Future<void> _bounded(Future<void> Function() step, String what) async {
+    try {
+      await step().timeout(signOutStepTimeout);
+    } catch (e, st) {
+      logger.w('Sign-out step "$what" failed or timed out; continuing.', tag: 'GoogleAuth', error: e, stackTrace: st);
+    }
   }
 
   Future<void> _markLoggedOut(String userId) async {
