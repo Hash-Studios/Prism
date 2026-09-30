@@ -137,7 +137,13 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
   }
 
   Future<void> _clearLearned() async {
-    await _tasteSignals.clear();
+    try {
+      await _tasteSignals.clear();
+    } catch (_) {
+      if (!mounted) return;
+      _messengerKey.currentState?.showSnackBar(const SnackBar(content: Text('Could not clear history. Try again.')));
+      return;
+    }
     if (!mounted) return;
     personalizedFeedSettingsRevision.value += 1;
     setState(() => _learned = TasteProfile.empty);
