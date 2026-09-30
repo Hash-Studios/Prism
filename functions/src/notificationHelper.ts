@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
+import {findUserByEmail} from "./common";
 
 export interface NotificationData extends Record<string, string> {
   route: string;
@@ -74,6 +75,14 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
   const message = fcmMessage({...payload, fcmTarget: payload.fcmTarget});
 
   try {
+    if ("topic" in payload.fcmTarget && payload.modifier.includes("@")) {
+      const personalEmailTopic = payload.fcmTarget.topic === emailToTopic(payload.modifier);
+      if (!payload.pushOnly || personalEmailTopic) {
+        const user = await findUserByEmail(payload.modifier);
+        if (isLoggedOut(user?.data())) return;
+      }
+    }
+
     const messageId = await messaging.send(message);
     logger.info("FCM push sent.", {
       messageId,
@@ -135,6 +144,10 @@ export async function sendToUidAndEmailTopics(
   if (uidTopic) {
     await sendNotification({...payload, fcmTarget: {topic: emailTopic}, pushOnly: true});
   }
+}
+
+export function isLoggedOut(user: {loggedIn?: unknown} | undefined): boolean {
+  return user?.loggedIn === false;
 }
 
 const INVALID_TOPIC_CHARS = /[^a-zA-Z0-9\-_.~%]/g;
