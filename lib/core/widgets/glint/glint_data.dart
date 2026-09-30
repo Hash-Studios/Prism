@@ -136,48 +136,9 @@ class GlintMoodSpec {
   final Map<String, List<GlintKey>> parts;
 }
 
-/// A round part of the ring outline: the circle ([cx], [cy], [r]) from [start] for [sweep] radians.
-class GlintArc extends GlintRingPiece {
-  const GlintArc(this.cx, this.cy, this.r, this.start, this.sweep);
-
-  final double cx;
-  final double cy;
-  final double r;
-  final double start;
-  final double sweep;
-}
-
-/// A straight part of the ring outline.
-class GlintLine extends GlintRingPiece {
-  const GlintLine(this.x0, this.y0, this.x1, this.y1);
-
-  final double x0;
-  final double y0;
-  final double x1;
-  final double y1;
-}
-
-sealed class GlintRingPiece {
-  const GlintRingPiece();
-}
-
 // ---------------------------------------------------------------- ring and crystal
 
 const double glintRingStroke = 10;
-const Offset glintRingCenter = Offset(80, 81.6);
-
-/// The ring's centre line: the hull of four circles (the logo's rounded kite), clockwise from the top.
-/// Arcs and straight edges alternate, and the colours below sit at the middle of each of the eight pieces.
-const List<GlintRingPiece> glintRingHull = [
-  GlintArc(80, 41.7, 16, -2.572162, 2.002732),
-  GlintLine(93.475333, 33.073563, 133.048708, 94.89102),
-  GlintArc(122.1, 101.9, 13, -0.56943, 1.645047),
-  GlintLine(128.277465, 113.338485, 86.652654, 135.818368),
-  GlintArc(80, 123.5, 14, 1.075617, 0.990359),
-  GlintLine(73.347346, 135.818368, 31.722535, 113.338485),
-  GlintArc(37.9, 101.9, 13, 2.065976, 1.645047),
-  GlintLine(26.951292, 94.89102, 66.524667, 33.073563),
-];
 const List<Color> glintRingNodeColors = [
   glintPurple,
   glintLavender,
@@ -205,9 +166,6 @@ const double glintCrystalSplitX = 80;
 const List<Offset> glintCrystalHighlight = [Offset(77.9, 54), Offset(52.6, 97.9)];
 const double glintCrystalHighlightWidth = 1.2;
 const double glintCrystalHighlightOpacity = 0.6;
-
-/// The four corners of the crystal, top and then clockwise. The outline rounds them by 3.
-const List<Offset> glintCrystalCorners = [Offset(80, 46), Offset(113.3, 103.7), Offset(80, 117.8), Offset(46.7, 103.7)];
 
 /// The crystal's outline.
 final Path glintCrystalPath = Path()

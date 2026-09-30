@@ -40,13 +40,13 @@ enum GlintMood {
 
 /// Prism's mascot: the crystal from the logo, with a face, inside the logo's rainbow ring.
 ///
-/// The colours are fixed brand colours (the logo's), not theme colours. A mood changes the face, the motion and the
-/// details, never the colours. Glint is a picture, so screen readers skip it: callers say what it means in words
-/// beside it.
+/// The colours are fixed brand colours (the logo's), not theme colours. A mood changes the face, motion and details;
+/// love also warms the ring. Glint is a picture, so screen readers skip it: callers say what it means in words beside
+/// it.
 ///
-/// Glint loops for as long as it is on screen, and its ticker stops with the route and the app. Under reduce-motion
-/// it holds a still pose of the same mood. Because it loops, a test that shows Glint pumps a bounded number of frames
-/// instead of `pumpAndSettle`.
+/// Glint loops while its route and app are active, following [TickerMode]. Under reduce-motion it holds a still pose
+/// of the same mood. Because it loops, a test that shows Glint pumps a bounded number of frames instead of
+/// `pumpAndSettle`.
 class Glint extends StatefulWidget {
   const Glint({super.key, this.mood = GlintMood.calm, this.size = 96});
 
@@ -61,7 +61,6 @@ class Glint extends StatefulWidget {
 
 class _GlintState extends State<Glint> with SingleTickerProviderStateMixin {
   late final Ticker _ticker = createTicker(_onTick);
-  Duration _zero = Duration.zero;
   Duration _now = Duration.zero;
 
   void _onTick(Duration elapsed) => setState(() => _now = elapsed);
@@ -72,7 +71,7 @@ class _GlintState extends State<Glint> with SingleTickerProviderStateMixin {
     final bool still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (still && _ticker.isActive) _ticker.stop();
     if (!still && !_ticker.isActive) {
-      _zero = _now = Duration.zero;
+      _now = Duration.zero;
       _ticker.start();
     }
   }
@@ -81,7 +80,12 @@ class _GlintState extends State<Glint> with SingleTickerProviderStateMixin {
   void didUpdateWidget(Glint oldWidget) {
     super.didUpdateWidget(oldWidget);
     // A new mood starts its loop from the top.
-    if (oldWidget.mood != widget.mood) _zero = _now;
+    if (oldWidget.mood != widget.mood && _ticker.isActive) {
+      _now = Duration.zero;
+      _ticker
+        ..stop()
+        ..start();
+    }
   }
 
   @override
@@ -95,7 +99,7 @@ class _GlintState extends State<Glint> with SingleTickerProviderStateMixin {
     child: GlintPose(
       mood: widget.mood,
       size: widget.size,
-      seconds: (_now - _zero).inMicroseconds / Duration.microsecondsPerSecond,
+      seconds: _now.inMicroseconds / Duration.microsecondsPerSecond,
       still: !_ticker.isActive,
     ),
   );
@@ -121,10 +125,6 @@ class GlintPose extends StatelessWidget {
     final GlintMoodSpec spec = glintSpecOf(mood);
     final double at = still ? spec.stillAt : seconds;
     final double fraction = (at % spec.period) / spec.period;
-    assert(
-      glintCrystalCornersAt(mood, fraction).every((Offset c) => c.dx >= 0 && c.dx <= _box && c.dy >= 0 && c.dy <= _box),
-      'The crystal of ${mood.name} leaves its box at $fraction',
-    );
     return ExcludeSemantics(
       child: SizedBox.square(
         dimension: size,
@@ -149,18 +149,6 @@ GlintMoodSpec glintSpecOf(GlintMood mood) => switch (mood) {
   GlintMood.sleepy => glintSleepy,
 };
 
-/// Where the crystal's four corners are, in the 160 x 160 box, at [fraction] of the mood's loop.
-@visibleForTesting
-List<Offset> glintCrystalCornersAt(GlintMood mood, double fraction) {
-  final GlintMoodSpec spec = glintSpecOf(mood);
-  final _Pose scene = _poseOf(spec, 'scene', fraction);
-  final _Pose body = _poseOf(spec, 'body', fraction);
-  return [
-    for (final Offset corner in glintCrystalCorners)
-      scene.apply(glintPartOrigin['scene']!, body.apply(glintPartOrigin['body']!, corner)),
-  ];
-}
-
 // ---------------------------------------------------------------- motion
 
 /// A part's motion at one moment.
@@ -175,17 +163,6 @@ class _Pose {
   final double sx;
   final double sy;
   final double op;
-
-  /// The same as `translate(origin + t) rotate(rot) scale(sx, sy) translate(-origin)` on the canvas.
-  Offset apply(Offset origin, Offset point) {
-    final double x = (point.dx - origin.dx) * sx;
-    final double y = (point.dy - origin.dy) * sy;
-    final double a = rot * math.pi / 180;
-    return Offset(
-      x * math.cos(a) - y * math.sin(a) + origin.dx + tx,
-      x * math.sin(a) + y * math.cos(a) + origin.dy + ty,
-    );
-  }
 
   factory _Pose.between(GlintKey a, GlintKey b, double u) => _Pose(
     a.tx + (b.tx - a.tx) * u,
@@ -252,7 +229,10 @@ class _GlintPainter extends CustomPainter {
     canvas.rotate(pose.rot * math.pi / 180);
     canvas.scale(pose.sx, pose.sy);
     canvas.translate(-origin.dx, -origin.dy);
-    if (op < 1) canvas.saveLayer(_layerBounds, Paint()..color = Color.fromRGBO(0, 0, 0, op));
+    if (op < 1) {
+      _opacityPaint.color = Color.fromRGBO(0, 0, 0, op);
+      canvas.saveLayer(_layerBounds, _opacityPaint);
+    }
     draw();
     if (op < 1) canvas.restore();
     canvas.restore();
@@ -264,13 +244,13 @@ class _GlintPainter extends CustomPainter {
     canvas.scale(size.width / _box);
     _part(canvas, 'scene', glintPartOrigin['scene']!, () {
       _part(canvas, 'ring', glintPartOrigin['ring']!, () => _drawRing(canvas));
-      for (final GlintFx fx in spec.fx.where((GlintFx fx) => fx.behind)) {
-        _drawFx(canvas, fx);
+      for (final GlintFx fx in spec.fx) {
+        if (fx.behind) _drawFx(canvas, fx);
       }
       _part(canvas, 'body', glintPartOrigin['body']!, () => _drawBody(canvas));
       _part(canvas, 'fx', glintPartOrigin['fx']!, () {
-        for (final GlintFx fx in spec.fx.where((GlintFx fx) => !fx.behind)) {
-          _drawFx(canvas, fx);
+        for (final GlintFx fx in spec.fx) {
+          if (!fx.behind) _drawFx(canvas, fx);
         }
       });
     });
@@ -278,42 +258,31 @@ class _GlintPainter extends CustomPainter {
   }
 
   void _drawRing(Canvas canvas) {
-    final (List<Color> colors, List<double> stops) = love ? _warmRing : _coolRing;
-    canvas.drawPath(
-      _ringPath,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = glintRingStroke
-        ..strokeJoin = StrokeJoin.round
-        ..shader = ui.Gradient.sweep(glintRingCenter, colors, stops),
-    );
+    final List<Paint> paints = love ? _warmRing : _coolRing;
+    for (int i = 0; i < _ringSegmentPaths.length; i++) {
+      canvas.drawPath(_ringSegmentPaths[i], paints[i]);
+    }
   }
 
   void _drawBody(Canvas canvas) {
-    canvas.drawPath(glintCrystalPath, Paint()..color = glintCrystalRight);
+    canvas.drawPath(glintCrystalPath, _crystalRightPaint);
     canvas.save();
     canvas.clipPath(glintCrystalPath);
-    canvas.drawRect(const Rect.fromLTRB(40, 40, glintCrystalSplitX, 125), Paint()..color = glintCrystalLeft);
+    canvas.drawRect(const Rect.fromLTRB(40, 40, glintCrystalSplitX, 125), _crystalLeftPaint);
     canvas.restore();
-    canvas.drawLine(
-      glintCrystalHighlight[0],
-      glintCrystalHighlight[1],
-      Paint()
-        ..color = glintWhite.withValues(alpha: glintCrystalHighlightOpacity)
-        ..strokeWidth = glintCrystalHighlightWidth
-        ..strokeCap = StrokeCap.round,
-    );
-    canvas.drawPath(
-      glintCrystalPath,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..color = glintCrystalRim
-        ..strokeWidth = glintCrystalRimWidth
-        ..strokeJoin = StrokeJoin.round,
-    );
+    canvas.drawLine(glintCrystalHighlight[0], glintCrystalHighlight[1], _crystalHighlightPaint);
+    canvas.drawPath(glintCrystalPath, _crystalRimPaint);
     if (spec.parts.containsKey('fx:sheen')) _drawSheen(canvas);
-    for (final GlintShape s in [if (spec.face.cheeks) ...glintCheeks, ...spec.face.brows, ...spec.face.mouth]) {
-      _drawShape(canvas, s);
+    if (spec.face.cheeks) {
+      for (final GlintShape cheek in glintCheeks) {
+        _drawShape(canvas, cheek);
+      }
+    }
+    for (final GlintShape brow in spec.face.brows) {
+      _drawShape(canvas, brow);
+    }
+    for (final GlintShape mouth in spec.face.mouth) {
+      _drawShape(canvas, mouth);
     }
     _part(canvas, 'eyes', glintPartOrigin['eyes']!, () {
       for (final GlintShape s in spec.face.eyes) {
@@ -326,8 +295,8 @@ class _GlintPainter extends CustomPainter {
     canvas.save();
     canvas.clipPath(glintCrystalPath);
     _part(canvas, 'fx:sheen', Offset.zero, () {
-      canvas.drawPath(_polygon(glintSheenWide), Paint()..color = const Color(0xFFBFE6FF).withValues(alpha: .6));
-      canvas.drawPath(_polygon(glintSheenNarrow), Paint()..color = glintWhite.withValues(alpha: .85));
+      canvas.drawPath(_sheenWidePath, _sheenWidePaint);
+      canvas.drawPath(_sheenNarrowPath, _sheenNarrowPaint);
     });
     canvas.restore();
   }
@@ -335,7 +304,7 @@ class _GlintPainter extends CustomPainter {
   void _drawFx(Canvas canvas, GlintFx fx) {
     canvas.save();
     canvas.translate(fx.x, fx.y);
-    _part(canvas, 'fx:${fx.name}', Offset.zero, () => _drawFxShape(canvas, fx));
+    _part(canvas, _fxPartNames.putIfAbsent(fx, () => 'fx:${fx.name}'), Offset.zero, () => _drawFxShape(canvas, fx));
     canvas.restore();
   }
 
@@ -345,87 +314,131 @@ class _GlintPainter extends CustomPainter {
 
 // ---------------------------------------------------------------- shapes
 
-final Path _ringPath = _buildRingPath();
+// These eight overlapping segments and their user-space gradients match glint2.html.
+final List<Path> _ringSegmentPaths = [
+  Path()
+    ..moveTo(80, 25.7)
+    ..arcToPoint(const Offset(93.48, 33.07), radius: const Radius.circular(16))
+    ..lineTo(113.53, 64.4),
+  Path()
+    ..moveTo(113.26, 63.98)
+    ..lineTo(133.05, 94.89)
+    ..arcToPoint(const Offset(134.55, 105.64), radius: const Radius.circular(13)),
+  Path()
+    ..moveTo(134.69, 105.16)
+    ..arcToPoint(const Offset(128.28, 113.34), radius: const Radius.circular(13))
+    ..lineTo(107.03, 124.82),
+  Path()
+    ..moveTo(107.47, 124.58)
+    ..lineTo(86.65, 135.82)
+    ..arcToPoint(const Offset(79.5, 137.49), radius: const Radius.circular(14)),
+  Path()
+    ..moveTo(80, 137.5)
+    ..arcToPoint(const Offset(73.35, 135.82), radius: const Radius.circular(14))
+    ..lineTo(52.09, 124.34),
+  Path()
+    ..moveTo(52.53, 124.58)
+    ..lineTo(31.72, 113.34)
+    ..arcToPoint(const Offset(25.2, 104.67), radius: const Radius.circular(13)),
+  Path()
+    ..moveTo(25.31, 105.16)
+    ..arcToPoint(const Offset(26.95, 94.89), radius: const Radius.circular(13))
+    ..lineTo(47.01, 63.56),
+  Path()
+    ..moveTo(46.74, 63.98)
+    ..lineTo(66.52, 33.07)
+    ..arcToPoint(const Offset(80.5, 25.71), radius: const Radius.circular(16)),
+];
 
-Path _buildRingPath() {
-  final Path path = Path();
-  bool first = true;
-  for (final GlintRingPiece piece in glintRingHull) {
-    switch (piece) {
-      case GlintArc():
-        path.arcTo(
-          Rect.fromCircle(center: Offset(piece.cx, piece.cy), radius: piece.r),
-          piece.start,
-          piece.sweep,
-          first,
-        );
-      case GlintLine():
-        path.lineTo(piece.x1, piece.y1);
-    }
-    first = false;
-  }
-  return path..close();
-}
+const List<Offset> _ringGradientStarts = [
+  Offset(80, 25.7),
+  Offset(113.26, 63.98),
+  Offset(134.69, 105.16),
+  Offset(107.47, 124.58),
+  Offset(80, 137.5),
+  Offset(52.53, 124.58),
+  Offset(25.31, 105.16),
+  Offset(46.74, 63.98),
+];
+const List<Offset> _ringGradientEnds = [
+  Offset(113.26, 63.98),
+  Offset(134.69, 105.16),
+  Offset(107.47, 124.58),
+  Offset(80, 137.5),
+  Offset(52.53, 124.58),
+  Offset(25.31, 105.16),
+  Offset(46.74, 63.98),
+  Offset(80, 25.7),
+];
 
-/// The ring's sweep colours: one at the middle of each hull piece, and the loop closed over the 0 angle.
-final (List<Color>, List<double>) _coolRing = _sweep(glintRingNodeColors);
-final (List<Color>, List<double>) _warmRing = _sweep([
+final List<Paint> _coolRing = _ringPaints(glintRingNodeColors);
+final List<Paint> _warmRing = _ringPaints([
   for (int i = 0; i < glintRingNodeColors.length; i++) glintRingWarmColors[i] ?? glintRingNodeColors[i],
 ]);
 
-(List<Color>, List<double>) _sweep(List<Color> nodeColors) {
-  final List<(double, Color)> nodes = [
-    for (int i = 0; i < glintRingHull.length; i++) (_angleOf(_middleOf(glintRingHull[i])), nodeColors[i]),
-  ]..sort(((double, Color) a, (double, Color) b) => a.$1.compareTo(b.$1));
-  final (double, Color) first = nodes.first;
-  final (double, Color) last = nodes.last;
-  // The colour where the sweep wraps past the 0 angle, between the last node and the first.
-  final double gap = 1 - last.$1 + first.$1;
-  final Color edge = Color.lerp(last.$2, first.$2, gap == 0 ? 0 : (1 - last.$1) / gap)!;
-  return (
-    [edge, for (final (double, Color) n in nodes) n.$2, edge],
-    [0, for (final (double, Color) n in nodes) n.$1, 1],
-  );
-}
+List<Paint> _ringPaints(List<Color> nodeColors) => [
+  for (int i = 0; i < nodeColors.length; i++)
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = glintRingStroke
+      ..strokeJoin = StrokeJoin.round
+      ..shader = ui.Gradient.linear(_ringGradientStarts[i], _ringGradientEnds[i], [
+        nodeColors[i],
+        nodeColors[(i + 1) % nodeColors.length],
+      ]),
+];
 
-Offset _middleOf(GlintRingPiece piece) => switch (piece) {
-  GlintArc() => Offset(
-    piece.cx + piece.r * math.cos(piece.start + piece.sweep / 2),
-    piece.cy + piece.r * math.sin(piece.start + piece.sweep / 2),
-  ),
-  GlintLine() => Offset((piece.x0 + piece.x1) / 2, (piece.y0 + piece.y1) / 2),
-};
+final Path _sheenWidePath = Path()..addPolygon(glintSheenWide, true);
+final Path _sheenNarrowPath = Path()..addPolygon(glintSheenNarrow, true);
+final Paint _sheenWidePaint = Paint()..color = const Color(0xFFBFE6FF).withValues(alpha: .6);
+final Paint _sheenNarrowPaint = Paint()..color = glintWhite.withValues(alpha: .85);
+final Paint _crystalRightPaint = Paint()..color = glintCrystalRight;
+final Paint _crystalLeftPaint = Paint()..color = glintCrystalLeft;
+final Paint _crystalHighlightPaint = Paint()
+  ..color = glintWhite.withValues(alpha: glintCrystalHighlightOpacity)
+  ..strokeWidth = glintCrystalHighlightWidth
+  ..strokeCap = StrokeCap.round;
+final Paint _crystalRimPaint = Paint()
+  ..style = PaintingStyle.stroke
+  ..color = glintCrystalRim
+  ..strokeWidth = glintCrystalRimWidth
+  ..strokeJoin = StrokeJoin.round;
+final Paint _opacityPaint = Paint();
 
-/// A stop in [0, 1) for [point]: the angle round the ring's centre, from +x and clockwise (y is down).
-double _angleOf(Offset point) {
-  final Offset d = point - glintRingCenter;
-  return (math.atan2(d.dy, d.dx) % (2 * math.pi)) / (2 * math.pi);
-}
+final Map<GlintShape, Path> _shapePaths = {};
+final Map<GlintFx, Path> _fxPaths = {};
+final Map<GlintFx, String> _fxPartNames = {};
+final Map<Color, Paint> _fillPaints = {};
+final Map<(Color, double), Paint> _strokePaints = {};
 
-Path _polygon(List<Offset> points) => Path()..addPolygon(points, true);
+Paint _fill(Color color) => _fillPaints.putIfAbsent(color, () => Paint()..color = color);
+
+Paint _cachedStroke(Color color, double width) =>
+    _strokePaints.putIfAbsent((color, width), () => _stroke(color, width));
+
+Path _heartPath(GlintHeart shape) => _shapePaths.putIfAbsent(shape, () {
+  final double cx = shape.cx;
+  final double cy = shape.cy;
+  final double k = shape.size;
+  return Path()
+    ..moveTo(cx, cy + k * 1.2)
+    ..cubicTo(cx - k * 1.9, cy + k * .1, cx - k * 1.4, cy - k * 1.6, cx, cy - k * .6)
+    ..cubicTo(cx + k * 1.4, cy - k * 1.6, cx + k * 1.9, cy + k * .1, cx, cy + k * 1.2)
+    ..close();
+});
 
 void _drawShape(Canvas canvas, GlintShape shape) {
   switch (shape) {
     case GlintEllipse():
       canvas.drawOval(
         Rect.fromCenter(center: Offset(shape.cx, shape.cy), width: shape.rx * 2, height: shape.ry * 2),
-        Paint()..color = shape.color.withValues(alpha: shape.color.a * shape.opacity),
+        _fill(shape.color.withValues(alpha: shape.color.a * shape.opacity)),
       );
     case GlintHeart():
-      final double cx = shape.cx;
-      final double cy = shape.cy;
-      final double k = shape.size;
-      canvas.drawPath(
-        Path()
-          ..moveTo(cx, cy + k * 1.2)
-          ..cubicTo(cx - k * 1.9, cy + k * .1, cx - k * 1.4, cy - k * 1.6, cx, cy - k * .6)
-          ..cubicTo(cx + k * 1.4, cy - k * 1.6, cx + k * 1.9, cy + k * .1, cx, cy + k * 1.2)
-          ..close(),
-        Paint()..color = shape.color,
-      );
+      canvas.drawPath(_heartPath(shape), _fill(shape.color));
     case GlintStroke():
-      if (shape.fill != null) canvas.drawPath(shape.path, Paint()..color = shape.fill!);
-      canvas.drawPath(shape.path, _stroke(shape.color, shape.width));
+      if (shape.fill != null) canvas.drawPath(shape.path, _fill(shape.fill!));
+      canvas.drawPath(shape.path, _cachedStroke(shape.color, shape.width));
   }
 }
 
@@ -440,61 +453,73 @@ Paint _stroke(Color color, double width) => Paint()
 void _drawFxShape(Canvas canvas, GlintFx fx) {
   final double s = fx.size;
   final Color color = fx.color ?? glintWhite;
-  final Paint fill = Paint()..color = color;
+  final Paint fill = _fill(color);
   switch (fx.kind) {
     case GlintFxKind.spark:
       canvas.drawPath(
-        Path()
-          ..moveTo(0, -s)
-          ..quadraticBezierTo(0, 0, s, 0)
-          ..quadraticBezierTo(0, 0, 0, s)
-          ..quadraticBezierTo(0, 0, -s, 0)
-          ..quadraticBezierTo(0, 0, 0, -s)
-          ..close(),
+        _fxPaths.putIfAbsent(
+          fx,
+          () => Path()
+            ..moveTo(0, -s)
+            ..quadraticBezierTo(0, 0, s, 0)
+            ..quadraticBezierTo(0, 0, 0, s)
+            ..quadraticBezierTo(0, 0, -s, 0)
+            ..quadraticBezierTo(0, 0, 0, -s)
+            ..close(),
+        ),
         fill,
       );
     case GlintFxKind.heart:
       canvas.drawPath(
-        Path()
-          ..moveTo(0, s * .9)
-          ..cubicTo(-s * 1.6, -s * .1, -s * 1.1, -s * 1.4, 0, -s * .5)
-          ..cubicTo(s * 1.1, -s * 1.4, s * 1.6, -s * .1, 0, s * .9)
-          ..close(),
+        _fxPaths.putIfAbsent(
+          fx,
+          () => Path()
+            ..moveTo(0, s * .9)
+            ..cubicTo(-s * 1.6, -s * .1, -s * 1.1, -s * 1.4, 0, -s * .5)
+            ..cubicTo(s * 1.1, -s * 1.4, s * 1.6, -s * .1, 0, s * .9)
+            ..close(),
+        ),
         fill,
       );
     case GlintFxKind.z:
       final double a = 3.5 * s;
       final double b = 4 * s;
       canvas.drawPath(
-        Path()
-          ..moveTo(-a, -b)
-          ..relativeLineTo(2 * a, 0)
-          ..relativeLineTo(-2 * a, 2 * b)
-          ..relativeLineTo(2 * a, 0),
-        _stroke(color, 2),
+        _fxPaths.putIfAbsent(
+          fx,
+          () => Path()
+            ..moveTo(-a, -b)
+            ..relativeLineTo(2 * a, 0)
+            ..relativeLineTo(-2 * a, 2 * b)
+            ..relativeLineTo(2 * a, 0),
+        ),
+        _cachedStroke(color, 2),
       );
     case GlintFxKind.drop:
       canvas.save();
       canvas.scale(s);
       canvas.drawPath(
-        Path()
-          ..moveTo(0, -5.2)
-          ..quadraticBezierTo(4.2, 0, 3.7, 2.6)
-          ..arcToPoint(const Offset(-3.7, 2.6), radius: const Radius.circular(3.7))
-          ..quadraticBezierTo(-4.2, 0, 0, -5.2)
-          ..close(),
+        _fxPaths.putIfAbsent(
+          fx,
+          () => Path()
+            ..moveTo(0, -5.2)
+            ..quadraticBezierTo(4.2, 0, 3.7, 2.6)
+            ..arcToPoint(const Offset(-3.7, 2.6), radius: const Radius.circular(3.7))
+            ..quadraticBezierTo(-4.2, 0, 0, -5.2)
+            ..close(),
+        ),
         fill,
       );
       canvas.restore();
     case GlintFxKind.bang:
-      canvas.drawLine(Offset(s * -1.2, -3.6), Offset(s * .8, 5), _stroke(color, 2.6));
+      canvas.drawLine(Offset(s * -1.2, -3.6), Offset(s * .8, 5), _cachedStroke(color, 2.6));
       canvas.drawCircle(Offset(s * 1.4, 10.4), 1.5, fill);
     case GlintFxKind.rays:
       for (int i = 0; i < glintRayColors.length; i++) {
         final double a = (-50 + 20 * i) * math.pi / 180;
         final double dx = math.sin(a);
         final double dy = math.cos(a);
-        canvas.drawLine(Offset(dx * 12, dy * 12), Offset(dx * 48, dy * 48), _stroke(glintRayColors[i], 3));
+        canvas.drawLine(Offset(dx * 12, dy * 12), Offset(dx * 48, dy * 48), _cachedStroke(glintRayColors[i], 3));
       }
   }
 }
