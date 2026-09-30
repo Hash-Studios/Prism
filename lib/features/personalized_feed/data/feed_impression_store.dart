@@ -36,32 +36,52 @@ class FeedImpressionStore {
     final DateTime cutoff = now.subtract(_window);
     for (final String key in keys) {
       final _Impression? old = all.remove(key);
-      final int count = old == null || old.lastShown.isBefore(cutoff) ? 1 : min(old.count + 1, hiddenShows - 1);
+      final int count = old != null && old.count >= hiddenShows
+          ? hiddenShows
+          : old == null || old.lastShown.isBefore(cutoff)
+          ? 1
+          : min(old.count + 1, hiddenShows - 1);
       all[key] = _Impression(count, now);
     }
     return _write(all);
   }
 
   /// Hides are kept apart from impressions, so a busy feed never evicts them.
-  Future<void> hide(String key, DateTime now) {
+  Future<void> hide(String key, DateTime now) async {
+    final Map<String, _Impression> all = _read();
+    if (all.values.any((entry) => entry.count >= hiddenShows)) {
+      await _write(all);
+    }
     final List<String> hidden = _readHidden()
       ..remove(key)
       ..add(key);
-    final List<String> kept = hidden.length > _hiddenCap ? hidden.sublist(hidden.length - _hiddenCap) : hidden;
-    return _settingsLocal.set(_hiddenKey, json.encode(kept));
+    return _writeHidden(hidden);
   }
 
   List<String> _readHidden() {
+    final Set<String> hidden = <String>{
+      for (final MapEntry<String, _Impression> entry in _read().entries)
+        if (entry.value.count >= hiddenShows) entry.key,
+    };
     final String raw = _settingsLocal.get<String>(_hiddenKey, defaultValue: '');
     if (raw.isEmpty) {
-      return <String>[];
+      return hidden.toList();
     }
     try {
       final Object? decoded = json.decode(raw);
-      return decoded is List ? decoded.whereType<String>().toList() : <String>[];
+      if (decoded is List) {
+        hidden.removeAll(decoded.whereType<String>());
+        hidden.addAll(decoded.whereType<String>());
+      }
     } catch (_) {
-      return <String>[];
+      // Keep legacy hides even if the separate list is malformed.
     }
+    return hidden.toList();
+  }
+
+  Future<void> _writeHidden(List<String> hidden) {
+    final List<String> kept = hidden.length > _hiddenCap ? hidden.sublist(hidden.length - _hiddenCap) : hidden;
+    return _settingsLocal.set(_hiddenKey, json.encode(kept));
   }
 
   Map<String, _Impression> _read() {
@@ -91,9 +111,13 @@ class FeedImpressionStore {
     }
   }
 
-  Future<void> _write(Map<String, _Impression> all) {
-    final List<MapEntry<String, _Impression>> entries = all.entries.toList()
-      ..sort((a, b) => a.value.lastShown.compareTo(b.value.lastShown));
+  Future<void> _write(Map<String, _Impression> all) async {
+    if (all.values.any((entry) => entry.count >= hiddenShows)) {
+      await _writeHidden(_readHidden());
+    }
+    final List<MapEntry<String, _Impression>> entries =
+        all.entries.where((entry) => entry.value.count < hiddenShows).toList()
+          ..sort((a, b) => a.value.lastShown.compareTo(b.value.lastShown));
     final Iterable<MapEntry<String, _Impression>> kept = entries.length > _cap
         ? entries.skip(entries.length - _cap)
         : entries;
