@@ -15,7 +15,6 @@ import 'package:Prism/features/navigation/views/widgets/offline_banner.dart';
 import 'package:Prism/features/navigation/views/widgets/personalized_feed_settings_bottom_sheet.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_top_app_bar.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -35,9 +34,8 @@ class HomeTabPage extends StatefulWidget {
 class _HomeTabPageState extends State<HomeTabPage> {
   final FavoritesLocalDataSource _favoritesLocal = getIt<FavoritesLocalDataSource>();
   final SettingsLocalDataSource _settingsLocal = getIt<SettingsLocalDataSource>();
-  bool result = true;
+  bool _isOnline = true;
   bool _hasHandledQuickActionInvocation = false;
-  bool _isChangelogCheckPending = true;
   int _personalizedFeedVersion = 0;
 
   Future<void> _ensureDefaultTopicSubscriptions() async {
@@ -62,18 +60,8 @@ class _HomeTabPageState extends State<HomeTabPage> {
       _settingsLocal.set('lastSeenVersion', currentAppVersion);
     }
     if (lastSeen != null && lastSeen != currentAppVersion) {
-      showChangelog(context, () {
-        if (mounted) {
-          setState(() {
-            _isChangelogCheckPending = false;
-          });
-        }
-      });
-      return;
+      showChangelog(context, () {});
     }
-    setState(() {
-      _isChangelogCheckPending = false;
-    });
   }
 
   void _trackQuickActionInvocation(String shortcutType) {
@@ -100,14 +88,9 @@ class _HomeTabPageState extends State<HomeTabPage> {
   }
 
   Future<void> checkConnection() async {
-    result = await InternetConnectionChecker.instance.hasConnection;
-    if (result) {
-      logger.d("Internet working as expected!");
-      setState(() {});
-    } else {
-      logger.d("Not connected to Internet!");
-      setState(() {});
-    }
+    final bool isOnline = await InternetConnectionChecker.instance.hasConnection;
+    if (!mounted) return;
+    setState(() => _isOnline = isOnline);
   }
 
   Future<void> saveFavToLocal() async {
@@ -134,7 +117,6 @@ class _HomeTabPageState extends State<HomeTabPage> {
     quickActions.initialize((String shortcutType) {
       _trackQuickActionInvocation(shortcutType);
       if (shortcutType == 'Downloads') {
-        logger.d('Downloads');
         context.router.push(const DownloadRoute());
       }
     });
@@ -144,22 +126,16 @@ class _HomeTabPageState extends State<HomeTabPage> {
       const ShortcutItem(type: 'Collections', localizedTitle: 'Collections', icon: '@drawable/ic_collections'),
       const ShortcutItem(type: 'Downloads', localizedTitle: 'Downloads', icon: '@drawable/ic_downloads'),
     ]);
-    saveFavToLocal();
-    checkConnection();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showChangelogCheck();
+    });
+    unawaited(saveFavToLocal());
+    unawaited(checkConnection());
     unawaited(_ensureDefaultTopicSubscriptions());
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isChangelogCheckPending) {
-      Future<void>.delayed(Duration.zero).then((_) {
-        if (!mounted) {
-          return;
-        }
-        _showChangelogCheck();
-      });
-    }
-
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: PrismTopAppBar(
@@ -177,7 +153,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
       body: Stack(
         children: <Widget>[
           PersonalizedFeedScreen(key: ValueKey<int>(_personalizedFeedVersion)),
-          if (!result) const ConnectivityWidget() else Container(),
+          if (!_isOnline) const ConnectivityWidget(),
         ],
       ),
     );

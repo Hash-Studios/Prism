@@ -4,14 +4,28 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 
-const String _kDefaultFeedMix = 'balanced';
+enum FeedMix {
+  balanced('Balanced'),
+  creators('Creators'),
+  discovery('Discovery');
+
+  const FeedMix(this.label);
+
+  final String label;
+
+  static FeedMix fromName(String name) =>
+      FeedMix.values.firstWhere((FeedMix mix) => mix.name == name, orElse: () => FeedMix.balanced);
+}
 
 Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {VoidCallback? onPreferencesSaved}) async {
   final SettingsLocalDataSource settingsLocal = getIt<SettingsLocalDataSource>();
@@ -27,11 +41,10 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {Void
   if (selected.isEmpty) {
     selected = PersonalizedInterestsCatalog.defaultSelection(catalog).toSet();
   }
-  final String currentMix = settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: _kDefaultFeedMix);
+  final FeedMix currentMix = FeedMix.fromName(
+    settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: FeedMix.balanced.name),
+  );
 
-  if (!context.mounted) {
-    return;
-  }
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -40,20 +53,21 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context, {Void
       catalog: catalog,
       initialInterests: selected,
       initialFeedMix: currentMix,
-      onSave: (List<String> interests, String feedMix) async {
+      onSave: (List<String> interests, FeedMix feedMix) async {
         final bool persisted = await _persistInterests(settingsLocal, interests);
         if (!persisted) {
-          return;
+          return false;
         }
-        await settingsLocal.set(personalizedFeedMixLocalKey, feedMix);
+        await settingsLocal.set(personalizedFeedMixLocalKey, feedMix.name);
         onPreferencesSaved?.call();
+        return true;
       },
     ),
   );
 }
 
 Future<bool> _persistInterests(SettingsLocalDataSource settingsLocal, List<String> interests) async {
-  await settingsLocal.set('onboarding_v2_interests', interests.join(','));
+  await settingsLocal.set(OnboardingV2Keys.selectedInterests, interests.join(','));
   if (!app_state.prismUser.loggedIn) {
     return true;
   }
@@ -73,8 +87,8 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
 
   final List<PersonalizedInterest> catalog;
   final Set<String> initialInterests;
-  final String initialFeedMix;
-  final Future<void> Function(List<String> interests, String feedMix) onSave;
+  final FeedMix initialFeedMix;
+  final Future<bool> Function(List<String> interests, FeedMix feedMix) onSave;
 
   @override
   State<PersonalizedFeedSettingsSheet> createState() => _PersonalizedFeedSettingsSheetState();
@@ -82,7 +96,7 @@ class PersonalizedFeedSettingsSheet extends StatefulWidget {
 
 class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettingsSheet> {
   late Set<String> _selectedInterests;
-  late String _feedMix;
+  late FeedMix _feedMix;
   bool _saving = false;
 
   @override
@@ -98,15 +112,21 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     final List<String> defaults = PersonalizedInterestsCatalog.defaultSelection(widget.catalog);
     setState(() {
       _selectedInterests = defaults.toSet();
-      _feedMix = _kDefaultFeedMix;
+      _feedMix = FeedMix.balanced;
     });
   }
 
   Future<void> _save() async {
     if (!_canSave) return;
     setState(() => _saving = true);
-    await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
-    if (mounted) Navigator.of(context).pop();
+    final bool saved = await widget.onSave(_selectedInterests.toList(growable: false), _feedMix);
+    if (!mounted) return;
+    if (saved) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() => _saving = false);
+      toasts.error("Couldn't save your feed. Try again.");
+    }
   }
 
   @override
@@ -129,10 +149,9 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         const SizedBox(height: PrismBottomSheet.topGap),
-        const _DragHandle(),
+        const AiSheetDragHandle(),
         const SizedBox(height: PrismBottomSheet.headerGap),
 
-        // -- Header -----------------------------------------------------------
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: PrismBottomSheet.horizontalPadding),
           child: Row(
@@ -151,7 +170,6 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
         ),
         const SizedBox(height: PrismBottomSheet.headerGap),
 
-        // -- Interests --------------------------------------------------------
         Padding(
           padding: const EdgeInsets.only(
             left: PrismBottomSheet.horizontalPadding,
@@ -186,7 +204,6 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
           ),
         ),
 
-        // -- Feed mix ---------------------------------------------------------
         Padding(
           padding: const EdgeInsets.only(
             left: PrismBottomSheet.horizontalPadding,
@@ -202,10 +219,9 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
             right: PrismBottomSheet.horizontalPadding,
             bottom: PrismBottomSheet.sectionTopGap,
           ),
-          child: _FeedMixSelector(value: _feedMix, onChanged: (String v) => setState(() => _feedMix = v)),
+          child: _FeedMixSelector(value: _feedMix, onChanged: (FeedMix v) => setState(() => _feedMix = v)),
         ),
 
-        // -- Action bar -------------------------------------------------------
         const Divider(
           height: 1,
           indent: PrismBottomSheet.horizontalPadding,
@@ -290,29 +306,22 @@ class _InterestChip extends StatelessWidget {
 class _FeedMixSelector extends StatelessWidget {
   const _FeedMixSelector({required this.value, required this.onChanged});
 
-  final String value;
-  final ValueChanged<String> onChanged;
+  final FeedMix value;
+  final ValueChanged<FeedMix> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    return SegmentedButton<String>(
-      segments: const <ButtonSegment<String>>[
-        ButtonSegment<String>(
-          value: 'balanced',
-          label: Text('Balanced', maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        ButtonSegment<String>(
-          value: 'creators',
-          label: Text('Creators', maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        ButtonSegment<String>(
-          value: 'discovery',
-          label: Text('Discovery', maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
+    return SegmentedButton<FeedMix>(
+      segments: <ButtonSegment<FeedMix>>[
+        for (final FeedMix mix in FeedMix.values)
+          ButtonSegment<FeedMix>(
+            value: mix,
+            label: Text(mix.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
       ],
-      selected: <String>{value},
-      onSelectionChanged: (Set<String> s) {
+      selected: <FeedMix>{value},
+      onSelectionChanged: (Set<FeedMix> s) {
         if (s.isNotEmpty) onChanged(s.first);
       },
       expandedInsets: EdgeInsets.zero,
@@ -328,24 +337,6 @@ class _FeedMixSelector extends StatelessWidget {
         ),
         iconColor: WidgetStateProperty.resolveWith(
           (Set<WidgetState> states) => states.contains(WidgetState.selected) ? PrismColors.onPrimary : cs.onSurface,
-        ),
-      ),
-    );
-  }
-}
-
-class _DragHandle extends StatelessWidget {
-  const _DragHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: PrismBottomSheet.dragHandleWidth,
-        height: PrismBottomSheet.dragHandleHeight,
-        decoration: BoxDecoration(
-          color: Theme.of(context).hintColor,
-          borderRadius: BorderRadius.circular(PrismBottomSheet.dragHandleRadius),
         ),
       ),
     );
