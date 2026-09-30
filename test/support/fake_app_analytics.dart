@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:flutter/widgets.dart';
 
 class FakeAppAnalytics implements AppAnalytics {
+  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
   final List<String?> userIds = <String?>[];
   final List<MapEntry<String, String?>> userProperties = <MapEntry<String, String?>>[];
 
@@ -13,17 +14,11 @@ class FakeAppAnalytics implements AppAnalytics {
   Future<void> flush() async {}
 
   @override
-  Future<void> logLogin({String? loginMethod}) async {}
-
-  @override
   Future<void> logScreenView({
     required String screenName,
     String? screenClass,
     Map<String, Object?>? parameters,
   }) async {}
-
-  @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) async {}
 
   @override
   Future<void> setUserId(String? userId) async {
@@ -36,5 +31,7 @@ class FakeAppAnalytics implements AppAnalytics {
   }
 
   @override
-  Future<void> track(AnalyticsEvent event) async {}
+  Future<void> track(AnalyticsEvent event) async {
+    events.add(event);
+  }
 }

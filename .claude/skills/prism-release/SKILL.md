@@ -86,7 +86,7 @@ Run these from the repo root.
    `.github/workflows/testflight.yml` workflow, which has its own secrets. TestFlight app id is
    `6670200846` (from that workflow), group `Prism Alpha`.
 
-6. **Version guard.** `python3 tool/verify_version_sync.py`, checks `pubspec.yaml`'s
+6. **Version guard.** `python3 tool/sync_app_version.py --check`, checks `pubspec.yaml`'s
    `version:` line against `lib/core/constants/app_constants.dart`'s
    `currentAppVersion`/`currentAppVersionCode`. Run `python3 tool/sync_app_version.py`
    (= `make version-sync`) to fix a mismatch; `make version-guard` is the same check wired into
@@ -151,7 +151,7 @@ Format is `X.Y.Z+N` (currently `3.0.8+332`). `N` is `versionCode` on Android and
 on iOS, both stores need `N` to increase on every upload.
 
 **Cross-check against both stores before picking the next number.** This repo has no automated
-build-number-desync guard (unlike `verify_version_sync.py`, which only checks pubspec against
+build-number-desync guard (unlike `sync_app_version.py --check`, which only checks pubspec against
 `app_constants.dart`, not against ASC/Play):
 
 ```sh
@@ -171,7 +171,7 @@ Edit the `version:` line to `X.Y.Z+N+1` (or the human-confirmed number from step
 
 ```sh
 make version-sync    # python3 tool/sync_app_version.py, updates app_constants.dart to match
-make version-guard    # python3 tool/verify_version_sync.py, must exit 0
+make version-guard    # python3 tool/sync_app_version.py --check, must exit 0
 ```
 
 Never hand-edit `lib/core/constants/app_constants.dart`. `version-sync` derives it from

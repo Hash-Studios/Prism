@@ -11,17 +11,9 @@ class FavouriteWallsAdapter {
 
   final FavouriteWallsBloc _bloc;
 
-  List<FavouriteWallEntity>? get liked {
-    final state = _bloc.state;
-    if (state.status == LoadStatus.initial) {
-      return null;
-    }
-    return state.items;
-  }
-
   Future<List<FavouriteWallEntity>?> getDataBase({bool forceRefresh = false}) async {
     await _ensureLoaded(forceRefresh: forceRefresh);
-    return liked;
+    return _bloc.state.status == LoadStatus.initial ? null : _bloc.state.items;
   }
 
   Future<bool> favCheck(FavouriteWallEntity wall) async {

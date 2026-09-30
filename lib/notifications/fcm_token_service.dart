@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// Stores and keeps the FCM device token up-to-date in the user's Firestore
@@ -29,7 +30,7 @@ class FcmTokenService {
       await _persistToken(userId: userId, token: token);
       // Carries a Followers switch turned off on an older build over to the server.
       if (getIt.isRegistered<SettingsLocalDataSource>() &&
-          !getIt<SettingsLocalDataSource>().get<bool>('followersSubscriber', defaultValue: true)) {
+          !getIt<SettingsLocalDataSource>().get<bool>(NotificationPrefKeys.followers, defaultValue: true)) {
         await saveFollowerAlerts(userId: userId, enabled: false);
       }
     } catch (e, st) {
@@ -54,10 +55,10 @@ class FcmTokenService {
   }
 
   /// Listens for token refreshes and persists the new token automatically.
-  /// Call once after login.  Returns a cancel function.
-  void Function() listenForTokenRefresh({required String userId}) {
+  /// Call once after login.
+  void listenForTokenRefresh({required String userId}) {
     cancel();
-    if (userId.trim().isEmpty) return cancel;
+    if (userId.trim().isEmpty) return;
     _tokenRefreshSubscription = FirebaseMessaging.instance.onTokenRefresh.listen((String newToken) async {
       try {
         await _persistToken(userId: userId, token: newToken);
@@ -65,13 +66,11 @@ class FcmTokenService {
         logger.w('FcmTokenService: failed to persist refreshed token.', error: e, stackTrace: st);
       }
     });
-    return cancel;
   }
 
   void cancel() {
-    final subscription = _tokenRefreshSubscription;
+    unawaited(_tokenRefreshSubscription?.cancel());
     _tokenRefreshSubscription = null;
-    unawaited(subscription?.cancel());
   }
 
   Future<void> _persistToken({required String userId, required String token}) async {

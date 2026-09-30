@@ -151,8 +151,6 @@ class _LogToastWidget extends StatelessWidget {
 
   Color _levelColor(AppLogLevel level) {
     switch (level) {
-      case AppLogLevel.trace:
-        return Colors.grey.shade700;
       case AppLogLevel.debug:
         return Colors.blueGrey.shade600;
       case AppLogLevel.info:
@@ -161,8 +159,6 @@ class _LogToastWidget extends StatelessWidget {
         return Colors.orange.shade700;
       case AppLogLevel.error:
         return Colors.red.shade700;
-      case AppLogLevel.fatal:
-        return Colors.purple.shade800;
     }
   }
 }

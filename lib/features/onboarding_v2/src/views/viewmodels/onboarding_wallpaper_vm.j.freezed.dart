@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$OnboardingWallpaperVm {
 
- String get fullUrl; String get thumbnailUrl; String get title; String get authorName; String get sourceCategory;
+ String get fullUrl; String get thumbnailUrl; String get sourceCategory;
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $OnboardingWallpaperVmCopyWith<OnboardingWallpaperVm> get copyWith => _$Onboardi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.title, title) || other.title == title)&&(identical(other.authorName, authorName) || other.authorName == authorName)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,title,authorName,sourceCategory);
+int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,sourceCategory);
 
 @override
 String toString() {
-  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, title: $title, authorName: $authorName, sourceCategory: $sourceCategory)';
+  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, sourceCategory: $sourceCategory)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $OnboardingWallpaperVmCopyWith<$Res>  {
   factory $OnboardingWallpaperVmCopyWith(OnboardingWallpaperVm value, $Res Function(OnboardingWallpaperVm) _then) = _$OnboardingWallpaperVmCopyWithImpl;
 @useResult
 $Res call({
- String fullUrl, String thumbnailUrl, String title, String authorName, String sourceCategory
+ String fullUrl, String thumbnailUrl, String sourceCategory
 });
 
 
@@ -62,12 +62,10 @@ class _$OnboardingWallpaperVmCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? title = null,Object? authorName = null,Object? sourceCategory = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? sourceCategory = null,}) {
   return _then(_self.copyWith(
 fullUrl: null == fullUrl ? _self.fullUrl : fullUrl // ignore: cast_nullable_to_non_nullable
 as String,thumbnailUrl: null == thumbnailUrl ? _self.thumbnailUrl : thumbnailUrl // ignore: cast_nullable_to_non_nullable
-as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,authorName: null == authorName ? _self.authorName : authorName // ignore: cast_nullable_to_non_nullable
 as String,sourceCategory: null == sourceCategory ? _self.sourceCategory : sourceCategory // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -154,10 +152,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String title,  String authorName,  String sourceCategory)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String sourceCategory)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperVm() when $default != null:
-return $default(_that.fullUrl,_that.thumbnailUrl,_that.title,_that.authorName,_that.sourceCategory);case _:
+return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory);case _:
   return orElse();
 
 }
@@ -175,10 +173,10 @@ return $default(_that.fullUrl,_that.thumbnailUrl,_that.title,_that.authorName,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String title,  String authorName,  String sourceCategory)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String fullUrl,  String thumbnailUrl,  String sourceCategory)  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperVm():
-return $default(_that.fullUrl,_that.thumbnailUrl,_that.title,_that.authorName,_that.sourceCategory);case _:
+return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +193,10 @@ return $default(_that.fullUrl,_that.thumbnailUrl,_that.title,_that.authorName,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fullUrl,  String thumbnailUrl,  String title,  String authorName,  String sourceCategory)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String fullUrl,  String thumbnailUrl,  String sourceCategory)?  $default,) {final _that = this;
 switch (_that) {
 case _OnboardingWallpaperVm() when $default != null:
-return $default(_that.fullUrl,_that.thumbnailUrl,_that.title,_that.authorName,_that.sourceCategory);case _:
+return $default(_that.fullUrl,_that.thumbnailUrl,_that.sourceCategory);case _:
   return null;
 
 }
@@ -210,13 +208,11 @@ return $default(_that.fullUrl,_that.thumbnailUrl,_that.title,_that.authorName,_t
 
 
 class _OnboardingWallpaperVm implements OnboardingWallpaperVm {
-  const _OnboardingWallpaperVm({required this.fullUrl, required this.thumbnailUrl, required this.title, required this.authorName, required this.sourceCategory});
+  const _OnboardingWallpaperVm({required this.fullUrl, required this.thumbnailUrl, required this.sourceCategory});
   
 
 @override final  String fullUrl;
 @override final  String thumbnailUrl;
-@override final  String title;
-@override final  String authorName;
 @override final  String sourceCategory;
 
 /// Create a copy of OnboardingWallpaperVm
@@ -229,16 +225,16 @@ _$OnboardingWallpaperVmCopyWith<_OnboardingWallpaperVm> get copyWith => __$Onboa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.title, title) || other.title == title)&&(identical(other.authorName, authorName) || other.authorName == authorName)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OnboardingWallpaperVm&&(identical(other.fullUrl, fullUrl) || other.fullUrl == fullUrl)&&(identical(other.thumbnailUrl, thumbnailUrl) || other.thumbnailUrl == thumbnailUrl)&&(identical(other.sourceCategory, sourceCategory) || other.sourceCategory == sourceCategory));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,title,authorName,sourceCategory);
+int get hashCode => Object.hash(runtimeType,fullUrl,thumbnailUrl,sourceCategory);
 
 @override
 String toString() {
-  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, title: $title, authorName: $authorName, sourceCategory: $sourceCategory)';
+  return 'OnboardingWallpaperVm(fullUrl: $fullUrl, thumbnailUrl: $thumbnailUrl, sourceCategory: $sourceCategory)';
 }
 
 
@@ -249,7 +245,7 @@ abstract mixin class _$OnboardingWallpaperVmCopyWith<$Res> implements $Onboardin
   factory _$OnboardingWallpaperVmCopyWith(_OnboardingWallpaperVm value, $Res Function(_OnboardingWallpaperVm) _then) = __$OnboardingWallpaperVmCopyWithImpl;
 @override @useResult
 $Res call({
- String fullUrl, String thumbnailUrl, String title, String authorName, String sourceCategory
+ String fullUrl, String thumbnailUrl, String sourceCategory
 });
 
 
@@ -266,12 +262,10 @@ class __$OnboardingWallpaperVmCopyWithImpl<$Res>
 
 /// Create a copy of OnboardingWallpaperVm
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? title = null,Object? authorName = null,Object? sourceCategory = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? fullUrl = null,Object? thumbnailUrl = null,Object? sourceCategory = null,}) {
   return _then(_OnboardingWallpaperVm(
 fullUrl: null == fullUrl ? _self.fullUrl : fullUrl // ignore: cast_nullable_to_non_nullable
 as String,thumbnailUrl: null == thumbnailUrl ? _self.thumbnailUrl : thumbnailUrl // ignore: cast_nullable_to_non_nullable
-as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,authorName: null == authorName ? _self.authorName : authorName // ignore: cast_nullable_to_non_nullable
 as String,sourceCategory: null == sourceCategory ? _self.sourceCategory : sourceCategory // ignore: cast_nullable_to_non_nullable
 as String,
   ));

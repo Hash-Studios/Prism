@@ -58,20 +58,13 @@ class SwipeHintIndicator extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  final double opacity;
 
-  const SwipeHintIndicator({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.color,
-    this.opacity = 0.6,
-  });
+  const SwipeHintIndicator({super.key, required this.icon, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: opacity,
+      opacity: 0.6,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -5,24 +5,21 @@ import 'package:flutter/material.dart';
 
 class FavoriteIcon extends StatefulWidget {
   const FavoriteIcon({
-    double? iconSize,
-    Color? iconColor,
-    bool? isFavorite,
-    required VoidCallback valueChanged,
+    this.iconSize = 60.0,
+    this.iconColor = Colors.red,
+    this.isFavorite = false,
+    required this.valueChanged,
 
     /// When set (e.g. toolbar circles), expands the tap target to this size so
     /// padding around the icon is still tappable. Should match the outer button size.
     this.tapTargetExtent,
     super.key,
-  }) : _iconSize = iconSize ?? 60.0,
-       _iconColor = iconColor ?? Colors.red,
-       _isFavorite = isFavorite ?? false,
-       _valueChanged = valueChanged;
+  });
 
-  final double _iconSize;
-  final Color _iconColor;
-  final bool _isFavorite;
-  final VoidCallback _valueChanged;
+  final double iconSize;
+  final Color iconColor;
+  final bool isFavorite;
+  final VoidCallback valueChanged;
   final double? tapTargetExtent;
 
   @override
@@ -31,67 +28,44 @@ class FavoriteIcon extends StatefulWidget {
 
 class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<Color?> _colorAnimation;
   late Animation<double> _sizeAnimation;
+  late double _maxIconSize;
 
-  late CurvedAnimation _curve;
-
-  double _maxIconSize = 0.0;
-  double _minIconSize = 0.0;
-
-  final int _animationTime = 400;
-
-  bool _isFavorite = false;
   bool _isAnimationCompleted = false;
 
   @override
   void initState() {
     super.initState();
 
-    _isFavorite = widget._isFavorite;
-    _maxIconSize = (widget._iconSize < 20.0)
-        ? 20.0
-        : (widget._iconSize > 100.0)
-        ? 100.0
-        : widget._iconSize;
-    final double sizeDifference = _maxIconSize * 0.30;
-    _minIconSize = _maxIconSize - sizeDifference;
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: _animationTime),
-    );
-
-    _curve = CurvedAnimation(curve: Curves.slowMiddle, parent: _controller);
-    _colorAnimation = ColorTween(begin: widget._iconColor, end: widget._iconColor).animate(_curve);
+    _maxIconSize = widget.iconSize.clamp(20.0, 100.0);
+    final double minIconSize = _maxIconSize * 0.7;
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
     _sizeAnimation = TweenSequence(<TweenSequenceItem<double>>[
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: _minIconSize, end: _maxIconSize),
+        tween: Tween<double>(begin: minIconSize, end: _maxIconSize),
         weight: 50,
       ),
       TweenSequenceItem<double>(
-        tween: Tween<double>(begin: _maxIconSize, end: _minIconSize),
+        tween: Tween<double>(begin: _maxIconSize, end: minIconSize),
         weight: 50,
       ),
-    ]).animate(_curve);
+    ]).animate(CurvedAnimation(curve: Curves.slowMiddle, parent: _controller));
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        widget._valueChanged();
+        widget.valueChanged();
         _isAnimationCompleted = true;
-        _isFavorite = !_isFavorite;
       } else if (status == AnimationStatus.dismissed) {
-        widget._valueChanged();
+        widget.valueChanged();
         _isAnimationCompleted = false;
-        _isFavorite = !_isFavorite;
       }
     });
   }
 
   @override
   void dispose() {
-    super.dispose();
     _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -102,13 +76,11 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
       builder: (BuildContext context, _) {
         return InkResponse(
           onTap: () {
-            setState(() {
-              if (_isAnimationCompleted == true) {
-                _controller.reverse();
-              } else {
-                _controller.forward();
-              }
-            });
+            if (_isAnimationCompleted) {
+              _controller.reverse();
+            } else {
+              _controller.forward();
+            }
           },
           containedInkWell: true,
           radius: layoutExtent / 2,
@@ -117,8 +89,8 @@ class _FavoriteIconState extends State<FavoriteIcon> with TickerProviderStateMix
             height: layoutExtent,
             child: Center(
               child: Icon(
-                widget._isFavorite ? JamIcons.heart_f : JamIcons.heart,
-                color: _colorAnimation.value,
+                widget.isFavorite ? JamIcons.heart_f : JamIcons.heart,
+                color: widget.iconColor,
                 size: _sizeAnimation.value,
               ),
             ),

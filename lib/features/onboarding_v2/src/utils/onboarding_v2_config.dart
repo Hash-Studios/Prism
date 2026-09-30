@@ -96,6 +96,20 @@ class OnboardingV2Config {
       'simple abstract lines with perfectly balanced negative space',
       'a soft gradient sky over flat minimalist hills',
     ],
+    AiStylePreset.anime: [
+      'an anime style city rooftop at golden hour with drifting cherry blossoms',
+      'a dreamy anime countryside train crossing under a huge cloudy sky',
+      'an anime mountain village at dusk with glowing lanterns and soft mist',
+      'a quiet anime seaside town under a pastel sunset and towering clouds',
+      'an anime starry night over a calm lake with floating lights',
+    ],
+    AiStylePreset.meshGradient: [
+      'a smooth mesh gradient of coral, teal and warm yellow with soft grain',
+      'a flowing mesh gradient in deep violet and electric blue with gentle glow',
+      'a pastel mesh gradient of peach, lilac and mint blending into each other',
+      'a vibrant mesh gradient sunset with layered magenta and orange tones',
+      'a calm mesh gradient of ocean blues and seafoam with subtle light bloom',
+    ],
     AiStylePreset.cyberpunk: [
       'a neon megacity street with wet reflections and flying vehicles',
       'a futuristic alley with holographic billboards and teal-magenta light',

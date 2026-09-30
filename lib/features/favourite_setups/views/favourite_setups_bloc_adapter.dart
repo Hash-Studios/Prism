@@ -1,7 +1,7 @@
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_setups/biz/bloc/favourite_setups_bloc.j.dart';
-import 'package:Prism/features/favourite_setups/domain/entities/favourite_setup_entity.dart';
+import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -11,7 +11,7 @@ class FavouriteSetupsAdapter {
 
   final FavouriteSetupsBloc _bloc;
 
-  List<FavouriteSetupEntity>? get liked {
+  List<SetupEntity>? get items {
     final state = _bloc.state;
     if (state.status == LoadStatus.initial) {
       return null;
@@ -19,12 +19,9 @@ class FavouriteSetupsAdapter {
     return state.items;
   }
 
-  Future<List<FavouriteSetupEntity>?> getDataBase() async {
-    await _ensureLoaded();
-    return liked;
-  }
+  Future<void> load() => _ensureLoaded();
 
-  Future<void> favCheck(FavouriteSetupEntity setup) async {
+  Future<void> toggle(SetupEntity setup) async {
     if (setup.id.isEmpty) {
       return;
     }
@@ -39,19 +36,6 @@ class FavouriteSetupsAdapter {
     final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
     _bloc.add(FavouriteSetupsEvent.toggleRequested(setup: setup));
     await completion;
-  }
-
-  Future<bool> deleteData() async {
-    final userId = app_state.prismUser.id;
-    if (userId.isEmpty) {
-      return false;
-    }
-
-    await _ensureLoaded();
-    final completion = _bloc.stream.firstWhere((state) => state.actionStatus != ActionStatus.inProgress);
-    _bloc.add(const FavouriteSetupsEvent.clearRequested());
-    await completion;
-    return _bloc.state.actionStatus == ActionStatus.success;
   }
 
   Future<void> _ensureLoaded() async {
