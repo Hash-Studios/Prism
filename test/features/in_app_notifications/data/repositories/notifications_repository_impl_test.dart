@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/features/in_app_notifications/data/repositories/notifications_repository_impl.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/fake_user_block_repository.dart';
 import '../../../../support/in_memory_local_store.dart';
+import '../../in_app_notification_fixture.dart';
 
 void main() {
   group('NotificationsRepositoryImpl', () {
@@ -17,8 +19,8 @@ void main() {
     test('waits for blocked creators and prunes cached blocked notifications before returning local data', () async {
       final blocks = FakeUserBlockRepository.pending();
       final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
-        _notification(id: 'blocked', followerEmail: 'blocked@example.com'),
-        _notification(id: 'visible', followerEmail: 'visible@example.com'),
+        notification('blocked', followerEmail: 'blocked@example.com'),
+        notification('visible', followerEmail: 'visible@example.com'),
       ]);
       getIt.registerSingleton<UserBlockRepository>(blocks);
 
@@ -35,6 +37,52 @@ void main() {
       expect(result.data!.map((item) => item.id).toList(growable: false), <String>['visible']);
       expect((await local.readAll()).map((item) => item.id).toList(growable: false), <String>['visible']);
     });
+
+    test('lists newest first after every change', () async {
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('old', createdAt: DateTime.utc(2024)),
+        notification('new', createdAt: DateTime.utc(2025)),
+        notification('mid', createdAt: DateTime.utc(2024, 6)),
+      ]);
+      final repo = NotificationsRepositoryImpl(local);
+
+      final result = await repo.markAsRead(id: 'mid');
+
+      expect(result.data!.map((item) => item.id), <String>['new', 'mid', 'old']);
+      expect(result.data!.singleWhere((item) => item.id == 'mid').read, isTrue);
+    });
+
+    test('rejects a blank notification id', () async {
+      final repo = NotificationsRepositoryImpl(_FakeNotificationsLocalDataSource(const <InAppNotificationEntity>[]));
+
+      expect((await repo.markAsRead(id: '  ')).failure, isA<ValidationFailure>());
+      expect((await repo.deleteById(id: '')).failure, isA<ValidationFailure>());
+    });
+
+    test('deleteByIds trims and dedupes ids and rejects an empty list', () async {
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[
+        notification('a'),
+        notification('b'),
+        notification('c'),
+      ]);
+      final repo = NotificationsRepositoryImpl(local);
+
+      final result = await repo.deleteByIds(ids: <String>[' a ', 'a', 'b', '']);
+
+      expect(result.data!.map((item) => item.id), <String>['c']);
+      expect(local.deletedIds, <String>['a', 'b']);
+      expect((await repo.deleteByIds(ids: <String>['', '  '])).failure, isA<ValidationFailure>());
+    });
+
+    test('clearAll empties the inbox', () async {
+      final local = _FakeNotificationsLocalDataSource(<InAppNotificationEntity>[notification('a')]);
+      final repo = NotificationsRepositoryImpl(local);
+
+      final result = await repo.clearAll();
+
+      expect(result.data, isEmpty);
+      expect(await local.readAll(), isEmpty);
+    });
   });
 }
 
@@ -45,6 +93,7 @@ class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
 
   List<InAppNotificationEntity> _items;
   int readCount = 0;
+  List<String> deletedIds = <String>[];
 
   @override
   Future<void> clearAll() async {
@@ -57,7 +106,10 @@ class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
   }
 
   @override
-  DateTime? lastFetchAtUtc() => null;
+  Future<void> deleteByIds(List<String> ids) async {
+    deletedIds = ids;
+    _items = _items.where((item) => !ids.contains(item.id)).toList(growable: false);
+  }
 
   @override
   Future<void> markAsRead(String id) async {
@@ -74,36 +126,4 @@ class _FakeNotificationsLocalDataSource extends NotificationsLocalDataSource {
   Future<void> removeWhere(bool Function(InAppNotificationEntity item) predicate) async {
     _items = _items.where((item) => !predicate(item)).toList(growable: false);
   }
-
-  @override
-  Future<void> setLastFetchAtUtc(DateTime value) async {}
-
-  @override
-  Future<void> upsertAll(List<InAppNotificationEntity> incoming) async {
-    final Map<String, InAppNotificationEntity> merged = <String, InAppNotificationEntity>{
-      for (final item in _items) item.id: item,
-      for (final item in incoming) item.id: item,
-    };
-    _items = merged.values.toList(growable: false);
-  }
-
-  @override
-  Future<void> writeAll(List<InAppNotificationEntity> items) async {
-    _items = List<InAppNotificationEntity>.from(items);
-  }
-}
-
-InAppNotificationEntity _notification({required String id, required String followerEmail}) {
-  return InAppNotificationEntity(
-    id: id,
-    title: 'Title $id',
-    pageName: '/notification',
-    body: 'Body $id',
-    imageUrl: '',
-    arguments: const <Object>[],
-    url: '',
-    createdAt: DateTime.utc(2026),
-    read: false,
-    followerEmail: followerEmail,
-  );
 }

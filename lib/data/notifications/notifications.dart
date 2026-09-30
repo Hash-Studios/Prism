@@ -8,7 +8,7 @@ import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
-import 'package:Prism/data/notifications/model/in_app_notif_model.dart';
+import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -138,26 +138,38 @@ Future<void> _replaceAllPreservingReadState(
   await notificationsLocal.writeAll(merged);
 }
 
+DateTime _createdAtFrom(Object? value) {
+  if (value is Map && value.containsKey('_seconds')) {
+    final int seconds = value['_seconds'] as int? ?? 0;
+    final int nanoseconds = value['_nanoseconds'] as int? ?? 0;
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000 + nanoseconds ~/ 1000000);
+  }
+  return parseDateTime(value) ?? DateTime.now();
+}
+
 InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
-  final InAppNotif notif = InAppNotif.fromSnapshot(raw);
-  final DateTime createdAt = notif.createdAt?.toUtc() ?? DateTime.now().toUtc();
-  final String title = notif.title ?? '';
-  final String body = notif.body ?? '';
-  final String pageName = notif.pageName ?? '';
-  final String url = notif.url ?? '';
+  final Map<String, dynamic> data = _asMap(raw['data']);
+  final Map<String, dynamic> notification = _asMap(raw['notification']);
+  final DateTime createdAt = _createdAtFrom(raw['createdAt']).toUtc();
+  final String title = notification['title']?.toString() ?? '';
+  final String body = notification['body']?.toString() ?? '';
+  final String pageName = data['pageName']?.toString() ?? '';
+  final String url = data['url']?.toString() ?? '';
+  final String imageUrl = data['imageUrl']?.toString().trim() ?? '';
+  final Object? arguments = data['arguments'];
   return InAppNotificationEntity(
     id: buildInAppNotificationId(title: title, body: body, pageName: pageName, url: url, createdAt: createdAt),
     title: title,
     pageName: pageName,
     body: body,
-    imageUrl: notif.imageUrl ?? '',
-    arguments: (notif.arguments ?? const <Object>[]).whereType<Object>().toList(growable: false),
+    imageUrl: (Uri.tryParse(imageUrl)?.host.isNotEmpty ?? false) ? imageUrl : '',
+    arguments: arguments is List ? arguments.whereType<Object>().toList(growable: false) : const <Object>[],
     url: url,
     createdAt: createdAt,
-    read: notif.read ?? false,
-    route: notif.route,
-    wallId: notif.wallId,
-    followerEmail: notif.followerEmail,
+    read: false,
+    route: data['route']?.toString(),
+    wallId: data['wall_id']?.toString(),
+    followerEmail: (data['follower_email'] ?? data['profile_identifier'] ?? data['username'])?.toString(),
   );
 }
 
