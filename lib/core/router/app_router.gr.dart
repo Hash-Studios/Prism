@@ -765,53 +765,6 @@ class ProfileRouteArgs {
 }
 
 /// generated route for
-/// [ProfileSetupViewScreen]
-class ProfileSetupViewRoute extends PageRouteInfo<ProfileSetupViewRouteArgs> {
-  ProfileSetupViewRoute({
-    Key? key,
-    required int setupIndex,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ProfileSetupViewRoute.name,
-         args: ProfileSetupViewRouteArgs(key: key, setupIndex: setupIndex),
-         initialChildren: children,
-       );
-
-  static const String name = 'ProfileSetupViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<ProfileSetupViewRouteArgs>();
-      return ProfileSetupViewScreen(key: args.key, setupIndex: args.setupIndex);
-    },
-  );
-}
-
-class ProfileSetupViewRouteArgs {
-  const ProfileSetupViewRouteArgs({this.key, required this.setupIndex});
-
-  final Key? key;
-
-  final int setupIndex;
-
-  @override
-  String toString() {
-    return 'ProfileSetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ProfileSetupViewRouteArgs) return false;
-    return key == other.key && setupIndex == other.setupIndex;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ setupIndex.hashCode;
-}
-
-/// generated route for
 /// [ProfileTabPage]
 class ProfileTabRoute extends PageRouteInfo<void> {
   const ProfileTabRoute({List<PageRouteInfo>? children})
