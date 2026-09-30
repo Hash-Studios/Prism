@@ -12,18 +12,11 @@ enums:
     values:
       - success
       - failure
-  - name: subscription_result
-    dart_type: SubscriptionResultValue
-    values:
-      - success
-      - not_entitled
-      - failure
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
       - rc_attempt
       - fallback_only
-      - fallback
       - rc
   - name: paywall_result
     dart_type: PaywallResultValue
@@ -72,12 +65,8 @@ enums:
   - name: setting
     dart_type: SettingValue
     values:
-      - followers_feed
       - anime_wallpapers
       - sketchy_wallpapers
-      - followers_notifications
-      - posts_notifications
-      - in_app_notifications
       - recommendations_notifications
   - name: analytics_action
     dart_type: AnalyticsActionValue
@@ -89,20 +78,11 @@ enums:
       - logout_tapped
       - clear_favourite_walls_tapped
       - clear_favourite_walls_confirmed
-      - clear_favourite_setups_tapped
-      - clear_favourite_setups_confirmed
-      - next_tapped
-      - skip_tapped
-      - finish_tapped
       - upload_sheet_opened
       - upload_wallpaper_selected
-      - upload_setup_selected
       - notification_settings_opened
-      - notification_item_opened
-      - notification_item_dismissed
       - quick_action_follow_feed
       - quick_action_collections
-      - quick_action_setups
       - quick_action_ai_wallpapers
       - quick_action_downloads
       - quick_action_unknown
@@ -117,18 +97,11 @@ enums:
       - unfollow_tapped
       - edit_profile_tapped
       - open_drawer_tapped
-      - drawer_buy_premium_tapped
       - drawer_fav_walls_tapped
       - drawer_fav_setups_tapped
       - drawer_downloads_tapped
-      - drawer_clear_downloads_tapped
-      - drawer_clear_downloads_confirmed
-      - drawer_review_status_tapped
       - drawer_share_prism_tapped
-      - drawer_contact_support_tapped
       - drawer_logout_tapped
-      - drawer_restart_tapped
-      - open_theme_tapped
       - open_downloaded_wallpaper_tapped
       - open_transaction_link_tapped
       - action_chip_tapped
@@ -145,7 +118,6 @@ enums:
       - cancelled
       - blocked
       - navigated
-      - ignored
       - empty
   - name: analytics_reason
     dart_type: AnalyticsReasonValue
@@ -154,22 +126,18 @@ enums:
       - error
       - missing_data
       - not_signed_in
-      - already_signed_in
       - empty_input
       - unknown
-      - not_eligible
   - name: search_provider
     dart_type: SearchProviderValue
     values:
       - wallhaven
       - pexels
-      - user
   - name: item_type
     dart_type: ItemTypeValue
     values:
       - wallpaper
       - user
-      - notification
   - name: target_type
     dart_type: TargetTypeValue
     values:
@@ -183,7 +151,6 @@ enums:
     dart_type: EntryPointValue
     values:
       - bottom_nav
-      - quick_action
   - name: launch_state
     dart_type: LaunchStateValue
     values:
@@ -193,13 +160,11 @@ enums:
     dart_type: ShareChannelValue
     values:
       - share_sheet
-      - clipboard
       - link
   - name: dismiss_mode
     dart_type: DismissModeValue
     values:
       - swipe
-      - clear_all
   - name: notification_type
     dart_type: NotificationTypeValue
     values:
@@ -215,10 +180,7 @@ enums:
     values:
       - home
       - search
-      - setups
-      - ai
       - streak
-      - profile
   - name: notification_preference
     dart_type: NotificationPreferenceValue
     values:
@@ -231,7 +193,6 @@ enums:
     dart_type: DeepLinkSourceValue
     values:
       - app_links
-      - short_link_resolver
   - name: share_type
     dart_type: ShareTypeValue
     values:
@@ -247,16 +208,10 @@ enums:
       - search_wallpaper_screen
       - favourite_wallpaper_view
       - profile_wallpaper_view
-      - user_profile_wallpaper_view
       - download_wallpaper_screen
       - profile_screen
       - profile_drawer
-      - profile_user_list
-      - profile_general_list
       - profile_prism_list
-      - profile_about_list
-      - profile_premium_list
-      - profile_download_list
       - about_screen
       - coin_transactions_screen
       - download_screen
@@ -265,7 +220,6 @@ enums:
       - home_pexels_grid
       - home_color_grid
       - home_collections_view_grid
-      - following_screen
       - favourite_walls_grid
       - favourite_setups_grid
   - name: scroll_list_name
@@ -276,10 +230,8 @@ enums:
       - pexels_grid
       - color_grid
       - collections_view_grid
-      - following_grid
       - favourite_walls_grid
       - favourite_setups_grid
-      - profile_nested_scroll
   - name: scroll_depth_percent
     dart_type: ScrollDepthPercentValue
     values:
@@ -297,11 +249,9 @@ enums:
       - telegram
       - email
       - external
-      - unknown
 
 events:
   - id: report_setup
-  - id: report_wall
   - id: content_report_submit
     fields:
       - name: content_type
@@ -482,85 +432,6 @@ events:
       - name: placement
         key: placement
         type: string
-  - id: subscription_package_selected
-    fields:
-      - name: source
-        key: source
-        type: string
-      - name: product_id
-        key: product_id
-        type: string
-      - name: package_type
-        key: package_type
-        type: string
-      - name: price
-        key: price
-        type: num
-      - name: currency
-        key: currency
-        type: string
-  - id: subscription_restore_started
-    fields:
-      - name: source
-        key: source
-        type: string
-  - id: subscription_restore_result
-    fields:
-      - name: source
-        key: source
-        type: string
-      - name: result
-        key: result
-        type: enum
-        enum: SubscriptionResultValue
-      - name: error_code
-        key: error_code
-        type: string
-        required: false
-      - name: error_message
-        key: error_message
-        type: string
-        required: false
-  - id: subscription_purchase_started
-    fields:
-      - name: source
-        key: source
-        type: string
-      - name: product_id
-        key: product_id
-        type: string
-      - name: package_type
-        key: package_type
-        type: string
-      - name: price
-        key: price
-        type: num
-      - name: currency
-        key: currency
-        type: string
-  - id: subscription_purchase_result
-    fields:
-      - name: source
-        key: source
-        type: string
-      - name: product_id
-        key: product_id
-        type: string
-      - name: package_type
-        key: package_type
-        type: string
-      - name: result
-        key: result
-        type: enum
-        enum: SubscriptionResultValue
-      - name: error_code
-        key: error_code
-        type: string
-        required: false
-      - name: error_message
-        key: error_message
-        type: string
-        required: false
   - id: subscription_entitlement_refresh
     fields:
       - name: result
@@ -765,11 +636,6 @@ events:
         key: mode
         type: enum
         enum: AiChargeModeValue
-  - id: ai_share_tapped
-    fields:
-      - name: generation_id
-        key: generation_id
-        type: string
   - id: ai_submit_started
     fields:
       - name: generation_id
@@ -807,7 +673,6 @@ events:
       - name: source_tag
         key: source_tag
         type: string
-  - id: categories_checked
   - id: collections_checked
   - id: edit_setup
     fields:
@@ -887,16 +752,6 @@ events:
       - name: from_suggestion
         key: from_suggestion
         type: bool
-  - id: search_provider_changed
-    fields:
-      - name: from_provider
-        key: from_provider
-        type: enum
-        enum: SearchProviderValue
-      - name: to_provider
-        key: to_provider
-        type: enum
-        enum: SearchProviderValue
   - id: search_tag_selected
     fields:
       - name: provider
@@ -1021,35 +876,6 @@ events:
         key: reason
         type: enum
         enum: AnalyticsReasonValue
-  - id: onboarding_step_viewed
-    fields:
-      - name: step
-        key: step
-        type: int
-  - id: onboarding_action_tapped
-    fields:
-      - name: step
-        key: step
-        type: int
-      - name: action
-        key: action
-        type: enum
-        enum: AnalyticsActionValue
-  - id: onboarding_auth_result
-    fields:
-      - name: method
-        key: method
-        type: enum
-        enum: AuthMethodValue
-      - name: result
-        key: result
-        type: enum
-        enum: EventResultValue
-      - name: reason
-        key: reason
-        type: enum
-        enum: AnalyticsReasonValue
-        required: false
   - id: profile_completeness_nudge_viewed
     fields:
       - name: source_context
@@ -1072,16 +898,6 @@ events:
       - name: progress_percent
         key: progress_percent
         type: int
-  - id: tomorrow_hook_viewed
-    fields:
-      - name: source_context
-        key: source_context
-        type: string
-  - id: tomorrow_hook_action_tapped
-    fields:
-      - name: action
-        key: action
-        type: string
   - id: tomorrow_hook_permission_result
     fields:
       - name: result
@@ -1108,11 +924,6 @@ events:
         type: string
       - name: source
         key: source
-        type: string
-  - id: wotd_set_as_wallpaper
-    fields:
-      - name: wall_id
-        key: wall_id
         type: string
   - id: wotd_opened_from_push
     fields:
@@ -1376,7 +1187,6 @@ events:
       - name: platform
         key: platform
         type: string
-  - id: onboarding_v2_paywall_timer_unlocked
   - id: onboarding_v2_completed
     fields:
       - name: did_purchase
@@ -1391,8 +1201,3 @@ events:
       - name: error_source
         key: error_source
         type: string
-  - id: quality_daily_snapshot
-    fields:
-      - name: crash_free_users_pct
-        key: crash_free_users_pct
-        type: double
