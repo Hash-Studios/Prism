@@ -1,8 +1,7 @@
 import * as admin from "firebase-admin";
-import {randomUUID} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {emailToTopic, userIdToTopic} from "./notificationHelper";
+import {emailToTopic, fcmMessage, userIdToTopic} from "./notificationHelper";
 import {db, REGION, str} from "./common";
 
 export const WIN_BACK_STEPS = [3, 7, 14, 30, 60];
@@ -10,7 +9,6 @@ export const WIN_BACK_STEPS = [3, 7, 14, 30, 60];
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 300;
 const CHUNK_SIZE = 25;
-const LEASE_MS = 10 * 60 * 1000;
 const FIELD = "coinState.streakLastClaimServerAt";
 
 const COPY: Record<number, {title: string; body: (wallTitle: string) => string}> = {
@@ -76,8 +74,6 @@ export const sendWinBackPushes = onSchedule(
     timeoutSeconds: 540,
     memory: "512MiB",
     maxInstances: 1,
-    retryCount: 3,
-    minBackoffSeconds: LEASE_MS / 1000,
   },
   async () => {
     const nowMs = Date.now();
@@ -110,86 +106,21 @@ export const sendWinBackPushes = onSchedule(
               const step = winBackStepFor(nowMs, claimAt.toMillis(), completedState(data));
               if (step !== n) return false;
 
-              if (data.winBack?.pending?.id &&
-                  data.winBack.pending.expiresAt instanceof admin.firestore.Timestamp &&
-                  data.winBack.pending.expiresAt.toMillis() > nowMs) return false;
-              const reservationId = randomUUID();
-              const expiresAt = admin.firestore.Timestamp.fromMillis(nowMs + LEASE_MS);
-              const topics = await db.runTransaction(async (tx) => {
-                const current = await tx.get(doc.ref);
-                const fresh = current.data();
-                if (!current.exists || !fresh) return undefined;
-                const freshClaimAt = fresh.coinState?.streakLastClaimServerAt;
-                if (fresh.deleted === true || fresh.loggedIn === false ||
-                    !(freshClaimAt instanceof admin.firestore.Timestamp) || !freshClaimAt.isEqual(claimAt) ||
-                    winBackStepFor(nowMs, freshClaimAt.toMillis(), completedState(fresh)) !== n) return undefined;
-                const pending = fresh.winBack?.pending;
-                if (pending?.id && pending.expiresAt instanceof admin.firestore.Timestamp &&
-                    pending.expiresAt.toMillis() > nowMs) {
-                  return undefined;
-                }
-                const freshEmail = str(fresh.email);
-                const freshTopics = [...new Set([userIdToTopic(uid), freshEmail && emailToTopic(freshEmail)].filter(Boolean))];
-                tx.update(doc.ref, {
-                  winBack: {...fresh.winBack, pending: {id: reservationId, step: n, claimAt, expiresAt}},
-                });
-                return freshTopics;
-              });
-              if (!topics) return false;
-
-              const payload: admin.messaging.Message = {
-                notification: {title: copy.title, body: copy.body(wall.title)},
-                data: {
-                  route: "wall_of_the_day",
-                  ...(wall.wallId ? {wall_id: wall.wallId} : {}),
-                  channel_id: "wall_of_the_day",
-                  ...(wall.imageUrl ? {imageUrl: wall.imageUrl} : {}),
-                },
-                android: {
-                  notification: {
-                    channelId: "wall_of_the_day",
-                    clickAction: "FLUTTER_NOTIFICATION_CLICK",
-                    ...(wall.imageUrl ? {imageUrl: wall.imageUrl} : {}),
-                    tag: `win_back_${n}`,
-                  },
-                  collapseKey: `win_back_${n}`,
-                  priority: "high",
-                },
-                apns: {
-                  headers: {"apns-collapse-id": `win_back_${n}`},
-                  payload: {aps: {sound: "default", badge: 1}},
-                },
-                condition: topics.map((topic) => `'${topic}' in topics`).join(" || "),
-              };
-              try {
-                await admin.messaging().send(payload);
-              } catch (err) {
-                await db.runTransaction(async (tx) => {
-                  const current = await tx.get(doc.ref);
-                  const fresh = current.data();
-                  if (!current.exists || !fresh || fresh.winBack?.pending?.id !== reservationId) return;
-                  const winBack = {...fresh.winBack};
-                  delete winBack.pending;
-                  tx.update(doc.ref, {winBack});
-                });
-                throw err;
-              }
-
-              await db.runTransaction(async (tx) => {
-                const current = await tx.get(doc.ref);
-                const fresh = current.data();
-                if (!current.exists || !fresh || fresh.winBack?.pending?.id !== reservationId) return;
-                const freshClaimAt = fresh.coinState?.streakLastClaimServerAt;
-                const winBack = {...fresh.winBack};
-                delete winBack.pending;
-                if (fresh.deleted !== true && fresh.loggedIn !== false &&
-                    freshClaimAt instanceof admin.firestore.Timestamp && freshClaimAt.isEqual(claimAt)) {
-                  tx.update(doc.ref, {
-                    winBack: {...winBack, step: n, claimAt, sentAt: admin.firestore.FieldValue.serverTimestamp()},
-                  });
-                } else {
-                  tx.update(doc.ref, {winBack});
-                }
+              const email = str(data.email);
+              const topics = [...new Set([userIdToTopic(uid), email && emailToTopic(email)].filter(Boolean))];
+              await admin.messaging().send(fcmMessage({
+                title: copy.title,
+                body: copy.body(wall.title),
+                data: {route: "wall_of_the_day", ...(wall.wallId ? {wall_id: wall.wallId} : {})},
+                imageUrl: wall.imageUrl,
+                modifier: uid,
+                channelId: "wall_of_the_day",
+                pushOnly: true,
+                collapseKey: `win_back_${n}`,
+                fcmTarget: {condition: topics.map((t) => `'${t}' in topics`).join(" || ")},
+              }));
+              await doc.ref.update({
+                winBack: {step: n, claimAt, sentAt: admin.firestore.FieldValue.serverTimestamp()},
               });
               return true;
             }),
@@ -209,6 +140,5 @@ export const sendWinBackPushes = onSchedule(
       }
     }
     logger.info("sendWinBackPushes: done", {sent, failed});
-    if (failed > 0) throw new Error(`winBack: ${failed} user(s) failed`);
   },
 );
