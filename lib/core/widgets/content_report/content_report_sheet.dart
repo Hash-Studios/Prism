@@ -62,8 +62,6 @@ class _ContentReportSheetBody extends StatefulWidget {
 
 String _contentTypeLabel(String contentType) {
   switch (contentType) {
-    case 'setup':
-      return 'setup';
     case 'user':
       return 'user';
     default:

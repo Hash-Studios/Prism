@@ -5,7 +5,6 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/data/upload/wallpaper/setup_submission.dart';
 import 'package:Prism/data/upload/wallpaper/wall_submission.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -99,38 +98,4 @@ Future<WallSubmissionResult> createRecord(
   }
   toasts.success('Your wall is submitted and is under review.');
   return result;
-}
-
-Map<String, dynamic> _setupPayload(SetupSubmission s) => {
-  'by': app_state.prismUser.name,
-  'email': app_state.prismUser.email,
-  'userPhoto': app_state.prismUser.profilePhoto,
-  ...s.toFirestore(),
-  'created_at': DateTime.now().toUtc(),
-};
-
-Future<void> createSetup(SetupSubmission setup) async {
-  await firestoreClient.addDoc(FirebaseCollections.setups, _setupPayload(setup), sourceTag: 'upload.createSetup');
-  toasts.success("Your setup is submitted, and is under review.");
-}
-
-Future<void> updateSetup(String setupDocId, SetupSubmission setup) async {
-  await firestoreClient.setDoc(
-    FirebaseCollections.setups,
-    setupDocId,
-    _setupPayload(setup),
-    merge: true,
-    sourceTag: 'upload.updateSetup',
-  );
-  toasts.success("Your setup is edited, and is under review.");
-}
-
-Future<void> createDraftSetup(SetupSubmission setup) async {
-  await firestoreClient.setDoc(
-    FirebaseCollections.draftSetups,
-    setup.id,
-    _setupPayload(setup),
-    sourceTag: 'upload.createDraftSetup',
-  );
-  toasts.success("Draft saved!");
 }
