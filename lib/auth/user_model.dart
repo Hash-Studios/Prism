@@ -57,9 +57,9 @@ List<PrismTransaction> _toTransactionList(Object? value) {
 String _resolveTierValue({required bool premium, required Object? raw}) {
   final SubscriptionTier parsed = SubscriptionTier.fromValue(raw?.toString());
   if (parsed != SubscriptionTier.free) {
-    return parsed.value;
+    return parsed.name;
   }
-  return premium ? SubscriptionTier.pro.value : SubscriptionTier.free.value;
+  return premium ? SubscriptionTier.pro.name : SubscriptionTier.free.name;
 }
 
 /// Usernames drop spaces and punctuation, the same rule edit profile enforces.

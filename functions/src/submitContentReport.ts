@@ -2,14 +2,8 @@ import * as crypto from "node:crypto";
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
+import {db, readDailyCount, REGION, utcDateString} from "./common";
 
-if (!admin.apps.length) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
-
-const REGION = "asia-south1";
 const CONTENT_REPORTS = "contentReports";
 const RATE_TARGET = "contentReportRateByTarget";
 const RATE_DAILY = "contentReportRateDaily";
@@ -72,17 +66,7 @@ function normalizeDetails(raw: unknown): string {
 }
 
 function normalizeAppVersion(raw: unknown): string {
-  if (raw == null) {
-    return "";
-  }
-  if (typeof raw !== "string") {
-    return "";
-  }
-  return raw.trim().slice(0, 64);
-}
-
-function utcDateString(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return typeof raw === "string" ? raw.trim().slice(0, 64) : "";
 }
 
 function rateTargetDocId(uid: string, contentType: string, targetId: string): string {
@@ -156,14 +140,7 @@ export const submitContentReport = onCall(
         }
       }
 
-      let dailyCount = 0;
-      if (dailyRateSnap.exists) {
-        const d = dailyRateSnap.data()?.day as string | undefined;
-        const c = dailyRateSnap.data()?.count;
-        if (d === today && typeof c === "number") {
-          dailyCount = c;
-        }
-      }
+      const dailyCount = readDailyCount(dailyRateSnap, today);
       if (dailyCount >= MAX_REPORTS_PER_DAY) {
         throw new HttpsError("resource-exhausted", "Daily report limit reached. Try again tomorrow.");
       }

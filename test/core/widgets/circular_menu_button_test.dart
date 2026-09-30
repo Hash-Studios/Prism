@@ -38,7 +38,7 @@ void main() {
 
     expect(
       tester.getSemantics(find.bySemanticsLabel('Favourite')),
-      containsSemantics(label: 'Favourite', isButton: true, isSelected: true),
+      isSemantics(label: 'Favourite', isButton: true, isSelected: true),
     );
   });
 }

@@ -41,12 +41,11 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
         entrypoint: EntryPointValue.bottomNav,
       ),
     );
-    if (app_state.prismUser.premium != true && !UploadQuota.hasFreeUploadQuotaRemaining()) {
-      toasts.codeSend('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
+    if (!app_state.prismUser.premium && !UploadQuota.hasFreeUploadQuotaRemaining()) {
+      toasts.success('Free users can upload ${UploadQuota.freeUploadsPerWeek} wallpapers per week.');
       if (mounted) {
         Navigator.of(context).pop();
         await PaywallOrchestrator.instance.present(
-          context,
           placement: PaywallPlacement.uploadLimitReached,
           source: 'upload_wallpaper_limit_reached',
         );
@@ -145,7 +144,7 @@ class _PressScaleWrapperState extends State<_PressScaleWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final bool motion = !MediaQuery.of(context).disableAnimations;
+    final bool motion = !MediaQuery.disableAnimationsOf(context);
     return Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => setState(() => _pressed = true),

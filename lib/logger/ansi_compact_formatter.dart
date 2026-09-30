@@ -25,13 +25,6 @@ class AnsiCompactFormatter {
         ..write(']');
     }
 
-    if (record.spanId != null && record.spanId!.isNotEmpty) {
-      mainLine
-        ..write(' {span=')
-        ..write(record.spanId)
-        ..write('}');
-    }
-
     mainLine
       ..write(' ')
       ..write(record.message);
@@ -104,8 +97,6 @@ class AnsiCompactFormatter {
 
   String _colorCodeFor(AppLogLevel level) {
     switch (level) {
-      case AppLogLevel.trace:
-        return '90';
       case AppLogLevel.debug:
         return '36';
       case AppLogLevel.info:
@@ -114,8 +105,6 @@ class AnsiCompactFormatter {
         return '33';
       case AppLogLevel.error:
         return '31';
-      case AppLogLevel.fatal:
-        return '35';
     }
   }
 

@@ -5,9 +5,10 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/utils/theme_utils.dart';
+import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/features/favourite_setups/views/favourite_setups_bloc_adapter.dart';
-import 'package:Prism/features/setups/views/widgets/loading_setup_cards.dart';
-import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/setups/domain/entities/setup_entity.dart';
 import 'package:Prism/global/svg_assets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,243 +20,144 @@ class FavouriteSetupGrid extends StatefulWidget {
   const FavouriteSetupGrid({super.key});
 
   @override
-  _FavouriteSetupGridState createState() => _FavouriteSetupGridState();
+  State<FavouriteSetupGrid> createState() => _FavouriteSetupGridState();
 }
 
-class _FavouriteSetupGridState extends State<FavouriteSetupGrid> with SingleTickerProviderStateMixin {
-  AnimationController? _controller;
-  late Animation<Color?> animation;
-  GlobalKey<RefreshIndicatorState> refreshFavKey = GlobalKey<RefreshIndicatorState>();
+class _FavouriteSetupGridState extends State<FavouriteSetupGrid> {
   final ScrollMilestoneTracker _scrollMilestoneTracker = ScrollMilestoneTracker();
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
+  late final Future<void> _initialLoad;
 
   @override
   void initState() {
     super.initState();
     _contentLoadTracker.start();
-    _controller = AnimationController(duration: const Duration(milliseconds: 800), vsync: this);
-    animation =
-        context.prismModeStyleForWindow(listen: false) == "Dark"
-              ? TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: Colors.white10, end: const Color(0x22FFFFFF)),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(begin: const Color(0x22FFFFFF), end: Colors.white10),
-                  ),
-                ]).animate(_controller!)
-              : TweenSequence<Color?>([
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .1),
-                      end: Colors.black.withValues(alpha: .14),
-                    ),
-                  ),
-                  TweenSequenceItem(
-                    weight: 1.0,
-                    tween: ColorTween(
-                      begin: Colors.black.withValues(alpha: .14),
-                      end: Colors.black.withValues(alpha: .1),
-                    ),
-                  ),
-                ]).animate(_controller!)
-          ..addListener(() {
-            setState(() {});
-          });
-    _controller!.repeat();
+    _initialLoad = context.favouriteSetupsAdapter(listen: false).load();
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> refreshList() async {
-    refreshFavKey.currentState?.show();
+  Future<void> _refresh() {
     _contentLoadTracker.start();
     _scrollMilestoneTracker.reset();
-    context.favouriteSetupsAdapter(listen: false).getDataBase();
+    return context.favouriteSetupsAdapter(listen: false).load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final likedSetups = context.favouriteSetupsAdapter(listen: false).liked;
-    if (likedSetups != null) {
-      _contentLoadTracker.success(
-        itemCount: likedSetups.length,
-        onSuccess: ({required int loadTimeMs, int? itemCount}) async {
-          await analytics.track(
-            SurfaceContentLoadedEvent(
-              surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
-              result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
-              loadTimeMs: loadTimeMs,
-              sourceContext: 'favourite_setups_grid_initial',
-              itemCount: itemCount,
-            ),
-          );
-        },
-      );
-    }
-    return RefreshIndicator(
-      backgroundColor: Theme.of(context).primaryColor,
-      key: refreshFavKey,
-      onRefresh: refreshList,
-      child: context.favouriteSetupsAdapter(listen: false).liked != null
-          ? context.favouriteSetupsAdapter(listen: false).liked!.isEmpty
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        child: context.prismModeStyleForContext() == "Dark"
-                            ? SvgPicture.string(
-                                favouritesDark
-                                    .replaceAll(
-                                      "181818",
-                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "E57697",
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                    )
-                                    .replaceAll(
-                                      "F0F0F0",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2E41",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "3F3D56",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2F2F",
-                                      Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                    ),
-                              )
-                            : SvgPicture.string(
-                                favouritesLight
-                                    .replaceAll(
-                                      "181818",
-                                      Theme.of(context).primaryColor.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "E57697",
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.error.toString().replaceAll("Color(0xff", "").replaceAll(")", ""),
-                                    )
-                                    .replaceAll(
-                                      "F0F0F0",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2E41",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "3F3D56",
-                                      Theme.of(context).colorScheme.secondary.toARGB32().toRadixString(16).substring(2),
-                                    )
-                                    .replaceAll(
-                                      "2F2F2F",
-                                      Theme.of(context).hintColor.toARGB32().toRadixString(16).substring(2),
-                                    ),
-                              ),
+    final List<SetupEntity>? setups = context.favouriteSetupsAdapter().items;
+    final Color placeholderColor = Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1);
+    return FutureBuilder<void>(
+      future: _initialLoad,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done || setups == null) {
+          return const LoadingCards(childAspectRatio: 0.5025);
+        }
+        _contentLoadTracker.success(
+          itemCount: setups.length,
+          onSuccess: ({required int loadTimeMs, int? itemCount}) async {
+            await analytics.track(
+              SurfaceContentLoadedEvent(
+                surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
+                result: (itemCount ?? 0) > 0 ? EventResultValue.success : EventResultValue.empty,
+                loadTimeMs: loadTimeMs,
+                sourceContext: 'favourite_setups_grid_initial',
+                itemCount: itemCount,
+              ),
+            );
+          },
+        );
+        return RefreshIndicator(
+          backgroundColor: Theme.of(context).primaryColor,
+          onRefresh: _refresh,
+          child: setups.isEmpty
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: SvgPicture.string(
+                        themedIllustration(context, dark: favouritesDark, light: favouritesLight),
                       ),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.1,
-                      ),
-                    ],
-                  )
-                : NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification notification) {
-                      _scrollMilestoneTracker.onScroll(
-                        metrics: notification.metrics,
-                        itemCount: context.favouriteSetupsAdapter().liked!.length,
-                        onMilestoneReached: (depth, {required int itemCount}) async {
-                          await analytics.track(
-                            ScrollMilestoneReachedEvent(
-                              surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
-                              listName: ScrollListNameValue.favouriteSetupsGrid,
-                              depth: depth,
-                              sourceContext: 'favourite_setups_grid_scroll',
-                              itemCount: itemCount,
-                            ),
-                          );
-                        },
-                      );
-                      return false;
-                    },
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      scrollCacheExtent: const ScrollCacheExtent.pixels(50000),
-                      padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
-                      itemCount: context.favouriteSetupsAdapter().liked!.length,
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
-                        childAspectRatio: 0.5025,
-                        mainAxisSpacing: 8,
-                        crossAxisSpacing: 8,
-                      ),
-                      itemBuilder: (context, index) {
-                        return Stack(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: animation.value,
-                                borderRadius: BorderRadius.circular(20),
-                                image: DecorationImage(
-                                  image: CachedNetworkImageProvider(
-                                    context.favouriteSetupsAdapter().liked![index].image,
-                                  ),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                  highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                  onTap: () {
-                                    if (context.favouriteSetupsAdapter(listen: false).liked == null ||
-                                        context.favouriteSetupsAdapter(listen: false).liked!.isEmpty) {
-                                    } else {
-                                      unawaited(
-                                        analytics.track(
-                                          SurfaceActionTappedEvent(
-                                            surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
-                                            action: AnalyticsActionValue.tileOpened,
-                                            sourceContext: 'favourite_setups_grid_tile',
-                                            itemId: context.favouriteSetupsAdapter(listen: false).liked![index].id,
-                                            index: index,
-                                          ),
-                                        ),
-                                      );
-                                      context.router.push(FavSetupViewRoute(setupIndex: index));
-                                    }
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 0.1,
+                    ),
+                  ],
+                )
+              : NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification notification) {
+                    _scrollMilestoneTracker.onScroll(
+                      metrics: notification.metrics,
+                      itemCount: setups.length,
+                      onMilestoneReached: (depth, {required int itemCount}) async {
+                        await analytics.track(
+                          ScrollMilestoneReachedEvent(
+                            surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
+                            listName: ScrollListNameValue.favouriteSetupsGrid,
+                            depth: depth,
+                            sourceContext: 'favourite_setups_grid_scroll',
+                            itemCount: itemCount,
+                          ),
                         );
                       },
+                    );
+                    return false;
+                  },
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(50000),
+                    padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+                    itemCount: setups.length,
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: MediaQuery.of(context).orientation == Orientation.portrait ? 300 : 250,
+                      childAspectRatio: 0.5025,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
                     ),
-                  )
-          : const LoadingSetupCards(),
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: placeholderColor,
+                              borderRadius: BorderRadius.circular(20),
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(setups[index].image),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
+                                onTap: () {
+                                  unawaited(
+                                    analytics.track(
+                                      SurfaceActionTappedEvent(
+                                        surface: AnalyticsSurfaceValue.favouriteSetupsGrid,
+                                        action: AnalyticsActionValue.tileOpened,
+                                        sourceContext: 'favourite_setups_grid_tile',
+                                        itemId: setups[index].id,
+                                        index: index,
+                                      ),
+                                    ),
+                                  );
+                                  context.router.push(FavSetupViewRoute(setupIndex: index));
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+        );
+      },
     );
   }
 }

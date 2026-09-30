@@ -6,6 +6,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FeedItemEntity _prism(String id, {required String category, String? creator}) {
@@ -133,7 +134,7 @@ void main() {
     final PersonalizedRankingResult result = rank(candidates, mix: FeedMix.balanced);
 
     expect(result.items, hasLength(8));
-    expect(result.sourceCounts[WallpaperSource.wallhaven], lessThanOrEqualTo(4));
+    expect(result.items.where((e) => e.source == WallpaperSource.wallhaven), hasLength(lessThanOrEqualTo(4)));
   });
 
   test('the same wall from two pools is returned once', () {

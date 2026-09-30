@@ -5,6 +5,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 
 /// Where a candidate came from. The prior discounts sources further from the
 /// user's own network, like X's out-of-network discount.
@@ -43,11 +44,10 @@ class RankingCandidate {
 }
 
 class PersonalizedRankingResult {
-  const PersonalizedRankingResult({required this.items, required this.usedKeys, required this.sourceCounts});
+  const PersonalizedRankingResult({required this.items, required this.usedKeys});
 
   final List<FeedItemEntity> items;
   final List<String> usedKeys;
-  final Map<WallpaperSource, int> sourceCounts;
 }
 
 /// Scores and mixes feed candidates on device. Stages follow X's home mixer:
@@ -112,18 +112,9 @@ class PersonalizedRankingService {
       }
     }
 
-    final List<FeedItemEntity> items = selected.map((e) => e.candidate.item).toList(growable: false);
     return PersonalizedRankingResult(
-      items: items,
+      items: selected.map((e) => e.candidate.item).toList(growable: false),
       usedKeys: selected.map((e) => e.candidate.key).toList(growable: false),
-      sourceCounts: <WallpaperSource, int>{
-        for (final WallpaperSource source in <WallpaperSource>[
-          WallpaperSource.prism,
-          WallpaperSource.wallhaven,
-          WallpaperSource.pexels,
-        ])
-          source: items.where((e) => e.source == source).length,
-      },
     );
   }
 

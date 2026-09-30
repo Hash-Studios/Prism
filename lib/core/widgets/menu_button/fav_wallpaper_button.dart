@@ -42,7 +42,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       child: FavoriteIcon(
         tapTargetExtent: 53,
         valueChanged: () {
-          if (app_state.prismUser.loggedIn == false) {
+          if (!app_state.prismUser.loggedIn) {
             googleSignInPopUp(context, () {
               onFav(widget.wall);
             });

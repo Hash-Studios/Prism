@@ -67,23 +67,6 @@ class MixpanelAnalyticsProvider implements AnalyticsProvider {
   }
 
   @override
-  Future<void> logShare({required String contentType, required String itemId, required String method}) async {
-    _client.track(
-      'share',
-      properties: <String, Object>{'content_type': contentType, 'item_id': itemId, 'method': method},
-    );
-  }
-
-  @override
-  Future<void> logLogin({String? loginMethod}) async {
-    final Map<String, Object> properties = <String, Object>{};
-    if (loginMethod != null && loginMethod.trim().isNotEmpty) {
-      properties['login_method'] = loginMethod;
-    }
-    _client.track('login', properties: properties.isEmpty ? null : properties);
-  }
-
-  @override
   Future<void> setUserId(String? userId) async {
     final String trimmed = userId?.trim() ?? '';
     if (trimmed.isEmpty) {

@@ -6,8 +6,11 @@ import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheet_chrome.dart';
+import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/features/onboarding_v2/src/domain/usecases/save_interests_usecase.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/feed_mix.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -34,9 +37,6 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
   }
   final FeedMix currentMix = FeedMix.parse(settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
-  if (!context.mounted) {
-    return;
-  }
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -67,14 +67,12 @@ Future<void> openPersonalizedFeedSettingsBottomSheet(BuildContext context) async
 
 Future<bool> _persistInterests(SettingsLocalDataSource settingsLocal, List<String> interests) async {
   if (!app_state.prismUser.loggedIn) {
-    await settingsLocal.set('onboarding_v2_interests', interests.join(','));
+    await settingsLocal.set(OnboardingV2Keys.selectedInterests, interests.join(','));
     return true;
   }
   final SaveInterestsUseCase saveInterests = getIt<SaveInterestsUseCase>();
   final Result<void> saveResult = await saveInterests(SaveInterestsParams(interests: interests));
-  if (!saveResult.isSuccess) return false;
-  await settingsLocal.set('onboarding_v2_interests', interests.join(','));
-  return true;
+  return saveResult.isSuccess;
 }
 
 class PersonalizedFeedSettingsSheet extends StatefulWidget {
@@ -185,7 +183,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               const SizedBox(height: PrismBottomSheet.topGap),
-              const _DragHandle(),
+              const AiSheetDragHandle(),
               const SizedBox(height: PrismBottomSheet.headerGap),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: PrismBottomSheet.horizontalPadding),
@@ -315,19 +313,12 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       Text('Discovery', style: PrismTextStyles.sheetSectionLabel(context)),
       const SizedBox(height: PrismBottomSheet.sectionContentGap),
       SegmentedButton<FeedMix>(
-        segments: const <ButtonSegment<FeedMix>>[
-          ButtonSegment<FeedMix>(
-            value: FeedMix.familiar,
-            label: Text('Familiar', maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-          ButtonSegment<FeedMix>(
-            value: FeedMix.balanced,
-            label: Text('Balanced', maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-          ButtonSegment<FeedMix>(
-            value: FeedMix.adventurous,
-            label: Text('Adventurous', maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
+        segments: <ButtonSegment<FeedMix>>[
+          for (final FeedMix mix in FeedMix.values)
+            ButtonSegment<FeedMix>(
+              value: mix,
+              label: Text(mix.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
         ],
         selected: <FeedMix>{_feedMix},
         showSelectedIcon: false,
@@ -550,24 +541,6 @@ class _ActionBar extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DragHandle extends StatelessWidget {
-  const _DragHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: PrismBottomSheet.dragHandleWidth,
-        height: PrismBottomSheet.dragHandleHeight,
-        decoration: BoxDecoration(
-          color: Theme.of(context).hintColor,
-          borderRadius: BorderRadius.circular(PrismBottomSheet.dragHandleRadius),
         ),
       ),
     );

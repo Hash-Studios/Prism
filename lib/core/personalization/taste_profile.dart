@@ -2,24 +2,6 @@ import 'dart:math';
 
 import 'package:Prism/core/personalization/taste_signals.dart';
 
-/// How far the home feed reaches outside the user's taste.
-enum FeedMix {
-  familiar(exploreEvery: 8),
-  balanced(exploreEvery: 5),
-  adventurous(exploreEvery: 3);
-
-  const FeedMix({required this.exploreEvery});
-
-  /// Every n-th feed slot goes to a wallpaper outside the user's taste.
-  final int exploreEvery;
-
-  static FeedMix parse(String? raw) => switch (raw?.trim().toLowerCase()) {
-    'familiar' || 'creators' => FeedMix.familiar,
-    'adventurous' || 'discovery' => FeedMix.adventurous,
-    _ => FeedMix.balanced,
-  };
-}
-
 /// What the user likes, as weights per term (category, tag) and per creator.
 /// Built fresh on device from explicit picks, follows and [TasteSignal]s.
 class TasteProfile {

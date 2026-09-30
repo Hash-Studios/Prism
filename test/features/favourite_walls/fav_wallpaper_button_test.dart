@@ -24,16 +24,7 @@ class _MockFetchFavouriteWallsUseCase extends Mock implements FetchFavouriteWall
 
 class _MockToggleFavouriteWallUseCase extends Mock implements ToggleFavouriteWallUseCase {}
 
-class _MockRemoveFavouriteWallUseCase extends Mock implements RemoveFavouriteWallUseCase {}
-
 class _MockClearFavouriteWallsUseCase extends Mock implements ClearFavouriteWallsUseCase {}
-
-class _RecordingAnalytics extends FakeAppAnalytics {
-  final List<AnalyticsEvent> events = <AnalyticsEvent>[];
-
-  @override
-  Future<void> track(AnalyticsEvent event) async => events.add(event);
-}
 
 void main() {
   setUpAll(() {
@@ -45,26 +36,22 @@ void main() {
         wall: LegacyFavouriteWall(id: 'wall_1', source: WallpaperSource.prism, legacyPayload: <String, Object?>{}),
       ),
     );
-    registerFallbackValue(const RemoveFavouriteWallParams(userId: 'user_1', wallId: 'wall_1'));
     registerFallbackValue(const ClearFavouriteWallsParams(userId: 'user_1', wallIds: <String>[]));
   });
 
   late _MockFetchFavouriteWallsUseCase fetchUseCase;
   late _MockToggleFavouriteWallUseCase toggleUseCase;
-  late _MockRemoveFavouriteWallUseCase removeUseCase;
   late _MockClearFavouriteWallsUseCase clearUseCase;
-  late _RecordingAnalytics recordingAnalytics;
+  late FakeAppAnalytics recordingAnalytics;
   late FavoritesLocalDataSource favorites;
 
   setUp(() {
     fetchUseCase = _MockFetchFavouriteWallsUseCase();
     toggleUseCase = _MockToggleFavouriteWallUseCase();
-    removeUseCase = _MockRemoveFavouriteWallUseCase();
     clearUseCase = _MockClearFavouriteWallsUseCase();
-    recordingAnalytics = _RecordingAnalytics();
+    recordingAnalytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = recordingAnalytics;
     when(() => fetchUseCase(any())).thenAnswer((_) async => Result.success(const <FavouriteWallEntity>[]));
-    when(() => removeUseCase(any())).thenAnswer((_) async => Result.success(true));
     when(() => clearUseCase(any())).thenAnswer((_) async => Result.success(true));
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user_1'
@@ -106,7 +93,7 @@ void main() {
 
   testWidgets('does not track favourite status when the save fails', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('write failed')));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, removeUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc);
@@ -116,7 +103,7 @@ void main() {
 
   testWidgets('tracks favourite status when the save succeeds', (tester) async {
     when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, removeUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
     addTearDown(bloc.close);
 
     await tapFavourite(tester, bloc);
@@ -137,7 +124,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', false);
       return Result.success(false);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, removeUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
     addTearDown(bloc.close);
     var callbackCount = 0;
 
@@ -153,7 +140,7 @@ void main() {
       await favorites.setWallFavourite('user_1', 'wall_1', true);
       return Result.success(true);
     });
-    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, removeUseCase, clearUseCase);
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase);
     addTearDown(bloc.close);
     var callbackCount = 0;
 

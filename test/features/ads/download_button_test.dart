@@ -40,11 +40,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: DownloadButton(
-            link: 'https://example.com/wall.jpg',
-            colorChanged: false,
-            onDownloaded: () => callbackCount++,
-          ),
+          body: DownloadButton(link: 'https://example.com/wall.jpg', onDownloaded: () => callbackCount++),
         ),
       ),
     );

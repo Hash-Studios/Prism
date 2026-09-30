@@ -1,10 +1,6 @@
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
-// ---------------------------------------------------------------------------
-// Colors
-// ---------------------------------------------------------------------------
-
 /// Hard-coded semantic color tokens for Prism UI chrome.
 ///
 /// Prefer [Theme.of(context).colorScheme] for surface/content colors that
@@ -23,10 +19,6 @@ abstract final class PrismColors {
   static const Color onPrimary = Colors.white;
 }
 
-// ---------------------------------------------------------------------------
-// Fonts
-// ---------------------------------------------------------------------------
-
 /// Font family name constants.
 ///
 /// Keep font strings in one place so renaming a family only requires one edit.
@@ -36,15 +28,12 @@ abstract final class PrismFonts {
   static const String roboto = 'Roboto';
 }
 
-// ---------------------------------------------------------------------------
-// Text styles
-// ---------------------------------------------------------------------------
-
 /// Pre-built text styles for recurring chrome and editorial patterns.
 ///
 /// Where a style must adapt to the active theme use the static helper methods
 /// (which accept a [BuildContext]). Purely structural styles that do not vary
 /// by theme are exposed as `const` values.
+// ignore: avoid_classes_with_only_static_members
 abstract final class PrismTextStyles {
   /// Brand wordmark ("prism") shown in the top app-bar.
   ///
@@ -170,10 +159,6 @@ abstract final class PrismTextStyles {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
-
 /// Icon data constants so individual widgets don't scatter icon literals.
 ///
 /// Centralising icon choices makes it easy to swap an icon app-wide or audit
@@ -186,10 +171,6 @@ abstract final class PrismIcons {
   /// Trailing chevron indicating a dropdown / expandable section.
   static const IconData dropdownCaret = Icons.expand_more_rounded;
 }
-
-// ---------------------------------------------------------------------------
-// App-bar sizes
-// ---------------------------------------------------------------------------
 
 /// Fixed-size dimensions for app-bar chrome.
 ///
@@ -208,21 +189,13 @@ abstract final class PrismAppBarSizes {
   /// Visual icon size inside app-bar buttons.
   static const double iconSize = 16;
 
-  // -- Profile avatar --------------------------------------------------------
-
   static const double profileAvatarSize = 40;
   static const double profileAvatarInnerPadding = 8;
-
-  // -- Notification badge dot ------------------------------------------------
 
   static const double notificationBadgeSize = 6;
   static const double notificationBadgeBlurRadius = 4;
   static const double notificationBadgeSpreadRadius = 1;
 }
-
-// ---------------------------------------------------------------------------
-// Feed layout
-// ---------------------------------------------------------------------------
 
 /// Wallpaper grid columns for a screen [width]: about one per 180 pt, so a phone gets 3 in portrait
 /// and 5 in landscape, and a tablet gets more instead of huge, blurry tiles.
@@ -230,8 +203,6 @@ int wallpaperGridColumns(double width) => (width / 180).round().clamp(3, 8);
 
 /// Layout constants for the personalized feed carousel and wallpaper grid.
 abstract final class PrismFeedLayout {
-  // -- Carousel --------------------------------------------------------------
-
   /// Carousel height = screen width × this ratio (2 : 3 portrait aspect).
   static const double carouselHeightRatio = 2 / 3;
 
@@ -241,8 +212,6 @@ abstract final class PrismFeedLayout {
   /// Font size for the carousel banner overlay headline.
   static const double carouselBannerFontSize = 20;
 
-  // -- Grid ------------------------------------------------------------------
-
   /// Grid tile aspect ratio (width : height).
   static const double gridTileAspectRatio = 0.5;
 
@@ -251,8 +220,6 @@ abstract final class PrismFeedLayout {
 
   /// Stroke width for the inline "fetching more" progress indicator.
   static const double loadingIndicatorStrokeWidth = 2.4;
-
-  // -- Padding presets -------------------------------------------------------
 
   /// Padding for the error state (generous top space pushes the note to
   /// roughly the vertical centre of the visible area).
@@ -268,17 +235,11 @@ abstract final class PrismFeedLayout {
   static const double endOfPageSpacerHeight = 22;
 }
 
-// ---------------------------------------------------------------------------
-// Editorial note / empty-state cards
-// ---------------------------------------------------------------------------
-
 /// Visual parameters for the `PersonalizedFeedEditorialNote` pattern.
 ///
 /// Reuse these constants whenever you build a typographic call-out that follows
 /// the same accent-bar + text column layout anywhere in the app.
 abstract final class PrismEditorialNote {
-  // -- Accent bar ------------------------------------------------------------
-
   static const double accentBarWidth = 3;
   static const double accentBarHeight = 52;
   static const double accentBarBorderRadius = 2;
@@ -286,12 +247,8 @@ abstract final class PrismEditorialNote {
   /// Horizontal gap between the accent bar and the text column.
   static const double accentBarTextGap = 16;
 
-  // -- Text ------------------------------------------------------------------
-
   /// Vertical spacing between the title and the detail paragraph.
   static const double titleDetailSpacing = 8;
-
-  // -- Container -------------------------------------------------------------
 
   /// Maximum width of the note container — keeps line length readable on
   /// wider screens and tablets.
@@ -301,19 +258,11 @@ abstract final class PrismEditorialNote {
   static const double horizontalPadding = 8;
 }
 
-// ---------------------------------------------------------------------------
-// Overlay / scrim
-// ---------------------------------------------------------------------------
-
 /// Opacity values for overlay layers applied on top of imagery.
 abstract final class PrismOverlay {
   /// Scrim alpha for the banner text overlay on top of carousel photography.
   static const double carouselBannerScrimAlpha = 0.45;
 }
-
-// ---------------------------------------------------------------------------
-// Bottom sheet chrome
-// ---------------------------------------------------------------------------
 
 /// Layout and sizing tokens for modal bottom sheets.
 ///
@@ -321,15 +270,11 @@ abstract final class PrismOverlay {
 /// language — drag handles, section labels, action bars, and spacing all
 /// derive from here.
 abstract final class PrismBottomSheet {
-  // -- Drag handle -----------------------------------------------------------
-
   static const double dragHandleWidth = 32;
   static const double dragHandleHeight = 4;
 
   /// Fully-rounded pill radius for the drag handle.
   static const double dragHandleRadius = 99;
-
-  // -- Vertical rhythm -------------------------------------------------------
 
   /// Space between the sheet top edge and the drag handle.
   static const double topGap = 12;
@@ -343,31 +288,21 @@ abstract final class PrismBottomSheet {
   /// Space between a section label and the content below it.
   static const double sectionLabelBottomGap = 4;
 
-  // -- Horizontal padding ----------------------------------------------------
-
   /// Consistent horizontal inset used for headers, section labels, and
   /// the action bar — keeps the vertical rhythm of the whole sheet aligned.
   static const double horizontalPadding = 20;
 
-  // -- Interest chips --------------------------------------------------------
-
   static const double chipSpacing = 8;
   static const double chipRunSpacing = 8;
 
-  // -- Action bar ------------------------------------------------------------
-
   /// Vertical padding inside the action bar row.
   static const double actionsVerticalPadding = 12;
-
-  // -- Saving spinner --------------------------------------------------------
 
   /// Size of the inline saving indicator inside the "Save" button.
   static const double savingIndicatorSize = 16;
 
   /// Stroke width for the inline saving spinner.
   static const double savingIndicatorStrokeWidth = 2;
-
-  // -- Tall sheets -----------------------------------------------------------
 
   /// Share of the screen height a tall sheet (e.g. "Tune your feed") takes.
   static const double maxHeightFactor = 0.9;
@@ -377,8 +312,6 @@ abstract final class PrismBottomSheet {
 
   /// Space between a section heading row and its main content.
   static const double sectionContentGap = 12;
-
-  // -- Interest tiles --------------------------------------------------------
 
   static const int interestGridColumns = 3;
   static const double interestTileSpacing = 8;
@@ -396,8 +329,6 @@ abstract final class PrismBottomSheet {
   static const double interestCheckBadgeSize = 22;
   static const double interestCheckIconSize = 14;
 
-  // -- Learned taste pills ---------------------------------------------------
-
   static const int learnedTermCount = 6;
   static const EdgeInsets learnedPillPadding = EdgeInsets.fromLTRB(14, 8, 14, 10);
 
@@ -406,10 +337,6 @@ abstract final class PrismBottomSheet {
   static const double learnedBarHeight = 3;
   static const double learnedBarTrackAlpha = 0.18;
 }
-
-// ---------------------------------------------------------------------------
-// Form fields
-// ---------------------------------------------------------------------------
 
 /// Dimensions and opacities shared by all text-input fields across the app.
 abstract final class PrismFormField {
@@ -445,47 +372,31 @@ abstract final class PrismFormField {
   static const double availabilitySpinnerSize = 18;
 }
 
-// ---------------------------------------------------------------------------
-// Profile editing
-// ---------------------------------------------------------------------------
-
 /// Dimensions and spacing for the edit-profile screen.
 abstract final class PrismProfile {
-  // -- Avatar ----------------------------------------------------------------
-
   static const double avatarSize = 88;
 
   /// How far the avatar overlaps below the cover image.
   static const double avatarOverlap = 44;
   static const double avatarBorderWidth = 3;
 
-  // -- Camera chip (avatar badge) --------------------------------------------
-
   static const double cameraChipSize = 26;
   static const double cameraChipBorderWidth = 2;
   static const double cameraChipIconSize = 13;
 
-  // -- Cover area ------------------------------------------------------------
-
   static const double coverScrimHeight = 52;
   static const double coverEditIconSize = 15;
   static const double coverEditIconGap = 6;
-
-  // -- Remove chip (top-right corner of cover) -------------------------------
 
   static const double removeChipSize = 32;
   static const double removeChipIconSize = 15;
   static const double removeChipScrimAlpha = 0.45;
   static const double removeChipPositionOffset = 10;
 
-  // -- Form field vertical rhythm --------------------------------------------
-
   static const double fieldGap = 12;
   static const double preSaveGap = 28;
   static const double postSaveGap = 16;
   static const double bottomPadding = 40;
-
-  // -- Link row --------------------------------------------------------------
 
   static const double linkSelectorHeight = 56;
   static const double linkSelectorHorizontalPadding = 12;
@@ -496,13 +407,9 @@ abstract final class PrismProfile {
   static const double linkDropdownTextGap = 12;
   static const double linkDropdownFontSize = 14;
 
-  // -- Save button -----------------------------------------------------------
-
   static const double saveButtonHeight = 56;
   static const double savingIndicatorSize = 22;
   static const double savingIndicatorStrokeWidth = 2.5;
-
-  // -- Dialog ----------------------------------------------------------------
 
   static const double dialogBorderRadius = 16;
   static const double dialogButtonRadius = 8;

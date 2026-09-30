@@ -40,9 +40,6 @@ class FakeUserBlockRepository implements UserBlockRepository {
   }
 
   @override
-  bool get hasLoadedBlockedCreatorEmails => _hasLoaded;
-
-  @override
   Future<Result<void>> unblockUser({required String targetUserId}) async => Result.success(null);
 
   @override

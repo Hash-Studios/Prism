@@ -274,7 +274,6 @@ The following packages are needed for the development of this application.
 - `path_provider: ^2.0.1` for accessing storage directories
 - `permission_handler: ^12.0.1` for handling device permissions
 - `internet_connection_checker: ^3.0.1` for connectivity monitoring
-- `in_app_update: ^4.2.5` for in-app update prompts
 - `flutter_displaymode: ^0.7.0` for display refresh rate management
 - `device_info_plus: ^11.5.0` for device metadata
 - `package_info_plus: ^8.3.0` for app version info
@@ -400,7 +399,7 @@ We collect usage analytics, crash logs, and optional account info (name, email, 
 
 Full privacy policy: [PRIVACY.md](PRIVACY.md)
 
-Contact: hash.studios.inc+prism@gmail.com
+Contact: hash.studios.inc@gmail.com
 
 ## Contributors
 
