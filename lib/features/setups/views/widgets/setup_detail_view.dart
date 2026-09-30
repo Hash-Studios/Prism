@@ -356,61 +356,65 @@ class _SetupDetailViewState extends State<SetupDetailView> with SingleTickerProv
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: <Widget>[
-                                    Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        SizedBox(
-                                          width: screen.width * 0.36,
-                                          child: Padding(
-                                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
-                                            child: Row(
-                                              children: [
-                                                Flexible(
-                                                  child: Text(
-                                                    setup.id.toUpperCase(),
-                                                    overflow: TextOverflow.fade,
-                                                    softWrap: false,
-                                                    style: infoStyle,
-                                                  ),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                                  child: Container(height: 16, color: secondary, width: 2),
-                                                ),
-                                                Flexible(
-                                                  child: FutureBuilder<String>(
-                                                    future: _futureView,
-                                                    builder: (context, snapshot) => Text(
-                                                      snapshot.hasData ? '${snapshot.data} views' : '',
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.bottomLeft,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          SizedBox(
+                                            width: screen.width * 0.36,
+                                            child: Padding(
+                                              padding: const EdgeInsets.fromLTRB(0, 5, 0, 5),
+                                              child: Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      setup.id.toUpperCase(),
                                                       overflow: TextOverflow.fade,
                                                       softWrap: false,
                                                       style: infoStyle,
                                                     ),
                                                   ),
+                                                  Padding(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                                    child: Container(height: 16, color: secondary, width: 2),
+                                                  ),
+                                                  Flexible(
+                                                    child: FutureBuilder<String>(
+                                                      future: _futureView,
+                                                      builder: (context, snapshot) => Text(
+                                                        snapshot.hasData ? '${snapshot.data} views' : '',
+                                                        overflow: TextOverflow.fade,
+                                                        softWrap: false,
+                                                        style: infoStyle,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                          GestureDetector(
+                                            onTap: _reportSetup,
+                                            child: Row(
+                                              children: [
+                                                Icon(JamIcons.info, size: 20, color: secondary.withValues(alpha: .7)),
+                                                const SizedBox(width: 10),
+                                                Text(
+                                                  'Report',
+                                                  overflow: TextOverflow.fade,
+                                                  style: theme.textTheme.bodyMedium!.copyWith(
+                                                    decoration: TextDecoration.underline,
+                                                    color: secondary,
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                           ),
-                                        ),
-                                        GestureDetector(
-                                          onTap: _reportSetup,
-                                          child: Row(
-                                            children: [
-                                              Icon(JamIcons.info, size: 20, color: secondary.withValues(alpha: .7)),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                'Report',
-                                                overflow: TextOverflow.fade,
-                                                style: theme.textTheme.bodyMedium!.copyWith(
-                                                  decoration: TextDecoration.underline,
-                                                  color: secondary,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                     Column(
                                       mainAxisSize: MainAxisSize.min,
