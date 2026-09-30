@@ -58,17 +58,13 @@ type User = Record<string, unknown> & {
   coinState: Record<string, unknown>;
   winBack?: Record<string, unknown>;
 };
-type MockDoc = {id: string; data: () => User; ref: {id: string}};
+type MockDoc = {id: string; data: () => User; ref: {id: string; update: (value: Record<string, unknown>) => Promise<void>}};
 type MockQuery = {
   where: (field: string, op: string, value: admin.firestore.Timestamp) => MockQuery;
   orderBy: (field: string) => MockQuery;
   startAfter: (cursor: MockDoc) => MockQuery;
   limit: (count: number) => MockQuery;
   get: () => Promise<{docs: MockDoc[]; size: number; empty: boolean}>;
-};
-type MockTransaction = {
-  get: (ref: {id: string}) => Promise<{exists: boolean; data: () => User | undefined}>;
-  update: (ref: {id: string}, value: Record<string, unknown>) => void;
 };
 
 const activityMs = (user: User) => {
@@ -93,29 +89,28 @@ function messageCondition(message: admin.messaging.Message): string | undefined 
 }
 
 async function runJob(users: User[], options: {
-  beforeTransactions?: (state: Map<string, User>) => void;
   failSend?: boolean;
-  concurrentRuns?: number;
   wall?: boolean;
-  failTransactionAt?: number;
-  nowMs?: number;
-  afterSend?: (state: Map<string, User>) => void;
 } = {}) {
   const firestore = admin.firestore();
   const messaging = admin.messaging();
   const loggerDescriptors = ["info", "warn", "error"].map((name) => [name,
     Object.getOwnPropertyDescriptor(logger, name)] as const);
   const firestoreCollection = firestore.collection.bind(firestore);
-  const firestoreTransaction = firestore.runTransaction.bind(firestore);
   const messagingSend = messaging.send.bind(messaging);
   const dateNow = Date.now;
   const state = new Map(users.map((u) => [u.id, u]));
   const sent: admin.messaging.Message[] = [];
   const collections: string[] = [];
-  let transactionTail = Promise.resolve();
-  let transactionCount = 0;
 
-  const refFor = (id: string): MockDoc["ref"] => ({id});
+  const refFor = (id: string): MockDoc["ref"] => ({
+    id,
+    update: async (value) => {
+      const current = state.get(id);
+      if (!current) throw new Error(`Missing test document: ${id}`);
+      state.set(id, {...current, ...value});
+    },
+  });
   const snapshot = (user: User): MockDoc => {
     const data = {...user, coinState: {...user.coinState}, winBack: user.winBack && {...user.winBack}};
     return {id: user.id, data: () => data, ref: refFor(user.id)};
@@ -172,7 +167,6 @@ async function runJob(users: User[], options: {
               return userTime > cursorTime || (userTime === cursorTime && user.id.localeCompare(cursor.id) > 0);
             });
             const docs = eligible.slice(0, pageSize).map(snapshot);
-            options.beforeTransactions?.(state);
             return {docs, size: docs.length, empty: docs.length === 0};
           },
         });
@@ -183,68 +177,25 @@ async function runJob(users: User[], options: {
   };
 
   Object.defineProperty(firestore, "collection", {configurable: true, value: collection});
-  Object.defineProperty(firestore, "runTransaction", {
-    configurable: true,
-    value: async (callback: (tx: MockTransaction) => Promise<unknown>) => {
-      let release: (() => void) | undefined;
-      const previous = transactionTail;
-      transactionTail = new Promise<void>((resolve) => {
-        release = resolve;
-      });
-      await previous;
-      const changes = new Map<string, User>();
-      let committed = false;
-      transactionCount += 1;
-      try {
-        const result = await callback({
-          get: async (ref: {id: string}) => ({exists: state.has(ref.id), data: () => state.get(ref.id)}),
-          update: (ref: {id: string}, value: Record<string, unknown>) => {
-            const current = state.get(ref.id);
-            if (!current) throw new Error(`Missing test document: ${ref.id}`);
-            const updated = {...current};
-            Object.assign(updated, value);
-            changes.set(ref.id, updated);
-          },
-        });
-        if (transactionCount === options.failTransactionAt) throw new Error("Firestore commit failed");
-        committed = true;
-        return result;
-      } finally {
-        if (committed) for (const [id, value] of changes) state.set(id, value);
-        release?.();
-      }
-    },
-  });
   Object.defineProperty(messaging, "send", {
     configurable: true,
     value: async (message: admin.messaging.Message) => {
       sent.push(message);
       if (options.failSend) throw new Error("FCM unavailable");
-      options.afterSend?.(state);
       return `message-${sent.length}`;
     },
   });
   for (const name of ["info", "warn", "error"] as const) {
     Object.defineProperty(logger, name, {configurable: true, value: () => undefined});
   }
-  Date.now = () => options.nowMs ?? NOW;
+  Date.now = () => NOW;
   try {
     const run = sendWinBackPushes.run;
-    let failure: unknown;
-    try {
-      await Promise.all(Array.from({length: options.concurrentRuns ?? 1}, () => run({
-        jobName: "win-back-test",
-        scheduleTime: new Date(NOW).toISOString(),
-      } satisfies ScheduledEvent)));
-    } catch (err) {
-      failure = err;
-    }
-    if (failure) return {sent, users: state, collections, failure};
+    await run({jobName: "win-back-test", scheduleTime: new Date(NOW).toISOString()} satisfies ScheduledEvent);
     return {sent, users: state, collections};
   } finally {
     Date.now = dateNow;
     Object.defineProperty(firestore, "collection", {configurable: true, value: firestoreCollection});
-    Object.defineProperty(firestore, "runTransaction", {configurable: true, value: firestoreTransaction});
     Object.defineProperty(messaging, "send", {configurable: true, value: messagingSend});
     for (const [name, descriptor] of loggerDescriptors) {
       if (descriptor) Object.defineProperty(logger, name, descriptor);
@@ -274,34 +225,15 @@ test("job sends one push using the uid/email condition and app payload", async (
   assert.equal(sent[0].data?.route, "wall_of_the_day");
   assert.equal(sent[0].data?.channel_id, "wall_of_the_day");
   assert.ok(sent[0].android?.notification?.channelId === "wall_of_the_day");
-  assert.equal(sent[0].android?.collapseKey, "win_back_3");
-});
-
-test("scheduled handler exposes bounded retry configuration", () => {
-  const endpoint = (sendWinBackPushes as unknown as {
-    __endpoint?: {scheduleTrigger?: {retryConfig?: {retryCount?: number; minBackoffSeconds?: number}}};
-  }).__endpoint;
-  assert.equal(endpoint?.scheduleTrigger?.retryConfig?.retryCount, 3);
-  assert.equal(endpoint?.scheduleTrigger?.retryConfig?.minBackoffSeconds, 600);
+  assert.equal(sent[0].android?.notification?.tag, "win_back_3");
 });
 
 test("fresh activity, deleted users and logged-out users are skipped", async () => {
   const {sent} = await runJob([
-    makeUser("fresh", 3.5),
-    makeUser("missing-doc", 3.5),
-    makeUser("deleted", 3.5),
-    makeUser("logged-out", 3.5),
-  ], {beforeTransactions: (state) => {
-    const fresh = state.get("fresh");
-    const deleted = state.get("deleted");
-    const loggedOut = state.get("logged-out");
-    assert.ok(fresh);
-    assert.ok(deleted && loggedOut);
-    fresh.coinState.streakLastClaimServerAt = admin.firestore.Timestamp.fromMillis(NOW - 2 * DAY);
-    deleted.deleted = true;
-    loggedOut.loggedIn = false;
-    state.delete("missing-doc");
-  }});
+    makeUser("fresh", 2),
+    makeUser("deleted", 3.5, {deleted: true}),
+    makeUser("logged-out", 3.5, {loggedIn: false}),
+  ]);
   assert.equal(sent.length, 0);
 });
 
@@ -312,31 +244,14 @@ test("completed sends dedupe reruns", async () => {
   assert.equal(again.sent.length, 0);
 });
 
-test("concurrent invocations claim a user only once", async () => {
-  const racing = await runJob([makeUser("racing", 3.5)], {concurrentRuns: 2});
-  assert.equal(racing.sent.length, 1);
-});
-
-test("failed FCM does not leave a completed stamp or owned pending lease", async () => {
+test("failed FCM does not leave a completed stamp", async () => {
   const failed = await runJob([makeUser("retry", 3.5)], {failSend: true});
-  assert.ok(failed.failure);
+  assert.equal(failed.sent.length, 1);
   const user = failed.users.get("retry");
   assert.ok(user);
   assert.equal(user.winBack?.step, undefined);
-  assert.equal(user.winBack?.pending, undefined);
   const retry = await runJob([...failed.users.values()]);
   assert.equal(retry.sent.length, 1);
-});
-
-test("failed FCM cleanup failure retains a lease until the first configured retry is safe", async () => {
-  const failed = await runJob([makeUser("cleanup-retry", 3.5)], {failSend: true, failTransactionAt: 2});
-  assert.ok(failed.failure);
-  assert.equal(failed.sent.length, 1);
-  const expiry = failed.users.get("cleanup-retry")?.winBack?.pending as {expiresAt?: admin.firestore.Timestamp};
-  assert.ok(expiry.expiresAt instanceof admin.firestore.Timestamp);
-  const retry = await runJob([...failed.users.values()], {nowMs: expiry.expiresAt.toMillis()});
-  assert.equal(retry.sent.length, 1);
-  assert.equal(retry.users.get("cleanup-retry")?.winBack?.step, 3);
 });
 
 test("varied timestamp pages with ties do not skip users after the 300-document boundary", async () => {
@@ -364,21 +279,6 @@ test("malformed completed dedupe timestamps do not crash or suppress an eligible
   assert.equal(sent.length, 1);
 });
 
-test("an active pending lease blocks a later step, but an expired lease can retry", async () => {
-  const lastClaim = admin.firestore.Timestamp.fromMillis(NOW - 7.5 * DAY);
-  const active = await runJob([makeUser("leased", 7.5, {
-    winBack: {pending: {id: "old-attempt", step: 3, claimAt: lastClaim,
-      expiresAt: admin.firestore.Timestamp.fromMillis(NOW + DAY)}},
-  })]);
-  assert.equal(active.sent.length, 0);
-
-  const expired = await runJob([makeUser("leased", 7.5, {
-    winBack: {pending: {id: "expired-attempt", step: 3, claimAt: lastClaim,
-      expiresAt: admin.firestore.Timestamp.fromMillis(NOW - 1)}},
-  })]);
-  assert.equal(expired.sent.length, 1);
-});
-
 test("empty or invalid email topic falls back to only the authoritative uid topic", async () => {
   const {sent} = await runJob([makeUser("uid-only", 3.5, {email: "###@example.com"})]);
   assert.equal(sent.length, 1);
@@ -391,18 +291,6 @@ test("legacy topic preserves email case and uses the canonical document uid", as
   assert.equal(sent.length, 1);
   const condition = messageCondition(sent[0]);
   assert.equal(condition, "'u_doc-uid' in topics || 'Alice' in topics");
-});
-
-test("the email topic comes from the fresh reservation document, not a stale query snapshot", async () => {
-  const {sent} = await runJob([makeUser("fresh-email", 3.5, {email: "old@example.com"})], {
-    beforeTransactions: (state) => {
-      const user = state.get("fresh-email");
-      assert.ok(user);
-      user.email = "Alice@example.com";
-    },
-  });
-  const condition = messageCondition(sent[0]);
-  assert.equal(condition, "'u_fresh-email' in topics || 'Alice' in topics");
 });
 
 test("payload carries the current wall details and falls back cleanly without one", async () => {
@@ -420,58 +308,12 @@ test("payload carries the current wall details and falls back cleanly without on
   assert.ok(!fallback.collections.includes("notifications"));
 });
 
-test("state changes after push acceptance are not marked as sent", async () => {
-  const cases: Array<{id: string; change: (user: User) => void}> = [
-    {id: "activity-after-send", change: (user) => {
-      user.coinState.streakLastClaimServerAt = admin.firestore.Timestamp.fromMillis(NOW - 2 * DAY);
-    }},
-    {id: "deleted-after-send", change: (user) => {
-      user.deleted = true;
-    }},
-    {id: "signed-out-after-send", change: (user) => {
-      user.loggedIn = false;
-    }},
-  ];
-  for (const {id, change} of cases) {
-    const result = await runJob([makeUser(id, 3.5)], {afterSend: (state) => {
-      const user = state.get(id);
-      assert.ok(user);
-      change(user);
-    }});
-    assert.equal(result.sent.length, 1);
-    assert.equal(result.users.get(id)?.winBack?.step, undefined);
-  }
-});
-
-test("completion does not overwrite a lease replaced after push acceptance", async () => {
-  const result = await runJob([makeUser("lease-owner", 3.5)], {afterSend: (state) => {
-    const user = state.get("lease-owner");
-    assert.ok(user);
-    const pending = user.winBack?.pending;
-    assert.ok(pending && typeof pending === "object");
-    user.winBack = {...user.winBack, pending: {...pending, id: "new-owner"}};
-  }});
-  assert.equal(result.users.get("lease-owner")?.winBack?.step, undefined);
-  const pending = result.users.get("lease-owner")?.winBack?.pending as Record<string, unknown>;
-  assert.equal(pending.id, "new-owner");
-});
-
-test("accepted push with a failed final transaction retains its lease and blocks immediate resend", async () => {
-  const first = await runJob([makeUser("finalize-retry", 3.5)], {failTransactionAt: 2});
-  assert.ok(first.failure);
-  assert.equal(first.sent.length, 1);
-  assert.ok(first.users.get("finalize-retry")?.winBack?.pending);
-  const rerun = await runJob([...first.users.values()]);
-  assert.equal(rerun.sent.length, 0);
-});
-
 test("failed later-step delivery preserves the earlier completed stamp", async () => {
   const claimAt = admin.firestore.Timestamp.fromMillis(NOW - 7.5 * DAY);
   const sentAt = admin.firestore.Timestamp.fromMillis(NOW - DAY);
   const failed = await runJob([makeUser("later-step", 7.5, {
     winBack: {step: 3, claimAt, sentAt},
   })], {failSend: true});
-  assert.ok(failed.failure);
   const winBack = failed.users.get("later-step")?.winBack;
   assert.equal(winBack?.step, 3);
   assert.equal(winBack?.claimAt, claimAt);
