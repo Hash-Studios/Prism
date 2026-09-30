@@ -1204,7 +1204,7 @@ class UserSearchRoute extends PageRouteInfo<void> {
 class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
   WallpaperDetailRoute({
     Key? key,
-    WallpaperDetailEntity? entity,
+    FeedItemEntity? entity,
     String? wallId,
     WallpaperSource? source,
     String? thumbnailUrl,
@@ -1256,7 +1256,7 @@ class WallpaperDetailRouteArgs {
 
   final Key? key;
 
-  final WallpaperDetailEntity? entity;
+  final FeedItemEntity? entity;
 
   final String? wallId;
 

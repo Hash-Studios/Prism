@@ -9,9 +9,9 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
 import 'package:Prism/features/streak/streak_unlock.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -598,7 +598,7 @@ class _StreakShopGrid extends StatelessWidget {
                       onTap: () {
                         if (unlocked) {
                           HapticFeedback.lightImpact();
-                          final entity = PrismDetailEntity(wallpaper: w);
+                          final entity = PrismFeedItem(id: w.id, wallpaper: w);
                           context.router.push(WallpaperDetailRoute(entity: entity));
                         } else {
                           final String req;

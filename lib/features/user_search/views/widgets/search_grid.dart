@@ -8,8 +8,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
@@ -17,19 +17,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-String? _authorName(WallpaperDetailEntity wallpaper) => wallpaper.when(
-  prism: (wall) => wall.core.authorName,
-  wallhaven: (_) => null,
-  pexels: (wall) => wall.core.authorName,
+String? _authorName(FeedItemEntity wallpaper) => wallpaper.when(
+  prism: (_, wall) => wall.core.authorName,
+  wallhaven: (_, _) => null,
+  pexels: (_, wall) => wall.core.authorName,
 );
 
-String _thumbnailUrl(WallpaperDetailEntity wallpaper) => wallpaper.when(
-  prism: (wall) => wall.thumbnailUrl,
-  wallhaven: (wall) {
+String _thumbnailUrl(FeedItemEntity wallpaper) => wallpaper.when(
+  prism: (_, wall) => wall.thumbnailUrl,
+  wallhaven: (_, wall) {
     final String thumb = wall.thumbs?['original'] ?? '';
     return thumb.isNotEmpty && thumb != 'null' ? thumb : wall.fullUrl;
   },
-  pexels: (wall) => wall.thumbnailUrl,
+  pexels: (_, wall) => wall.thumbnailUrl,
 );
 
 class SearchGrid extends StatefulWidget {
@@ -37,7 +37,7 @@ class SearchGrid extends StatefulWidget {
 
   final String query;
   final SearchProviderValue provider;
-  final List<WallpaperDetailEntity> initialResults;
+  final List<FeedItemEntity> initialResults;
 
   @override
   State<SearchGrid> createState() => _SearchGridState();
@@ -57,7 +57,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
           }
         });
   final GlobalKey<RefreshIndicatorState> refreshHomeKey = GlobalKey<RefreshIndicatorState>();
-  late List<WallpaperDetailEntity> _results = widget.initialResults;
+  late List<FeedItemEntity> _results = widget.initialResults;
   int? longTapIndex;
   bool seeMoreLoader = false;
   bool _hasMore = true;
@@ -96,7 +96,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
         return;
       }
       setState(() {
-        _results = <WallpaperDetailEntity>[..._results, ...more];
+        _results = <FeedItemEntity>[..._results, ...more];
         _currentPage = nextPage;
         _hasMore = more.isNotEmpty;
       });
@@ -148,7 +148,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
     }
   }
 
-  void _openWallpaper(WallpaperDetailEntity wallpaper, int index) {
+  void _openWallpaper(FeedItemEntity wallpaper, int index) {
     analytics.track(
       SearchResultOpenedEvent(
         provider: widget.provider,
@@ -163,7 +163,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
     );
   }
 
-  void _shareWallpaper(WallpaperDetailEntity wallpaper, int index) {
+  void _shareWallpaper(FeedItemEntity wallpaper, int index) {
     setState(() {
       longTapIndex = index;
     });
@@ -199,7 +199,7 @@ class _SearchGridState extends State<SearchGrid> with SingleTickerProviderStateM
                 return SeeMoreButton(seeMoreLoader: seeMoreLoader, func: _requestNextPage);
               }
 
-              final WallpaperDetailEntity wallpaper = _results[index];
+              final FeedItemEntity wallpaper = _results[index];
               return Semantics(
                 button: true,
                 label: wallpaperSemanticLabel(_authorName(wallpaper)),

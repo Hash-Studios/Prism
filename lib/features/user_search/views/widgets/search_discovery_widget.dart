@@ -8,8 +8,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/data/categories/categories.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -191,7 +191,7 @@ class _TrendingList extends StatelessWidget {
               onTap: () {
                 context.router.push(
                   WallpaperDetailRoute(
-                    entity: WallhavenDetailEntity(wallpaper: wall),
+                    entity: WallhavenFeedItem(id: wall.id, wallpaper: wall),
                     analyticsSurface: AnalyticsSurfaceValue.searchWallpaperScreen,
                   ),
                 );

@@ -1,4 +1,4 @@
-import 'package:Prism/features/wallpaper_detail/domain/entities/wallpaper_detail_entity.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -36,7 +36,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
     this.panelScrollInProgress = false,
   });
 
-  final WallpaperDetailEntity entity;
+  final FeedItemEntity entity;
   final String? views;
   final bool viewsLoading;
   final bool paletteLoading;
@@ -48,7 +48,7 @@ final class WallpaperDetailLoaded extends WallpaperDetailState {
   final bool panelScrollInProgress;
 
   WallpaperDetailLoaded copyWith({
-    WallpaperDetailEntity? entity,
+    FeedItemEntity? entity,
     String? views,
     bool? viewsLoading,
     bool? paletteLoading,
