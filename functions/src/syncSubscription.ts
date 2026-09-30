@@ -41,12 +41,15 @@ export function subscriptionFromRevenueCat(json: unknown, nowMs: number): {premi
   return {premium: true, subscriptionTier: lifetime ? "lifetime" : "pro"};
 }
 
-/** Claims the per-user sync slot. False when the last sync was under 30 seconds ago. */
-export async function claimSyncSlot(callerUid: string, nowMs: number): Promise<boolean> {
+/**
+ * Claims the per-user sync slot. False when the last sync was under 30 seconds ago, unless `bypassCooldown`
+ * (a user stored as Free may have just paid, so they always get a fresh RevenueCat read).
+ */
+export async function claimSyncSlot(callerUid: string, nowMs: number, bypassCooldown = false): Promise<boolean> {
   const ref = db.collection(SYNC_STATE).doc(callerUid);
   return db.runTransaction(async (tx) => {
     const lastAt = (await tx.get(ref)).data()?.lastAt;
-    if (typeof lastAt === "number" && nowMs - lastAt < SYNC_COOLDOWN_MS) return false;
+    if (!bypassCooldown && typeof lastAt === "number" && nowMs - lastAt < SYNC_COOLDOWN_MS) return false;
     tx.set(ref, {lastAt: nowMs});
     return true;
   });
@@ -66,8 +69,9 @@ export const syncSubscription = onCall(
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to sync your subscription.");
 
     const claimedAt = Date.now();
-    if (!await claimSyncSlot(callerUid, claimedAt)) {
-      const stored = (await db.collection(USERS).doc(callerUid).get()).data() ?? {};
+    const storedBefore = (await db.collection(USERS).doc(callerUid).get()).data() ?? {};
+    if (!await claimSyncSlot(callerUid, claimedAt, storedBefore.premium !== true)) {
+      const stored = storedBefore;
       return {
         premium: stored.premium === true,
         subscriptionTier: typeof stored.subscriptionTier === "string" ? stored.subscriptionTier : "free",

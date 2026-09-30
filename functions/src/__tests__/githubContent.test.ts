@@ -189,7 +189,7 @@ test("githubDeleteFile refunds once and fences a duplicate delete from a same-pa
   });
   let deleteCount = 0;
   const remote = new Map<string, Record<string, unknown>>();
-  const blobSha = createHash("sha1").update("blob 3\0").update(Buffer.from("AAAA", "base64")).digest("hex");
+  const blobSha = createHash("sha1").update("blob 3\0").update(Buffer.from("/9j/", "base64")).digest("hex");
   t.mock.method(globalThis, "fetch", async (rawUrl: string | URL | Request, init: RequestInit) => {
     const path = decodeURIComponent(new URL(rawUrl.toString()).pathname.split("/contents/")[1]);
     if (init.method === "DELETE") {
@@ -214,7 +214,7 @@ test("githubDeleteFile refunds once and fences a duplicate delete from a same-pa
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 0);
   await assert.rejects(remove, {code: "permission-denied"});
   await run(githubPutFile, {
-    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "AAAA"},
+    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "/9j/"},
   });
   assert.equal(deleteCount, 1);
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
@@ -240,7 +240,7 @@ test("githubDeleteFile blocks a duplicate delete and reupload while delete is in
   const deleteResponse = new Promise<void>((resolve) => {
     finishDelete = resolve;
   });
-  const blobSha = createHash("sha1").update("blob 3\0").update(Buffer.from("AAAA", "base64")).digest("hex");
+  const blobSha = createHash("sha1").update("blob 3\0").update(Buffer.from("/9j/", "base64")).digest("hex");
   const remote = new Map<string, Record<string, unknown>>();
   t.mock.method(globalThis, "fetch", async (_url: string | URL | Request, init: RequestInit) => {
     if (init.method === "DELETE") {
@@ -266,14 +266,14 @@ test("githubDeleteFile blocks a duplicate delete and reupload while delete is in
   await deleteStarted;
   await assert.rejects(remove, {code: "resource-exhausted"});
   await assert.rejects(() => run(githubPutFile, {
-    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "AAAA"},
+    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "/9j/"},
   }), {code: "failed-precondition"});
   assert.equal(deleteCount, 1);
   finishDelete();
   await firstDelete;
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 0);
   await run(githubPutFile, {
-    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "AAAA"},
+    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "/9j/"},
   });
   assert.equal(deleteCount, 1);
   assert.equal(remote.get("thumb_wall.jpg")?.sha, blobSha);
@@ -343,7 +343,7 @@ test("githubPutFile keeps a main wall upload when a failed preview is retried", 
   });
   const put = (path: string) => run(githubPutFile, {
     auth: {uid: "u"},
-    data: {repo: "walls", path, message: path, contentBase64: "AAAA"},
+    data: {repo: "walls", path, message: path, contentBase64: "/9j/"},
   });
 
   await put("wall.jpg");
@@ -352,7 +352,7 @@ test("githubPutFile keeps a main wall upload when a failed preview is retried", 
   assert.equal(docs.get("githubUploadStats/u")?.weekCount, 1);
   await assert.rejects(() => run(githubPutFile, {
     auth: {uid: "v"},
-    data: {repo: "walls", path: "thumb_wall.jpg", message: "thumb_wall.jpg", contentBase64: "AAAA"},
+    data: {repo: "walls", path: "thumb_wall.jpg", message: "thumb_wall.jpg", contentBase64: "/9j/"},
   }), {code: "permission-denied"});
   const recovered = await put("thumb_wall.jpg");
   assert.deepEqual(recovered, {content: remote.get("thumb_wall.jpg")});
@@ -371,7 +371,7 @@ test("githubPutFile retries receipt persistence without charging the weekly quot
     "githubUploadStats/u": {day, count: 0, week, weekCount: 0},
   }, 1);
   const remote = new Map<string, Record<string, unknown>>();
-  const bytes = Buffer.from("AAAA", "base64");
+  const bytes = Buffer.from("/9j/", "base64");
   const sha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   let putCount = 0;
   t.mock.method(globalThis, "fetch", async (rawUrl: string | URL | Request, init: RequestInit) => {
@@ -390,7 +390,7 @@ test("githubPutFile retries receipt persistence without charging the weekly quot
   });
   const put = () => run(githubPutFile, {
     auth: {uid: "u"},
-    data: {repo: "walls", path: "thumb_wall.jpg", message: "thumb_wall.jpg", contentBase64: "AAAA"},
+    data: {repo: "walls", path: "thumb_wall.jpg", message: "thumb_wall.jpg", contentBase64: "/9j/"},
   });
 
   await assert.rejects(put, /temporary receipt write failure/);
@@ -419,7 +419,7 @@ test("githubPutFile rolls back weekly quota after a definite GitHub rejection", 
   });
 
   await assert.rejects(() => run(githubPutFile, {
-    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "AAAA"},
+    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "/9j/"},
   }), {code: "internal"});
   assert.equal(puts, 1);
   assert.equal(docs.get("githubUploadStats/u")?.count, 1);
@@ -437,7 +437,7 @@ for (const premiumInitially of [false, true]) {
       "usersv2/u": {premium: premiumInitially},
       "githubUploadStats/u": {day: "2026-10-01", count: 0, week, weekCount: 0},
     });
-    const blobSha = createHash("sha1").update("blob 3\0").update(Buffer.from("AAAA", "base64")).digest("hex");
+    const blobSha = createHash("sha1").update("blob 3\0").update(Buffer.from("/9j/", "base64")).digest("hex");
     let puts = 0;
     t.mock.method(globalThis, "fetch", async (_url: string | URL | Request, init: RequestInit) => {
       if (init.method === "GET") return {ok: false, status: 404, json: async () => ({})};
@@ -447,7 +447,7 @@ for (const premiumInitially of [false, true]) {
       }})};
     });
     const upload = () => run(githubPutFile, {
-      auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "AAAA"},
+      auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "/9j/"},
     });
     await assert.rejects(upload, {code: "internal"});
     assert.equal(docs.get("githubUploadStats/u")?.weekCount, premiumInitially ? 0 : 1);
@@ -496,12 +496,12 @@ test("githubPutFile permits only one simultaneous upload for a path", async (t) 
     started();
     await putResponse;
     return {ok: true, status: 201, json: async () => ({content: {
-      path: "thumb_wall.jpg", sha: createHash("sha1").update("blob 3\0").update(Buffer.from("AAAA", "base64")).digest("hex"),
+      path: "thumb_wall.jpg", sha: createHash("sha1").update("blob 3\0").update(Buffer.from("/9j/", "base64")).digest("hex"),
       download_url: "https://raw.example/thumb_wall.jpg",
     }})};
   });
   const upload = () => run(githubPutFile, {
-    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "AAAA"},
+    auth: {uid: "u"}, data: {repo: "walls", path: "thumb_wall.jpg", message: "upload", contentBase64: "/9j/"},
   });
   const firstUpload = upload();
   await putStarted;
@@ -523,7 +523,7 @@ test("githubPutFile does not claim a pre-existing public file with matching byte
     "usersv2/v": {premium: false},
     "githubUploadStats/v": {day, count: 0, week, weekCount: 0},
   });
-  const bytes = Buffer.from("AAAA", "base64");
+  const bytes = Buffer.from("/9j/", "base64");
   const sha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   t.mock.method(globalThis, "fetch", async () => ({
     ok: true,
@@ -533,7 +533,7 @@ test("githubPutFile does not claim a pre-existing public file with matching byte
 
   await assert.rejects(() => run(githubPutFile, {
     auth: {uid: "v"},
-    data: {repo: "walls", path: "thumb_public.jpg", message: "thumb_public.jpg", contentBase64: "AAAA"},
+    data: {repo: "walls", path: "thumb_public.jpg", message: "thumb_public.jpg", contentBase64: "/9j/"},
   }), {code: "already-exists"});
   assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploadIntents/")), false);
   assert.equal(docs.get("githubUploadStats/v")?.weekCount, 0);
@@ -570,7 +570,7 @@ test("githubPutFile keeps separate delete records when files share a blob SHA", 
     "githubUploadStats/u": {day, count: 0, week, weekCount: 0},
     "githubUploadStats/v": {day, count: 0, week, weekCount: 0},
   });
-  const bytes = Buffer.from("AAAA", "base64");
+  const bytes = Buffer.from("/9j/", "base64");
   const sameSha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   const remote = new Map<string, Record<string, unknown>>();
   t.mock.method(globalThis, "fetch", async (rawUrl: string | URL | Request, init: RequestInit) => {
@@ -594,7 +594,7 @@ test("githubPutFile keeps separate delete records when files share a blob SHA", 
   for (const [uid, path] of [["u", "a.jpg"], ["v", "b.jpg"]]) {
     await run(githubPutFile, {
       auth: {uid},
-      data: {repo: "walls", path, message: path, contentBase64: "AAAA"},
+      data: {repo: "walls", path, message: path, contentBase64: "/9j/"},
     });
   }
   assert.deepEqual(
@@ -611,7 +611,7 @@ test("githubPutFile keeps separate delete records when files share a blob SHA", 
   assert.equal([...docs.keys()].filter((key) => key.startsWith("githubUploads/")).length, 0);
   await run(githubPutFile, {
     auth: {uid: "u"},
-    data: {repo: "walls", path: "a.jpg", message: "a.jpg", contentBase64: "AAAA"},
+    data: {repo: "walls", path: "a.jpg", message: "a.jpg", contentBase64: "/9j/"},
   });
   assert.equal([...docs.keys()].filter((key) => key.startsWith("githubUploads/")).length, 1);
 });
