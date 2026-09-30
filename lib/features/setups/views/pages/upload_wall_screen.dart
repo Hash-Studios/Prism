@@ -79,6 +79,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   bool _submitted = false;
   bool _submissionAttempted = false;
   bool _discarding = false;
+  bool _leaving = false;
 
   bool get _isBusy =>
       _stage == _UploadStage.processing ||
@@ -86,6 +87,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       _stage == _UploadStage.saving ||
       _discarding;
   bool get _hasStagedFiles => wallpaperSha != null || thumbSha != null;
+
+  @override
+  void dispose() {
+    if (!_leaving && !_submitted && !_submissionAttempted && !_isBusy && _hasStagedFiles) {
+      unawaited(_deleteFile());
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -197,12 +206,19 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<bool> _uploadFiles() async {
-    if (!mounted) return false;
+    if (!mounted || _leaving) return false;
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
     });
     try {
+      final hasIncompleteFile =
+          (wallpaperPath != null && wallpaperSha != null && wallpaperUrl == null) ||
+          (thumbPath != null && thumbSha != null && wallpaperThumb == null);
+      if (hasIncompleteFile && !await _deleteFile()) {
+        throw StateError('Could not remove an incomplete upload before retrying.');
+      }
+      if (!mounted || _leaving) return false;
       final github = GitHubContentApi();
       final baseName = path.basename(widget.image.path);
       if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
@@ -214,14 +230,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 contentBase64: base64Encode(imageBytes),
                 path: baseName,
               );
-        if (value.downloadUrl == null || value.path == null || value.sha == null) {
+        wallpaperUrl = value.downloadUrl;
+        wallpaperPath = value.path ?? baseName;
+        wallpaperSha = value.sha;
+        if (wallpaperUrl == null || wallpaperPath == null || wallpaperSha == null) {
           throw StateError('The wallpaper upload returned incomplete file details.');
         }
-        wallpaperUrl = value.downloadUrl;
-        wallpaperPath = value.path;
-        wallpaperSha = value.sha;
       }
-      if (!mounted) {
+      if (!mounted || _leaving) {
         await _deleteFile();
         return false;
       }
@@ -234,21 +250,24 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 contentBase64: base64Encode(imageBytesThumb),
                 path: 'thumb_$baseName',
               );
-        if (thumbValue.downloadUrl == null || thumbValue.path == null || thumbValue.sha == null) {
+        wallpaperThumb = thumbValue.downloadUrl;
+        thumbPath = thumbValue.path ?? 'thumb_$baseName';
+        thumbSha = thumbValue.sha;
+        if (wallpaperThumb == null || thumbPath == null || thumbSha == null) {
           throw StateError('The preview upload returned incomplete file details.');
         }
-        wallpaperThumb = thumbValue.downloadUrl;
-        thumbPath = thumbValue.path;
-        thumbSha = thumbValue.sha;
       }
-      if (!mounted) {
+      if (!mounted || _leaving) {
         await _deleteFile();
         return false;
       }
       return true;
     } catch (error) {
       logger.w('Wallpaper upload failed: $error');
-      if (!mounted) return false;
+      if (!mounted || _leaving) {
+        await _deleteFile();
+        return false;
+      }
       setState(() {
         _stage = _UploadStage.failedUpload;
         _errorMessage = 'The upload did not finish. Your image is still here, so you can try again.';
@@ -264,14 +283,17 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<void> _submit() async {
-    if ((_stage != _UploadStage.ready && _stage != _UploadStage.failedUpload) || _submitted || _discarding) {
+    if ((_stage != _UploadStage.ready && _stage != _UploadStage.failedUpload) ||
+        _submitted ||
+        _discarding ||
+        _leaving) {
       return;
     }
     setState(() {
       _stage = _UploadStage.uploading;
       _errorMessage = null;
     });
-    if (!await _uploadFiles() || !mounted) return;
+    if (!await _uploadFiles() || !mounted || _leaving) return;
     setState(() => _stage = _UploadStage.saving);
     _submissionAttempted = true;
     try {
@@ -291,11 +313,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
             );
       if (result == wall_store.WallSubmissionResult.quotaExceeded) {
         _submissionAttempted = false;
-        await _deleteFile();
+        final deleted = await _deleteFile();
         if (!mounted) return;
         setState(() {
           _stage = _UploadStage.quotaExceeded;
-          _errorMessage = 'You have reached this week’s free wallpaper upload limit.';
+          _errorMessage = deleted
+              ? 'You have reached this week’s free wallpaper upload limit.'
+              : 'You reached the upload limit, but uploaded files could not be removed. Try Back again to retry.';
         });
         return;
       }
@@ -311,15 +335,15 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     if (!mounted) return;
     _submitted = true;
     analytics.track(UploadWallpaperEvent(assetId: id ?? '', link: wallpaperUrl ?? ''));
+    if (_leaving) return;
     final router = widget.fromSetupRoute ? null : context.router;
     Navigator.pop(context, [wallpaperUrl, id]);
     if (router != null) unawaited(router.push(const ReviewRoute()));
   }
 
   void _onPop() {
-    if (!_submitted && !_submissionAttempted && _stage != _UploadStage.saving) {
-      unawaited(_deleteFile());
-    }
+    _leaving = true;
+    if (!_submitted && !_submissionAttempted && !_isBusy) unawaited(_deleteFile());
   }
 
   Future<void> _confirmDiscard() async {
@@ -485,7 +509,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                               label: const Text('Try again'),
                             )
                           : _stage == _UploadStage.quotaExceeded
-                          ? FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Back'))
+                          ? FilledButton(onPressed: () => Navigator.maybePop(context), child: const Text('Back'))
                           : _stage == _UploadStage.failedSubmission
                           ? FilledButton.icon(
                               onPressed: () => unawaited(context.router.push(const ReviewRoute())),

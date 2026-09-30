@@ -39,15 +39,37 @@ abstract final class _AiGenSpace {
   static const double xl = 24;
 }
 
+bool canSubmitAiGeneration(AiGenerationRecord record, {required String currentUserId}) =>
+    record.submittedWallId == null && record.userId == currentUserId;
+
+List<AiGenerationRecord> mergeAiSubmissionHistory(
+  List<AiGenerationRecord> fetched,
+  Map<String, AiGenerationRecord> confirmed, {
+  required String fetchedUserId,
+}) {
+  final Map<String, AiGenerationRecord> merged = <String, AiGenerationRecord>{
+    for (final record in fetched) record.id: record,
+  };
+  for (final record in confirmed.values) {
+    if (record.userId == fetchedUserId) {
+      merged[record.id] = record;
+    }
+  }
+  return merged.values.toList(growable: false);
+}
+
 class AiWallpaperTabPage extends StatefulWidget {
-  const AiWallpaperTabPage({super.key});
+  const AiWallpaperTabPage({super.key, this.repository, this.submitForTesting});
+
+  final AiGenerationRepositoryImpl? repository;
+  final Future<wallstore.WallSubmissionResult> Function()? submitForTesting;
 
   @override
   State<AiWallpaperTabPage> createState() => _AiWallpaperTabPageState();
 }
 
 class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
-  final AiGenerationRepositoryImpl _repository = AiGenerationRepositoryImpl();
+  late final AiGenerationRepositoryImpl _repository = widget.repository ?? AiGenerationRepositoryImpl();
   final Random _random = Random();
   final TextEditingController _promptController = TextEditingController();
   final TextEditingController _variationController = TextEditingController();
@@ -57,6 +79,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   AiQualityTier _selectedQualityTier = AiQualityTier.fast;
   List<AiGenerationRecord> _history = <AiGenerationRecord>[];
   AiGenerationRecord? _latest;
+  final Map<String, AiGenerationRecord> _confirmedSubmissionRecords = <String, AiGenerationRecord>{};
+  String _historyUserId = '';
 
   bool _loadingHistory = false;
   bool _loadingGeneration = false;
@@ -330,10 +354,20 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _loadHistory() async {
+    final String userId = app_state.prismUser.id;
+    if (_historyUserId != userId) {
+      _historyUserId = userId;
+      _history = <AiGenerationRecord>[];
+      _latest = null;
+      _confirmedSubmissionRecords.clear();
+      _unconfirmedSubmissionIds.clear();
+    }
     if (!_isLoggedIn) {
       setState(() {
         _history = <AiGenerationRecord>[];
         _latest = null;
+        _confirmedSubmissionRecords.clear();
+        _unconfirmedSubmissionIds.clear();
       });
       return;
     }
@@ -346,15 +380,19 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         }
         return;
       }
-      final result = await _repository.fetchHistory(userId: app_state.prismUser.id);
+      final result = await _repository.fetchHistory(userId: userId);
+      if (!mounted || app_state.prismUser.id != userId) return;
+      final mergedResult = mergeAiSubmissionHistory(result, _confirmedSubmissionRecords, fetchedUserId: userId);
       setState(() {
-        _history = result;
-        _latest = result.isEmpty ? null : result.first;
+        _history = mergedResult;
+        _latest = mergedResult.isEmpty ? null : mergedResult.first;
       });
       analytics.track(AiHistoryOpenedEvent(count: result.length));
     } catch (error, stackTrace) {
       logger.w('AI history fetch failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      toasts.error(_toastForHistoryFailure(error));
+      if (mounted) {
+        toasts.error(_toastForHistoryFailure(error));
+      }
     } finally {
       if (mounted) {
         setState(() => _loadingHistory = false);
@@ -413,6 +451,17 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       qualityTier: _selectedQualityTier,
       sourceTag: 'coins.reserve.ai_screen',
     );
+    if (!mounted) {
+      if (reservation.success) {
+        await CoinsService.instance.rollbackAiGenerationReservation(
+          reservation.mode,
+          sourceTag: 'coins.rollback.ai_screen',
+          reservationTransactionId: reservation.transactionId,
+          coinsToRefund: reservation.coinsSpent,
+        );
+      }
+      return;
+    }
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
       CoinsService.instance.logLowBalanceNudge(
         sourceTag: 'coins.ai_generation.low_balance',
@@ -460,10 +509,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         stylePreset: generated.stylePreset.apiValue,
       );
 
-      setState(() {
-        _latest = generated;
-        _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
-      });
+      if (mounted) {
+        setState(() {
+          _latest = generated;
+          _history = <AiGenerationRecord>[generated, ..._history.where((item) => item.id != generated.id)];
+        });
+      }
 
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.lightImpact();
@@ -485,11 +536,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             coinsSpent: reservation.coinsSpent,
           ),
         );
-        if (targetSize != null && _isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
+        if (mounted && targetSize != null && _isAspectRatioMismatch(generated: generated, targetSize: targetSize)) {
           toasts.error('Crop may differ slightly on your device.');
         }
       }
-      if (variation) {
+      if (variation && mounted) {
         _variationController.clear();
       }
     } catch (error, stackTrace) {
@@ -551,6 +602,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   }
 
   Future<void> _submitToCommunity(AiGenerationRecord record) async {
+    if (!canSubmitAiGeneration(record, currentUserId: app_state.prismUser.id) ||
+        _confirmedSubmissionRecords.containsKey(record.id)) {
+      return;
+    }
     if (!_isLoggedIn) {
       toasts.error('Please sign in to submit wallpapers.');
       return;
@@ -571,45 +626,51 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     try {
       analytics.track(AiSubmitStartedEvent(generationId: record.id));
       final metadata = await _repository.prefillSubmissionMetadata(generationId: record.id);
+      if (!mounted || app_state.prismUser.id != record.userId) return;
       final edited = await _showSubmissionEditor(metadata);
+      if (!mounted || app_state.prismUser.id != record.userId) return;
       if (edited == null) {
         return;
       }
 
       final String communityId = _buildCommunityId(record.id);
       submissionStarted = true;
-      final wallstore.WallSubmissionResult submissionResult = await wallstore.createRecord(
-        communityId,
-        'Prism',
-        record.watermarkedImageUrl,
-        record.watermarkedImageUrl,
-        '${record.width}x${record.height}',
-        'AI',
-        edited['title']?.toString(),
-        edited['category']?.toString(),
-        edited['description']?.toString(),
-        false,
-        wallpaperTags: (edited['tags'] as List<Object?>? ?? const <Object?>[])
-            .map((Object? tag) => tag?.toString() ?? '')
-            .where((tag) => tag.isNotEmpty)
-            .toList(growable: false),
-        isAiGenerated: true,
-        aiGenerationId: record.id,
-        aiProvider: record.provider,
-        aiModel: record.model,
-        aiOriginalImageUrl: record.imageUrl,
-        aiPrompt: record.prompt,
-        aiStylePreset: record.stylePreset.apiValue,
-      );
+      final wallstore.WallSubmissionResult submissionResult =
+          await (widget.submitForTesting?.call() ??
+              wallstore.createRecord(
+                communityId,
+                'Prism',
+                record.watermarkedImageUrl,
+                record.watermarkedImageUrl,
+                '${record.width}x${record.height}',
+                'AI',
+                edited['title']?.toString(),
+                edited['category']?.toString(),
+                edited['description']?.toString(),
+                false,
+                wallpaperTags: (edited['tags'] as List<Object?>? ?? const <Object?>[])
+                    .map((Object? tag) => tag?.toString() ?? '')
+                    .where((tag) => tag.isNotEmpty)
+                    .toList(growable: false),
+                isAiGenerated: true,
+                aiGenerationId: record.id,
+                aiProvider: record.provider,
+                aiModel: record.model,
+                aiOriginalImageUrl: record.imageUrl,
+                aiPrompt: record.prompt,
+                aiStylePreset: record.stylePreset.apiValue,
+              ));
       if (submissionResult == wallstore.WallSubmissionResult.quotaExceeded) {
         return;
       }
       submissionConfirmed = true;
+      if (app_state.prismUser.id != record.userId) return;
       final updated = record.copyWith(
         submittedWallId: communityId,
         submittedAt: DateTime.now().toUtc(),
         status: 'submitted',
       );
+      _confirmedSubmissionRecords[updated.id] = updated;
       if (mounted) {
         setState(() {
           _history = _history.map((item) => item.id == updated.id ? updated : item).toList();
@@ -632,7 +693,9 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       if (mounted && _motionAllowed(context)) {
         HapticFeedback.selectionClick();
       }
-      toasts.codeSend('Submitted for review.');
+      if (mounted && app_state.prismUser.id == record.userId) {
+        toasts.codeSend('Submitted for review.');
+      }
     } catch (error, stackTrace) {
       if (submissionConfirmed) {
         logger.w(
@@ -642,7 +705,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           stackTrace: stackTrace,
         );
       } else if (submissionStarted) {
-        if (mounted) {
+        if (mounted && app_state.prismUser.id == record.userId) {
           setState(() => _unconfirmedSubmissionIds.add(record.id));
         }
         logger.w(
@@ -651,10 +714,14 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           error: error,
           stackTrace: stackTrace,
         );
-        toasts.error('Could not confirm the submission. Check Review Status before trying again.');
+        if (mounted && app_state.prismUser.id == record.userId) {
+          toasts.error('Could not confirm the submission. Check Review Status before trying again.');
+        }
       } else {
         logger.w('AI community submit failed before saving', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-        toasts.error(_isOfflineOrNetworkError(error) ? 'No connection. Try again.' : 'Submit failed. Please retry.');
+        if (mounted && app_state.prismUser.id == record.userId) {
+          toasts.error(_isOfflineOrNetworkError(error) ? 'No connection. Try again.' : 'Submit failed. Please retry.');
+        }
       }
     } finally {
       if (mounted) {
@@ -923,7 +990,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final bool canSubmit =
         current != null &&
-        current.submittedWallId == null &&
+        canSubmitAiGeneration(current, currentUserId: app_state.prismUser.id) &&
+        !_confirmedSubmissionRecords.containsKey(current.id) &&
         app_state.aiSubmitEnabled &&
         !_submitting &&
         !_unconfirmedSubmissionIds.contains(current.id);
