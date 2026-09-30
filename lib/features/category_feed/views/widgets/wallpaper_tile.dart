@@ -9,7 +9,6 @@ import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class WallpaperTile extends StatelessWidget {
@@ -67,16 +66,7 @@ class WallpaperTile extends StatelessWidget {
             enabled: !context.reduceMotion,
             child: Hero(
               tag: heroTag,
-              child: CachedNetworkImage(
-                imageUrl: item.thumbnailUrl,
-                fit: BoxFit.cover,
-                fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-                fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-                fadeInCurve: Curves.easeOut,
-                memCacheHeight: height,
-                placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-                errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-              ),
+              child: PrismImageTile(url: item.thumbnailUrl, fallbackUrl: item.fullUrl, memCacheHeight: height),
             ),
           ),
         ),
