@@ -123,6 +123,32 @@ void main() {
     expect(service.pendingClaimForCurrentUser, isNull);
   });
 
+  test('permanent referral skips clear the queued inviter without retrying', () async {
+    backend.onCall = (_, _) async => <String, Object>{
+      'success': false,
+      'changed': false,
+      'reason': 'referral_caller_not_new',
+    };
+
+    final result = await service.processPendingReferralIfEligible(inviterUserId: 'inviter');
+
+    expect(result.reason, 'referral_caller_not_new');
+    expect(service.pendingReferralInviterId, isNull);
+  });
+
+  test('daily referral cap keeps the queued inviter for a later retry', () async {
+    backend.onCall = (_, _) async => <String, Object>{
+      'success': false,
+      'changed': false,
+      'reason': 'referral_inviter_daily_limit',
+    };
+
+    final result = await service.processPendingReferralIfEligible(inviterUserId: 'inviter');
+
+    expect(result.reason, 'referral_inviter_daily_limit');
+    expect(service.pendingReferralInviterId, 'inviter');
+  });
+
   test('claim sheet dedupe is retained per user and day when accounts alternate', () async {
     backend.onCall = (_, _) async => <String, Object>{
       'claimed': true,

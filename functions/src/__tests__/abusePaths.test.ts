@@ -15,12 +15,23 @@ import {claimSyncSlot, syncSubscription} from "../syncSubscription";
 
 type Doc = Record<string, unknown>;
 
+function referralLedgerQuery(snapshot: Record<string, Doc> | Map<string, Doc>) {
+  const entries = snapshot instanceof Map ? [...snapshot.entries()] : Object.entries(snapshot);
+  const docs = entries
+    .filter(([path, data]) => path.startsWith("coinTransactions/") && data.userId != null &&
+      data.action === "referral" && data.reason === "inviter_reward")
+    .map(([path, data]) => ({id: path.split("/").pop() ?? "", data: () => data}));
+  return {docs, size: docs.length, empty: docs.length === 0};
+}
+
 /** In-memory Firestore: dotted update keys write nested maps. `walls` only answers the email lookup. */
 function fakeStore(t: TestContext, seed: Record<string, Doc>, walls: Doc[] = []) {
   const store = new Map<string, Doc>(Object.entries(seed));
   const snap = (path: string) => ({exists: store.has(path), data: () => store.get(path)});
   const set = (path: string, data: Doc) => void store.set(path, {...data});
+  let wrote = false;
   const update = (path: string, data: Doc) => {
+    wrote = true;
     const doc = {...(store.get(path) ?? {})} as Doc;
     for (const [key, value] of Object.entries(data)) {
       const parts = key.split(".");
@@ -34,26 +45,104 @@ function fakeStore(t: TestContext, seed: Record<string, Doc>, walls: Doc[] = [])
     store.set(path, doc);
   };
   const tx = {
-    get: async (ref: admin.firestore.DocumentReference) => snap(ref.path),
-    set: (ref: admin.firestore.DocumentReference, data: Doc) => set(ref.path, data),
+    get: async (ref: admin.firestore.DocumentReference | admin.firestore.Query) => {
+      if (wrote) throw new Error("Firestore transaction reads must precede writes");
+      return typeof (ref as admin.firestore.DocumentReference).path === "string" ?
+        snap((ref as admin.firestore.DocumentReference).path) : referralLedgerQuery(store);
+    },
+    set: (ref: admin.firestore.DocumentReference, data: Doc) => {
+      wrote = true;
+      set(ref.path, data);
+    },
     update: (ref: admin.firestore.DocumentReference, data: Doc) => update(ref.path, data),
   };
-  t.mock.method(db, "runTransaction", async (cb: (tx: unknown) => Promise<unknown>) => cb(tx));
+  t.mock.method(db, "runTransaction", async (cb: (tx: unknown) => Promise<unknown>) => {
+    wrote = false;
+    return cb(tx);
+  });
   const realCollection = db.collection.bind(db);
   t.mock.method(db, "collection", (name: string) => {
-    if (name !== "walls") return realCollection(name);
+    if (name !== "walls" && name !== "githubUploads") return realCollection(name);
     return {
-      where: (_f: string, _op: string, email: string) => ({
-        limit: () => ({get: async () => ({empty: !walls.some((w) => w.email === email)})}),
-      }),
+      where: (field: string, _op: string, value: unknown) => {
+        const rows: Doc[] = name === "walls" ? walls : [...store.entries()]
+          .filter(([path]) => path.startsWith("githubUploads/"))
+          .map(([, data]) => data);
+        const docs = rows.filter((data) => data[field] === value)
+          .map((data, index) => ({id: `doc${index}`, data: () => data}));
+        const query = {docs, empty: docs.length === 0, get: async () => ({docs, empty: docs.length === 0})};
+        return {limit: () => query, get: query.get};
+      },
     };
   });
   return store;
 }
 
+function fakeRetriedStore(t: TestContext, first: Record<string, Doc>, retry: Record<string, Doc>) {
+  let snapshot = first;
+  const transaction = () => {
+    let wrote = false;
+    return {
+      get: async (ref: admin.firestore.DocumentReference | admin.firestore.Query) => {
+        if (wrote) throw new Error("Firestore transaction reads must precede writes");
+        if (typeof (ref as admin.firestore.DocumentReference).path !== "string") return referralLedgerQuery(snapshot);
+        return {
+          exists: Object.prototype.hasOwnProperty.call(snapshot, (ref as admin.firestore.DocumentReference).path),
+          data: () => snapshot[(ref as admin.firestore.DocumentReference).path],
+        };
+      },
+      set: () => {
+        wrote = true;
+      },
+      update: () => {
+        wrote = true;
+      },
+    };
+  };
+  t.mock.method(db, "runTransaction", async (cb: (tx: unknown) => Promise<unknown>) => {
+    await cb(transaction());
+    snapshot = retry;
+    return cb(transaction());
+  });
+}
+
+function mockAuthCreationTimes(t: TestContext, creationTimes: Record<string, number>) {
+  t.mock.method(admin.auth(), "getUser", async (userId: string) => ({
+    metadata: {creationTime: iso(creationTimes[userId])},
+  } as never));
+}
+
+function inviterHistory(inviterUid: string, createdAt: number[]): Record<string, Doc> {
+  const docs: Record<string, Doc> = {};
+  createdAt.forEach((at, index) => {
+    docs[`coinTransactions/historic-${index}`] = {
+      userId: inviterUid,
+      action: "referral",
+      reason: "inviter_reward",
+      type: "credit",
+      status: "completed",
+      delta: 100,
+      createdAt: admin.firestore.Timestamp.fromMillis(at),
+    };
+  });
+  return docs;
+}
+
 const NOW = Date.now();
 const DAY = 86_400_000;
 const iso = (ms: number) => new Date(ms).toISOString();
+function withWallsRepo(t: TestContext) {
+  const priorRepo = process.env.GH_REPO_WALLS;
+  const priorOwner = process.env.GH_USERNAME;
+  process.env.GH_REPO_WALLS = "walls";
+  process.env.GH_USERNAME = "owner";
+  t.after(() => {
+    if (priorRepo === undefined) delete process.env.GH_REPO_WALLS;
+    else process.env.GH_REPO_WALLS = priorRepo;
+    if (priorOwner === undefined) delete process.env.GH_USERNAME;
+    else process.env.GH_USERNAME = priorOwner;
+  });
+}
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const run = (fn: {run: (r: any) => Promise<any>}, req: Record<string, unknown>) => fn.run(req);
 
@@ -73,6 +162,10 @@ test("referralSkipReason: reads Timestamp-like createdAt values", () => {
   assert.equal(referralSkipReason(ts(NOW - DAY), ts(NOW - 5 * DAY), {}, "d", NOW), null);
 });
 
+test("referralSkipReason: permits an account at the 14-day boundary", () => {
+  assert.equal(referralSkipReason(NOW - 14 * DAY, NOW - 30 * DAY, {}, "d", NOW), null);
+});
+
 test("referralSkipReason: inviter must be older than the caller", () => {
   assert.equal(referralSkipReason(iso(NOW - 2 * DAY), iso(NOW - DAY), {}, "d", NOW), "referral_inviter_not_older");
   assert.equal(referralSkipReason(iso(NOW - 2 * DAY), undefined, {}, "d", NOW), "referral_inviter_not_older");
@@ -85,9 +178,11 @@ test("referralSkipReason: caps inviter rewards at 10 a day and 100 in total", ()
   assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 10, total: 10}, "d", NOW), "referral_inviter_daily_limit");
   assert.equal(referralSkipReason(caller, inviter, {day: "old", count: 10, total: 50}, "d", NOW), null);
   assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 0, total: 100}, "d", NOW), "referral_inviter_lifetime_limit");
+  assert.equal(referralSkipReason(caller, inviter, {day: "d", count: 10, total: 100}, "d", NOW), "referral_inviter_lifetime_limit");
 });
 
 test("processReferral: pays both users once and counts it against the inviter", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 40 * DAY});
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
     "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
@@ -100,6 +195,7 @@ test("processReferral: pays both users once and counts it against the inviter", 
 });
 
 test("processReferral: an old caller gets nothing and nobody is paid", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - 60 * DAY, inviter: NOW - 400 * DAY});
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - 60 * DAY)},
     "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 400 * DAY)},
@@ -109,7 +205,9 @@ test("processReferral: an old caller gets nothing and nobody is paid", async (t)
   assert.equal(result.reason, "referral_caller_not_new");
   assert.equal(store.get("usersv2/caller")?.coins, 0);
   assert.equal(store.get("usersv2/inviter")?.coins, 5);
-  assert.equal(store.has("referralStats/inviter"), false);
+  assert.deepEqual(store.get("referralStats/inviter"), {
+    day: new Date(NOW).toISOString().slice(0, 10), count: 0, total: 0,
+  });
   // A permanent skip is marked processed, so a retry reports already processed.
   const retry = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
   assert.equal(retry.reason, "referral_already_processed");
@@ -121,7 +219,16 @@ test("processReferral: a self referral is still rejected", async (t) => {
   await assert.rejects(() => run(processReferral, {auth: {uid: "a"}, data: {inviterUserId: "a"}}), {code: "invalid-argument"});
 });
 
+test("processReferral: rejects an inviter value that is not a document ID", async (t) => {
+  fakeStore(t, {});
+  await assert.rejects(
+    () => run(processReferral, {auth: {uid: "a"}, data: {inviterUserId: "nested/id"}}),
+    {code: "invalid-argument"},
+  );
+});
+
 test("processReferral: the inviter's 11th reward of the day is skipped", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 40 * DAY});
   const day = new Date(NOW).toISOString().slice(0, 10);
   const store = fakeStore(t, {
     "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
@@ -133,6 +240,112 @@ test("processReferral: the inviter's 11th reward of the day is skipped", async (
   assert.equal(store.get("usersv2/inviter")?.coins, 5);
   // A daily limit is temporary, so the caller can retry tomorrow.
   assert.notEqual((store.get("usersv2/caller")?.coinState as {referralRewarded?: boolean} | undefined)?.referralRewarded, true);
+});
+
+test("processReferral: a permanent lifetime cap takes precedence over the daily cap", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 40 * DAY});
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
+    "referralStats/inviter": {day, count: 10, total: 100},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.reason, "referral_inviter_lifetime_limit");
+  assert.equal((store.get("usersv2/caller")?.coinState as Doc).referralRewarded, true);
+});
+
+test("processReferral: ignores a forged recent profile createdAt", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - 30 * DAY, inviter: NOW - 400 * DAY});
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 400 * DAY)},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.reason, "referral_caller_not_new");
+  assert.equal(store.get("usersv2/caller")?.coins, 0);
+  assert.equal(store.get("usersv2/inviter")?.coins, 5);
+});
+
+test("processReferral: ignores a forged old inviter profile createdAt", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - DAY / 2});
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 400 * DAY)},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.reason, "referral_inviter_not_older");
+  assert.equal(store.get("usersv2/caller")?.coins, 0);
+  assert.equal(store.get("usersv2/inviter")?.coins, 5);
+});
+
+test("processReferral: a retry at the daily cap returns the skip result", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 40 * DAY});
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  fakeRetriedStore(t, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
+    "referralStats/inviter": {day, count: 9, total: 9},
+  }, {
+    "usersv2/caller": {coins: 0, createdAt: iso(NOW - DAY)},
+    "usersv2/inviter": {coins: 5, createdAt: iso(NOW - 40 * DAY)},
+    "referralStats/inviter": {day, count: 10, total: 10},
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.success, false);
+  assert.equal(result.changed, false);
+  assert.equal(result.delta, 0);
+  assert.equal(result.reason, "referral_inviter_daily_limit");
+});
+
+test("processReferral: bootstraps the lifetime cap from 100 historical inviter rewards", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 400 * DAY});
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0}, "usersv2/inviter": {coins: 10},
+    ...inviterHistory("inviter", Array.from({length: 100}, (_, index) => NOW - (index + 2) * DAY)),
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.reason, "referral_inviter_lifetime_limit");
+  assert.equal(store.get("referralStats/inviter")?.total, 100);
+  assert.equal((store.get("usersv2/caller")?.coinState as Doc).referralRewarded, true);
+  assert.equal(store.get("usersv2/inviter")?.coins, 10);
+});
+
+test("processReferral: bootstraps the current UTC daily cap and leaves the caller retryable", async (t) => {
+  mockAuthCreationTimes(t, {caller: NOW - DAY, inviter: NOW - 400 * DAY});
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  const store = fakeStore(t, {
+    "usersv2/caller": {coins: 0}, "usersv2/inviter": {coins: 10},
+    ...inviterHistory("inviter", Array.from({length: 10}, () => NOW - 60_000)),
+  });
+  const result = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(result.reason, "referral_inviter_daily_limit");
+  assert.deepEqual(store.get("referralStats/inviter"), {day, count: 10, total: 10});
+  assert.notEqual((store.get("usersv2/caller")?.coinState as Doc | undefined)?.referralRewarded, true);
+});
+
+test("processReferral: excludes prior-day history, reaches 100, then stops a concurrent retry", async (t) => {
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  mockAuthCreationTimes(t, {caller: NOW - DAY, nextCaller: NOW - DAY, inviter: NOW - 400 * DAY});
+  const seed = {
+    "usersv2/caller": {coins: 0}, "usersv2/nextCaller": {coins: 0}, "usersv2/inviter": {coins: 10},
+    ...inviterHistory("inviter", Array.from({length: 99}, (_, index) => NOW - (index + 2) * DAY)),
+  };
+  const store = fakeStore(t, seed);
+  const paid = await run(processReferral, {auth: {uid: "caller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(paid.changed, true);
+  assert.deepEqual(store.get("referralStats/inviter"), {day, count: 1, total: 100});
+
+  const replayStore = {
+    ...seed,
+    "usersv2/nextCaller": {coins: 0},
+    "referralStats/inviter": {day, count: 1, total: 100},
+  };
+  fakeRetriedStore(t, seed, replayStore);
+  const replay = await run(processReferral, {auth: {uid: "nextCaller"}, data: {inviterUserId: "inviter"}});
+  assert.equal(replay.success, false);
+  assert.equal(replay.changed, false);
+  assert.equal(replay.reason, "referral_inviter_lifetime_limit");
 });
 
 // Refund
@@ -169,9 +382,61 @@ test("awardCoins refund: the sixth refund of the day is skipped and the debit st
   assert.equal(store.get("coinTransactions/tx1")?.status, "completed");
 });
 
+test("awardCoins refund: rejects transaction IDs that are not document IDs", async (t) => {
+  fakeStore(t, {});
+  await assert.rejects(
+    () => run(awardCoins, {...refundReq, data: {...refundReq.data, transactionId: "nested/id"}}),
+    {code: "invalid-argument"},
+  );
+});
+
+test("awardCoins refund: a retry at the daily cap returns the skip result", async (t) => {
+  const day = new Date(NOW).toISOString().slice(0, 10);
+  const debit = {
+    userId: "u", type: "debit", status: "completed", action: "wallpaperDownload", delta: -5,
+    createdAt: admin.firestore.Timestamp.fromMillis(NOW - 60_000),
+  };
+  fakeRetriedStore(t, {
+    "usersv2/u": {coins: 10}, "coinTransactions/tx1": debit, [`coinRefundDaily/u_${day}`]: {day, count: 4},
+  }, {
+    "usersv2/u": {coins: 10}, "coinTransactions/tx1": debit, [`coinRefundDaily/u_${day}`]: {day, count: 5},
+  });
+  const result = await run(awardCoins, refundReq);
+  assert.equal(result.success, false);
+  assert.equal(result.changed, false);
+  assert.equal(result.delta, 0);
+  assert.equal(result.reason, "refund_daily_limit");
+});
+
+test("spendCoins: a retry with insufficient balance returns the retry result", async (t) => {
+  fakeRetriedStore(t, {"usersv2/u": {coins: 10}}, {"usersv2/u": {coins: 0}});
+  const result = await run(spendCoins, {
+    auth: {uid: "u"}, data: {action: "premiumFilter", sourceTag: "t"},
+  });
+  assert.equal(result.success, false);
+  assert.equal(result.changed, false);
+  assert.equal(result.delta, 0);
+  assert.equal(result.currentBalance, 0);
+  assert.equal(result.insufficientBalance, true);
+  assert.equal(result.transactionId, "");
+});
+
+test("awardCoins and spendCoins: prototype action names are unsupported", async (t) => {
+  fakeStore(t, {"usersv2/u": {coins: 100}});
+  await assert.rejects(
+    () => run(awardCoins, {auth: {uid: "u"}, data: {action: "constructor", sourceTag: "t"}}),
+    {code: "invalid-argument"},
+  );
+  await assert.rejects(
+    () => run(spendCoins, {auth: {uid: "u"}, data: {action: "constructor", sourceTag: "t"}}),
+    {code: "invalid-argument"},
+  );
+});
+
 // One-time awards
 
 test("awardCoins firstWallpaperUpload: skips when the caller has no wall", async (t) => {
+  withWallsRepo(t);
   const store = fakeStore(t, {"usersv2/u": {coins: 0}}, []);
   const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
   const skipped = await run(awardCoins, req);
@@ -180,10 +445,55 @@ test("awardCoins firstWallpaperUpload: skips when the caller has no wall", async
 });
 
 test("awardCoins firstWallpaperUpload: pays 50 when a wall by the caller exists", async (t) => {
-  const store = fakeStore(t, {"usersv2/u": {coins: 0}}, [{email: "a@b.c"}]);
+  withWallsRepo(t);
+  const store = fakeStore(t, {
+    "usersv2/u": {coins: 0},
+    "githubUploads/thumb-sha": {uid: "u", repo: "walls", path: "thumb_a.jpg"},
+  }, [{
+    email: "a@b.c", wallpaper_thumb: "https://raw.githubusercontent.com/owner/walls/main/thumb_a.jpg", review: false,
+  }]);
   const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
   const paid = await run(awardCoins, req);
   assert.equal(paid.delta, 50);
+  assert.equal(store.get("usersv2/u")?.coins, 50);
+});
+
+test("awardCoins firstWallpaperUpload: rejects a forged wall row without caller upload evidence", async (t) => {
+  withWallsRepo(t);
+  const store = fakeStore(t, {"usersv2/u": {coins: 0}}, [{
+    email: "a@b.c", wallpaper_thumb: "https://raw.githubusercontent.com/owner/walls/main/thumb_fake.jpg", review: false,
+  }]);
+  const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
+  const result = await run(awardCoins, req);
+  assert.equal(result.reason, "first_upload_no_wall");
+  assert.equal(store.get("usersv2/u")?.coins, 0);
+});
+
+test("awardCoins firstWallpaperUpload: rejects upload receipts from another GitHub owner", async (t) => {
+  withWallsRepo(t);
+  const store = fakeStore(t, {
+    "usersv2/u": {coins: 0},
+    "githubUploads/fake-sha": {uid: "u", repo: "walls", path: "thumb_fake.jpg"},
+  }, [{
+    email: "a@b.c", wallpaper_thumb: "https://raw.githubusercontent.com/attacker/walls/main/thumb_fake.jpg", review: false,
+  }]);
+  const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
+  assert.equal((await run(awardCoins, req)).reason, "first_upload_no_wall");
+  assert.equal(store.get("usersv2/u")?.coins, 0);
+});
+
+test("awardCoins firstWallpaperUpload: accepts an approved legacy wall without an upload receipt", async (t) => {
+  const priorRepo = process.env.GH_REPO_WALLS;
+  const priorOwner = process.env.GH_USERNAME;
+  delete process.env.GH_REPO_WALLS;
+  delete process.env.GH_USERNAME;
+  t.after(() => {
+    if (priorRepo !== undefined) process.env.GH_REPO_WALLS = priorRepo;
+    if (priorOwner !== undefined) process.env.GH_USERNAME = priorOwner;
+  });
+  const store = fakeStore(t, {"usersv2/u": {coins: 0}}, [{email: "a@b.c", review: true}]);
+  const req = {auth: {uid: "u", token: {email: "a@b.c"}}, data: {action: "firstWallpaperUpload", sourceTag: "t"}};
+  assert.equal((await run(awardCoins, req)).delta, 50);
   assert.equal(store.get("usersv2/u")?.coins, 50);
 });
 
@@ -238,6 +548,21 @@ test("unlockPremiumPreview: an expired unlock is charged again", async (t) => {
   const store = fakeStore(t, {"usersv2/u": {coins: 30, coinState: {premiumPreviewUnlocks: {neon: Date.now() - 1}}}});
   assert.equal((await run(unlockPremiumPreview, unlockReq)).changed, true);
   assert.equal(store.get("usersv2/u")?.coins, 20);
+});
+
+test("unlockPremiumPreview: a prototype key is charged and persisted as an own property", async (t) => {
+  const store = fakeStore(t, {"usersv2/u": {coins: 30}});
+  const constructor = await run(unlockPremiumPreview, {auth: {uid: "u"}, data: {collectionKey: "constructor"}});
+  assert.equal(constructor.changed, true);
+  const again = await run(unlockPremiumPreview, {auth: {uid: "u"}, data: {collectionKey: "constructor"}});
+  assert.equal(again.changed, false);
+  const unlocks = (store.get("usersv2/u")?.coinState as Doc).premiumPreviewUnlocks as Record<string, number>;
+  assert.equal(Object.prototype.hasOwnProperty.call(unlocks, "constructor"), true);
+  assert.equal(store.get("usersv2/u")?.coins, 20);
+  await assert.rejects(
+    () => run(unlockPremiumPreview, {auth: {uid: "u"}, data: {collectionKey: "__proto__"}}),
+    {code: "invalid-argument"},
+  );
 });
 
 test("unlockPremiumPreview: insufficient balance changes nothing", async (t) => {
