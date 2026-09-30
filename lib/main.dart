@@ -31,6 +31,8 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
+import 'package:Prism/core/router/pending_deep_link_queue.dart';
+import 'package:Prism/core/router/push_tap_startup.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -429,10 +431,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final ShortLinkResolver _shortLinkResolver = ShortLinkResolver();
   final DeepLinkNavigation _deepLinkNavigation = const DeepLinkNavigation();
   final NotificationRouteMapper _notificationRouteMapper = const NotificationRouteMapper();
-  final List<DeepLinkActionEntity> _pendingDeepLinks = <DeepLinkActionEntity>[];
+  final PendingDeepLinkQueue _pendingDeepLinks = PendingDeepLinkQueue();
   bool _bootstrapCompleted = false;
   static bool _launchLinkHandled = false;
-  bool _processingPendingDeepLinks = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
@@ -625,7 +626,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _processPendingDeepLinks() async {
-    if (!_bootstrapCompleted || _processingPendingDeepLinks || _pendingDeepLinks.isEmpty) {
+    if (!_bootstrapCompleted || _pendingDeepLinks.isEmpty) {
       return;
     }
     if (_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name) {
@@ -634,16 +635,15 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       });
       return;
     }
-    _processingPendingDeepLinks = true;
-    try {
-      final List<DeepLinkActionEntity> queued = List<DeepLinkActionEntity>.from(_pendingDeepLinks);
-      _pendingDeepLinks.clear();
-      for (final DeepLinkActionEntity action in queued) {
-        await _handleDeepLinkIntent(action);
-      }
-    } finally {
-      _processingPendingDeepLinks = false;
-    }
+    await _pendingDeepLinks.drain(
+      _handleDeepLinkIntent,
+      onError: (action, error, stackTrace) => logger.w(
+        'Deep link navigation failed.',
+        error: error,
+        stackTrace: stackTrace,
+        fields: <String, Object?>{'uri': action.rawUri},
+      ),
+    );
   }
 
   Future<void> _handleDeepLinkIntent(DeepLinkActionEntity action) async {
@@ -801,9 +801,16 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
   }
 
+  bool get _pastStartup =>
+      mounted && _bootstrapCompleted && !(_appRouter.hasEntries && _appRouter.topRoute.name == SplashWidgetRoute.name);
+
   /// Routes a tapped push notification to the correct screen based on
   /// the `route` field in the notification's data payload.
   Future<void> _handlePushTap(Map<String, dynamic> data) async {
+    // A cold-launch tap arrives before startup ends, and the splash would replace its route. Wait, like deep links do.
+    final bool canRoute = await waitForPushTapStartup(isMounted: () => mounted, isReady: () => _pastStartup);
+    if (!canRoute) return;
+
     final String route = data['route']?.toString() ?? '';
     final String wallId = (data['wall_id']?.toString() ?? '').trim();
     final String rawUrl = (data['url']?.toString() ?? '').trim();
@@ -817,6 +824,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       final Uri? parsed = Uri.tryParse(rawUrl);
       if (parsed != null && _deepLinkNavigation.isPrismDeepLink(parsed)) {
         final PageRouteInfo? deepLinkRoute = await _deepLinkNavigation.mapUriToRoute(parsed);
+        if (!mounted) return;
         if (deepLinkRoute != null) {
           _appRouter.navigate(deepLinkRoute);
           return;
@@ -825,6 +833,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     }
 
     final PageRouteInfo? mappedRoute = await _notificationRouteMapper.fromPayload(data, sourceTag: 'push.route_mapper');
+    if (!mounted) return;
     if (mappedRoute != null) {
       _appRouter.navigate(mappedRoute);
       return;
@@ -863,6 +872,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _appRouter = AppRouter();
     localNotification.router = _appRouter;
+    localNotification.onPushTap = _handlePushTap;
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
