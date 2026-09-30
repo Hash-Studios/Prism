@@ -6,21 +6,15 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/utils/theme_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
-import 'package:Prism/global/svg_assets.dart';
-import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 String? _favouriteWallAuthor(FavouriteWallEntity wall) => switch (wall) {
   PrismFavouriteWall(:final wallpaper) => wallpaper.core.authorName,
@@ -58,6 +52,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   void _openWall(List<FavouriteWallEntity> walls, int index) {
     final FavouriteWallEntity wall = walls[index];
     if (wall is LegacyFavouriteWall) {
+      toasts.error("This wallpaper can't be opened.");
       return;
     }
     unawaited(
@@ -104,27 +99,32 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             },
           );
         }
+        final ColorScheme cs = Theme.of(context).colorScheme;
         return RefreshIndicator(
-          backgroundColor: Theme.of(context).primaryColor,
+          color: cs.primary,
+          backgroundColor: cs.surfaceContainerHigh,
           key: refreshFavKey,
           onRefresh: refreshList,
           child: !loaded
               ? const LoadingCards()
               : walls.isEmpty
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      child: SvgPicture.string(
-                        themedIllustration(context, dark: favouritesDark, light: favouritesLight),
-                      ),
-                    ),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height * 0.1,
-                    ),
-                  ],
+              ? _PullableState(
+                  child: state.status == LoadStatus.failure
+                      ? GlintState(
+                          kind: GlintStateKind.error,
+                          title: "Couldn't load your favourites",
+                          body: 'Check your connection and try again.',
+                          actionLabel: 'Try again',
+                          onAction: () => unawaited(refreshList()),
+                        )
+                      : GlintState(
+                          kind: GlintStateKind.empty,
+                          title: 'No favourites yet',
+                          body: 'Tap the heart on a wallpaper to keep it here.',
+                          actionLabel: 'Browse wallpapers',
+                          onAction: () =>
+                              context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+                        ),
                 )
               : NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification notification) {
@@ -145,41 +145,46 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                     );
                     return false;
                   },
-                  child: PulsePlaceholder(
-                    builder: (context, _) => GridView.builder(
-                      shrinkWrap: true,
-                      scrollCacheExtent: const ScrollCacheExtent.pixels(50000),
-                      padding: EdgeInsets.zero,
-                      itemCount: walls.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: wallpaperGridColumns(MediaQuery.sizeOf(context).width),
-                        childAspectRatio: 0.5,
-                      ),
-                      itemBuilder: (context, index) => Semantics(
-                        button: true,
-                        label: wallpaperSemanticLabel(_favouriteWallAuthor(walls[index])),
-                        child: Stack(
-                          children: [
-                            PrismImageTile(
-                              url: walls[index].thumbnailUrl,
-                              heroTag: prismHeroTag(this, index, walls[index].id),
-                            ),
-                            Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                                highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-                                onTap: () => _openWall(walls, index),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                  child: GridView.builder(
+                    padding: PrismWallGrid.padding.copyWith(
+                      top: PrismSpace.xxs,
+                      bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
+                    ),
+                    itemCount: walls.length,
+                    gridDelegate: PrismWallGrid.delegate(context),
+                    itemBuilder: (context, index) => PrismWallTile(
+                      url: walls[index].thumbnailUrl,
+                      heroTag: prismHeroTag(this, index, walls[index].id),
+                      semanticLabel: wallpaperSemanticLabel(_favouriteWallAuthor(walls[index])),
+                      onTap: () => _openWall(walls, index),
+                      overlay: walls[index] is LegacyFavouriteWall
+                          ? IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.4)))
+                          : null,
                     ),
                   ),
                 ),
         );
       },
+    );
+  }
+}
+
+/// Lets a short state scroll, so pull to refresh still works on it.
+class _PullableState extends StatelessWidget {
+  const _PullableState({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(child: child),
+        ),
+      ),
     );
   }
 }

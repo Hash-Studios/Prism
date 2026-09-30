@@ -1,8 +1,7 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
@@ -24,7 +23,7 @@ class CollectionViewScreen extends StatefulWidget {
 }
 
 class _CollectionViewScreenState extends State<CollectionViewScreen> {
-  late final Future<void> _collectionFuture = getCollectionWithName(widget.collectionName);
+  late Future<void> _collectionFuture = getCollectionWithName(widget.collectionName);
 
   bool get _isCategoryView => widget.collectionName.startsWith('category:');
 
@@ -58,20 +57,24 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
   @override
   Widget build(BuildContext context) {
     final title = (_isCategoryView ? _decodedCategoryName : widget.collectionName).inCaps;
-    return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
-      appBar: PreferredSize(
-        preferredSize: const Size(double.infinity, 55),
-        child: HeadingChipBar(current: title),
-      ),
-      body: _isCategoryView ? const _CategoryFeedContent() : _buildCollectionContent(),
-    );
+    return PrismPage(title: title, body: _isCategoryView ? const _CategoryFeedContent() : _buildCollectionContent());
   }
 
   Widget _buildCollectionContent() {
     return FutureBuilder<void>(
       future: _collectionFuture,
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.hasError) {
+          return GlintState(
+            kind: GlintStateKind.error,
+            title: "Couldn't load this collection",
+            body: 'Check your connection and try again.',
+            actionLabel: 'Try again',
+            onAction: () => setState(() {
+              _collectionFuture = getCollectionWithName(widget.collectionName);
+            }),
+          );
+        }
         if (snapshot.connectionState == ConnectionState.done) {
           return const CollectionViewGrid();
         }
@@ -92,16 +95,12 @@ class _CategoryFeedContent extends StatelessWidget {
           return const LoadingCards();
         }
         if (state.status == LoadStatus.failure) {
-          return RefreshIndicator(
-            onRefresh: () async => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested()),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Spacer(),
-                Center(child: Text("Can't connect to the Servers!")),
-                Spacer(),
-              ],
-            ),
+          return GlintState(
+            kind: GlintStateKind.offline,
+            title: "Can't reach the servers",
+            body: 'Check your connection and try again.',
+            actionLabel: 'Try again',
+            onAction: () => context.read<CategoryFeedBloc>().add(const CategoryFeedEvent.refreshRequested()),
           );
         }
         final source = state.selectedCategory?.source ?? WallpaperSource.prism;

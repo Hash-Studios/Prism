@@ -2,24 +2,24 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+/// One wallpaper of a feed grid. It opens the wallpaper detail page and records the tap.
 class WallpaperTile extends StatelessWidget {
   const WallpaperTile({super.key, required this.item, required this.index, this.memCacheHeight, this.crossAxisCount});
 
   final FeedItemEntity item;
   final int index;
+
+  /// Kept for callers that still pass it. The shared tile decides the decode size.
   final int? memCacheHeight;
 
-  /// When null, uses the app's standard grid (3 columns portrait, 5 landscape).
+  /// Kept for callers that still pass it. The shared grid decides the column count.
   final int? crossAxisCount;
 
   AnalyticsSurfaceValue get _surface => switch (item.source) {
@@ -36,51 +36,26 @@ class WallpaperTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final columns = crossAxisCount ?? wallpaperGridColumns(MediaQuery.sizeOf(context).width);
-    final width = (MediaQuery.sizeOf(context).width / columns).toInt();
-    final height = memCacheHeight ?? (width * 2 * 1.5).toInt();
     final String heroTag = prismHeroTag(Scrollable.maybeOf(context) ?? context, index, item.id);
-    return Semantics(
-      button: true,
-      label: item.semanticLabel,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          splashColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-          highlightColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-          onTap: () {
-            unawaited(
-              analytics.track(
-                SurfaceActionTappedEvent(
-                  surface: _surface,
-                  action: AnalyticsActionValue.tileOpened,
-                  sourceContext: _sourceContext,
-                  itemType: ItemTypeValue.wallpaper,
-                  itemId: item.id,
-                  index: index,
-                ),
-              ),
-            );
-            context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
-          },
-          child: HeroMode(
-            enabled: !context.reduceMotion,
-            child: Hero(
-              tag: heroTag,
-              child: CachedNetworkImage(
-                imageUrl: item.thumbnailUrl,
-                fit: BoxFit.cover,
-                fadeInDuration: context.motion(const Duration(milliseconds: 180)),
-                fadeOutDuration: context.motion(const Duration(milliseconds: 180)),
-                fadeInCurve: Curves.easeOut,
-                memCacheHeight: height,
-                placeholder: (ctx, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-                errorWidget: (ctx, _, _) => ColoredBox(color: Theme.of(ctx).colorScheme.surfaceContainerHighest),
-              ),
+    return PrismWallTile(
+      url: item.thumbnailUrl,
+      heroTag: heroTag,
+      semanticLabel: item.semanticLabel,
+      onTap: () {
+        unawaited(
+          analytics.track(
+            SurfaceActionTappedEvent(
+              surface: _surface,
+              action: AnalyticsActionValue.tileOpened,
+              sourceContext: _sourceContext,
+              itemType: ItemTypeValue.wallpaper,
+              itemId: item.id,
+              index: index,
             ),
           ),
-        ),
-      ),
+        );
+        context.router.push(WallpaperDetailRoute(entity: item, heroTag: heroTag));
+      },
     );
   }
 }
