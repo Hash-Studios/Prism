@@ -29,7 +29,7 @@ class _ChangelogVersion {
 const String _changelogUrl = 'https://raw.githubusercontent.com/Hash-Studios/Prism/master/CHANGELOG.md';
 const String _changelogCacheKey = 'remote_changelog_markdown_cache';
 
-void showChangelog(BuildContext context, VoidCallback func) {
+void showChangelog(BuildContext context, [VoidCallback? func]) {
   final controller = ScrollController();
   final NavigatorState? navigator = Navigator.maybeOf(context, rootNavigator: true);
   final AlertDialog aboutPopUp = AlertDialog(
@@ -84,7 +84,7 @@ void showChangelog(BuildContext context, VoidCallback func) {
       TextButton(
         onPressed: () {
           openPrismLink(context, "https://bit.ly/prismchanges");
-          func();
+          func?.call();
         },
         child: Text(
           'VIEW FULL',
@@ -100,7 +100,7 @@ void showChangelog(BuildContext context, VoidCallback func) {
           if (navigator?.canPop() ?? false) {
             navigator?.pop();
           }
-          func();
+          func?.call();
         },
         child: const Text(
           'CLOSE',
