@@ -1,3 +1,4 @@
+import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
@@ -8,10 +9,6 @@ import 'package:injectable/injectable.dart';
 class FirebaseViewStatsRepository implements ViewStatsRepository {
   FirebaseViewStatsRepository();
 
-  static const String _region = 'asia-south1';
-
-  cf.FirebaseFunctions get _functions => cf.FirebaseFunctions.instanceFor(region: _region);
-
   static const Duration _callableTimeout = Duration(seconds: 20);
 
   @override
@@ -21,7 +18,7 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
       return Result.error(const ServerFailure('Invalid wall id'));
     }
     try {
-      final cf.HttpsCallable callable = _functions.httpsCallable(
+      final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'recordWallpaperView',
         options: cf.HttpsCallableOptions(timeout: _callableTimeout),
       );
@@ -41,7 +38,7 @@ class FirebaseViewStatsRepository implements ViewStatsRepository {
       return Result.error(const ServerFailure('Invalid setup id'));
     }
     try {
-      final cf.HttpsCallable callable = _functions.httpsCallable(
+      final cf.HttpsCallable callable = appFunctions.httpsCallable(
         'recordSetupView',
         options: cf.HttpsCallableOptions(timeout: _callableTimeout),
       );
