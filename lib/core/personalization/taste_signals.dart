@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 /// Things a user does with a wallpaper. The ranker turns these into weights,
@@ -29,6 +31,9 @@ List<String> _normalizeTasteTerms(Iterable<String?> rawTerms) {
 final Map<String, List<String>> _feedTerms = <String, List<String>>{};
 const int _feedTermsCap = 500;
 
+@visibleForTesting
+void clearRememberedFeedTerms() => _feedTerms.clear();
+
 /// Remembers terms the feed knew for a wall, such as the search query that
 /// found it. Wallhaven and Pexels search results carry no tags, so without
 /// this their signals would have nothing to learn from.
@@ -38,8 +43,7 @@ void rememberFeedTerms(String fullUrl, List<String> terms) {
   if (key.isEmpty || terms.isEmpty) {
     return;
   }
-  _feedTerms.remove(key);
-  _feedTerms[key] = terms;
+  _feedTerms[key] = _normalizeTasteTerms(<String?>[...?_feedTerms.remove(key), ...terms]);
   if (_feedTerms.length > _feedTermsCap) {
     _feedTerms.remove(_feedTerms.keys.first);
   }
@@ -61,12 +65,18 @@ class TasteSignal {
     List<String>? collections,
     DateTime? at,
   }) {
+    final String url = core.fullUrl.trim().toLowerCase();
+    final String key = url.isEmpty ? '${core.source.wireValue}:${core.id.trim().toLowerCase()}' : url;
+    final List<String>? feedTerms = _feedTerms.remove(key);
+    if (feedTerms != null) {
+      _feedTerms[key] = feedTerms;
+    }
     return TasteSignal(
       action: action,
       at: (at ?? DateTime.now()).toUtc(),
       terms: _normalizeTasteTerms(<String?>[
         ...tasteTermsOf(core, tags: tags, collections: collections),
-        ...?_feedTerms[core.fullUrl.trim().toLowerCase()],
+        ...?feedTerms,
       ]),
       creator: tasteCreatorOf(core),
     );
