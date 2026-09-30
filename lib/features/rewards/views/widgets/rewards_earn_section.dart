@@ -37,6 +37,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
       sourceTag: 'coins.hub.rewarded_ad',
       upsellSource: 'coin_hub_rewarded_ad',
       isMounted: () => mounted,
+      adErrorMessage: 'Ad was not completed.',
     );
     if (credited) {
       toasts.success('+${CoinPolicy.rewardedAd} coins');

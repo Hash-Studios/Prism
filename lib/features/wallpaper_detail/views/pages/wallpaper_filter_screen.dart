@@ -168,17 +168,28 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
 
   Future<bool> _setWallpaper(String path, WallpaperTarget target) async {
     bool applied = false;
+    Object? setError;
     try {
       applied = await WallpaperService.setWallpaperFromSource(path, target);
-      if (applied) {
-        analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success));
-        toasts.success("Wallpaper set successfully!");
-      } else {
-        toasts.error("Something went wrong!");
-      }
     } catch (e) {
       logger.e('Set wallpaper failed', error: e);
-      analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.failure));
+      setError = e;
+    }
+    void followUp(void Function() callback) {
+      try {
+        callback();
+      } catch (error) {
+        logger.w('Wallpaper set outcome follow-up failed', error: error);
+      }
+    }
+
+    if (setError != null) {
+      followUp(() => analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.failure)));
+    } else if (applied) {
+      followUp(() => analytics.track(SetWallEvent(wallpaperTarget: target, result: BinaryResultValue.success)));
+      followUp(() => toasts.success("Wallpaper set successfully!"));
+    } else {
+      followUp(() => toasts.error("Something went wrong!"));
     }
     if (mounted) {
       Navigator.of(context).pop();
@@ -186,7 +197,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     return applied;
   }
 
-  /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the charge is refunded.
+  /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the gate attempts a refund.
   Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
     if (!mounted) return;
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
@@ -203,23 +214,24 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
     }
 
     final String filter = _editLabel;
-    final String retryTag = '$sourceTag.watch_and_retry';
     // Spend tags end in `.spend`. The filter events log the tag without it.
     String eventTag(String spendTag) => spendTag.substring(0, spendTag.length - '.spend'.length);
-    final CoinGateResult result = await CoinGate.forContext(context).run(
-      CoinGateSpec(
+    CoinGateSpec spec(String attemptSourceTag) {
+      final String retryTag = '$attemptSourceTag.watch_and_retry';
+      return CoinGateSpec(
         action: CoinSpendAction.premiumFilter,
         reason: 'filter_$filter',
         tags: CoinGateTags(
-          spend: '$sourceTag.spend',
+          spend: '$attemptSourceTag.spend',
           retrySpend: '$retryTag.retry.spend',
           ad: '$retryTag.rewarded_ad',
-          insufficient: '$sourceTag.low_balance_nudge',
+          insufficient: '$attemptSourceTag.low_balance_nudge',
         ),
         upsellSource: 'premium_filter_watch_ad',
         upgradeSource: 'premium_filter_low_balance',
         isMounted: () => mounted,
         perform: action,
+        creditAfterUnmount: false,
         choose: _choosePremiumFilterAction,
         failureLabel: 'Export failed',
         refundReason: 'premium_filter_export_failed_refund',
@@ -236,8 +248,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
           );
           toasts.success('Premium filter unlocked for this edit (-${CoinPolicy.premiumFilter} coins).');
         },
-      ),
-    );
+        retrySpec: () => spec('$retryTag.retry'),
+      );
+    }
+
+    final CoinGateResult result = await CoinGate.forContext(context).run(spec(sourceTag));
     // A failed or refunded export must not leave the filter unlocked for the session.
     if (result == CoinGateResult.performed) {
       _premiumFilterUnlockedForSession = true;
@@ -281,8 +296,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> {
       final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
       final result = await PrismMediaHostApi().saveMedia(request);
       if (result.success) {
-        analytics.track(DownloadWallpaperEvent(link: imageFile.path));
-        toasts.success("Wall Saved in Pictures!");
+        try {
+          analytics.track(DownloadWallpaperEvent(link: imageFile.path));
+          toasts.success("Wall Saved in Pictures!");
+        } catch (error) {
+          logger.w('Wallpaper saved but follow-up failed', error: error);
+        }
         return true;
       }
       toasts.error("Couldn't save wallpaper. Please retry!");

@@ -18,7 +18,7 @@ enum CoinGateResult {
   /// The balance is too low and the user did not top up.
   insufficient,
 
-  /// The spend call itself failed. Nothing was charged.
+  /// The spend call failed. The caller did not receive a confirmed charge.
   spendFailed,
 
   /// The action failed after a charge and the coins were refunded.
@@ -65,6 +65,7 @@ class CoinGateTags {
     required this.ad,
     required this.insufficient,
     this.nudge,
+    this.promptSpend,
     this.nudgeSpend,
     this.retrySpend,
   });
@@ -75,10 +76,13 @@ class CoinGateTags {
   /// Logged when the pre-spend nudge shows. Defaults to [insufficient].
   final String? nudge;
 
+  /// Spend tag when the user explicitly picks spend in a prompt.
+  final String? promptSpend;
+
   /// Logged when the spend is refused for low balance and the prompt shows.
   final String insufficient;
 
-  /// Spend tag when the user taps "spend" in the nudge. Defaults to [spend].
+  /// Spend tag when the user explicitly chooses to spend. Defaults to the phase-specific tag.
   final String? nudgeSpend;
 
   /// Spend tag for the retry after a rewarded ad. Defaults to [spend].
@@ -99,12 +103,19 @@ class CoinGateSpec {
     this.nudgeBelow,
     this.confirmFirst = false,
     this.toastWhenInsufficient = false,
+    this.logInsufficientOnlyWhenLow = false,
+    this.precheckBalance = false,
+    this.repromptOnNudgeSpendInsufficient = true,
+    this.creditAfterUnmount = true,
+    this.refundOnFailure = true,
+    this.adErrorMessage = 'Unable to credit coins right now.',
     this.spendErrorMessage = 'Unable to process coins right now.',
     this.failureLabel = 'Download failed',
     this.refundReason = 'download_failed_refund',
     this.onAttempt,
     this.onWatchChosen,
     this.onSpent,
+    this.retrySpec,
   });
 
   final CoinSpendAction action;
@@ -114,7 +125,7 @@ class CoinGateSpec {
   final String upsellSource;
   final String upgradeSource;
 
-  /// The gated work. Return false (or throw) when it failed: the charge is refunded.
+  /// The gated work. Return false (or throw) when it failed; the gate attempts a refund for a confirmed charge if enabled.
   final Future<bool> Function() perform;
 
   /// Shows the caller's sheet. The gate logs the nudge event before calling it.
@@ -133,6 +144,24 @@ class CoinGateSpec {
 
   /// Toast "Need N more coins." before re-prompting after a refused spend.
   final bool toastWhenInsufficient;
+
+  /// Preserve callers that log an insufficient prompt only while the local balance is below cost.
+  final bool logInsufficientOnlyWhenLow;
+
+  /// Open the insufficient prompt instead of attempting an initial spend when the visible balance is short.
+  final bool precheckBalance;
+
+  /// Reopen the low-balance prompt if a nudge's spend choice is refused.
+  final bool repromptOnNudgeSpendInsufficient;
+
+  /// Keep rewarded-ad crediting after dismissal except for flows that historically stopped on unmount.
+  final bool creditAfterUnmount;
+
+  /// Disable refunds when the spend callable grants access and the gated work only navigates.
+  final bool refundOnFailure;
+
+  /// Error text for rewarded-ad credit or upsell exceptions. Unchanged credits use the standard credit error.
+  final String adErrorMessage;
   final String spendErrorMessage;
   final String failureLabel;
   final String refundReason;
@@ -141,6 +170,9 @@ class CoinGateSpec {
 
   /// Called when coins really left the balance, before [perform].
   final void Function(String spendTag, CoinMutationResult result)? onSpent;
+
+  /// Build the next gate attempt after an ad was credited. Null means try once, then return if still insufficient.
+  final CoinGateSpec Function()? retrySpec;
 }
 
 /// One place for the premium bypass, spend, low-balance sheet, rewarded ad, credit, retry, refund sequence.
@@ -152,7 +184,10 @@ class CoinGate {
   final CoinGatePort _port;
 
   Future<CoinGateResult> run(CoinGateSpec spec) async {
-    if (_port.isPremium) {
+    if (!spec.isMounted()) {
+      return CoinGateResult.cancelled;
+    }
+    if (_port.isPremium && spec.spend == null) {
       return await _perform(spec, 'premium_bypass') ? CoinGateResult.performedFree : CoinGateResult.failedNotRefunded;
     }
 
@@ -163,17 +198,25 @@ class CoinGate {
     final bool low = nudgeBelow != null && balance < nudgeBelow;
     if (low || spec.confirmFirst) {
       prompt = CoinGatePrompt(phase: CoinGatePhase.nudge, cost: cost, balance: balance);
+    } else if (spec.precheckBalance && balance < cost) {
+      prompt = CoinGatePrompt(phase: CoinGatePhase.insufficient, cost: cost, balance: balance);
     }
     String spendTag = spec.tags.spend;
 
     while (true) {
+      if (_port.isPremium && spec.spend == null) {
+        return await _perform(spec, 'premium_bypass') ? CoinGateResult.performedFree : CoinGateResult.failedNotRefunded;
+      }
+      bool nudgeSpendSelected = false;
       if (prompt != null) {
         if (!spec.isMounted()) {
           return CoinGateResult.cancelled;
         }
         final CoinGatePrompt current = prompt;
         prompt = null;
-        if (current.phase == CoinGatePhase.insufficient || low) {
+        final bool shouldLogInsufficient =
+            current.phase == CoinGatePhase.insufficient && (!spec.logInsufficientOnlyWhenLow || _port.balance < cost);
+        if (shouldLogInsufficient || (current.phase == CoinGatePhase.nudge && low)) {
           _port.logLowBalanceNudge(
             sourceTag: current.phase == CoinGatePhase.nudge
                 ? spec.tags.nudge ?? spec.tags.insufficient
@@ -181,7 +224,11 @@ class CoinGate {
             requiredCoins: cost,
           );
         }
-        switch (await spec.choose(current)) {
+        final CoinGateChoice choice = await spec.choose(current);
+        if (!spec.isMounted()) {
+          return CoinGateResult.cancelled;
+        }
+        switch (choice) {
           case CoinGateChoice.cancel:
             return CoinGateResult.cancelled;
           case CoinGateChoice.upgrade:
@@ -192,7 +239,10 @@ class CoinGate {
           case CoinGateChoice.watchAd:
             return _watchAndRetry(spec, cost);
           case CoinGateChoice.spend:
-            spendTag = current.phase == CoinGatePhase.nudge ? spec.tags.nudgeSpend ?? spec.tags.spend : spec.tags.spend;
+            nudgeSpendSelected = current.phase == CoinGatePhase.nudge;
+            spendTag =
+                spec.tags.promptSpend ??
+                (current.phase == CoinGatePhase.nudge ? spec.tags.nudgeSpend ?? spec.tags.spend : spec.tags.spend);
           case CoinGateChoice.proceed:
             if (current.phase == CoinGatePhase.insufficient) {
               return CoinGateResult.cancelled;
@@ -205,12 +255,21 @@ class CoinGate {
         }
       }
 
+      if (_port.isPremium && spec.spend == null) {
+        return await _perform(spec, 'premium_bypass') ? CoinGateResult.performedFree : CoinGateResult.failedNotRefunded;
+      }
       final CoinGateResult result = await _spendAndPerform(spec, spendTag);
       if (result != CoinGateResult.insufficient) {
         return result;
       }
+      if (!spec.isMounted()) {
+        return CoinGateResult.cancelled;
+      }
       if (spec.toastWhenInsufficient) {
         _port.showError('Need ${(cost - _port.balance).clamp(1, cost)} more coins.');
+      }
+      if (nudgeSpendSelected && !spec.repromptOnNudgeSpendInsufficient) {
+        return result;
       }
       prompt = CoinGatePrompt(phase: CoinGatePhase.insufficient, cost: cost, balance: _port.balance);
     }
@@ -221,24 +280,57 @@ class CoinGate {
     required String sourceTag,
     required String upsellSource,
     required bool Function() isMounted,
+    bool creditAfterUnmount = true,
+    String adErrorMessage = 'Unable to credit coins right now.',
   }) async {
-    if (!await _port.watchRewardedAd()) {
-      _port.showError('Ad was not completed.');
+    if (!isMounted()) {
       return false;
     }
+    final bool watched;
     try {
-      final CoinMutationResult credit = await _port.award(CoinEarnAction.rewardedAd, sourceTag: sourceTag);
-      if (!credit.changed) {
-        _port.showError('Unable to credit coins right now.');
-        return false;
-      }
-      if (isMounted()) {
-        await _port.recordRewardedAdWatch(source: upsellSource);
-      }
+      watched = await _port.watchRewardedAd();
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
-      _port.showError('Unable to credit coins right now.');
+      if (isMounted()) {
+        _port.showError('Ad was not completed.');
+      }
       return false;
+    }
+    if (!watched) {
+      if (isMounted()) {
+        _port.showError('Ad was not completed.');
+      }
+      return false;
+    }
+    if (!creditAfterUnmount && !isMounted()) {
+      return false;
+    }
+    final CoinMutationResult credit;
+    try {
+      credit = await _port.award(CoinEarnAction.rewardedAd, sourceTag: sourceTag);
+    } catch (error, stackTrace) {
+      _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
+      if (isMounted()) {
+        _port.showError(adErrorMessage);
+      }
+      return false;
+    }
+    if (!credit.changed) {
+      if (isMounted()) {
+        _port.showError('Unable to credit coins right now.');
+      }
+      return false;
+    }
+    if (isMounted()) {
+      try {
+        await _port.recordRewardedAdWatch(source: upsellSource);
+      } catch (error, stackTrace) {
+        _port.logCoinError(sourceTag: sourceTag, error: error, stackTrace: stackTrace);
+        if (isMounted()) {
+          _port.showError(adErrorMessage);
+        }
+        return false;
+      }
     }
     return true;
   }
@@ -249,9 +341,18 @@ class CoinGate {
       sourceTag: spec.tags.ad,
       upsellSource: spec.upsellSource,
       isMounted: spec.isMounted,
+      creditAfterUnmount: spec.creditAfterUnmount,
+      adErrorMessage: spec.adErrorMessage,
     );
     if (!credited) {
       return CoinGateResult.cancelled;
+    }
+    if (!spec.isMounted()) {
+      return CoinGateResult.cancelled;
+    }
+    final CoinGateSpec Function()? retrySpec = spec.retrySpec;
+    if (retrySpec != null) {
+      return run(retrySpec());
     }
     final int balance = _port.balance;
     if (balance < cost) {
@@ -268,26 +369,43 @@ class CoinGate {
       spent = await (spec.spend?.call(tag) ?? _port.spend(spec.action, sourceTag: tag, reason: spec.reason));
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: tag, error: error, stackTrace: stackTrace);
-      _port.showError(spec.spendErrorMessage);
+      if (spec.isMounted()) {
+        _port.showError(spec.spendErrorMessage);
+      }
       return CoinGateResult.spendFailed;
     }
     if (!spent.success) {
       if (spent.insufficientBalance) {
         return CoinGateResult.insufficient;
       }
-      _port.showError(spec.spendErrorMessage);
+      if (spec.isMounted()) {
+        _port.showError(spec.spendErrorMessage);
+      }
       return CoinGateResult.spendFailed;
     }
+    if (!spec.isMounted()) {
+      if (spent.changed && spec.refundOnFailure) {
+        return _refund(spec, tag, spent);
+      }
+      return spent.changed ? CoinGateResult.performed : CoinGateResult.failedNotRefunded;
+    }
     if (spent.changed) {
-      spec.onSpent?.call(tag, spent);
+      try {
+        spec.onSpent?.call(tag, spent);
+      } catch (error, stackTrace) {
+        _port.logCoinError(sourceTag: tag, error: error, stackTrace: stackTrace);
+      }
     }
     if (await _perform(spec, tag)) {
       return CoinGateResult.performed;
     }
-    return spent.changed ? _refund(spec, tag, spent) : CoinGateResult.failedNotRefunded;
+    return spent.changed && spec.refundOnFailure ? _refund(spec, tag, spent) : CoinGateResult.failedNotRefunded;
   }
 
   Future<bool> _perform(CoinGateSpec spec, String tag) async {
+    if (!spec.isMounted()) {
+      return false;
+    }
     try {
       return await spec.perform();
     } catch (error, stackTrace) {
@@ -306,14 +424,18 @@ class CoinGate {
         reason: spec.refundReason,
       );
       if (refund.success && refund.changed) {
-        _port.showSuccess('${spec.failureLabel}. ${refund.delta} coins refunded.');
+        if (spec.isMounted()) {
+          _port.showSuccess('${spec.failureLabel}. ${refund.delta} coins refunded.');
+        }
         return CoinGateResult.failedRefunded;
       }
       _port.logCoinError(sourceTag: refundTag, error: StateError('Coin refund was not applied: ${refund.reason}'));
     } catch (error, stackTrace) {
       _port.logCoinError(sourceTag: refundTag, error: error, stackTrace: stackTrace);
     }
-    _port.showError('${spec.failureLabel}. Your refund could not be confirmed.');
+    if (spec.isMounted()) {
+      _port.showError('${spec.failureLabel}. Your refund could not be confirmed.');
+    }
     return CoinGateResult.failedNotRefunded;
   }
 }
