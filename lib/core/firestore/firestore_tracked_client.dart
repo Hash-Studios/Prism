@@ -123,7 +123,9 @@ class FirestoreTrackedClient implements FirestoreClient {
       }
     }
     for (final FirestoreOrderBy order in spec.orderBy) {
-      query = query.orderBy(order.field, descending: order.descending);
+      query = order.field == firestoreDocumentIdField
+          ? query.orderBy(FieldPath.documentId, descending: order.descending)
+          : query.orderBy(order.field, descending: order.descending);
     }
     if (spec.startAfterFieldValues != null && spec.startAfterFieldValues!.isNotEmpty) {
       query = query.startAfter(spec.startAfterFieldValues!);

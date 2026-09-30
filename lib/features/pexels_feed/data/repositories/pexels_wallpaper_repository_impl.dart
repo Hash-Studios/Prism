@@ -31,9 +31,13 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository {
   bool hasMoreForCategory(String categoryName) => _hasMoreMap[categoryName] ?? true;
 
   @override
-  Future<Result<List<PexelsWallpaper>>> fetchFeed({required String categoryName, required bool refresh}) async {
+  Future<Result<List<PexelsWallpaper>>> fetchFeed({
+    required String categoryName,
+    required bool refresh,
+    int startPage = 1,
+  }) async {
     if (refresh) {
-      _pageNumbers[categoryName] = 1;
+      _pageNumbers[categoryName] = startPage;
       _hasMoreMap[categoryName] = true;
     }
 

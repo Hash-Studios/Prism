@@ -55,13 +55,14 @@ extension PersonalizedFeedEventPatterns on PersonalizedFeedEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult Function( _LessLikeThisRequested value)?  lessLikeThisRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _LessLikeThisRequested() when lessLikeThisRequested != null:
+return lessLikeThisRequested(_that);case _:
   return orElse();
 
 }
@@ -79,13 +80,14 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreRequested value)  fetchMoreRequested,required TResult Function( _LessLikeThisRequested value)  lessLikeThisRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
 return refreshRequested(_that);case _FetchMoreRequested():
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _LessLikeThisRequested():
+return lessLikeThisRequested(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -102,13 +104,14 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreRequested value)?  fetchMoreRequested,TResult? Function( _LessLikeThisRequested value)?  lessLikeThisRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested(_that);case _:
+return fetchMoreRequested(_that);case _LessLikeThisRequested() when lessLikeThisRequested != null:
+return lessLikeThisRequested(_that);case _:
   return null;
 
 }
@@ -125,12 +128,13 @@ return fetchMoreRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function()?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreRequested,TResult Function( FeedItemEntity item)?  lessLikeThisRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _LessLikeThisRequested() when lessLikeThisRequested != null:
+return lessLikeThisRequested(_that.item);case _:
   return orElse();
 
 }
@@ -148,12 +152,13 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function()  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreRequested,required TResult Function( FeedItemEntity item)  lessLikeThisRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started();case _RefreshRequested():
 return refreshRequested();case _FetchMoreRequested():
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _LessLikeThisRequested():
+return lessLikeThisRequested(_that.item);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -170,12 +175,13 @@ return fetchMoreRequested();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function()?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreRequested,TResult? Function( FeedItemEntity item)?  lessLikeThisRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started();case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreRequested() when fetchMoreRequested != null:
-return fetchMoreRequested();case _:
+return fetchMoreRequested();case _LessLikeThisRequested() when lessLikeThisRequested != null:
+return lessLikeThisRequested(_that.item);case _:
   return null;
 
 }
@@ -278,6 +284,81 @@ String toString() {
 
 
 
+
+/// @nodoc
+
+
+class _LessLikeThisRequested implements PersonalizedFeedEvent {
+  const _LessLikeThisRequested(this.item);
+  
+
+ final  FeedItemEntity item;
+
+/// Create a copy of PersonalizedFeedEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$LessLikeThisRequestedCopyWith<_LessLikeThisRequested> get copyWith => __$LessLikeThisRequestedCopyWithImpl<_LessLikeThisRequested>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LessLikeThisRequested&&(identical(other.item, item) || other.item == item));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,item);
+
+@override
+String toString() {
+  return 'PersonalizedFeedEvent.lessLikeThisRequested(item: $item)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$LessLikeThisRequestedCopyWith<$Res> implements $PersonalizedFeedEventCopyWith<$Res> {
+  factory _$LessLikeThisRequestedCopyWith(_LessLikeThisRequested value, $Res Function(_LessLikeThisRequested) _then) = __$LessLikeThisRequestedCopyWithImpl;
+@useResult
+$Res call({
+ FeedItemEntity item
+});
+
+
+$FeedItemEntityCopyWith<$Res> get item;
+
+}
+/// @nodoc
+class __$LessLikeThisRequestedCopyWithImpl<$Res>
+    implements _$LessLikeThisRequestedCopyWith<$Res> {
+  __$LessLikeThisRequestedCopyWithImpl(this._self, this._then);
+
+  final _LessLikeThisRequested _self;
+  final $Res Function(_LessLikeThisRequested) _then;
+
+/// Create a copy of PersonalizedFeedEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? item = null,}) {
+  return _then(_LessLikeThisRequested(
+null == item ? _self.item : item // ignore: cast_nullable_to_non_nullable
+as FeedItemEntity,
+  ));
+}
+
+/// Create a copy of PersonalizedFeedEvent
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$FeedItemEntityCopyWith<$Res> get item {
+  
+  return $FeedItemEntityCopyWith<$Res>(_self.item, (value) {
+    return _then(_self.copyWith(item: value));
+  });
+}
+}
 
 /// @nodoc
 mixin _$PersonalizedFeedState {

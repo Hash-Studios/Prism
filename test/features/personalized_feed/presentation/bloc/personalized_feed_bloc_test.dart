@@ -33,6 +33,7 @@ FeedItemEntity _prismItem(String id, {required String authorEmail}) {
 
 void main() {
   setUpAll(() {
+    registerFallbackValue(_prismItem('fallback', authorEmail: 'f@example.com'));
     registerFallbackValue(
       const FetchPersonalizedFeedRequest(
         page: 1,
@@ -49,7 +50,7 @@ void main() {
   setUp(() {
     fetchUseCase = _MockFetchPersonalizedFeedUseCase();
     repository = _MockPersonalizedFeedRepository();
-    when(() => repository.readPersistedSeenKeys()).thenAnswer((_) async => const <String>[]);
+    when(() => repository.lessLikeThis(any())).thenAnswer((_) async {});
   });
 
   test('blocking a creator removes their items from the emitted state without a refetch', () async {
@@ -79,5 +80,32 @@ void main() {
 
     expect(bloc.state.items.map((e) => e.id), <String>['2']);
     verify(() => fetchUseCase(any())).called(1);
+  });
+
+  test('less like this removes the item and reports it to the repository', () async {
+    final FeedItemEntity item1 = _prismItem('1', authorEmail: 'a@example.com');
+    when(() => fetchUseCase(any())).thenAnswer(
+      (_) async => Result.success(
+        PersonalizedFeedPage(
+          items: <FeedItemEntity>[
+            item1,
+            _prismItem('2', authorEmail: 'b@example.com'),
+          ],
+          hasMore: false,
+        ),
+      ),
+    );
+    final bloc = PersonalizedFeedBloc(fetchUseCase, repository, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+
+    bloc.add(const PersonalizedFeedEvent.started());
+    await Future<void>.delayed(Duration.zero);
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+
+    bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(item1));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(bloc.state.items.map((e) => e.id), <String>['2']);
+    verify(() => repository.lessLikeThis(item1)).called(1);
   });
 }

@@ -33,9 +33,10 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository {
     required bool refresh,
     int categories = 100,
     int purity = 100,
+    int startPage = 1,
   }) async {
     if (refresh) {
-      _pageNumbers[categoryName] = 1;
+      _pageNumbers[categoryName] = startPage;
       _hasMoreMap[categoryName] = true;
     }
 

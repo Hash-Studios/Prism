@@ -354,9 +354,6 @@ abstract final class PrismBottomSheet {
   static const double chipSpacing = 8;
   static const double chipRunSpacing = 8;
 
-  /// Uniform padding inside the scrollable chip area.
-  static const EdgeInsets chipAreaPadding = EdgeInsets.all(16);
-
   // -- Action bar ------------------------------------------------------------
 
   /// Vertical padding inside the action bar row.
@@ -370,10 +367,44 @@ abstract final class PrismBottomSheet {
   /// Stroke width for the inline saving spinner.
   static const double savingIndicatorStrokeWidth = 2;
 
-  // -- Keyboard avoidance ----------------------------------------------------
+  // -- Tall sheets -----------------------------------------------------------
 
-  /// Extra bottom clearance added on top of the keyboard inset.
-  static const double keyboardSafetyBuffer = 8;
+  /// Share of the screen height a tall sheet (e.g. "Tune your feed") takes.
+  static const double maxHeightFactor = 0.9;
+
+  /// Vertical gap between major sections of a tall sheet.
+  static const double sectionGap = 24;
+
+  /// Space between a section heading row and its main content.
+  static const double sectionContentGap = 12;
+
+  // -- Interest tiles --------------------------------------------------------
+
+  static const int interestGridColumns = 3;
+  static const double interestTileSpacing = 8;
+  static const double interestTileAspectRatio = 0.9;
+  static const double interestTileRadius = 14;
+  static const double interestTileLabelInset = 8;
+  static const double interestTileSelectedBorderWidth = 2;
+
+  /// Selected tiles sink slightly, like a pressed card.
+  static const double interestTileSelectedScale = 0.96;
+
+  /// Strongest alpha of the [ColorScheme.scrim] gradient under the tile name.
+  static const double interestTileScrimAlpha = 0.65;
+
+  static const double interestCheckBadgeSize = 22;
+  static const double interestCheckIconSize = 14;
+
+  // -- Learned taste pills ---------------------------------------------------
+
+  static const int learnedTermCount = 6;
+  static const EdgeInsets learnedPillPadding = EdgeInsets.fromLTRB(14, 8, 14, 10);
+
+  /// Fixed track width so strengths compare across pills.
+  static const double learnedBarWidth = 48;
+  static const double learnedBarHeight = 3;
+  static const double learnedBarTrackAlpha = 0.18;
 }
 
 // ---------------------------------------------------------------------------

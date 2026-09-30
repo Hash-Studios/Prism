@@ -87,6 +87,8 @@ import '../../features/palette/domain/usecases/generate_palette_usecase.dart'
 import '../../features/palette/palette.dart' as _i806;
 import '../../features/personalized_feed/biz/bloc/personalized_feed_bloc.j.dart'
     as _i872;
+import '../../features/personalized_feed/data/feed_impression_store.dart'
+    as _i535;
 import '../../features/personalized_feed/data/personalized_feed_repository_impl.dart'
     as _i903;
 import '../../features/personalized_feed/domain/repositories/personalized_feed_repository.dart'
@@ -187,6 +189,7 @@ import '../persistence/data_sources/notifications_local_data_source.dart'
 import '../persistence/data_sources/session_local_data_source.dart' as _i704;
 import '../persistence/data_sources/settings_local_data_source.dart' as _i1073;
 import '../persistence/local_store.dart' as _i496;
+import '../personalization/taste_signals.dart' as _i731;
 import '../view_stats/view_stats_repository.dart' as _i602;
 import 'injection_module.dart' as _i212;
 
@@ -325,6 +328,12 @@ _i174.GetIt initGetIt(
     () => _i491.InternetConnectivityService(
       gh<_i973.InternetConnectionChecker>(),
     ),
+  );
+  gh.lazySingleton<_i731.TasteSignalStore>(
+    () => _i731.TasteSignalStore(gh<_i1073.SettingsLocalDataSource>()),
+  );
+  gh.lazySingleton<_i535.FeedImpressionStore>(
+    () => _i535.FeedImpressionStore(gh<_i1073.SettingsLocalDataSource>()),
   );
   gh.lazySingleton<_i738.SessionRepository>(
     () => _i1021.SessionRepositoryImpl(gh<_i704.SessionLocalDataSource>()),
@@ -497,16 +506,6 @@ _i174.GetIt initGetIt(
       gh<_i340.ClearFavouriteSetupsUseCase>(),
     ),
   );
-  gh.lazySingleton<_i567.PersonalizedFeedRepository>(
-    () => _i903.PersonalizedFeedRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i954.FeedCacheLocalDataSource>(),
-      gh<_i1073.SettingsLocalDataSource>(),
-      gh<_i604.WallhavenWallpaperRepository>(),
-      gh<_i312.PexelsWallpaperRepository>(),
-      gh<_i112.UserBlockRepository>(),
-    ),
-  );
   gh.lazySingleton<_i411.SetupsRepository>(
     () => _i415.SetupsRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -543,6 +542,19 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i301.FetchCategoryFeedUseCase>(
     () => _i301.FetchCategoryFeedUseCase(gh<_i563.CategoryFeedRepository>()),
+  );
+  gh.lazySingleton<_i567.PersonalizedFeedRepository>(
+    () => _i903.PersonalizedFeedRepositoryImpl(
+      gh<_i349.FirestoreClient>(),
+      gh<_i954.FeedCacheLocalDataSource>(),
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i312.PexelsWallpaperRepository>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i643.FavouriteWallsRepository>(),
+      gh<_i731.TasteSignalStore>(),
+      gh<_i535.FeedImpressionStore>(),
+    ),
   );
   gh.factory<_i358.WallpaperDetailBloc>(
     () => _i358.WallpaperDetailBloc(
@@ -598,19 +610,6 @@ _i174.GetIt initGetIt(
     () =>
         _i446.SearchUsersByUsernameUseCase(gh<_i817.PublicProfileRepository>()),
   );
-  gh.lazySingleton<_i247.FetchSetupsUseCase>(
-    () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
-  );
-  gh.factory<_i195.CategoryFeedBloc>(
-    () => _i195.CategoryFeedBloc(
-      gh<_i301.LoadCategoriesUseCase>(),
-      gh<_i301.FetchCategoryFeedUseCase>(),
-      gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
-    () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
-  );
   gh.lazySingleton<_i489.WallOfTheDayRepository>(
     () => _i1070.WallOfTheDayRepositoryImpl(
       gh<_i349.FirestoreClient>(),
@@ -618,10 +617,33 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
+  gh.lazySingleton<_i247.FetchSetupsUseCase>(
+    () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
+  );
+  gh.lazySingleton<_i502.FirstWallpaperService>(
+    () => _i502.FirstWallpaperService(
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i489.WallOfTheDayRepository>(),
+    ),
+  );
+  gh.lazySingleton<_i272.FetchProfileSetupsUseCase>(
+    () => _i272.FetchProfileSetupsUseCase(gh<_i563.ProfileSetupsRepository>()),
+  );
   gh.factory<_i736.ThemeModeBloc>(
     () => _i736.ThemeModeBloc(
       gh<_i836.LoadThemeModeUseCase>(),
       gh<_i836.UpdateThemeModeUseCase>(),
+    ),
+  );
+  gh.factory<_i224.OnboardingV2Bloc>(
+    () => _i224.OnboardingV2Bloc(
+      gh<_i132.FetchStarterPackUseCase>(),
+      gh<_i95.SaveInterestsUseCase>(),
+      gh<_i74.FollowStarterPackUseCase>(),
+      gh<_i975.CompleteOnboardingV2UseCase>(),
+      gh<_i502.FirstWallpaperService>(),
+      gh<_i563.CategoryFeedRepository>(),
+      gh<_i897.OnboardingV2Repository>(),
     ),
   );
   gh.factory<_i717.PublicProfileBloc>(
@@ -641,6 +663,19 @@ _i174.GetIt initGetIt(
       gh<_i567.PersonalizedFeedRepository>(),
     ),
   );
+  gh.factory<_i195.CategoryFeedBloc>(
+    () => _i195.CategoryFeedBloc(
+      gh<_i301.LoadCategoriesUseCase>(),
+      gh<_i301.FetchCategoryFeedUseCase>(),
+      gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.factory<_i941.ProfileSetupsBloc>(
+    () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
+  );
+  gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
+    () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
+  );
   gh.factory<_i318.SetupsBloc>(
     () => _i318.SetupsBloc(
       gh<_i247.FetchSetupsUseCase>(),
@@ -652,29 +687,6 @@ _i174.GetIt initGetIt(
       gh<_i212.FetchPersonalizedFeedUseCase>(),
       gh<_i567.PersonalizedFeedRepository>(),
       gh<_i112.UserBlockRepository>(),
-    ),
-  );
-  gh.factory<_i941.ProfileSetupsBloc>(
-    () => _i941.ProfileSetupsBloc(gh<_i272.FetchProfileSetupsUseCase>()),
-  );
-  gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
-    () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
-  );
-  gh.lazySingleton<_i502.FirstWallpaperService>(
-    () => _i502.FirstWallpaperService(
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i489.WallOfTheDayRepository>(),
-    ),
-  );
-  gh.factory<_i224.OnboardingV2Bloc>(
-    () => _i224.OnboardingV2Bloc(
-      gh<_i132.FetchStarterPackUseCase>(),
-      gh<_i95.SaveInterestsUseCase>(),
-      gh<_i74.FollowStarterPackUseCase>(),
-      gh<_i975.CompleteOnboardingV2UseCase>(),
-      gh<_i502.FirstWallpaperService>(),
-      gh<_i563.CategoryFeedRepository>(),
-      gh<_i897.OnboardingV2Repository>(),
     ),
   );
   gh.factory<_i183.WotdBloc>(
