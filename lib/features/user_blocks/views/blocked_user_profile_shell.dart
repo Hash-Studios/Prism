@@ -1,11 +1,8 @@
 import 'dart:async';
 
-import 'package:Prism/analytics/analytics_service.dart';
-import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/user_blocks/user_block_actions.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
 /// Shown when the signed-in viewer has blocked this profile’s account.
@@ -44,7 +41,7 @@ class BlockedUserProfileShell extends StatelessWidget {
                 'You blocked $displayName',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'Proxima Nova',
+                  fontFamily: PrismFonts.proximaNova,
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
                   color: Theme.of(context).colorScheme.secondary,
@@ -56,7 +53,7 @@ class BlockedUserProfileShell extends StatelessWidget {
                 'You can unblock them any time.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: 'Proxima Nova',
+                  fontFamily: PrismFonts.proximaNova,
                   fontSize: 14,
                   height: 1.35,
                   color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.75),
@@ -64,20 +61,7 @@ class BlockedUserProfileShell extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               FilledButton(
-                onPressed: () async {
-                  final UserBlockRepository repo = getIt<UserBlockRepository>();
-                  final result = await repo.unblockUser(targetUserId: targetUserId);
-                  if (!context.mounted) {
-                    return;
-                  }
-                  if (result.isFailure) {
-                    toasts.error(result.failure?.toString() ?? 'Could not unblock');
-                    unawaited(analytics.track(const UserBlockActionEvent(action: 'unblock', result: 'failure')));
-                    return;
-                  }
-                  unawaited(analytics.track(const UserBlockActionEvent(action: 'unblock', result: 'success')));
-                  toasts.codeSend('User unblocked');
-                },
+                onPressed: () => unawaited(unblockUserWithFeedback(context, targetUserId)),
                 child: const Text('Unblock'),
               ),
             ],

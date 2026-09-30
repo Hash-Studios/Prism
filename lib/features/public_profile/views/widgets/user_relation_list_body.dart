@@ -2,18 +2,16 @@ import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/loader.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-/// Which side of the follow graph a [UserRelationListBody] renders.
-enum UserRelationKind { followers, following }
 
 /// Shared body for [FollowersScreen] and [FollowingListScreen]. The two
 /// screens are identical apart from terminology, which bloc state fields
@@ -45,46 +43,10 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   Timer? _debounce;
   bool _isSearchActive = false;
 
-  bool _isFetching(PublicProfileState state) => _isFollowers ? state.isFetchingFollowers : state.isFetchingFollowing;
+  RelationList _list(PublicProfileState state) => state.relation(widget.kind);
 
-  bool _hasMore(PublicProfileState state) => _isFollowers ? state.hasMoreFollowers : state.hasMoreFollowing;
-
-  int _page(PublicProfileState state) => _isFollowers ? state.followerPage : state.followingPage;
-
-  List<UserSummaryEntity> _summaries(PublicProfileState state) =>
-      _isFollowers ? state.followerSummaries : state.followingSummaries;
-
-  bool _isSearching(PublicProfileState state) => _isFollowers ? state.isSearchingFollowers : state.isSearchingFollowing;
-
-  List<UserSummaryEntity>? _searchResults(PublicProfileState state) =>
-      _isFollowers ? state.followerSearchResults : state.followingSearchResults;
-
-  PublicProfileEvent _fetchPageEvent(int page) => _isFollowers
-      ? PublicProfileEvent.fetchFollowerSummariesPageRequested(
-          allEmails: widget.emails,
-          currentUserEmail: app_state.prismUser.email,
-          page: page,
-        )
-      : PublicProfileEvent.fetchFollowingSummariesPageRequested(
-          allEmails: widget.emails,
-          currentUserEmail: app_state.prismUser.email,
-          page: page,
-        );
-
-  PublicProfileEvent _searchEvent(String query) => _isFollowers
-      ? PublicProfileEvent.searchFollowerSummariesRequested(
-          query: query,
-          allEmails: widget.emails,
-          currentUserEmail: app_state.prismUser.email,
-        )
-      : PublicProfileEvent.searchFollowingSummariesRequested(
-          query: query,
-          allEmails: widget.emails,
-          currentUserEmail: app_state.prismUser.email,
-        );
-
-  PublicProfileEvent get _clearSearchEvent =>
-      _isFollowers ? const PublicProfileEvent.clearFollowerSearch() : const PublicProfileEvent.clearFollowingSearch();
+  PublicProfileEvent _fetchPageEvent(int page) =>
+      PublicProfileEvent.relationPageRequested(kind: widget.kind, allEmails: widget.emails, page: page);
 
   String get _title => _isFollowers ? 'Followers' : 'Following';
 
@@ -93,20 +55,21 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   String get _emptyLoadFailedText => _isFollowers ? 'Could not load followers.' : 'Could not load following list.';
 
   void _maybeAutoLoadMore(PublicProfileState state) {
-    if (_isSearchActive || _isFetching(state) || !_hasMore(state)) {
+    final RelationList list = _list(state);
+    if (_isSearchActive || list.isFetching || !list.hasMore) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_scrollController.hasClients) return;
-      final current = _bloc.state;
-      if (_isSearchActive || _isFetching(current) || !_hasMore(current)) {
+      final current = _list(_bloc.state);
+      if (_isSearchActive || current.isFetching || !current.hasMore) {
         return;
       }
       // If the list still cannot scroll, auto-fetch the next page so users are
       // not stuck on a tiny first page when many emails no longer map to docs.
       if (_scrollController.position.maxScrollExtent <= 0) {
-        _bloc.add(_fetchPageEvent(_page(current) + 1));
+        _bloc.add(_fetchPageEvent(current.page + 1));
       }
     });
   }
@@ -137,10 +100,10 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     final threshold = _scrollController.position.maxScrollExtent - 200;
     if (_scrollController.offset < threshold) return;
 
-    final state = _bloc.state;
-    if (_isFetching(state) || !_hasMore(state) || _isSearchActive) return;
+    final list = _list(_bloc.state);
+    if (list.isFetching || !list.hasMore || _isSearchActive) return;
 
-    _bloc.add(_fetchPageEvent(_page(state) + 1));
+    _bloc.add(_fetchPageEvent(list.page + 1));
   }
 
   void _onSearchChanged() {
@@ -150,7 +113,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     if (query.length < _searchMinLength) {
       if (_isSearchActive) {
         setState(() => _isSearchActive = false);
-        _bloc.add(_clearSearchEvent);
+        _bloc.add(PublicProfileEvent.relationSearchCleared(kind: widget.kind));
       }
       return;
     }
@@ -158,7 +121,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     _debounce = Timer(const Duration(milliseconds: _searchDebounceMs), () {
       if (!mounted) return;
       setState(() => _isSearchActive = true);
-      _bloc.add(_searchEvent(query));
+      _bloc.add(PublicProfileEvent.relationSearchRequested(kind: widget.kind, query: query, allEmails: widget.emails));
     });
   }
 
@@ -177,19 +140,15 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
             _SearchBar(controller: _searchController),
             Expanded(
               child: BlocBuilder<PublicProfileBloc, PublicProfileState>(
-                buildWhen: (prev, curr) =>
-                    _summaries(prev) != _summaries(curr) ||
-                    _isFetching(prev) != _isFetching(curr) ||
-                    _hasMore(prev) != _hasMore(curr) ||
-                    _searchResults(prev) != _searchResults(curr) ||
-                    _isSearching(prev) != _isSearching(curr),
+                buildWhen: (prev, curr) => _list(prev) != _list(curr),
                 builder: (context, state) {
+                  final list = _list(state);
                   // Search mode.
                   if (_isSearchActive) {
-                    if (_isSearching(state)) {
+                    if (list.isSearching) {
                       return Center(child: Loader());
                     }
-                    final results = _searchResults(state) ?? const <UserSummaryEntity>[];
+                    final results = list.searchResults ?? const <UserSummaryEntity>[];
                     if (results.isEmpty) {
                       return Center(child: _emptyText('No results found.', context));
                     }
@@ -197,8 +156,8 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                   }
 
                   // Paginated mode.
-                  final summaries = _summaries(state);
-                  if (_isFetching(state) && summaries.isEmpty) {
+                  final summaries = list.summaries;
+                  if (list.isFetching && summaries.isEmpty) {
                     return Center(child: Loader());
                   }
                   if (summaries.isEmpty) {
@@ -210,8 +169,8 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                   return _UserList(
                     users: summaries,
                     scrollController: _scrollController,
-                    hasMore: _hasMore(state),
-                    isLoading: _isFetching(state),
+                    hasMore: list.hasMore,
+                    isLoading: list.isFetching,
                   );
                 },
               ),
@@ -226,7 +185,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     return Text(
       text,
       style: TextStyle(
-        fontFamily: 'Proxima Nova',
+        fontFamily: PrismFonts.proximaNova,
         color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.6),
         fontSize: 15,
       ),
@@ -284,11 +243,15 @@ class _SearchBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: TextField(
         controller: controller,
-        style: TextStyle(fontFamily: 'Proxima Nova', color: Theme.of(context).colorScheme.secondary, fontSize: 15),
+        style: TextStyle(
+          fontFamily: PrismFonts.proximaNova,
+          color: Theme.of(context).colorScheme.secondary,
+          fontSize: 15,
+        ),
         decoration: InputDecoration(
           hintText: 'Search by username…',
           hintStyle: TextStyle(
-            fontFamily: 'Proxima Nova',
+            fontFamily: PrismFonts.proximaNova,
             color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.4),
             fontSize: 15,
           ),

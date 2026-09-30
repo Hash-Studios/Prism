@@ -161,28 +161,14 @@ class _FollowButton extends StatelessWidget {
   }
 
   void _onPressed(BuildContext context) {
-    final bloc = context.read<PublicProfileBloc>();
-    final String currentUserId = app_state.prismUser.id;
-    final String currentUserEmail = app_state.prismUser.email;
-
-    if (user.isFollowedByCurrentUser) {
-      bloc.add(
-        PublicProfileEvent.unfollowFromListRequested(
-          currentUserId: currentUserId,
-          currentUserEmail: currentUserEmail,
-          targetUserId: user.id,
-          targetUserEmail: user.email,
-        ),
-      );
-    } else {
-      bloc.add(
-        PublicProfileEvent.followFromListRequested(
-          currentUserId: currentUserId,
-          currentUserEmail: currentUserEmail,
-          targetUserId: user.id,
-          targetUserEmail: user.email,
-        ),
-      );
-    }
+    context.read<PublicProfileBloc>().add(
+      PublicProfileEvent.followChangeRequested(
+        follow: !user.isFollowedByCurrentUser,
+        currentUserId: app_state.prismUser.id,
+        currentUserEmail: app_state.prismUser.email,
+        targetUserId: user.id,
+        targetUserEmail: user.email,
+      ),
+    );
   }
 }

@@ -4,8 +4,9 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/home/core/heading_chip_bar.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
-import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -19,26 +20,18 @@ class BlockedAccountsScreen extends StatefulWidget {
 
 class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
   final UserBlockRepository _repo = getIt<UserBlockRepository>();
-  Future<List<BlockedUserListRow>>? _loadFuture;
+  late Future<Result<List<BlockedUserListRow>>> _loadFuture;
 
   @override
   void initState() {
     super.initState();
     unawaited(analytics.track(const UserBlockActionEvent(action: 'open_blocked_list')));
-    _loadFuture = _load();
-  }
-
-  Future<List<BlockedUserListRow>> _load() async {
-    final result = await _repo.fetchBlockedUsersList();
-    if (result.isFailure || result.data == null) {
-      return <BlockedUserListRow>[];
-    }
-    return result.data!;
+    _loadFuture = _repo.fetchBlockedUsersList();
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _loadFuture = _load();
+      _loadFuture = _repo.fetchBlockedUsersList();
     });
     await _loadFuture;
   }
@@ -51,34 +44,23 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
         preferredSize: Size(double.infinity, 55),
         child: HeadingChipBar(current: 'Blocked accounts'),
       ),
-      body: FutureBuilder<List<BlockedUserListRow>>(
+      body: FutureBuilder<Result<List<BlockedUserListRow>>>(
         future: _loadFuture,
-        builder: (BuildContext context, AsyncSnapshot<List<BlockedUserListRow>> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (BuildContext context, AsyncSnapshot<Result<List<BlockedUserListRow>>> snapshot) {
+          final Result<List<BlockedUserListRow>>? result = snapshot.data;
+          if (result == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          final List<BlockedUserListRow> rows = snapshot.data ?? <BlockedUserListRow>[];
-          if (rows.isEmpty) {
-            return RefreshIndicator(
+          if (result.isFailure) {
+            return _Message(
+              text: 'Could not load blocked accounts.',
               onRefresh: _refresh,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: <Widget>[
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      'No blocked accounts.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              action: TextButton(onPressed: _refresh, child: const Text('Retry')),
             );
+          }
+          final List<BlockedUserListRow> rows = result.data ?? <BlockedUserListRow>[];
+          if (rows.isEmpty) {
+            return _Message(text: 'No blocked accounts.', onRefresh: _refresh);
           }
           return RefreshIndicator(
             onRefresh: _refresh,
@@ -103,18 +85,9 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                   ),
                   trailing: TextButton(
                     onPressed: () async {
-                      final result = await _repo.unblockUser(targetUserId: row.blockedUid);
-                      if (!context.mounted) {
-                        return;
+                      if (await unblockUserWithFeedback(context, row.blockedUid)) {
+                        await _refresh();
                       }
-                      if (result.isFailure) {
-                        toasts.error(result.failure?.toString() ?? 'Could not unblock');
-                        unawaited(analytics.track(const UserBlockActionEvent(action: 'unblock', result: 'failure')));
-                        return;
-                      }
-                      unawaited(analytics.track(const UserBlockActionEvent(action: 'unblock', result: 'success')));
-                      toasts.codeSend('Unblocked');
-                      await _refresh();
                     },
                     child: const Text('Unblock'),
                   ),
@@ -123,6 +96,36 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _Message extends StatelessWidget {
+  const _Message({required this.text, required this.onRefresh, this.action});
+
+  final String text;
+  final Future<void> Function() onRefresh;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: <Widget>[
+          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8), fontSize: 15),
+            ),
+          ),
+          ?action,
+        ],
       ),
     );
   }
