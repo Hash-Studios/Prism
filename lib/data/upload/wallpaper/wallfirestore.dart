@@ -35,33 +35,35 @@ Future<WallSubmissionResult> createRecord(
   String? aiPrompt,
   String? aiStylePreset,
 }) async {
-  final bool isPremium = app_state.prismUser.premium;
+  final user = app_state.prismUser;
+  final bool isPremium = user.premium;
   final WallSubmissionResult result = await submitWallRecord(
     isPremium: isPremium,
-    hasFreeQuota: isPremium || UploadQuota.hasFreeUploadQuotaRemaining(),
-    consumeFreeQuota: () {
+    hasFreeQuota: UploadQuota.hasFreeUploadQuotaRemaining,
+    consumeFreeQuota: () async {
       UploadQuota.incrementWeeklyUploads();
-      app_state.prismUser.uploadsWeekStart = _settingsLocal.get<String>('uploadsWeekStart', defaultValue: '').trim();
-      app_state.prismUser.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
-      app_state.persistPrismUser();
-      if (app_state.prismUser.id.trim().isNotEmpty) {
+      user.uploadsWeekStart = _settingsLocal.get<String>('uploadsWeekStart', defaultValue: '').trim();
+      user.uploadsThisWeek = UploadQuota.currentUploadsThisWeek();
+      final Future<void>? persistUser = app_state.prismUser.id == user.id ? app_state.persistPrismUser() : null;
+      if (user.id.trim().isNotEmpty) {
         unawaited(
           firestoreClient
-              .updateDoc(FirebaseCollections.usersV2, app_state.prismUser.id, {
-                'uploadsWeekStart': app_state.prismUser.uploadsWeekStart,
-                'uploadsThisWeek': app_state.prismUser.uploadsThisWeek,
+              .updateDoc(FirebaseCollections.usersV2, user.id, {
+                'uploadsWeekStart': user.uploadsWeekStart,
+                'uploadsThisWeek': user.uploadsThisWeek,
               }, sourceTag: 'upload.weekly_quota_sync')
               .catchError((Object error, StackTrace stackTrace) {
                 logger.w('Could not sync weekly upload quota', tag: 'Upload', error: error, stackTrace: stackTrace);
               }),
         );
       }
+      if (persistUser != null) await persistUser;
     },
     firestoreClient: firestoreClient,
     record: {
-      'by': app_state.prismUser.name,
-      'email': app_state.prismUser.email,
-      'userPhoto': app_state.prismUser.profilePhoto,
+      'by': user.name,
+      'email': user.email,
+      'userPhoto': user.profilePhoto,
       'id': id,
       'wallpaper_provider': wallpaperProvider,
       'wallpaper_thumb': wallpaperThumb,
@@ -83,7 +85,10 @@ Future<WallSubmissionResult> createRecord(
       if (aiPrompt != null && aiPrompt.trim().isNotEmpty) 'aiPrompt': aiPrompt,
       if (aiStylePreset != null && aiStylePreset.trim().isNotEmpty) 'aiStylePreset': aiStylePreset,
     },
-    awardFirstUpload: () => CoinsService.instance.maybeAwardFirstWallpaperUpload().then((_) {}),
+    awardFirstUpload: () {
+      if (app_state.prismUser.id != user.id) return Future<void>.value();
+      return CoinsService.instance.maybeAwardFirstWallpaperUpload().then((_) {});
+    },
   );
 
   if (result == WallSubmissionResult.quotaExceeded) {

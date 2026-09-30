@@ -127,6 +127,12 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         }
         return ListView.builder(
           itemCount: walls.length,
+          findChildIndexCallback: (Key key) {
+            final int index = walls.indexWhere(
+              (FirestoreDocument wall) => 'wall-${wall.id}' == (key as ValueKey<String>).value,
+            );
+            return index < 0 ? null : index;
+          },
           itemBuilder: (BuildContext context, int index) {
             final FirestoreDocument wall = walls[index];
             final String previewUrl = wall.wallpaperThumb;
@@ -180,6 +186,12 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         }
         return ListView.builder(
           itemCount: setups.length,
+          findChildIndexCallback: (Key key) {
+            final int index = setups.indexWhere(
+              (FirestoreDocument setup) => 'setup-${setup.id}' == (key as ValueKey<String>).value,
+            );
+            return index < 0 ? null : index;
+          },
           itemBuilder: (BuildContext context, int index) {
             final FirestoreDocument setup = setups[index];
             final String fullUrl = setup.image;
@@ -250,6 +262,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             final String timeStr = created != null ? timeago.format(created) : '';
             if (ct == 'wall' && tid.isNotEmpty) {
               return _WallContentReportCard(
+                key: ValueKey<String>('report-${r.id}'),
                 report: r,
                 targetDocId: tid,
                 contentTypeLabel: ct,
@@ -424,6 +437,7 @@ class _RejectReasonDialogState extends State<_RejectReasonDialog> {
 
 class _WallContentReportCard extends StatefulWidget {
   const _WallContentReportCard({
+    super.key,
     required this.report,
     required this.targetDocId,
     required this.contentTypeLabel,
@@ -624,16 +638,18 @@ class _ModerationCard extends StatefulWidget {
 
 class _ModerationCardState extends State<_ModerationCard> {
   bool _isApproving = false;
+  bool _isApproved = false;
   String? _approvalError;
 
   Future<void> _approve() async {
-    if (_isApproving) return;
+    if (_isApproving || _isApproved) return;
     setState(() {
       _isApproving = true;
       _approvalError = null;
     });
     try {
       await widget.onApprove();
+      if (mounted) setState(() => _isApproved = true);
     } catch (error, stackTrace) {
       logger.e('Admin approval failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
       if (mounted) {
@@ -699,15 +715,18 @@ class _ModerationCardState extends State<_ModerationCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: FilledButton(
-                    onPressed: _isApproving ? null : _approve,
+                    onPressed: _isApproving || _isApproved ? null : _approve,
                     child: _isApproving
                         ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Approve'),
+                        : Text(_isApproved ? 'Approved' : 'Approve'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton(onPressed: _isApproving ? null : widget.onReject, child: const Text('Reject')),
+                  child: OutlinedButton(
+                    onPressed: _isApproving || _isApproved ? null : widget.onReject,
+                    child: const Text('Reject'),
+                  ),
                 ),
               ],
             ),

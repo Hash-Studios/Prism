@@ -6,6 +6,10 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/admin_review/data/admin_review_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore_platform_interface/cloud_firestore_platform_interface.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -21,12 +25,15 @@ class _FakeAdminReviewRepository extends AdminReviewRepository {
   int approvals = 0;
   int rejections = 0;
   bool failFirstWallStream = false;
+  Stream<List<FirestoreDocument>>? reportsStream;
+  Stream<List<FirestoreDocument>>? wallsStream;
   Future<void> Function()? approveAction;
   Future<void> Function()? rejectAction;
 
   @override
   Stream<List<FirestoreDocument>> watchPendingWalls() {
     wallStreamCalls++;
+    if (wallsStream != null) return wallsStream!;
     if (failFirstWallStream && wallStreamCalls == 1) {
       return Stream<List<FirestoreDocument>>.error(StateError('offline'));
     }
@@ -39,7 +46,7 @@ class _FakeAdminReviewRepository extends AdminReviewRepository {
 
   @override
   Stream<List<FirestoreDocument>> watchOpenContentReports() =>
-      Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
+      reportsStream ?? Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
 
   @override
   Future<void> approveWall(FirestoreDocument wall) async {
@@ -54,14 +61,52 @@ class _FakeAdminReviewRepository extends AdminReviewRepository {
   }
 }
 
+class _FakeFirestorePlatform extends FirebaseFirestorePlatform {
+  final List<String> requestedWallIds = <String>[];
+
+  @override
+  FirebaseFirestorePlatform delegateFor({required FirebaseApp app, required String databaseId}) => this;
+
+  @override
+  CollectionReferencePlatform collection(String collectionPath) => _FakeCollectionReference(this, collectionPath);
+}
+
+class _FakeCollectionReference extends CollectionReferencePlatform {
+  _FakeCollectionReference(super.firestore, super.path);
+
+  @override
+  DocumentReferencePlatform doc([String? path]) => _FakeDocumentReference(firestore, '$this/${path ?? ''}');
+}
+
+class _FakeDocumentReference extends DocumentReferencePlatform {
+  _FakeDocumentReference(super.firestore, super.path);
+
+  @override
+  Future<DocumentSnapshotPlatform> get([GetOptions options = const GetOptions()]) async {
+    final String wallId = id;
+    (firestore as _FakeFirestorePlatform).requestedWallIds.add(wallId);
+    return DocumentSnapshotPlatform(firestore, path, <String, Object?>{
+      'wallpaper_thumb': 'https://example.com/$wallId.png',
+    }, PigeonSnapshotMetadata(hasPendingWrites: false, isFromCache: false));
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late PrismUsersV2 originalUser;
+  late _FakeFirestorePlatform firestore;
 
   Future<void> pumpReviewScreen(WidgetTester tester, _FakeAdminReviewRepository repository) async {
     await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
     await tester.pumpAndSettle();
   }
+
+  setUpAll(() async {
+    setupFirebaseCoreMocks();
+    await Firebase.initializeApp();
+    firestore = _FakeFirestorePlatform();
+    FirebaseFirestorePlatform.instance = firestore;
+  });
 
   setUp(() {
     originalUser = app_state.prismUser;
@@ -87,6 +132,113 @@ void main() {
     expect(find.text('ID: wall-1'), findsOneWidget);
   });
 
+  testWidgets('wall report previews stay with their report after the stream reorders rows', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(900, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final StreamController<List<FirestoreDocument>> reports = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(reports.close);
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..reportsStream = reports.stream;
+    await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
+    await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
+    await tester.pump(const Duration(milliseconds: 600));
+    reports.add(const <FirestoreDocument>[
+      FirestoreDocument('report-a', <String, dynamic>{
+        'contentType': 'wall',
+        'reason': 'A',
+        'targetFirestoreDocId': 'wall-a',
+      }),
+      FirestoreDocument('report-b', <String, dynamic>{
+        'contentType': 'wall',
+        'reason': 'B',
+        'targetFirestoreDocId': 'wall-b',
+      }),
+    ]);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('wall — A'), findsOneWidget);
+    expect(find.text('wall — B'), findsOneWidget);
+    expect(firestore.requestedWallIds, containsAll(<String>['wall-a', 'wall-b']));
+
+    void expectReportPreview(String reason, String wallId) {
+      final Finder report = find.ancestor(of: find.textContaining('Target: $wallId'), matching: find.byType(Card));
+      expect(report, findsOneWidget, reason: 'report with reason $reason should target $wallId');
+      expect(find.descendant(of: report, matching: find.text('wall — $reason')), findsOneWidget);
+      final Finder preview = find.descendant(of: report, matching: find.byType(CachedNetworkImage));
+      expect(preview, findsOneWidget);
+      expect(tester.widget<CachedNetworkImage>(preview).imageUrl, 'https://example.com/$wallId.png');
+    }
+
+    expectReportPreview('A', 'wall-a');
+    expectReportPreview('B', 'wall-b');
+
+    reports.add(const <FirestoreDocument>[
+      FirestoreDocument('report-b', <String, dynamic>{
+        'contentType': 'wall',
+        'reason': 'B',
+        'targetFirestoreDocId': 'wall-b',
+      }),
+      FirestoreDocument('report-a', <String, dynamic>{
+        'contentType': 'wall',
+        'reason': 'A',
+        'targetFirestoreDocId': 'wall-a',
+      }),
+    ]);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expectReportPreview('A', 'wall-a');
+    expectReportPreview('B', 'wall-b');
+    expect(firestore.requestedWallIds, containsAll(<String>['wall-a', 'wall-b']));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('approval state stays with the same wall after an earlier row is removed', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(900, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
+    addTearDown(walls.close);
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..wallsStream = walls.stream;
+    final Completer<void> pendingApproval = Completer<void>();
+    repository.approveAction = () => pendingApproval.future;
+    await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
+    await tester.pump();
+    walls.add(const <FirestoreDocument>[
+      FirestoreDocument('wall-a', <String, dynamic>{'review': false}),
+      FirestoreDocument('wall-b', <String, dynamic>{'review': false}),
+    ]);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('ID: wall-b'), findsOneWidget);
+    final Finder wallBCard = find.ancestor(of: find.text('ID: wall-b'), matching: find.byType(Card));
+    final Finder wallBApprove = find.descendant(of: wallBCard, matching: find.widgetWithText(FilledButton, 'Approve'));
+    await tester.tap(wallBApprove);
+    await tester.pump();
+    expect(repository.approvals, 1);
+
+    walls.add(const <FirestoreDocument>[
+      FirestoreDocument('wall-b', <String, dynamic>{'review': false}),
+    ]);
+    await tester.pump();
+    expect(wallBCard, findsOneWidget);
+    expect(find.descendant(of: wallBCard, matching: find.byType(CircularProgressIndicator)), findsOneWidget);
+    final Finder wallBButton = find.descendant(of: wallBCard, matching: find.byType(FilledButton));
+    expect(tester.widget<FilledButton>(wallBButton).onPressed, isNull);
+    await tester.tap(wallBButton, warnIfMissed: false);
+    await tester.pump();
+    expect(repository.approvals, 1);
+
+    pendingApproval.complete();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('approval disables repeat taps and offers an inline retry after failure', (WidgetTester tester) async {
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
     final Completer<void> pendingApproval = Completer<void>();
@@ -106,6 +258,24 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Retry'));
     await tester.pumpAndSettle();
     expect(repository.approvals, 2);
+  });
+
+  testWidgets('successful approval stays disabled until the stream removes its card', (WidgetTester tester) async {
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await pumpReviewScreen(tester, repository);
+
+    final VoidCallback? staleApprove = tester
+        .widget<FilledButton>(find.widgetWithText(FilledButton, 'Approve'))
+        .onPressed;
+    staleApprove!();
+    await tester.pumpAndSettle();
+    expect(repository.approvals, 1);
+    expect(find.widgetWithText(FilledButton, 'Approved'), findsOneWidget);
+    expect(tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Reject')).onPressed, isNull);
+
+    staleApprove();
+    await tester.pumpAndSettle();
+    expect(repository.approvals, 1);
   });
 
   testWidgets('rejection keeps the reason and dialog open after a save failure', (WidgetTester tester) async {
