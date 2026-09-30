@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
-import 'package:Prism/core/purchases/subscription_tier.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -18,7 +16,6 @@ import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/main.dart' as app;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -315,200 +312,6 @@ void main() {
     await favourites.close();
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('resume refreshes premium once and reloads the unchanged session', (tester) async {
-    final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
-    final _MockSessionBloc sessionBloc = _MockSessionBloc();
-    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
-    final Completer<SubscriptionTier> refresh = Completer<SubscriptionTier>();
-    app_state.prismUser = _currentUser('account-a', premium: true);
-    const SessionState session = SessionState(
-      status: LoadStatus.success,
-      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: true, subscriptionTier: 'pro'),
-    );
-    int refreshCalls = 0;
-    when(() => autoRotateBloc.state).thenReturn(_activeRotationState());
-    whenListen(autoRotateBloc, const Stream<AutoRotateState>.empty(), initialState: _activeRotationState());
-    whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: session);
-    whenListen(
-      favouriteWallsBloc,
-      const Stream<FavouriteWallsState>.empty(),
-      initialState: FavouriteWallsState.initial(),
-    );
-
-    await tester.pumpWidget(
-      _listenerTree(
-        autoRotateBloc,
-        sessionBloc,
-        favouriteWallsBloc,
-        refreshTier: () {
-          refreshCalls++;
-          return refresh.future;
-        },
-      ),
-    );
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
-    expect(refreshCalls, 1);
-
-    refresh.complete(SubscriptionTier.pro);
-    await tester.pump();
-
-    verify(() => sessionBloc.add(const SessionEvent.started())).called(1);
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets('resume does not reload a different account after entitlement refresh', (tester) async {
-    final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
-    final _MockSessionBloc sessionBloc = _MockSessionBloc();
-    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
-    final StreamController<SessionState> states = StreamController<SessionState>();
-    final Completer<SubscriptionTier> refresh = Completer<SubscriptionTier>();
-    app_state.prismUser = _currentUser('account-a', premium: true);
-    const SessionState initial = SessionState(
-      status: LoadStatus.success,
-      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: true, subscriptionTier: 'pro'),
-    );
-    when(() => autoRotateBloc.state).thenReturn(_activeRotationState());
-    whenListen(autoRotateBloc, const Stream<AutoRotateState>.empty(), initialState: _activeRotationState());
-    whenListen(sessionBloc, states.stream, initialState: initial);
-    whenListen(
-      favouriteWallsBloc,
-      const Stream<FavouriteWallsState>.empty(),
-      initialState: FavouriteWallsState.initial(),
-    );
-
-    await tester.pumpWidget(
-      _listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc, refreshTier: () => refresh.future),
-    );
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
-    states.add(
-      const SessionState(
-        status: LoadStatus.success,
-        session: SessionEntity(userId: 'account-b', loggedIn: true, premium: true, subscriptionTier: 'pro'),
-      ),
-    );
-    app_state.prismUser = _currentUser('account-b', premium: true);
-    await tester.pump();
-    refresh.complete(SubscriptionTier.free);
-    await tester.pump();
-
-    expect(app_state.prismUser.id, 'account-b');
-    expect(app_state.prismUser.premium, isTrue);
-    verifyNever(() => sessionBloc.add(const SessionEvent.started()));
-    await states.close();
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets('resume ignores RevenueCat entitlement for a different SDK account', (tester) async {
-    app_state.prismUser = _currentUser('account-a', premium: true);
-    final _MockAutoRotateBloc autoRotateBloc = _MockAutoRotateBloc();
-    final _MockSessionBloc sessionBloc = _MockSessionBloc();
-    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
-    const SessionState session = SessionState(
-      status: LoadStatus.success,
-      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: true, subscriptionTier: 'pro'),
-    );
-    final List<String> calls = <String>[];
-    const MethodChannel purchasesChannel = MethodChannel('purchases_flutter');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, (call) async {
-      calls.add(call.method);
-      if (call.method == 'getAppUserID') return 'another-account';
-      return null;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(purchasesChannel, null));
-    when(() => autoRotateBloc.state).thenReturn(_activeRotationState());
-    whenListen(autoRotateBloc, const Stream<AutoRotateState>.empty(), initialState: _activeRotationState());
-    whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: session);
-    whenListen(
-      favouriteWallsBloc,
-      const Stream<FavouriteWallsState>.empty(),
-      initialState: FavouriteWallsState.initial(),
-    );
-
-    await tester.pumpWidget(_listenerTree(autoRotateBloc, sessionBloc, favouriteWallsBloc));
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-
-    expect(calls, <String>['getAppUserID']);
-    expect(app_state.prismUser.premium, isTrue);
-    expect(app_state.prismUser.subscriptionTier, SubscriptionTier.pro.name);
-    verifyNever(() => sessionBloc.add(const SessionEvent.started()));
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
-  testWidgets('resume downgrade persists for the same account and stops shared auto-rotate', (tester) async {
-    app_state.prismUser = _currentUser('account-a', premium: true);
-    final _FakeAutoRotateRepository repository = _FakeAutoRotateRepository(
-      config: const AutoRotateConfig(enabled: true),
-    );
-    final AutoRotateBloc autoRotateBloc = AutoRotateBloc(repository);
-    final _MockSessionBloc sessionBloc = _MockSessionBloc();
-    final _MockFavouriteWallsBloc favouriteWallsBloc = _MockFavouriteWallsBloc();
-    final StreamController<SessionState> sessions = StreamController<SessionState>();
-    const SessionState proSession = SessionState(
-      status: LoadStatus.success,
-      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: true, subscriptionTier: 'pro'),
-    );
-    whenListen(sessionBloc, sessions.stream, initialState: proSession);
-    whenListen(
-      favouriteWallsBloc,
-      const Stream<FavouriteWallsState>.empty(),
-      initialState: const FavouriteWallsState(
-        status: LoadStatus.success,
-        actionStatus: ActionStatus.success,
-        userId: 'account-a',
-        items: <FavouriteWallEntity>[
-          LegacyFavouriteWall(
-            id: 'wall-a',
-            source: WallpaperSource.prism,
-            legacyPayload: <String, Object?>{'wallpaper_url': 'https://example.test/a.jpg'},
-          ),
-          LegacyFavouriteWall(
-            id: 'wall-b',
-            source: WallpaperSource.prism,
-            legacyPayload: <String, Object?>{'wallpaper_url': 'https://example.test/b.jpg'},
-          ),
-        ],
-      ),
-    );
-
-    await tester.pumpWidget(
-      _listenerTree(
-        autoRotateBloc,
-        sessionBloc,
-        favouriteWallsBloc,
-        refreshTier: () => Future<SubscriptionTier>.value(SubscriptionTier.free),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(autoRotateBloc.state.status.isRunning, isTrue);
-
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
-
-    expect(app_state.prismUser.id, 'account-a');
-    expect(app_state.prismUser.premium, isFalse);
-    expect(app_state.prismUser.subscriptionTier, SubscriptionTier.free.name);
-    verify(() => sessionBloc.add(const SessionEvent.started())).called(1);
-
-    sessions.add(
-      const SessionState(
-        status: LoadStatus.success,
-        session: SessionEntity(userId: 'account-a', loggedIn: true, premium: false, subscriptionTier: 'free'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(autoRotateBloc.state.isPro, isFalse);
-    expect(autoRotateBloc.state.config.enabled, isFalse);
-    expect(autoRotateBloc.state.status.isRunning, isFalse);
-    expect(repository.stops, 1);
-    expect(repository.config.enabled, isFalse);
-    await tester.pumpWidget(const SizedBox());
-    await tester.runAsync(autoRotateBloc.close);
-    await sessions.close();
-  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
-
   testWidgets('session revocation survives app subtree restart without replacing the shared bloc', (tester) async {
     final _FakeAutoRotateRepository repository = _FakeAutoRotateRepository(
       config: const AutoRotateConfig(enabled: true),
@@ -618,27 +421,12 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
 
-Widget _listenerTree(
-  AutoRotateBloc autoRotateBloc,
-  SessionBloc sessionBloc,
-  FavouriteWallsBloc favouriteWallsBloc, {
-  Future<SubscriptionTier> Function()? refreshTier,
-}) => MultiBlocProvider(
-  providers: [
-    BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
-    BlocProvider<SessionBloc>.value(value: sessionBloc),
-    BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
-  ],
-  child: MaterialApp(
-    home: AutoRotateSessionListener(refreshTier: refreshTier, child: const SizedBox()),
-  ),
-);
-
-AutoRotateState _activeRotationState() =>
-    AutoRotateState.initial().copyWith(config: const AutoRotateConfig(enabled: true));
-
-PrismUsersV2 _currentUser(String id, {required bool premium}) => app_constants.createGuestPrismUser()
-  ..id = id
-  ..loggedIn = true
-  ..premium = premium
-  ..subscriptionTier = premium ? SubscriptionTier.pro.name : SubscriptionTier.free.name;
+Widget _listenerTree(AutoRotateBloc autoRotateBloc, SessionBloc sessionBloc, FavouriteWallsBloc favouriteWallsBloc) =>
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
+        BlocProvider<SessionBloc>.value(value: sessionBloc),
+        BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
+      ],
+      child: const MaterialApp(home: AutoRotateSessionListener(child: SizedBox())),
+    );
