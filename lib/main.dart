@@ -141,7 +141,7 @@ Future<void> main() async {
           );
         }),
       );
-      Bloc.observer = const BlocDebugObserver();
+      if (kDebugMode) Bloc.observer = const BlocDebugObserver();
       localNotification = LocalNotification();
 
       PlatformDispatcher.instance.onError = (Object error, StackTrace stackTrace) {
@@ -669,7 +669,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           ),
         );
       case SetupLinkIntent():
-        _appRouter.push(ShareSetupViewRoute(setupName: action.setupName, thumbnailUrl: action.thumbnailUrl));
+        _appRouter.push(ShareSetupViewRoute(setupName: action.setupName));
         unawaited(
           analytics.track(
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),

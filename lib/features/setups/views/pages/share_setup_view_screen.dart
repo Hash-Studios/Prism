@@ -10,10 +10,9 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class ShareSetupViewScreen extends StatefulWidget {
-  const ShareSetupViewScreen({super.key, @PathParam('setupName') required this.setupName, this.thumbnailUrl = ''});
+  const ShareSetupViewScreen({super.key, @PathParam('setupName') required this.setupName});
 
   final String setupName;
-  final String thumbnailUrl;
 
   @override
   State<ShareSetupViewScreen> createState() => _ShareSetupViewScreenState();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/logger/logger.dart';
@@ -27,15 +28,13 @@ class ShortLinkResolver {
     : _client = client ?? http.Client(),
       _parser = parser;
 
-  static const String apiBase = 'https://prismwalls.com/api/links';
-
   final http.Client _client;
   final DeepLinkParser _parser;
 
   Future<ShortLinkResult> resolve(String code) async {
     try {
       final response = await _client
-          .get(Uri.parse('$apiBase/$code'), headers: const <String, String>{'Accept': 'application/json'})
+          .get(Uri.parse('$shortLinkApiUrl/$code'), headers: const <String, String>{'Accept': 'application/json'})
           .timeout(const Duration(seconds: 6));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
