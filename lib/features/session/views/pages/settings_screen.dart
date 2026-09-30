@@ -606,7 +606,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           leading: const Icon(JamIcons.instant_picture_f),
           title: Text('Buy Premium', style: _titleStyle),
-          subtitle: const Text('Get unlimited setups and filters.', style: _subtitleStyle),
+          subtitle: const Text('Get unlimited uploads and filters.', style: _subtitleStyle),
           trailing: const Icon(Icons.chevron_right_rounded),
           onTap: () {
             _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);

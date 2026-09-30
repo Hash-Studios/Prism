@@ -40,7 +40,7 @@ class DeepLinkNavigation {
       case UserLinkIntent():
         return ProfileRoute(profileIdentifier: action.profileIdentifier);
       case SetupLinkIntent():
-        return ShareSetupViewRoute(setupName: action.setupName);
+        return const HomeTabRoute();
       case ReferLinkIntent():
         return null;
       case ShortCodeIntent():

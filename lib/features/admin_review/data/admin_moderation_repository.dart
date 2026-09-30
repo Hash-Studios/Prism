@@ -17,10 +17,6 @@ class AdminModerationRepository {
     return _watchPending(FirebaseCollections.walls, 'admin_review.pending_walls', 'createdAt');
   }
 
-  Stream<List<FirestoreDocument>> watchPendingSetups() {
-    return _watchPending(FirebaseCollections.setups, 'admin_review.pending_setups', 'created_at');
-  }
-
   Stream<List<FirestoreDocument>> watchOpenContentReports() {
     return _client.watchQuery<FirestoreDocument>(
       const FirestoreQuerySpec(
@@ -125,37 +121,6 @@ class AdminModerationRepository {
       'collections': wall.collections,
       if (wall.payload['createdAt'] != null) 'createdAt': wall.payload['createdAt'],
     }, sourceTag: 'admin_review.undo_approve_wall');
-  }
-
-  Future<void> approveSetup(FirestoreDocument setup) {
-    final Map<String, dynamic>? notification = _notification(
-      email: setup.email,
-      title: 'Setup Approved',
-      body: 'Your setup has been approved and is now live.',
-      imageUrl: setup.image,
-    );
-    return _client.runBatch((FirestoreBatch batch) async {
-      batch.updateDoc(FirebaseCollections.setups, setup.id, <String, dynamic>{
-        'review': true,
-        'reviewedAt': DateTime.now().toUtc(),
-        'created_at': DateTime.now().toUtc(),
-      });
-      if (notification != null) {
-        batch.addDoc(FirebaseCollections.notifications, notification);
-      }
-    }, sourceTag: 'admin_review.approve_setup');
-  }
-
-  Future<void> rejectSetup(FirestoreDocument setup, {required String reason}) {
-    return _reject(
-      setup,
-      reason: reason,
-      liveCollection: FirebaseCollections.setups,
-      rejectedCollection: FirebaseCollections.rejectedSetups,
-      title: 'Setup Rejected',
-      imageUrl: setup.image,
-      sourceTag: 'admin_review.reject_setup',
-    );
   }
 
   Future<void> _reject(

@@ -18,26 +18,12 @@ class FavoritesLocalDataSource {
     return Set<String>.from(raw.cast<String>());
   }
 
-  Set<String> _setupSet(String scope) {
-    final raw = _store.get(PersistenceKeys.favoritesSetupSet(scope));
-    if (raw is! List) return <String>{};
-    return Set<String>.from(raw.cast<String>());
-  }
-
   Future<void> _saveWallSet(String scope, Set<String> ids) {
     return _store.set(PersistenceKeys.favoritesWallSet(scope), ids.toList(growable: false));
   }
 
-  Future<void> _saveSetupSet(String scope, Set<String> ids) {
-    return _store.set(PersistenceKeys.favoritesSetupSet(scope), ids.toList(growable: false));
-  }
-
   bool isWallFavourite(String userId, String itemId) {
     return _wallSet(_scope(userId)).contains(itemId);
-  }
-
-  bool isSetupFavourite(String userId, String itemId) {
-    return _setupSet(_scope(userId)).contains(itemId);
   }
 
   Future<void> setWallFavourite(String userId, String itemId, bool value) async {
@@ -53,21 +39,6 @@ class FavoritesLocalDataSource {
 
   Future<void> replaceWallFavourites(String userId, Iterable<String> itemIds) {
     return _saveWallSet(_scope(userId), itemIds.where((id) => id.isNotEmpty).toSet());
-  }
-
-  Future<void> setSetupFavourite(String userId, String itemId, bool value) async {
-    final scope = _scope(userId);
-    final ids = _setupSet(scope);
-    if (value) {
-      ids.add(itemId);
-    } else {
-      ids.remove(itemId);
-    }
-    await _saveSetupSet(scope, ids);
-  }
-
-  Future<void> replaceSetupFavourites(String userId, Iterable<String> itemIds) {
-    return _saveSetupSet(_scope(userId), itemIds.where((id) => id.isNotEmpty).toSet());
   }
 
   Future<void> setSeeded(String userId, bool value) async {

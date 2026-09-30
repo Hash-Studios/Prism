@@ -38,14 +38,6 @@ import '../../features/category_feed/domain/repositories/category_feed_repositor
     as _i563;
 import '../../features/category_feed/domain/usecases/category_feed_usecases.dart'
     as _i301;
-import '../../features/favourite_setups/biz/bloc/favourite_setups_bloc.j.dart'
-    as _i704;
-import '../../features/favourite_setups/data/repositories/favourite_setups_repository_impl.dart'
-    as _i934;
-import '../../features/favourite_setups/domain/repositories/favourite_setups_repository.dart'
-    as _i841;
-import '../../features/favourite_setups/domain/usecases/favourite_setups_usecases.dart'
-    as _i340;
 import '../../features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart'
     as _i782;
 import '../../features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart'
@@ -110,12 +102,6 @@ import '../../features/session/data/repositories/session_repository_impl.dart'
 import '../../features/session/domain/repositories/session_repository.dart'
     as _i738;
 import '../../features/session/domain/usecases/session_usecases.dart' as _i986;
-import '../../features/setups/biz/bloc/setups_bloc.j.dart' as _i318;
-import '../../features/setups/data/repositories/setups_repository_impl.dart'
-    as _i415;
-import '../../features/setups/domain/repositories/setups_repository.dart'
-    as _i411;
-import '../../features/setups/domain/usecases/setups_usecases.dart' as _i247;
 import '../../features/startup/biz/bloc/startup_bloc.j.dart' as _i313;
 import '../../features/startup/data/repositories/startup_repository_impl.dart'
     as _i152;
@@ -291,12 +277,6 @@ _i174.GetIt initGetIt(
     () =>
         _i406.ClearFavouriteWallsUseCase(gh<_i643.FavouriteWallsRepository>()),
   );
-  gh.lazySingleton<_i841.FavouriteSetupsRepository>(
-    () => _i934.FavouriteSetupsRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i640.FavoritesLocalDataSource>(),
-    ),
-  );
   gh.lazySingleton<_i577.WallpaperSearchService>(
     () => _i577.WallpaperSearchService(
       gh<_i604.WallhavenWallpaperRepository>(),
@@ -353,16 +333,6 @@ _i174.GetIt initGetIt(
       gh<_i1073.SettingsLocalDataSource>(),
     ),
   );
-  gh.lazySingleton<_i340.FetchFavouriteSetupsUseCase>(
-    () => _i340.FetchFavouriteSetupsUseCase(
-      gh<_i841.FavouriteSetupsRepository>(),
-    ),
-  );
-  gh.lazySingleton<_i340.ToggleFavouriteSetupUseCase>(
-    () => _i340.ToggleFavouriteSetupUseCase(
-      gh<_i841.FavouriteSetupsRepository>(),
-    ),
-  );
   gh.lazySingleton<_i25.AdminModerationRepository>(
     () => _i25.AdminModerationRepository(gh<_i349.FirestoreClient>()),
   );
@@ -407,12 +377,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i474.DeleteNotificationsByIdsUseCase>(
     () => _i474.DeleteNotificationsByIdsUseCase(
       gh<_i366.NotificationsRepository>(),
-    ),
-  );
-  gh.factory<_i704.FavouriteSetupsBloc>(
-    () => _i704.FavouriteSetupsBloc(
-      gh<_i340.FetchFavouriteSetupsUseCase>(),
-      gh<_i340.ToggleFavouriteSetupUseCase>(),
     ),
   );
   gh.factory<_i711.ReviewBatchBloc>(
@@ -466,13 +430,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i95.SaveInterestsUseCase>(
     () => _i95.SaveInterestsUseCase(gh<_i897.OnboardingV2Repository>()),
-  );
-  gh.lazySingleton<_i411.SetupsRepository>(
-    () => _i415.SetupsRepositoryImpl(
-      gh<_i349.FirestoreClient>(),
-      gh<_i954.FeedCacheLocalDataSource>(),
-      gh<_i112.UserBlockRepository>(),
-    ),
   );
   gh.lazySingleton<_i563.CategoryFeedRepository>(
     () => _i307.CategoryFeedRepositoryImpl(
@@ -535,12 +492,6 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
     ),
   );
-  gh.lazySingleton<_i247.FetchSetupsUseCase>(
-    () => _i247.FetchSetupsUseCase(gh<_i411.SetupsRepository>()),
-  );
-  gh.lazySingleton<_i247.FetchSetupByNameUseCase>(
-    () => _i247.FetchSetupByNameUseCase(gh<_i411.SetupsRepository>()),
-  );
   gh.lazySingleton<_i502.FirstWallpaperService>(
     () => _i502.FirstWallpaperService(
       gh<_i563.CategoryFeedRepository>(),
@@ -583,12 +534,6 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i398.FetchWallOfTheDayUseCase>(
     () => _i398.FetchWallOfTheDayUseCase(gh<_i489.WallOfTheDayRepository>()),
-  );
-  gh.factory<_i318.SetupsBloc>(
-    () => _i318.SetupsBloc(
-      gh<_i247.FetchSetupsUseCase>(),
-      gh<_i112.UserBlockRepository>(),
-    ),
   );
   gh.factory<_i872.PersonalizedFeedBloc>(
     () => _i872.PersonalizedFeedBloc(

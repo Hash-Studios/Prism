@@ -42,10 +42,6 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   }
 
   @override
-  Stream<List<FirestoreDocument>> watchPendingSetups() =>
-      Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
-
-  @override
   Stream<List<FirestoreDocument>> watchOpenContentReports() =>
       reportsStream ?? Stream<List<FirestoreDocument>>.value(const <FirestoreDocument>[]);
 
@@ -130,8 +126,6 @@ void main() {
     addTearDown(reports.close);
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..reportsStream = reports.stream;
     await tester.pumpWidget(MaterialApp(home: AdminReviewScreen(repository: repository)));
-    await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
-    await tester.pump(const Duration(milliseconds: 600));
     await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
     await tester.pump(const Duration(milliseconds: 600));
     reports.add(const <FirestoreDocument>[

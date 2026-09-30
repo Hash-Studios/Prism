@@ -41,12 +41,10 @@ import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/category_feed.dart';
-import 'package:Prism/features/favourite_setups/favourite_setups.dart';
 import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
-import 'package:Prism/features/setups/setups.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
@@ -253,8 +251,6 @@ Future<void> main() async {
                 BlocProvider<WallpaperDetailBloc>(create: (_) => getIt<WallpaperDetailBloc>()),
                 BlocProvider<CategoryFeedBloc>(create: (_) => getIt<CategoryFeedBloc>()),
                 BlocProvider<FavouriteWallsBloc>(create: (_) => getIt<FavouriteWallsBloc>()),
-                BlocProvider<FavouriteSetupsBloc>(create: (_) => getIt<FavouriteSetupsBloc>()),
-                BlocProvider<SetupsBloc>(create: (_) => getIt<SetupsBloc>()),
                 BlocProvider<SessionBloc>(create: (_) => getIt<SessionBloc>()..add(const SessionEvent.started())),
                 BlocProvider<StartupBloc>(
                   create: (_) =>
@@ -663,7 +659,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
           ),
         );
       case SetupLinkIntent():
-        _appRouter.push(ShareSetupViewRoute(setupName: action.setupName));
+        // Setups were removed; old shared setup links open Home.
+        _appRouter.navigate(const HomeTabRoute());
+        toasts.error('Home screen setups are no longer available.');
         unawaited(
           analytics.track(
             const DeepLinkNavigationResultEvent(targetType: TargetTypeValue.setup, result: EventResultValue.navigated),

@@ -14,6 +14,13 @@ void main() {
     expect(route, isA<ProfileRoute>());
   });
 
+  test('maps a legacy setup link to the home tab', () async {
+    const DeepLinkNavigation navigation = DeepLinkNavigation();
+    final route = await navigation.mapUriToRoute(Uri.parse('https://prismwalls.com/setup/minimal-desk'));
+
+    expect(route, isA<HomeTabRoute>());
+  });
+
   test('resolves /l short code and maps to share wallpaper route', () async {
     final http.Client client = MockClient((request) async {
       if (request.url.toString() == 'https://prismwalls.com/api/links/u5lmmUq0') {
