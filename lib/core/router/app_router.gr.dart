@@ -390,22 +390,6 @@ class DownloadWallpaperRouteArgs {
 }
 
 /// generated route for
-/// [DraftSetupScreen]
-class DraftSetupRoute extends PageRouteInfo<void> {
-  const DraftSetupRoute({List<PageRouteInfo>? children})
-    : super(DraftSetupRoute.name, initialChildren: children);
-
-  static const String name = 'DraftSetupRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return DraftSetupScreen();
-    },
-  );
-}
-
-/// generated route for
 /// [EditProfilePanel]
 class EditProfilePanelRoute extends PageRouteInfo<void> {
   const EditProfilePanelRoute({List<PageRouteInfo>? children})
@@ -419,53 +403,6 @@ class EditProfilePanelRoute extends PageRouteInfo<void> {
       return const EditProfilePanel();
     },
   );
-}
-
-/// generated route for
-/// [EditSetupReviewScreen]
-class EditSetupReviewRoute extends PageRouteInfo<EditSetupReviewRouteArgs> {
-  EditSetupReviewRoute({
-    Key? key,
-    required FirestoreDocument setupDoc,
-    List<PageRouteInfo>? children,
-  }) : super(
-         EditSetupReviewRoute.name,
-         args: EditSetupReviewRouteArgs(key: key, setupDoc: setupDoc),
-         initialChildren: children,
-       );
-
-  static const String name = 'EditSetupReviewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<EditSetupReviewRouteArgs>();
-      return EditSetupReviewScreen(key: args.key, setupDoc: args.setupDoc);
-    },
-  );
-}
-
-class EditSetupReviewRouteArgs {
-  const EditSetupReviewRouteArgs({this.key, required this.setupDoc});
-
-  final Key? key;
-
-  final FirestoreDocument setupDoc;
-
-  @override
-  String toString() {
-    return 'EditSetupReviewRouteArgs{key: $key, setupDoc: $setupDoc}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! EditSetupReviewRouteArgs) return false;
-    return key == other.key && setupDoc == other.setupDoc;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ setupDoc.hashCode;
 }
 
 /// generated route for
@@ -510,69 +447,6 @@ class EditWallRouteArgs {
 
   @override
   int get hashCode => key.hashCode ^ image.hashCode;
-}
-
-/// generated route for
-/// [FavSetupViewScreen]
-class FavSetupViewRoute extends PageRouteInfo<FavSetupViewRouteArgs> {
-  FavSetupViewRoute({
-    Key? key,
-    required int setupIndex,
-    List<PageRouteInfo>? children,
-  }) : super(
-         FavSetupViewRoute.name,
-         args: FavSetupViewRouteArgs(key: key, setupIndex: setupIndex),
-         initialChildren: children,
-       );
-
-  static const String name = 'FavSetupViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<FavSetupViewRouteArgs>();
-      return FavSetupViewScreen(key: args.key, setupIndex: args.setupIndex);
-    },
-  );
-}
-
-class FavSetupViewRouteArgs {
-  const FavSetupViewRouteArgs({this.key, required this.setupIndex});
-
-  final Key? key;
-
-  final int setupIndex;
-
-  @override
-  String toString() {
-    return 'FavSetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! FavSetupViewRouteArgs) return false;
-    return key == other.key && setupIndex == other.setupIndex;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ setupIndex.hashCode;
-}
-
-/// generated route for
-/// [FavouriteSetupScreen]
-class FavouriteSetupRoute extends PageRouteInfo<void> {
-  const FavouriteSetupRoute({List<PageRouteInfo>? children})
-    : super(FavouriteSetupRoute.name, initialChildren: children);
-
-  static const String name = 'FavouriteSetupRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const FavouriteSetupScreen();
-    },
-  );
 }
 
 /// generated route for
@@ -906,101 +780,6 @@ class SettingsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [SetupGuidelinesScreen]
-class SetupGuidelinesRoute extends PageRouteInfo<void> {
-  const SetupGuidelinesRoute({List<PageRouteInfo>? children})
-    : super(SetupGuidelinesRoute.name, initialChildren: children);
-
-  static const String name = 'SetupGuidelinesRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return SetupGuidelinesScreen();
-    },
-  );
-}
-
-/// generated route for
-/// [SetupScreen]
-class SetupRoute extends PageRouteInfo<void> {
-  const SetupRoute({List<PageRouteInfo>? children})
-    : super(SetupRoute.name, initialChildren: children);
-
-  static const String name = 'SetupRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const SetupScreen();
-    },
-  );
-}
-
-/// generated route for
-/// [SetupViewScreen]
-class SetupViewRoute extends PageRouteInfo<SetupViewRouteArgs> {
-  SetupViewRoute({
-    Key? key,
-    required int setupIndex,
-    List<PageRouteInfo>? children,
-  }) : super(
-         SetupViewRoute.name,
-         args: SetupViewRouteArgs(key: key, setupIndex: setupIndex),
-         initialChildren: children,
-       );
-
-  static const String name = 'SetupViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<SetupViewRouteArgs>();
-      return SetupViewScreen(key: args.key, setupIndex: args.setupIndex);
-    },
-  );
-}
-
-class SetupViewRouteArgs {
-  const SetupViewRouteArgs({this.key, required this.setupIndex});
-
-  final Key? key;
-
-  final int setupIndex;
-
-  @override
-  String toString() {
-    return 'SetupViewRouteArgs{key: $key, setupIndex: $setupIndex}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! SetupViewRouteArgs) return false;
-    return key == other.key && setupIndex == other.setupIndex;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ setupIndex.hashCode;
-}
-
-/// generated route for
-/// [SetupsTabPage]
-class SetupsTabRoute extends PageRouteInfo<void> {
-  const SetupsTabRoute({List<PageRouteInfo>? children})
-    : super(SetupsTabRoute.name, initialChildren: children);
-
-  static const String name = 'SetupsTabRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      return const SetupsTabPage();
-    },
-  );
-}
-
-/// generated route for
 /// [SharePrismScreen]
 class SharePrismRoute extends PageRouteInfo<void> {
   const SharePrismRoute({List<PageRouteInfo>? children})
@@ -1014,59 +793,6 @@ class SharePrismRoute extends PageRouteInfo<void> {
       return SharePrismScreen();
     },
   );
-}
-
-/// generated route for
-/// [ShareSetupViewScreen]
-class ShareSetupViewRoute extends PageRouteInfo<ShareSetupViewRouteArgs> {
-  ShareSetupViewRoute({
-    Key? key,
-    required String setupName,
-    List<PageRouteInfo>? children,
-  }) : super(
-         ShareSetupViewRoute.name,
-         args: ShareSetupViewRouteArgs(key: key, setupName: setupName),
-         rawPathParams: {'setupName': setupName},
-         initialChildren: children,
-       );
-
-  static const String name = 'ShareSetupViewRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final pathParams = data.inheritedPathParams;
-      final args = data.argsAs<ShareSetupViewRouteArgs>(
-        orElse: () => ShareSetupViewRouteArgs(
-          setupName: pathParams.getString('setupName'),
-        ),
-      );
-      return ShareSetupViewScreen(key: args.key, setupName: args.setupName);
-    },
-  );
-}
-
-class ShareSetupViewRouteArgs {
-  const ShareSetupViewRouteArgs({this.key, required this.setupName});
-
-  final Key? key;
-
-  final String setupName;
-
-  @override
-  String toString() {
-    return 'ShareSetupViewRouteArgs{key: $key, setupName: $setupName}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! ShareSetupViewRouteArgs) return false;
-    return key == other.key && setupName == other.setupName;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ setupName.hashCode;
 }
 
 /// generated route for
@@ -1150,59 +876,11 @@ class ThemeViewRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [UploadSetupScreen]
-class UploadSetupRoute extends PageRouteInfo<UploadSetupRouteArgs> {
-  UploadSetupRoute({
-    Key? key,
-    required File image,
-    List<PageRouteInfo>? children,
-  }) : super(
-         UploadSetupRoute.name,
-         args: UploadSetupRouteArgs(key: key, image: image),
-         initialChildren: children,
-       );
-
-  static const String name = 'UploadSetupRoute';
-
-  static PageInfo page = PageInfo(
-    name,
-    builder: (data) {
-      final args = data.argsAs<UploadSetupRouteArgs>();
-      return UploadSetupScreen(key: args.key, image: args.image);
-    },
-  );
-}
-
-class UploadSetupRouteArgs {
-  const UploadSetupRouteArgs({this.key, required this.image});
-
-  final Key? key;
-
-  final File image;
-
-  @override
-  String toString() {
-    return 'UploadSetupRouteArgs{key: $key, image: $image}';
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! UploadSetupRouteArgs) return false;
-    return key == other.key && image == other.image;
-  }
-
-  @override
-  int get hashCode => key.hashCode ^ image.hashCode;
-}
-
-/// generated route for
 /// [UploadWallScreen]
 class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
   UploadWallRoute({
     Key? key,
     required File image,
-    required bool fromSetupRoute,
     Future<void> Function()? prepareImageForTesting,
     Future<GitHubContent> Function({required bool isThumbnail})?
     uploadFileForTesting,
@@ -1215,7 +893,6 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
          args: UploadWallRouteArgs(
            key: key,
            image: image,
-           fromSetupRoute: fromSetupRoute,
            prepareImageForTesting: prepareImageForTesting,
            uploadFileForTesting: uploadFileForTesting,
            deleteFileForTesting: deleteFileForTesting,
@@ -1233,7 +910,6 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
       return UploadWallScreen(
         key: args.key,
         image: args.image,
-        fromSetupRoute: args.fromSetupRoute,
         prepareImageForTesting: args.prepareImageForTesting,
         uploadFileForTesting: args.uploadFileForTesting,
         deleteFileForTesting: args.deleteFileForTesting,
@@ -1247,7 +923,6 @@ class UploadWallRouteArgs {
   const UploadWallRouteArgs({
     this.key,
     required this.image,
-    required this.fromSetupRoute,
     this.prepareImageForTesting,
     this.uploadFileForTesting,
     this.deleteFileForTesting,
@@ -1257,8 +932,6 @@ class UploadWallRouteArgs {
   final Key? key;
 
   final File image;
-
-  final bool fromSetupRoute;
 
   final Future<void> Function()? prepareImageForTesting;
 
@@ -1272,20 +945,18 @@ class UploadWallRouteArgs {
 
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, fromSetupRoute: $fromSetupRoute, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! UploadWallRouteArgs) return false;
-    return key == other.key &&
-        image == other.image &&
-        fromSetupRoute == other.fromSetupRoute;
+    return key == other.key && image == other.image;
   }
 
   @override
-  int get hashCode => key.hashCode ^ image.hashCode ^ fromSetupRoute.hashCode;
+  int get hashCode => key.hashCode ^ image.hashCode;
 }
 
 /// generated route for

@@ -99,7 +99,6 @@ enum AnalyticsActionValue {
   editProfileTapped,
   openDrawerTapped,
   drawerFavWallsTapped,
-  drawerFavSetupsTapped,
   drawerDownloadsTapped,
   drawerSharePrismTapped,
   drawerLogoutTapped,
@@ -231,7 +230,6 @@ enum DeepLinkSourceValue {
 enum ShareTypeValue {
   wallpaper,
   user,
-  setup,
   refer;
 
   String get wireValue => _snakeCase(name);
@@ -240,7 +238,6 @@ enum ShareTypeValue {
 enum AnalyticsSurfaceValue {
   wallpaperScreen,
   shareWallpaperView,
-  shareSetupViewScreen,
   searchWallpaperScreen,
   favouriteWallpaperView,
   profileWallpaperView,
@@ -256,8 +253,7 @@ enum AnalyticsSurfaceValue {
   homePexelsGrid,
   homeColorGrid,
   homeCollectionsViewGrid,
-  favouriteWallsGrid,
-  favouriteSetupsGrid;
+  favouriteWallsGrid;
 
   String get wireValue => _snakeCase(name);
 }
@@ -268,8 +264,7 @@ enum ScrollListNameValue {
   pexelsGrid,
   colorGrid,
   collectionsViewGrid,
-  favouriteWallsGrid,
-  favouriteSetupsGrid;
+  favouriteWallsGrid;
 
   String get wireValue => _snakeCase(name);
 }

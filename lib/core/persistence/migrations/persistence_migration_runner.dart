@@ -45,30 +45,8 @@ class PersistenceMigrationRunner {
       }
     }
 
-    // 2. Consolidate setup favorites: favorites.setups.<scope>.<itemId> → set key
-    final setupKeys = allKeys.where((k) => k.startsWith(PersistenceKeys.favoritesSetupPrefix)).toList();
-    final setupsByScope = <String, Set<String>>{};
-    for (final key in setupKeys) {
-      if (key.contains('__set.')) continue;
-      final withoutPrefix = key.substring(PersistenceKeys.favoritesSetupPrefix.length);
-      final dotIndex = withoutPrefix.indexOf('.');
-      if (dotIndex < 0) continue;
-      final scope = withoutPrefix.substring(0, dotIndex);
-      final itemId = withoutPrefix.substring(dotIndex + 1);
-      setupsByScope.putIfAbsent(scope, () => <String>{}).add(itemId);
-    }
-    for (final entry in setupsByScope.entries) {
-      final setKey = PersistenceKeys.favoritesSetupSet(entry.key);
-      final existing = store.get(setKey);
-      final existingSet = existing is List ? Set<String>.from(existing.cast<String>()) : <String>{};
-      existingSet.addAll(entry.value);
-      await store.set(setKey, existingSet.toList(growable: false));
-    }
-    for (final key in setupKeys) {
-      if (!key.contains('__set.')) {
-        await store.delete(key);
-      }
-    }
+    // 2. Drop setup favorites. Setups were removed from the app.
+    await store.clearPrefix(PersistenceKeys.favoritesSetupPrefix);
 
     // 3. Remove stale large-payload keys from SharedPreferences.
     //    These now live in JSON files via LazyFileCache.
