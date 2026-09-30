@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { seoRouteOrder } from "@/lib/seo-pages";
 import { SITE_URL } from "@/lib/site-config";
 
 export const dynamic = "force-static";
 
-const routes = ["/", "/4k-wallpapers", "/amoled-wallpapers", "/home-screen-setups", "/collections"];
+const routes = ["/", ...seoRouteOrder.map((slug) => `/${slug}`)];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

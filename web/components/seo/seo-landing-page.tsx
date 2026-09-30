@@ -4,7 +4,7 @@ import { Header } from "@/components/sections/header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { seoRouteContent, seoRouteOrder, type SeoRouteContent } from "@/lib/seo-pages";
-import { APP_NAME, PLAY_STORE_URL, TESTFLIGHT_COMING_SOON } from "@/lib/site-config";
+import { APP_NAME, PLAY_STORE_URL } from "@/lib/site-config";
 
 type SeoLandingPageProps = {
   content: SeoRouteContent;
@@ -32,11 +32,6 @@ export function SeoLandingPage({ content }: SeoLandingPageProps) {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href={PLAY_STORE_URL}>Get it on Google Play</Button>
-              {TESTFLIGHT_COMING_SOON ? (
-                <Button href="/#future" variant="secondary">
-                  iPhone coming soon
-                </Button>
-              ) : null}
             </div>
           </div>
         </section>

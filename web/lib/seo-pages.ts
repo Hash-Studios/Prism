@@ -1,4 +1,5 @@
-import { APP_NAME } from "@/lib/site-config";
+import type { Metadata } from "next";
+import { APP_NAME, SITE_URL } from "@/lib/site-config";
 
 export type SeoRouteContent = {
   slug: "4k-wallpapers" | "amoled-wallpapers" | "home-screen-setups" | "collections";
@@ -93,3 +94,20 @@ export const seoRouteOrder: SeoRouteContent["slug"][] = [
   "home-screen-setups",
   "collections",
 ];
+
+export function seoMetadata(slug: SeoRouteContent["slug"], image: string): Metadata {
+  const { title, description } = seoRouteContent[slug];
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/${slug}` },
+    openGraph: {
+      url: `${SITE_URL}/${slug}`,
+      title,
+      description,
+      images: [{ url: image, width: 390, height: 844 }],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
+  };
+}
