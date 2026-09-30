@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
+import 'package:Prism/features/debug_panel/views/widgets/debug_widgets.dart';
 import 'package:Prism/logger/app_logger.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart' show ShareParams, SharePlus;
 
 class LogViewerPage extends StatefulWidget {
@@ -98,19 +98,7 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
         // Search bar
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: TextField(
-            controller: _searchCtrl,
-            decoration: InputDecoration(
-              hintText: 'Search logs...',
-              prefixIcon: const Icon(Icons.search, size: 18),
-              suffixIcon: _searchCtrl.text.isNotEmpty
-                  ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => _searchCtrl.clear())
-                  : null,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
+          child: DebugSearchField(controller: _searchCtrl, hintText: 'Search logs...'),
         ),
         // Level chips
         SizedBox(
@@ -125,8 +113,8 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
                   child: FilterChip(
                     label: Text(level.shortLabel, style: const TextStyle(fontSize: 11)),
                     selected: _selectedLevels.contains(level),
-                    selectedColor: _levelColor(level).withValues(alpha: 0.3),
-                    checkmarkColor: _levelColor(level),
+                    selectedColor: level.color.withValues(alpha: 0.3),
+                    checkmarkColor: level.color,
                     onSelected: (v) {
                       setState(() {
                         if (v) {
@@ -180,12 +168,12 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
               IconButton(
                 tooltip: 'Copy all (filtered)',
                 icon: const Icon(Icons.copy, size: 18),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: _formatAll(filtered)));
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Copied to clipboard'), duration: Duration(seconds: 2)));
-                },
+                onPressed: () => copyToClipboard(
+                  context,
+                  _formatAll(filtered),
+                  label: 'Copied to clipboard',
+                  duration: const Duration(seconds: 2),
+                ),
               ),
               IconButton(
                 tooltip: 'Export as file',
@@ -225,45 +213,11 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
       ],
     );
   }
-
-  Color _levelColor(AppLogLevel level) {
-    switch (level) {
-      case AppLogLevel.trace:
-        return Colors.grey;
-      case AppLogLevel.debug:
-        return Colors.blueGrey;
-      case AppLogLevel.info:
-        return Colors.green;
-      case AppLogLevel.warn:
-        return Colors.orange;
-      case AppLogLevel.error:
-        return Colors.red;
-      case AppLogLevel.fatal:
-        return Colors.purple;
-    }
-  }
 }
 
 class _LogEntryTile extends StatelessWidget {
   const _LogEntryTile({required this.record});
   final AppLogRecord record;
-
-  static Color _levelColor(AppLogLevel level) {
-    switch (level) {
-      case AppLogLevel.trace:
-        return Colors.grey;
-      case AppLogLevel.debug:
-        return Colors.blueGrey;
-      case AppLogLevel.info:
-        return Colors.green;
-      case AppLogLevel.warn:
-        return Colors.orange;
-      case AppLogLevel.error:
-        return Colors.red;
-      case AppLogLevel.fatal:
-        return Colors.purple;
-    }
-  }
 
   String get _timeStr {
     final t = record.timestamp;
@@ -275,7 +229,7 @@ class _LogEntryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _levelColor(record.level);
+    final color = record.level.color;
     final hasDetail = record.error != null || record.stackTrace != null || record.fields.isNotEmpty;
 
     return InkWell(
@@ -377,9 +331,11 @@ class _LogDetailSheet extends StatelessWidget {
                     if (errorStr.isNotEmpty) buf.writeln('\nError:\n$errorStr');
                     if (stackTraceStr.isNotEmpty) buf.writeln('\nStackTrace:\n$stackTraceStr');
                     if (record.fields.isNotEmpty) buf.writeln('\nFields: ${record.fields}');
-                    Clipboard.setData(ClipboardData(text: buf.toString()));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Copied to clipboard'), duration: Duration(seconds: 2)),
+                    copyToClipboard(
+                      context,
+                      buf.toString(),
+                      label: 'Copied to clipboard',
+                      duration: const Duration(seconds: 2),
                     );
                   },
                 ),
@@ -415,12 +371,7 @@ class _LogDetailSheet extends StatelessWidget {
                       TextButton.icon(
                         icon: const Icon(Icons.copy, size: 14),
                         label: const Text('Copy', style: TextStyle(fontSize: 12)),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: errorStr));
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(const SnackBar(content: Text('Error copied'), duration: Duration(seconds: 1)));
-                        },
+                        onPressed: () => copyToClipboard(context, errorStr, label: 'Error copied'),
                       ),
                     ],
                   ),
@@ -438,12 +389,7 @@ class _LogDetailSheet extends StatelessWidget {
                       TextButton.icon(
                         icon: const Icon(Icons.copy, size: 14),
                         label: const Text('Copy', style: TextStyle(fontSize: 12)),
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: stackTraceStr));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Stack trace copied'), duration: Duration(seconds: 1)),
-                          );
-                        },
+                        onPressed: () => copyToClipboard(context, stackTraceStr, label: 'Stack trace copied'),
                       ),
                     ],
                   ),
