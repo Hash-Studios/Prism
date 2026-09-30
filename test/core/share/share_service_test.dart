@@ -56,7 +56,7 @@ void main() {
         await ShareService.shareFile(file: file, text: 'wall link', context: shareContext);
 
         expect(calls, hasLength(1));
-        final Map<dynamic, dynamic> args = calls.single.arguments as Map<dynamic, dynamic>;
+        final Map<Object?, Object?> args = calls.single.arguments as Map<Object?, Object?>;
         expect(args['text'], 'wall link');
         expect(args['paths'], <String>[file.path]);
         expect(args['mimeTypes'], <String>['image/png']);
@@ -107,7 +107,7 @@ void main() {
 }
 
 Map<String, double> _origin(MethodCall call) {
-  final Map<dynamic, dynamic> args = call.arguments as Map<dynamic, dynamic>;
+  final Map<Object?, Object?> args = call.arguments as Map<Object?, Object?>;
   return <String, double>{
     'originX': (args['originX'] as num).toDouble(),
     'originY': (args['originY'] as num).toDouble(),
