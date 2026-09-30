@@ -14,13 +14,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 export 'package:Prism/core/utils/string_extensions.dart';
 
-bool updateChecked = false;
-bool updateAvailable = false;
-Map versionInfo = <String, dynamic>{};
-bool updateAlerted = false;
 bool hasNotch = false;
 double? notchSize;
-bool tooltipShown = false;
 
 String _runtimeAppVersion = app_constants.currentAppVersion;
 String _runtimeAppVersionCode = app_constants.currentAppVersionCode;

@@ -9,7 +9,7 @@ class WallpaperService {
     final normalizedSource = _normalizeSource(source);
     final filePath = await _resolveToLocalFile(normalizedSource);
     final request = aw.WallpaperRequest(
-      target: _mapTargetToLocation(target),
+      target: aw.WallpaperTarget.values.byName(target.name),
       sourceType: aw.WallpaperSourceType.file,
       source: filePath,
     );
@@ -26,9 +26,6 @@ class WallpaperService {
     if (source.contains('/0/')) {
       return source.replaceAll('/0//', '/0/');
     }
-    if (source.contains('com.hash.prism')) {
-      return source;
-    }
     return source;
   }
 
@@ -37,20 +34,6 @@ class WallpaperService {
       final file = await DefaultCacheManager().getSingleFile(source).timeout(const Duration(seconds: 30));
       return file.path;
     }
-    if (source.startsWith('/')) {
-      return source;
-    }
     return source;
-  }
-
-  static aw.WallpaperTarget _mapTargetToLocation(WallpaperTarget target) {
-    switch (target) {
-      case WallpaperTarget.home:
-        return aw.WallpaperTarget.home;
-      case WallpaperTarget.lock:
-        return aw.WallpaperTarget.lock;
-      case WallpaperTarget.both:
-        return aw.WallpaperTarget.both;
-    }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:Prism/logger/logger.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class AppSoundManager {
@@ -5,7 +6,7 @@ class AppSoundManager {
 
   static final AppSoundManager instance = AppSoundManager._();
 
-  static const String _onboardingSwooshAsset = 'sounds/onboarding_open_candidate_a.mp3';
+  static const String _onboardingSwooshAsset = 'sounds/onboarding_swoosh.mp3';
   static const double _onboardingSwooshVolume = 0.07;
 
   // Media-mode player for the onboarding fade: lowLatency does not
@@ -17,7 +18,9 @@ class AppSoundManager {
   Future<void> playOnboardingSwoosh({double volume = _onboardingSwooshVolume}) async {
     try {
       await _playWithFade(assetPath: _onboardingSwooshAsset, startVolume: volume);
-    } catch (_) {}
+    } catch (error, stackTrace) {
+      logger.w('Onboarding swoosh failed', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<void> dispose() async {
