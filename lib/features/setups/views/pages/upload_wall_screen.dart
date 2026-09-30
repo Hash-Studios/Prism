@@ -322,10 +322,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       });
       return;
     }
-    if (!mounted) return;
     _submitted = true;
     analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
-    if (_leaving) return;
+    if (!mounted || _leaving) return;
     final router = widget.fromSetupRoute ? null : context.router;
     Navigator.pop(context, UploadedWallpaper(url: wallpaperUrl!, id: id));
     if (router != null) unawaited(router.push(const ReviewRoute()));
