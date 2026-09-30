@@ -78,4 +78,33 @@ void main() {
     expect(bloc.state.items.map((e) => e.id), <String>['2']);
     verify(() => fetch(any())).called(1);
   });
+
+  test('refreshRequested refetches the selected category, and fetchMoreRequested pages it', () async {
+    final load = _MockLoadCategoriesUseCase();
+    final fetch = _MockFetchCategoryFeedUseCase();
+    when(() => load(any())).thenAnswer((_) async => Result.success(const <CategoryEntity>[_home]));
+    when(() => fetch(any())).thenAnswer((invocation) async {
+      final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
+      return Result.success(
+        CategoryFeedPage(
+          items: <FeedItemEntity>[_prismItem(params.refresh ? '1' : '2', authorEmail: 'kept@example.com')],
+          hasMore: params.refresh,
+        ),
+      );
+    });
+    final bloc = CategoryFeedBloc(load, fetch, FakeUserBlockRepository.pending());
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.started());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    bloc.add(const CategoryFeedEvent.refreshRequested());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    final calls = verify(() => fetch(captureAny())).captured.cast<FetchCategoryFeedParams>();
+    expect(calls.map((call) => call.refresh), <bool>[true, true, false]);
+    expect(bloc.state.items.map((e) => e.id), <String>['1', '2']);
+    expect(bloc.state.hasMore, isFalse);
+  });
 }
