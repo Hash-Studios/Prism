@@ -1177,6 +1177,12 @@ class CoinsService {
     return rawKey.trim().toLowerCase();
   }
 
+  /// Applies a balance the server returned outside the coin callables, such as a badge reward.
+  void applyServerBalance(int balance) {
+    if (!_canMutateCoins() || balance == app_state.prismUser.coins) return;
+    _applyLocalBalance(balance, delta: balance - app_state.prismUser.coins);
+  }
+
   void _applyLocalBalance(int newBalance, {required int delta}) {
     final int previous = app_state.prismUser.coins;
     app_state.prismUser.coins = newBalance;

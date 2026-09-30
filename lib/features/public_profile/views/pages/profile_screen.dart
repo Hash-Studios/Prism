@@ -15,6 +15,7 @@ import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/no_load_link_pop_up.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
@@ -72,6 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     following: app_state.prismUser.following,
     links: app_state.prismUser.links,
     coverPhoto: app_state.prismUser.coverPhoto ?? '',
+    badges: app_state.prismUser.badges.map((b) => b.id).toList(growable: false),
   );
 
   @override
@@ -500,6 +502,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                       ),
                                       const SizedBox(height: 2),
                                     ],
+                                    ProfileBadgeRow(badgeIds: _profile.badges),
                                     const SizedBox(height: 8),
                                     SizedBox(
                                       width: MediaQuery.of(context).size.width * 0.7,
