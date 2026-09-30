@@ -10,6 +10,7 @@ import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -77,7 +78,7 @@ class _RewardsPageState extends State<RewardsPage> {
                   const RewardsCollectionSection(),
                   const RewardsActivitySection(),
                   // Clear the floating bottom nav.
-                  const SizedBox(height: 120),
+                  SizedBox(height: 40 + MediaQuery.paddingOf(context).bottom + 80),
                 ],
               ),
             ),
@@ -119,10 +120,7 @@ class _Header extends StatelessWidget {
                 onPressed: () => context.router.maybePop(),
               ),
             Expanded(
-              child: Semantics(
-                header: true,
-                child: Text('Rewards', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
-              ),
+              child: Semantics(header: true, child: Text('Rewards', style: PrismTextStyles.screenTitle(context))),
             ),
             ValueListenableBuilder<int>(
               valueListenable: CoinsService.instance.balanceNotifier,
@@ -130,23 +128,19 @@ class _Header extends StatelessWidget {
                 label: '$balance Prism coins',
                 excludeSemantics: true,
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(9, 6, 14, 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: cs.outlineVariant),
+                    border: Border.all(color: cs.onSurface.withValues(alpha: 0.1)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       const PrismCoinIcon(size: 18),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 6),
                       Text(
                         '$balance',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-                        ),
+                        style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),

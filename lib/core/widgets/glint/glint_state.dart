@@ -1,5 +1,6 @@
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Which state a [GlintState] shows. It sets Glint's mood.
@@ -47,9 +48,6 @@ class GlintState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final TextTheme text = theme.textTheme;
-    final ColorScheme colors = theme.colorScheme;
     final String? bodyText = body;
     final bool hasAction = actionLabel != null && onAction != null;
 
@@ -63,18 +61,10 @@ class GlintState extends StatelessWidget {
             children: [
               Glint(mood: kind.mood, size: glintSize),
               const SizedBox(height: 16),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: text.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: colors.onSurface),
-              ),
+              Text(title, textAlign: TextAlign.center, style: PrismTextStyles.cardTitle(context)),
               if (bodyText != null) ...[
                 const SizedBox(height: 6),
-                Text(
-                  bodyText,
-                  textAlign: TextAlign.center,
-                  style: text.bodyMedium?.copyWith(color: colors.onSurface.withValues(alpha: 0.7)),
-                ),
+                Text(bodyText, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
               ],
               if (hasAction) ...[
                 const SizedBox(height: 16),

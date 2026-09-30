@@ -3,10 +3,12 @@ import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 const int _kActivityLimit = 30;
+const int _kActivityCollapsed = 8;
 
 /// "Activity": the latest coin transactions.
 class RewardsActivitySection extends StatefulWidget {
@@ -21,6 +23,7 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
   bool _failed = false;
   bool _inFlight = false;
   bool _reloadRequested = false;
+  bool _expanded = false;
   List<CoinTransactionEntry> _items = const <CoinTransactionEntry>[];
 
   @override
@@ -77,38 +80,48 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
     } else if (_failed) {
       body = Row(
         children: <Widget>[
-          Expanded(child: Text("Couldn't load activity.", style: theme.textTheme.bodyMedium)),
+          Expanded(child: Text("Couldn't load activity.", style: PrismTextStyles.body(context))),
           TextButton(onPressed: _load, child: const Text('Try again')),
         ],
       );
     } else if (_items.isEmpty) {
-      body = Text(
-        'No coin activity yet.',
-        style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6)),
-      );
+      body = Text('No coin activity yet.', style: PrismTextStyles.body(context));
     } else {
-      body = DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.4), width: 0.5),
-        ),
-        child: Column(
-          children: <Widget>[
-            for (int i = 0; i < _items.length; i++) ...<Widget>[
-              if (i > 0) Divider(height: 1, thickness: 0.5, color: scheme.outlineVariant.withValues(alpha: 0.4)),
-              _ActivityRow(entry: _items[i]),
-            ],
-          ],
-        ),
+      final int shown = _expanded ? _items.length : _items.length.clamp(0, _kActivityCollapsed);
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
+            ),
+            child: Column(
+              children: <Widget>[
+                for (int i = 0; i < shown; i++) ...<Widget>[
+                  if (i > 0) Divider(height: 1, thickness: 1, color: scheme.onSurface.withValues(alpha: 0.08)),
+                  _ActivityRow(entry: _items[i]),
+                ],
+              ],
+            ),
+          ),
+          if (_items.length > _kActivityCollapsed)
+            Center(
+              child: TextButton(
+                onPressed: () => setState(() => _expanded = !_expanded),
+                child: Text(_expanded ? 'Show less' : 'Show more', style: PrismTextStyles.rowTitle(context)),
+              ),
+            ),
+        ],
       );
     }
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(top: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text('Activity', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text('Activity', style: PrismTextStyles.sectionTitle(context)),
           const SizedBox(height: 12),
           body,
         ],
@@ -126,7 +139,7 @@ class _ActivityRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final Color amountColor = entry.isCredit ? scheme.tertiary : scheme.onSurface.withValues(alpha: 0.6);
+    final Color amountColor = entry.isCredit ? PrismColors.coinGain(context) : scheme.onSurface.withValues(alpha: 0.6);
     final String amount = entry.delta > 0 ? '+${entry.delta}' : '${entry.delta}';
     final String label = coinTransactionLabel(entry);
     final String date = _relativeDate(entry.createdAt);
@@ -142,28 +155,16 @@ class _ActivityRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                  ),
+                  Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
                   const SizedBox(height: 2),
-                  Text(
-                    date,
-                    style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurface.withValues(alpha: 0.6)),
-                  ),
+                  Text(date, style: PrismTextStyles.caption(context)),
                 ],
               ),
             ),
             const SizedBox(width: 10),
             Text(
               amount,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: amountColor,
-                fontWeight: FontWeight.w700,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
+              style: PrismTextStyles.rowTitle(context).copyWith(color: amountColor, fontWeight: FontWeight.w700),
             ),
           ],
         ),

@@ -47,13 +47,13 @@ class _HeroCard extends StatelessWidget {
         : status.claimedToday
         ? 'Today is done. Come back tomorrow for +${CoinPolicy.streakClaimRewardForDay(nextDay, isPro: isPro)} coins.'
         : 'Open Prism today to keep your streak.';
-    final TextStyle? muted = theme.textTheme.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.6));
+    final TextStyle caption = PrismTextStyles.caption(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.outlineVariant),
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -72,14 +72,7 @@ class _HeroCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(
-                          'STREAK',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: cs.onSurface.withValues(alpha: 0.6),
-                            letterSpacing: 1.6,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text('STREAK', style: PrismTextStyles.eyebrow(context)),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.baseline,
                           textBaseline: TextBaseline.alphabetic,
@@ -90,26 +83,15 @@ class _HeroCard extends StatelessWidget {
                               curve: PrismCurves.enter,
                               builder: (context, value, _) => Text(
                                 '${value.round()}',
-                                style: TextStyle(
-                                  fontFamily: PrismFonts.fraunces,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 60,
-                                  height: 1.05,
-                                  letterSpacing: -1,
-                                  color: cs.onSurface,
-                                  fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-                                ),
+                                style: PrismTextStyles.numeral(context, 64).copyWith(letterSpacing: -1),
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              count == 1 ? 'day' : 'days',
-                              style: theme.textTheme.bodyLarge?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
-                            ),
+                            Text(count == 1 ? 'day' : 'days', style: PrismTextStyles.body(context)),
                           ],
                         ),
                         if (status.best > 0)
-                          Text('Best ${status.best} ${status.best == 1 ? 'day' : 'days'}', style: muted),
+                          Text('Best ${status.best} ${status.best == 1 ? 'day' : 'days'}', style: caption),
                       ],
                     ),
                   ),
@@ -117,15 +99,15 @@ class _HeroCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(statusLine, style: muted?.copyWith(fontSize: 13)),
+            Text(statusLine, style: PrismTextStyles.body(context)),
             const SizedBox(height: 16),
             _CycleStrip(cycleDay: cycleDay, todayDay: todayDay),
             const SizedBox(height: 14),
             Row(
               children: <Widget>[
-                Icon(Icons.card_giftcard_rounded, size: 15, color: cs.onSurface.withValues(alpha: 0.6)),
+                Icon(Icons.card_giftcard_rounded, size: 15, color: cs.onSurface.withValues(alpha: 0.55)),
                 const SizedBox(width: 7),
-                Text('Finish day 7 for a +${CoinPolicy.streak7Bonus} week bonus', style: muted),
+                Text('Finish day 7 for a +${CoinPolicy.streak7Bonus} week bonus', style: caption),
               ],
             ),
           ],
@@ -197,7 +179,6 @@ class _CycleStripState extends State<_CycleStrip> with SingleTickerProviderState
                     curve: PrismCurves.enter,
                   ).transform(_controller.value),
                   scheme: cs,
-                  textTheme: theme.textTheme,
                 ),
               ),
           ],
@@ -215,7 +196,6 @@ class _DayCell extends StatelessWidget {
     required this.reward,
     required this.progress,
     required this.scheme,
-    required this.textTheme,
   });
 
   final int day;
@@ -224,12 +204,11 @@ class _DayCell extends StatelessWidget {
   final int reward;
   final double progress;
   final ColorScheme scheme;
-  final TextTheme textTheme;
 
   @override
   Widget build(BuildContext context) {
     final Color dim = scheme.onSurface.withValues(alpha: 0.4);
-    final Color muted = scheme.onSurface.withValues(alpha: 0.6);
+    final Color muted = scheme.onSurface.withValues(alpha: 0.55);
     final bool upcoming = !done && !today;
     final double fill = done ? progress : 0;
     return Semantics(
@@ -242,7 +221,10 @@ class _DayCell extends StatelessWidget {
       excludeSemantics: true,
       child: Column(
         children: <Widget>[
-          Text('Day $day', style: textTheme.labelSmall?.copyWith(fontSize: 10.5, color: upcoming ? dim : muted)),
+          Text(
+            'Day $day',
+            style: PrismTextStyles.caption(context).copyWith(fontSize: 10.5, color: upcoming ? dim : muted),
+          ),
           const SizedBox(height: 8),
           Stack(
             clipBehavior: Clip.none,
@@ -281,12 +263,9 @@ class _DayCell extends StatelessWidget {
                     ),
                     child: Text(
                       '+${CoinPolicy.streak7Bonus}',
-                      style: textTheme.labelSmall?.copyWith(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        height: 1,
-                        color: scheme.tertiary,
-                      ),
+                      style: PrismTextStyles.caption(
+                        context,
+                      ).copyWith(fontSize: 9.5, fontWeight: FontWeight.w700, height: 1, color: scheme.tertiary),
                     ),
                   ),
                 ),
@@ -295,10 +274,9 @@ class _DayCell extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '+$reward',
-            style: textTheme.labelMedium?.copyWith(
+            style: PrismTextStyles.caption(context).copyWith(
               fontWeight: FontWeight.w600,
-              color: today ? scheme.onSurface : (upcoming ? dim : muted),
-              fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+              color: today || done ? scheme.onSurface.withValues(alpha: 0.85) : (upcoming ? dim : muted),
             ),
           ),
         ],

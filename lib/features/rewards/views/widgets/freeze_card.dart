@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/animated/glint_toast.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
@@ -50,7 +51,7 @@ class FreezeCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cs.outlineVariant),
+            border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -60,18 +61,15 @@ class FreezeCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text('Streak freeze', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text('Streak freeze', style: PrismTextStyles.cardTitle(context)),
                     Text(
                       '$held of ${CoinPolicy.maxStreakFreezes}',
-                      style: theme.textTheme.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w600),
+                      style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Saves your streak if you miss a day. Used on its own.',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
-                ),
+                Text('Saves your streak if you miss a day. Used on its own.', style: PrismTextStyles.body(context)),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -87,8 +85,14 @@ class FreezeCard extends StatelessWidget {
                     FilledButton.tonal(
                       onPressed: full ? null : () => buyStreakFreezeFlow(context, onEarnCoins: onEarnCoins),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 44),
+                        backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+                        disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.05),
+                        foregroundColor: cs.onSurface,
+                        disabledForegroundColor: cs.onSurface.withValues(alpha: 0.4),
+                        minimumSize: const Size(0, 40),
                         padding: const EdgeInsets.symmetric(horizontal: 18),
+                        shape: const StadiumBorder(),
+                        textStyle: PrismTextStyles.rowTitle(context),
                       ),
                       child: full
                           ? const Text('Full')
@@ -130,7 +134,10 @@ class _Slot extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: filled ? cs.primary.withValues(alpha: 0.12) : Colors.transparent,
-          border: Border.all(color: filled ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant, width: 1.5),
+          border: Border.all(
+            color: filled ? cs.primary.withValues(alpha: 0.4) : cs.onSurface.withValues(alpha: 0.12),
+            width: 1.5,
+          ),
         ),
         child: Icon(Icons.ac_unit_rounded, size: 22, color: filled ? cs.primary : cs.onSurface.withValues(alpha: 0.3)),
       ),
@@ -193,8 +200,6 @@ class _FreezeSheetState extends State<_FreezeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme cs = theme.colorScheme;
     final int balance = CoinsService.instance.balanceNotifier.value;
     const int cost = CoinPolicy.streakFreezeCost;
     return SafeArea(
@@ -207,32 +212,18 @@ class _FreezeSheetState extends State<_FreezeSheet> {
             if (_short) ...<Widget>[
               const Center(child: Glint(mood: GlintMood.worried, size: 72)),
               const SizedBox(height: 12),
-              Text(
-                'You need $cost coins.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
+              Text('You need $cost coins.', textAlign: TextAlign.center, style: PrismTextStyles.sectionTitle(context)),
               const SizedBox(height: 4),
-              Text(
-                'You have $balance.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
-              ),
+              Text('You have $balance.', textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(_FreezeSheetResult.earn),
                 child: const Text('Earn coins'),
               ),
             ] else ...<Widget>[
-              Text(
-                'Buy a streak freeze for $cost coins?',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
+              Text('Buy a streak freeze for $cost coins?', style: PrismTextStyles.sectionTitle(context)),
               const SizedBox(height: 4),
-              Text(
-                'Balance after: ${balance - cost}',
-                style: theme.textTheme.bodyMedium?.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
-              ),
+              Text('Balance after: ${balance - cost}', style: PrismTextStyles.body(context)),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: _busy ? null : _buy,

@@ -16,12 +16,12 @@ class BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
-    final Color muted = cs.onSurface.withValues(alpha: 0.6);
+    final Color muted = cs.onSurface.withValues(alpha: 0.55);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.outlineVariant),
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -37,26 +37,15 @@ class BalanceCard extends StatelessWidget {
                   children: <Widget>[
                     const PrismCoinIcon(size: 36),
                     const SizedBox(width: 14),
-                    Text(
-                      '$balance',
-                      style: TextStyle(
-                        fontFamily: PrismFonts.fraunces,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 40,
-                        height: 1,
-                        letterSpacing: -0.4,
-                        color: cs.onSurface,
-                        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-                      ),
-                    ),
+                    Text('$balance', style: PrismTextStyles.numeral(context, 40).copyWith(letterSpacing: -0.4)),
                     const SizedBox(width: 8),
-                    Text('coins', style: theme.textTheme.bodyLarge?.copyWith(color: muted)),
+                    Text('coins', style: PrismTextStyles.body(context)),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Divider(height: 1, color: cs.outlineVariant),
+            Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
             PressScale(
               scale: 0.98,
               child: GestureDetector(
@@ -67,14 +56,11 @@ class BalanceCard extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text(
-                        'What you can do with them',
-                        style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
-                      ),
+                      Text('What you can do with them', style: PrismTextStyles.rowTitle(context)),
                       Container(
                         width: 32,
                         height: 32,
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: cs.surfaceContainerHighest),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: cs.onSurface.withValues(alpha: 0.06)),
                         child: Icon(Icons.chevron_right_rounded, size: 20, color: muted),
                       ),
                     ],
@@ -86,10 +72,7 @@ class BalanceCard extends StatelessWidget {
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
-                Text(
-                  'With Pro, downloads and filters are free. ',
-                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
-                ),
+                Text('With Pro, downloads and filters are free. ', style: PrismTextStyles.caption(context)),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => PaywallOrchestrator.instance.presentOrRequireSignIn(
@@ -101,10 +84,9 @@ class BalanceCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
                       'See Pro',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: cs.onSurface,
-                        decoration: TextDecoration.underline,
-                      ),
+                      style: PrismTextStyles.rowTitle(
+                        context,
+                      ).copyWith(decoration: TextDecoration.underline, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
